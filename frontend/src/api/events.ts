@@ -28,6 +28,7 @@ export function setEventDetailData(
   isAuthed: boolean,
   token?: string,
 ): void {
+  // token is omitted at every call site — all are host/admin mutations, never reachable by an rsvp-token holder.
   for (const key of new Set([event.id, event.slug].filter(Boolean))) {
     qc.setQueryData(eventKeys.detail(key, isAuthed, token), event);
   }

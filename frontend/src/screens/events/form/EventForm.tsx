@@ -20,9 +20,12 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventPath, EventType } from '@/models/event';
+import { type Event, eventHostCount, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
+import type { User } from '@/models/user';
 
+import { EventHostSection } from '../EventHostSection';
+import { eventMemberSectionFlags } from '../eventMemberFlags';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
@@ -231,7 +234,7 @@ export function EventForm({ existing }: Props) {
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
-  const hostsCount = coHosts.length;
+  const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
     <form
@@ -271,15 +274,17 @@ export function EventForm({ existing }: Props) {
           onBufferPoll={setBufferedPollOptions}
         />
 
-        {!existing && (
-          <CollapsibleCard
-            title="hosts"
-            summary={
-              hostsCount > 0
-                ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-                : undefined
-            }
-          >
+        <CollapsibleCard
+          title="hosts"
+          summary={
+            hostsCount > 0
+              ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+              : undefined
+          }
+        >
+          {existing ? (
+            <ExistingEventHosts event={existing} user={user} />
+          ) : (
             <MemberPicker
               label="co-hosts"
               selected={coHosts}
@@ -287,13 +292,8 @@ export function EventForm({ existing }: Props) {
               excludeIds={user ? [user.id] : []}
               hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
             />
-          </CollapsibleCard>
-        )}
-        {existing && (
-          <CollapsibleCard title="hosts">
-            <p className="text-foreground-tertiary text-sm">manage co-hosts on the event page</p>
-          </CollapsibleCard>
-        )}
+          )}
+        </CollapsibleCard>
 
         <CollapsibleCard
           title="details"
@@ -383,5 +383,17 @@ export function EventForm({ existing }: Props) {
       </div>
       {confirmElement}
     </form>
+  );
+}
+
+function ExistingEventHosts({ event, user }: { event: Event; user: User | null }) {
+  const { isHostOrEventManager, canEdit } = eventMemberSectionFlags(event, user);
+  return (
+    <EventHostSection
+      event={event}
+      isHostOrEventManager={isHostOrEventManager}
+      canEdit={canEdit}
+      viewerId={user?.id ?? null}
+    />
   );
 }

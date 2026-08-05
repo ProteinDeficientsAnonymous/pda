@@ -8,7 +8,6 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
-import { Card } from './EventDetailCard';
 
 interface HostRow {
   userId: string;
@@ -46,9 +45,6 @@ export function EventHostSection({
     .map((row) => ({ userId: row.id, name: row.name, photoUrl: row.photoUrl }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
-  if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager) return null;
-  const totalChips = hosts.length + pending.length;
-  const label = totalChips > 1 ? 'hosts' : 'host';
 
   async function removeCohost(host: HostRow) {
     const isSelf = host.userId === viewerId;
@@ -75,7 +71,7 @@ export function EventHostSection({
   }
 
   return (
-    <Card label={label}>
+    <>
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => {
           const isSelf = h.userId === viewerId;
@@ -133,7 +129,7 @@ export function EventHostSection({
         />
       ) : null}
       {confirmElement}
-    </Card>
+    </>
   );
 }
 

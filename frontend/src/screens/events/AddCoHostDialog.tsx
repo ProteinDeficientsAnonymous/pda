@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useUpdateEvent } from '@/api/eventWrites';
+import { useAddCohosts } from '@/api/cohostInvites';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function AddCoHostDialog({ event, open, onClose }: Props) {
-  const update = useUpdateEvent(event.id);
+  const update = useAddCohosts();
   const [added, setAdded] = useState<MemberSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const excludeIds = [
@@ -25,9 +25,8 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
 
   async function submit() {
     setError(null);
-    const combined = Array.from(new Set([...event.coHostIds, ...added.map((m) => m.id)]));
     try {
-      await update.mutateAsync({ coHostIds: combined });
+      await update.mutateAsync({ eventId: event.id, userIds: added.map((m) => m.id) });
       setAdded([]);
       onClose();
     } catch (err) {
