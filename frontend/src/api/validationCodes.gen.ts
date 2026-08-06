@@ -148,7 +148,7 @@ export const Code = {
     AnswerInvalidFormat: 'survey.answer_invalid_format',
     AnswerInvalidOption: 'survey.answer_invalid_option',
     AnswerMustBeNumber: 'survey.answer_must_be_number',
-    AnswerMustBeYesNo: 'survey.answer_must_be_yes_no',
+    AnswerMustBeBoolean: 'survey.answer_must_be_boolean',
     AnswerRatingOutOfRange: 'survey.answer_rating_out_of_range',
     AnswerInvalidDatetimeOption: 'survey.answer_invalid_datetime_option',
     AnswerInvalidAvailability: 'survey.answer_invalid_availability',
@@ -341,7 +341,7 @@ export type ValidationCode =
   | 'survey.answer_invalid_format'
   | 'survey.answer_invalid_option'
   | 'survey.answer_must_be_number'
-  | 'survey.answer_must_be_yes_no'
+  | 'survey.answer_must_be_boolean'
   | 'survey.answer_rating_out_of_range'
   | 'survey.answer_invalid_datetime_option'
   | 'survey.answer_invalid_availability'
@@ -502,7 +502,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.answer_invalid_format': ['label'],
   'survey.answer_invalid_option': ['label'],
   'survey.answer_must_be_number': ['label'],
-  'survey.answer_must_be_yes_no': ['label'],
+  'survey.answer_must_be_boolean': ['label'],
   'survey.answer_rating_out_of_range': ['label'],
   'survey.answer_invalid_datetime_option': ['label'],
   'survey.answer_invalid_availability': ['label', 'value'],

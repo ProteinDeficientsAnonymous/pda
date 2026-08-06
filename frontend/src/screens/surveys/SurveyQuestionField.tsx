@@ -40,7 +40,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'select':
+    case 'radio':
       return (
         <RadioGroup
           {...common}
@@ -49,7 +49,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'dropdown':
+    case 'select':
       return (
         <Select
           {...common}
@@ -61,7 +61,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           placeholder="select one"
         />
       );
-    case 'multiselect':
+    case 'checkbox':
       return (
         <CheckboxGroup
           {...common}
@@ -72,7 +72,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'yes_no':
+    case 'boolean':
       return (
         <RadioGroup
           {...common}
