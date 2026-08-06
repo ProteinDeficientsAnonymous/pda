@@ -28,7 +28,6 @@ _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
 
-
 class EventRsvpQuestionOut(BaseModel):
     id: str
     label: str
@@ -36,7 +35,6 @@ class EventRsvpQuestionOut(BaseModel):
     options: list[str] = []
     required: bool
     display_order: int
-
 
 class EventRsvpQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
@@ -60,19 +58,15 @@ class EventRsvpQuestionIn(BaseModel):
             raise ValueError(f"options must be {FieldLimit.OPTION_TEXT} characters or fewer")
         return trimmed
 
-
 class EventRsvpQuestionSyncIn(EventRsvpQuestionIn):
     id: UUID | None = None
-
 
 class EventRsvpQuestionExpectedIn(EventRsvpQuestionIn):
     id: UUID
 
-
 class EventRsvpQuestionSyncPayload(BaseModel):
     expected: list[EventRsvpQuestionExpectedIn]
     questions: list[EventRsvpQuestionSyncIn]
-
 
 def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
     if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
@@ -88,11 +82,8 @@ def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
             status_code=400,
         )
 
-
-
 def _looks_like_email(s: str) -> bool:
     return bool(_EMAIL_RE.match(s))
-
 
 def _looks_like_phone(s: str) -> bool:
     """Accept E.164 (+15551234567) or any string phonenumbers can parse as US."""
@@ -102,7 +93,6 @@ def _looks_like_phone(s: str) -> bool:
         return False
     return phonenumbers.is_valid_number(parsed)
 
-
 def _validate_zelle_info(v: str | None) -> str | None:
     """Zelle is a free-text field but should be either an email or a phone number."""
     if v is None or v == "":
@@ -111,7 +101,6 @@ def _validate_zelle_info(v: str | None) -> str | None:
     if _looks_like_email(stripped) or _looks_like_phone(stripped):
         return stripped
     raise_validation(Code.Zelle.INVALID, field="zelle_info")
-
 
 def _validate_max_attendees(v: int | None) -> int | None:
     """Accept null (unlimited) or an integer >= 1. Reject 0 and negatives."""
@@ -124,14 +113,11 @@ def _validate_max_attendees(v: int | None) -> int | None:
         )
     return v
 
-
 def _normalize_url(url: str) -> str:
     return url if url.startswith(("http://", "https://")) else f"https://{url}"
 
-
 def _strip_www(host: str) -> str:
     return host.removeprefix("www.")
-
 
 def _validate_partiful_url(url: str, field: str) -> str:
     if not url:
@@ -144,7 +130,6 @@ def _validate_partiful_url(url: str, field: str) -> str:
     if "partiful.com" not in host:
         raise_validation(Code.Url.PARTIFUL_NOT_RECOGNIZED, field=field)
     return require_url_path(url, field=field)
-
 
 def _validate_generic_url(url: str, field: str) -> str:
     # Accepts either a bare domain (fast.com) or a full URL and normalizes to
@@ -163,16 +148,13 @@ def _validate_generic_url(url: str, field: str) -> str:
         raise_validation(Code.Url.SCHEME_MUST_BE_HTTP_OR_HTTPS, field=field)
     return normalized
 
-
 class TagOut(BaseModel):
     id: str
     name: str
     slug: str
 
-
 class TagIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
-
 
 class RSVPGuestOut(BaseModel):
     user_id: str
@@ -188,14 +170,12 @@ class RSVPGuestOut(BaseModel):
     is_member: bool = True
     paid_confirmed: bool = False
 
-
 class PendingCoHostInviteOut(BaseModel):
     id: str
     user_id: str
     user_name: str
     user_photo_url: str = ""
     invited_at: datetime
-
 
 class EventListOut(BaseModel):
     id: str
@@ -237,7 +217,6 @@ class EventListOut(BaseModel):
     is_past: bool = False
     status: str = "active"
     tags: list[TagOut] = []
-
 
 class EventOut(BaseModel):
     id: str
@@ -293,7 +272,6 @@ class EventOut(BaseModel):
     tags: list[TagOut] = []
     rsvp_questions: list[EventRsvpQuestionOut] = []
 
-
 class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
@@ -302,16 +280,13 @@ class RSVPIn(BaseModel):
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
-
 class HostRSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
     paid_confirmed: bool = False
 
-
 class HostRSVPPaymentIn(BaseModel):
     paid_confirmed: bool
-
 
 class TextRecipientsOut(BaseModel):
     attending: list[str] = []
@@ -320,13 +295,11 @@ class TextRecipientsOut(BaseModel):
     waitlisted: list[str] = []
     invited: list[str] = []
 
-
 class CancellationOut(BaseModel):
     user_id: str
     name: str
     cancelled_at: datetime
     days_before_event: int
-
 
 class EventStatsOut(BaseModel):
     going_count: int = 0
@@ -339,7 +312,6 @@ class EventStatsOut(BaseModel):
     not_marked_count: int = 0
     cancellations: list[CancellationOut] = []
 
-
 class EventAttendanceRowOut(BaseModel):
     """One event's attendance summary for the admin attendance report."""
 
@@ -351,17 +323,14 @@ class EventAttendanceRowOut(BaseModel):
     no_show_count: int = 0
     going_count: int = 0
 
-
 class AttendanceReportOut(BaseModel):
     events: list[EventAttendanceRowOut] = []
     official_no_show_count: int = 0
     club_no_show_count: int = 0
 
-
 class AttendanceIn(BaseModel):
     attendance: AttendanceStatus
     for_plus_one: bool = False
-
 
 class EventIn(BaseModel):
     title: str = Field(max_length=FieldLimit.TITLE)
@@ -430,7 +399,6 @@ class EventIn(BaseModel):
     def validate_max_attendees(cls, v: int | None) -> int | None:
         return _validate_max_attendees(v)
 
-
 class EventPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
     description: str | None = Field(default=None, max_length=FieldLimit.EVENT_DESCRIPTION)
@@ -489,7 +457,6 @@ class EventPatchIn(BaseModel):
     @classmethod
     def validate_max_attendees(cls, v: int | None) -> int | None:
         return _validate_max_attendees(v)
-
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
 _ALLOWED_IMAGE_TYPES = {
