@@ -1,3 +1,10 @@
+# [0.87.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.86.0...v0.87.0) (2026-08-06)
+
+
+### Features
+
+* **events:** partiful-style guest list summary + detail overlay (Issue 1129) ([#1137](https://github.com/ProteinDeficientsAnonymous/pda/issues/1137)) ([41b53d5](https://github.com/ProteinDeficientsAnonymous/pda/commit/41b53d573d161cb97645bf479b28cb24d4ce9ecb))
+
 # [0.86.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.10...v0.86.0) (2026-08-05)
 
 
