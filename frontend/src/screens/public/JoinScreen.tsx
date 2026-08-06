@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { TextField } from '@/components/ui/TextField';
-import { personName } from '@/utils/validators';
+import { personName, ValidationMessage } from '@/utils/validators';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
@@ -95,10 +95,12 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     const next: Record<string, string> = {};
     const firstNameErr = personName(firstName);
     if (firstNameErr)
-      next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
+      next.firstName =
+        firstNameErr === ValidationMessage.REQUIRED ? 'first name required' : firstNameErr;
     const lastNameErr = personName(lastName);
     if (lastNameErr)
-      next.lastName = lastNameErr === 'Required' ? 'last name required' : lastNameErr;
+      next.lastName =
+        lastNameErr === ValidationMessage.REQUIRED ? 'last name required' : lastNameErr;
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
