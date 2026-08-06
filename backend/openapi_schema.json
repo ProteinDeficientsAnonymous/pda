@@ -3631,10 +3631,12 @@
       "JoinFormQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JoinFormQuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -3684,8 +3686,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/JoinFormQuestionType"
           },
           "id": {
             "title": "Id",
@@ -3717,6 +3718,16 @@
         ],
         "title": "JoinFormQuestionOut",
         "type": "object"
+      },
+      "JoinFormQuestionType": {
+        "description": "Question types supported by join forms.",
+        "enum": [
+          "text",
+          "textarea",
+          "select"
+        ],
+        "title": "JoinFormQuestionType",
+        "type": "string"
       },
       "JoinRequestAnswerOut": {
         "properties": {
@@ -4988,6 +4999,22 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
+      "QuestionType": {
+        "description": "HTML-aligned question type catalog (wire values).",
+        "enum": [
+          "text",
+          "textarea",
+          "radio",
+          "select",
+          "checkbox",
+          "number",
+          "boolean",
+          "rating",
+          "datetime_poll"
+        ],
+        "title": "QuestionType",
+        "type": "string"
+      },
       "RSVPGuestOut": {
         "properties": {
           "attendance": {
@@ -5716,10 +5743,12 @@
       "SurveyQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -5769,8 +5798,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/QuestionType"
           },
           "id": {
             "title": "Id",

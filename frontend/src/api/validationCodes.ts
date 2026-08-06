@@ -332,7 +332,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" must be a number` : 'must be a number';
     }
-    case Code.Survey.AnswerMustBeYesNo: {
+    case Code.Survey.AnswerMustBeBoolean: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" must be yes or no` : 'must be yes or no';
     }

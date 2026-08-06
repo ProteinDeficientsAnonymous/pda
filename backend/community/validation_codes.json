@@ -617,8 +617,8 @@
         ]
       },
       {
-        "name": "ANSWER_MUST_BE_YES_NO",
-        "value": "survey.answer_must_be_yes_no",
+        "name": "ANSWER_MUST_BE_BOOLEAN",
+        "value": "survey.answer_must_be_boolean",
         "params": [
           "label"
         ]

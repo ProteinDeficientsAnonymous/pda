@@ -44,26 +44,35 @@ class JoinRequestStatus(models.TextChoices):
     REJECTED = "rejected", "Rejected"
 
 
-class JoinFormQuestionType(models.TextChoices):
-    TEXT = "text", "Text"
-    SELECT = "select", "Select"
-
-
 class SurveyVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
 
 
-class SurveyQuestionType(models.TextChoices):
+class QuestionType(models.TextChoices):
+    """HTML-aligned question type catalog (wire values)."""
+
     TEXT = "text", "Text"
     TEXTAREA = "textarea", "Text area"
-    SELECT = "select", "Single select"
-    MULTISELECT = "multiselect", "Multi select"
-    DROPDOWN = "dropdown", "Dropdown"
+    RADIO = "radio", "Radio"
+    SELECT = "select", "Select"
+    CHECKBOX = "checkbox", "Checkbox"
     NUMBER = "number", "Number"
-    YES_NO = "yes_no", "Yes / No"
+    BOOLEAN = "boolean", "Yes / No"
     RATING = "rating", "Rating"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
+
+
+# Survey authors the full catalog; keep the historical name as an alias.
+SurveyQuestionType = QuestionType
+
+
+class JoinFormQuestionType(models.TextChoices):
+    """Question types supported by join forms."""
+
+    TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
+    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
 
 
 class InvitePermission(models.TextChoices):
