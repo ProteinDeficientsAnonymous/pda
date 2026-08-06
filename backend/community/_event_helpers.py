@@ -79,12 +79,27 @@ _GUEST_LIST_STATUS_ORDER = {
     RSVPStatus.WAITLISTED: 3,
 }
 
+def _can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bool:
+    """Hosts, co-hosts, and event managers can see RSVP question answers."""
+    if requesting_user is None:
+        return False
+    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if creator is not None and requesting_user.pk == creator.pk:
+        return True
+    return str(requesting_user.pk) in co_host_ids
+
 
 def _build_guest_list(
-    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+    rsvps,
+    can_see_phones: bool,
+    viewer=None,
+    can_see_payment_status: bool = False,
+    *,
+    include_answers: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone
-    and payment-status visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
+    payment-status, and answer visibility."""
     ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
@@ -100,6 +115,7 @@ def _build_guest_list(
             plus_one_checked_in_at=r.plus_one_checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
+            answers=dict(r.questionnaire_responses or {}) if include_answers else {},
         )
         for r in ordered_rsvps
     ]
@@ -315,7 +331,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled else []
+    answers_visible = _can_see_guest_answers(auth_user, creator, co_host_ids)
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or answers_visible else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -357,11 +374,18 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(all_rsvps, viewer_is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(
+                all_rsvps,
+                viewer_is_cohost,
+                auth_user,
+                payment_status_visible,
+                include_answers=answers_visible,
+            ),
             [],
             can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
+        my_rsvp_answers=_find_my_rsvp_answers(all_rsvps, auth_user),
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,

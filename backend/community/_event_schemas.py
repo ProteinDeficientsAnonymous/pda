@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 import phonenumbers
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, WithJsonSchema, field_validator, model_validator
 
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
@@ -26,6 +26,7 @@ _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
+RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
 
 
 class EventRsvpQuestionOut(BaseModel):
@@ -177,6 +178,7 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: RSVPStatus
     has_plus_one: bool = False
+    answers: dict = {}
     phone: str | None = None
     photo_url: str = ""
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
@@ -299,6 +301,10 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    answers: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; checkbox values are comma-separated.",
+    )
 
 
 class HostRSVPIn(BaseModel):
