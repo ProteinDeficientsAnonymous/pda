@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/auth/store';
 import {
   type Event,
+  type EventRsvpQuestion,
   EventStatus as EventStatusEnum,
   EventType as EventTypeEnum,
   EventVisibility,
@@ -47,6 +48,10 @@ export interface EventFormValues {
   tagIds: string[];
   status: EventStatus;
 }
+
+type CreateEventValues = EventFormValues & {
+  rsvpQuestions?: readonly EventRsvpQuestion[];
+};
 
 type WireBody = Record<string, unknown>;
 
@@ -128,11 +133,15 @@ export function useCreateEvent() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (values: EventFormValues) => {
-      const { data } = await apiClient.post<WireEvent>(
-        '/api/community/events/',
-        toWireBody(values),
-      );
+    mutationFn: async ({ rsvpQuestions = [], ...values }: CreateEventValues) => {
+      const body = toWireBody(values);
+      body.rsvp_questions = rsvpQuestions.map((question) => ({
+        label: question.label,
+        field_type: question.fieldType,
+        options: question.options,
+        required: question.required,
+      }));
+      const { data } = await apiClient.post<WireEvent>('/api/community/events/', body);
       return mapEvent(data);
     },
     onSuccess: (event) => {

@@ -1,0 +1,104 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { RsvpQuestionDraft } from '../rsvpQuestions';
+import { EventRsvpQuestionDialog } from './EventRsvpQuestionDialog';
+
+describe('EventRsvpQuestionDialog', () => {
+  it('requires a question', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/question required/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('requires options for select one', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/at least one option/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('saves a free response question', () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={onClose} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'notes' } });
+    fireEvent.click(screen.getByLabelText('required'));
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        label: 'notes',
+        fieldType: 'textarea',
+        options: [],
+        required: true,
+        id: expect.any(String) as string,
+      }),
+    );
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('saves select multiple with parsed options when editing', () => {
+    const existing: RsvpQuestionDraft = {
+      id: 'q-existing',
+      label: 'help',
+      fieldType: 'checkbox',
+      options: ['a'],
+      required: false,
+    };
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open existing={existing} onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('options'), { target: { value: 'setup\ncleanup' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(onSave).toHaveBeenCalledWith({
+      id: 'q-existing',
+      label: 'help',
+      fieldType: 'checkbox',
+      options: ['setup', 'cleanup'],
+      required: false,
+    });
+  });
+
+  it('rejects commas in select multiple options', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'help' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'checkbox' } });
+    fireEvent.change(screen.getByLabelText('options'), { target: { value: 'yes, with a guest' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/options cannot contain commas/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('allows commas in select one options', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'bringing someone?' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
+    fireEvent.change(screen.getByLabelText('options'), {
+      target: { value: 'yes, with a guest\nno' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ options: ['yes, with a guest', 'no'] }),
+    );
+  });
+
+  it('rejects options over the answer length limit', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
+    fireEvent.change(screen.getByLabelText('options'), { target: { value: 'x'.repeat(201) } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/options must be 200 characters or fewer/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+});
