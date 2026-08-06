@@ -35,7 +35,7 @@ def reverse_question_types(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0087_alter_eventrsvp_options"),
+        ("community", "0089_alter_event_description"),
     ]
 
     operations = [
