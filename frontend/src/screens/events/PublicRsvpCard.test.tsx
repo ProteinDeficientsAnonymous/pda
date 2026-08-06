@@ -73,6 +73,30 @@ describe('PublicRsvpCard', () => {
     );
   });
 
+  it('submits existing question answers when changing status', () => {
+    renderCard({
+      status: RsvpServerStatus.Attending,
+      event: {
+        myRsvpAnswers: { q1: { label: 'travel details', answer: 'taking transit' } },
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'travel details',
+            fieldType: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByLabelText('travel details')).toHaveValue('taking transit');
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(updateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ answers: { q1: 'taking transit' } }),
+    );
+  });
+
   it('renders the comment field', () => {
     renderCard({ status: RsvpServerStatus.Attending });
     expect(screen.getByLabelText('comment (optional)')).toBeInTheDocument();

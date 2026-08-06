@@ -42,6 +42,7 @@ describe('useSubmitPublicRsvp', () => {
       phone_number: '+15550001111',
       status: 'attending',
       has_plus_one: false,
+      answers: {},
       website: '',
       paid_confirmed: false,
     };
@@ -71,6 +72,16 @@ describe('useUpdatePublicMyRsvp', () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/community/public/my-rsvps/ev1/',
+      {
+        status: 'attending',
+        has_plus_one: false,
+        comment: 'hi',
+        paid_confirmed: false,
+      },
+      { params: { token } },
+    );
     expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.detail('ev1', false, token) });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: eventCommentKeys.list('ev1') });
   });
