@@ -20,6 +20,7 @@ interface SetRsvpArgs {
   // public EventComment or a host-only decline notification.
   comment?: string;
   paidConfirmed?: boolean;
+  answers?: Record<string, string | string[]>;
 }
 
 // EventDetailScreen's :id route param can be the event's uuid or slug, so the cache key varies.
@@ -51,10 +52,12 @@ export function useSetRsvp() {
       hasPlusOne = false,
       comment,
       paidConfirmed,
+      answers = {},
     }: SetRsvpArgs) => {
       const { data } = await apiClient.post<WireEvent>(`/api/community/events/${eventId}/rsvp/`, {
         status,
         has_plus_one: hasPlusOne,
+        answers,
         ...(comment === undefined ? {} : { comment }),
         ...(paidConfirmed ? { paid_confirmed: true } : {}),
       });
