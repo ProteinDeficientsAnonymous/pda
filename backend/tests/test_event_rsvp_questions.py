@@ -98,7 +98,7 @@ class TestRsvpWithAnswers:
         )
         assert ok.status_code == 200
         rsvp = EventRSVP.objects.get(event=rsvp_event)
-        assert rsvp.answers[q["id"]]["answer"] == "driving"
+        assert rsvp.questionnaire_responses[q["id"]]["answer"] == "driving"
         assert ok.json()["my_rsvp_answers"][q["id"]]["answer"] == "driving"
 
     def test_cant_go_skips_required_answers(

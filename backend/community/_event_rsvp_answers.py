@@ -1,5 +1,7 @@
 """Validate and snapshot RSVP question answers."""
 
+from users.permissions import PermissionKey
+
 from community._field_limits import FieldLimit
 from community._question_answers import (
     assert_single_choice_member,
@@ -10,6 +12,26 @@ from community._validation import Code, raise_validation
 from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 
 AnswersIn = dict[str, str]
+
+
+def can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bool:
+    """Hosts, co-hosts, and event managers can see RSVP question answers."""
+    if requesting_user is None:
+        return False
+    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if creator is not None and requesting_user.pk == creator.pk:
+        return True
+    return str(requesting_user.pk) in co_host_ids
+
+
+def find_my_rsvp_answers(rsvps, user) -> dict:
+    if user is None:
+        return {}
+    for r in rsvps:
+        if r.user_id == user.pk:
+            return dict(r.questionnaire_responses or {})
+    return {}
 
 
 def answers_required_for_status(status: str) -> bool:

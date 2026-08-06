@@ -174,7 +174,9 @@ def _snapshot_rsvp_answers(
     final_status: str,
     answers: dict[str, str] | None,
 ) -> dict:
-    existing_answers = dict(existing.answers or {}) if existing is not None else {}
+    existing_answers = (
+        dict(existing.questionnaire_responses or {}) if existing is not None else {}
+    )
     if not answers_required_for_status(final_status):
         return existing_answers
 
@@ -216,7 +218,7 @@ def _rsvp_unchanged(
         existing.status == final_status
         and existing.has_plus_one == final_plus_one
         and existing.paid_confirmed_at == new_confirmed_at
-        and dict(existing.answers or {}) == answers_snapshot
+        and dict(existing.questionnaire_responses or {}) == answers_snapshot
     )
 
 
@@ -278,7 +280,7 @@ def _apply_rsvp_in_transaction(  # noqa: PLR0913
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
-            "answers": answers_snapshot,
+            "questionnaire_responses": answers_snapshot,
         },
     )
 
