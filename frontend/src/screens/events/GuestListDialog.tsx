@@ -122,13 +122,13 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose }: P
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {active === 'invited' ? (
-            <InvitedList event={event} />
+            <InvitedList event={event} row />
           ) : visible.length === 0 ? (
             <p className="text-muted text-xs">{needle ? 'no one matches' : 'no one yet'}</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1">
               {visible.map((g) => (
-                <GuestChip key={g.userId} guest={g} />
+                <GuestChip key={g.userId} guest={g} row />
               ))}
             </div>
           )}

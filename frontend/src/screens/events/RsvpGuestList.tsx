@@ -51,7 +51,7 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
         </button>
       </div>
 
-      <div className="flex items-center -space-x-2">
+      <div className="flex items-center gap-1.5">
         {preview.map((g) => (
           <PreviewAvatar key={g.userId} guest={g} />
         ))}
@@ -62,7 +62,7 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
               setOpenTab('going');
             }}
             aria-label={`view all ${String(going.length + maybe.length)} guests`}
-            className="border-surface bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 flex h-8 w-8 items-center justify-center rounded-full border-2 text-[11px]"
+            className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px]"
           >
             +{overflow}
           </button>
@@ -91,7 +91,7 @@ function PreviewAvatar({ guest }: { guest: EventGuest }) {
         alt={guest.name}
         title={guest.name}
         loading="lazy"
-        className="border-surface h-8 w-8 rounded-full border-2 object-cover"
+        className="h-8 w-8 shrink-0 rounded-full object-cover"
       />
     );
   }
@@ -99,7 +99,7 @@ function PreviewAvatar({ guest }: { guest: EventGuest }) {
     <span
       title={guest.name}
       aria-label={guest.name}
-      className="border-surface bg-toggle-off text-foreground-secondary flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs"
+      className="bg-toggle-off text-foreground-secondary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs"
     >
       {guest.name.slice(0, 1).toLowerCase()}
     </span>
