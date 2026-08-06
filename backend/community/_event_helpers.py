@@ -13,6 +13,7 @@ from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import get_my_pending_invite
 from community._event_cohost_helpers import _pending_cohost_invites_out
+from community._event_rsvp_answers import can_see_guest_answers, find_my_rsvp_answers
 from community._event_rsvp_serialize import event_rsvp_question_out
 from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
@@ -79,17 +80,6 @@ _GUEST_LIST_STATUS_ORDER = {
     RSVPStatus.WAITLISTED: 3,
 }
 
-def _can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bool:
-    """Hosts, co-hosts, and event managers can see RSVP question answers."""
-    if requesting_user is None:
-        return False
-    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
-        return True
-    if creator is not None and requesting_user.pk == creator.pk:
-        return True
-    return str(requesting_user.pk) in co_host_ids
-
-
 def _build_guest_list(
     rsvps,
     can_see_phones: bool,
@@ -129,16 +119,6 @@ def _find_my_rsvp(rsvps, user):
         if r.user_id == user.pk:
             return r
     return None
-
-
-def _find_my_rsvp_answers(rsvps, user) -> dict:
-    if user is None:
-        return {}
-    for r in rsvps:
-        if r.user_id == user.pk:
-            return dict(r.questionnaire_responses or {})
-    return {}
-
 
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
@@ -331,7 +311,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    answers_visible = _can_see_guest_answers(auth_user, creator, co_host_ids)
+    answers_visible = can_see_guest_answers(auth_user, creator, co_host_ids)
     all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or answers_visible else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
@@ -385,7 +365,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
             can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
-        my_rsvp_answers=_find_my_rsvp_answers(all_rsvps, auth_user),
+        my_rsvp_answers=find_my_rsvp_answers(all_rsvps, auth_user),
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
