@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from community.models.choices import (
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
     EventStatus,
@@ -265,6 +266,8 @@ class EventRSVP(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
     status = models.CharField(max_length=20, choices=RSVPStatus.choices)
     has_plus_one = models.BooleanField(default=False)
+    # Snapshot of RSVP question answers: {question_id: {label, answer}}.
+    answers = models.JSONField(default=dict, blank=True)
     attendance = models.CharField(
         max_length=20,
         choices=AttendanceStatus.choices,
@@ -293,6 +296,78 @@ class EventRSVP(models.Model):
         return (
             f"{self.user.full_name or self.user.phone_number} → {self.event.title}: {self.status}"
         )
+
+
+class EventFlag(models.Model):
+    if TYPE_CHECKING:
+        event_id: uuid.UUID
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="flags")
+    flagged_by = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="event_flags",
+    )
+    reason = models.TextField(max_length=500)
+    status = models.CharField(
+        max_length=20,
+        choices=EventFlagStatus.choices,
+        default=EventFlagStatus.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["event", "flagged_by"], name="unique_event_flag"),
+        ]
+
+    def __str__(self):
+        return f"Flag on '{self.event.title}' by {self.flagged_by}"
+
+
+class EventEmailBlast(models.Model):
+    """A record of an email blast a host sent to an event's attendees."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="email_blasts")
+    sender = models.ForeignKey(
+        "users.User", null=True, on_delete=models.SET_NULL, related_name="event_email_blasts"
+    )
+    subject = models.CharField(max_length=150)
+    body = models.TextField(max_length=5000)
+    audience = models.CharField(max_length=120, blank=True)
+    # successful sends only; attempts = recipient_count + failed_count
+    recipient_count = models.PositiveIntegerField(default=0)
+    skipped_no_email_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Blast '{self.subject}' to '{self.event.title}'"
+
+
+class EventRsvpQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvp_questions")
+    label = models.CharField(max_length=300)
+    field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
+    options = models.JSONField(default=list, blank=True)
+    required = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["display_order"]
+
+    def __str__(self):
+        return f"{self.label} ({self.event.title})"
 
 
 class EventFlag(models.Model):

@@ -37,6 +37,14 @@ export const Code = {
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
     WouldRemoveNonMembers: 'event.would_remove_non_members',
+    RsvpQuestionNotFound: 'event.rsvp_question_not_found',
+    RsvpQuestionDuplicate: 'event.rsvp_question_duplicate',
+    RsvpQuestionConflict: 'event.rsvp_question_conflict',
+    RsvpQuestionOptionsRequired: 'event.rsvp_question_options_required',
+    RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
+    RsvpAnswerRequired: 'event.rsvp_answer_required',
+    RsvpAnswerInvalidOption: 'event.rsvp_answer_invalid_option',
+    RsvpAnswerTooLong: 'event.rsvp_answer_too_long',
     PaymentConfirmationRequired: 'event.payment_confirmation_required',
     CheckInReportNotYetAvailable: 'event.check_in_report_not_yet_available',
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
@@ -264,6 +272,14 @@ export type ValidationCode =
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
   | 'event.would_remove_non_members'
+  | 'event.rsvp_question_not_found'
+  | 'event.rsvp_question_duplicate'
+  | 'event.rsvp_question_conflict'
+  | 'event.rsvp_question_options_required'
+  | 'event.rsvp_question_option_no_comma'
+  | 'event.rsvp_answer_required'
+  | 'event.rsvp_answer_invalid_option'
+  | 'event.rsvp_answer_too_long'
   | 'event.payment_confirmation_required'
   | 'event.check_in_report_not_yet_available'
   | 'event.check_in_report_invalid_column'
@@ -429,6 +445,14 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
   'event.would_remove_non_members': ['count'],
+  'event.rsvp_question_not_found': [],
+  'event.rsvp_question_duplicate': [],
+  'event.rsvp_question_conflict': [],
+  'event.rsvp_question_options_required': [],
+  'event.rsvp_question_option_no_comma': [],
+  'event.rsvp_answer_required': ['label'],
+  'event.rsvp_answer_invalid_option': ['label'],
+  'event.rsvp_answer_too_long': ['label', 'max'],
   'event.payment_confirmation_required': [],
   'event.check_in_report_not_yet_available': [],
   'event.check_in_report_invalid_column': ['column'],

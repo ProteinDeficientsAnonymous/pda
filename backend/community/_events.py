@@ -33,6 +33,7 @@ from community._event_nonmember_removal import (
     guard_or_remove_ineligible_non_members,
 )
 from community._event_schemas import (
+    validate_event_rsvp_question,
     EventIn,
     EventListOut,
     EventOut,
@@ -51,6 +52,7 @@ from community._rsvp_payment import can_see_payment_details
 from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
+    EventRsvpQuestion,
     Event,
     EventStatus,
     PageVisibility,
@@ -222,7 +224,7 @@ def get_event(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -268,6 +270,9 @@ def create_event(request, payload: EventIn):
             check_past=True,
         )
 
+    for question in payload.rsvp_questions:
+        validate_event_rsvp_question(question)
+
     event = Event.objects.create(
         title=payload.title,
         description=payload.description,
@@ -295,6 +300,19 @@ def create_event(request, payload: EventIn):
     )
     _set_event_participants(request, event, payload.co_host_ids)
     _set_event_tags(event, payload.tag_ids)
+    EventRsvpQuestion.objects.bulk_create(
+        [
+            EventRsvpQuestion(
+                event=event,
+                label=question.label,
+                field_type=question.field_type,
+                options=question.options,
+                required=question.required,
+                display_order=display_order,
+            )
+            for display_order, question in enumerate(payload.rsvp_questions)
+        ]
+    )
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
@@ -324,7 +342,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .get(id=event_id)
         )
     except Event.DoesNotExist:
