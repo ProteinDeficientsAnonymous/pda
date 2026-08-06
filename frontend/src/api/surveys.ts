@@ -4,7 +4,7 @@ import { apiClient } from './client';
 import type { QuestionType } from './questionTypes';
 
 export type { QuestionType };
-/** Survey authors the full catalog, so its field types are the catalog itself. */
+/** Survey field types are the full catalog (`QuestionType`). */
 export type SurveyQuestionType = QuestionType;
 export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = 'text';
 

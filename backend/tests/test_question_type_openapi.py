@@ -24,15 +24,14 @@ def test_join_form_question_out_uses_named_enum():
 
 
 @pytest.mark.unit
-def test_survey_question_schemas_use_named_enum():
+def test_survey_question_schemas_use_catalog_question_type():
     assert _field_type_schema("SurveyQuestionIn") == {
-        "allOf": [{"$ref": "#/components/schemas/SurveyQuestionType"}],
+        "allOf": [{"$ref": "#/components/schemas/QuestionType"}],
         "default": "text",
     }
-    assert _field_type_schema("SurveyQuestionOut") == {
-        "$ref": "#/components/schemas/SurveyQuestionType"
-    }
-    assert set(_schemas()["SurveyQuestionType"]["enum"]) == {
+    assert _field_type_schema("SurveyQuestionOut") == {"$ref": "#/components/schemas/QuestionType"}
+    assert "SurveyQuestionType" not in _schemas()
+    assert set(_schemas()["QuestionType"]["enum"]) == {
         "text",
         "textarea",
         "radio",

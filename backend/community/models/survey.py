@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 
-from community.models.choices import SurveyQuestionType, SurveyVisibility
+from community.models.choices import QuestionType, SurveyVisibility
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -60,8 +60,8 @@ class SurveyQuestion(models.Model):
     label = models.CharField(max_length=500)
     field_type = models.CharField(
         max_length=20,
-        choices=SurveyQuestionType.choices,
-        default=SurveyQuestionType.TEXT,
+        choices=QuestionType.choices,
+        default=QuestionType.TEXT,
     )
     options = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)

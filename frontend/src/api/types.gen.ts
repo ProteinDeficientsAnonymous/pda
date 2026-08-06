@@ -4087,6 +4087,12 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * QuestionType
+         * @description HTML-aligned question type catalog (wire values).
+         * @enum {string}
+         */
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -4354,7 +4360,7 @@ export interface components {
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
             /** @default text */
-            field_type: components["schemas"]["SurveyQuestionType"];
+            field_type: components["schemas"]["QuestionType"];
             /** Label */
             label: string;
             /**
@@ -4377,7 +4383,7 @@ export interface components {
         SurveyQuestionOut: {
             /** Display Order */
             display_order: number;
-            field_type: components["schemas"]["SurveyQuestionType"];
+            field_type: components["schemas"]["QuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -4390,11 +4396,6 @@ export interface components {
             /** Required */
             required: boolean;
         };
-        /**
-         * SurveyQuestionType
-         * @enum {string}
-         */
-        SurveyQuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** SurveyResponseOut */
         SurveyResponseOut: {
             /** Answers */

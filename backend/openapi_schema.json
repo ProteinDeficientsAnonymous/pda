@@ -4630,6 +4630,22 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
+      "QuestionType": {
+        "description": "HTML-aligned question type catalog (wire values).",
+        "enum": [
+          "text",
+          "textarea",
+          "radio",
+          "select",
+          "checkbox",
+          "number",
+          "boolean",
+          "rating",
+          "datetime_poll"
+        ],
+        "title": "QuestionType",
+        "type": "string"
+      },
       "RSVPGuestOut": {
         "properties": {
           "attendance": {
@@ -5330,7 +5346,7 @@
           "field_type": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SurveyQuestionType"
+                "$ref": "#/components/schemas/QuestionType"
               }
             ],
             "default": "text"
@@ -5383,7 +5399,7 @@
             "type": "integer"
           },
           "field_type": {
-            "$ref": "#/components/schemas/SurveyQuestionType"
+            "$ref": "#/components/schemas/QuestionType"
           },
           "id": {
             "title": "Id",
@@ -5415,21 +5431,6 @@
         ],
         "title": "SurveyQuestionOut",
         "type": "object"
-      },
-      "SurveyQuestionType": {
-        "enum": [
-          "text",
-          "textarea",
-          "radio",
-          "select",
-          "checkbox",
-          "number",
-          "boolean",
-          "rating",
-          "datetime_poll"
-        ],
-        "title": "SurveyQuestionType",
-        "type": "string"
       },
       "SurveyResponseOut": {
         "properties": {

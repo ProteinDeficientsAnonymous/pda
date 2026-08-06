@@ -3,8 +3,7 @@
 import json
 
 import pytest
-from community.models import JoinFormQuestion, JoinFormQuestionType, SurveyQuestionType
-from community.models.choices import QuestionType, QuestionTypeDefinition
+from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -46,22 +45,16 @@ def _make_questions(count: int) -> list[JoinFormQuestion]:
 
 @pytest.mark.unit
 def test_question_type_enums_match_canonical_definitions():
-    canonical = {
-        name: definition
-        for name, definition in vars(QuestionType).items()
-        if isinstance(definition, QuestionTypeDefinition)
-    }
-    survey = {
+    catalog = {
         question_type.name: (question_type.value, question_type.label)
-        for question_type in SurveyQuestionType
+        for question_type in QuestionType
     }
     join = {
         question_type.name: (question_type.value, question_type.label)
         for question_type in JoinFormQuestionType
     }
 
-    assert survey == canonical
-    assert join == {name: canonical[name] for name in ("TEXT", "TEXTAREA", "SELECT")}
+    assert join == {name: catalog[name] for name in ("TEXT", "TEXTAREA", "SELECT")}
     assert [question_type.value for question_type in JoinFormQuestionType] == [
         "text",
         "textarea",

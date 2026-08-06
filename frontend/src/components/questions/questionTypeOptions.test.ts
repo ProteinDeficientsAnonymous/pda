@@ -12,10 +12,7 @@ import {
 
 type AssertExtends<_A extends B, B> = true;
 type _SurveyIsCatalog = AssertExtends<SurveyQuestionType, QuestionType>;
-type _CatalogMatchesOpenApi = AssertExtends<
-  QuestionType,
-  components['schemas']['SurveyQuestionType']
->;
+type _CatalogMatchesOpenApi = AssertExtends<QuestionType, components['schemas']['QuestionType']>;
 
 const FULL_TYPES: QuestionType[] = [
   'text',

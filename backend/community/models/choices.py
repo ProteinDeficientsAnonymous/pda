@@ -1,7 +1,5 @@
 """TextChoices enums and plain constants for the community app."""
 
-from typing import NamedTuple
-
 from django.db import models
 
 
@@ -51,35 +49,22 @@ class SurveyVisibility(models.TextChoices):
     MEMBERS_ONLY = "members_only", "Members only"
 
 
-class QuestionTypeDefinition(NamedTuple):
-    value: str
-    label: str
-
-
-class QuestionType:
+class QuestionType(models.TextChoices):
     """HTML-aligned question type catalog (wire values)."""
 
-    TEXT = QuestionTypeDefinition("text", "Text")
-    TEXTAREA = QuestionTypeDefinition("textarea", "Text area")
-    RADIO = QuestionTypeDefinition("radio", "Radio")
-    SELECT = QuestionTypeDefinition("select", "Select")
-    CHECKBOX = QuestionTypeDefinition("checkbox", "Checkbox")
-    NUMBER = QuestionTypeDefinition("number", "Number")
-    BOOLEAN = QuestionTypeDefinition("boolean", "Yes / No")
-    RATING = QuestionTypeDefinition("rating", "Rating")
-    DATETIME_POLL = QuestionTypeDefinition("datetime_poll", "Datetime poll")
+    TEXT = "text", "Text"
+    TEXTAREA = "textarea", "Text area"
+    RADIO = "radio", "Radio"
+    SELECT = "select", "Select"
+    CHECKBOX = "checkbox", "Checkbox"
+    NUMBER = "number", "Number"
+    BOOLEAN = "boolean", "Yes / No"
+    RATING = "rating", "Rating"
+    DATETIME_POLL = "datetime_poll", "Datetime poll"
 
 
-class SurveyQuestionType(models.TextChoices):
-    TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
-    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
-    RADIO = QuestionType.RADIO.value, QuestionType.RADIO.label
-    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
-    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
-    NUMBER = QuestionType.NUMBER.value, QuestionType.NUMBER.label
-    BOOLEAN = QuestionType.BOOLEAN.value, QuestionType.BOOLEAN.label
-    RATING = QuestionType.RATING.value, QuestionType.RATING.label
-    DATETIME_POLL = QuestionType.DATETIME_POLL.value, QuestionType.DATETIME_POLL.label
+# Survey authors the full catalog; keep the historical name as an alias.
+SurveyQuestionType = QuestionType
 
 
 class JoinFormQuestionType(models.TextChoices):
