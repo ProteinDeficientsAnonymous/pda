@@ -9,7 +9,7 @@ from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
-from community._event_helpers import event_rsvp_question_out
+from community._event_rsvp_serialize import event_rsvp_question_out
 from community._event_schemas import (
     EventRsvpQuestionOut,
     EventRsvpQuestionSyncPayload,
