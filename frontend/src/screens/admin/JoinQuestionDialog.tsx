@@ -1,14 +1,12 @@
-import type { SyntheticEvent } from 'react';
-import { useState } from 'react';
-
-import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion, JoinQuestionInput, JoinQuestionType } from '@/api/join';
-import { useCreateJoinQuestion, useUpdateJoinQuestion } from '@/api/join';
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { TextField } from '@/components/ui/TextField';
+import {
+  DEFAULT_JOIN_QUESTION_TYPE,
+  useCreateJoinQuestion,
+  useUpdateJoinQuestion,
+} from '@/api/join';
+import { QuestionAuthorDialog } from '@/components/questions/QuestionAuthorDialog';
+
+import { JOIN_QUESTION_TYPE_OPTIONS } from './joinQuestionTypeOptions';
 
 interface Props {
   open: boolean;
@@ -25,104 +23,31 @@ export function JoinQuestionDialog(props: Props) {
 function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
   const create = useCreateJoinQuestion();
   const update = useUpdateJoinQuestion(existing?.id ?? '');
-
-  const [label, setLabel] = useState(() => existing?.label ?? '');
-  const [fieldType, setFieldType] = useState<JoinQuestionType>(() => existing?.fieldType ?? 'text');
-  const [required, setRequired] = useState(() => existing?.required ?? false);
-  const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
-  const [error, setError] = useState<string | null>(null);
-
   const busy = create.isPending || update.isPending;
 
-  async function onSubmit(e: SyntheticEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!label.trim()) {
-      setError('label required');
-      return;
-    }
-    const options =
-      fieldType === 'select'
-        ? optionsText
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
-    if (fieldType === 'select' && options.length === 0) {
-      setError('add at least one option for a select question');
-      return;
-    }
-    const input: JoinQuestionInput = { label: label.trim(), fieldType, options, required };
-    try {
-      if (existing) await update.mutateAsync(input);
-      else await create.mutateAsync(input);
-      onClose();
-    } catch (err) {
-      setError(extractError(err));
-    }
-  }
-
   return (
-    <Dialog open={open} onClose={onClose} title={existing ? 'edit question' : 'add question'}>
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
-        <TextField
-          label="label"
-          value={label}
-          onChange={(e) => {
-            setLabel(e.target.value);
-          }}
-          maxLength={200}
-        />
-        <Select
-          label="type"
-          value={fieldType}
-          onChange={(e) => {
-            setFieldType(e.target.value as JoinQuestionType);
-          }}
-          options={[
-            { value: 'text', label: 'text' },
-            { value: 'select', label: 'select (one of)' },
-          ]}
-        />
-        {fieldType === 'select' ? (
-          <Textarea
-            label="options"
-            value={optionsText}
-            onChange={(e) => {
-              setOptionsText(e.target.value);
-            }}
-            hint="one per line"
-            rows={5}
-          />
-        ) : null}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={required}
-            onChange={(e) => {
-              setRequired(e.target.checked);
-            }}
-          />
-          <span>required</span>
-        </label>
-        {error ? (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        ) : null}
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={busy} type="button">
-            cancel
-          </Button>
-          <Button type="submit" disabled={busy}>
-            {busy ? 'saving…' : 'save'}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
+    <QuestionAuthorDialog<JoinQuestionType>
+      open={open}
+      onClose={onClose}
+      title={existing ? 'edit question' : 'add question'}
+      initial={{
+        label: existing?.label ?? '',
+        fieldType: existing?.fieldType ?? DEFAULT_JOIN_QUESTION_TYPE,
+        options: existing?.options ?? [],
+        required: existing?.required ?? false,
+      }}
+      typeOptions={JOIN_QUESTION_TYPE_OPTIONS}
+      busy={busy}
+      onSave={async (values) => {
+        const input: JoinQuestionInput = {
+          label: values.label,
+          fieldType: values.fieldType,
+          options: values.options,
+          required: values.required,
+        };
+        if (existing) await update.mutateAsync(input);
+        else await create.mutateAsync(input);
+      }}
+    />
   );
-}
-
-function extractError(err: unknown): string {
-  return extractApiErrorOr(err, "couldn't save — try again");
 }

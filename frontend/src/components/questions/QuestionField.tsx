@@ -6,14 +6,15 @@ import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
 interface Props {
-  question: SurveyQuestion;
+  question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required'>;
   value: AnswerValue | undefined;
   onChange: (v: AnswerValue) => void;
   error?: string | undefined;
   readOnly?: boolean;
 }
 
-export function SurveyQuestionField({ question, value, onChange, error, readOnly }: Props) {
+/** Shared answer field for surveys and join form questions. */
+export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
   const label = question.required ? question.label : `${question.label} (optional)`;
   const common = { label, error, disabled: readOnly };
 
@@ -130,6 +131,15 @@ function asAvailabilityMap(v: AnswerValue | undefined): Record<string, string> {
   return typeof v === 'object' ? v : {};
 }
 
+function FieldError({ error }: { error?: string | undefined }) {
+  if (!error) return null;
+  return (
+    <p role="alert" className="text-xs text-red-600">
+      {error}
+    </p>
+  );
+}
+
 function RadioGroup({
   label,
   options,
@@ -163,11 +173,7 @@ function RadioGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -207,11 +213,7 @@ function CheckboxGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -258,11 +260,7 @@ function StarRating({
           );
         })}
       </div>
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -326,11 +324,7 @@ function DatetimePoll({
           </div>
         );
       })}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }

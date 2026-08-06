@@ -120,7 +120,7 @@ SEED_USERS = [
 SEED_JOIN_FORM_QUESTIONS = [
     SeedJoinFormQuestion(
         label="Why do you want to join?",
-        field_type=JoinFormQuestionType.TEXT,
+        field_type=JoinFormQuestionType.TEXTAREA,
         required=True,
         display_order=0,
     ),
