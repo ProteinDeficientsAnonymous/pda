@@ -202,7 +202,7 @@ def _snapshot_rsvp_answers(
     return historical_answers | current_answers
 
 
-def _apply_rsvp_in_transaction(
+def _apply_rsvp_in_transaction(  # noqa: PLR0913
     event_id,
     user,
     status: str,
