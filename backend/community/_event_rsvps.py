@@ -16,13 +16,13 @@ from notifications.service import (
     notify_rsvp_status_changed,
 )
 
-from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_helpers import (
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
     promote_from_waitlist,
 )
+from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
@@ -202,6 +202,24 @@ def _snapshot_rsvp_answers(
     return historical_answers | current_answers
 
 
+def _rsvp_unchanged(
+    existing: EventRSVP | None,
+    *,
+    final_status: str,
+    final_plus_one: bool,
+    new_confirmed_at,
+    answers_snapshot: dict,
+) -> bool:
+    if existing is None:
+        return False
+    return (
+        existing.status == final_status
+        and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_confirmed_at
+        and dict(existing.answers or {}) == answers_snapshot
+    )
+
+
 def _apply_rsvp_in_transaction(  # noqa: PLR0913
     event_id,
     user,
@@ -243,12 +261,12 @@ def _apply_rsvp_in_transaction(  # noqa: PLR0913
     had_plus_one = existing is not None and existing.has_plus_one
     new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
 
-    if (
-        existing is not None
-        and existing.status == final_status
-        and existing.has_plus_one == final_plus_one
-        and existing.paid_confirmed_at == new_confirmed_at
-        and dict(existing.answers or {}) == answers_snapshot
+    if _rsvp_unchanged(
+        existing,
+        final_status=final_status,
+        final_plus_one=final_plus_one,
+        new_confirmed_at=new_confirmed_at,
+        answers_snapshot=answers_snapshot,
     ):
         return final_status, [], False
 
