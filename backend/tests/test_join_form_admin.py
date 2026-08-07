@@ -116,8 +116,10 @@ class TestJoinFormQuestionTypes:
         )
         assert response.status_code == 201
         body = response.json()
-        assert body["field_type"] == "textarea"
-        assert JoinFormQuestion.objects.get(id=body["id"]).field_type == "textarea"
+        assert body["field_type"] == JoinFormQuestionType.TEXTAREA
+        assert (
+            JoinFormQuestion.objects.get(id=body["id"]).field_type == JoinFormQuestionType.TEXTAREA
+        )
 
     def test_create_select_question(self, api_client, form_admin_headers):
         response = api_client.post(
@@ -134,5 +136,5 @@ class TestJoinFormQuestionTypes:
             **form_admin_headers,
         )
         assert response.status_code == 201
-        assert response.json()["field_type"] == "select"
+        assert response.json()["field_type"] == JoinFormQuestionType.SELECT
         assert response.json()["options"] == ["friend", "flyer"]

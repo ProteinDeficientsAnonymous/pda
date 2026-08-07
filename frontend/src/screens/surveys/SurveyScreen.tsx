@@ -113,7 +113,7 @@ function SurveyForm({ survey }: { survey: Survey }) {
           </Button>
         ) : null}
 
-        {submit.isSuccess && !readOnly ? <p className="text-sm text-green-700">saved ✓</p> : null}
+        {submit.isSuccess && !readOnly ? <p className="text-success text-sm">saved ✓</p> : null}
       </form>
     </ContentContainer>
   );
