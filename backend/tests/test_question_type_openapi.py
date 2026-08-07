@@ -1,0 +1,42 @@
+import json
+from pathlib import Path
+
+import pytest
+
+SCHEMA_PATH = Path(__file__).resolve().parents[1] / "openapi_schema.json"
+
+
+def _schemas() -> dict:
+    return json.loads(SCHEMA_PATH.read_text())["components"]["schemas"]
+
+
+def _field_type_schema(model_name: str) -> dict:
+    return _schemas()[model_name]["properties"]["field_type"]
+
+
+@pytest.mark.unit
+def test_join_form_question_out_uses_named_enum():
+    field = _field_type_schema("JoinFormQuestionOut")
+    assert field == {"$ref": "#/components/schemas/JoinFormQuestionType"}
+    assert _schemas()["JoinFormQuestionType"]["enum"] == ["text", "textarea", "select"]
+
+
+@pytest.mark.unit
+def test_survey_question_schemas_use_catalog_question_type():
+    assert _field_type_schema("SurveyQuestionIn") == {
+        "allOf": [{"$ref": "#/components/schemas/QuestionType"}],
+        "default": "text",
+    }
+    assert _field_type_schema("SurveyQuestionOut") == {"$ref": "#/components/schemas/QuestionType"}
+    assert "SurveyQuestionType" not in _schemas()
+    assert set(_schemas()["QuestionType"]["enum"]) == {
+        "text",
+        "textarea",
+        "radio",
+        "select",
+        "checkbox",
+        "number",
+        "boolean",
+        "rating",
+        "datetime_poll",
+    }

@@ -148,7 +148,7 @@ class Code:
         ANSWER_INVALID_FORMAT = "survey.answer_invalid_format"  # params: { label }
         ANSWER_INVALID_OPTION = "survey.answer_invalid_option"  # params: { label }
         ANSWER_MUST_BE_NUMBER = "survey.answer_must_be_number"  # params: { label }
-        ANSWER_MUST_BE_YES_NO = "survey.answer_must_be_yes_no"  # params: { label }
+        ANSWER_MUST_BE_BOOLEAN = "survey.answer_must_be_boolean"  # params: { label }
         ANSWER_RATING_OUT_OF_RANGE = "survey.answer_rating_out_of_range"  # params: { label }
         ANSWER_INVALID_DATETIME_OPTION = (
             "survey.answer_invalid_datetime_option"  # params: { label }
