@@ -139,6 +139,9 @@ class Command(BaseCommand):
                     "display_order": data.display_order,
                 },
             )
+            if not created and q.field_type != data.field_type:
+                q.field_type = data.field_type
+                q.save(update_fields=["field_type"])
             label = "Created" if created else "Already exists"
             self.stdout.write(f"  {label} question: {q.label}")
             questions[q.label] = q
