@@ -5,13 +5,13 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from community._field_limits import FieldLimit
-from community.models import QuestionType, SurveyVisibility
+from community.models import SurveyQuestionType, SurveyVisibility
 
 
 class SurveyQuestionOut(BaseModel):
     id: str
     label: str
-    field_type: QuestionType
+    field_type: SurveyQuestionType
     options: list[str] = []
     required: bool
     display_order: int
@@ -92,7 +92,7 @@ class FinalizePollIn(BaseModel):
 
 class SurveyQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
-    field_type: QuestionType = QuestionType.TEXT
+    field_type: SurveyQuestionType = SurveyQuestionType.TEXT
     options: list[str] = []
     required: bool = False
 

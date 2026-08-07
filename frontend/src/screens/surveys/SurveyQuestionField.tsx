@@ -1,3 +1,4 @@
+import { QuestionType } from '@/api/questionTypes';
 import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
@@ -17,7 +18,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
   const common = { label, error, disabled: readOnly };
 
   switch (question.fieldType) {
-    case 'textarea':
+    case QuestionType.Textarea:
       return (
         <Textarea
           {...common}
@@ -29,7 +30,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           maxLength={2000}
         />
       );
-    case 'number':
+    case QuestionType.Number:
       return (
         <TextField
           {...common}
@@ -40,7 +41,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'radio':
+    case QuestionType.Radio:
       return (
         <RadioGroup
           {...common}
@@ -49,7 +50,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'select':
+    case QuestionType.Select:
       return (
         <Select
           {...common}
@@ -61,7 +62,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           placeholder="select one"
         />
       );
-    case 'checkbox':
+    case QuestionType.Checkbox:
       return (
         <CheckboxGroup
           {...common}
@@ -72,7 +73,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'boolean':
+    case QuestionType.Boolean:
       return (
         <RadioGroup
           {...common}
@@ -81,7 +82,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'rating':
+    case QuestionType.Rating:
       return (
         <StarRating
           label={label}
@@ -94,7 +95,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'datetime_poll':
+    case QuestionType.DatetimePoll:
       return (
         <DatetimePoll
           {...common}
@@ -103,7 +104,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'text':
+    case QuestionType.Text:
     default:
       return (
         <TextField
