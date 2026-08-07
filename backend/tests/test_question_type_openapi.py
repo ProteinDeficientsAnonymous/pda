@@ -1,5 +1,3 @@
-"""Contract tests: question field_type enums stay named in OpenAPI."""
-
 import json
 from pathlib import Path
 
