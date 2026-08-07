@@ -77,6 +77,16 @@ export interface EventTag {
   slug: string;
 }
 
+export type EventRsvpQuestionType = 'textarea' | 'select' | 'checkbox';
+
+export interface EventRsvpQuestion {
+  id: string;
+  label: string;
+  fieldType: EventRsvpQuestionType;
+  options: string[];
+  required: boolean;
+}
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -87,6 +97,8 @@ export interface EventGuest {
   attendance: AttendanceStatusValue;
   isMember: boolean;
   paidConfirmed: boolean;
+  /** Host-only RSVP question snapshots; empty for non-hosts. */
+  answers: Record<string, { label: string; answer: string }>;
 }
 
 export interface EventCancellation {
@@ -154,6 +166,9 @@ export interface Event {
   guests: EventGuest[];
   myRsvp: string | null;
   myPaidConfirmed: boolean;
+  /** Snapshot answers for the viewer's RSVP: questionId → { label, answer }. */
+  myRsvpAnswers: Record<string, { label: string; answer: string }>;
+  rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   surveySlugs: string[];
   invitedUserIds: string[];

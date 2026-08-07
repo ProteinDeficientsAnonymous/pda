@@ -12,6 +12,7 @@ import { makeEvent } from '@/test/fixtures';
 import {
   eventToFormValues,
   toPartialWireBody,
+  useCreateEvent,
   useInviteToEvent,
   useUpdateEvent,
   useUploadEventPhoto,
@@ -117,6 +118,45 @@ describe('toPartialWireBody', () => {
   it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
     expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
     expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
+  });
+});
+
+describe('useCreateEvent', () => {
+  it('should create the event and RSVP questions in one request', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent() });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    const { result } = renderHook(() => useCreateEvent(), { wrapper: Wrapper });
+    const values = eventToFormValues(makeEvent());
+
+    result.current.mutate({
+      ...values,
+      rsvpQuestions: [
+        {
+          id: 'q-new',
+          label: 'dietary?',
+          fieldType: 'textarea',
+          options: [],
+          required: true,
+        },
+      ],
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/community/events/',
+      expect.objectContaining({
+        rsvp_questions: [
+          {
+            label: 'dietary?',
+            field_type: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+      }),
+    );
   });
 });
 
