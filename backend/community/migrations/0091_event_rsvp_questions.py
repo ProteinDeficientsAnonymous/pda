@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="eventrsvp",
-            name="answers",
+            name="questionnaire_responses",
             field=models.JSONField(blank=True, default=dict),
         ),
         migrations.CreateModel(

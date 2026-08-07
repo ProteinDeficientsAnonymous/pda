@@ -1,7 +1,14 @@
-"""Unit tests for the RSVP question-type subset of the shared catalog."""
-
 import pytest
-from community.models import RSVP_CHOICE_TYPES, QuestionType, RsvpQuestionType
+from community.models import RSVP_CHOICE_TYPES, EventRSVP, QuestionType, RsvpQuestionType
+from django.core.exceptions import FieldDoesNotExist
+
+
+@pytest.mark.unit
+def test_event_rsvp_uses_questionnaire_responses_field():
+    field = EventRSVP._meta.get_field("questionnaire_responses")
+    assert field.get_internal_type() == "JSONField"
+    with pytest.raises(FieldDoesNotExist):
+        EventRSVP._meta.get_field("answers")
 
 
 @pytest.mark.unit
