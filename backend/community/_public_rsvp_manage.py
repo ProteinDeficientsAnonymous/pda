@@ -20,7 +20,7 @@ from community._event_rsvps import (
     _validate_rsvp_status,
     payment_audit_details,
 )
-from community._event_schemas import EventOut
+from community._event_schemas import EventOut, RsvpAnswer
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
@@ -60,6 +60,10 @@ class PublicRsvpManageIn(BaseModel):
     has_plus_one: bool = False
     paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    answers: dict[str, RsvpAnswer] | None = Field(
+        default=None,
+        description="Question UUID to answer; omit or send null to preserve saved answers.",
+    )
 
 
 def _resolve_token_user(token: str) -> User:
@@ -148,7 +152,7 @@ def list_my_rsvps(request, token: str = ""):
 
 @router.post(
     "/public/my-rsvps/{event_id}/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
@@ -159,7 +163,12 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     with transaction.atomic():
         final_status, promoted_user_ids, created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False, payload.paid_confirmed
+            event.id,
+            user,
+            payload.status,
+            False,
+            payload.paid_confirmed,
+            answers=payload.answers,
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
 
