@@ -12,28 +12,39 @@ import { isRsvpInputStatus, RSVP_GROUP_LABELS, RsvpServerStatus } from '@/models
 import { cn } from '@/utils/cn';
 import { eventRequiresPaymentConfirmation } from '@/utils/eventCost';
 
-export function EventManageRsvpsPanel({ event }: { event: Event }) {
+import { EventRsvpResponsesSection } from './EventRsvpResponsesSection';
+
+export function EventManageRsvpsPanel({
+  event,
+  readOnly = false,
+}: {
+  event: Event;
+  /** Past events: hide add/edit controls; still show question responses. */
+  readOnly?: boolean;
+}) {
   const setGuestRsvp = useSetGuestRsvp(event.id);
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
   const setGuestPayment = useSetGuestPayment(event.id);
-  const showPaymentStatus = eventRequiresPaymentConfirmation(event);
+  const showPaymentStatus = !readOnly && eventRequiresPaymentConfirmation(event);
 
   return (
-    <div className="flex flex-col gap-6">
-      <AddMemberSection
-        event={event}
-        isPending={setGuestRsvp.isPending}
-        onAdd={(userId) => {
-          setGuestRsvp.mutate(
-            { userId, status: RsvpServerStatus.Attending, hasPlusOne: false },
-            {
-              onError: (err) => {
-                toast.error(extractApiErrorOr(err, "couldn't add them — try again"));
+    <div className="flex flex-col gap-8">
+      {readOnly ? null : (
+        <AddMemberSection
+          event={event}
+          isPending={setGuestRsvp.isPending}
+          onAdd={(userId) => {
+            setGuestRsvp.mutate(
+              { userId, status: RsvpServerStatus.Attending, hasPlusOne: false },
+              {
+                onError: (err) => {
+                  toast.error(extractApiErrorOr(err, "couldn't add them — try again"));
+                },
               },
-            },
-          );
-        }}
-      />
+            );
+          }}
+        />
+      )}
       {event.guests.length === 0 ? (
         <p className="text-muted text-sm">no one yet 🌿</p>
       ) : (
@@ -45,6 +56,7 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
               key={group.status}
               label={group.label}
               guests={guests}
+              readOnly={readOnly}
               onChangeStatus={(userId, status, hasPlusOne) => {
                 setGuestRsvp.mutate(
                   { userId, status, hasPlusOne },
@@ -88,6 +100,7 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
           );
         })
       )}
+      <EventRsvpResponsesSection event={event} />
     </div>
   );
 }
@@ -134,6 +147,7 @@ function GuestGroup({
   onRemove,
   onTogglePaid,
   isPending,
+  readOnly,
 }: {
   label: string;
   guests: EventGuest[];
@@ -141,6 +155,7 @@ function GuestGroup({
   onRemove: (userId: string) => void;
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
+  readOnly: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -152,6 +167,7 @@ function GuestGroup({
           <GuestRow
             key={g.userId}
             guest={g}
+            readOnly={readOnly}
             onChangeStatus={onChangeStatus}
             onRemove={onRemove}
             onTogglePaid={onTogglePaid}
@@ -209,14 +225,31 @@ function GuestRow({
   onRemove,
   onTogglePaid,
   isPending,
+  readOnly,
 }: {
   guest: EventGuest;
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
+  readOnly: boolean;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
+
+  if (readOnly) {
+    return (
+      <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2">
+        <span className="text-foreground text-sm">
+          {guest.name}
+          {!guest.isMember ? ' (not a member)' : ''}
+        </span>
+        <span className="text-muted text-xs">
+          {currentStatus ?? guest.status}
+          {guest.hasPlusOne ? ' · +1' : ''}
+        </span>
+      </li>
+    );
+  }
 
   if (!guest.isMember) {
     return (

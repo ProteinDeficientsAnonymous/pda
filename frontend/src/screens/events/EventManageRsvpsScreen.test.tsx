@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
@@ -54,7 +54,7 @@ describe('EventManageRsvpsScreen', () => {
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
-  it('shows a forbidden notice for a past event', () => {
+  it('shows a forbidden notice for a past event with no questions', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: makeEvent({
         createdById: 'user-creator',
@@ -69,6 +69,34 @@ describe('EventManageRsvpsScreen', () => {
     renderScreen();
 
     expect(screen.getByText(/event has already happened/i)).toBeInTheDocument();
+  });
+
+  it('lets a host review question responses on a past event', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        guests: [],
+        isPast: true,
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText(/guest edits are closed/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /question responses/i })).toBeInTheDocument();
   });
 
   it('shows a forbidden notice when rsvps are disabled', () => {
@@ -86,6 +114,56 @@ describe('EventManageRsvpsScreen', () => {
     renderScreen();
 
     expect(screen.getByText(/rsvps are off/i)).toBeInTheDocument();
+  });
+
+  it('lets a host review responses when rsvps are off but questions remain', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        guests: [],
+        rsvpEnabled: false,
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText(/reviewing question responses/i)).toBeInTheDocument();
+  });
+
+  it('lets a host review responses when only saved answer snapshots remain', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        rsvpEnabled: false,
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+          }),
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText('saved answer')).toBeInTheDocument();
   });
 
   it('renders the panel heading for a host on a future rsvp-enabled event', () => {

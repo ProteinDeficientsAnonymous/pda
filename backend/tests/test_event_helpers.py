@@ -68,6 +68,16 @@ class TestBuildGuestList:
         assert result[0].name == "member"
 
 
+
+    def test_includes_answers_only_when_requested(self):
+        rsvp = self._make_rsvp("u1", "Alice", RSVPStatus.ATTENDING, "+1555000")
+        rsvp.answers = {"qid": {"label": "q", "answer": "yes"}}
+        hidden = _build_guest_list([rsvp], can_see_phones=False, include_answers=False)
+        assert hidden[0].answers == {}
+        shown = _build_guest_list([rsvp], can_see_phones=False, include_answers=True)
+        assert shown[0].answers == {"qid": {"label": "q", "answer": "yes"}}
+
+
 class TestFindMyRsvp:
     def _make_rsvp(self, user_id, status):
         return SimpleNamespace(user_id=user_id, status=status)
