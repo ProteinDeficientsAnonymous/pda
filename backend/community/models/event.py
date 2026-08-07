@@ -266,8 +266,7 @@ class EventRSVP(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
     status = models.CharField(max_length=20, choices=RSVPStatus.choices)
     has_plus_one = models.BooleanField(default=False)
-    # Snapshot of RSVP question answers: {question_id: {label, answer}}.
-    answers = models.JSONField(default=dict, blank=True)
+    questionnaire_responses = models.JSONField(default=dict, blank=True)
     attendance = models.CharField(
         max_length=20,
         choices=AttendanceStatus.choices,

@@ -114,7 +114,7 @@ def _find_my_rsvp_answers(rsvps, user) -> dict:
         return {}
     for r in rsvps:
         if r.user_id == user.pk:
-            return dict(r.answers or {})
+            return dict(r.questionnaire_responses or {})
     return {}
 
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
