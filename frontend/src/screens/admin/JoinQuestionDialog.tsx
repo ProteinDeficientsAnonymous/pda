@@ -5,8 +5,7 @@ import {
   useUpdateJoinQuestion,
 } from '@/api/join';
 import { QuestionAuthorDialog } from '@/components/questions/QuestionAuthorDialog';
-
-import { JOIN_QUESTION_TYPE_OPTIONS } from './joinQuestionTypeOptions';
+import { JOIN_QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 
 interface Props {
   open: boolean;
