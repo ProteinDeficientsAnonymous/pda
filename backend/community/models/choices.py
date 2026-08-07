@@ -75,6 +75,20 @@ class JoinFormQuestionType(models.TextChoices):
     SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
 
 
+class RsvpQuestionType(models.TextChoices):
+    """Question types supported by event RSVP questions."""
+
+    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
+    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
+
+
+RSVP_QUESTION_TYPE_CHOICES = RsvpQuestionType.choices
+RSVP_CHOICE_TYPES = frozenset(
+    {RsvpQuestionType.SELECT, RsvpQuestionType.CHECKBOX},
+)
+
+
 class InvitePermission(models.TextChoices):
     ALL_MEMBERS = "all_members", "All members"
     CO_HOSTS_ONLY = "co_hosts_only", "Co-hosts only"

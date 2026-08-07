@@ -156,6 +156,53 @@
         ]
       },
       {
+        "name": "RSVP_QUESTION_NOT_FOUND",
+        "value": "event.rsvp_question_not_found",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_DUPLICATE",
+        "value": "event.rsvp_question_duplicate",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_CONFLICT",
+        "value": "event.rsvp_question_conflict",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_OPTIONS_REQUIRED",
+        "value": "event.rsvp_question_options_required",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_OPTION_NO_COMMA",
+        "value": "event.rsvp_question_option_no_comma",
+        "params": []
+      },
+      {
+        "name": "RSVP_ANSWER_REQUIRED",
+        "value": "event.rsvp_answer_required",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_INVALID_OPTION",
+        "value": "event.rsvp_answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_TOO_LONG",
+        "value": "event.rsvp_answer_too_long",
+        "params": [
+          "label",
+          "max"
+        ]
+      },
+      {
         "name": "PAYMENT_CONFIRMATION_REQUIRED",
         "value": "event.payment_confirmation_required",
         "params": []
