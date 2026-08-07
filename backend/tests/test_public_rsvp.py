@@ -463,7 +463,7 @@ class TestPublicRsvpAnswers:
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=official_event)
-        assert rsvp.answers[str(q.id)]["answer"] == "driving"
+        assert rsvp.questionnaire_responses[str(q.id)]["answer"] == "driving"
 
     def test_required_answer_missing_rejected(self, api_client, official_event, fake_email_sender):
         from community.models import EventRsvpQuestion

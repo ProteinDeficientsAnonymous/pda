@@ -47,7 +47,7 @@ class TestPublicRsvpAnswerUpdates:
 
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=official_event, user=nonmember)
-        assert rsvp.answers[str(question.id)]["answer"] == "taking transit"
+        assert rsvp.questionnaire_responses[str(question.id)]["answer"] == "taking transit"
 
     def test_update_without_answers_validates_new_required_questions(
         self, api_client, nonmember, official_event
@@ -102,6 +102,6 @@ class TestPublicRsvpAnswerUpdates:
         )
 
         assert response.status_code == 200
-        answers = EventRSVP.objects.get(event=official_event, user=nonmember).answers
+        answers = EventRSVP.objects.get(event=official_event, user=nonmember).questionnaire_responses
         assert answers[deleted_id]["answer"] == "historical"
         assert answers[str(current.id)]["label"] == "old current label"
