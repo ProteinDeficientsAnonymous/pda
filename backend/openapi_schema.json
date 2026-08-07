@@ -4928,6 +4928,12 @@
       },
       "RSVPGuestOut": {
         "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "attendance": {
             "allOf": [
               {
@@ -5001,6 +5007,15 @@
       },
       "RSVPIn": {
         "properties": {
+          "answers": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "title": "Answers",
+            "type": "object"
+          },
           "comment": {
             "anyOf": [
               {

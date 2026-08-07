@@ -22,6 +22,7 @@ from community._event_helpers import (
     load_event_with_stats_prefetch,
     promote_from_waitlist,
 )
+from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
@@ -167,8 +168,67 @@ def payment_audit_details(event_id, user_id) -> dict:
     }
 
 
-def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool, paid_confirmed: bool = False
+def _snapshot_rsvp_answers(
+    event: Event,
+    existing: EventRSVP | None,
+    final_status: str,
+    answers: dict[str, str] | None,
+) -> dict:
+    existing_answers = (
+        dict(existing.questionnaire_responses or {}) if existing is not None else {}
+    )
+    if not answers_required_for_status(final_status):
+        return existing_answers
+
+    questions = list(event.rsvp_questions.all())
+    current_ids = {str(question.id) for question in questions}
+    if answers is None:
+        answers = {
+            question_id: snapshot["answer"]
+            for question_id, snapshot in existing_answers.items()
+            if question_id in current_ids
+        }
+        build_rsvp_answers(questions, answers, require_answers=True)
+        return existing_answers
+
+    current_answers = build_rsvp_answers(questions, answers, require_answers=True)
+    for question_id, snapshot in current_answers.items():
+        previous = existing_answers.get(question_id)
+        if previous is not None and previous["answer"] == snapshot["answer"]:
+            current_answers[question_id] = previous
+    historical_answers = {
+        question_id: snapshot
+        for question_id, snapshot in existing_answers.items()
+        if question_id not in current_ids
+    }
+    return historical_answers | current_answers
+
+
+def _rsvp_unchanged(
+    existing: EventRSVP | None,
+    *,
+    final_status: str,
+    final_plus_one: bool,
+    new_confirmed_at,
+    answers_snapshot: dict,
+) -> bool:
+    if existing is None:
+        return False
+    return (
+        existing.status == final_status
+        and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_confirmed_at
+        and dict(existing.questionnaire_responses or {}) == answers_snapshot
+    )
+
+
+def _apply_rsvp_in_transaction(  # noqa: PLR0913
+    event_id,
+    user,
+    status: str,
+    has_plus_one: bool,
+    paid_confirmed: bool = False,
+    answers: dict[str, str] | None = None,
 ) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -183,7 +243,7 @@ def _apply_rsvp_in_transaction(
     # is locked under select_for_update.
     event = (
         Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users")
+        .prefetch_related("co_hosts", "invited_users", "rsvp_questions")
         .get(id=event_id)
     )
 
@@ -197,16 +257,18 @@ def _apply_rsvp_in_transaction(
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
     final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
+    answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, answers)
 
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
     new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
 
-    if (
-        existing is not None
-        and existing.status == final_status
-        and existing.has_plus_one == final_plus_one
-        and existing.paid_confirmed_at == new_confirmed_at
+    if _rsvp_unchanged(
+        existing,
+        final_status=final_status,
+        final_plus_one=final_plus_one,
+        new_confirmed_at=new_confirmed_at,
+        answers_snapshot=answers_snapshot,
     ):
         return final_status, [], False
 
@@ -218,6 +280,7 @@ def _apply_rsvp_in_transaction(
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
+            "questionnaire_responses": answers_snapshot,
         },
     )
 
@@ -245,7 +308,12 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one, payload.paid_confirmed
+            event_id,
+            request.auth,
+            payload.status,
+            payload.has_plus_one,
+            payload.paid_confirmed,
+            payload.answers,
         )
 
     sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
@@ -322,7 +390,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
     """
     event = (
         Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users")
+        .prefetch_related("co_hosts", "invited_users", "rsvp_questions")
         .get(id=event_id)
     )
     if event.is_deleted:

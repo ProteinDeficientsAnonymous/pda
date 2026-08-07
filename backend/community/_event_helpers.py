@@ -24,6 +24,7 @@ from community._cohost_invite_helpers import (
     get_pending_invites_for_event,
     send_cohost_invite_emails,
 )
+from community._event_rsvp_answers import can_see_guest_answers, find_my_rsvp_answers
 from community._event_rsvp_serialize import event_rsvp_question_out
 from community._event_schemas import (
     CancellationOut,
@@ -86,9 +87,14 @@ def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 def _build_guest_list(
-    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+    rsvps,
+    can_see_phones: bool,
+    viewer=None,
+    can_see_payment_status: bool = False,
+    *,
+    include_answers: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone and payment-status visibility."""
+    """Build guest list with optional phone / payment / answer visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -101,6 +107,7 @@ def _build_guest_list(
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
+            answers=dict(r.questionnaire_responses or {}) if include_answers else {},
         )
         for r in rsvps
     ]
@@ -113,14 +120,6 @@ def _find_my_rsvp(rsvps, user):
         if r.user_id == user.pk:
             return r
     return None
-
-def _find_my_rsvp_answers(rsvps, user) -> dict:
-    if user is None:
-        return {}
-    for r in rsvps:
-        if r.user_id == user.pk:
-            return dict(r.questionnaire_responses or {})
-    return {}
 
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
@@ -324,7 +323,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled else []
+    answers_visible = can_see_guest_answers(auth_user, creator, co_host_ids)
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or answers_visible else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -366,11 +366,18 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(all_rsvps, viewer_is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(
+                all_rsvps,
+                viewer_is_cohost,
+                auth_user,
+                payment_status_visible,
+                include_answers=answers_visible,
+            ),
             [],
             can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
+        my_rsvp_answers=find_my_rsvp_answers(all_rsvps, auth_user),
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,

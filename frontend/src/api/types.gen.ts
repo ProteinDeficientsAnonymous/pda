@@ -4301,6 +4301,13 @@ export interface components {
         QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** RSVPGuestOut */
         RSVPGuestOut: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: unknown;
+            };
             /** @default unknown */
             attendance: components["schemas"]["AttendanceStatus"];
             /** Checked In At */
@@ -4335,6 +4342,13 @@ export interface components {
         };
         /** RSVPIn */
         RSVPIn: {
+            /**
+             * Answers
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            answers?: {
+                [key: string]: string;
+            };
             /** Comment */
             comment?: string | null;
             /**
