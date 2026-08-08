@@ -1,6 +1,7 @@
 """Tests for host-only event stats, attendance marking, and cancellation lead time."""
 
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from community._event_helpers import _cancellations
@@ -171,43 +172,50 @@ class TestCancellations:
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
 
-    def test_within_24_hours_true_at_23h59m_before(self, stats_event, members):
-        rsvp = EventRSVP.objects.create(
-            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+    def test_same_day_true_just_after_local_midnight(self, host_user, members):
+        """Cancelling 1 minute into the event's local calendar day is still 'same day'
+        even though it's ~14 hours before start — Issue 1318."""
+        et = ZoneInfo("America/New_York")
+        start = timezone.datetime(2026, 6, 15, 14, 0, tzinfo=et)  # 2pm ET
+        event = Event.objects.create(
+            title="Same Day Event", start_datetime=start, rsvp_enabled=True, created_by=host_user
         )
-        cancelled_at = stats_event.start_datetime - timedelta(hours=23, minutes=59)
+        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
+        cancelled_at = timezone.datetime(2026, 6, 15, 0, 1, tzinfo=et)  # 12:01am ET, same day
         EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
-        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
-            pk=stats_event.pk
-        )
-        rows = _cancellations(stats_event)
-        assert rows[0].within_24_hours is True
-        # day-truncation would otherwise misreport this as "same day" (0 days) — Issue 1318.
-        assert rows[0].days_before_event == 0
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
+        rows = _cancellations(event)
+        assert rows[0].same_day is True
 
-    def test_within_24_hours_false_at_24h01m_before(self, stats_event, members):
-        rsvp = EventRSVP.objects.create(
-            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+    def test_same_day_false_when_cancelled_prior_local_day(self, host_user, members):
+        """Cancelling 1 minute before the event's local calendar day starts is not
+        'same day' even though it's under 24 hours before start."""
+        et = ZoneInfo("America/New_York")
+        start = timezone.datetime(2026, 6, 15, 0, 30, tzinfo=et)  # 12:30am ET
+        event = Event.objects.create(
+            title="Early Start Event",
+            start_datetime=start,
+            rsvp_enabled=True,
+            created_by=host_user,
         )
-        cancelled_at = stats_event.start_datetime - timedelta(hours=24, minutes=1)
+        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
+        cancelled_at = timezone.datetime(2026, 6, 14, 23, 59, tzinfo=et)  # prior local day
         EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
-        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
-            pk=stats_event.pk
-        )
-        rows = _cancellations(stats_event)
-        assert rows[0].within_24_hours is False
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
+        rows = _cancellations(event)
+        assert rows[0].same_day is False
 
-    def test_within_24_hours_false_when_cancelled_after_start(self, stats_event, members):
+    def test_same_day_false_when_cancelled_after_start(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
         )
-        cancelled_at = stats_event.start_datetime + timedelta(hours=1)
+        cancelled_at = stats_event.start_datetime + timedelta(days=1)
         EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
         rows = _cancellations(stats_event)
-        assert rows[0].within_24_hours is False
+        assert rows[0].same_day is False
 
     def test_includes_previous_status(self, stats_event, members):
         rsvp = EventRSVP.objects.create(

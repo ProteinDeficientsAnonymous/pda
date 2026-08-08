@@ -121,7 +121,7 @@ export interface EventCancellation {
   name: string;
   cancelledAt: Date;
   daysBeforeEvent: number;
-  within24Hours: boolean;
+  sameDay: boolean;
   previousStatus: RsvpServerStatusValue | null;
 }
 
