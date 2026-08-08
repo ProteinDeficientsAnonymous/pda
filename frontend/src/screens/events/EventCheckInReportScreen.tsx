@@ -190,10 +190,10 @@ function CanceledRow({ person }: { person: CanceledPerson }) {
 function BackLink({ eventId }: { eventId: string }) {
   return (
     <Link
-      to={`/events/${eventId}/attendance`}
+      to={`/events/${eventId}`}
       className="text-foreground-secondary hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
-      ← back to attendance
+      ← back to event
     </Link>
   );
 }
