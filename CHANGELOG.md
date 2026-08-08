@@ -1,3 +1,10 @@
+## [0.87.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.2...v0.87.3) (2026-08-08)
+
+
+### Bug Fixes
+
+* **Issue 1327:** bucket check-in report by attendance mark, not RSVP status ([#1330](https://github.com/ProteinDeficientsAnonymous/pda/issues/1330)) ([af81165](https://github.com/ProteinDeficientsAnonymous/pda/commit/af81165920936ca78b93d6523aea5d81742c1b81))
+
 ## [0.87.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.1...v0.87.2) (2026-08-08)
 
 
