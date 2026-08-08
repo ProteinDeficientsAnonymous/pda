@@ -220,6 +220,68 @@ class TestCheckInReportEndpoint:
         row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
         assert row["name"] == "Ada Lovelace"
 
+    def test_marked_as_attended_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 1
+        assert report["attended_count"] == 0
+        rsvp.attendance = AttendanceStatus.ATTENDED
+        rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 0, "member should not be in unmarked after mark-in"
+        assert report["attended_count"] == 1, "member should be in attended after mark-in"
+        assert report["attended"][0]["user_id"] == str(member.pk)
+
+    def test_maybe_rsvp_marked_in_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.MAYBE)
+        rsvp.attendance = AttendanceStatus.ATTENDED
+        rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 0, "maybe RSVP marked in should not stay unmarked"
+        assert report["attended_count"] == 1
+        assert report["attended"][0]["user_id"] == str(member.pk)
+
+    def test_cant_go_rsvp_marked_didnt_attend_is_not_a_no_show(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.CANT_GO)
+        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["no_show_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
+        assert report["canceled_count"] == 1
+        assert report["canceled"][0]["user_id"] == str(member.pk)
+
+    def test_attending_rsvp_marked_didnt_attend_is_a_no_show(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
+        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["no_show_count"] == 1
+        assert report["no_shows"][0]["user_id"] == str(member.pk)
+
 
 @pytest.mark.django_db
 class TestCheckInReportCsvEndpoint:

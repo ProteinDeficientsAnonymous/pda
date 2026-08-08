@@ -59,18 +59,20 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     attended, no_shows, canceled, unmarked = [], [], [], []
     for rsvp in _report_rsvps(event):
         base = _person(rsvp, viewer, can_see_phones)
-        if rsvp.status == RSVPStatus.CANT_GO:
-            canceled.append(
-                CanceledPersonOut(
-                    **base.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
-                )
-            )
-        elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
+        # ATTENDED overrides status (a host can check in a "maybe"); NO_SHOW
+        # only counts if they were actually RSVP'd ATTENDING.
+        if rsvp.attendance == AttendanceStatus.ATTENDED:
             attended.append(
                 AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
             )
         elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW:
             no_shows.append(base)
+        elif rsvp.status == RSVPStatus.CANT_GO:
+            canceled.append(
+                CanceledPersonOut(
+                    **base.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
+                )
+            )
         else:
             unmarked.append(base)
 
