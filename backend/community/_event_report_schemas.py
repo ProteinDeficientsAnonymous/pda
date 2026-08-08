@@ -8,6 +8,7 @@ class CheckInReportPersonOut(BaseModel):
     name: str
     phone: str | None = None
     is_member: bool = True
+    is_plus_one_guest: bool = False
 
 
 class AttendedPersonOut(CheckInReportPersonOut):
