@@ -3,6 +3,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
+from django.utils import timezone
 from users.models import User
 
 from community.models import AttendanceMilestone, AttendanceStatus, EventType
@@ -38,12 +39,12 @@ def last_qualifying_attendance_date(user: User) -> date | None:
         .values_list("event__start_datetime", flat=True)
         .first()
     )
-    return latest.date() if latest else None
+    return timezone.localtime(latest).date() if latest else None
 
 
 def compute_anchor(user: User, today: date) -> date:
     """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined)."""
-    candidates = [settings.ATTENDANCE_CLOCK_FLOOR, user.date_joined.date()]
+    candidates = [settings.ATTENDANCE_CLOCK_FLOOR, timezone.localtime(user.date_joined).date()]
     last_attended = last_qualifying_attendance_date(user)
     if last_attended is not None:
         candidates.append(last_attended)

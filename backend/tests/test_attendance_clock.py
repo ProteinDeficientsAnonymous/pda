@@ -1,6 +1,6 @@
 """Tests for anchor + milestone due-date math (community/_attendance_clock.py)."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 
 import pytest
 from community._attendance_clock import compute_anchor, latest_due_milestone, milestone_due_date
@@ -17,7 +17,7 @@ def _make_user(date_joined: date, **extra) -> User:
         **extra,
     )
     User.objects.filter(pk=user.pk).update(
-        date_joined=datetime.combine(date_joined, datetime.min.time(), tzinfo=UTC)
+        date_joined=datetime.combine(date_joined, time(12, 0), tzinfo=UTC)
     )
     user.refresh_from_db()
     return user
@@ -27,7 +27,7 @@ def _make_event(*, event_type: str, start: date) -> Event:
     return Event.objects.create(
         title="test event",
         event_type=event_type,
-        start_datetime=datetime.combine(start, datetime.min.time(), tzinfo=UTC),
+        start_datetime=datetime.combine(start, time(12, 0), tzinfo=UTC),
     )
 
 
