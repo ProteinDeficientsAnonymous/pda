@@ -1194,11 +1194,6 @@
             "title": "Attended Count",
             "type": "integer"
           },
-          "didnt_go_count": {
-            "default": 0,
-            "title": "Didnt Go Count",
-            "type": "integer"
-          },
           "event_id": {
             "title": "Event Id",
             "type": "string"
@@ -1206,6 +1201,11 @@
           "going_count": {
             "default": 0,
             "title": "Going Count",
+            "type": "integer"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
             "type": "integer"
           },
           "start_datetime": {

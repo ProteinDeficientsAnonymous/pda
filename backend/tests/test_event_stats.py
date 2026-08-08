@@ -206,7 +206,9 @@ class TestResolveCancelledAt:
 
 @pytest.mark.django_db
 class TestAttendanceCounts:
-    def test_attended_and_didnt_go_count_the_mark_regardless_of_status(self, stats_event, members):
+    def test_attended_count_and_didnt_go_count_ignore_later_status_change(
+        self, stats_event, members
+    ):
         EventRSVP.objects.create(
             event=stats_event,
             user=members[0],

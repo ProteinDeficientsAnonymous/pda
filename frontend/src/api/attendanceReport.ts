@@ -7,7 +7,7 @@ export interface EventAttendanceRow {
   title: string;
   startDatetime: Date | null;
   attendedCount: number;
-  didntGoCount: number;
+  noShowCount: number;
   goingCount: number;
 }
 
@@ -16,7 +16,7 @@ interface WireRow {
   title: string;
   start_datetime: string | null;
   attended_count: number;
-  didnt_go_count: number;
+  no_show_count: number;
   going_count: number;
 }
 
@@ -30,7 +30,7 @@ function mapRow(w: WireRow): EventAttendanceRow {
     title: w.title,
     startDatetime: w.start_datetime ? new Date(w.start_datetime) : null,
     attendedCount: w.attended_count,
-    didntGoCount: w.didnt_go_count,
+    noShowCount: w.no_show_count,
     goingCount: w.going_count,
   };
 }

@@ -275,7 +275,7 @@ class EventAttendanceRowOut(BaseModel):
     title: str
     start_datetime: datetime | None = None
     attended_count: int = 0
-    didnt_go_count: int = 0
+    no_show_count: int = 0
     going_count: int = 0
 
 

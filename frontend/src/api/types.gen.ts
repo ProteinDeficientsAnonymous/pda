@@ -2595,11 +2595,6 @@ export interface components {
              * @default 0
              */
             attended_count: number;
-            /**
-             * Didnt Go Count
-             * @default 0
-             */
-            didnt_go_count: number;
             /** Event Id */
             event_id: string;
             /**
@@ -2607,6 +2602,11 @@ export interface components {
              * @default 0
              */
             going_count: number;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
             /** Start Datetime */
             start_datetime?: string | null;
             /** Title */

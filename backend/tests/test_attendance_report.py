@@ -98,7 +98,7 @@ class TestAttendanceReportEndpoint:
         row = rows[0]
         assert row["event_id"] == str(marked.id)
         assert row["attended_count"] == 1
-        assert row["didnt_go_count"] == 1
+        assert row["no_show_count"] == 1
         assert row["going_count"] == 3
 
     def test_excludes_events_without_marks(self, api_client, host_user, members, events_admin):

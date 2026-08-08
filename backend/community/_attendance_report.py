@@ -48,10 +48,10 @@ def attendance_report(request):
             attended_total=Count(
                 "rsvps", filter=attendance_q(AttendanceStatus.ATTENDED), distinct=True
             ),
-            didnt_go_total=Count("rsvps", filter=no_show_q(), distinct=True),
+            no_show_total=Count("rsvps", filter=no_show_q(), distinct=True),
             going_total=going_headcount_expr(),
         )
-        .filter(Q(attended_total__gt=0) | Q(didnt_go_total__gt=0))
+        .filter(Q(attended_total__gt=0) | Q(no_show_total__gt=0))
         .order_by("-start_datetime")
     )
 
@@ -64,7 +64,7 @@ def attendance_report(request):
                     title=e.title,
                     start_datetime=e.start_datetime,
                     attended_count=e.attended_total,
-                    didnt_go_count=e.didnt_go_total,
+                    no_show_count=e.no_show_total,
                     going_count=e.going_total,
                 )
                 for e in events
