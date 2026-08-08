@@ -111,7 +111,7 @@ class TestSetAttendance:
         )
         response = api_client.post(
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
-            {"attendance": AttendanceStatus.NO_SHOW},
+            {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
             **_auth(host_user),
         )
@@ -136,7 +136,7 @@ class TestSetAttendance:
         first_check_in = rsvp.checked_in_at
         api_client.post(
             url,
-            {"attendance": AttendanceStatus.NO_SHOW},
+            {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
             **_auth(host_user),
         )
@@ -155,7 +155,7 @@ class TestSetAttendance:
         )
         response = api_client.post(
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
-            {"attendance": AttendanceStatus.NO_SHOW},
+            {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
             **_auth(cohost_user),
         )
