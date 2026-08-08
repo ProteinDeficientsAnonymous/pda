@@ -240,6 +240,21 @@ class TestCheckInReportEndpoint:
         assert report["attended_count"] == 1, "member should be in attended after mark-in"
         assert report["attended"][0]["user_id"] == str(member.pk)
 
+    def test_maybe_rsvp_marked_in_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.MAYBE)
+        rsvp.attendance = AttendanceStatus.ATTENDED
+        rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 0, "maybe RSVP marked in should not stay unmarked"
+        assert report["attended_count"] == 1
+        assert report["attended"][0]["user_id"] == str(member.pk)
+
 
 @pytest.mark.django_db
 class TestCheckInReportCsvEndpoint:
