@@ -1,3 +1,10 @@
+## [0.87.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.1...v0.87.2) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1317 - sort host attendance guest list, rename no-show label ([#1325](https://github.com/ProteinDeficientsAnonymous/pda/issues/1325)) ([9abccfb](https://github.com/ProteinDeficientsAnonymous/pda/commit/9abccfb5b75bde2654934b7029629becc11b302c))
+
 ## [0.87.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.0...v0.87.1) (2026-08-08)
 
 
