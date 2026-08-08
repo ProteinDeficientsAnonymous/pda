@@ -206,6 +206,7 @@ class TestCheckInReportEndpoint:
         total = (
             data["attended_count"]
             + data["no_show_count"]
+            + data["didnt_go_count"]
             + data["canceled_count"]
             + data["unmarked_count"]
         )
@@ -268,6 +269,21 @@ class TestCheckInReportEndpoint:
         assert report["no_show_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
         assert report["canceled_count"] == 1
         assert report["canceled"][0]["user_id"] == str(member.pk)
+
+    def test_maybe_rsvp_marked_didnt_attend_is_in_didnt_go_not_unmarked(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.MAYBE)
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["didnt_go_count"] == 1, "a maybe marked didn't-attend isn't left unmarked"
+        assert report["didnt_go"][0]["user_id"] == str(member.pk)
+        assert report["no_show_count"] == 0
+        assert report["unmarked_count"] == 0
 
     def test_attending_rsvp_marked_didnt_attend_is_a_no_show(
         self, api_client, past_event, members, host_user
@@ -346,6 +362,7 @@ class TestCheckInReportCsvEndpoint:
         report_total = (
             report["attended_count"]
             + report["no_show_count"]
+            + report["didnt_go_count"]
             + report["canceled_count"]
             + report["unmarked_count"]
         )

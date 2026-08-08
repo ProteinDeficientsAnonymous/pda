@@ -20,10 +20,12 @@ export interface CanceledPerson extends CheckInReportPerson {
 export interface CheckInReport {
   attendedCount: number;
   noShowCount: number;
+  didntGoCount: number;
   canceledCount: number;
   unmarkedCount: number;
   attended: AttendedPerson[];
   noShows: CheckInReportPerson[];
+  didntGo: CheckInReportPerson[];
   canceled: CanceledPerson[];
   unmarked: CheckInReportPerson[];
 }
@@ -46,10 +48,12 @@ interface WireCanceledPerson extends WirePerson {
 interface WireReport {
   attended_count: number;
   no_show_count: number;
+  didnt_go_count: number;
   canceled_count: number;
   unmarked_count: number;
   attended: WireAttendedPerson[];
   no_shows: WirePerson[];
+  didnt_go: WirePerson[];
   canceled: WireCanceledPerson[];
   unmarked: WirePerson[];
 }
@@ -58,6 +62,7 @@ function mapReport(w: WireReport): CheckInReport {
   return {
     attendedCount: w.attended_count,
     noShowCount: w.no_show_count,
+    didntGoCount: w.didnt_go_count,
     canceledCount: w.canceled_count,
     unmarkedCount: w.unmarked_count,
     attended: w.attended.map((p) => ({
@@ -68,6 +73,12 @@ function mapReport(w: WireReport): CheckInReport {
       checkedInAt: p.checked_in_at ? new Date(p.checked_in_at) : null,
     })),
     noShows: w.no_shows.map((p) => ({
+      userId: p.user_id,
+      name: p.name,
+      phone: p.phone,
+      isMember: p.is_member,
+    })),
+    didntGo: w.didnt_go.map((p) => ({
       userId: p.user_id,
       name: p.name,
       phone: p.phone,

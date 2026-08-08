@@ -478,6 +478,19 @@
             "title": "Canceled Count",
             "type": "integer"
           },
+          "didnt_go": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "Didnt Go",
+            "type": "array"
+          },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "no_show_count": {
             "default": 0,
             "title": "No Show Count",

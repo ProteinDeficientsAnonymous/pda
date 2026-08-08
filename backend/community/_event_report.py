@@ -17,10 +17,10 @@ from community._event_report_schemas import (
     CheckInReportPersonOut,
 )
 from community._events import _can_edit_event
-from community._rsvp_counts import is_no_show
+from community._rsvp_counts import is_attended, is_didnt_go, is_no_show
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, FeatureFlag, RSVPStatus, flag_enabled
+from community.models import Event, FeatureFlag, RSVPStatus, flag_enabled
 
 router = Router()
 
@@ -57,33 +57,35 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
     can_see_phones = is_cohost(viewer, co_host_ids)
 
-    attended, no_shows, canceled, unmarked = [], [], [], []
+    attended, no_shows, didnt_go, canceled, unmarked = [], [], [], [], []
     for rsvp in _report_rsvps(event):
         base = _person(rsvp, viewer, can_see_phones)
-        # ATTENDED overrides status (a host can check in a "maybe"); a no-show
-        # only counts if they were actually RSVP'd ATTENDING.
-        if rsvp.attendance == AttendanceStatus.ATTENDED:
+        if is_attended(rsvp):
             attended.append(
                 AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
             )
-        elif is_no_show(rsvp):
-            no_shows.append(base)
         elif rsvp.status == RSVPStatus.CANT_GO:
             canceled.append(
                 CanceledPersonOut(
                     **base.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
                 )
             )
+        elif is_no_show(rsvp):
+            no_shows.append(base)
+        elif is_didnt_go(rsvp):
+            didnt_go.append(base)
         else:
             unmarked.append(base)
 
     return CheckInReportOut(
         attended_count=len(attended),
         no_show_count=len(no_shows),
+        didnt_go_count=len(didnt_go),
         canceled_count=len(canceled),
         unmarked_count=len(unmarked),
         attended=attended,
         no_shows=no_shows,
+        didnt_go=didnt_go,
         canceled=canceled,
         unmarked=unmarked,
     )
