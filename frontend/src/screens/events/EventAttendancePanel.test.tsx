@@ -256,8 +256,8 @@ describe('EventAttendancePanel', () => {
     };
     mockStats(stats);
     renderPanel(BASE_EVENT);
-    expect(screen.getByText(/was going/i)).toBeInTheDocument();
-    expect(screen.getByText(/was maybe/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(was going\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(was maybe\)/i)).toBeInTheDocument();
   });
 
   it('filters cancellations by "within N days" when host enters a value', () => {
