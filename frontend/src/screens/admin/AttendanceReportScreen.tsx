@@ -113,7 +113,7 @@ function AttendanceRow({ row, linkable }: { row: EventAttendanceRow; linkable: b
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1 text-xs">
         <Stat label="attended" value={row.attendedCount} />
-        <Stat label="no-show" value={row.noShowCount} />
+        <Stat label="didn't go" value={row.noShowCount} />
         <Stat label="going (heads)" value={row.goingCount} />
       </div>
     </>
