@@ -21,8 +21,8 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
 
 
 def _is_marked(rsvp: EventRSVP, attendance: str) -> bool:
-    """Has this attendance mark, regardless of the rsvp's current status."""
-    return _is_reportable(rsvp) and rsvp.attendance == attendance
+    """Has this attendance mark (attended / didn't go)."""
+    return rsvp.attendance == attendance
 
 
 def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
@@ -53,7 +53,9 @@ def compute_member_stats(
     window_start = now - timedelta(days=QUALIFYING_WINDOW_DAYS)
 
     qualifying_dates = [
-        rsvp.event.start_datetime for rsvp in rsvps if _is_qualifying_attended(rsvp)
+        rsvp.event.start_datetime
+        for rsvp in rsvps
+        if _is_reportable(rsvp) and _is_qualifying_attended(rsvp)
     ]
     qualifying_dates_known = [d for d in qualifying_dates if d is not None]
     last_qualifying_at = max(qualifying_dates_known) if qualifying_dates_known else None
@@ -62,10 +64,13 @@ def compute_member_stats(
     community_count = sum(
         1
         for rsvp in rsvps
-        if _is_marked(rsvp, AttendanceStatus.ATTENDED)
+        if _is_reportable(rsvp)
+        and _is_marked(rsvp, AttendanceStatus.ATTENDED)
         and rsvp.event.event_type == EventType.COMMUNITY
     )
-    didnt_go_count = sum(1 for rsvp in rsvps if _is_marked(rsvp, AttendanceStatus.DIDNT_GO))
+    didnt_go_count = sum(
+        1 for rsvp in rsvps if _is_reportable(rsvp) and _is_marked(rsvp, AttendanceStatus.DIDNT_GO)
+    )
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
@@ -112,7 +117,7 @@ def attended_events(rsvps: Iterable[EventRSVP]) -> list[AttendedEvent]:
             event_type=rsvp.event.event_type,
         )
         for rsvp in rsvps
-        if _is_marked(rsvp, AttendanceStatus.ATTENDED)
+        if _is_reportable(rsvp) and _is_marked(rsvp, AttendanceStatus.ATTENDED)
     ]
     events.sort(key=lambda e: (e.start_datetime is None, e.start_datetime))
     return events
