@@ -9,6 +9,7 @@ import type {
 
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
+import { checkInReportKeys } from './eventCheckInReport';
 import { mapEvent, type WireEvent } from './eventMapper';
 import { invalidateEventDetail, setEventDetailData } from './events';
 import { USERS_KEY } from './users';
@@ -85,6 +86,7 @@ export function useSetAttendance(eventId: string) {
     onSuccess: () => {
       invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+      void qc.invalidateQueries({ queryKey: checkInReportKeys.detail(eventId) });
       // attendance marks feed the admin report + members-list last_attended.
       void qc.invalidateQueries({ queryKey: attendanceReportKey });
       void qc.invalidateQueries({ queryKey: USERS_KEY });
