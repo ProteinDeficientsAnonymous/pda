@@ -1,3 +1,10 @@
+## [0.87.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.0...v0.87.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1321 - allow attendance check-in for maybe RSVPs ([#1322](https://github.com/ProteinDeficientsAnonymous/pda/issues/1322)) ([b5b0d8c](https://github.com/ProteinDeficientsAnonymous/pda/commit/b5b0d8ca620d36cc78efdec75629ff00a0f254a2))
+
 # [0.87.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.86.0...v0.87.0) (2026-08-06)
 
 
