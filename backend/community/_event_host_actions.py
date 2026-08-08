@@ -134,8 +134,6 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
     if rsvp is None:
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
-    if rsvp.status != RSVPStatus.ATTENDING:
-        raise_validation(Code.Event.ATTENDANCE_ONLY_FOR_GOING_RSVPS, status_code=400)
 
     # The mark and any tentative promotion it triggers commit as a unit, so a
     # mid-promotion failure can't leave a member flagged without their request

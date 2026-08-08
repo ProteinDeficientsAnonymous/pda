@@ -405,7 +405,26 @@ class TestSetAttendance:
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.attendance_opens_later"
 
-    def test_rejects_when_rsvp_not_going(self, api_client, open_check_in_event, host_user, members):
+    def test_host_marks_attended_for_maybe_rsvp(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.MAYBE
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.ATTENDED
+        assert rsvp.checked_in_at is not None
+
+    def test_allows_check_in_when_rsvp_not_going(
+        self, api_client, open_check_in_event, host_user, members
+    ):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.CANT_GO
         )
@@ -415,7 +434,21 @@ class TestSetAttendance:
             content_type="application/json",
             **_auth(host_user),
         )
-        assert response.status_code == 400
+        assert response.status_code == 200
+
+    def test_allows_check_in_when_rsvp_waitlisted(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.WAITLISTED
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
 
     def test_rejects_unknown_rsvp(self, api_client, open_check_in_event, host_user, members):
         response = api_client.post(
