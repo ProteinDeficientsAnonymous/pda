@@ -328,7 +328,11 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             EventRSVP.objects.update_or_create(
                 event=event,
                 user_id=user_id,
-                defaults={"status": RSVPStatus.ATTENDING, "cancelled_at": None},
+                defaults={
+                    "status": RSVPStatus.ATTENDING,
+                    "cancelled_at": None,
+                    "previous_status": None,
+                },
             )
     broadcast_capacity_change(event_id)
     audit_log(

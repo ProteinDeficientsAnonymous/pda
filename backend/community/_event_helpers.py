@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -122,11 +123,17 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
 
 
+_WITHIN_24_HOURS = timedelta(hours=24)
+
+
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
 
     Lead time is derived from the recorded cancelled_at transition timestamp,
     falling back to updated_at for legacy rows that predate the column.
+    within_24_hours compares the actual elapsed timedelta rather than
+    truncated days, so a cancellation the day before doesn't misreport as
+    "same day" just because day-truncation rounds it down to 0.
     Returns [] if the event has no start_datetime.
     """
     if event.start_datetime is None:
@@ -136,12 +143,15 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
         if r.status != RSVPStatus.CANT_GO:
             continue
         cancelled_at = r.cancelled_at or r.updated_at
+        lead_time = event.start_datetime - cancelled_at
         rows.append(
             CancellationOut(
                 user_id=str(r.user_id),
                 name=visible_display_name(r.user, viewer),
                 cancelled_at=cancelled_at,
-                days_before_event=(event.start_datetime - cancelled_at).days,
+                days_before_event=lead_time.days,
+                within_24_hours=timedelta(0) <= lead_time <= _WITHIN_24_HOURS,
+                previous_status=r.previous_status,
             )
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
