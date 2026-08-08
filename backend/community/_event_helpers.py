@@ -7,30 +7,13 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
-from notifications._cohost_notifications import create_cohost_invite_notifications
-from notifications.service import (
-    broadcast_cohost_change,
-    broadcast_event_update,
-    create_event_invite_notifications,
-    create_waitlist_promoted_notifications,
-)
+from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
 from users._helpers import visible_display_name
-from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._cohost_invite_helpers import (
-    diff_cohost_invites,
-    get_my_pending_invite,
-    get_pending_invites_for_event,
-    send_cohost_invite_emails,
-)
-from community._event_schemas import (
-    CancellationOut,
-    EventOut,
-    PendingCoHostInviteOut,
-    RSVPGuestOut,
-    TagOut,
-)
+from community._cohost_invite_helpers import get_my_pending_invite
+from community._event_cohost_helpers import _pending_cohost_invites_out
+from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
     _attending_headcount_db,
@@ -88,10 +71,20 @@ def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
+_GUEST_LIST_STATUS_ORDER = {
+    RSVPStatus.ATTENDING: 0,
+    RSVPStatus.MAYBE: 1,
+    RSVPStatus.CANT_GO: 2,
+    RSVPStatus.WAITLISTED: 3,
+}
+
+
 def _build_guest_list(
     rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
 ) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone and payment-status visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone
+    and payment-status visibility."""
+    ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -105,7 +98,7 @@ def _build_guest_list(
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
         )
-        for r in rsvps
+        for r in ordered_rsvps
     ]
 
 
@@ -238,17 +231,6 @@ def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str
     return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
 
 
-def _can_manage_cohost_invites(
-    requesting_user,
-    co_host_ids: set[str],
-) -> bool:
-    """Accepted co-hosts can see and rescind pending invites. Admins are
-    intentionally excluded — this is a host-only workflow, not admin moderation."""
-    if requesting_user is None:
-        return False
-    return str(requesting_user.pk) in co_host_ids
-
-
 def _can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
@@ -296,23 +278,6 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
         .first()
     )
     return poll_survey
-
-
-def _pending_cohost_invites_out(
-    event: Event, auth_user, co_host_ids: set[str]
-) -> list[PendingCoHostInviteOut]:
-    if not _can_manage_cohost_invites(auth_user, co_host_ids):
-        return []
-    return [
-        PendingCoHostInviteOut(
-            id=str(inv.id),
-            user_id=str(inv.user_id),
-            user_name=visible_display_name(inv.user, auth_user),
-            user_photo_url=media_path(inv.user.profile_photo),
-            invited_at=inv.invited_at,
-        )
-        for inv in get_pending_invites_for_event(event)
-    ]
 
 
 def _resolve_comment_count(event: Event) -> int:
@@ -404,48 +369,6 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),
     )
-
-
-def _update_co_hosts(
-    event: Event,
-    co_host_ids: Iterable[str],
-    updater: UserModel,
-) -> None:
-    """Reconcile cohost invites against the requested ids and broadcast updates.
-
-    With the invite-approval flow, this no longer mutates ``event.co_hosts``
-    directly for newly-added users — those go to ``EventCoHostInvite`` as
-    PENDING and only land in ``event.co_hosts`` once accepted. Removals still
-    take effect immediately (the rescind helper drops them from
-    ``event.co_hosts`` if they had been accepted).
-    """
-    next_ids = {str(uid) for uid in co_host_ids}
-    newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
-    if newly_invited:
-        create_cohost_invite_notifications(event, newly_invited, updater)
-        send_cohost_invite_emails(event, newly_invited, updater)
-
-    if newly_invited or removed_accepted_ids:
-        broadcast_cohost_change(
-            event,
-            exclude_user_ids={str(updater.pk)},
-            extra_user_ids=set(newly_invited) | set(removed_accepted_ids),
-        )
-
-
-def _update_invited_users(
-    event: Event,
-    invited_user_ids: Iterable[str],
-    inviter: UserModel,
-) -> None:
-    """Update event.invited_users and notify newly added users."""
-    id_list = list(invited_user_ids)
-    old_ids = set(event.invited_users.values_list("pk", flat=True))
-    invited = UserModel.objects.filter(pk__in=id_list)
-    event.invited_users.set(invited)
-    new_ids = {str(uid) for uid in id_list} - {str(uid) for uid in old_ids}
-    if new_ids:
-        create_event_invite_notifications(event, new_ids, inviter)
 
 
 def _can_edit_event(user, event: Event) -> bool:

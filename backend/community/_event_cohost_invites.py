@@ -27,7 +27,8 @@ from community._cohost_invite_helpers import (
     expire_stale_cohost_invites,
     send_cohost_invite_emails,
 )
-from community._event_helpers import _can_manage_cohost_invites, _event_out
+from community._event_cohost_helpers import _can_manage_cohost_invites
+from community._event_helpers import _event_out
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation

@@ -51,7 +51,7 @@ export function EventCheckInList({
                 />
                 <AttendanceButton
                   active={g.attendance === AttendanceStatus.NoShow}
-                  label="no-show"
+                  label="didn't attend"
                   onClick={() => {
                     onMark(g.userId, AttendanceStatus.NoShow);
                   }}
