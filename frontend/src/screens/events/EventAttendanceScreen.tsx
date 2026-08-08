@@ -39,7 +39,7 @@ export default function EventAttendanceScreen() {
   return (
     <ContentContainer>
       <BackLink eventId={event.id} />
-      <h1 className="mb-1 text-2xl font-medium tracking-tight">attendance</h1>
+      <h1 className="mb-1 text-2xl font-medium tracking-tight">check-in</h1>
       <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
       <EventAttendancePanel event={event} />
     </ContentContainer>
