@@ -226,6 +226,26 @@ class TestRSVP:
         user = User.objects.get(phone_number="+12025550101")
         assert EventRSVP.objects.filter(event=rsvp_event, user=user).count() == 1
 
+    def test_rsvp_stamps_previous_status_on_transition_to_cant_go(
+        self, api_client, auth_headers, rsvp_event
+    ):
+        api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.MAYBE},
+            content_type="application/json",
+            **auth_headers,
+        )
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.CANT_GO},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        user = User.objects.get(phone_number="+12025550101")
+        rsvp = EventRSVP.objects.get(event=rsvp_event, user=user)
+        assert rsvp.previous_status == RSVPStatus.MAYBE
+
     def test_rsvp_delete_success(self, api_client, auth_headers, rsvp_event, test_user):
         EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)
         response = api_client.delete(
