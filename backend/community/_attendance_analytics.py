@@ -43,11 +43,10 @@ def compute_member_stats(
     """Aggregate a member's rsvps into the analytics fields. Pure function over prefetched rows."""
     now = now or timezone.now()
     window_start = now - timedelta(days=QUALIFYING_WINDOW_DAYS)
+    reportable_rsvps = [rsvp for rsvp in rsvps if _is_reportable(rsvp)]
 
     qualifying_dates = [
-        rsvp.event.start_datetime
-        for rsvp in rsvps
-        if _is_reportable(rsvp) and _is_qualifying_attended(rsvp)
+        rsvp.event.start_datetime for rsvp in reportable_rsvps if _is_qualifying_attended(rsvp)
     ]
     qualifying_dates_known = [d for d in qualifying_dates if d is not None]
     last_qualifying_at = max(qualifying_dates_known) if qualifying_dates_known else None
@@ -55,12 +54,10 @@ def compute_member_stats(
 
     community_count = sum(
         1
-        for rsvp in rsvps
-        if _is_reportable(rsvp)
-        and is_attended(rsvp)
-        and rsvp.event.event_type == EventType.COMMUNITY
+        for rsvp in reportable_rsvps
+        if is_attended(rsvp) and rsvp.event.event_type == EventType.COMMUNITY
     )
-    didnt_go_count = sum(1 for rsvp in rsvps if _is_reportable(rsvp) and is_didnt_go(rsvp))
+    didnt_go_count = sum(1 for rsvp in reportable_rsvps if is_didnt_go(rsvp))
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
