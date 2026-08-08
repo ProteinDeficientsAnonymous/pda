@@ -56,7 +56,7 @@ describe('EventAttendanceScreen', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();
 
-    expect(screen.getByRole('heading', { name: /attendance/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /check-in/i })).toBeInTheDocument();
     expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe('EventAttendanceScreen', () => {
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /^attendance$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^check-in$/i })).not.toBeInTheDocument();
   });
 
   it('blocks even the creator when rsvp is disabled', () => {
@@ -83,6 +83,6 @@ describe('EventAttendanceScreen', () => {
     renderScreen();
 
     expect(screen.getByText(/rsvps are off for this event/i)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /^attendance$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^check-in$/i })).not.toBeInTheDocument();
   });
 });
