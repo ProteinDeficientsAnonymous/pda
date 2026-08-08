@@ -329,7 +329,7 @@ def test_seed_staging_past_official_has_member_and_non_member_attendance_marks()
     marked = EventRSVP.objects.filter(
         event__title=OFFICIAL_PAST_TITLE,
         status=RSVPStatus.ATTENDING,
-        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW],
+        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO],
     )
     assert marked.filter(user__is_member=True).exists()
     assert marked.filter(user__is_member=False).exists()

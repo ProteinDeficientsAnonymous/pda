@@ -82,7 +82,7 @@ class TestAttendanceReportEndpoint:
             event=marked,
             user=members[1],
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
         EventRSVP.objects.create(
             event=marked,
@@ -171,12 +171,12 @@ class TestAttendanceReportEndpoint:
         response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
         assert response.json()["events"] == []
 
-    def test_stranded_mark_after_rsvp_change_not_counted(
+    def test_attended_mark_counts_regardless_of_later_status_change(
         self, api_client, host_user, members, events_admin
     ):
         event = _make_event(host_user, "Flipped Event", days_ago=2)
-        # Marked attended while ATTENDING, then flipped to CANT_GO — attendance
-        # is not cleared, but the report must not count it.
+        # Marked attended while ATTENDING, then flipped to CANT_GO — the mark
+        # is a fact that happened, so the report must still count it.
         EventRSVP.objects.create(
             event=event,
             user=members[0],
@@ -185,7 +185,9 @@ class TestAttendanceReportEndpoint:
         )
 
         response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
-        assert response.json()["events"] == []
+        events = response.json()["events"]
+        assert len(events) == 1
+        assert events[0]["attended_count"] == 1
 
     def test_sorted_newest_first(self, api_client, host_user, members, events_admin):
         older = _make_event(host_user, "Older", days_ago=10)
@@ -253,14 +255,14 @@ class TestLastAttendedOnMemberList:
             event=event,
             user=members[0],
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
 
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))
         assert row["last_attended"] is None
 
-    def test_last_attended_excludes_stranded_mark_after_rsvp_change(
+    def test_last_attended_counts_mark_regardless_of_later_status_change(
         self, api_client, host_user, members, manage_users_headers
     ):
         event = _make_event(host_user, "Flipped Event", days_ago=2)
@@ -273,7 +275,7 @@ class TestLastAttendedOnMemberList:
 
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))
-        assert row["last_attended"] is None
+        assert row["last_attended"] is not None
 
     def test_last_attended_excludes_deleted_events(
         self, api_client, host_user, members, manage_users_headers

@@ -19,7 +19,12 @@ from community._attendance_analytics import (
     user_rsvps_for_attendance,
 )
 from community._event_schemas import AttendanceReportOut, EventAttendanceRowOut
-from community._rsvp_counts import attendance_q, going_headcount_expr, reportable_events_q
+from community._rsvp_counts import (
+    attendance_q,
+    going_headcount_expr,
+    no_show_q,
+    reportable_events_q,
+)
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import AttendanceStatus, Event, FeatureFlag, flag_enabled
@@ -43,9 +48,7 @@ def attendance_report(request):
             attended_total=Count(
                 "rsvps", filter=attendance_q(AttendanceStatus.ATTENDED), distinct=True
             ),
-            no_show_total=Count(
-                "rsvps", filter=attendance_q(AttendanceStatus.NO_SHOW), distinct=True
-            ),
+            no_show_total=Count("rsvps", filter=no_show_q(), distinct=True),
             going_total=going_headcount_expr(),
         )
         .filter(Q(attended_total__gt=0) | Q(no_show_total__gt=0))
@@ -81,7 +84,7 @@ class MemberAttendanceRowOut(BaseModel):
     qualifying_count_12mo: int = 0
     compliant: bool = False
     community_count: int = 0
-    no_show_count: int = 0
+    didnt_go_count: int = 0
     cancel_count: int = 0
     months_since_last_qualifying: int | None = None
     is_pause_candidate: bool = False
@@ -103,7 +106,7 @@ def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
         qualifying_count_12mo=stats.qualifying_count_12mo,
         compliant=is_compliant(stats),
         community_count=stats.community_count,
-        no_show_count=stats.no_show_count,
+        didnt_go_count=stats.didnt_go_count,
         cancel_count=stats.cancel_count,
         months_since_last_qualifying=months_since(stats.last_qualifying_at),
         is_pause_candidate=not user.is_paused and is_pause_candidate(stats),

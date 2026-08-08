@@ -17,6 +17,7 @@ from community._event_report_schemas import (
     CheckInReportPersonOut,
 )
 from community._events import _can_edit_event
+from community._rsvp_counts import is_no_show
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import AttendanceStatus, Event, FeatureFlag, RSVPStatus, flag_enabled
@@ -59,13 +60,13 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     attended, no_shows, canceled, unmarked = [], [], [], []
     for rsvp in _report_rsvps(event):
         base = _person(rsvp, viewer, can_see_phones)
-        # ATTENDED overrides status (a host can check in a "maybe"); NO_SHOW
+        # ATTENDED overrides status (a host can check in a "maybe"); a no-show
         # only counts if they were actually RSVP'd ATTENDING.
         if rsvp.attendance == AttendanceStatus.ATTENDED:
             attended.append(
                 AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
             )
-        elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW:
+        elif is_no_show(rsvp):
             no_shows.append(base)
         elif rsvp.status == RSVPStatus.CANT_GO:
             canceled.append(

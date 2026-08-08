@@ -97,7 +97,7 @@ interface WirePendingCohostInvite {
 
 function mapAttendance(value: string | undefined): AttendanceStatusValue {
   if (value === AttendanceStatus.Attended) return AttendanceStatus.Attended;
-  if (value === AttendanceStatus.NoShow) return AttendanceStatus.NoShow;
+  if (value === AttendanceStatus.DidntGo) return AttendanceStatus.DidntGo;
   return AttendanceStatus.Unknown;
 }
 

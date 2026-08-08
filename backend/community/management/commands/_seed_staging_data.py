@@ -257,7 +257,7 @@ TOKEN_NONE = "none"
 
 
 _ATTENDED = AttendanceStatus.ATTENDED
-_NO_SHOW = AttendanceStatus.NO_SHOW
+_NO_SHOW = AttendanceStatus.DIDNT_GO
 
 
 @dataclass

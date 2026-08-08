@@ -37,7 +37,7 @@ const BASE_STATS: EventStats = {
   noResponseCount: 1,
   waitlistedCount: 0,
   attendedCount: 0,
-  noShowCount: 0,
+  didntGoCount: 0,
   notMarkedCount: 1,
   cancellations: [
     {

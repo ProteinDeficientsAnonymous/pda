@@ -2109,7 +2109,7 @@ export interface components {
          * AttendanceStatus
          * @enum {string}
          */
-        AttendanceStatus: "unknown" | "attended" | "no_show";
+        AttendanceStatus: "unknown" | "attended" | "didnt_go";
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -3329,6 +3329,11 @@ export interface components {
              */
             cant_go_count: number;
             /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * Going Count
              * @default 0
              */
@@ -3343,11 +3348,6 @@ export interface components {
              * @default 0
              */
             no_response_count: number;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /**
              * Not Marked Count
              * @default 0
@@ -3828,6 +3828,11 @@ export interface components {
              * @default false
              */
             compliant: boolean;
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
             /** Full Name */
             full_name: string;
             /**
@@ -3841,11 +3846,6 @@ export interface components {
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
             months_since_last_qualifying?: number | null;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /** Phone Number */
             phone_number: string;
             /**

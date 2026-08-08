@@ -50,10 +50,10 @@ export function EventCheckInList({
                   disabled={isPending}
                 />
                 <AttendanceButton
-                  active={g.attendance === AttendanceStatus.NoShow}
+                  active={g.attendance === AttendanceStatus.DidntGo}
                   label="didn't attend"
                   onClick={() => {
-                    onMark(g.userId, AttendanceStatus.NoShow);
+                    onMark(g.userId, AttendanceStatus.DidntGo);
                   }}
                   disabled={isPending}
                 />

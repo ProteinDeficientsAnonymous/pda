@@ -97,7 +97,7 @@ def stocked_event(past_event, members, guest_user):
         event=past_event,
         user=members[1],
         status=RSVPStatus.ATTENDING,
-        attendance=AttendanceStatus.NO_SHOW,
+        attendance=AttendanceStatus.DIDNT_GO,
     )
     EventRSVP.objects.create(
         event=past_event,
@@ -260,7 +260,7 @@ class TestCheckInReportEndpoint:
     ):
         member = members[0]
         rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.CANT_GO)
-        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
@@ -274,7 +274,7 @@ class TestCheckInReportEndpoint:
     ):
         member = members[0]
         rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
-        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **_auth(host_user)

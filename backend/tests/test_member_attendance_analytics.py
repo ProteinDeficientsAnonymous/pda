@@ -145,13 +145,13 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["last_qualifying_at"] is not None
         assert row["is_pause_candidate"] is True
 
-    def test_no_show_and_cancel_counts(self, api_client, flag_on, host_user, member, events_admin):
+    def test_didnt_go_and_cancel_counts(self, api_client, flag_on, host_user, member, events_admin):
         event = _make_event(host_user, "No Show Event", days_ago=5)
         EventRSVP.objects.create(
             event=event,
             user=member,
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
         cancelled_event = _make_event(host_user, "Cancelled RSVP Event", days_ago=3)
         EventRSVP.objects.create(
@@ -163,8 +163,23 @@ class TestMemberAttendanceAnalyticsEndpoint:
 
         response = api_client.get(MEMBERS_URL, **_auth(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
-        assert row["no_show_count"] == 1
+        assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
+
+    def test_didnt_go_count_regardless_of_later_status_change(
+        self, api_client, flag_on, host_user, member, events_admin
+    ):
+        event = _make_event(host_user, "Flipped Event", days_ago=5)
+        EventRSVP.objects.create(
+            event=event,
+            user=member,
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+
+        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["didnt_go_count"] == 1
 
     def test_never_attended_is_pause_candidate(
         self, api_client, flag_on, host_user, member, events_admin
@@ -234,7 +249,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         ids = [r["user_id"] for r in response.json()["members"]]
         assert str(guest.pk) not in ids
 
-    def test_stranded_mark_after_rsvp_change_not_counted(
+    def test_attended_mark_counts_regardless_of_later_status_change(
         self, api_client, flag_on, host_user, member, events_admin
     ):
         event = _make_event(host_user, "Flipped Event", days_ago=2)
@@ -246,5 +261,5 @@ class TestMemberAttendanceAnalyticsEndpoint:
         )
         response = api_client.get(MEMBERS_URL, **_auth(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
-        assert row["qualifying_count_12mo"] == 0
-        assert row["last_qualifying_at"] is None
+        assert row["qualifying_count_12mo"] == 1
+        assert row["last_qualifying_at"] is not None
