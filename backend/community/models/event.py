@@ -272,6 +272,9 @@ class EventRSVP(models.Model):
     )
     checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    previous_status = models.CharField(
+        max_length=20, choices=RSVPStatus.choices, null=True, blank=True
+    )
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

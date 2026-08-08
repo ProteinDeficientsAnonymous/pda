@@ -94,6 +94,8 @@ export interface EventCancellation {
   name: string;
   cancelledAt: Date;
   daysBeforeEvent: number;
+  within24Hours: boolean;
+  previousStatus: RsvpServerStatusValue | null;
 }
 
 export interface EventStats {
