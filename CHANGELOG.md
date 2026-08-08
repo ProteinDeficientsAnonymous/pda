@@ -1,3 +1,10 @@
+## [0.87.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.5...v0.87.6) (2026-08-08)
+
+
+### Bug Fixes
+
+* **events:** rename "no-show" label to "didn't go" in attendance UI ([#1338](https://github.com/ProteinDeficientsAnonymous/pda/issues/1338)) ([7eb9249](https://github.com/ProteinDeficientsAnonymous/pda/commit/7eb9249d33d408dddeff3a0a495ae211c4fd3116))
+
 ## [0.87.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.4...v0.87.5) (2026-08-08)
 
 
