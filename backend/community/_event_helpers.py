@@ -88,10 +88,20 @@ def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
+_GUEST_LIST_STATUS_ORDER = {
+    RSVPStatus.ATTENDING: 0,
+    RSVPStatus.MAYBE: 1,
+    RSVPStatus.CANT_GO: 2,
+    RSVPStatus.WAITLISTED: 3,
+}
+
+
 def _build_guest_list(
     rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
 ) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone and payment-status visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone
+    and payment-status visibility."""
+    ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -105,7 +115,7 @@ def _build_guest_list(
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
         )
-        for r in rsvps
+        for r in ordered_rsvps
     ]
 
 
