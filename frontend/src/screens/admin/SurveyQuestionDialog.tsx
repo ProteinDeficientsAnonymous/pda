@@ -2,6 +2,7 @@ import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   type SurveyQuestion,
   type SurveyQuestionInput,
@@ -16,15 +17,19 @@ import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 
 const TYPES: { value: SurveyQuestionType; label: string; wantsOptions: boolean }[] = [
-  { value: 'text', label: 'short text', wantsOptions: false },
-  { value: 'textarea', label: 'long text', wantsOptions: false },
-  { value: 'number', label: 'number', wantsOptions: false },
-  { value: 'select', label: 'single choice (radio)', wantsOptions: true },
-  { value: 'dropdown', label: 'dropdown', wantsOptions: true },
-  { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
-  { value: 'yes_no', label: 'yes / no', wantsOptions: false },
-  { value: 'rating', label: '1–5 rating', wantsOptions: true },
-  { value: 'datetime_poll', label: 'datetime poll (iso options)', wantsOptions: true },
+  { value: QuestionType.Text, label: 'short text', wantsOptions: false },
+  { value: QuestionType.Textarea, label: 'long text', wantsOptions: false },
+  { value: QuestionType.Number, label: 'number', wantsOptions: false },
+  { value: QuestionType.Radio, label: 'radio', wantsOptions: true },
+  { value: QuestionType.Select, label: 'select', wantsOptions: true },
+  { value: QuestionType.Checkbox, label: 'checkbox', wantsOptions: true },
+  { value: QuestionType.Boolean, label: 'yes / no', wantsOptions: false },
+  { value: QuestionType.Rating, label: '1–5 rating', wantsOptions: true },
+  {
+    value: QuestionType.DatetimePoll,
+    label: 'datetime poll (iso options)',
+    wantsOptions: true,
+  },
 ];
 
 interface Props {
@@ -47,7 +52,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
 
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<SurveyQuestionType>(
-    () => existing?.fieldType ?? 'text',
+    () => existing?.fieldType ?? QuestionType.Text,
   );
   const [required, setRequired] = useState(() => existing?.required ?? false);
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
@@ -89,9 +94,9 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
   }
 
   const optionsHint =
-    fieldType === 'rating'
+    fieldType === QuestionType.Rating
       ? 'one label per star (up to 5)'
-      : fieldType === 'datetime_poll'
+      : fieldType === QuestionType.DatetimePoll
         ? 'one ISO-8601 datetime per line'
         : 'one option per line';
 
