@@ -43,12 +43,15 @@ def _report_rsvps(event: Event):
     return [r for r in event.rsvps.all() if r.status != RSVPStatus.REMOVED]
 
 
-def _person(rsvp, viewer, can_see_phones: bool) -> CheckInReportPersonOut:
+def _person(
+    rsvp, viewer, can_see_phones: bool, is_plus_one_guest: bool = False
+) -> CheckInReportPersonOut:
     return CheckInReportPersonOut(
         user_id=str(rsvp.user_id),
         name=visible_display_name(rsvp.user, viewer),
         phone=rsvp.user.phone_number if can_see_phones else None,
         is_member=rsvp.user.is_member,
+        is_plus_one_guest=is_plus_one_guest,
     )
 
 
@@ -73,6 +76,17 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
             no_shows.append(base)
         else:
             unmarked.append(base)
+
+        if rsvp.has_plus_one:
+            plus_one_base = _person(rsvp, viewer, can_see_phones, is_plus_one_guest=True)
+            if rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
+                attended.append(
+                    AttendedPersonOut(
+                        **plus_one_base.model_dump(), checked_in_at=rsvp.checked_in_at
+                    )
+                )
+            else:
+                unmarked.append(plus_one_base)
 
     return CheckInReportOut(
         attended_count=len(attended),
@@ -104,7 +118,9 @@ def _csv_safe(value: str) -> str:
     return value
 
 
-def _csv_row(rsvp, viewer, can_see_phones: bool, columns: list[str]) -> list[str]:
+def _csv_row(
+    rsvp, viewer, can_see_phones: bool, columns: list[str], is_plus_one_guest: bool = False
+) -> list[str]:
     values = {
         "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
         "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
@@ -112,7 +128,7 @@ def _csv_row(rsvp, viewer, can_see_phones: bool, columns: list[str]) -> list[str
         "attendance": rsvp.attendance,
         "checked_in_at": rsvp.checked_in_at.isoformat() if rsvp.checked_in_at else "",
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
-        "plus_one": "yes" if rsvp.has_plus_one else "no",
+        "plus_one": "guest" if is_plus_one_guest else ("yes" if rsvp.has_plus_one else "no"),
     }
     return [values[c] for c in columns]
 
@@ -148,6 +164,10 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     writer.writerow(selected)
     for rsvp in _report_rsvps(event):
         writer.writerow(_csv_row(rsvp, request.auth, can_see_phones, selected))
+        if rsvp.has_plus_one:
+            writer.writerow(
+                _csv_row(rsvp, request.auth, can_see_phones, selected, is_plus_one_guest=True)
+            )
 
     response = HttpResponse(buf.getvalue(), content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'
