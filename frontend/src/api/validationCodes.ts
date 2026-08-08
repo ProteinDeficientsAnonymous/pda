@@ -100,8 +100,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "we couldn't set up your rsvp with those details — reach out and we'll help";
     case Code.Event.AttendanceOpensLater:
       return 'check-in opens an hour before the event starts';
-    case Code.Event.AttendanceOnlyForGoingRsvps:
-      return 'attendance can only be marked on going rsvps';
     case Code.Event.BlastInvalidAudience:
       return 'that audience choice is not valid';
     case Code.Event.BlastNoRecipients:
