@@ -1,3 +1,10 @@
+## [0.87.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.3...v0.87.4) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1331 - check-in report back link returns to event ([#1334](https://github.com/ProteinDeficientsAnonymous/pda/issues/1334)) ([ab59f15](https://github.com/ProteinDeficientsAnonymous/pda/commit/ab59f15fff9e4ae8557b46b29520b9fc7ef2672e))
+
 ## [0.87.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.2...v0.87.3) (2026-08-08)
 
 
