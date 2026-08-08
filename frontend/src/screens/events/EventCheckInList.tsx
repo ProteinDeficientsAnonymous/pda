@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import type { AttendanceStatusValue, EventGuest, RsvpServerStatusValue } from '@/models/event';
-import { AttendanceStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
+import { AttendanceStatus, RsvpServerStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 export function EventCheckInList({
@@ -31,35 +31,38 @@ export function EventCheckInList({
         <p className="text-muted text-xs">nobody with that rsvp 🌿</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {filtered.map((g) => (
-            <li
-              key={g.userId}
-              className="border-border flex items-center justify-between gap-2 rounded-md border p-2"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="text-foreground truncate text-sm">{g.name}</span>
-                <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
-              </span>
-              <div className="flex gap-1">
-                <AttendanceButton
-                  active={g.attendance === AttendanceStatus.Attended}
-                  label="attended"
-                  onClick={() => {
-                    onMark(g.userId, AttendanceStatus.Attended);
-                  }}
-                  disabled={isPending}
-                />
-                <AttendanceButton
-                  active={g.attendance === AttendanceStatus.NoShow}
-                  label="no-show"
-                  onClick={() => {
-                    onMark(g.userId, AttendanceStatus.NoShow);
-                  }}
-                  disabled={isPending}
-                />
-              </div>
-            </li>
-          ))}
+          {filtered.map((g) => {
+            const cantGo = g.status === RsvpServerStatus.CantGo;
+            return (
+              <li
+                key={g.userId}
+                className="border-border flex items-center justify-between gap-2 rounded-md border p-2"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="text-foreground truncate text-sm">{g.name}</span>
+                  <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
+                </span>
+                <div className="flex gap-1">
+                  <AttendanceButton
+                    active={g.attendance === AttendanceStatus.Attended}
+                    label="attended"
+                    onClick={() => {
+                      onMark(g.userId, AttendanceStatus.Attended);
+                    }}
+                    disabled={isPending}
+                  />
+                  <AttendanceButton
+                    active={g.attendance === AttendanceStatus.NoShow}
+                    label="no-show"
+                    onClick={() => {
+                      onMark(g.userId, AttendanceStatus.NoShow);
+                    }}
+                    disabled={isPending || cantGo}
+                  />
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
