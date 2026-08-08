@@ -20,7 +20,7 @@ class Command(BaseCommand):
         if not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
             return
 
-        today = timezone.now().date()
+        today = timezone.localtime().date()
         calendar_url = f"{settings.FRONTEND_BASE_URL}/calendar"
         sender = get_email_sender()
         sent_count = 0

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { useEventStats, useSetAttendance } from '@/api/eventStats';
 import type { Event, EventCancellation, EventStats } from '@/models/event';
+import { rsvpGroupLabel } from '@/models/event';
 
 import { EventCheckInList } from './EventCheckInList';
 
@@ -95,7 +96,8 @@ function CancellationsList({ cancellations }: { cancellations: EventCancellation
           {filtered.map((c) => (
             <li key={c.userId} className="text-foreground-secondary">
               <span className="text-foreground">{c.name}</span> —{' '}
-              {formatLeadTime(c.daysBeforeEvent)}
+              {formatLeadTime(c.daysBeforeEvent, c.sameDay)}
+              {c.previousStatus ? ` (was ${rsvpGroupLabel(c.previousStatus)})` : ''}
             </li>
           ))}
         </ul>
@@ -150,9 +152,9 @@ function WithinDaysFilter({
   );
 }
 
-function formatLeadTime(days: number): string {
+function formatLeadTime(days: number, sameDay: boolean): string {
   if (days < 0) return `cancelled ${String(Math.abs(days))} days after start`;
-  if (days === 0) return 'cancelled same day';
+  if (sameDay) return 'cancelled same day';
   if (days === 1) return 'cancelled 1 day before';
   return `cancelled ${String(days)} days before`;
 }

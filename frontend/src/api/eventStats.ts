@@ -19,6 +19,8 @@ interface WireCancellation {
   name: string;
   cancelled_at: string;
   days_before_event: number;
+  same_day: boolean;
+  previous_status: string | null;
 }
 
 interface WireStats {
@@ -39,6 +41,8 @@ function mapCancellation(w: WireCancellation): EventCancellation {
     name: w.name,
     cancelledAt: new Date(w.cancelled_at),
     daysBeforeEvent: w.days_before_event,
+    sameDay: w.same_day,
+    previousStatus: w.previous_status as EventCancellation['previousStatus'],
   };
 }
 

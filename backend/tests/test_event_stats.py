@@ -1,10 +1,11 @@
 """Tests for host-only event stats, attendance marking, and cancellation lead time."""
 
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from community._event_helpers import _cancellations
-from community._event_rsvps import _resolve_cancelled_at
+from community._event_rsvps import _resolve_cancelled_at, _resolve_previous_status
 from community._rsvp_counts import (
     _attended_count,
     _no_response_count,
@@ -170,6 +171,62 @@ class TestCancellations:
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
 
+    def test_same_day_true_just_after_local_midnight(self, host_user, members):
+        """Cancelling 1 minute into the event's local calendar day is still 'same day'
+        even though it's ~14 hours before start — Issue 1318."""
+        et = ZoneInfo("America/New_York")
+        start = timezone.datetime(2026, 6, 15, 14, 0, tzinfo=et)  # 2pm ET
+        event = Event.objects.create(
+            title="Same Day Event", start_datetime=start, rsvp_enabled=True, created_by=host_user
+        )
+        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
+        cancelled_at = timezone.datetime(2026, 6, 15, 0, 1, tzinfo=et)  # 12:01am ET, same day
+        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
+        rows = _cancellations(event)
+        assert rows[0].same_day is True
+
+    def test_same_day_false_when_cancelled_prior_local_day(self, host_user, members):
+        """Cancelling 1 minute before the event's local calendar day starts is not
+        'same day' even though it's under 24 hours before start."""
+        et = ZoneInfo("America/New_York")
+        start = timezone.datetime(2026, 6, 15, 0, 30, tzinfo=et)  # 12:30am ET
+        event = Event.objects.create(
+            title="Early Start Event",
+            start_datetime=start,
+            rsvp_enabled=True,
+            created_by=host_user,
+        )
+        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
+        cancelled_at = timezone.datetime(2026, 6, 14, 23, 59, tzinfo=et)  # prior local day
+        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
+        rows = _cancellations(event)
+        assert rows[0].same_day is False
+
+    def test_same_day_false_when_cancelled_after_start(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+        )
+        cancelled_at = stats_event.start_datetime + timedelta(days=1)
+        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
+        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
+            pk=stats_event.pk
+        )
+        rows = _cancellations(stats_event)
+        assert rows[0].same_day is False
+
+    def test_includes_previous_status(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+        )
+        EventRSVP.objects.filter(pk=rsvp.pk).update(previous_status=RSVPStatus.MAYBE)
+        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
+            pk=stats_event.pk
+        )
+        rows = _cancellations(stats_event)
+        assert rows[0].previous_status == RSVPStatus.MAYBE
+
 
 @pytest.mark.django_db
 class TestResolveCancelledAt:
@@ -201,6 +258,40 @@ class TestResolveCancelledAt:
             cancelled_at=cancelled,
         )
         assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
+
+
+@pytest.mark.django_db
+class TestResolvePreviousStatus:
+    def test_stamps_prior_status_on_transition_from_attending(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        assert _resolve_previous_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.ATTENDING
+
+    def test_stamps_prior_status_on_transition_from_maybe(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.MAYBE)
+        assert _resolve_previous_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
+
+    def test_none_for_brand_new_cant_go(self):
+        assert _resolve_previous_status(None, RSVPStatus.CANT_GO) is None
+
+    def test_clears_when_leaving_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            previous_status=RSVPStatus.ATTENDING,
+        )
+        assert _resolve_previous_status(rsvp, RSVPStatus.ATTENDING) is None
+
+    def test_preserves_original_previous_status_when_still_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            previous_status=RSVPStatus.MAYBE,
+        )
+        assert _resolve_previous_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
 
 
 @pytest.mark.django_db

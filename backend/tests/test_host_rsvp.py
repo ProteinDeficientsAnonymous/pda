@@ -225,6 +225,20 @@ class TestSetGuestRsvp:
         assert rsvp.cancelled_at is not None
         assert rsvp.cancelled_at >= before
 
+    def test_stamps_previous_status_on_transition_to_cant_go(
+        self, api_client, host_rsvp_event, host_user, guest
+    ):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
+        response = api_client.post(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            {"status": RSVPStatus.CANT_GO},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
+        assert rsvp.previous_status == RSVPStatus.MAYBE
+
     def test_broadcasts_capacity_change_excluding_actor(
         self, api_client, host_rsvp_event, host_user, guest
     ):

@@ -7,6 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
+from django.utils import timezone
 from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
@@ -123,9 +124,8 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
 
-    Lead time is derived from the recorded cancelled_at transition timestamp,
-    falling back to updated_at for legacy rows that predate the column.
-    Returns [] if the event has no start_datetime.
+    same_day compares local calendar dates, not raw UTC, to avoid misreporting
+    across a UTC day rollover.
     """
     if event.start_datetime is None:
         return []
@@ -134,12 +134,19 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
         if r.status != RSVPStatus.CANT_GO:
             continue
         cancelled_at = r.cancelled_at or r.updated_at
+        lead_time = event.start_datetime - cancelled_at
+        same_day = (
+            timezone.localtime(cancelled_at).date()
+            == timezone.localtime(event.start_datetime).date()
+        )
         rows.append(
             CancellationOut(
                 user_id=str(r.user_id),
                 name=visible_display_name(r.user, viewer),
                 cancelled_at=cancelled_at,
-                days_before_event=(event.start_datetime - cancelled_at).days,
+                days_before_event=lead_time.days,
+                same_day=same_day,
+                previous_status=r.previous_status,
             )
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
