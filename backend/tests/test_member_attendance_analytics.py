@@ -145,7 +145,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["last_qualifying_at"] is not None
         assert row["is_pause_candidate"] is True
 
-    def test_no_show_and_cancel_counts(self, api_client, flag_on, host_user, member, events_admin):
+    def test_didnt_go_and_cancel_counts(self, api_client, flag_on, host_user, member, events_admin):
         event = _make_event(host_user, "No Show Event", days_ago=5)
         EventRSVP.objects.create(
             event=event,
@@ -165,6 +165,21 @@ class TestMemberAttendanceAnalyticsEndpoint:
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
+
+    def test_didnt_go_count_regardless_of_later_status_change(
+        self, api_client, flag_on, host_user, member, events_admin
+    ):
+        event = _make_event(host_user, "Flipped Event", days_ago=5)
+        EventRSVP.objects.create(
+            event=event,
+            user=member,
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+
+        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["didnt_go_count"] == 1
 
     def test_never_attended_is_pause_candidate(
         self, api_client, flag_on, host_user, member, events_admin

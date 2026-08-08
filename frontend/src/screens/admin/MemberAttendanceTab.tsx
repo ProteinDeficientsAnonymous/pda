@@ -129,7 +129,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
       <div className="mt-2 flex flex-wrap gap-1 text-xs">
         <Stat label="qualifying (12mo)" value={row.qualifyingCount12mo} />
         <Stat label="community events" value={row.communityCount} />
-        <Stat label="no-shows" value={row.didntGoCount} />
+        <Stat label="didn't go" value={row.didntGoCount} />
         <Stat label="cancels" value={row.cancelCount} />
       </div>
 

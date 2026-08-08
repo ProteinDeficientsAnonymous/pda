@@ -8,7 +8,7 @@ from typing import NamedTuple
 from django.db.models import Prefetch
 from django.utils import timezone
 
-from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES, is_no_show
+from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES
 from community.models import AttendanceStatus, EventRSVP, EventType
 
 QUALIFYING_EVENT_TYPES = (EventType.CLUB, EventType.OFFICIAL)
@@ -23,10 +23,6 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
 def _is_marked(rsvp: EventRSVP, attendance: str) -> bool:
     """Has this attendance mark, regardless of the rsvp's current status."""
     return _is_reportable(rsvp) and rsvp.attendance == attendance
-
-
-def _is_reportable_no_show(rsvp: EventRSVP) -> bool:
-    return _is_reportable(rsvp) and is_no_show(rsvp)
 
 
 def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
@@ -69,7 +65,7 @@ def compute_member_stats(
         if _is_marked(rsvp, AttendanceStatus.ATTENDED)
         and rsvp.event.event_type == EventType.COMMUNITY
     )
-    didnt_go_count = sum(1 for rsvp in rsvps if _is_reportable_no_show(rsvp))
+    didnt_go_count = sum(1 for rsvp in rsvps if _is_marked(rsvp, AttendanceStatus.DIDNT_GO))
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
