@@ -28,7 +28,7 @@ interface WireStats {
   no_response_count: number;
   waitlisted_count: number;
   attended_count: number;
-  no_show_count: number;
+  didnt_go_count: number;
   not_marked_count: number;
   cancellations: WireCancellation[];
 }
@@ -50,7 +50,7 @@ function mapStats(w: WireStats): EventStats {
     noResponseCount: w.no_response_count,
     waitlistedCount: w.waitlisted_count,
     attendedCount: w.attended_count,
-    noShowCount: w.no_show_count,
+    didntGoCount: w.didnt_go_count,
     notMarkedCount: w.not_marked_count,
     cancellations: w.cancellations.map(mapCancellation),
   };

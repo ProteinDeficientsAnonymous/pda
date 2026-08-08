@@ -260,7 +260,7 @@ SEED_RSVPS = [
         "Past Potluck (seed)",
         _JAMIE,
         RSVPStatus.ATTENDING,
-        attendance=AttendanceStatus.NO_SHOW,
+        attendance=AttendanceStatus.DIDNT_GO,
     ),
     SeedRSVP("Past Potluck (seed)", _RIN, RSVPStatus.MAYBE),
     SeedRSVP("Past Potluck (seed)", _ASH, RSVPStatus.CANT_GO),

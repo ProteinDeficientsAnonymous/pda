@@ -37,7 +37,7 @@ function makeMemberRow(overrides: Partial<MemberAttendanceRow> = {}): MemberAtte
     qualifyingCount12mo: 3,
     compliant: true,
     communityCount: 1,
-    noShowCount: 0,
+    didntGoCount: 0,
     cancelCount: 0,
     monthsSinceLastQualifying: 2,
     isPauseCandidate: false,

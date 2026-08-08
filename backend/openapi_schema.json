@@ -478,18 +478,18 @@
             "title": "Canceled Count",
             "type": "integer"
           },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
-            "type": "integer"
-          },
-          "no_shows": {
+          "didnt_go": {
             "default": [],
             "items": {
               "$ref": "#/components/schemas/CheckInReportPersonOut"
             },
-            "title": "No Shows",
+            "title": "Didnt Go",
             "type": "array"
+          },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
           },
           "unmarked": {
             "default": [],
@@ -1194,6 +1194,11 @@
             "title": "Attended Count",
             "type": "integer"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "event_id": {
             "title": "Event Id",
             "type": "string"
@@ -1201,11 +1206,6 @@
           "going_count": {
             "default": 0,
             "title": "Going Count",
-            "type": "integer"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
             "type": "integer"
           },
           "start_datetime": {
@@ -2820,6 +2820,11 @@
             "title": "Cant Go Count",
             "type": "integer"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "going_count": {
             "default": 0,
             "title": "Going Count",
@@ -2833,11 +2838,6 @@
           "no_response_count": {
             "default": 0,
             "title": "No Response Count",
-            "type": "integer"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
             "type": "integer"
           },
           "not_marked_count": {
@@ -3968,6 +3968,11 @@
             "title": "Compliant",
             "type": "boolean"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "full_name": {
             "title": "Full Name",
             "type": "string"
@@ -4003,11 +4008,6 @@
               }
             ],
             "title": "Months Since Last Qualifying"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
-            "type": "integer"
           },
           "phone_number": {
             "title": "Phone Number",

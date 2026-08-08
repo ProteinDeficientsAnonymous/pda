@@ -97,7 +97,7 @@ def stocked_event(past_event, members, guest_user):
         event=past_event,
         user=members[1],
         status=RSVPStatus.ATTENDING,
-        attendance=AttendanceStatus.NO_SHOW,
+        attendance=AttendanceStatus.DIDNT_GO,
     )
     EventRSVP.objects.create(
         event=past_event,
@@ -122,7 +122,7 @@ class TestCheckInReportEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["attended_count"] == 2
-        assert data["no_show_count"] == 1
+        assert data["didnt_go_count"] == 1
         assert data["canceled_count"] == 1
         assert data["unmarked_count"] == 1
 
@@ -205,7 +205,7 @@ class TestCheckInReportEndpoint:
         data = response.json()
         total = (
             data["attended_count"]
-            + data["no_show_count"]
+            + data["didnt_go_count"]
             + data["canceled_count"]
             + data["unmarked_count"]
         )
@@ -260,12 +260,12 @@ class TestCheckInReportEndpoint:
     ):
         member = members[0]
         rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.CANT_GO)
-        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
         ).json()
-        assert report["no_show_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
+        assert report["didnt_go_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
         assert report["canceled_count"] == 1
         assert report["canceled"][0]["user_id"] == str(member.pk)
 
@@ -274,13 +274,13 @@ class TestCheckInReportEndpoint:
     ):
         member = members[0]
         rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
-        rsvp.attendance = AttendanceStatus.NO_SHOW
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
         ).json()
-        assert report["no_show_count"] == 1
-        assert report["no_shows"][0]["user_id"] == str(member.pk)
+        assert report["didnt_go_count"] == 1
+        assert report["didnt_go"][0]["user_id"] == str(member.pk)
 
 
 @pytest.mark.django_db
@@ -345,7 +345,7 @@ class TestCheckInReportCsvEndpoint:
         data_rows = [line for line in csv_body.splitlines()[1:] if line]
         report_total = (
             report["attended_count"]
-            + report["no_show_count"]
+            + report["didnt_go_count"]
             + report["canceled_count"]
             + report["unmarked_count"]
         )

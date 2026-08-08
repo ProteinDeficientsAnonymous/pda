@@ -82,7 +82,7 @@ class TestAttendanceReportEndpoint:
             event=marked,
             user=members[1],
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
         EventRSVP.objects.create(
             event=marked,
@@ -98,7 +98,7 @@ class TestAttendanceReportEndpoint:
         row = rows[0]
         assert row["event_id"] == str(marked.id)
         assert row["attended_count"] == 1
-        assert row["no_show_count"] == 1
+        assert row["didnt_go_count"] == 1
         assert row["going_count"] == 3
 
     def test_excludes_events_without_marks(self, api_client, host_user, members, events_admin):
@@ -253,7 +253,7 @@ class TestLastAttendedOnMemberList:
             event=event,
             user=members[0],
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
 
         response = api_client.get("/api/auth/users/", **manage_users_headers)

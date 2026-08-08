@@ -66,7 +66,7 @@ export function rsvpGroupLabel(status: string): string {
 export const AttendanceStatus = {
   Unknown: 'unknown',
   Attended: 'attended',
-  NoShow: 'no_show',
+  DidntGo: 'no_show',
 } as const;
 export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
@@ -103,7 +103,7 @@ export interface EventStats {
   noResponseCount: number;
   waitlistedCount: number;
   attendedCount: number;
-  noShowCount: number;
+  didntGoCount: number;
   notMarkedCount: number;
   cancellations: EventCancellation[];
 }

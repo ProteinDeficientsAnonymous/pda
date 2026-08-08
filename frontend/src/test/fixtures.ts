@@ -193,7 +193,7 @@ export function makeRow(overrides: Partial<EventAttendanceRow> = {}): EventAtten
     title: 'Potluck',
     startDatetime: new Date('2026-03-15T18:00:00Z'),
     attendedCount: 4,
-    noShowCount: 1,
+    didntGoCount: 1,
     goingCount: 6,
     ...overrides,
   };

@@ -55,16 +55,16 @@ def _is_attended(rsvp: EventRSVP) -> bool:
     return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED
 
 
-def _is_no_show(rsvp: EventRSVP) -> bool:
-    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW
+def _is_didnt_go(rsvp: EventRSVP) -> bool:
+    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.DIDNT_GO
 
 
 def _attended_count(event: Event) -> int:
     return sum(1 for r in event.rsvps.all() if _is_attended(r))
 
 
-def _no_show_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if _is_no_show(r))
+def _didnt_go_count(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if _is_didnt_go(r))
 
 
 def _not_marked_count(event: Event) -> int:

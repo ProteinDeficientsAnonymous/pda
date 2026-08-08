@@ -40,7 +40,7 @@ class MemberAttendanceStats(NamedTuple):
     last_qualifying_at: datetime | None
     qualifying_count_12mo: int
     community_count: int
-    no_show_count: int
+    didnt_go_count: int
     cancel_count: int
 
 
@@ -69,14 +69,14 @@ def compute_member_stats(
         if _is_marked(rsvp, AttendanceStatus.ATTENDED)
         and rsvp.event.event_type == EventType.COMMUNITY
     )
-    no_show_count = sum(1 for rsvp in rsvps if _is_marked(rsvp, AttendanceStatus.NO_SHOW))
+    didnt_go_count = sum(1 for rsvp in rsvps if _is_marked(rsvp, AttendanceStatus.DIDNT_GO))
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
         last_qualifying_at=last_qualifying_at,
         qualifying_count_12mo=qualifying_count_12mo,
         community_count=community_count,
-        no_show_count=no_show_count,
+        didnt_go_count=didnt_go_count,
         cancel_count=cancel_count,
     )
 

@@ -151,7 +151,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             event=event,
             user=member,
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
         cancelled_event = _make_event(host_user, "Cancelled RSVP Event", days_ago=3)
         EventRSVP.objects.create(
@@ -163,7 +163,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
 
         response = api_client.get(MEMBERS_URL, **_auth(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
-        assert row["no_show_count"] == 1
+        assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
 
     def test_never_attended_is_pause_candidate(

@@ -7,8 +7,8 @@ from community._event_helpers import _cancellations
 from community._event_rsvps import _resolve_cancelled_at
 from community._rsvp_counts import (
     _attended_count,
+    _didnt_go_count,
     _no_response_count,
-    _no_show_count,
 )
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.utils import timezone
@@ -216,7 +216,7 @@ class TestAttendanceCounts:
             event=stats_event,
             user=members[1],
             status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.NO_SHOW,
+            attendance=AttendanceStatus.DIDNT_GO,
         )
         # cant_go marked attended shouldn't count (defensive)
         EventRSVP.objects.create(
@@ -229,4 +229,4 @@ class TestAttendanceCounts:
             pk=stats_event.pk
         )
         assert _attended_count(stats_event) == 1
-        assert _no_show_count(stats_event) == 1
+        assert _didnt_go_count(stats_event) == 1

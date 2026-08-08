@@ -59,7 +59,7 @@ beforeEach(() => {
 });
 
 describe('AttendanceReportScreen', () => {
-  it("renders per-event attended / didn't go / going counts", () => {
+  it('renders per-event attended / no-show / going counts', () => {
     mockResult({ data: [makeRow()] });
     mockFlags({ report: true });
 
@@ -68,7 +68,7 @@ describe('AttendanceReportScreen', () => {
     expect(screen.getByText('potluck')).toBeInTheDocument();
     const row = screen.getByRole('link');
     expect(row).toHaveTextContent('4 attended');
-    expect(row).toHaveTextContent("1 didn't go");
+    expect(row).toHaveTextContent('1 no-show');
     expect(row).toHaveTextContent('6 going');
     expect(row).toHaveAttribute('href', '/events/e1/report');
   });
