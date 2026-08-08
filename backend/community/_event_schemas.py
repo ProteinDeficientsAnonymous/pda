@@ -254,7 +254,7 @@ class CancellationOut(BaseModel):
     name: str
     cancelled_at: datetime
     days_before_event: int
-    within_24_hours: bool
+    same_day: bool
     previous_status: str | None
 
 
