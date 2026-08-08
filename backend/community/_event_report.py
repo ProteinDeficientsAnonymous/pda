@@ -59,10 +59,8 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     attended, no_shows, canceled, unmarked = [], [], [], []
     for rsvp in _report_rsvps(event):
         base = _person(rsvp, viewer, can_see_phones)
-        # A host can check someone in regardless of their RSVP status (e.g. a
-        # "maybe" who showed up), so an ATTENDED mark takes priority over status.
-        # NO_SHOW only counts as a no-show if they'd actually RSVP'd to attend —
-        # marking a "cant go" or "maybe" as didn't-attend isn't a no-show.
+        # ATTENDED overrides status (a host can check in a "maybe"); NO_SHOW
+        # only counts if they were actually RSVP'd ATTENDING.
         if rsvp.attendance == AttendanceStatus.ATTENDED:
             attended.append(
                 AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
