@@ -20,16 +20,16 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
     return rsvp.event.status not in NON_REPORTABLE_EVENT_STATUSES
 
 
-def _is_marked(rsvp: EventRSVP, attendance: str) -> bool:
-    """Has this attendance mark (attended / didn't go)."""
-    return rsvp.attendance == attendance
+def _is_attended(rsvp: EventRSVP) -> bool:
+    return rsvp.attendance == AttendanceStatus.ATTENDED
+
+
+def _is_didnt_go(rsvp: EventRSVP) -> bool:
+    return rsvp.attendance == AttendanceStatus.DIDNT_GO
 
 
 def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
-    return (
-        _is_marked(rsvp, AttendanceStatus.ATTENDED)
-        and rsvp.event.event_type in QUALIFYING_EVENT_TYPES
-    )
+    return _is_attended(rsvp) and rsvp.event.event_type in QUALIFYING_EVENT_TYPES
 
 
 class MemberAttendanceStats(NamedTuple):
@@ -65,12 +65,10 @@ def compute_member_stats(
         1
         for rsvp in rsvps
         if _is_reportable(rsvp)
-        and _is_marked(rsvp, AttendanceStatus.ATTENDED)
+        and _is_attended(rsvp)
         and rsvp.event.event_type == EventType.COMMUNITY
     )
-    didnt_go_count = sum(
-        1 for rsvp in rsvps if _is_reportable(rsvp) and _is_marked(rsvp, AttendanceStatus.DIDNT_GO)
-    )
+    didnt_go_count = sum(1 for rsvp in rsvps if _is_reportable(rsvp) and _is_didnt_go(rsvp))
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
@@ -117,7 +115,7 @@ def attended_events(rsvps: Iterable[EventRSVP]) -> list[AttendedEvent]:
             event_type=rsvp.event.event_type,
         )
         for rsvp in rsvps
-        if _is_reportable(rsvp) and _is_marked(rsvp, AttendanceStatus.ATTENDED)
+        if _is_reportable(rsvp) and _is_attended(rsvp)
     ]
     events.sort(key=lambda e: (e.start_datetime is None, e.start_datetime))
     return events
