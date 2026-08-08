@@ -126,12 +126,8 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
 
-    Lead time is derived from the recorded cancelled_at transition timestamp,
-    falling back to updated_at for legacy rows that predate the column.
-    same_day compares calendar dates in local time (settings.TIME_ZONE) rather
-    than raw UTC timestamps, so a cancellation late at night doesn't misreport
-    as a different day just because UTC already rolled over.
-    Returns [] if the event has no start_datetime.
+    same_day compares local calendar dates, not raw UTC, to avoid misreporting
+    across a UTC day rollover.
     """
     if event.start_datetime is None:
         return []
