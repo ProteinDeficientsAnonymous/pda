@@ -1,3 +1,10 @@
+## [0.87.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.4...v0.87.5) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1333 - rename attendance page to check in ([#1337](https://github.com/ProteinDeficientsAnonymous/pda/issues/1337)) ([d61c4de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d61c4de23c041583e8d137036607a691fe4a5473))
+
 ## [0.87.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.3...v0.87.4) (2026-08-08)
 
 
