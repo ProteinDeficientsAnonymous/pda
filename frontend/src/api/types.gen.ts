@@ -2241,6 +2241,16 @@ export interface components {
              */
             canceled_count: number;
             /**
+             * Didnt Go
+             * @default []
+             */
+            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * No Show Count
              * @default 0
              */

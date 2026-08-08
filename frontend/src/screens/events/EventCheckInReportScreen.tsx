@@ -90,6 +90,7 @@ function ReportBody({
       <div className="flex flex-wrap gap-2 text-xs">
         <Pill label="attended" value={report.attendedCount} />
         <Pill label="no-show" value={report.noShowCount} />
+        <Pill label="didn't go" value={report.didntGoCount} />
         <Pill label="canceled" value={report.canceledCount} />
         <Pill label="unmarked" value={report.unmarkedCount} />
       </div>
@@ -99,6 +100,10 @@ function ReportBody({
       </PersonSection>
 
       <PersonSection title="no-shows" people={report.noShows} empty="no no-shows">
+        {(p) => <PersonRow key={p.userId} person={p} />}
+      </PersonSection>
+
+      <PersonSection title="didn't go" people={report.didntGo} empty="no one marked didn't go">
         {(p) => <PersonRow key={p.userId} person={p} />}
       </PersonSection>
 
