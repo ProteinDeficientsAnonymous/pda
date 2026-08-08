@@ -220,11 +220,11 @@ class TestCheckInReportEndpoint:
         row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
         assert row["name"] == "Ada Lovelace"
 
-    def test_marked_as_attended_shows_in_attended_list(self, api_client, past_event, members, host_user):
+    def test_marked_as_attended_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
         member = members[0]
-        rsvp = EventRSVP.objects.create(
-            event=past_event, user=member, status=RSVPStatus.ATTENDING
-        )
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
         ).json()
@@ -273,9 +273,7 @@ class TestCheckInReportEndpoint:
         self, api_client, past_event, members, host_user
     ):
         member = members[0]
-        rsvp = EventRSVP.objects.create(
-            event=past_event, user=member, status=RSVPStatus.ATTENDING
-        )
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
         rsvp.attendance = AttendanceStatus.NO_SHOW
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
