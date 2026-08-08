@@ -141,7 +141,7 @@
         "enum": [
           "unknown",
           "attended",
-          "no_show"
+          "didnt_go"
         ],
         "title": "AttendanceStatus",
         "type": "string"

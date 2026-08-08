@@ -66,7 +66,7 @@ export function rsvpGroupLabel(status: string): string {
 export const AttendanceStatus = {
   Unknown: 'unknown',
   Attended: 'attended',
-  DidntGo: 'no_show',
+  DidntGo: 'didnt_go',
 } as const;
 export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 

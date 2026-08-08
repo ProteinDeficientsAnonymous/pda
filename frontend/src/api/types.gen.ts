@@ -2109,7 +2109,7 @@ export interface components {
          * AttendanceStatus
          * @enum {string}
          */
-        AttendanceStatus: "unknown" | "attended" | "no_show";
+        AttendanceStatus: "unknown" | "attended" | "didnt_go";
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */

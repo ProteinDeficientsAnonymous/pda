@@ -82,7 +82,7 @@ class RSVPStatus(models.TextChoices):
 class AttendanceStatus(models.TextChoices):
     UNKNOWN = "unknown", "Unknown"
     ATTENDED = "attended", "Attended"
-    DIDNT_GO = "no_show", "Didn't go"
+    DIDNT_GO = "didnt_go", "Didn't go"
 
 
 class PollAvailability:
