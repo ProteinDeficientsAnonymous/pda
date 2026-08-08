@@ -1,3 +1,10 @@
+## [0.87.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.6...v0.87.7) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1332 - check-in report counts explicit no-show marks ([#1336](https://github.com/ProteinDeficientsAnonymous/pda/issues/1336)) ([60a90c5](https://github.com/ProteinDeficientsAnonymous/pda/commit/60a90c52c63c62318e69f6b77704c0f0e6a5f3e8))
+
 ## [0.87.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.5...v0.87.6) (2026-08-08)
 
 
