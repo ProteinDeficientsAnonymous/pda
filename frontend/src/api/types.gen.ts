@@ -2223,6 +2223,10 @@ export interface components {
             days_before_event: number;
             /** Name */
             name: string;
+            /** Previous Status */
+            previous_status: string | null;
+            /** Same Day */
+            same_day: boolean;
             /** User Id */
             user_id: string;
         };

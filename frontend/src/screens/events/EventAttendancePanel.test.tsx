@@ -45,7 +45,7 @@ const BASE_STATS: EventStats = {
       name: 'bob',
       cancelledAt: new Date('2026-05-29T12:00:00Z'),
       daysBeforeEvent: 3,
-      within24Hours: false,
+      sameDay: false,
       previousStatus: null,
     },
   ],
@@ -212,7 +212,7 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText(/cancelled 3 days before/i)).toBeInTheDocument();
   });
 
-  it('shows "within 24 hours" instead of day count when the backend flags it (Issue 1318)', () => {
+  it('shows "same day" when the backend flags a same-calendar-day cancellation (Issue 1318)', () => {
     const stats: EventStats = {
       ...BASE_STATS,
       cancellations: [
@@ -221,15 +221,14 @@ describe('EventAttendancePanel', () => {
           name: 'lastminute larry',
           cancelledAt: new Date('2026-06-04T13:00:00Z'),
           daysBeforeEvent: 0,
-          within24Hours: true,
+          sameDay: true,
           previousStatus: null,
         },
       ],
     };
     mockStats(stats);
     renderPanel(BASE_EVENT);
-    expect(screen.getByText(/cancelled within 24 hours/i)).toBeInTheDocument();
-    expect(screen.queryByText(/cancelled same day/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/cancelled same day/i)).toBeInTheDocument();
   });
 
   it('shows the prior rsvp status alongside a cancellation', () => {
@@ -241,7 +240,7 @@ describe('EventAttendancePanel', () => {
           name: 'was going wendy',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
-          within24Hours: false,
+          sameDay: false,
           previousStatus: RsvpServerStatus.Attending,
         },
         {
@@ -249,7 +248,7 @@ describe('EventAttendancePanel', () => {
           name: 'was maybe mia',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
-          within24Hours: false,
+          sameDay: false,
           previousStatus: RsvpServerStatus.Maybe,
         },
       ],
@@ -269,7 +268,7 @@ describe('EventAttendancePanel', () => {
           name: 'early bird',
           cancelledAt: new Date('2026-05-20T00:00:00Z'),
           daysBeforeEvent: 12,
-          within24Hours: false,
+          sameDay: false,
           previousStatus: null,
         },
         {
@@ -277,7 +276,7 @@ describe('EventAttendancePanel', () => {
           name: 'late one',
           cancelledAt: new Date('2026-05-31T00:00:00Z'),
           daysBeforeEvent: 1,
-          within24Hours: false,
+          sameDay: false,
           previousStatus: null,
         },
       ],
