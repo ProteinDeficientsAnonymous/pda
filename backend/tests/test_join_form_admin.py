@@ -3,7 +3,7 @@
 import json
 
 import pytest
-from community.models import JoinFormQuestion, JoinFormQuestionType
+from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -43,6 +43,25 @@ def _make_questions(count: int) -> list[JoinFormQuestion]:
     ]
 
 
+@pytest.mark.unit
+def test_question_type_enums_match_canonical_definitions():
+    catalog = {
+        question_type.name: (question_type.value, question_type.label)
+        for question_type in QuestionType
+    }
+    join = {
+        question_type.name: (question_type.value, question_type.label)
+        for question_type in JoinFormQuestionType
+    }
+
+    assert join == {name: catalog[name] for name in ("TEXT", "TEXTAREA", "SELECT")}
+    assert [question_type.value for question_type in JoinFormQuestionType] == [
+        "text",
+        "textarea",
+        "select",
+    ]
+
+
 @pytest.mark.django_db
 class TestReorderJoinFormQuestions:
     def test_reorder_updates_display_order(self, api_client, form_admin_headers):
@@ -77,3 +96,45 @@ class TestReorderJoinFormQuestions:
             content_type="application/json",
         )
         assert response.status_code == 401
+
+
+@pytest.mark.django_db
+class TestJoinFormQuestionTypes:
+    def test_create_textarea_question(self, api_client, form_admin_headers):
+        response = api_client.post(
+            "/api/community/join-form/questions/",
+            data=json.dumps(
+                {
+                    "label": "Why join?",
+                    "field_type": JoinFormQuestionType.TEXTAREA,
+                    "options": [],
+                    "required": True,
+                }
+            ),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["field_type"] == JoinFormQuestionType.TEXTAREA
+        assert (
+            JoinFormQuestion.objects.get(id=body["id"]).field_type == JoinFormQuestionType.TEXTAREA
+        )
+
+    def test_create_select_question(self, api_client, form_admin_headers):
+        response = api_client.post(
+            "/api/community/join-form/questions/",
+            data=json.dumps(
+                {
+                    "label": "Heard how?",
+                    "field_type": JoinFormQuestionType.SELECT,
+                    "options": ["friend", "flyer"],
+                    "required": False,
+                }
+            ),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["field_type"] == JoinFormQuestionType.SELECT
+        assert response.json()["options"] == ["friend", "flyer"]
