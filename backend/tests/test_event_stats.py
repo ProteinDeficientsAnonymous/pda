@@ -422,7 +422,9 @@ class TestSetAttendance:
         assert rsvp.attendance == AttendanceStatus.ATTENDED
         assert rsvp.checked_in_at is not None
 
-    def test_rejects_when_rsvp_not_going(self, api_client, open_check_in_event, host_user, members):
+    def test_allows_check_in_when_rsvp_not_going(
+        self, api_client, open_check_in_event, host_user, members
+    ):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.CANT_GO
         )
@@ -432,9 +434,9 @@ class TestSetAttendance:
             content_type="application/json",
             **_auth(host_user),
         )
-        assert response.status_code == 400
+        assert response.status_code == 200
 
-    def test_rejects_when_rsvp_waitlisted(
+    def test_allows_check_in_when_rsvp_waitlisted(
         self, api_client, open_check_in_event, host_user, members
     ):
         EventRSVP.objects.create(
@@ -446,7 +448,7 @@ class TestSetAttendance:
             content_type="application/json",
             **_auth(host_user),
         )
-        assert response.status_code == 400
+        assert response.status_code == 200
 
     def test_rejects_unknown_rsvp(self, api_client, open_check_in_event, host_user, members):
         response = api_client.post(
