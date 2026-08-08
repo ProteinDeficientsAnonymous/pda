@@ -2241,15 +2241,15 @@ export interface components {
              */
             canceled_count: number;
             /**
-             * Didnt Go
-             * @default []
-             */
-            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
-            /**
-             * Didnt Go Count
+             * No Show Count
              * @default 0
              */
-            didnt_go_count: number;
+            no_show_count: number;
+            /**
+             * No Shows
+             * @default []
+             */
+            no_shows: components["schemas"]["CheckInReportPersonOut"][];
             /**
              * Unmarked
              * @default []

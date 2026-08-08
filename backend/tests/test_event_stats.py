@@ -9,6 +9,7 @@ from community._rsvp_counts import (
     _attended_count,
     _didnt_go_count,
     _no_response_count,
+    _no_show_count,
 )
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.utils import timezone
@@ -205,7 +206,7 @@ class TestResolveCancelledAt:
 
 @pytest.mark.django_db
 class TestAttendanceCounts:
-    def test_attended_counts_the_mark_didnt_go_requires_was_going(self, stats_event, members):
+    def test_attended_and_didnt_go_count_the_mark_regardless_of_status(self, stats_event, members):
         EventRSVP.objects.create(
             event=stats_event,
             user=members[0],
@@ -218,15 +219,40 @@ class TestAttendanceCounts:
             status=RSVPStatus.ATTENDING,
             attendance=AttendanceStatus.DIDNT_GO,
         )
-        # attended is a fact regardless of status; didnt_go requires status=ATTENDING.
+        # both marks are facts regardless of a later status change.
         EventRSVP.objects.create(
             event=stats_event,
             user=members[2],
             status=RSVPStatus.CANT_GO,
             attendance=AttendanceStatus.ATTENDED,
         )
+        EventRSVP.objects.create(
+            event=stats_event,
+            user=members[3],
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
         assert _attended_count(stats_event) == 2
-        assert _didnt_go_count(stats_event) == 1
+        assert _didnt_go_count(stats_event) == 2
+
+    def test_no_show_requires_was_going(self, stats_event, members):
+        EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+        # marked didnt_go but not RSVP'd going — not a true no-show.
+        EventRSVP.objects.create(
+            event=stats_event,
+            user=members[1],
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
+            pk=stats_event.pk
+        )
+        assert _no_show_count(stats_event) == 1

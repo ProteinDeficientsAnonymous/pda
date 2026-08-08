@@ -20,11 +20,11 @@ class CanceledPersonOut(CheckInReportPersonOut):
 
 class CheckInReportOut(BaseModel):
     attended_count: int = 0
-    didnt_go_count: int = 0
+    no_show_count: int = 0
     canceled_count: int = 0
     unmarked_count: int = 0
     attended: list[AttendedPersonOut] = []
-    didnt_go: list[CheckInReportPersonOut] = []
+    no_shows: list[CheckInReportPersonOut] = []
     canceled: list[CanceledPersonOut] = []
     unmarked: list[CheckInReportPersonOut] = []
 
