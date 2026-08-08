@@ -205,7 +205,7 @@ class TestResolveCancelledAt:
 
 @pytest.mark.django_db
 class TestAttendanceCounts:
-    def test_attended_no_show_only_count_going(self, stats_event, members):
+    def test_attended_counts_the_mark_didnt_go_requires_was_going(self, stats_event, members):
         EventRSVP.objects.create(
             event=stats_event,
             user=members[0],
@@ -218,7 +218,7 @@ class TestAttendanceCounts:
             status=RSVPStatus.ATTENDING,
             attendance=AttendanceStatus.DIDNT_GO,
         )
-        # cant_go marked attended shouldn't count (defensive)
+        # attended is a fact regardless of status; didnt_go requires status=ATTENDING.
         EventRSVP.objects.create(
             event=stats_event,
             user=members[2],
@@ -228,5 +228,5 @@ class TestAttendanceCounts:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        assert _attended_count(stats_event) == 1
+        assert _attended_count(stats_event) == 2
         assert _didnt_go_count(stats_event) == 1

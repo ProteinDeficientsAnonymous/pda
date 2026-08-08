@@ -8,8 +8,8 @@ from typing import NamedTuple
 from django.db.models import Prefetch
 from django.utils import timezone
 
-from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES
-from community.models import AttendanceStatus, EventRSVP, EventType, RSVPStatus
+from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES, is_no_show
+from community.models import AttendanceStatus, EventRSVP, EventType
 
 QUALIFYING_EVENT_TYPES = (EventType.CLUB, EventType.OFFICIAL)
 QUALIFYING_WINDOW_DAYS = 365
@@ -21,12 +21,12 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
 
 
 def _is_marked(rsvp: EventRSVP, attendance: str) -> bool:
-    # gated on status=ATTENDING so a stranded mark after the rsvp flips to CANT_GO/removed isn't counted; mirrors attendance_q
-    return (
-        _is_reportable(rsvp)
-        and rsvp.status == RSVPStatus.ATTENDING
-        and rsvp.attendance == attendance
-    )
+    """Has this attendance mark, regardless of the rsvp's current status."""
+    return _is_reportable(rsvp) and rsvp.attendance == attendance
+
+
+def _is_reportable_no_show(rsvp: EventRSVP) -> bool:
+    return _is_reportable(rsvp) and is_no_show(rsvp)
 
 
 def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
@@ -69,7 +69,7 @@ def compute_member_stats(
         if _is_marked(rsvp, AttendanceStatus.ATTENDED)
         and rsvp.event.event_type == EventType.COMMUNITY
     )
-    didnt_go_count = sum(1 for rsvp in rsvps if _is_marked(rsvp, AttendanceStatus.DIDNT_GO))
+    didnt_go_count = sum(1 for rsvp in rsvps if _is_reportable_no_show(rsvp))
     cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
 
     return MemberAttendanceStats(
