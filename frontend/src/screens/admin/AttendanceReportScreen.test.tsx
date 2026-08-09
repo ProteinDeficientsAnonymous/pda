@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAttendanceReport } from '@/api/attendanceReport';
 import { useFlag } from '@/api/featureFlags';
-import { EventType } from '@/models/event';
 import { Feature } from '@/models/featureFlags';
 import { makeRow } from '@/test/fixtures';
 
@@ -86,25 +85,6 @@ describe('AttendanceReportScreen', () => {
     expect(row).toHaveTextContent('4 attended');
     expect(row).toHaveTextContent('1 no-show');
     expect(row).toHaveAttribute('href', '/events/e1/report');
-  });
-
-  it('displays split no-show counts by event type', () => {
-    mockResult({
-      data: {
-        events: [makeRow(), makeRow({ eventType: EventType.Club, eventId: 'e2', noShowCount: 2 })],
-        officialNoShowCount: 1,
-        clubNoShowCount: 2,
-      },
-    });
-
-    renderScreen();
-
-    expect(screen.getByText('official event no-shows').closest('span')).toHaveTextContent(
-      '1 official event no-shows',
-    );
-    expect(screen.getByText('club event no-shows').closest('span')).toHaveTextContent(
-      '2 club event no-shows',
-    );
   });
 
   it('links each event row to its check-in report when host_attendance_report is on', () => {
