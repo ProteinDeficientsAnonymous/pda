@@ -431,6 +431,17 @@
             "title": "Name",
             "type": "string"
           },
+          "previous_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Status"
+          },
           "user_id": {
             "title": "User Id",
             "type": "string"
@@ -440,7 +451,8 @@
           "user_id",
           "name",
           "cancelled_at",
-          "days_before_event"
+          "days_before_event",
+          "previous_status"
         ],
         "title": "CancellationOut",
         "type": "object"

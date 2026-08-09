@@ -2,6 +2,7 @@ import base64
 import os
 from datetime import date, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -230,3 +231,7 @@ FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
 # Floor for the attendance-reminder clock — no one's anchor predates this date.
 # Movable until the program announcement date is final (see attendance-analytics-design.md).
 ATTENDANCE_CLOCK_FLOOR = date(2026, 8, 1)
+
+# Reference timezone for "local calendar day" comparisons (event same-day labeling,
+# attendance-clock anchors). Deliberately not the global TIME_ZONE — see Issue 1318.
+LOCAL_DAY_TZ = ZoneInfo("America/New_York")

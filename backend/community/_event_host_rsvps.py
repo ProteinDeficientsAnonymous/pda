@@ -20,6 +20,7 @@ from community._event_helpers import (
 from community._event_rsvps import (
     _resolve_cancelled_at,
     _resolve_paid_confirmed_at,
+    _resolve_previous_status,
     _resolve_rsvp_status,
     _validate_rsvp_status,
     payment_audit_details,
@@ -71,6 +72,7 @@ def _apply_host_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "previous_status": _resolve_previous_status(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
         },
     )
