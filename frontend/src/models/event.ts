@@ -95,7 +95,6 @@ export interface EventCancellation {
   name: string;
   cancelledAt: Date;
   daysBeforeEvent: number;
-  sameDay: boolean;
   previousStatus: RsvpServerStatusValue | null;
 }
 

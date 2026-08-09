@@ -2225,8 +2225,6 @@ export interface components {
             name: string;
             /** Previous Status */
             previous_status: string | null;
-            /** Same Day */
-            same_day: boolean;
             /** User Id */
             user_id: string;
         };

@@ -125,30 +125,26 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
-    """Return currently-CANT_GO RSVPs with lead time (days before start).
+    """Return currently-CANT_GO RSVPs with lead time (local calendar days before start).
 
-    same_day compares local calendar dates, not raw UTC, to avoid misreporting
-    across a UTC day rollover.
+    Compares local calendar dates, not raw UTC durations, so a cancellation just
+    after local midnight isn't misreported as a full day early/late.
     """
     if event.start_datetime is None:
         return []
+    start_date = timezone.localtime(event.start_datetime, settings.LOCAL_DAY_TZ).date()
     rows = []
     for r in event.rsvps.all():
         if r.status != RSVPStatus.CANT_GO:
             continue
         cancelled_at = r.cancelled_at or r.updated_at
-        lead_time = event.start_datetime - cancelled_at
-        same_day = (
-            timezone.localtime(cancelled_at, settings.LOCAL_DAY_TZ).date()
-            == timezone.localtime(event.start_datetime, settings.LOCAL_DAY_TZ).date()
-        )
+        cancelled_date = timezone.localtime(cancelled_at, settings.LOCAL_DAY_TZ).date()
         rows.append(
             CancellationOut(
                 user_id=str(r.user_id),
                 name=visible_display_name(r.user, viewer),
                 cancelled_at=cancelled_at,
-                days_before_event=lead_time.days,
-                same_day=same_day,
+                days_before_event=(start_date - cancelled_date).days,
                 previous_status=r.previous_status,
             )
         )
