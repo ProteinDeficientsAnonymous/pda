@@ -1,3 +1,10 @@
+## [0.87.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.8...v0.87.9) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1316 - slide refresh cookie expiry on token refresh ([#1340](https://github.com/ProteinDeficientsAnonymous/pda/issues/1340)) ([b174745](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1747453d9ca1b5c98ee39c1cabca58d88de9c1b))
+
 ## [0.87.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.7...v0.87.8) (2026-08-09)
 
 
