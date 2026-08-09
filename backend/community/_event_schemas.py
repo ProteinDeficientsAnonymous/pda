@@ -82,7 +82,6 @@ def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
         raise_validation(Code.Event.RSVP_QUESTION_OPTION_NO_COMMA, field="options", status_code=400)
 
 
-
 def _looks_like_email(s: str) -> bool:
     return bool(_EMAIL_RE.match(s))
 
