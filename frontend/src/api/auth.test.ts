@@ -1,9 +1,8 @@
 import MockAdapter from 'axios-mock-adapter';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { authClient } from './client';
-
 import { restoreSession } from './auth';
+import { authClient } from './client';
 
 const wireUser = {
   id: 'user-1',
