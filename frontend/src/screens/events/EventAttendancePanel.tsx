@@ -36,9 +36,9 @@ export function EventAttendancePanel({ event }: Props) {
       {checkInOpen ? (
         <EventCheckInList
           guests={event.guests}
-          onMark={(userId, attendance) => {
+          onMark={(userId, attendance, forPlusOne) => {
             setAttendance.mutate(
-              { userId, attendance },
+              { userId, attendance, forPlusOne: forPlusOne ?? false },
               { onError: () => toast.error("couldn't save check-in — try again") },
             );
           }}

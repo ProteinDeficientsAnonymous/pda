@@ -115,6 +115,11 @@
         "properties": {
           "attendance": {
             "$ref": "#/components/schemas/AttendanceStatus"
+          },
+          "for_plus_one": {
+            "default": false,
+            "title": "For Plus One",
+            "type": "boolean"
           }
         },
         "required": [
@@ -163,6 +168,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -373,6 +383,11 @@
             "title": "Is Member",
             "type": "boolean"
           },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -526,6 +541,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -4744,6 +4764,26 @@
             "default": "",
             "title": "Photo Url",
             "type": "string"
+          },
+          "plus_one_attendance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceStatus"
+              }
+            ],
+            "default": "unknown"
+          },
+          "plus_one_checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus One Checked In At"
           },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"

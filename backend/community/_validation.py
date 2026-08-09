@@ -30,6 +30,7 @@ class Code:
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
+        NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"

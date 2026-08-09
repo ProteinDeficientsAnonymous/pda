@@ -4,13 +4,17 @@ import type { AttendanceStatusValue, EventGuest, RsvpServerStatusValue } from '@
 import { AttendanceStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
 import { cn } from '@/utils/cn';
 
+function firstName(name: string): string {
+  return name.split(' ')[0] ?? name;
+}
+
 export function EventCheckInList({
   guests,
   onMark,
   isPending,
 }: {
   guests: EventGuest[];
-  onMark: (userId: string, attendance: AttendanceStatusValue) => void;
+  onMark: (userId: string, attendance: AttendanceStatusValue, forPlusOne?: boolean) => void;
   isPending: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useState<RsvpServerStatusValue | null>(null);
@@ -32,32 +36,56 @@ export function EventCheckInList({
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((g) => (
-            <li
-              key={g.userId}
-              className="border-border flex items-center justify-between gap-2 rounded-md border p-2"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="text-foreground truncate text-sm">{g.name}</span>
-                <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
-              </span>
-              <div className="flex gap-1">
-                <AttendanceButton
-                  active={g.attendance === AttendanceStatus.Attended}
-                  label="attended"
-                  onClick={() => {
-                    onMark(g.userId, AttendanceStatus.Attended);
-                  }}
-                  disabled={isPending}
-                />
-                <AttendanceButton
-                  active={g.attendance === AttendanceStatus.DidntGo}
-                  label="didn't attend"
-                  onClick={() => {
-                    onMark(g.userId, AttendanceStatus.DidntGo);
-                  }}
-                  disabled={isPending}
-                />
+            <li key={g.userId} className="flex flex-col gap-2">
+              <div className="border-border flex items-center justify-between gap-2 rounded-md border p-2">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="text-foreground truncate text-sm">{g.name}</span>
+                  <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
+                </span>
+                <div className="flex gap-1">
+                  <AttendanceButton
+                    active={g.attendance === AttendanceStatus.Attended}
+                    label="attended"
+                    onClick={() => {
+                      onMark(g.userId, AttendanceStatus.Attended);
+                    }}
+                    disabled={isPending}
+                  />
+                  <AttendanceButton
+                    active={g.attendance === AttendanceStatus.DidntGo}
+                    label="didn't attend"
+                    onClick={() => {
+                      onMark(g.userId, AttendanceStatus.DidntGo);
+                    }}
+                    disabled={isPending}
+                  />
+                </div>
               </div>
+              {g.hasPlusOne ? (
+                <div className="border-border bg-surface-dim/40 ml-4 flex items-center justify-between gap-2 rounded-md border p-2">
+                  <span className="text-foreground-secondary truncate text-sm">
+                    {firstName(g.name)}&apos;s +1
+                  </span>
+                  <div className="flex gap-1">
+                    <AttendanceButton
+                      active={g.plusOneAttendance === AttendanceStatus.Attended}
+                      label="attended"
+                      onClick={() => {
+                        onMark(g.userId, AttendanceStatus.Attended, true);
+                      }}
+                      disabled={isPending}
+                    />
+                    <AttendanceButton
+                      active={g.plusOneAttendance === AttendanceStatus.DidntGo}
+                      label="didn't attend"
+                      onClick={() => {
+                        onMark(g.userId, AttendanceStatus.DidntGo, true);
+                      }}
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

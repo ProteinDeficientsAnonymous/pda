@@ -3,11 +3,28 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class ReportPlusOne:
+    GUEST = "guest"
+    YES = "yes"
+    NO = "no"
+
+
+class ReportBucket:
+    """Keys matching CheckInReportOut's list fields, for building the bucket dict in one place."""
+
+    ATTENDED = "attended"
+    NO_SHOWS = "no_shows"
+    DIDNT_GO = "didnt_go"
+    CANCELED = "canceled"
+    UNMARKED = "unmarked"
+
+
 class CheckInReportPersonOut(BaseModel):
     user_id: str
     name: str
     phone: str | None = None
     is_member: bool = True
+    is_plus_one_guest: bool = False
 
 
 class AttendedPersonOut(CheckInReportPersonOut):

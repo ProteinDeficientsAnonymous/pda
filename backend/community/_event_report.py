@@ -15,12 +15,13 @@ from community._event_report_schemas import (
     CanceledPersonOut,
     CheckInReportOut,
     CheckInReportPersonOut,
+    ReportBucket,
+    ReportPlusOne,
 )
 from community._events import _can_edit_event
-from community._rsvp_counts import is_attended, is_didnt_go, is_no_show
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, FeatureFlag, RSVPStatus, flag_enabled
+from community.models import AttendanceStatus, Event, FeatureFlag, RSVPStatus, flag_enabled
 
 router = Router()
 
@@ -44,50 +45,92 @@ def _report_rsvps(event: Event):
     return [r for r in event.rsvps.all() if r.status != RSVPStatus.REMOVED]
 
 
-def _person(rsvp, viewer, can_see_phones: bool) -> CheckInReportPersonOut:
+def _person(
+    rsvp, viewer, can_see_phones: bool, is_plus_one_guest: bool = False
+) -> CheckInReportPersonOut:
     return CheckInReportPersonOut(
         user_id=str(rsvp.user_id),
         name=visible_display_name(rsvp.user, viewer),
         phone=rsvp.user.phone_number if can_see_phones else None,
         is_member=rsvp.user.is_member,
+        is_plus_one_guest=is_plus_one_guest,
     )
+
+
+def _classify_attendance(
+    rsvp_status: str,
+    attendance: str,
+    checked_in_at,
+    person: CheckInReportPersonOut,
+    buckets: dict,
+) -> None:
+    """Bucket a person by attendance mark; caller has already ruled out CANT_GO."""
+    if attendance == AttendanceStatus.ATTENDED:
+        buckets[ReportBucket.ATTENDED].append(
+            AttendedPersonOut(**person.model_dump(), checked_in_at=checked_in_at)
+        )
+    elif rsvp_status == RSVPStatus.ATTENDING and attendance == AttendanceStatus.DIDNT_GO:
+        buckets[ReportBucket.NO_SHOWS].append(person)
+    elif attendance == AttendanceStatus.DIDNT_GO:
+        buckets[ReportBucket.DIDNT_GO].append(person)
+    else:
+        buckets[ReportBucket.UNMARKED].append(person)
+
+
+def _classify_cancellation(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict) -> None:
+    cancelled_at = rsvp.cancelled_at or rsvp.updated_at
+    buckets[ReportBucket.CANCELED].append(
+        CanceledPersonOut(**person.model_dump(), cancelled_at=cancelled_at)
+    )
+    if plus_one is not None:
+        buckets[ReportBucket.CANCELED].append(
+            CanceledPersonOut(**plus_one.model_dump(), cancelled_at=cancelled_at)
+        )
+
+
+def _classify_rsvp(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict) -> None:
+    if rsvp.status == RSVPStatus.CANT_GO:
+        _classify_cancellation(rsvp, person, plus_one, buckets)
+        return
+
+    _classify_attendance(rsvp.status, rsvp.attendance, rsvp.checked_in_at, person, buckets)
+    if plus_one is not None:
+        _classify_attendance(
+            rsvp.status, rsvp.plus_one_attendance, rsvp.plus_one_checked_in_at, plus_one, buckets
+        )
 
 
 def _build_report(event: Event, viewer) -> CheckInReportOut:
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
     can_see_phones = is_cohost(viewer, co_host_ids)
 
-    attended, no_shows, didnt_go, canceled, unmarked = [], [], [], [], []
+    buckets = {
+        ReportBucket.ATTENDED: [],
+        ReportBucket.NO_SHOWS: [],
+        ReportBucket.DIDNT_GO: [],
+        ReportBucket.CANCELED: [],
+        ReportBucket.UNMARKED: [],
+    }
     for rsvp in _report_rsvps(event):
-        base = _person(rsvp, viewer, can_see_phones)
-        if is_attended(rsvp):
-            attended.append(
-                AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
-            )
-        elif rsvp.status == RSVPStatus.CANT_GO:
-            canceled.append(
-                CanceledPersonOut(
-                    **base.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
-                )
-            )
-        elif is_no_show(rsvp):
-            no_shows.append(base)
-        elif is_didnt_go(rsvp):
-            didnt_go.append(base)
-        else:
-            unmarked.append(base)
+        person = _person(rsvp, viewer, can_see_phones)
+        plus_one = (
+            _person(rsvp, viewer, can_see_phones, is_plus_one_guest=True)
+            if rsvp.has_plus_one
+            else None
+        )
+        _classify_rsvp(rsvp, person, plus_one, buckets)
 
     return CheckInReportOut(
-        attended_count=len(attended),
-        no_show_count=len(no_shows),
-        didnt_go_count=len(didnt_go),
-        canceled_count=len(canceled),
-        unmarked_count=len(unmarked),
-        attended=attended,
-        no_shows=no_shows,
-        didnt_go=didnt_go,
-        canceled=canceled,
-        unmarked=unmarked,
+        attended_count=len(buckets[ReportBucket.ATTENDED]),
+        no_show_count=len(buckets[ReportBucket.NO_SHOWS]),
+        didnt_go_count=len(buckets[ReportBucket.DIDNT_GO]),
+        canceled_count=len(buckets[ReportBucket.CANCELED]),
+        unmarked_count=len(buckets[ReportBucket.UNMARKED]),
+        attended=buckets[ReportBucket.ATTENDED],
+        no_shows=buckets[ReportBucket.NO_SHOWS],
+        didnt_go=buckets[ReportBucket.DIDNT_GO],
+        canceled=buckets[ReportBucket.CANCELED],
+        unmarked=buckets[ReportBucket.UNMARKED],
     )
 
 
@@ -109,14 +152,19 @@ def _csv_safe(value: str) -> str:
     return value
 
 
-def _csv_row(rsvp, viewer, can_see_phones: bool, columns: list[str]) -> list[str]:
+def _csv_row(
+    rsvp, viewer, can_see_phones: bool, columns: list[str], is_plus_one_guest: bool = False
+) -> list[str]:
+    attendance = rsvp.plus_one_attendance if is_plus_one_guest else rsvp.attendance
     values = {
         "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
         "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
-        "attendance": rsvp.attendance,
+        "attendance": attendance,
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
-        "plus_one": "yes" if rsvp.has_plus_one else "no",
+        "plus_one": ReportPlusOne.GUEST
+        if is_plus_one_guest
+        else (ReportPlusOne.YES if rsvp.has_plus_one else ReportPlusOne.NO),
     }
     return [values[c] for c in columns]
 
@@ -152,6 +200,10 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     writer.writerow(selected)
     for rsvp in _report_rsvps(event):
         writer.writerow(_csv_row(rsvp, request.auth, can_see_phones, selected))
+        if rsvp.has_plus_one:
+            writer.writerow(
+                _csv_row(rsvp, request.auth, can_see_phones, selected, is_plus_one_guest=True)
+            )
 
     response = HttpResponse(buf.getvalue(), content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'

@@ -7,6 +7,7 @@ export interface CheckInReportPerson {
   name: string;
   phone: string | null;
   isMember: boolean;
+  isPlusOneGuest: boolean;
 }
 
 export interface AttendedPerson extends CheckInReportPerson {
@@ -35,6 +36,7 @@ interface WirePerson {
   name: string;
   phone: string | null;
   is_member: boolean;
+  is_plus_one_guest: boolean;
 }
 
 interface WireAttendedPerson extends WirePerson {
@@ -70,6 +72,7 @@ function mapReport(w: WireReport): CheckInReport {
       name: p.name,
       phone: p.phone,
       isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
       checkedInAt: p.checked_in_at ? new Date(p.checked_in_at) : null,
     })),
     noShows: w.no_shows.map((p) => ({
@@ -77,18 +80,21 @@ function mapReport(w: WireReport): CheckInReport {
       name: p.name,
       phone: p.phone,
       isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
     })),
     didntGo: w.didnt_go.map((p) => ({
       userId: p.user_id,
       name: p.name,
       phone: p.phone,
       isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
     })),
     canceled: w.canceled.map((p) => ({
       userId: p.user_id,
       name: p.name,
       phone: p.phone,
       isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
       cancelledAt: new Date(p.cancelled_at),
     })),
     unmarked: w.unmarked.map((p) => ({
@@ -96,6 +102,7 @@ function mapReport(w: WireReport): CheckInReport {
       name: p.name,
       phone: p.phone,
       isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
     })),
   };
 }

@@ -76,10 +76,14 @@ export function useEventStats(eventId: string | undefined, enabled: boolean) {
 export function useSetAttendance(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { userId: string; attendance: AttendanceStatusValue }) => {
+    mutationFn: async (args: {
+      userId: string;
+      attendance: AttendanceStatusValue;
+      forPlusOne?: boolean;
+    }) => {
       const { data } = await apiClient.post<WireEvent>(
         `/api/community/events/${eventId}/rsvps/${args.userId}/attendance/`,
-        { attendance: args.attendance },
+        { attendance: args.attendance, for_plus_one: args.forPlusOne ?? false },
       );
       return mapEvent(data);
     },

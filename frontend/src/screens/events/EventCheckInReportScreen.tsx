@@ -155,12 +155,18 @@ function GuestBadge() {
   );
 }
 
+function PlusOneGuestBadge() {
+  return (
+    <span className="bg-surface-dim text-foreground-secondary rounded px-1.5 py-0.5">+1 guest</span>
+  );
+}
+
 function PersonRow({ person }: { person: CheckInReportPerson }) {
   return (
     <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
       <span className="flex items-center gap-2">
         {person.name}
-        {!person.isMember ? <GuestBadge /> : null}
+        {person.isPlusOneGuest ? <PlusOneGuestBadge /> : !person.isMember ? <GuestBadge /> : null}
       </span>
     </li>
   );
@@ -171,7 +177,7 @@ function AttendedRow({ person }: { person: AttendedPerson }) {
     <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
       <span className="flex items-center gap-2">
         {person.name}
-        {!person.isMember ? <GuestBadge /> : null}
+        {person.isPlusOneGuest ? <PlusOneGuestBadge /> : !person.isMember ? <GuestBadge /> : null}
       </span>
     </li>
   );
@@ -182,7 +188,7 @@ function CanceledRow({ person }: { person: CanceledPerson }) {
     <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
       <span className="flex items-center gap-2">
         {person.name}
-        {!person.isMember ? <GuestBadge /> : null}
+        {person.isPlusOneGuest ? <PlusOneGuestBadge /> : !person.isMember ? <GuestBadge /> : null}
       </span>
       <span className="text-muted text-xs">canceled {formatShortDateTime(person.cancelledAt)}</span>
     </li>

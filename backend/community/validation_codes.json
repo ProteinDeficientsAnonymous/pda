@@ -127,6 +127,11 @@
         "params": []
       },
       {
+        "name": "NO_PLUS_ONE_TO_CHECK_IN",
+        "value": "event.no_plus_one_to_check_in",
+        "params": []
+      },
+      {
         "name": "PERM_DENIED",
         "value": "event.perm_denied",
         "params": [

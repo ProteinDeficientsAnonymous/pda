@@ -257,3 +257,67 @@ class TestSetAttendance:
             event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
         )
         assert rsvp.attendance == AttendanceStatus.UNKNOWN
+
+    def test_marks_plus_one_independently_of_member(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+        )
+        url = f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/"
+        api_client.post(
+            url,
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        api_client.post(
+            url,
+            {"attendance": AttendanceStatus.DIDNT_GO, "for_plus_one": True},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.ATTENDED
+        assert rsvp.checked_in_at is not None
+        assert rsvp.plus_one_attendance == AttendanceStatus.DIDNT_GO
+        assert rsvp.plus_one_checked_in_at is None
+
+    def test_plus_one_check_in_stamps_its_own_checked_in_at(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED, "for_plus_one": True},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.UNKNOWN
+        assert rsvp.plus_one_attendance == AttendanceStatus.ATTENDED
+        assert rsvp.plus_one_checked_in_at is not None
+
+    def test_rejects_plus_one_mark_when_no_plus_one(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED, "for_plus_one": True},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"][0]["code"] == "event.no_plus_one_to_check_in"

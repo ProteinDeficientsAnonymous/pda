@@ -72,6 +72,7 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
     const timer = setTimeout(() => void runSearch(''), 0);
     return () => {
       clearTimeout(timer);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
 

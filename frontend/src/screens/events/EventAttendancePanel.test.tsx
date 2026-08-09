@@ -123,7 +123,26 @@ describe('EventAttendancePanel', () => {
     fireEvent.click(attendedBtn);
 
     expect(setAttendanceMutate).toHaveBeenCalledWith(
-      { userId: 'alice', attendance: AttendanceStatus.Attended },
+      { userId: 'alice', attendance: AttendanceStatus.Attended, forPlusOne: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it('fires setAttendance with forPlusOne when the guest has a +1', () => {
+    mockStats(BASE_STATS);
+    const soonEvent: Event = {
+      ...BASE_EVENT,
+      guests: [makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true })],
+      startDatetime: new Date(Date.now() + 30 * 60 * 1000),
+    };
+    renderPanel(soonEvent);
+
+    expect(screen.getByText(/alice.?s \+1/i)).toBeInTheDocument();
+    const attendedButtons = screen.getAllByRole('button', { name: /^attended$/i });
+    fireEvent.click(attendedButtons[1]!);
+
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.Attended, forPlusOne: true },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
   });

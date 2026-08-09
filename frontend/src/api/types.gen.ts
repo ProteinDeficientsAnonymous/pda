@@ -2096,6 +2096,11 @@ export interface components {
         /** AttendanceIn */
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
+            /**
+             * For Plus One
+             * @default false
+             */
+            for_plus_one: boolean;
         };
         /** AttendanceReportOut */
         AttendanceReportOut: {
@@ -2119,6 +2124,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2190,6 +2200,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2278,6 +2293,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -4202,6 +4222,10 @@ export interface components {
              * @default
              */
             photo_url: string;
+            /** @default unknown */
+            plus_one_attendance: components["schemas"]["AttendanceStatus"];
+            /** Plus One Checked In At */
+            plus_one_checked_in_at?: string | null;
             status: components["schemas"]["RSVPStatus"];
             /** User Id */
             user_id: string;

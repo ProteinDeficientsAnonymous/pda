@@ -271,6 +271,12 @@ class EventRSVP(models.Model):
         default=AttendanceStatus.UNKNOWN,
     )
     checked_in_at = models.DateTimeField(null=True, blank=True)
+    plus_one_attendance = models.CharField(
+        max_length=20,
+        choices=AttendanceStatus.choices,
+        default=AttendanceStatus.UNKNOWN,
+    )
+    plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

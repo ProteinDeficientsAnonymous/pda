@@ -85,6 +85,7 @@ export interface EventGuest {
   photoUrl: string;
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
+  plusOneAttendance: AttendanceStatusValue;
   isMember: boolean;
   paidConfirmed: boolean;
 }
