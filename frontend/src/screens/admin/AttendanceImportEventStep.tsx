@@ -29,10 +29,20 @@ export function AttendanceImportEventStep({ onNext }: Props) {
         aria-label="event source"
         className="border-border-strong bg-surface flex w-full rounded-full border p-1"
       >
-        <ModeButton active={mode === 'existing'} onClick={() => { setMode('existing'); }}>
+        <ModeButton
+          active={mode === 'existing'}
+          onClick={() => {
+            setMode('existing');
+          }}
+        >
           existing event
         </ModeButton>
-        <ModeButton active={mode === 'new'} onClick={() => { setMode('new'); }}>
+        <ModeButton
+          active={mode === 'new'}
+          onClick={() => {
+            setMode('new');
+          }}
+        >
           new event
         </ModeButton>
       </div>
@@ -42,7 +52,9 @@ export function AttendanceImportEventStep({ onNext }: Props) {
           query={query}
           onQueryChange={setQuery}
           options={options}
-          onPick={(id) => { onNext({ eventId: id }); }}
+          onPick={(id) => {
+            onNext({ eventId: id });
+          }}
         />
       ) : (
         <NewEventFields
@@ -50,7 +62,9 @@ export function AttendanceImportEventStep({ onNext }: Props) {
           date={newDate}
           onTitleChange={setNewTitle}
           onDateChange={setNewDate}
-          onNext={() => { onNext({ eventTitle: newTitle, eventDate: newDate }); }}
+          onNext={() => {
+            onNext({ eventTitle: newTitle, eventDate: newDate });
+          }}
         />
       )}
     </div>
@@ -97,7 +111,9 @@ function ExistingEventPicker({
       <TextField
         label="search events"
         value={query}
-        onChange={(e) => { onQueryChange(e.target.value); }}
+        onChange={(e) => {
+          onQueryChange(e.target.value);
+        }}
         placeholder="search by title"
       />
       {options.length === 0 ? (
@@ -108,7 +124,9 @@ function ExistingEventPicker({
             <li key={o.id}>
               <button
                 type="button"
-                onClick={() => { onPick(o.id); }}
+                onClick={() => {
+                  onPick(o.id);
+                }}
                 className="hover:bg-background flex w-full items-center justify-between px-3 py-2 text-start text-sm"
               >
                 <span>{o.title.toLowerCase()}</span>
@@ -142,14 +160,18 @@ function NewEventFields({
       <TextField
         label="event name"
         value={title}
-        onChange={(e) => { onTitleChange(e.target.value); }}
+        onChange={(e) => {
+          onTitleChange(e.target.value);
+        }}
         placeholder="e.g. summer potluck"
       />
       <TextField
         label="event date"
         type="date"
         value={date}
-        onChange={(e) => { onDateChange(e.target.value); }}
+        onChange={(e) => {
+          onDateChange(e.target.value);
+        }}
       />
       <Button disabled={!title.trim() || !date} onClick={onNext}>
         continue

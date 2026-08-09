@@ -26,11 +26,21 @@ export default function AttendanceReportScreen() {
           <h1 className="mb-1 text-2xl font-medium tracking-tight">attendance</h1>
           <p className="text-muted text-sm">who actually showed up, per event and per member</p>
         </div>
-        <Button variant="secondary" onClick={() => { setImportOpen(true); }}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setImportOpen(true);
+          }}
+        >
           import from partiful
         </Button>
       </header>
-      <AttendanceImportDialog open={importOpen} onClose={() => { setImportOpen(false); }} />
+      <AttendanceImportDialog
+        open={importOpen}
+        onClose={() => {
+          setImportOpen(false);
+        }}
+      />
 
       {membersTabEnabled ? (
         <div

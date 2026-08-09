@@ -143,10 +143,7 @@ export function AttendanceImportDialog({ open, onClose }: Props) {
               {unresolvedCount} row{unresolvedCount === 1 ? '' : 's'} still need a member or skip
             </p>
           ) : null}
-          <Button
-            disabled={unresolvedCount > 0 || commitMutation.isPending}
-            onClick={handleCommit}
-          >
+          <Button disabled={unresolvedCount > 0 || commitMutation.isPending} onClick={handleCommit}>
             {commitMutation.isPending ? 'importing…' : 'confirm import'}
           </Button>
         </div>

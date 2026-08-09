@@ -20,7 +20,13 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
     return (
       <RowShell row={row}>
         <span className="text-muted text-xs italic">skipped</span>
-        <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => { onResolve(null, false); }}>
+        <Button
+          variant="ghost"
+          className="h-7 px-2 text-xs"
+          onClick={() => {
+            onResolve(null, false);
+          }}
+        >
           undo
         </Button>
       </RowShell>
@@ -31,7 +37,13 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
     return (
       <RowShell row={row}>
         <span className="text-foreground text-xs">→ {resolvedName.toLowerCase()}</span>
-        <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => { onResolve(null, false); }}>
+        <Button
+          variant="ghost"
+          className="h-7 px-2 text-xs"
+          onClick={() => {
+            onResolve(null, false);
+          }}
+        >
           change
         </Button>
       </RowShell>
@@ -42,7 +54,13 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
     <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
       <div className="flex items-center justify-between gap-3">
         <RowLabel row={row} />
-        <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => { onResolve(null, true); }}>
+        <Button
+          variant="ghost"
+          className="h-7 px-2 text-xs"
+          onClick={() => {
+            onResolve(null, true);
+          }}
+        >
           skip
         </Button>
       </div>
@@ -52,7 +70,9 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
             <button
               key={c.userId}
               type="button"
-              onClick={() => { onResolve(c.userId, false); }}
+              onClick={() => {
+                onResolve(c.userId, false);
+              }}
               className="bg-surface-dim hover:bg-background rounded-full px-2.5 py-1 text-xs"
             >
               {c.fullName.toLowerCase()} · {formatPhone(c.phoneNumber)}
@@ -113,7 +133,9 @@ function SearchPicker({
     <div className="flex flex-col gap-1">
       <input
         value={term}
-        onChange={(e) => { onTermChange(e.target.value); }}
+        onChange={(e) => {
+          onTermChange(e.target.value);
+        }}
         placeholder="search members by name or phone"
         aria-label={`search a member to match "${term}"`}
         className="border-border-strong bg-background h-8 w-full rounded-md border px-2 text-xs outline-none"
@@ -124,7 +146,9 @@ function SearchPicker({
             <li key={m.id}>
               <button
                 type="button"
-                onClick={() => { onPick(m); }}
+                onClick={() => {
+                  onPick(m);
+                }}
                 className="hover:bg-background flex w-full items-center justify-between px-2 py-1 text-start text-xs"
               >
                 <span>{m.fullName.toLowerCase()}</span>
