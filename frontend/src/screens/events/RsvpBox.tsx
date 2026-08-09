@@ -20,7 +20,7 @@ interface ConfirmArgs {
   comment?: string;
   hasPlusOne: boolean;
   paidConfirmed?: boolean;
-  answers: Record<string, RsvpAnswerValue>;
+  questionnaireResponses: Record<string, RsvpAnswerValue>;
 }
 
 interface Props {
@@ -72,7 +72,7 @@ export function RsvpBox({
   const showQuestions =
     questions.length > 0 && (status === RsvpStatus.Attending || status === RsvpStatus.Maybe);
 
-  function filledAnswers(): Record<string, RsvpAnswerValue> {
+  function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
     const next: Record<string, RsvpAnswerValue> = {};
     if (!showQuestions) return next;
     for (const q of questions) {
@@ -86,7 +86,11 @@ export function RsvpBox({
 
   function submit(paidConfirmed: boolean) {
     const trimmed = comment.trim();
-    const args: ConfirmArgs = { status, hasPlusOne, answers: filledAnswers() };
+    const args: ConfirmArgs = {
+      status,
+      hasPlusOne,
+      questionnaireResponses: filledQuestionnaireResponses(),
+    };
     if (showComment && trimmed) args.comment = trimmed;
     if (paidConfirmed) args.paidConfirmed = true;
     onConfirm(args);

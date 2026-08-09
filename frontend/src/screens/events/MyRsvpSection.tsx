@@ -73,7 +73,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     comment?: string;
     hasPlusOne: boolean;
     paidConfirmed?: boolean;
-    answers: Record<string, RsvpAnswerValue>;
+    questionnaireResponses: Record<string, RsvpAnswerValue>;
   }) {
     setError(null);
     try {
@@ -90,7 +90,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
-          answers: args.answers,
+          questionnaireResponses: args.questionnaireResponses,
           ...(args.comment === undefined ? {} : { comment: args.comment }),
           ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });
@@ -175,7 +175,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           busy={busy}
           questions={event.rsvpQuestions}
           initialAnswers={Object.fromEntries(
-            Object.entries(event.myRsvpAnswers).map(([id, snap]) => [id, snap.answer]),
+            Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
           )}
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}

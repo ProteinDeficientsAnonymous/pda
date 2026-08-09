@@ -57,7 +57,7 @@ describe('RsvpBox', () => {
         status: RsvpStatus.Attending,
         comment: 'snacks',
         hasPlusOne: false,
-        answers: {},
+        questionnaireResponses: {},
       }),
     );
   });
@@ -217,7 +217,7 @@ describe('RsvpBox', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
         status: RsvpStatus.Attending,
-        answers: { 'q-transport': 'driving' },
+        questionnaireResponses: { 'q-transport': 'driving' },
       }),
     );
   });

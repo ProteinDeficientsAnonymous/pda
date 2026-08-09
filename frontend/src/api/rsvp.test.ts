@@ -38,7 +38,7 @@ describe('useSetRsvp', () => {
     vi.clearAllMocks();
   });
 
-  it('should post answers with the RSVP body', async () => {
+  it('should post questionnaire_responses with the RSVP body', async () => {
     const { Wrapper } = buildWrapper();
     vi.mocked(apiClient.post).mockResolvedValue({
       data: { id: EVENT_ID, title: 'potluck', my_rsvp: RsvpStatus.Attending },
@@ -47,14 +47,14 @@ describe('useSetRsvp', () => {
     result.current.mutate({
       eventId: EVENT_ID,
       status: RsvpStatus.Attending,
-      answers: { q1: 'vegan' },
+      questionnaireResponses: { q1: 'vegan' },
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(apiClient.post).toHaveBeenCalledWith(
       `/api/community/events/${EVENT_ID}/rsvp/`,
       expect.objectContaining({
         status: RsvpStatus.Attending,
-        answers: { q1: 'vegan' },
+        questionnaire_responses: { q1: 'vegan' },
       }),
     );
   });
