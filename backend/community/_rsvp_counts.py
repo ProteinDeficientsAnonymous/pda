@@ -22,13 +22,23 @@ def reportable_events_q(prefix: str = "event") -> Q:
 
 
 def attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
-    """Attended/no-show predicate, gated on ATTENDING so stranded marks aren't counted.
+    """Has this attendance mark, regardless of the rsvp's current status.
 
     attendance(str): the AttendanceStatus to match.
     prefix(str): relation lookup prefix from the queried model to EventRSVP.
-    return(Q): filter on status=ATTENDING AND attendance=<attendance>.
+    return(Q): filter on attendance=<attendance>.
     """
-    return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING, f"{prefix}__attendance": attendance})
+    return Q(**{f"{prefix}__attendance": attendance})
+
+
+def no_show_q(prefix: str = "rsvps") -> Q:
+    """Was RSVP'd going and didn't go — the narrower, true no-show."""
+    return Q(
+        **{
+            f"{prefix}__status": RSVPStatus.ATTENDING,
+            f"{prefix}__attendance": AttendanceStatus.DIDNT_GO,
+        }
+    )
 
 
 def going_q(prefix: str = "rsvps") -> Q:
@@ -51,20 +61,31 @@ def going_headcount_expr(prefix: str = "rsvps") -> Coalesce:
     return Coalesce(Sum(_plus_one_weight_case(prefix), filter=going_q(prefix)), Value(0))
 
 
-def _is_attended(rsvp: EventRSVP) -> bool:
-    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED
+def is_attended(rsvp: EventRSVP) -> bool:
+    """Has an ATTENDED mark, regardless of the rsvp's current status. Shared across event surfaces."""
+    return rsvp.attendance == AttendanceStatus.ATTENDED
 
 
-def _is_no_show(rsvp: EventRSVP) -> bool:
-    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW
+def is_didnt_go(rsvp: EventRSVP) -> bool:
+    """Has a DIDNT_GO mark, regardless of the rsvp's current status. Shared across event surfaces."""
+    return rsvp.attendance == AttendanceStatus.DIDNT_GO
+
+
+def is_no_show(rsvp: EventRSVP) -> bool:
+    """Was RSVP'd going and didn't go — the narrower, true no-show. Shared across event surfaces."""
+    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.DIDNT_GO
 
 
 def _attended_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if _is_attended(r))
+    return sum(1 for r in event.rsvps.all() if is_attended(r))
+
+
+def _didnt_go_count(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if is_didnt_go(r))
 
 
 def _no_show_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if _is_no_show(r))
+    return sum(1 for r in event.rsvps.all() if is_no_show(r))
 
 
 def _not_marked_count(event: Event) -> int:

@@ -90,3 +90,28 @@ class TestEventGuestListVisibility:
         response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
         assert response.status_code == 200
         assert response.json()["guests"] == []
+
+    def test_guest_list_ordered_going_maybe_cant_go_waitlisted(
+        self, api_client, test_user, auth_headers
+    ):
+        event = make_official_event(created_by=test_user)
+        event.co_hosts.add(test_user)
+        waitlisted = User.objects.create_user(phone_number="+15551110001")
+        cant_go = User.objects.create_user(phone_number="+15551110002")
+        maybe = User.objects.create_user(phone_number="+15551110003")
+        going = User.objects.create_user(phone_number="+15551110004")
+        # created out of order to prove sort isn't relying on insertion/DB order
+        event.rsvps.create(user=waitlisted, status=RSVPStatus.WAITLISTED)
+        event.rsvps.create(user=cant_go, status=RSVPStatus.CANT_GO)
+        event.rsvps.create(user=maybe, status=RSVPStatus.MAYBE)
+        event.rsvps.create(user=going, status=RSVPStatus.ATTENDING)
+
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        statuses = [g["status"] for g in response.json()["guests"]]
+        assert statuses == [
+            RSVPStatus.ATTENDING,
+            RSVPStatus.MAYBE,
+            RSVPStatus.CANT_GO,
+            RSVPStatus.WAITLISTED,
+        ]

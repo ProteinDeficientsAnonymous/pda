@@ -52,10 +52,10 @@ export function EventCheckInList({
                     disabled={isPending}
                   />
                   <AttendanceButton
-                    active={g.attendance === AttendanceStatus.NoShow}
-                    label="no-show"
+                    active={g.attendance === AttendanceStatus.DidntGo}
+                    label="didn't attend"
                     onClick={() => {
-                      onMark(g.userId, AttendanceStatus.NoShow);
+                      onMark(g.userId, AttendanceStatus.DidntGo);
                     }}
                     disabled={isPending}
                   />
@@ -76,10 +76,10 @@ export function EventCheckInList({
                       disabled={isPending}
                     />
                     <AttendanceButton
-                      active={g.plusOneAttendance === AttendanceStatus.NoShow}
-                      label="no-show"
+                      active={g.plusOneAttendance === AttendanceStatus.DidntGo}
+                      label="didn't attend"
                       onClick={() => {
-                        onMark(g.userId, AttendanceStatus.NoShow, true);
+                        onMark(g.userId, AttendanceStatus.DidntGo, true);
                       }}
                       disabled={isPending}
                     />

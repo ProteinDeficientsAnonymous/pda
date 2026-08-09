@@ -2096,6 +2096,11 @@ export interface components {
         /** AttendanceIn */
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
+            /**
+             * For Plus One
+             * @default false
+             */
+            for_plus_one: boolean;
         };
         /** AttendanceReportOut */
         AttendanceReportOut: {
@@ -2109,7 +2114,7 @@ export interface components {
          * AttendanceStatus
          * @enum {string}
          */
-        AttendanceStatus: "unknown" | "attended" | "no_show";
+        AttendanceStatus: "unknown" | "attended" | "didnt_go";
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -2119,6 +2124,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2190,6 +2200,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2241,6 +2256,16 @@ export interface components {
              */
             canceled_count: number;
             /**
+             * Didnt Go
+             * @default []
+             */
+            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * No Show Count
              * @default 0
              */
@@ -2268,6 +2293,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -3329,6 +3359,11 @@ export interface components {
              */
             cant_go_count: number;
             /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * Going Count
              * @default 0
              */
@@ -3343,11 +3378,6 @@ export interface components {
              * @default 0
              */
             no_response_count: number;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /**
              * Not Marked Count
              * @default 0
@@ -3828,6 +3858,11 @@ export interface components {
              * @default false
              */
             compliant: boolean;
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
             /** Full Name */
             full_name: string;
             /**
@@ -3841,11 +3876,6 @@ export interface components {
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
             months_since_last_qualifying?: number | null;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /** Phone Number */
             phone_number: string;
             /**
@@ -4192,6 +4222,10 @@ export interface components {
              * @default
              */
             photo_url: string;
+            /** @default unknown */
+            plus_one_attendance: components["schemas"]["AttendanceStatus"];
+            /** Plus One Checked In At */
+            plus_one_checked_in_at?: string | null;
             status: components["schemas"]["RSVPStatus"];
             /** User Id */
             user_id: string;

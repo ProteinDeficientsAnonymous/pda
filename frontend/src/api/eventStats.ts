@@ -9,6 +9,7 @@ import type {
 
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
+import { checkInReportKeys } from './eventCheckInReport';
 import { mapEvent, type WireEvent } from './eventMapper';
 import { invalidateEventDetail, setEventDetailData } from './events';
 import { USERS_KEY } from './users';
@@ -27,7 +28,7 @@ interface WireStats {
   no_response_count: number;
   waitlisted_count: number;
   attended_count: number;
-  no_show_count: number;
+  didnt_go_count: number;
   not_marked_count: number;
   cancellations: WireCancellation[];
 }
@@ -49,7 +50,7 @@ function mapStats(w: WireStats): EventStats {
     noResponseCount: w.no_response_count,
     waitlistedCount: w.waitlisted_count,
     attendedCount: w.attended_count,
-    noShowCount: w.no_show_count,
+    didntGoCount: w.didnt_go_count,
     notMarkedCount: w.not_marked_count,
     cancellations: w.cancellations.map(mapCancellation),
   };
@@ -89,6 +90,7 @@ export function useSetAttendance(eventId: string) {
     onSuccess: () => {
       invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+      void qc.invalidateQueries({ queryKey: checkInReportKeys.detail(eventId) });
       // attendance marks feed the admin report + members-list last_attended.
       void qc.invalidateQueries({ queryKey: attendanceReportKey });
       void qc.invalidateQueries({ queryKey: USERS_KEY });

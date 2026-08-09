@@ -243,7 +243,7 @@ class TestCheckInPromotion:
         user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         host_headers = _auth(open_official_event.created_by)
         resp = self._mark(
-            api_client, open_official_event, user, host_headers, AttendanceStatus.NO_SHOW
+            api_client, open_official_event, user, host_headers, AttendanceStatus.DIDNT_GO
         )
         assert resp.status_code == 200
         user.refresh_from_db()

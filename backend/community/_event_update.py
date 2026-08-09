@@ -4,12 +4,12 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.utils import timezone
 
+from community._event_cohost_helpers import _update_co_hosts
 from community._event_helpers import (
     _can_edit_event,
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
-    _update_co_hosts,
     promote_from_waitlist,
 )
 from community._validation import Code, raise_validation

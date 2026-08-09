@@ -115,6 +115,11 @@
         "properties": {
           "attendance": {
             "$ref": "#/components/schemas/AttendanceStatus"
+          },
+          "for_plus_one": {
+            "default": false,
+            "title": "For Plus One",
+            "type": "boolean"
           }
         },
         "required": [
@@ -141,7 +146,7 @@
         "enum": [
           "unknown",
           "attended",
-          "no_show"
+          "didnt_go"
         ],
         "title": "AttendanceStatus",
         "type": "string"
@@ -163,6 +168,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -373,6 +383,11 @@
             "title": "Is Member",
             "type": "boolean"
           },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -478,6 +493,19 @@
             "title": "Canceled Count",
             "type": "integer"
           },
+          "didnt_go": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "Didnt Go",
+            "type": "array"
+          },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "no_show_count": {
             "default": 0,
             "title": "No Show Count",
@@ -513,6 +541,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -2820,6 +2853,11 @@
             "title": "Cant Go Count",
             "type": "integer"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "going_count": {
             "default": 0,
             "title": "Going Count",
@@ -2833,11 +2871,6 @@
           "no_response_count": {
             "default": 0,
             "title": "No Response Count",
-            "type": "integer"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
             "type": "integer"
           },
           "not_marked_count": {
@@ -3968,6 +4001,11 @@
             "title": "Compliant",
             "type": "boolean"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "full_name": {
             "title": "Full Name",
             "type": "string"
@@ -4003,11 +4041,6 @@
               }
             ],
             "title": "Months Since Last Qualifying"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
-            "type": "integer"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -4731,6 +4764,26 @@
             "default": "",
             "title": "Photo Url",
             "type": "string"
+          },
+          "plus_one_attendance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceStatus"
+              }
+            ],
+            "default": "unknown"
+          },
+          "plus_one_checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus One Checked In At"
           },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"
@@ -10794,7 +10847,7 @@
             "name": "columns",
             "required": false,
             "schema": {
-              "default": "name,phone,rsvp_status,attendance,checked_in_at,cancelled_at,plus_one",
+              "default": "name,phone,rsvp_status,attendance,cancelled_at,plus_one",
               "title": "Columns",
               "type": "string"
             }

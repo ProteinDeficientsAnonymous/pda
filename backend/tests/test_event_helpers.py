@@ -41,6 +41,8 @@ class TestBuildGuestList:
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
             checked_in_at=None,
+            plus_one_attendance=AttendanceStatus.UNKNOWN,
+            plus_one_checked_in_at=None,
             paid_confirmed_at=None,
         )
 

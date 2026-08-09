@@ -32,6 +32,7 @@ export const Code = {
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
+    NoPlusOneToCheckIn: 'event.no_plus_one_to_check_in',
     PermDenied: 'event.perm_denied',
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
@@ -252,6 +253,7 @@ export type ValidationCode =
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
+  | 'event.no_plus_one_to_check_in'
   | 'event.perm_denied'
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
@@ -412,6 +414,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
+  'event.no_plus_one_to_check_in': [],
   'event.perm_denied': ['action'],
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],

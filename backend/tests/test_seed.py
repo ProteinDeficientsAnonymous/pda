@@ -57,10 +57,10 @@ def test_seed_marks_attendance_on_past_event():
 
     event = Event.objects.get(title="Past Potluck (seed)")
     marked = event.rsvps.filter(
-        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW]
+        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO]
     )
     assert marked.filter(attendance=AttendanceStatus.ATTENDED).exists()
-    assert marked.filter(attendance=AttendanceStatus.NO_SHOW).exists()
+    assert marked.filter(attendance=AttendanceStatus.DIDNT_GO).exists()
 
 
 @pytest.mark.django_db

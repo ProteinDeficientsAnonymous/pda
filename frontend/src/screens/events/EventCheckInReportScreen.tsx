@@ -90,6 +90,7 @@ function ReportBody({
       <div className="flex flex-wrap gap-2 text-xs">
         <Pill label="attended" value={report.attendedCount} />
         <Pill label="no-show" value={report.noShowCount} />
+        <Pill label="didn't go" value={report.didntGoCount} />
         <Pill label="canceled" value={report.canceledCount} />
         <Pill label="unmarked" value={report.unmarkedCount} />
       </div>
@@ -99,6 +100,10 @@ function ReportBody({
       </PersonSection>
 
       <PersonSection title="no-shows" people={report.noShows} empty="no no-shows">
+        {(p) => <PersonRow key={p.userId} person={p} />}
+      </PersonSection>
+
+      <PersonSection title="didn't go" people={report.didntGo} empty="no one marked didn't go">
         {(p) => <PersonRow key={p.userId} person={p} />}
       </PersonSection>
 
@@ -174,9 +179,6 @@ function AttendedRow({ person }: { person: AttendedPerson }) {
         {person.name}
         {person.isPlusOneGuest ? <PlusOneGuestBadge /> : !person.isMember ? <GuestBadge /> : null}
       </span>
-      {person.checkedInAt ? (
-        <span className="text-muted text-xs">{formatShortDateTime(person.checkedInAt)}</span>
-      ) : null}
     </li>
   );
 }
@@ -196,10 +198,10 @@ function CanceledRow({ person }: { person: CanceledPerson }) {
 function BackLink({ eventId }: { eventId: string }) {
   return (
     <Link
-      to={`/events/${eventId}/attendance`}
+      to={`/events/${eventId}`}
       className="text-foreground-secondary hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
-      ← back to attendance
+      ← back to event
     </Link>
   );
 }

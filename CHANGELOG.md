@@ -1,3 +1,52 @@
+## [0.87.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.7...v0.87.8) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1339 - remove timestamp from check-in report ([#1341](https://github.com/ProteinDeficientsAnonymous/pda/issues/1341)) ([4b10285](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b10285e66bbafbc4b6eb60975c6720c63e5ceac))
+
+## [0.87.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.6...v0.87.7) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1332 - check-in report counts explicit no-show marks ([#1336](https://github.com/ProteinDeficientsAnonymous/pda/issues/1336)) ([60a90c5](https://github.com/ProteinDeficientsAnonymous/pda/commit/60a90c52c63c62318e69f6b77704c0f0e6a5f3e8))
+
+## [0.87.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.5...v0.87.6) (2026-08-08)
+
+
+### Bug Fixes
+
+* **events:** rename "no-show" label to "didn't go" in attendance UI ([#1338](https://github.com/ProteinDeficientsAnonymous/pda/issues/1338)) ([7eb9249](https://github.com/ProteinDeficientsAnonymous/pda/commit/7eb9249d33d408dddeff3a0a495ae211c4fd3116))
+
+## [0.87.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.4...v0.87.5) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1333 - rename attendance page to check in ([#1337](https://github.com/ProteinDeficientsAnonymous/pda/issues/1337)) ([d61c4de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d61c4de23c041583e8d137036607a691fe4a5473))
+
+## [0.87.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.3...v0.87.4) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1331 - check-in report back link returns to event ([#1334](https://github.com/ProteinDeficientsAnonymous/pda/issues/1334)) ([ab59f15](https://github.com/ProteinDeficientsAnonymous/pda/commit/ab59f15fff9e4ae8557b46b29520b9fc7ef2672e))
+
+## [0.87.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.2...v0.87.3) (2026-08-08)
+
+
+### Bug Fixes
+
+* **Issue 1327:** bucket check-in report by attendance mark, not RSVP status ([#1330](https://github.com/ProteinDeficientsAnonymous/pda/issues/1330)) ([af81165](https://github.com/ProteinDeficientsAnonymous/pda/commit/af81165920936ca78b93d6523aea5d81742c1b81))
+
+## [0.87.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.1...v0.87.2) (2026-08-08)
+
+
+### Bug Fixes
+
+* 1317 - sort host attendance guest list, rename no-show label ([#1325](https://github.com/ProteinDeficientsAnonymous/pda/issues/1325)) ([9abccfb](https://github.com/ProteinDeficientsAnonymous/pda/commit/9abccfb5b75bde2654934b7029629becc11b302c))
+
 ## [0.87.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.0...v0.87.1) (2026-08-08)
 
 
