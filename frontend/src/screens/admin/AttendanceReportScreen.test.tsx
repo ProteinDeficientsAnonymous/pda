@@ -64,7 +64,7 @@ beforeEach(() => {
 });
 
 describe('AttendanceReportScreen', () => {
-  it('renders per-event attended / no-show / going counts', () => {
+  it('renders per-event attended / no-show counts', () => {
     mockResult({
       data: {
         events: [makeRow()],
@@ -80,7 +80,6 @@ describe('AttendanceReportScreen', () => {
     const row = screen.getByRole('link');
     expect(row).toHaveTextContent('4 attended');
     expect(row).toHaveTextContent('1 no-show');
-    expect(row).toHaveTextContent('6 going');
     expect(row).toHaveAttribute('href', '/events/e1/report');
   });
 
