@@ -1,6 +1,6 @@
 import pytest
 from community._validation import Code
-from community.models import EventRSVP, EventRsvpQuestion, RSVPStatus
+from community.models import EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
@@ -32,14 +32,16 @@ class TestPublicRsvpAnswerUpdates:
         question = EventRsvpQuestion.objects.create(
             event=official_event,
             label="travel details",
-            field_type="textarea",
+            field_type=RsvpQuestionType.TEXTAREA,
             required=False,
         )
         EventRSVP.objects.create(
             event=official_event,
             user=nonmember,
             status=RSVPStatus.ATTENDING,
-            answers={str(question.id): {"label": question.label, "answer": "taking transit"}},
+            questionnaire_responses={
+                str(question.id): {"label": question.label, "answer": "taking transit"}
+            },
         )
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
 
@@ -60,7 +62,7 @@ class TestPublicRsvpAnswerUpdates:
         EventRsvpQuestion.objects.create(
             event=official_event,
             label="travel details",
-            field_type="textarea",
+            field_type=RsvpQuestionType.TEXTAREA,
             required=True,
         )
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
@@ -76,7 +78,7 @@ class TestPublicRsvpAnswerUpdates:
         current = EventRsvpQuestion.objects.create(
             event=official_event,
             label="current",
-            field_type="textarea",
+            field_type=RsvpQuestionType.TEXTAREA,
             required=False,
         )
         deleted_id = "00000000-0000-0000-0000-000000000001"
@@ -84,7 +86,7 @@ class TestPublicRsvpAnswerUpdates:
             event=official_event,
             user=nonmember,
             status=RSVPStatus.ATTENDING,
-            answers={
+            questionnaire_responses={
                 deleted_id: {"label": "deleted", "answer": "historical"},
                 str(current.id): {"label": "old current label", "answer": "unchanged"},
             },
@@ -97,11 +99,13 @@ class TestPublicRsvpAnswerUpdates:
             token,
             {
                 "status": RSVPStatus.MAYBE,
-                "answers": {str(current.id): "unchanged"},
+                "questionnaire_responses": {str(current.id): "unchanged"},
             },
         )
 
         assert response.status_code == 200
-        answers = EventRSVP.objects.get(event=official_event, user=nonmember).questionnaire_responses
+        answers = EventRSVP.objects.get(
+            event=official_event, user=nonmember
+        ).questionnaire_responses
         assert answers[deleted_id]["answer"] == "historical"
         assert answers[str(current.id)]["label"] == "old current label"

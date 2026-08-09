@@ -46,7 +46,7 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   const [comment, setComment] = useState('');
   const [answers, setAnswers] = useState<Record<string, RsvpAnswerValue>>(() =>
     Object.fromEntries(
-      Object.entries(event.myRsvpAnswers).map(([questionId, snapshot]) => [
+      Object.entries(event.myQuestionnaireResponses).map(([questionId, snapshot]) => [
         questionId,
         snapshot.answer,
       ]),
@@ -73,7 +73,7 @@ export function PublicRsvpCard({ token, event, status }: Props) {
         eventId: event.id,
         status: next,
         hasPlusOne: false,
-        answers,
+        questionnaireResponses: answers,
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
         ...(paidConfirmed ? { paidConfirmed: true } : {}),
       });

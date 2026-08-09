@@ -4985,15 +4985,6 @@
       },
       "PublicRsvpIn": {
         "properties": {
-          "answers": {
-            "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
-            },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
-            "title": "Answers",
-            "type": "object"
-          },
           "comment": {
             "anyOf": [
               {
@@ -5037,6 +5028,15 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "questionnaire_responses": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "title": "Questionnaire Responses",
+            "type": "object"
+          },
           "status": {
             "maxLength": 20,
             "title": "Status",
@@ -5060,22 +5060,6 @@
       },
       "PublicRsvpManageIn": {
         "properties": {
-          "answers": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "maxLength": 2000,
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Question UUID to answer; omit or send null to preserve saved answers.",
-            "title": "Answers"
-          },
           "comment": {
             "anyOf": [
               {
@@ -5097,6 +5081,22 @@
             "default": false,
             "title": "Paid Confirmed",
             "type": "boolean"
+          },
+          "questionnaire_responses": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Question UUID to answer; omit or send null to preserve saved answers.",
+            "title": "Questionnaire Responses"
           },
           "status": {
             "title": "Status",

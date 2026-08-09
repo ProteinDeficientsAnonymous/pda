@@ -48,7 +48,7 @@ class PublicRsvpIn(BaseModel):
     has_plus_one: bool = False
     paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    answers: dict[str, RsvpAnswer] = Field(
+    questionnaire_responses: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
         description="Question UUID to answer; checkbox values are comma-separated.",
     )
@@ -259,7 +259,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             _RsvpApply(
                 status=payload.status,
                 paid_confirmed=payload.paid_confirmed,
-                answers=payload.answers,
+                answers=payload.questionnaire_responses,
             ),
         )
         token = NonMemberRsvpToken.issue_or_extend(user)

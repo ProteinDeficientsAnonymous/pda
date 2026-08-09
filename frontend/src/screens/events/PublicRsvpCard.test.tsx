@@ -77,7 +77,9 @@ describe('PublicRsvpCard', () => {
     renderCard({
       status: RsvpServerStatus.Attending,
       event: {
-        myRsvpAnswers: { q1: { label: 'travel details', answer: 'taking transit' } },
+        myQuestionnaireResponses: {
+          q1: { label: 'travel details', answer: 'taking transit' },
+        },
         rsvpQuestions: [
           {
             id: 'q1',
@@ -93,7 +95,7 @@ describe('PublicRsvpCard', () => {
     expect(screen.getByLabelText('travel details')).toHaveValue('taking transit');
     fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
     expect(updateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ answers: { q1: 'taking transit' } }),
+      expect.objectContaining({ questionnaireResponses: { q1: 'taking transit' } }),
     );
   });
 

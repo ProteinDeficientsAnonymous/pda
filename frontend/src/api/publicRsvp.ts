@@ -109,7 +109,7 @@ interface UpdateArgs {
   hasPlusOne: boolean;
   comment?: string;
   paidConfirmed?: boolean;
-  answers?: Record<string, string>;
+  questionnaireResponses?: Record<string, string>;
 }
 
 function useManageInvalidate(token: string) {
@@ -133,14 +133,16 @@ export function useUpdatePublicMyRsvp(token: string) {
       hasPlusOne,
       comment,
       paidConfirmed,
-      answers,
+      questionnaireResponses,
     }: UpdateArgs) => {
       const body: PublicRsvpManageIn = {
         status,
         has_plus_one: hasPlusOne,
         comment: comment ?? null,
         paid_confirmed: paidConfirmed ?? false,
-        ...(answers === undefined ? {} : { answers }),
+        ...(questionnaireResponses === undefined
+          ? {}
+          : { questionnaire_responses: questionnaireResponses }),
       };
       const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
         params: { token },

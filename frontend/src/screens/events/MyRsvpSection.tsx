@@ -82,7 +82,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
-          answers: args.answers,
+          questionnaireResponses: args.questionnaireResponses,
           ...(args.comment !== undefined ? { comment: args.comment } : {}),
           ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });

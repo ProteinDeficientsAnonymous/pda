@@ -143,7 +143,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           status,
           has_plus_one: false,
           comment: comment.trim() || null,
-          answers: filledAnswers,
+          questionnaire_responses: filledAnswers,
           website,
           paid_confirmed: paidConfirmed,
         },

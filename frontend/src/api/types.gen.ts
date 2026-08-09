@@ -4382,13 +4382,6 @@ export interface components {
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
-            /**
-             * Answers
-             * @description Question UUID to answer; checkbox values are comma-separated.
-             */
-            answers?: {
-                [key: string]: string;
-            };
             /** Comment */
             comment?: string | null;
             /**
@@ -4415,6 +4408,13 @@ export interface components {
             paid_confirmed: boolean;
             /** Phone Number */
             phone_number: string;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            };
             /** Status */
             status: string;
             /**
@@ -4425,13 +4425,6 @@ export interface components {
         };
         /** PublicRsvpManageIn */
         PublicRsvpManageIn: {
-            /**
-             * Answers
-             * @description Question UUID to answer; omit or send null to preserve saved answers.
-             */
-            answers?: {
-                [key: string]: string;
-            } | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -4444,6 +4437,13 @@ export interface components {
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; omit or send null to preserve saved answers.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            } | null;
             /** Status */
             status: string;
         };

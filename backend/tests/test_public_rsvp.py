@@ -446,12 +446,12 @@ class TestPublicRsvpComment:
 @pytest.mark.django_db
 class TestPublicRsvpAnswers:
     def test_persists_required_answers(self, api_client, official_event, fake_email_sender):
-        from community.models import EventRsvpQuestion
+        from community.models import EventRsvpQuestion, RsvpQuestionType
 
         q = EventRsvpQuestion.objects.create(
             event=official_event,
             label="transport?",
-            field_type="select",
+            field_type=RsvpQuestionType.SELECT,
             options=["driving", "transit"],
             required=True,
             display_order=0,
@@ -459,19 +459,19 @@ class TestPublicRsvpAnswers:
         response = post(
             api_client,
             official_event,
-            answers={str(q.id): "driving"},
+            questionnaire_responses={str(q.id): "driving"},
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=official_event)
         assert rsvp.questionnaire_responses[str(q.id)]["answer"] == "driving"
 
     def test_required_answer_missing_rejected(self, api_client, official_event, fake_email_sender):
-        from community.models import EventRsvpQuestion
+        from community.models import EventRsvpQuestion, RsvpQuestionType
 
         EventRsvpQuestion.objects.create(
             event=official_event,
             label="transport?",
-            field_type="select",
+            field_type=RsvpQuestionType.SELECT,
             options=["driving", "transit"],
             required=True,
             display_order=0,

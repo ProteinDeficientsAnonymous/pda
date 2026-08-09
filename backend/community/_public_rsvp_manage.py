@@ -61,7 +61,7 @@ class PublicRsvpManageIn(BaseModel):
     has_plus_one: bool = False
     paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    answers: dict[str, RsvpAnswer] | None = Field(
+    questionnaire_responses: dict[str, RsvpAnswer] | None = Field(
         default=None,
         description="Question UUID to answer; omit or send null to preserve saved answers.",
     )
@@ -169,7 +169,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
             _RsvpApply(
                 status=payload.status,
                 paid_confirmed=payload.paid_confirmed,
-                answers=payload.answers,
+                answers=payload.questionnaire_responses,
             ),
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
