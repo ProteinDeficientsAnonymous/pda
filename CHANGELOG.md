@@ -1,3 +1,10 @@
+## [0.87.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.7...v0.87.8) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1339 - remove timestamp from check-in report ([#1341](https://github.com/ProteinDeficientsAnonymous/pda/issues/1341)) ([4b10285](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b10285e66bbafbc4b6eb60975c6720c63e5ceac))
+
 ## [0.87.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.6...v0.87.7) (2026-08-08)
 
 
