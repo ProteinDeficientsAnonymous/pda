@@ -108,6 +108,8 @@ def refresh_token(request, response: HttpResponse):
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
         refresh = RefreshToken(token)
+        # Slide the refresh cookie forward so it's an idle timeout, not a hard ceiling from login.
+        set_refresh_cookie(response, str(refresh))
         return Status(200, AccessOut(access=str(refresh.access_token)))
     except TokenError:
         raise_validation(

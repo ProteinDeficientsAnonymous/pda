@@ -95,6 +95,20 @@ class TestRefreshViaCookie:
         assert response.status_code == 200
         assert "access" in response.json()
 
+    def test_refresh_reissues_sliding_refresh_cookie(self, api_client, test_user):
+        refresh = RefreshToken.for_user(test_user)
+        api_client.cookies[REFRESH_COOKIE_NAME] = str(refresh)
+        response = api_client.post(
+            "/api/auth/refresh/",
+            {},
+            content_type="application/json",
+        )
+        assert response.status_code == 200
+        cookie = response.cookies.get(REFRESH_COOKIE_NAME)
+        assert cookie is not None
+        assert cookie["httponly"] is True
+        assert RefreshToken(cookie.value) is not None
+
     def test_invalid_cookie_clears_cookie(self, api_client, test_user):
         api_client.cookies[REFRESH_COOKIE_NAME] = "not.a.valid.token"
         response = api_client.post(
