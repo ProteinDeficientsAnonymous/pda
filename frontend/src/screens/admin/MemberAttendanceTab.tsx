@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -9,6 +9,7 @@ import {
 } from '@/api/memberAttendanceAnalytics';
 import { useUpdateUser } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
+import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -20,14 +21,33 @@ type Filter = 'all' | 'at-risk';
 export function MemberAttendanceTab() {
   const { data = [], isPending, isError } = useMemberAttendanceAnalytics();
   const [filter, setFilter] = useState<Filter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filtered = filter === 'at-risk' ? data.filter((m) => m.isPauseCandidate) : data;
+  const visible = useMemo(
+    () => filtered.filter((m) => m.fullName.toLowerCase().includes(searchQuery.toLowerCase())),
+    [filtered, searchQuery],
+  );
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load member attendance — try refreshing" />;
 
-  const visible = filter === 'at-risk' ? data.filter((m) => m.isPauseCandidate) : data;
-
   return (
     <div>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <TextField
+            label="search"
+            placeholder="name"
+            value={searchQuery}
+            maxLength={100}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+          />
+        </div>
+      </div>
+
       <div className="mb-3 flex items-center gap-2">
         <FilterButton
           active={filter === 'all'}
@@ -46,6 +66,12 @@ export function MemberAttendanceTab() {
           at risk
         </FilterButton>
       </div>
+
+      {visible.length > 0 ? (
+        <p className="text-foreground-tertiary mb-3 text-sm">
+          {visible.length === 1 ? '1 member' : `${String(visible.length)} members`}
+        </p>
+      ) : null}
 
       {visible.length === 0 ? (
         <p className="text-muted text-sm">nothing here 🌿</p>
