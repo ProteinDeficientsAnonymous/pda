@@ -30,7 +30,7 @@ from community.models import (
 
 router = Router()
 
-_MAX_CSV_SIZE = 2 * 1024 * 1024  # 2 MB
+_MAX_CSV_SIZE = 2 * 1024 * 1024
 _ALLOWED_CSV_TYPES = {"text/csv", "application/vnd.ms-excel", "text/plain"}
 
 
@@ -52,7 +52,6 @@ def _require_manage_events(request, action: str) -> None:
     auth=gated_jwt,
 )
 def list_attendance_import_event_options(request, q: str = ""):
-    """Existing events an admin can pick as the import target, newest first."""
     _require_manage_events(request, "list_attendance_import_event_options")
     events = Event.objects.exclude(status=EventStatus.DELETED).order_by("-start_datetime")
     if q.strip():
@@ -73,10 +72,6 @@ def list_attendance_import_event_options(request, q: str = ""):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def preview_attendance_import(request, csv_file: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
-    """Parse a raw Partiful export and return matched vs needs-review rows.
-
-    No writes happen here — this is read-only preview against existing users.
-    """
     _require_manage_events(request, "preview_attendance_import")
     if csv_file.content_type not in _ALLOWED_CSV_TYPES:
         raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
@@ -113,12 +108,7 @@ def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
 
 
 def _resolve_status_and_attendance(row) -> tuple[str, str]:
-    """Map a Partiful row to (RSVPStatus, AttendanceStatus).
-
-    Checked in → attended. RSVP'd going but not checked in → the canonical
-    no-show shape (attending + didnt_go, see _rsvp_counts.no_show_q). Anything
-    else (maybe/declined, never checked in) makes no attendance claim.
-    """
+    """Going+not-checked-in must map to attending+didnt_go — the no-show shape _rsvp_counts.no_show_q expects."""
     if row.checked_in:
         return RSVPStatus.ATTENDING, AttendanceStatus.ATTENDED
     if row.partiful_status.lower() == "going":
@@ -149,7 +139,6 @@ def _apply_row(event: Event, row, user: User) -> bool:
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def commit_attendance_import(request, payload: AttendanceImportCommitIn):
-    """Write reviewed rows into EventRSVP/AttendanceStatus, creating the event if needed."""
     _require_manage_events(request, "commit_attendance_import")
 
     event = _resolve_event(payload, request)

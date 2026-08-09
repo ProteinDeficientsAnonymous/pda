@@ -65,9 +65,7 @@ router.add_router("", join_request_submit_router)
 router.add_router("", join_request_resend_router)
 router.add_router("", login_link_router)
 router.add_router("", feedback_router)
-# Mount before events_router so the literal `/events/attendance-report/`,
-# `/events/attendance-analytics/members/`, and `/events/attendance-import/*`
-# routes resolve before that router's `/events/{event_id}/` parameterized route.
+# Mount before events_router so literal /events/attendance-* routes resolve before its /events/{event_id}/ param route.
 router.add_router("", attendance_report_router)
 router.add_router("", attendance_import_router)
 router.add_router("", events_router)

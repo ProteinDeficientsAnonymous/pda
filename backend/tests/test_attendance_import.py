@@ -1,5 +1,3 @@
-"""Tests for the Partiful attendance CSV import (preview + commit)."""
-
 import pytest
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
