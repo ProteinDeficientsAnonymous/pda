@@ -17,6 +17,7 @@ class ImportRowOut(BaseModel):
     matched_user_id: str | None = None
     matched_full_name: str | None = None
     candidates: list[ImportCandidateOut] = []
+    has_existing_rsvp: bool = False
 
 
 class AttendanceImportPreviewOut(BaseModel):

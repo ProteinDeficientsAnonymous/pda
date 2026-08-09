@@ -22,6 +22,7 @@ export interface ImportRow {
   matchedUserId: string | null;
   matchedFullName: string | null;
   candidates: ImportCandidate[];
+  hasExistingRsvp: boolean;
 }
 
 export interface AttendanceImportPreview {
@@ -49,6 +50,7 @@ interface WireRow {
   matched_user_id: string | null;
   matched_full_name: string | null;
   candidates: WireCandidate[];
+  has_existing_rsvp: boolean;
 }
 
 interface WirePreview {
@@ -75,6 +77,7 @@ function mapRow(w: WireRow): ImportRow {
       fullName: c.full_name,
       phoneNumber: c.phone_number,
     })),
+    hasExistingRsvp: w.has_existing_rsvp,
   };
 }
 
@@ -98,13 +101,16 @@ export function useAttendanceImportEventOptions(query: string) {
 
 export function usePreviewAttendanceImport() {
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, eventId }: { file: File; eventId?: string | undefined }) => {
       const formData = new FormData();
       formData.append('csv_file', file);
       const { data } = await apiClient.post<WirePreview>(
         '/api/community/events/attendance-import/preview/',
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          params: eventId ? { event_id: eventId } : undefined,
+        },
       );
       return {
         matched: data.matched.map(mapRow),

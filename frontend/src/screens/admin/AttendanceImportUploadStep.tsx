@@ -21,8 +21,8 @@ export function AttendanceImportUploadStep({ onFileReady, isPending }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted text-sm">
-        upload the raw partiful attendee export for this event (csv with name, status, checked in,
-        rsvp date columns)
+        upload the raw partiful attendee export for this event (csv with name, status, checked in
+        columns)
       </p>
       <input
         ref={inputRef}

@@ -39,6 +39,7 @@ export function AttendanceImportDialog({ open, onClose }: Props) {
   const [target, setTarget] = useState<EventTarget>({});
   const [preview, setPreview] = useState<AttendanceImportPreview | null>(null);
   const [resolutions, setResolutions] = useState<Record<number, RowResolution>>({});
+  const [pickedFullNames, setPickedFullNames] = useState<Record<number, string | null>>({});
 
   const previewMutation = usePreviewAttendanceImport();
   const commitMutation = useCommitAttendanceImport();
@@ -48,6 +49,7 @@ export function AttendanceImportDialog({ open, onClose }: Props) {
     setTarget({});
     setPreview(null);
     setResolutions({});
+    setPickedFullNames({});
   }
 
   function handleClose() {
@@ -56,20 +58,23 @@ export function AttendanceImportDialog({ open, onClose }: Props) {
   }
 
   function handleFileReady(file: File) {
-    previewMutation.mutate(file, {
-      onSuccess: (result) => {
-        setPreview(result);
-        const initial: Record<number, RowResolution> = {};
-        for (const row of [...result.matched, ...result.needsReview]) {
-          initial[row.rowIndex] = rowToResolution(row);
-        }
-        setResolutions(initial);
-        setStep('review');
+    previewMutation.mutate(
+      { file, eventId: target.eventId },
+      {
+        onSuccess: (result) => {
+          setPreview(result);
+          const initial: Record<number, RowResolution> = {};
+          for (const row of [...result.matched, ...result.needsReview]) {
+            initial[row.rowIndex] = rowToResolution(row);
+          }
+          setResolutions(initial);
+          setStep('review');
+        },
+        onError: (err) => {
+          toast.error(reportAttendanceImportError(err));
+        },
       },
-      onError: (err) => {
-        toast.error(reportAttendanceImportError(err));
-      },
-    });
+    );
   }
 
   function handleCommit() {
@@ -128,12 +133,14 @@ export function AttendanceImportDialog({ open, onClose }: Props) {
                 resolution={{
                   userId: resolutions[row.rowIndex]?.userId ?? null,
                   skip: resolutions[row.rowIndex]?.skip ?? false,
+                  pickedFullName: pickedFullNames[row.rowIndex],
                 }}
-                onResolve={(userId, skip) => {
+                onResolve={(userId, skip, fullName) => {
                   setResolutions((prev) => ({
                     ...prev,
                     [row.rowIndex]: { ...rowToResolution(row), userId, skip },
                   }));
+                  setPickedFullNames((prev) => ({ ...prev, [row.rowIndex]: fullName ?? null }));
                 }}
               />
             ))}

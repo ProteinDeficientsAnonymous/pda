@@ -40,7 +40,9 @@ def _matches_name(user: User, name_lower: str) -> bool:
     return name_lower in {c.strip().lower() for c in candidates if c}
 
 
-def match_row(row_index: int, raw_row: dict[str, str], pool: list[User]) -> ImportRowOut:
+def match_row(
+    row_index: int, raw_row: dict[str, str], pool: list[User], existing_rsvp_user_ids: set[str]
+) -> ImportRowOut:
     raw_name = raw_row.get("name", "")
     name_lower = raw_name.strip().lower()
     checked_in = raw_row.get("checked in", "").strip().lower() == "yes"
@@ -57,6 +59,7 @@ def match_row(row_index: int, raw_row: dict[str, str], pool: list[User]) -> Impo
             checked_in=checked_in,
             matched_user_id=str(user.id),
             matched_full_name=user.full_name,
+            has_existing_rsvp=str(user.id) in existing_rsvp_user_ids,
         )
 
     return ImportRowOut(
@@ -73,10 +76,13 @@ def match_row(row_index: int, raw_row: dict[str, str], pool: list[User]) -> Impo
     )
 
 
-def match_rows(rows: list[dict[str, str]]) -> tuple[list[ImportRowOut], list[ImportRowOut]]:
+def match_rows(
+    rows: list[dict[str, str]], existing_rsvp_user_ids: set[str] | None = None
+) -> tuple[list[ImportRowOut], list[ImportRowOut]]:
     pool = _candidate_pool()
+    existing = existing_rsvp_user_ids or set()
     matched, needs_review = [], []
     for i, row in enumerate(rows):
-        result = match_row(i, row, pool)
+        result = match_row(i, row, pool, existing)
         (matched if result.matched_user_id else needs_review).append(result)
     return matched, needs_review

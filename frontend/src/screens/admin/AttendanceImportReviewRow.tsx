@@ -7,14 +7,18 @@ import { formatPhone } from '@/utils/formatPhone';
 
 interface Props {
   row: ImportRow;
-  resolution: { userId: string | null; skip: boolean };
-  onResolve: (userId: string | null, skip: boolean) => void;
+  resolution: {
+    userId: string | null;
+    skip: boolean;
+    pickedFullName?: string | null | undefined;
+  };
+  onResolve: (userId: string | null, skip: boolean, fullName?: string | null) => void;
 }
 
 export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props) {
   const [term, setTerm] = useState('');
   const { data: searchResults = [] } = useUserSearch(term);
-  const resolvedName = resolvedUserName(row, resolution.userId);
+  const resolvedName = resolvedUserName(row, resolution.userId, resolution.pickedFullName);
 
   if (resolution.skip) {
     return (
@@ -36,7 +40,12 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
   if (resolvedName) {
     return (
       <RowShell row={row}>
-        <span className="text-foreground text-xs">→ {resolvedName.toLowerCase()}</span>
+        <span className="text-foreground text-xs">
+          → {resolvedName.toLowerCase()}
+          {row.hasExistingRsvp ? (
+            <span className="text-warning ml-1">(overwrites existing rsvp)</span>
+          ) : null}
+        </span>
         <Button
           variant="ghost"
           className="h-7 px-2 text-xs"
@@ -85,7 +94,7 @@ export function AttendanceImportReviewRow({ row, resolution, onResolve }: Props)
         onTermChange={setTerm}
         results={searchResults}
         onPick={(u) => {
-          onResolve(u.id, false);
+          onResolve(u.id, false, u.fullName);
         }}
       />
     </div>
@@ -112,10 +121,14 @@ function RowLabel({ row }: { row: ImportRow }) {
   );
 }
 
-function resolvedUserName(row: ImportRow, userId: string | null): string | null {
+function resolvedUserName(
+  row: ImportRow,
+  userId: string | null,
+  pickedFullName?: string | null,
+): string | null {
   if (!userId) return null;
   if (userId === row.matchedUserId) return row.matchedFullName;
-  return row.candidates.find((c) => c.userId === userId)?.fullName ?? 'selected';
+  return row.candidates.find((c) => c.userId === userId)?.fullName ?? pickedFullName ?? 'selected';
 }
 
 function SearchPicker({

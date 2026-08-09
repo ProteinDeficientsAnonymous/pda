@@ -71,15 +71,28 @@ def list_attendance_import_event_options(request, q: str = ""):
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
-def preview_attendance_import(request, csv_file: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
+def preview_attendance_import(
+    request,
+    csv_file: UploadedFile = File(...),  # ty: ignore[call-non-callable]
+    event_id: str | None = None,
+):
     _require_manage_events(request, "preview_attendance_import")
     if csv_file.content_type not in _ALLOWED_CSV_TYPES:
         raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
     if csv_file.size and csv_file.size > _MAX_CSV_SIZE:
         raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
 
+    existing_rsvp_user_ids: set[str] = set()
+    if event_id:
+        existing_rsvp_user_ids = {
+            str(uid)
+            for uid in Event.objects.filter(id=event_id)
+            .exclude(rsvps__user_id=None)
+            .values_list("rsvps__user_id", flat=True)
+        }
+
     rows = parse_partiful_csv(csv_file.read())
-    matched, needs_review = match_rows(rows)
+    matched, needs_review = match_rows(rows, existing_rsvp_user_ids)
     return Status(200, AttendanceImportPreviewOut(matched=matched, needs_review=needs_review))
 
 
@@ -110,13 +123,13 @@ def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
         event_type=EventType.COMMUNITY,
         visibility=PageVisibility.PUBLIC,
         status=EventStatus.ACTIVE,
-        rsvp_enabled=False,
+        rsvp_enabled=True,
         created_by=request.auth,
     )
 
 
 def _resolve_status_and_attendance(row) -> tuple[str, str]:
-    """Going+not-checked-in must map to attending+didnt_go — the no-show shape _rsvp_counts.no_show_q expects."""
+    """Going+not-checked-in must map to attending+didnt_go — the didn't-go shape _rsvp_counts.no_show_q expects."""
     if row.checked_in:
         return RSVPStatus.ATTENDING, AttendanceStatus.ATTENDED
     if row.partiful_status.lower() == "going":

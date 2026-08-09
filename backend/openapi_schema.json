@@ -3482,6 +3482,11 @@
             "title": "Checked In",
             "type": "boolean"
           },
+          "has_existing_rsvp": {
+            "default": false,
+            "title": "Has Existing Rsvp",
+            "type": "boolean"
+          },
           "matched_full_name": {
             "anyOf": [
               {
@@ -9150,7 +9155,24 @@
     "/api/community/events/attendance-import/preview/": {
       "post": {
         "operationId": "community__attendance_import_preview_attendance_import",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {

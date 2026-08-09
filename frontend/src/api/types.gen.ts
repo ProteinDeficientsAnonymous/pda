@@ -693,10 +693,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Commit Attendance Import
-         * @description Write reviewed rows into EventRSVP/AttendanceStatus, creating the event if needed.
-         */
+        /** Commit Attendance Import */
         post: operations["community__attendance_import_commit_attendance_import"];
         delete?: never;
         options?: never;
@@ -711,10 +708,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Attendance Import Event Options
-         * @description Existing events an admin can pick as the import target, newest first.
-         */
+        /** List Attendance Import Event Options */
         get: operations["community__attendance_import_list_attendance_import_event_options"];
         put?: never;
         post?: never;
@@ -733,12 +727,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Preview Attendance Import
-         * @description Parse a raw Partiful export and return matched vs needs-review rows.
-         *
-         *     No writes happen here — this is read-only preview against existing users.
-         */
+        /** Preview Attendance Import */
         post: operations["community__attendance_import_preview_attendance_import"];
         delete?: never;
         options?: never;
@@ -3684,6 +3673,11 @@ export interface components {
             candidates: components["schemas"]["ImportCandidateOut"][];
             /** Checked In */
             checked_in: boolean;
+            /**
+             * Has Existing Rsvp
+             * @default false
+             */
+            has_existing_rsvp: boolean;
             /** Matched Full Name */
             matched_full_name?: string | null;
             /** Matched User Id */
@@ -6957,7 +6951,9 @@ export interface operations {
     };
     community__attendance_import_preview_attendance_import: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;

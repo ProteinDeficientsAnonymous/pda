@@ -137,6 +137,27 @@ class TestPreviewEndpoint:
         assert len(body["needs_review"]) == 1
         assert len(body["needs_review"][0]["candidates"]) == 2
 
+    def test_no_event_id_leaves_has_existing_rsvp_false(self, api_client, events_admin, alice):
+        response = api_client.post(
+            "/api/community/events/attendance-import/preview/",
+            {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
+            **_auth(events_admin),
+        )
+        body = response.json()
+        assert body["matched"][0]["has_existing_rsvp"] is False
+
+    def test_event_id_flags_rows_with_existing_rsvp(
+        self, api_client, events_admin, past_event, alice
+    ):
+        EventRSVP.objects.create(event=past_event, user=alice, status=RSVPStatus.ATTENDING)
+        response = api_client.post(
+            f"/api/community/events/attendance-import/preview/?event_id={past_event.id}",
+            {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
+            **_auth(events_admin),
+        )
+        body = response.json()
+        assert body["matched"][0]["has_existing_rsvp"] is True
+
     def test_malformed_csv_rejected(self, api_client, events_admin):
         bad = SimpleUploadedFile(
             "bad.csv", b"not,the,right,headers\n1,2,3,4", content_type="text/csv"
