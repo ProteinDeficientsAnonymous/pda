@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { QuestionType } from '@/api/questionTypes';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
@@ -20,14 +21,14 @@ describe('EventRsvpResponsesSection', () => {
         {
           id: 'q1',
           label: 'how are you getting there?',
-          fieldType: 'select',
+          fieldType: QuestionType.Select,
           options: ['driving', 'transit'],
           required: true,
         },
         {
           id: 'q2',
           label: 'notes',
-          fieldType: 'textarea',
+          fieldType: QuestionType.Textarea,
           options: [],
           required: false,
         },
@@ -37,7 +38,7 @@ describe('EventRsvpResponsesSection', () => {
           userId: 'a',
           name: 'alice',
           status: RsvpServerStatus.Attending,
-          answers: {
+          questionnaireResponses: {
             q1: { label: 'how are you getting there?', answer: 'driving' },
             q2: { label: 'notes', answer: 'bringing chips' },
           },
@@ -46,7 +47,7 @@ describe('EventRsvpResponsesSection', () => {
           userId: 'b',
           name: 'bob',
           status: RsvpServerStatus.Maybe,
-          answers: {
+          questionnaireResponses: {
             q1: { label: 'how are you getting there?', answer: 'transit' },
           },
         }),
@@ -54,7 +55,7 @@ describe('EventRsvpResponsesSection', () => {
           userId: 'c',
           name: 'cara',
           status: RsvpServerStatus.CantGo,
-          answers: {},
+          questionnaireResponses: {},
         }),
       ],
     });
@@ -80,7 +81,7 @@ describe('EventRsvpResponsesSection', () => {
             {
               id: 'q1',
               label: 'q',
-              fieldType: 'textarea',
+              fieldType: QuestionType.Textarea,
               options: [],
               required: false,
             },
@@ -102,7 +103,7 @@ describe('EventRsvpResponsesSection', () => {
               userId: 'a',
               name: 'alice',
               status: RsvpServerStatus.Attending,
-              answers: {
+              questionnaireResponses: {
                 orphan: { label: 'old dietary question', answer: 'vegan' },
               },
             }),
@@ -122,7 +123,7 @@ describe('EventRsvpResponsesSection', () => {
             {
               id: 'q1',
               label: 'new question',
-              fieldType: 'textarea',
+              fieldType: QuestionType.Textarea,
               options: [],
               required: false,
             },
@@ -131,7 +132,7 @@ describe('EventRsvpResponsesSection', () => {
             makeGuest({
               userId: 'a',
               name: 'alice',
-              answers: {
+              questionnaireResponses: {
                 q1: { label: 'old question', answer: 'old answer' },
               },
             }),

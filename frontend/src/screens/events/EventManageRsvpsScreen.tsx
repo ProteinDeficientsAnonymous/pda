@@ -7,7 +7,7 @@ import { canManageEvent } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
-import { hasSavedRsvpAnswers } from './rsvpQuestions';
+import { hasSavedQuestionnaireResponses } from './rsvpQuestions';
 
 export default function EventManageRsvpsScreen() {
   const { id } = useParams<{ id: string }>();
@@ -28,7 +28,8 @@ export default function EventManageRsvpsScreen() {
       <ForbiddenNotice eventId={event.id} message="only the host or a co-host can manage rsvps" />
     );
   }
-  const hasQuestionHistory = event.rsvpQuestions.length > 0 || hasSavedRsvpAnswers(event);
+  const hasQuestionHistory =
+    event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
   if (!event.rsvpEnabled && !hasQuestionHistory) {
     return (
       <ForbiddenNotice

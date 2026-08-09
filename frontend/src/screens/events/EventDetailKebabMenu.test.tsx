@@ -185,7 +185,9 @@ describe('EventDetailKebabMenu', () => {
         rsvpQuestions: [],
         guests: [
           makeGuest({
-            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+            questionnaireResponses: {
+              deleted: { label: 'deleted question', answer: 'saved answer' },
+            },
           }),
         ],
       },
@@ -208,7 +210,9 @@ describe('EventDetailKebabMenu', () => {
         guests: [
           makeGuest({
             status: 'cant_go',
-            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+            questionnaireResponses: {
+              deleted: { label: 'deleted question', answer: 'saved answer' },
+            },
           }),
         ],
       },

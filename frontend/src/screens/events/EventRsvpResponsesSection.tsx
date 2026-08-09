@@ -1,3 +1,4 @@
+import { QuestionType } from '@/api/questionTypes';
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 
@@ -29,7 +30,7 @@ function responseColumns(
   }));
   const seen = new Set(cols.map((column) => column.key));
   for (const g of guests) {
-    for (const [qid, snap] of Object.entries(g.answers)) {
+    for (const [qid, snap] of Object.entries(g.questionnaireResponses)) {
       const key = `${qid}:${snap.label}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -45,7 +46,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
   if (columns.length === 0) return null;
 
   const choiceColumns = columns.filter(
-    (q) => q.fieldType === 'select' || q.fieldType === 'checkbox',
+    (q) => q.fieldType === QuestionType.Select || q.fieldType === QuestionType.Checkbox,
   );
 
   return (
@@ -90,7 +91,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
                   <td className="text-muted px-3 py-2 text-xs">{statusLabel(g.status)}</td>
                   {columns.map((q) => (
                     <td key={q.key} className="text-foreground px-3 py-2 whitespace-pre-wrap">
-                      {renderAnswerForColumn(g.answers[q.id], q)}
+                      {renderAnswerForColumn(g.questionnaireResponses[q.id], q)}
                     </td>
                   ))}
                 </tr>
@@ -109,10 +110,10 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
 
   let answered = 0;
   for (const g of guests) {
-    const snap = g.answers[question.id];
+    const snap = g.questionnaireResponses[question.id];
     if (snap?.label !== question.label) continue;
     const values =
-      question.fieldType === 'checkbox'
+      question.fieldType === QuestionType.Checkbox
         ? snap.answer.split(',').filter(Boolean)
         : snap.answer
           ? [snap.answer]
