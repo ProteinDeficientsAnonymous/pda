@@ -15,6 +15,7 @@ from community._event_report_schemas import (
     CanceledPersonOut,
     CheckInReportOut,
     CheckInReportPersonOut,
+    ReportPlusOne,
 )
 from community._events import _can_edit_event
 from community._shared import ErrorOut
@@ -158,7 +159,9 @@ def _csv_row(
         "rsvp_status": rsvp.status,
         "attendance": attendance,
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
-        "plus_one": "guest" if is_plus_one_guest else ("yes" if rsvp.has_plus_one else "no"),
+        "plus_one": ReportPlusOne.GUEST
+        if is_plus_one_guest
+        else (ReportPlusOne.YES if rsvp.has_plus_one else ReportPlusOne.NO),
     }
     return [values[c] for c in columns]
 

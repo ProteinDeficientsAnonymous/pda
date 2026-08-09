@@ -3,6 +3,12 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class ReportPlusOne:
+    GUEST = "guest"
+    YES = "yes"
+    NO = "no"
+
+
 class CheckInReportPersonOut(BaseModel):
     user_id: str
     name: str
