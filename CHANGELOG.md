@@ -1,3 +1,10 @@
+## [0.88.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.2...v0.88.3) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1344 - remove going/heads stat from attendance report ([#1347](https://github.com/ProteinDeficientsAnonymous/pda/issues/1347)) ([eabe652](https://github.com/ProteinDeficientsAnonymous/pda/commit/eabe652e680cbd2092ed2df5c3e5ec531a9648e1))
+
 ## [0.88.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.1...v0.88.2) (2026-08-09)
 
 
