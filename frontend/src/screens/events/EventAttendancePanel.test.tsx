@@ -132,9 +132,7 @@ describe('EventAttendancePanel', () => {
     mockStats(BASE_STATS);
     const soonEvent: Event = {
       ...BASE_EVENT,
-      guests: [
-        makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true }),
-      ],
+      guests: [makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true })],
       startDatetime: new Date(Date.now() + 30 * 60 * 1000),
     };
     renderPanel(soonEvent);
