@@ -96,7 +96,7 @@ function CancellationsList({ cancellations }: { cancellations: EventCancellation
           {filtered.map((c) => (
             <li key={c.userId} className="text-foreground-secondary">
               <span className="text-foreground">{c.name}</span> —{' '}
-              {formatLeadTime(c.daysBeforeEvent, c.sameDay)}
+              {formatLeadTime(c.daysBeforeEvent)}
               {c.previousStatus ? ` (was ${rsvpGroupLabel(c.previousStatus)})` : ''}
             </li>
           ))}
@@ -152,9 +152,9 @@ function WithinDaysFilter({
   );
 }
 
-function formatLeadTime(days: number, sameDay: boolean): string {
+function formatLeadTime(days: number): string {
+  if (days === 0) return 'cancelled same day';
   if (days < 0) return `cancelled ${String(Math.abs(days))} days after start`;
-  if (sameDay) return 'cancelled same day';
   if (days === 1) return 'cancelled 1 day before';
   return `cancelled ${String(days)} days before`;
 }

@@ -45,7 +45,6 @@ const BASE_STATS: EventStats = {
       name: 'bob',
       cancelledAt: new Date('2026-05-29T12:00:00Z'),
       daysBeforeEvent: 3,
-      sameDay: false,
       previousStatus: null,
     },
   ],
@@ -212,7 +211,7 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText(/cancelled 3 days before/i)).toBeInTheDocument();
   });
 
-  it('shows "same day" when the backend flags a same-calendar-day cancellation (Issue 1318)', () => {
+  it('shows "same day" when the backend reports zero days before start (Issue 1318)', () => {
     const stats: EventStats = {
       ...BASE_STATS,
       cancellations: [
@@ -221,7 +220,6 @@ describe('EventAttendancePanel', () => {
           name: 'lastminute larry',
           cancelledAt: new Date('2026-06-04T13:00:00Z'),
           daysBeforeEvent: 0,
-          sameDay: true,
           previousStatus: null,
         },
       ],
@@ -240,7 +238,6 @@ describe('EventAttendancePanel', () => {
           name: 'was going wendy',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
-          sameDay: false,
           previousStatus: RsvpServerStatus.Attending,
         },
         {
@@ -248,7 +245,6 @@ describe('EventAttendancePanel', () => {
           name: 'was maybe mia',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
-          sameDay: false,
           previousStatus: RsvpServerStatus.Maybe,
         },
       ],
@@ -268,7 +264,6 @@ describe('EventAttendancePanel', () => {
           name: 'early bird',
           cancelledAt: new Date('2026-05-20T00:00:00Z'),
           daysBeforeEvent: 12,
-          sameDay: false,
           previousStatus: null,
         },
         {
@@ -276,7 +271,6 @@ describe('EventAttendancePanel', () => {
           name: 'late one',
           cancelledAt: new Date('2026-05-31T00:00:00Z'),
           daysBeforeEvent: 1,
-          sameDay: false,
           previousStatus: null,
         },
       ],

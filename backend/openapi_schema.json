@@ -649,10 +649,6 @@
             ],
             "title": "Previous Status"
           },
-          "same_day": {
-            "title": "Same Day",
-            "type": "boolean"
-          },
           "user_id": {
             "title": "User Id",
             "type": "string"
@@ -663,7 +659,6 @@
           "name",
           "cancelled_at",
           "days_before_event",
-          "same_day",
           "previous_status"
         ],
         "title": "CancellationOut",
