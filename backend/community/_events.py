@@ -33,11 +33,11 @@ from community._event_nonmember_removal import (
     guard_or_remove_ineligible_non_members,
 )
 from community._event_schemas import (
-    validate_event_rsvp_question,
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
+    validate_event_rsvp_question,
 )
 from community._event_transitions import _handle_status_update, _set_event_participants
 from community._event_update import (
@@ -52,8 +52,8 @@ from community._rsvp_payment import can_see_payment_details
 from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
-    EventRsvpQuestion,
     Event,
+    EventRsvpQuestion,
     EventStatus,
     PageVisibility,
     parse_event_ref,

@@ -38,6 +38,7 @@ from community.models import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+
 def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     return (
         Event.objects.select_related("created_by")
@@ -45,6 +46,7 @@ def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
         .filter(id=event_id)
         .first()
     )
+
 
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
     """Post-commit, silently refresh stakeholders' cached event so capacity shows live (no notification)."""
@@ -62,6 +64,7 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
 
     transaction.on_commit(_run)
 
+
 def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     """Creator is always a co-host (added on event creation), so this covers both."""
     if requesting_user is None:
@@ -75,6 +78,7 @@ _GUEST_LIST_STATUS_ORDER = {
     RSVPStatus.CANT_GO: 2,
     RSVPStatus.WAITLISTED: 3,
 }
+
 
 def _build_guest_list(
     rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
@@ -100,6 +104,7 @@ def _build_guest_list(
         for r in ordered_rsvps
     ]
 
+
 def _find_my_rsvp(rsvps, user):
     """Find requesting user's own RSVP row."""
     if user is None:
@@ -109,6 +114,7 @@ def _find_my_rsvp(rsvps, user):
             return r
     return None
 
+
 def _find_my_rsvp_answers(rsvps, user) -> dict:
     if user is None:
         return {}
@@ -117,12 +123,14 @@ def _find_my_rsvp_answers(rsvps, user) -> dict:
             return dict(r.questionnaire_responses or {})
     return {}
 
+
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
     my_rsvp = _find_my_rsvp(rsvps, user)
     if my_rsvp is None:
         return None, False
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
+
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
@@ -149,6 +157,7 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
     return rows
 
+
 def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | None:
     """Return the oldest waitlisted RSVP that still fits under max_attendees, if any."""
     oldest = (
@@ -161,6 +170,7 @@ def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | 
     if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
         return None
     return oldest
+
 
 def promote_from_waitlist(event: Event) -> list[str]:
     """Promote oldest waitlisted users to attending (FIFO by created_at).
@@ -190,11 +200,13 @@ def promote_from_waitlist(event: Event) -> list[str]:
         create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
     return promoted_user_ids
 
+
 def _has_attendees(event: Event) -> bool:
     """Return True if the event has any invited users or attending RSVPs."""
     if event.invited_users.exists():
         return True
     return event.rsvps.filter(status=RSVPStatus.ATTENDING).exists()
+
 
 def _can_see_invited(
     requesting_user,
@@ -214,7 +226,9 @@ def _can_see_invited(
         return True
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
+
 _INACTIVE_RSVP_STATUSES = {RSVPStatus.CANT_GO, RSVPStatus.REMOVED}
+
 
 def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str | None) -> bool:
     """Hosts, event managers, and active RSVPs can see the guest list.
@@ -227,6 +241,7 @@ def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str
     if viewer_is_cohost or requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
+
 
 def _can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
@@ -242,14 +257,17 @@ def _can_see_invite_only(
         return True
     return user.has_permission(PermissionKey.MANAGE_EVENTS)
 
+
 def _get_creator_name(creator, viewer=None) -> str | None:
     if creator is None:
         return None
     return visible_display_name(creator, viewer)
 
+
 def _tags_out(event: Event) -> list[TagOut]:
     """Serialize an event's tags (uses the prefetched `tags` relation)."""
     return [TagOut(id=str(t.id), name=t.name, slug=t.slug) for t in event.tags.all()]
+
 
 def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     """Replace an event's tags with the curated tags matching `tag_ids`.
@@ -260,6 +278,7 @@ def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     """
     tags = EventTag.objects.filter(pk__in=list(tag_ids))
     event.tags.set(tags)
+
 
 def _get_datetime_poll_slug(event: Event) -> str | None:
     poll_survey = (
@@ -272,6 +291,7 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
     )
     return poll_survey
 
+
 def _resolve_comment_count(event: Event) -> int:
     """Read the annotated comment_count, falling back to a per-event count query."""
     annotated = getattr(event, "comment_count", None)
@@ -279,8 +299,10 @@ def _resolve_comment_count(event: Event) -> int:
         return annotated
     return event.comments.filter(deleted_at__isnull=True).count()
 
+
 def _iso_or_none(value) -> str | None:
     return value.isoformat() if value else None
+
 
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
@@ -370,6 +392,7 @@ def _can_edit_event(user, event: Event) -> bool:
         return True
     return event.co_hosts.filter(pk=user.pk).exists()
 
+
 _PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
 
 # Event types that require an explicit permission to tag. Community events need
@@ -379,9 +402,11 @@ _TYPE_TAG_PERMISSIONS = {
     EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
 }
 
+
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+
 
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
     """Raise 403 if the event type requires a tag permission the user lacks."""

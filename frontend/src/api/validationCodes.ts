@@ -112,6 +112,30 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'the check-in report is available once the event has ended';
     case Code.Event.CheckInReportInvalidColumn:
       return "one of those csv columns isn't recognized";
+    case Code.Event.RsvpQuestionNotFound:
+      return 'that rsvp question was not found';
+    case Code.Event.RsvpQuestionDuplicate:
+      return 'duplicate rsvp question';
+    case Code.Event.RsvpQuestionConflict:
+      return 'rsvp questions changed — refresh and try again';
+    case Code.Event.RsvpQuestionOptionsRequired:
+      return 'add at least one option';
+    case Code.Event.RsvpQuestionOptionNoComma:
+      return 'options cannot contain commas';
+    case Code.Event.RsvpAnswerRequired: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `"${label}" is required` : 'an answer is required';
+    }
+    case Code.Event.RsvpAnswerInvalidOption: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid option for "${label}"` : 'invalid option';
+    }
+    case Code.Event.RsvpAnswerTooLong: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      if (label && max !== null) return `"${label}" must be at most ${String(max)} characters`;
+      return 'that answer is too long';
+    }
     case Code.Event.PaymentConfirmationRequired:
       return 'confirm you paid before rsvping to this event';
 
