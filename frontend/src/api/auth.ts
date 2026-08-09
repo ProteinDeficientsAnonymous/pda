@@ -140,10 +140,7 @@ async function tryRestoreSession(): Promise<{ access: string; user: User } | nul
 }
 
 export async function restoreSession(): Promise<{ access: string; user: User } | null> {
-  // The refresh cookie is sent automatically. A real 401 means it's missing/
-  // invalid, so the session is genuinely gone. Anything else (network blip,
-  // cold start, 5xx) is transient — retry once before giving up, so a boot-time
-  // hiccup doesn't force a re-login on an otherwise-valid session.
+  // Retry once unless it's a real 401 — avoids re-login on a transient 5xx.
   try {
     return await tryRestoreSession();
   } catch (err) {

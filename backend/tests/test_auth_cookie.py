@@ -108,9 +108,7 @@ class TestRefreshViaCookie:
         assert cookie is not None
         assert cookie["httponly"] is True
         new_refresh = RefreshToken(cookie.value)
-        # The whole point of re-issuing is a fresh exp computed from "now", not
-        # copied from the old token — same-second in a fast test is fine, older
-        # is the bug this guards against.
+        # >= not >: same-second is fine, older is the bug.
         assert new_refresh.payload["exp"] >= old_refresh.payload["exp"]
         assert new_refresh.payload["jti"] != old_refresh.payload["jti"]
 
