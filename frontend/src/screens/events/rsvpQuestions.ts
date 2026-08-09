@@ -2,8 +2,8 @@
 
 import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import {
-  RSVP_QUESTION_TYPE_OPTIONS,
   questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
 } from '@/components/questions/questionTypeOptions';
 import { type Event, type EventRsvpQuestion, RsvpServerStatus } from '@/models/event';
 

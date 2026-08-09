@@ -9,9 +9,9 @@ import type { components } from '@/api/types.gen';
 import {
   JOIN_QUESTION_TYPE_OPTIONS,
   QUESTION_TYPE_OPTIONS,
-  RSVP_QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
 } from './questionTypeOptions';
 
 type AssertExtends<_A extends B, B> = true;
