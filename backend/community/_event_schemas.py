@@ -178,7 +178,7 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: RSVPStatus
     has_plus_one: bool = False
-    answers: dict = {}
+    questionnaire_responses: dict = {}
     phone: str | None = None
     photo_url: str = ""
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
@@ -265,7 +265,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
-    my_rsvp_answers: dict = {}
+    my_questionnaire_responses: dict = {}
     my_paid_confirmed: bool = False
     viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
@@ -301,7 +301,7 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    answers: dict[str, RsvpAnswer] = Field(
+    questionnaire_responses: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
         description="Question UUID to answer; checkbox values are comma-separated.",
     )

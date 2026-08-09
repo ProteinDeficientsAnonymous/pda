@@ -1,8 +1,6 @@
-"""Tests for per-event RSVP questions and answers on RSVP."""
-
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, EventRsvpQuestion, RSVPStatus
+from community.models import Event, EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
@@ -40,7 +38,7 @@ def other_headers(other_user):
 def _question_data(**overrides):
     return {
         "label": "how are you getting there?",
-        "field_type": "select",
+        "field_type": RsvpQuestionType.SELECT,
         "options": ["driving", "transit"],
         "required": True,
         **overrides,
@@ -91,7 +89,7 @@ class TestRsvpWithAnswers:
             {
                 "status": RSVPStatus.ATTENDING,
                 "has_plus_one": False,
-                "answers": {q["id"]: "driving"},
+                "questionnaire_responses": {q["id"]: "driving"},
             },
             content_type="application/json",
             **other_headers,
@@ -99,7 +97,7 @@ class TestRsvpWithAnswers:
         assert ok.status_code == 200
         rsvp = EventRSVP.objects.get(event=rsvp_event)
         assert rsvp.questionnaire_responses[q["id"]]["answer"] == "driving"
-        assert ok.json()["my_rsvp_answers"][q["id"]]["answer"] == "driving"
+        assert ok.json()["my_questionnaire_responses"][q["id"]]["answer"] == "driving"
 
     def test_cant_go_skips_required_answers(
         self, api_client, other_headers, auth_headers, rsvp_event
@@ -119,7 +117,7 @@ class TestRsvpWithAnswers:
             f"/api/community/events/{rsvp_event.id}/rsvp/",
             {
                 "status": RSVPStatus.MAYBE,
-                "answers": {q["id"]: "helicopter"},
+                "questionnaire_responses": {q["id"]: "helicopter"},
             },
             content_type="application/json",
             **other_headers,
@@ -136,7 +134,7 @@ class TestRsvpWithAnswers:
                 f"/api/community/events/{rsvp_event.id}/rsvp/",
                 {
                     "status": RSVPStatus.ATTENDING,
-                    "answers": {q["id"]: "transit"},
+                    "questionnaire_responses": {q["id"]: "transit"},
                 },
                 content_type="application/json",
                 **other_headers,
@@ -146,13 +144,13 @@ class TestRsvpWithAnswers:
 
         host_view = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
         host_guest = next(g for g in host_view["guests"] if g["user_id"] == str(other_user.pk))
-        assert host_guest["answers"][q["id"]]["answer"] == "transit"
+        assert host_guest["questionnaire_responses"][q["id"]]["answer"] == "transit"
 
         member_view = api_client.get(
             f"/api/community/events/{rsvp_event.id}/", **other_headers
         ).json()
         member_guest = next(g for g in member_view["guests"] if g["user_id"] == str(other_user.pk))
-        assert member_guest["answers"] == {}
+        assert member_guest["questionnaire_responses"] == {}
 
 
 @pytest.mark.django_db
@@ -162,12 +160,12 @@ class TestRsvpAnswerEdgeCases:
     ):
         q = _create_question(
             rsvp_event,
-            field_type="checkbox",
+            field_type=RsvpQuestionType.CHECKBOX,
             options=["a", "b"],
         )
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "answers": {q["id"]: ",,,"}},
+            {"status": RSVPStatus.ATTENDING, "questionnaire_responses": {q["id"]: ",,,"}},
             content_type="application/json",
             **other_headers,
         )
@@ -179,7 +177,7 @@ class TestRsvpAnswerEdgeCases:
             api_client,
             auth_headers,
             rsvp_event.id,
-            field_type="checkbox",
+            field_type=RsvpQuestionType.CHECKBOX,
             options=["a, b", "c"],
         )
         assert response.status_code == 400
@@ -210,14 +208,14 @@ class TestRsvpAnswerEdgeCases:
     ):
         q = _create_question(
             rsvp_event,
-            field_type="textarea",
+            field_type=RsvpQuestionType.TEXTAREA,
             options=[],
             label="travel details",
         )
 
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "answers": {q["id"]: "x" * 2001}},
+            {"status": RSVPStatus.ATTENDING, "questionnaire_responses": {q["id"]: "x" * 2001}},
             content_type="application/json",
             **other_headers,
         )
@@ -234,7 +232,7 @@ class TestRsvpAnswerEdgeCases:
         assert (
             api_client.post(
                 f"/api/community/events/{rsvp_event.id}/rsvp/",
-                {"status": RSVPStatus.ATTENDING, "answers": {q["id"]: "driving"}},
+                {"status": RSVPStatus.ATTENDING, "questionnaire_responses": {q["id"]: "driving"}},
                 content_type="application/json",
                 **other_headers,
             ).status_code
@@ -244,4 +242,4 @@ class TestRsvpAnswerEdgeCases:
         rsvp_event.save(update_fields=["rsvp_enabled"])
         host_view = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
         assert len(host_view["guests"]) == 1
-        assert host_view["guests"][0]["answers"][q["id"]]["answer"] == "driving"
+        assert host_view["guests"][0]["questionnaire_responses"][q["id"]]["answer"] == "driving"

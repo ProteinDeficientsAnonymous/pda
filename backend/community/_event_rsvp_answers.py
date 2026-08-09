@@ -1,5 +1,3 @@
-"""Validate and snapshot RSVP question answers."""
-
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
@@ -14,8 +12,7 @@ from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 AnswersIn = dict[str, str]
 
 
-def can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bool:
-    """Hosts, co-hosts, and event managers can see RSVP question answers."""
+def can_see_guest_questionnaire_responses(requesting_user, creator, co_host_ids: set[str]) -> bool:
     if requesting_user is None:
         return False
     if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
@@ -25,7 +22,7 @@ def can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bo
     return str(requesting_user.pk) in co_host_ids
 
 
-def find_my_rsvp_answers(rsvps, user) -> dict:
+def find_my_questionnaire_responses(rsvps, user) -> dict:
     if user is None:
         return {}
     for r in rsvps:
@@ -46,13 +43,13 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
     if require_answers and q.required:
         raise_validation(
             Code.Event.RSVP_ANSWER_REQUIRED,
-            field=f"answers.{q.id}",
+            field=f"questionnaire_responses.{q.id}",
             label=q.label,
         )
 
 
 def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
-    field = f"answers.{q.id}"
+    field = f"questionnaire_responses.{q.id}"
     if q.field_type == RsvpQuestionType.CHECKBOX:
         return normalize_checkbox_csv(
             answer,
@@ -93,7 +90,7 @@ def build_rsvp_answers(
         if len(answer) > FieldLimit.DESCRIPTION:
             raise_validation(
                 Code.Event.RSVP_ANSWER_TOO_LONG,
-                field=f"answers.{key}",
+                field=f"questionnaire_responses.{key}",
                 label=q.label,
                 max=FieldLimit.DESCRIPTION,
             )

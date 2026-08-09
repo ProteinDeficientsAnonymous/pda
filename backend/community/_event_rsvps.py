@@ -313,7 +313,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
             payload.status,
             payload.has_plus_one,
             payload.paid_confirmed,
-            payload.answers,
+            payload.questionnaire_responses,
         )
 
     sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)

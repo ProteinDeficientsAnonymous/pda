@@ -2340,6 +2340,12 @@
             ],
             "title": "My Pending Cohost Invite Id"
           },
+          "my_questionnaire_responses": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "My Questionnaire Responses",
+            "type": "object"
+          },
           "my_rsvp": {
             "anyOf": [
               {
@@ -2350,12 +2356,6 @@
               }
             ],
             "title": "My Rsvp"
-          },
-          "my_rsvp_answers": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "My Rsvp Answers",
-            "type": "object"
           },
           "other_link": {
             "default": "",
@@ -5241,12 +5241,6 @@
       },
       "RSVPGuestOut": {
         "properties": {
-          "answers": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Answers",
-            "type": "object"
-          },
           "attendance": {
             "allOf": [
               {
@@ -5322,6 +5316,12 @@
             ],
             "title": "Plus One Checked In At"
           },
+          "questionnaire_responses": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Questionnaire Responses",
+            "type": "object"
+          },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"
           },
@@ -5340,15 +5340,6 @@
       },
       "RSVPIn": {
         "properties": {
-          "answers": {
-            "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
-            },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
-            "title": "Answers",
-            "type": "object"
-          },
           "comment": {
             "anyOf": [
               {
@@ -5370,6 +5361,15 @@
             "default": false,
             "title": "Paid Confirmed",
             "type": "boolean"
+          },
+          "questionnaire_responses": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "title": "Questionnaire Responses",
+            "type": "object"
           },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"
