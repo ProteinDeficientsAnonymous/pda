@@ -115,7 +115,6 @@ def _csv_row(rsvp, viewer, can_see_phones: bool, columns: list[str]) -> list[str
         "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
         "attendance": rsvp.attendance,
-        "checked_in_at": rsvp.checked_in_at.isoformat() if rsvp.checked_in_at else "",
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
         "plus_one": "yes" if rsvp.has_plus_one else "no",
     }
