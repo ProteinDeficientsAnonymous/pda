@@ -176,6 +176,12 @@ class Code:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
         TOO_LARGE = "photo.too_large"  # params: { max_mb: int }
 
+    class AttendanceImport:
+        CSV_EMPTY = "attendance_import.csv_empty"
+        CSV_MALFORMED = "attendance_import.csv_malformed"
+        EVENT_OR_TITLE_REQUIRED = "attendance_import.event_or_title_required"
+        AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
+
     class Perm:
         DENIED = "perm.denied"  # params: { action?: str }
 
