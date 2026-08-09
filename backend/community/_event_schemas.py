@@ -296,7 +296,7 @@ class RSVPIn(BaseModel):
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     questionnaire_responses: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
-        description="Question UUID → answer; checkbox values are comma-separated.",
+        description="Question UUID to answer; checkbox values are comma-separated.",
     )
 
 
