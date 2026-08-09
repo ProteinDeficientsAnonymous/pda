@@ -41,7 +41,7 @@ describe('mapEvent', () => {
     expect(result.guests[1]!.paidConfirmed).toBe(false);
   });
 
-  it('should map rsvp_questions and my_rsvp_answers', () => {
+  it('should map rsvp_questions and my_questionnaire_responses', () => {
     const result = mapEvent(
       wireEvent({
         rsvp_questions: [
@@ -53,7 +53,7 @@ describe('mapEvent', () => {
             required: true,
           },
         ],
-        my_rsvp_answers: { q1: { label: 'dietary?', answer: 'none' } },
+        my_questionnaire_responses: { q1: { label: 'dietary?', answer: 'none' } },
       }),
     );
     expect(result.rsvpQuestions).toEqual([
@@ -65,7 +65,9 @@ describe('mapEvent', () => {
         required: true,
       },
     ]);
-    expect(result.myRsvpAnswers).toEqual({ q1: { label: 'dietary?', answer: 'none' } });
+    expect(result.myQuestionnaireResponses).toEqual({
+      q1: { label: 'dietary?', answer: 'none' },
+    });
   });
 
   it('converts ISO start_datetime to Date', () => {

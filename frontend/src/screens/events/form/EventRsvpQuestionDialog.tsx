@@ -2,6 +2,7 @@ import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { DEFAULT_RSVP_QUESTION_TYPE } from '@/api/eventRsvpQuestions';
+import { QuestionType } from '@/api/questionTypes';
 import { questionOptionsError } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -60,7 +61,7 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       setError(`options must be ${String(MAX_OPTION_LENGTH)} characters or fewer`);
       return;
     }
-    if (fieldType === 'checkbox' && options.some((option) => option.includes(','))) {
+    if (fieldType === QuestionType.Checkbox && options.some((option) => option.includes(','))) {
       setError('options cannot contain commas');
       return;
     }

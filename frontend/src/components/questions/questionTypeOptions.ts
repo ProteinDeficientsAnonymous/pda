@@ -1,3 +1,4 @@
+import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import type { JoinQuestionType } from '@/api/join';
 import { QuestionType } from '@/api/questionTypes';
 
@@ -41,6 +42,19 @@ export type JoinQuestionTypeOption = QuestionTypeOption & { value: JoinQuestionT
 
 /** Join-form authoring subset, projected from the shared catalog metadata. */
 export const JOIN_QUESTION_TYPE_OPTIONS: JoinQuestionTypeOption[] = JOIN_QUESTION_TYPES.map(
+  (value) => ({ ...QUESTION_TYPE_OPTION_BY_TYPE[value], value }),
+);
+
+const RSVP_QUESTION_TYPES = [
+  QuestionType.Textarea,
+  QuestionType.Select,
+  QuestionType.Checkbox,
+] as const satisfies readonly RsvpQuestionType[];
+
+export type RsvpQuestionTypeOption = QuestionTypeOption & { value: RsvpQuestionType };
+
+/** RSVP authoring subset, projected from the shared catalog metadata. */
+export const RSVP_QUESTION_TYPE_OPTIONS: RsvpQuestionTypeOption[] = RSVP_QUESTION_TYPES.map(
   (value) => ({ ...QUESTION_TYPE_OPTION_BY_TYPE[value], value }),
 );
 

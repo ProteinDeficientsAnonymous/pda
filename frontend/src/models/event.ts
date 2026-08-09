@@ -1,3 +1,5 @@
+import type { components } from '@/api/types.gen';
+
 import { hasPermission, Permission } from './permissions';
 import type { User } from './user';
 
@@ -77,7 +79,7 @@ export interface EventTag {
   slug: string;
 }
 
-export type EventRsvpQuestionType = 'textarea' | 'select' | 'checkbox';
+export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 
 export interface EventRsvpQuestion {
   id: string;
@@ -99,7 +101,7 @@ export interface EventGuest {
   isMember: boolean;
   paidConfirmed: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  answers: Record<string, { label: string; answer: string }>;
+  questionnaireResponses: Record<string, { label: string; answer: string }>;
 }
 
 export interface EventCancellation {
@@ -167,8 +169,8 @@ export interface Event {
   guests: EventGuest[];
   myRsvp: string | null;
   myPaidConfirmed: boolean;
-  /** Snapshot answers for the viewer's RSVP: questionId → { label, answer }. */
-  myRsvpAnswers: Record<string, { label: string; answer: string }>;
+  /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
+  myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   surveySlugs: string[];

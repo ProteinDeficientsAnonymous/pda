@@ -1,10 +1,11 @@
 import type { EventRsvpQuestion } from '@/models/event';
 
 import { apiClient } from './client';
+import { QuestionType } from './questionTypes';
 import type { components } from './types.gen';
 
 export type RsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
-export const DEFAULT_RSVP_QUESTION_TYPE: RsvpQuestionType = 'textarea';
+export const DEFAULT_RSVP_QUESTION_TYPE: RsvpQuestionType = QuestionType.Textarea;
 
 interface WireQuestion {
   id: string;

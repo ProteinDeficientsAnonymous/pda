@@ -2,8 +2,7 @@
 
 import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import {
-  QUESTION_TYPE_OPTION_BY_TYPE,
-  type QuestionTypeOption,
+  RSVP_QUESTION_TYPE_OPTIONS,
   questionTypeWantsOptions,
 } from '@/components/questions/questionTypeOptions';
 import { type Event, type EventRsvpQuestion, RsvpServerStatus } from '@/models/event';
@@ -12,13 +11,7 @@ export type { RsvpQuestionType };
 export type RsvpQuestionDraft = EventRsvpQuestion;
 export type RsvpAnswerValue = string;
 
-const RSVP_QUESTION_TYPE_OPTION_BY_TYPE = {
-  textarea: QUESTION_TYPE_OPTION_BY_TYPE.textarea,
-  select: QUESTION_TYPE_OPTION_BY_TYPE.select,
-  checkbox: QUESTION_TYPE_OPTION_BY_TYPE.checkbox,
-} satisfies Record<RsvpQuestionType, QuestionTypeOption>;
-
-export const RSVP_QUESTION_TYPE_OPTIONS = Object.values(RSVP_QUESTION_TYPE_OPTION_BY_TYPE);
+export { RSVP_QUESTION_TYPE_OPTIONS };
 
 const RESPONDENT_STATUSES = new Set<string>([
   RsvpServerStatus.Attending,
@@ -52,9 +45,11 @@ export function isRsvpRespondentStatus(status: string): boolean {
   return RESPONDENT_STATUSES.has(status);
 }
 
-export function hasSavedRsvpAnswers(event: Event): boolean {
+export function hasSavedQuestionnaireResponses(event: Event): boolean {
   return event.guests.some(
-    (guest) => isRsvpRespondentStatus(guest.status) && Object.keys(guest.answers).length > 0,
+    (guest) =>
+      isRsvpRespondentStatus(guest.status) &&
+      Object.keys(guest.questionnaireResponses).length > 0,
   );
 }
 

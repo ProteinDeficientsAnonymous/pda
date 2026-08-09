@@ -2,6 +2,7 @@ import type {
   AttendanceStatusValue,
   Event,
   EventGuest,
+  EventRsvpQuestion,
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
@@ -20,8 +21,9 @@ interface WireGuest {
   plus_one_attendance?: string;
   is_member?: boolean;
   paid_confirmed?: boolean;
-  answers?: Record<string, { label?: string; answer?: string }>;
+  questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
 }
+
 
 export interface WireEvent {
   id: string;
@@ -64,11 +66,11 @@ export interface WireEvent {
   guests?: WireGuest[];
   my_rsvp?: string | null;
   my_paid_confirmed?: boolean;
-  my_rsvp_answers?: Record<string, { label?: string; answer?: string }>;
+  my_questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
   rsvp_questions?: {
     id: string;
     label: string;
-    field_type: 'textarea' | 'select' | 'checkbox';
+    field_type: EventRsvpQuestion['fieldType'];
     options?: string[];
     required: boolean;
     display_order?: number;
@@ -114,9 +116,9 @@ function mapAttendance(value: string | undefined): AttendanceStatusValue {
   return AttendanceStatus.Unknown;
 }
 
-function mapMyRsvpAnswers(
+function mapQuestionnaireResponses(
   raw: Record<string, { label?: string; answer?: string }> | undefined,
-): Event['myRsvpAnswers'] {
+): Event['myQuestionnaireResponses'] {
   return Object.fromEntries(
     Object.entries(raw ?? {}).map(([id, snap]) => [
       id,
@@ -137,7 +139,7 @@ function mapGuest(g: WireGuest): EventGuest {
     plusOneAttendance: mapAttendance(g.plus_one_attendance),
     isMember: g.is_member ?? true,
     paidConfirmed: g.paid_confirmed ?? false,
-    answers: mapMyRsvpAnswers(g.answers),
+    questionnaireResponses: mapQuestionnaireResponses(g.questionnaire_responses),
   };
 }
 
@@ -197,7 +199,7 @@ export function mapEvent(e: WireEvent): Event {
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
     myPaidConfirmed: e.my_paid_confirmed ?? false,
-    myRsvpAnswers: mapMyRsvpAnswers(e.my_rsvp_answers),
+    myQuestionnaireResponses: mapQuestionnaireResponses(e.my_questionnaire_responses),
     rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
     viewerUserId: e.viewer_user_id ?? null,
     surveySlugs: e.survey_slugs ?? [],
