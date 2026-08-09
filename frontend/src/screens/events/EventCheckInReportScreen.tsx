@@ -173,9 +173,6 @@ function AttendedRow({ person }: { person: AttendedPerson }) {
         {person.name}
         {!person.isMember ? <GuestBadge /> : null}
       </span>
-      {person.checkedInAt ? (
-        <span className="text-muted text-xs">{formatShortDateTime(person.checkedInAt)}</span>
-      ) : null}
     </li>
   );
 }

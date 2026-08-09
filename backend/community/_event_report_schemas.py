@@ -36,7 +36,6 @@ REPORT_CSV_COLUMNS = (
     "phone",
     "rsvp_status",
     "attendance",
-    "checked_in_at",
     "cancelled_at",
     "plus_one",
 )

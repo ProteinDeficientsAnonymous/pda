@@ -10807,7 +10807,7 @@
             "name": "columns",
             "required": false,
             "schema": {
-              "default": "name,phone,rsvp_status,attendance,checked_in_at,cancelled_at,plus_one",
+              "default": "name,phone,rsvp_status,attendance,cancelled_at,plus_one",
               "title": "Columns",
               "type": "string"
             }

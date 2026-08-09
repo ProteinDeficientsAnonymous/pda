@@ -105,7 +105,6 @@ export const CSV_COLUMNS = [
   { key: 'phone', label: 'phone' },
   { key: 'rsvp_status', label: 'rsvp status' },
   { key: 'attendance', label: 'attendance' },
-  { key: 'checked_in_at', label: 'checked-in time' },
   { key: 'cancelled_at', label: 'canceled time' },
   { key: 'plus_one', label: 'plus-one' },
 ] as const;
