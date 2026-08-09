@@ -1,3 +1,10 @@
+# [0.88.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.9...v0.88.0) (2026-08-09)
+
+
+### Features
+
+* show +1 guests as separate lines in attendance report ([#1329](https://github.com/ProteinDeficientsAnonymous/pda/issues/1329)) ([34012fc](https://github.com/ProteinDeficientsAnonymous/pda/commit/34012fc05072b4b54a466f37dc65e3be8e213e0a))
+
 ## [0.87.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.8...v0.87.9) (2026-08-09)
 
 
