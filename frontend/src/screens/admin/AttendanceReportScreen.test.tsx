@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAttendanceReport } from '@/api/attendanceReport';
 import { useFlag } from '@/api/featureFlags';
+import { EventType } from '@/models/event';
 import { Feature } from '@/models/featureFlags';
 import { makeRow } from '@/test/fixtures';
 
@@ -86,7 +87,7 @@ describe('AttendanceReportScreen', () => {
   it('displays split no-show counts by event type', () => {
     mockResult({
       data: {
-        events: [makeRow(), makeRow({ eventType: 'club', eventId: 'e2', noShowCount: 2 })],
+        events: [makeRow(), makeRow({ eventType: EventType.Club, eventId: 'e2', noShowCount: 2 })],
         officialNoShowCount: 1,
         clubNoShowCount: 2,
       },
