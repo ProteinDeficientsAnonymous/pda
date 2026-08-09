@@ -15,6 +15,7 @@ from community._event_report_schemas import (
     CanceledPersonOut,
     CheckInReportOut,
     CheckInReportPersonOut,
+    ReportBucket,
     ReportPlusOne,
 )
 from community._events import _can_edit_event
@@ -65,22 +66,24 @@ def _classify_attendance(
 ) -> None:
     """Bucket a person by attendance mark; caller has already ruled out CANT_GO."""
     if attendance == AttendanceStatus.ATTENDED:
-        buckets["attended"].append(
+        buckets[ReportBucket.ATTENDED].append(
             AttendedPersonOut(**person.model_dump(), checked_in_at=checked_in_at)
         )
     elif rsvp_status == RSVPStatus.ATTENDING and attendance == AttendanceStatus.DIDNT_GO:
-        buckets["no_shows"].append(person)
+        buckets[ReportBucket.NO_SHOWS].append(person)
     elif attendance == AttendanceStatus.DIDNT_GO:
-        buckets["didnt_go"].append(person)
+        buckets[ReportBucket.DIDNT_GO].append(person)
     else:
-        buckets["unmarked"].append(person)
+        buckets[ReportBucket.UNMARKED].append(person)
 
 
 def _classify_cancellation(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict) -> None:
     cancelled_at = rsvp.cancelled_at or rsvp.updated_at
-    buckets["canceled"].append(CanceledPersonOut(**person.model_dump(), cancelled_at=cancelled_at))
+    buckets[ReportBucket.CANCELED].append(
+        CanceledPersonOut(**person.model_dump(), cancelled_at=cancelled_at)
+    )
     if plus_one is not None:
-        buckets["canceled"].append(
+        buckets[ReportBucket.CANCELED].append(
             CanceledPersonOut(**plus_one.model_dump(), cancelled_at=cancelled_at)
         )
 
@@ -102,11 +105,11 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     can_see_phones = is_cohost(viewer, co_host_ids)
 
     buckets = {
-        "attended": [],
-        "no_shows": [],
-        "didnt_go": [],
-        "canceled": [],
-        "unmarked": [],
+        ReportBucket.ATTENDED: [],
+        ReportBucket.NO_SHOWS: [],
+        ReportBucket.DIDNT_GO: [],
+        ReportBucket.CANCELED: [],
+        ReportBucket.UNMARKED: [],
     }
     for rsvp in _report_rsvps(event):
         person = _person(rsvp, viewer, can_see_phones)
@@ -118,16 +121,16 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
         _classify_rsvp(rsvp, person, plus_one, buckets)
 
     return CheckInReportOut(
-        attended_count=len(buckets["attended"]),
-        no_show_count=len(buckets["no_shows"]),
-        didnt_go_count=len(buckets["didnt_go"]),
-        canceled_count=len(buckets["canceled"]),
-        unmarked_count=len(buckets["unmarked"]),
-        attended=buckets["attended"],
-        no_shows=buckets["no_shows"],
-        didnt_go=buckets["didnt_go"],
-        canceled=buckets["canceled"],
-        unmarked=buckets["unmarked"],
+        attended_count=len(buckets[ReportBucket.ATTENDED]),
+        no_show_count=len(buckets[ReportBucket.NO_SHOWS]),
+        didnt_go_count=len(buckets[ReportBucket.DIDNT_GO]),
+        canceled_count=len(buckets[ReportBucket.CANCELED]),
+        unmarked_count=len(buckets[ReportBucket.UNMARKED]),
+        attended=buckets[ReportBucket.ATTENDED],
+        no_shows=buckets[ReportBucket.NO_SHOWS],
+        didnt_go=buckets[ReportBucket.DIDNT_GO],
+        canceled=buckets[ReportBucket.CANCELED],
+        unmarked=buckets[ReportBucket.UNMARKED],
     )
 
 

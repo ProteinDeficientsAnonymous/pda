@@ -9,6 +9,16 @@ class ReportPlusOne:
     NO = "no"
 
 
+class ReportBucket:
+    """Keys matching CheckInReportOut's list fields, for building the bucket dict in one place."""
+
+    ATTENDED = "attended"
+    NO_SHOWS = "no_shows"
+    DIDNT_GO = "didnt_go"
+    CANCELED = "canceled"
+    UNMARKED = "unmarked"
+
+
 class CheckInReportPersonOut(BaseModel):
     user_id: str
     name: str
