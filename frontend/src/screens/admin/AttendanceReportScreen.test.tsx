@@ -201,7 +201,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('opens the partiful import dialog from the import button', async () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
     const user = userEvent.setup();
 
     renderScreen();
