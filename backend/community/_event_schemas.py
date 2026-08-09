@@ -20,8 +20,7 @@ from community.models import (
     RSVPStatus,
 )
 
-# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
-# overkill for a free-text payment field, and we don't need DNS lookups.
+# Loose email check for free-text Zelle — EmailStr/DNS is overkill here.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
@@ -77,16 +76,11 @@ class EventRsvpQuestionSyncPayload(BaseModel):
 def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
     if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
         raise_validation(
-            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED,
-            field="options",
-            status_code=400,
+            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED, field="options", status_code=400
         )
     if payload.field_type == "checkbox" and any("," in option for option in payload.options):
-        raise_validation(
-            Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
-            field="options",
-            status_code=400,
-        )
+        raise_validation(Code.Event.RSVP_QUESTION_OPTION_NO_COMMA, field="options", status_code=400)
+
 
 
 def _looks_like_email(s: str) -> bool:
@@ -298,12 +292,11 @@ class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
     paid_confirmed: bool = False
-    # Not persisted on the RSVP — a non-empty value is a one-time post: a
-    # public EventComment (going/maybe) or a host-only notification (can't go).
+    # One-shot post (EventComment / host notify); not stored on the RSVP row.
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     questionnaire_responses: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
-        description="Question UUID to answer; checkbox values are comma-separated.",
+        description="Question UUID → answer; checkbox values are comma-separated.",
     )
 
 

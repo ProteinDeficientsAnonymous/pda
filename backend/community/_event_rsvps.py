@@ -174,9 +174,7 @@ def _snapshot_rsvp_answers(
     final_status: str,
     answers: dict[str, str] | None,
 ) -> dict:
-    existing_answers = (
-        dict(existing.questionnaire_responses or {}) if existing is not None else {}
-    )
+    existing_answers = dict(existing.questionnaire_responses or {}) if existing is not None else {}
     if not answers_required_for_status(final_status):
         return existing_answers
 

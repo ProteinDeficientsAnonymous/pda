@@ -83,6 +83,7 @@ _GUEST_LIST_STATUS_ORDER = {
     RSVPStatus.WAITLISTED: 3,
 }
 
+
 def _build_guest_list(
     rsvps,
     can_see_phones: bool,
@@ -124,6 +125,7 @@ def _find_my_rsvp(rsvps, user):
         if r.user_id == user.pk:
             return r
     return None
+
 
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
