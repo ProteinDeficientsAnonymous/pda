@@ -73,10 +73,23 @@ def _classify_person(rsvp, person: CheckInReportPersonOut, buckets: dict) -> Non
 
 
 def _classify_plus_one(rsvp, person: CheckInReportPersonOut, buckets: dict) -> None:
-    if rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
-        buckets["attended"].append(
-            AttendedPersonOut(**person.model_dump(), checked_in_at=rsvp.checked_in_at)
+    if rsvp.status == RSVPStatus.CANT_GO:
+        buckets["canceled"].append(
+            CanceledPersonOut(
+                **person.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
+            )
         )
+    elif (
+        rsvp.status == RSVPStatus.ATTENDING
+        and rsvp.plus_one_attendance == AttendanceStatus.ATTENDED
+    ):
+        buckets["attended"].append(
+            AttendedPersonOut(**person.model_dump(), checked_in_at=rsvp.plus_one_checked_in_at)
+        )
+    elif (
+        rsvp.status == RSVPStatus.ATTENDING and rsvp.plus_one_attendance == AttendanceStatus.NO_SHOW
+    ):
+        buckets["no_shows"].append(person)
     else:
         buckets["unmarked"].append(person)
 
@@ -125,12 +138,14 @@ def _csv_safe(value: str) -> str:
 def _csv_row(
     rsvp, viewer, can_see_phones: bool, columns: list[str], is_plus_one_guest: bool = False
 ) -> list[str]:
+    attendance = rsvp.plus_one_attendance if is_plus_one_guest else rsvp.attendance
+    checked_in_at = rsvp.plus_one_checked_in_at if is_plus_one_guest else rsvp.checked_in_at
     values = {
         "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
         "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
-        "attendance": rsvp.attendance,
-        "checked_in_at": rsvp.checked_in_at.isoformat() if rsvp.checked_in_at else "",
+        "attendance": attendance,
+        "checked_in_at": checked_in_at.isoformat() if checked_in_at else "",
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
         "plus_one": "guest" if is_plus_one_guest else ("yes" if rsvp.has_plus_one else "no"),
     }

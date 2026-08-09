@@ -159,6 +159,29 @@ class TestCheckInReportEndpoint:
         response = api_client.get(f"/api/community/events/{stocked_event.id}/report/")
         assert response.status_code == 401
 
+    def test_plus_one_attendance_tracked_independently_of_member(
+        self, api_client, past_event, members, host_user
+    ):
+        EventRSVP.objects.create(
+            event=past_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+            attendance=AttendanceStatus.ATTENDED,
+            checked_in_at=timezone.now() - timedelta(days=2),
+            plus_one_attendance=AttendanceStatus.NO_SHOW,
+        )
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        )
+        data = response.json()
+        assert data["attended_count"] == 1
+        assert data["no_show_count"] == 1
+        attended_row = data["attended"][0]
+        assert attended_row["is_plus_one_guest"] is False
+        no_show_row = data["no_shows"][0]
+        assert no_show_row["is_plus_one_guest"] is True
+
     def test_not_found(self, api_client, host_user):
         response = api_client.get(
             "/api/community/events/00000000-0000-0000-0000-000000000000/report/",

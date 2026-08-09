@@ -111,6 +111,28 @@ def get_text_recipients(request, event_id: UUID):
     return Status(200, _build_text_recipients(event))
 
 
+def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> str | None:
+    """Persist the attendance mark and return a magic token if it promoted a tentative member.
+
+    return(str | None): join-approval magic token, or None if no promotion occurred.
+    """
+    attendance_field, checked_in_field = (
+        ("plus_one_attendance", "plus_one_checked_in_at")
+        if payload.for_plus_one
+        else ("attendance", "checked_in_at")
+    )
+    setattr(rsvp, attendance_field, payload.attendance)
+    # Stamp the first time a guest is marked ATTENDED; keep the original
+    # check-in time if attendance is later flipped and re-marked.
+    if payload.attendance == AttendanceStatus.ATTENDED and getattr(rsvp, checked_in_field) is None:
+        setattr(rsvp, checked_in_field, timezone.now())
+    rsvp.save(update_fields=[attendance_field, checked_in_field, "updated_at"])
+
+    if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
+        return None
+    return _maybe_promote_tentative(rsvp.user, rsvp.event, actor)
+
+
 @router.post(
     "/events/{event_id}/rsvps/{user_id}/attendance/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
@@ -134,22 +156,14 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
     if rsvp is None:
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+    if payload.for_plus_one and not rsvp.has_plus_one:
+        raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
 
     # The mark and any tentative promotion it triggers commit as a unit, so a
     # mid-promotion failure can't leave a member flagged without their request
     # stamped approved.
     with transaction.atomic():
-        rsvp.attendance = payload.attendance
-        # Stamp the first time a guest is marked ATTENDED; keep the original
-        # check-in time if attendance is later flipped and re-marked.
-        if payload.attendance == AttendanceStatus.ATTENDED and rsvp.checked_in_at is None:
-            rsvp.checked_in_at = timezone.now()
-        rsvp.save(update_fields=["attendance", "checked_in_at", "updated_at"])
-        magic_token = (
-            _maybe_promote_tentative(rsvp.user, event, request.auth)
-            if payload.attendance == AttendanceStatus.ATTENDED
-            else None
-        )
+        magic_token = _apply_attendance_mark(rsvp, payload, request.auth)
 
     if magic_token:
         send_join_approval(
@@ -166,7 +180,11 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         target=AuditTarget(
             type=AuditTargetType.EVENT,
             id=str(event_id),
-            details={"user_id": str(user_id), "attendance": payload.attendance},
+            details={
+                "user_id": str(user_id),
+                "attendance": payload.attendance,
+                "for_plus_one": payload.for_plus_one,
+            },
         ),
     )
 

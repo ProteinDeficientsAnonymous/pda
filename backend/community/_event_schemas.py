@@ -115,6 +115,8 @@ class RSVPGuestOut(BaseModel):
     photo_url: str = ""
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
+    plus_one_attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
+    plus_one_checked_in_at: datetime | None = None
     is_member: bool = True
     paid_confirmed: bool = False
 
@@ -285,6 +287,7 @@ class AttendanceReportOut(BaseModel):
 
 class AttendanceIn(BaseModel):
     attendance: AttendanceStatus
+    for_plus_one: bool = False
 
 
 class EventIn(BaseModel):

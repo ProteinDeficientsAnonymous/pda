@@ -102,6 +102,8 @@ def _build_guest_list(
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
+            plus_one_attendance=r.plus_one_attendance,
+            plus_one_checked_in_at=r.plus_one_checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
         )
