@@ -9020,7 +9020,6 @@
     },
     "/api/community/events/attendance-import/commit/": {
       "post": {
-        "description": "Write reviewed rows into EventRSVP/AttendanceStatus, creating the event if needed.",
         "operationId": "community__attendance_import_commit_attendance_import",
         "parameters": [],
         "requestBody": {
@@ -9098,7 +9097,6 @@
     },
     "/api/community/events/attendance-import/events/": {
       "get": {
-        "description": "Existing events an admin can pick as the import target, newest first.",
         "operationId": "community__attendance_import_list_attendance_import_event_options",
         "parameters": [
           {
@@ -9151,7 +9149,6 @@
     },
     "/api/community/events/attendance-import/preview/": {
       "post": {
-        "description": "Parse a raw Partiful export and return matched vs needs-review rows.\n\nNo writes happen here \u2014 this is read-only preview against existing users.",
         "operationId": "community__attendance_import_preview_attendance_import",
         "parameters": [],
         "requestBody": {

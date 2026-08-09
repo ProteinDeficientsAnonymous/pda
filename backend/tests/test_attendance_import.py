@@ -250,15 +250,15 @@ class TestCommitEndpoint:
         assert body["skipped_count"] == 1
         assert not EventRSVP.objects.filter(event=past_event, user=alice).exists()
 
-    def test_missing_user_id_is_skipped(self, api_client, events_admin, past_event):
+    def test_unresolved_row_is_rejected(self, api_client, events_admin, past_event):
         response = api_client.post(
             "/api/community/events/attendance-import/commit/",
-            {"event_id": str(past_event.id), "rows": [self._row(user_id=None)]},
+            {"event_id": str(past_event.id), "rows": [self._row(user_id=None, skip=False)]},
             content_type="application/json",
             **_auth(events_admin),
         )
-        body = response.json()
-        assert body["skipped_count"] == 1
+        assert response.status_code == 400
+        assert response.json()["detail"][0]["code"] == "attendance_import.ambiguous_user_pick"
 
     def test_existing_rsvp_is_updated_not_duplicated(
         self, api_client, events_admin, past_event, alice

@@ -83,6 +83,14 @@ def preview_attendance_import(request, csv_file: UploadedFile = File(...)):  # t
     return Status(200, AttendanceImportPreviewOut(matched=matched, needs_review=needs_review))
 
 
+def _require_all_rows_resolved(payload: AttendanceImportCommitIn) -> None:
+    for row in payload.rows:
+        if not row.user_id and not row.skip:
+            raise_validation(
+                Code.AttendanceImport.AMBIGUOUS_USER_PICK, status_code=400, row_index=row.row_index
+            )
+
+
 def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
     if payload.event_id:
         try:
@@ -140,6 +148,7 @@ def _apply_row(event: Event, row, user: User) -> bool:
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def commit_attendance_import(request, payload: AttendanceImportCommitIn):
     _require_manage_events(request, "commit_attendance_import")
+    _require_all_rows_resolved(payload)
 
     event = _resolve_event(payload, request)
     user_ids = {r.user_id for r in payload.rows if r.user_id and not r.skip}
