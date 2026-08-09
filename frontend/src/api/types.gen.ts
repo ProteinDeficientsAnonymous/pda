@@ -2105,10 +2105,20 @@ export interface components {
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
+             * Club No Show Count
+             * @default 0
+             */
+            club_no_show_count: number;
+            /**
              * Events
              * @default []
              */
             events: components["schemas"]["EventAttendanceRowOut"][];
+            /**
+             * Official No Show Count
+             * @default 0
+             */
+            official_no_show_count: number;
         };
         /**
          * AttendanceStatus
@@ -2627,6 +2637,8 @@ export interface components {
             attended_count: number;
             /** Event Id */
             event_id: string;
+            /** Event Type */
+            event_type: string;
             /**
              * Going Count
              * @default 0

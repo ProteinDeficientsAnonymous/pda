@@ -79,24 +79,30 @@ function TabButton({
 }
 
 function EventsTab() {
-  const { data = [], isPending, isError } = useAttendanceReport();
-  // The per-event report at /events/:id/report is behind its own flag; only
-  // link rows there when it's on, otherwise the row dead-links to /calendar.
+  const { data, isPending, isError } = useAttendanceReport();
   const reportEnabled = useFlag(Feature.HostAttendanceReport);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load attendance — try refreshing" />;
 
-  return data.length === 0 ? (
-    <p className="text-muted text-sm">no attendance marked yet 🌿</p>
-  ) : (
-    <ul className="flex flex-col gap-2">
-      {data.map((row) => (
-        <li key={row.eventId}>
-          <AttendanceRow row={row} linkable={reportEnabled} />
-        </li>
-      ))}
-    </ul>
+  if (data.events.length === 0) {
+    return <p className="text-muted text-sm">no attendance marked yet 🌿</p>;
+  }
+
+  return (
+    <>
+      <div className="mb-4 flex gap-3">
+        <Stat label="official event no-shows" value={data.officialNoShowCount} />
+        <Stat label="club event no-shows" value={data.clubNoShowCount} />
+      </div>
+      <ul className="flex flex-col gap-2">
+        {data.events.map((row) => (
+          <li key={row.eventId}>
+            <AttendanceRow row={row} linkable={reportEnabled} />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

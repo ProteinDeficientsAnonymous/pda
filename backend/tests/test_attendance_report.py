@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, EventType, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 
@@ -56,7 +56,7 @@ def events_admin(db):
     return admin
 
 
-def _make_event(host_user, title, days_ago):
+def _make_event(host_user, title, days_ago, event_type=EventType.COMMUNITY):
     start = timezone.now() - timedelta(days=days_ago)
     return Event.objects.create(
         title=title,
@@ -65,6 +65,7 @@ def _make_event(host_user, title, days_ago):
         rsvp_enabled=True,
         created_by=host_user,
         status=EventStatus.ACTIVE,
+        event_type=event_type,
     )
 
 
@@ -218,6 +219,31 @@ class TestAttendanceReportEndpoint:
     def test_unauthenticated_rejected(self, api_client):
         response = api_client.get("/api/community/events/attendance-report/")
         assert response.status_code == 401
+
+    def test_no_show_counts_split_by_event_type(self, api_client, host_user, members, events_admin):
+        official = _make_event(
+            host_user, "Official Event", days_ago=2, event_type=EventType.OFFICIAL
+        )
+        club = _make_event(host_user, "Club Event", days_ago=3, event_type=EventType.CLUB)
+        community = _make_event(
+            host_user, "Community Event", days_ago=4, event_type=EventType.COMMUNITY
+        )
+        for ev, count in ((official, 2), (club, 1), (community, 1)):
+            for i in range(count):
+                EventRSVP.objects.create(
+                    event=ev,
+                    user=members[i],
+                    status=RSVPStatus.ATTENDING,
+                    attendance=AttendanceStatus.DIDNT_GO,
+                )
+
+        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        data = response.json()
+        assert data["official_no_show_count"] == 2
+        assert data["club_no_show_count"] == 1
+        row_types = {r["event_id"]: r["event_type"] for r in data["events"]}
+        assert row_types[str(official.id)] == EventType.OFFICIAL
+        assert row_types[str(club.id)] == EventType.CLUB
 
 
 @pytest.mark.django_db

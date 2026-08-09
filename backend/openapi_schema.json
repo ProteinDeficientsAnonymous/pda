@@ -130,6 +130,11 @@
       },
       "AttendanceReportOut": {
         "properties": {
+          "club_no_show_count": {
+            "default": 0,
+            "title": "Club No Show Count",
+            "type": "integer"
+          },
           "events": {
             "default": [],
             "items": {
@@ -137,6 +142,11 @@
             },
             "title": "Events",
             "type": "array"
+          },
+          "official_no_show_count": {
+            "default": 0,
+            "title": "Official No Show Count",
+            "type": "integer"
           }
         },
         "title": "AttendanceReportOut",
@@ -1231,6 +1241,10 @@
             "title": "Event Id",
             "type": "string"
           },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
           "going_count": {
             "default": 0,
             "title": "Going Count",
@@ -1260,7 +1274,8 @@
         },
         "required": [
           "event_id",
-          "title"
+          "title",
+          "event_type"
         ],
         "title": "EventAttendanceRowOut",
         "type": "object"

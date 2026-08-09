@@ -275,6 +275,7 @@ class EventAttendanceRowOut(BaseModel):
 
     event_id: str
     title: str
+    event_type: str
     start_datetime: datetime | None = None
     attended_count: int = 0
     no_show_count: int = 0
@@ -283,6 +284,8 @@ class EventAttendanceRowOut(BaseModel):
 
 class AttendanceReportOut(BaseModel):
     events: list[EventAttendanceRowOut] = []
+    official_no_show_count: int = 0
+    club_no_show_count: int = 0
 
 
 class AttendanceIn(BaseModel):

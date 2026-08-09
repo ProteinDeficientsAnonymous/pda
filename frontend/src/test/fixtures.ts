@@ -192,6 +192,7 @@ export function makeRow(overrides: Partial<EventAttendanceRow> = {}): EventAtten
   return {
     eventId: 'e1',
     title: 'Potluck',
+    eventType: EventType.Official,
     startDatetime: new Date('2026-03-15T18:00:00Z'),
     attendedCount: 4,
     noShowCount: 1,
