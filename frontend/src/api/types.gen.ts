@@ -684,6 +684,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-import/commit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit Attendance Import
+         * @description Write reviewed rows into EventRSVP/AttendanceStatus, creating the event if needed.
+         */
+        post: operations["community__attendance_import_commit_attendance_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-import/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Attendance Import Event Options
+         * @description Existing events an admin can pick as the import target, newest first.
+         */
+        get: operations["community__attendance_import_list_attendance_import_event_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-import/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Attendance Import
+         * @description Parse a raw Partiful export and return matched vs needs-review rows.
+         *
+         *     No writes happen here — this is read-only preview against existing users.
+         */
+        post: operations["community__attendance_import_preview_attendance_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/attendance-report/": {
         parameters: {
             query?: never;
@@ -2093,6 +2155,43 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
+        /** AttendanceImportCommitIn */
+        AttendanceImportCommitIn: {
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Title */
+            event_title?: string | null;
+            /** Rows */
+            rows: components["schemas"]["ImportRowResolutionIn"][];
+        };
+        /** AttendanceImportCommitOut */
+        AttendanceImportCommitOut: {
+            /** Created Count */
+            created_count: number;
+            /** Event Id */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Updated Count */
+            updated_count: number;
+        };
+        /** AttendanceImportPreviewOut */
+        AttendanceImportPreviewOut: {
+            /**
+             * Matched
+             * @default []
+             */
+            matched: components["schemas"]["ImportRowOut"][];
+            /**
+             * Needs Review
+             * @default []
+             */
+            needs_review: components["schemas"]["ImportRowOut"][];
+        };
         /** AttendanceIn */
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
@@ -2979,6 +3078,15 @@ export interface components {
              */
             zelle_info: string;
         };
+        /** EventOptionOut */
+        EventOptionOut: {
+            /** Id */
+            id: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** EventOut */
         EventOut: {
             /**
@@ -3557,6 +3665,53 @@ export interface components {
         HostRSVPPaymentIn: {
             /** Paid Confirmed */
             paid_confirmed: boolean;
+        };
+        /** ImportCandidateOut */
+        ImportCandidateOut: {
+            /** Full Name */
+            full_name: string;
+            /** Phone Number */
+            phone_number: string;
+            /** User Id */
+            user_id: string;
+        };
+        /** ImportRowOut */
+        ImportRowOut: {
+            /**
+             * Candidates
+             * @default []
+             */
+            candidates: components["schemas"]["ImportCandidateOut"][];
+            /** Checked In */
+            checked_in: boolean;
+            /** Matched Full Name */
+            matched_full_name?: string | null;
+            /** Matched User Id */
+            matched_user_id?: string | null;
+            /** Partiful Status */
+            partiful_status: string;
+            /** Raw Name */
+            raw_name: string;
+            /** Row Index */
+            row_index: number;
+        };
+        /** ImportRowResolutionIn */
+        ImportRowResolutionIn: {
+            /** Checked In */
+            checked_in: boolean;
+            /** Partiful Status */
+            partiful_status: string;
+            /** Raw Name */
+            raw_name: string;
+            /** Row Index */
+            row_index: number;
+            /**
+             * Skip
+             * @default false
+             */
+            skip: boolean;
+            /** User Id */
+            user_id?: string | null;
         };
         /** InviteIn */
         InviteIn: {
@@ -6700,6 +6855,154 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_import_commit_attendance_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceImportCommitIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceImportCommitOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_import_list_attendance_import_event_options: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOptionOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_import_preview_attendance_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Csv File
+                     * Format: binary
+                     */
+                    csv_file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceImportPreviewOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
