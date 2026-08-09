@@ -1,3 +1,10 @@
+## [0.88.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.1...v0.88.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1320 - split attendance no-show counts by event type ([#1346](https://github.com/ProteinDeficientsAnonymous/pda/issues/1346)) ([7719ef9](https://github.com/ProteinDeficientsAnonymous/pda/commit/7719ef9140bb1258a883dcfd06f7331061984cdd))
+
 ## [0.88.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.0...v0.88.1) (2026-08-09)
 
 
