@@ -107,8 +107,13 @@ def refresh_token(request, response: HttpResponse):
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
-        refresh = RefreshToken(token)
-        # Slide the refresh cookie forward so it's an idle timeout, not a hard ceiling from login.
+        old_refresh = RefreshToken(token)
+        # RefreshToken(token) decodes an existing token verbatim, including its
+        # original exp claim — re-serializing it doesn't extend expiry. Minting
+        # a new one for the same user is what actually slides the idle timeout
+        # forward instead of leaving a fixed ceiling from login.
+        user = User.objects.get(pk=old_refresh.payload["user_id"])
+        refresh = RefreshToken.for_user(user)
         set_refresh_cookie(response, str(refresh))
         return Status(200, AccessOut(access=str(refresh.access_token)))
     except TokenError:

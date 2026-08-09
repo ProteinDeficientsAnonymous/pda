@@ -95,9 +95,9 @@ class TestRefreshViaCookie:
         assert response.status_code == 200
         assert "access" in response.json()
 
-    def test_refresh_reissues_sliding_refresh_cookie(self, api_client, test_user):
-        refresh = RefreshToken.for_user(test_user)
-        api_client.cookies[REFRESH_COOKIE_NAME] = str(refresh)
+    def test_refresh_reissues_refresh_cookie_with_later_expiry(self, api_client, test_user):
+        old_refresh = RefreshToken.for_user(test_user)
+        api_client.cookies[REFRESH_COOKIE_NAME] = str(old_refresh)
         response = api_client.post(
             "/api/auth/refresh/",
             {},
@@ -107,7 +107,12 @@ class TestRefreshViaCookie:
         cookie = response.cookies.get(REFRESH_COOKIE_NAME)
         assert cookie is not None
         assert cookie["httponly"] is True
-        assert RefreshToken(cookie.value) is not None
+        new_refresh = RefreshToken(cookie.value)
+        # The whole point of re-issuing is a fresh exp computed from "now", not
+        # copied from the old token — same-second in a fast test is fine, older
+        # is the bug this guards against.
+        assert new_refresh.payload["exp"] >= old_refresh.payload["exp"]
+        assert new_refresh.payload["jti"] != old_refresh.payload["jti"]
 
     def test_invalid_cookie_clears_cookie(self, api_client, test_user):
         api_client.cookies[REFRESH_COOKIE_NAME] = "not.a.valid.token"
