@@ -92,7 +92,8 @@ def preview_attendance_import(
         }
 
     rows = parse_partiful_csv(csv_file.read())
-    matched, needs_review = match_rows(rows, existing_rsvp_user_ids)
+    checked_in_rows = [r for r in rows if r.get("checked in", "").lower() == "yes"]
+    matched, needs_review = match_rows(checked_in_rows, existing_rsvp_user_ids)
     return Status(200, AttendanceImportPreviewOut(matched=matched, needs_review=needs_review))
 
 
