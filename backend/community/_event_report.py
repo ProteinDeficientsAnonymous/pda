@@ -55,48 +55,52 @@ def _person(
     )
 
 
+def _classify_person(rsvp, person: CheckInReportPersonOut, buckets: dict) -> None:
+    if rsvp.status == RSVPStatus.CANT_GO:
+        buckets["canceled"].append(
+            CanceledPersonOut(
+                **person.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
+            )
+        )
+    elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
+        buckets["attended"].append(
+            AttendedPersonOut(**person.model_dump(), checked_in_at=rsvp.checked_in_at)
+        )
+    elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW:
+        buckets["no_shows"].append(person)
+    else:
+        buckets["unmarked"].append(person)
+
+
+def _classify_plus_one(rsvp, person: CheckInReportPersonOut, buckets: dict) -> None:
+    if rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
+        buckets["attended"].append(
+            AttendedPersonOut(**person.model_dump(), checked_in_at=rsvp.checked_in_at)
+        )
+    else:
+        buckets["unmarked"].append(person)
+
+
 def _build_report(event: Event, viewer) -> CheckInReportOut:
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
     can_see_phones = is_cohost(viewer, co_host_ids)
 
-    attended, no_shows, canceled, unmarked = [], [], [], []
+    buckets = {"attended": [], "no_shows": [], "canceled": [], "unmarked": []}
     for rsvp in _report_rsvps(event):
-        base = _person(rsvp, viewer, can_see_phones)
-        if rsvp.status == RSVPStatus.CANT_GO:
-            canceled.append(
-                CanceledPersonOut(
-                    **base.model_dump(), cancelled_at=rsvp.cancelled_at or rsvp.updated_at
-                )
-            )
-        elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
-            attended.append(
-                AttendedPersonOut(**base.model_dump(), checked_in_at=rsvp.checked_in_at)
-            )
-        elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW:
-            no_shows.append(base)
-        else:
-            unmarked.append(base)
-
+        _classify_person(rsvp, _person(rsvp, viewer, can_see_phones), buckets)
         if rsvp.has_plus_one:
-            plus_one_base = _person(rsvp, viewer, can_see_phones, is_plus_one_guest=True)
-            if rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.ATTENDED:
-                attended.append(
-                    AttendedPersonOut(
-                        **plus_one_base.model_dump(), checked_in_at=rsvp.checked_in_at
-                    )
-                )
-            else:
-                unmarked.append(plus_one_base)
+            plus_one = _person(rsvp, viewer, can_see_phones, is_plus_one_guest=True)
+            _classify_plus_one(rsvp, plus_one, buckets)
 
     return CheckInReportOut(
-        attended_count=len(attended),
-        no_show_count=len(no_shows),
-        canceled_count=len(canceled),
-        unmarked_count=len(unmarked),
-        attended=attended,
-        no_shows=no_shows,
-        canceled=canceled,
-        unmarked=unmarked,
+        attended_count=len(buckets["attended"]),
+        no_show_count=len(buckets["no_shows"]),
+        canceled_count=len(buckets["canceled"]),
+        unmarked_count=len(buckets["unmarked"]),
+        attended=buckets["attended"],
+        no_shows=buckets["no_shows"],
+        canceled=buckets["canceled"],
+        unmarked=buckets["unmarked"],
     )
 
 
