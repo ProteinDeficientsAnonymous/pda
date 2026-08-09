@@ -1,3 +1,10 @@
+## [0.88.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.0...v0.88.1) (2026-08-09)
+
+
+### Bug Fixes
+
+* 1319 - add search and member count to attendance members tab ([#1345](https://github.com/ProteinDeficientsAnonymous/pda/issues/1345)) ([8c47009](https://github.com/ProteinDeficientsAnonymous/pda/commit/8c470098f9e9343d821e1ffd4522cb560dd6a1f2))
+
 # [0.88.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.87.9...v0.88.0) (2026-08-09)
 
 
