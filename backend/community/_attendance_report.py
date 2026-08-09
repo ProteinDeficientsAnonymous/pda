@@ -27,7 +27,7 @@ from community._rsvp_counts import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, FeatureFlag, flag_enabled
+from community.models import AttendanceStatus, Event, EventType, FeatureFlag, flag_enabled
 
 router = Router()
 
@@ -68,8 +68,10 @@ def attendance_report(request):
         for e in events
     ]
 
-    official_no_show_total = sum(r.no_show_count for r in rows if r.event_type == "official")
-    club_no_show_total = sum(r.no_show_count for r in rows if r.event_type == "club")
+    official_no_show_total = sum(
+        r.no_show_count for r in rows if r.event_type == EventType.OFFICIAL
+    )
+    club_no_show_total = sum(r.no_show_count for r in rows if r.event_type == EventType.CLUB)
 
     return Status(
         200,

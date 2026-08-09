@@ -94,8 +94,12 @@ describe('AttendanceReportScreen', () => {
 
     renderScreen();
 
-    expect(screen.getByText('1 official event no-shows')).toBeInTheDocument();
-    expect(screen.getByText('2 club event no-shows')).toBeInTheDocument();
+    expect(screen.getByText('official event no-shows').closest('span')).toHaveTextContent(
+      '1 official event no-shows',
+    );
+    expect(screen.getByText('club event no-shows').closest('span')).toHaveTextContent(
+      '2 club event no-shows',
+    );
   });
 
   it('links each event row to its check-in report when host_attendance_report is on', () => {

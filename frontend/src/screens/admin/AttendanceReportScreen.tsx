@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { type AttendanceReportData, type EventAttendanceRow, useAttendanceReport } from '@/api/attendanceReport';
+import { type EventAttendanceRow, useAttendanceReport } from '@/api/attendanceReport';
 import { useFlag } from '@/api/featureFlags';
 import { Feature } from '@/models/featureFlags';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -85,7 +85,7 @@ function EventsTab() {
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load attendance — try refreshing" />;
 
-  if (!data || data.events.length === 0) {
+  if (data.events.length === 0) {
     return <p className="text-muted text-sm">no attendance marked yet 🌿</p>;
   }
 
