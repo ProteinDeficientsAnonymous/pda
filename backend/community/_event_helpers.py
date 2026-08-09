@@ -6,6 +6,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
@@ -138,8 +139,8 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
         cancelled_at = r.cancelled_at or r.updated_at
         lead_time = event.start_datetime - cancelled_at
         same_day = (
-            timezone.localtime(cancelled_at).date()
-            == timezone.localtime(event.start_datetime).date()
+            timezone.localtime(cancelled_at, settings.LOCAL_DAY_TZ).date()
+            == timezone.localtime(event.start_datetime, settings.LOCAL_DAY_TZ).date()
         )
         rows.append(
             CancellationOut(
