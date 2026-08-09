@@ -1,3 +1,10 @@
+## [0.89.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.0...v0.89.1) (2026-08-09)
+
+
+### Bug Fixes
+
+* correct attendance report test mock shape ([#1352](https://github.com/ProteinDeficientsAnonymous/pda/issues/1352)) ([7c589b7](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c589b7432e4cd45f526bed3d51fe2bb8325297f))
+
 # [0.89.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.3...v0.89.0) (2026-08-09)
 
 
