@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 
 import type { ConsentTypeValue } from '@/models/consent';
 import { normalizePermissions } from '@/models/permissions';
@@ -132,15 +133,23 @@ export async function magicLogin(token: string): Promise<{ access: string; user:
   return { access: data.access, user };
 }
 
+async function tryRestoreSession(): Promise<{ access: string; user: User } | null> {
+  const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
+  const user = await fetchMeWithToken(data.access);
+  return { access: data.access, user };
+}
+
 export async function restoreSession(): Promise<{ access: string; user: User } | null> {
-  // The refresh cookie is sent automatically. If it's missing/invalid, /refresh/
-  // returns 401 and we treat the session as gone.
+  // Retry once unless it's a real 401 — avoids re-login on a transient 5xx.
   try {
-    const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
-    const user = await fetchMeWithToken(data.access);
-    return { access: data.access, user };
-  } catch {
-    return null;
+    return await tryRestoreSession();
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 401) return null;
+    try {
+      return await tryRestoreSession();
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -75,7 +75,7 @@ DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", c
 
 NINJA_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 

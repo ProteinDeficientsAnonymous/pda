@@ -95,6 +95,41 @@ class TestRefreshViaCookie:
         assert response.status_code == 200
         assert "access" in response.json()
 
+    def test_refresh_reissues_refresh_cookie_with_later_expiry(self, api_client, test_user):
+        old_refresh = RefreshToken.for_user(test_user)
+        api_client.cookies[REFRESH_COOKIE_NAME] = str(old_refresh)
+        response = api_client.post(
+            "/api/auth/refresh/",
+            {},
+            content_type="application/json",
+        )
+        assert response.status_code == 200
+        cookie = response.cookies.get(REFRESH_COOKIE_NAME)
+        assert cookie is not None
+        assert cookie["httponly"] is True
+        new_refresh = RefreshToken(cookie.value)
+        # >= not >: same-second is fine, older is the bug.
+        assert new_refresh.payload["exp"] >= old_refresh.payload["exp"]
+        assert new_refresh.payload["jti"] != old_refresh.payload["jti"]
+
+    def test_refresh_for_deleted_user_returns_401_without_error_log(
+        self, api_client, test_user, caplog
+    ):
+        refresh = RefreshToken.for_user(test_user)
+        test_user.delete()
+        api_client.cookies[REFRESH_COOKIE_NAME] = str(refresh)
+        response = api_client.post(
+            "/api/auth/refresh/",
+            {},
+            content_type="application/json",
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"][0]["code"] == "auth.refresh_token_invalid"
+        cleared = response.cookies.get(REFRESH_COOKIE_NAME)
+        assert cleared is not None
+        assert cleared.value == ""
+        assert "pda.auth" not in {r.name for r in caplog.records if r.levelno >= 40}
+
     def test_invalid_cookie_clears_cookie(self, api_client, test_user):
         api_client.cookies[REFRESH_COOKIE_NAME] = "not.a.valid.token"
         response = api_client.post(

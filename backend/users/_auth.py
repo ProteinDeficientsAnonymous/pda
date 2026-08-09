@@ -107,9 +107,13 @@ def refresh_token(request, response: HttpResponse):
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
-        refresh = RefreshToken(token)
+        old_refresh = RefreshToken(token)
+        # Mint fresh, don't reuse old_refresh — it keeps the original exp.
+        user = User.objects.get(pk=old_refresh.payload["user_id"])
+        refresh = RefreshToken.for_user(user)
+        set_refresh_cookie(response, str(refresh))
         return Status(200, AccessOut(access=str(refresh.access_token)))
-    except TokenError:
+    except (TokenError, User.DoesNotExist):
         raise_validation(
             Code.Auth.REFRESH_TOKEN_INVALID, status_code=401, clear_refresh_cookie=True
         )
