@@ -110,10 +110,6 @@ function EventsTab() {
 
   return (
     <>
-      <div className="mb-4 flex gap-3">
-        <Stat label="official event no-shows" value={data.officialNoShowCount} />
-        <Stat label="club event no-shows" value={data.clubNoShowCount} />
-      </div>
       <ul className="flex flex-col gap-2">
         {data.events.map((row) => (
           <li key={row.eventId}>
