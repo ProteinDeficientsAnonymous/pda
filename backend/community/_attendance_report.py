@@ -55,20 +55,28 @@ def attendance_report(request):
         .order_by("-start_datetime")
     )
 
+    rows = [
+        EventAttendanceRowOut(
+            event_id=str(e.id),
+            title=e.title,
+            event_type=e.event_type,
+            start_datetime=e.start_datetime,
+            attended_count=e.attended_total,
+            no_show_count=e.no_show_total,
+            going_count=e.going_total,
+        )
+        for e in events
+    ]
+
+    official_no_show_total = sum(r.no_show_count for r in rows if r.event_type == "official")
+    club_no_show_total = sum(r.no_show_count for r in rows if r.event_type == "club")
+
     return Status(
         200,
         AttendanceReportOut(
-            events=[
-                EventAttendanceRowOut(
-                    event_id=str(e.id),
-                    title=e.title,
-                    start_datetime=e.start_datetime,
-                    attended_count=e.attended_total,
-                    no_show_count=e.no_show_total,
-                    going_count=e.going_total,
-                )
-                for e in events
-            ]
+            events=rows,
+            official_no_show_count=official_no_show_total,
+            club_no_show_count=club_no_show_total,
         ),
     )
 

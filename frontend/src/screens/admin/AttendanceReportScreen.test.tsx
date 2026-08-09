@@ -37,7 +37,11 @@ function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) 
   mockUseReport.mockReturnValue({
     isPending: false,
     isError: false,
-    data: [],
+    data: {
+      events: [],
+      officialNoShowCount: 0,
+      clubNoShowCount: 0,
+    },
     ...overrides,
   } as ReturnType<typeof useAttendanceReport>);
 }
@@ -60,7 +64,13 @@ beforeEach(() => {
 
 describe('AttendanceReportScreen', () => {
   it('renders per-event attended / no-show / going counts', () => {
-    mockResult({ data: [makeRow()] });
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ report: true });
 
     renderScreen();
@@ -73,8 +83,29 @@ describe('AttendanceReportScreen', () => {
     expect(row).toHaveAttribute('href', '/events/e1/report');
   });
 
+  it('displays split no-show counts by event type', () => {
+    mockResult({
+      data: {
+        events: [makeRow(), makeRow({ eventType: 'club', eventId: 'e2', noShowCount: 2 })],
+        officialNoShowCount: 1,
+        clubNoShowCount: 2,
+      },
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('1 official event no-shows')).toBeInTheDocument();
+    expect(screen.getByText('2 club event no-shows')).toBeInTheDocument();
+  });
+
   it('links each event row to its check-in report when host_attendance_report is on', () => {
-    mockResult({ data: [makeRow()] });
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true, report: true });
 
     renderScreen();
@@ -83,7 +114,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('renders event rows as plain text (no link) when host_attendance_report is off', () => {
-    mockResult({ data: [makeRow()] });
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true, report: false });
 
     renderScreen();
@@ -93,7 +130,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('shows the empty state when nothing is marked', () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
 
     renderScreen();
 
@@ -117,7 +160,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('hides the members tab when the flag is off', () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: false });
 
     renderScreen();
@@ -126,7 +175,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('switches to the members tab when the flag is on', async () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true });
     const user = userEvent.setup();
 
