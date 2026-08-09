@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0090_join_form_question_types"),
+        ("community", "0092_join_form_question_types"),
     ]
 
     operations = [
