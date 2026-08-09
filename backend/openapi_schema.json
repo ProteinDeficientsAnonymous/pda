@@ -111,6 +111,111 @@
         "title": "ApproveJoinRequestOut",
         "type": "object"
       },
+      "AttendanceImportCommitIn": {
+        "properties": {
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRowResolutionIn"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "AttendanceImportCommitIn",
+        "type": "object"
+      },
+      "AttendanceImportCommitOut": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "updated_count": {
+            "title": "Updated Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_title",
+          "created_count",
+          "updated_count",
+          "skipped_count"
+        ],
+        "title": "AttendanceImportCommitOut",
+        "type": "object"
+      },
+      "AttendanceImportPreviewOut": {
+        "properties": {
+          "matched": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "title": "Matched",
+            "type": "array"
+          },
+          "needs_review": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "title": "Needs Review",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceImportPreviewOut",
+        "type": "object"
+      },
       "AttendanceIn": {
         "properties": {
           "attendance": {
@@ -1978,6 +2083,36 @@
         "title": "EventListOut",
         "type": "object"
       },
+      "EventOptionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "EventOptionOut",
+        "type": "object"
+      },
       "EventOut": {
         "properties": {
           "allow_plus_ones": {
@@ -3343,6 +3478,136 @@
           "paid_confirmed"
         ],
         "title": "HostRSVPPaymentIn",
+        "type": "object"
+      },
+      "ImportCandidateOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "full_name",
+          "phone_number"
+        ],
+        "title": "ImportCandidateOut",
+        "type": "object"
+      },
+      "ImportRowOut": {
+        "properties": {
+          "candidates": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "checked_in": {
+            "title": "Checked In",
+            "type": "boolean"
+          },
+          "has_existing_rsvp": {
+            "default": false,
+            "title": "Has Existing Rsvp",
+            "type": "boolean"
+          },
+          "matched_full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Full Name"
+          },
+          "matched_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched User Id"
+          },
+          "partiful_status": {
+            "title": "Partiful Status",
+            "type": "string"
+          },
+          "raw_name": {
+            "title": "Raw Name",
+            "type": "string"
+          },
+          "row_index": {
+            "title": "Row Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row_index",
+          "raw_name",
+          "partiful_status",
+          "checked_in"
+        ],
+        "title": "ImportRowOut",
+        "type": "object"
+      },
+      "ImportRowResolutionIn": {
+        "properties": {
+          "checked_in": {
+            "title": "Checked In",
+            "type": "boolean"
+          },
+          "partiful_status": {
+            "title": "Partiful Status",
+            "type": "string"
+          },
+          "raw_name": {
+            "title": "Raw Name",
+            "type": "string"
+          },
+          "row_index": {
+            "title": "Row Index",
+            "type": "integer"
+          },
+          "skip": {
+            "default": false,
+            "title": "Skip",
+            "type": "boolean"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "row_index",
+          "raw_name",
+          "partiful_status",
+          "checked_in"
+        ],
+        "title": "ImportRowResolutionIn",
         "type": "object"
       },
       "InviteIn": {
@@ -8808,6 +9073,230 @@
           }
         ],
         "summary": "Member Attendance Analytics",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-import/commit/": {
+      "post": {
+        "operationId": "community__attendance_import_commit_attendance_import",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceImportCommitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceImportCommitOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Commit Attendance Import",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-import/events/": {
+      "get": {
+        "operationId": "community__attendance_import_list_attendance_import_event_options",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventOptionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Attendance Import Event Options",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-import/preview/": {
+      "post": {
+        "operationId": "community__attendance_import_preview_attendance_import",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "csv_file": {
+                    "format": "binary",
+                    "title": "Csv File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "csv_file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceImportPreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Preview Attendance Import",
         "tags": [
           "community"
         ]

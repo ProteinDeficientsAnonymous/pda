@@ -397,6 +397,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return maxMb !== null ? `photo must be under ${String(maxMb)} mb` : 'photo is too large';
     }
 
+    // Attendance import
+    case Code.AttendanceImport.CsvEmpty:
+      return "that csv doesn't have any rows — export attendees from partiful and try again";
+    case Code.AttendanceImport.CsvMalformed:
+      return "couldn't read that csv — make sure it's the raw partiful export";
+    case Code.AttendanceImport.EventOrTitleRequired:
+      return 'pick an existing event or give the new event a name and date';
+    case Code.AttendanceImport.AmbiguousUserPick:
+      return 'pick a member for that row before continuing';
+
     // Permission / rate
     case Code.Perm.Denied:
       return "you don't have permission to do that";

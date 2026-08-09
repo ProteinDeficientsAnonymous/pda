@@ -173,6 +173,12 @@ export const Code = {
     TypeNotAllowed: 'photo.type_not_allowed',
     TooLarge: 'photo.too_large',
   },
+  AttendanceImport: {
+    CsvEmpty: 'attendance_import.csv_empty',
+    CsvMalformed: 'attendance_import.csv_malformed',
+    EventOrTitleRequired: 'attendance_import.event_or_title_required',
+    AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
+  },
   Perm: {
     Denied: 'perm.denied',
   },
@@ -361,6 +367,10 @@ export type ValidationCode =
   | 'join_request.guidelines_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
+  | 'attendance_import.csv_empty'
+  | 'attendance_import.csv_malformed'
+  | 'attendance_import.event_or_title_required'
+  | 'attendance_import.ambiguous_user_pick'
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
@@ -522,6 +532,10 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.guidelines_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
+  'attendance_import.csv_empty': [],
+  'attendance_import.csv_malformed': [],
+  'attendance_import.event_or_title_required': [],
+  'attendance_import.ambiguous_user_pick': ['row_index'],
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],

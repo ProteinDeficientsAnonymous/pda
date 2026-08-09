@@ -22,6 +22,11 @@ vi.mock('@/api/featureFlags', () => ({
 vi.mock('./MemberAttendanceTab', () => ({
   MemberAttendanceTab: () => <div>members tab content</div>,
 }));
+vi.mock('@/api/attendanceImport', () => ({
+  useAttendanceImportEventOptions: vi.fn(() => ({ data: [] })),
+  usePreviewAttendanceImport: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useCommitAttendanceImport: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
 
 const mockUseReport = vi.mocked(useAttendanceReport);
 const mockUseFlag = vi.mocked(useFlag);
@@ -193,5 +198,16 @@ describe('AttendanceReportScreen', () => {
     await user.click(screen.getByRole('tab', { name: 'members' }));
 
     expect(screen.getByText('members tab content')).toBeInTheDocument();
+  });
+
+  it('opens the partiful import dialog from the import button', async () => {
+    mockResult({ data: [] });
+    const user = userEvent.setup();
+
+    renderScreen();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'import from partiful' }));
+
+    expect(screen.getByRole('dialog', { name: 'import partiful attendance' })).toBeInTheDocument();
   });
 });

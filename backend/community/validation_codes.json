@@ -743,6 +743,30 @@
         ]
       }
     ],
+    "AttendanceImport": [
+      {
+        "name": "CSV_EMPTY",
+        "value": "attendance_import.csv_empty",
+        "params": []
+      },
+      {
+        "name": "CSV_MALFORMED",
+        "value": "attendance_import.csv_malformed",
+        "params": []
+      },
+      {
+        "name": "EVENT_OR_TITLE_REQUIRED",
+        "value": "attendance_import.event_or_title_required",
+        "params": []
+      },
+      {
+        "name": "AMBIGUOUS_USER_PICK",
+        "value": "attendance_import.ambiguous_user_pick",
+        "params": [
+          "row_index"
+        ]
+      }
+    ],
     "Perm": [
       {
         "name": "DENIED",
