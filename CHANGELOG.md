@@ -1,3 +1,10 @@
+# [0.89.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.3...v0.89.0) (2026-08-09)
+
+
+### Features
+
+* 1324 - import historical partiful attendance via csv upload ([#1343](https://github.com/ProteinDeficientsAnonymous/pda/issues/1343)) ([c532fdd](https://github.com/ProteinDeficientsAnonymous/pda/commit/c532fddc626cd35443fc428d6eb86899b0d39339))
+
 ## [0.88.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.88.2...v0.88.3) (2026-08-09)
 
 
