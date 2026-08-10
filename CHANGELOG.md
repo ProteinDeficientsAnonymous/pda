@@ -1,3 +1,10 @@
+## [0.89.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.2...v0.89.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1349 - only map checked-in users in partiful import ([#1350](https://github.com/ProteinDeficientsAnonymous/pda/issues/1350)) ([13bd655](https://github.com/ProteinDeficientsAnonymous/pda/commit/13bd6556b802a1f9d806ddb1a7d91000a64ccb22))
+
 ## [0.89.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.1...v0.89.2) (2026-08-10)
 
 
