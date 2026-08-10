@@ -30,11 +30,19 @@ class Code:
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
-        ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
+        NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
+        RSVP_QUESTION_NOT_FOUND = "event.rsvp_question_not_found"
+        RSVP_QUESTION_DUPLICATE = "event.rsvp_question_duplicate"
+        RSVP_QUESTION_CONFLICT = "event.rsvp_question_conflict"
+        RSVP_QUESTION_OPTIONS_REQUIRED = "event.rsvp_question_options_required"
+        RSVP_QUESTION_OPTION_NO_COMMA = "event.rsvp_question_option_no_comma"
+        RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }
+        RSVP_ANSWER_INVALID_OPTION = "event.rsvp_answer_invalid_option"  # params: { label: str }
+        RSVP_ANSWER_TOO_LONG = "event.rsvp_answer_too_long"  # params: { label: str, max: int }
         PAYMENT_CONFIRMATION_REQUIRED = "event.payment_confirmation_required"
         CHECK_IN_REPORT_NOT_YET_AVAILABLE = "event.check_in_report_not_yet_available"
         CHECK_IN_REPORT_INVALID_COLUMN = (
@@ -148,7 +156,7 @@ class Code:
         ANSWER_INVALID_FORMAT = "survey.answer_invalid_format"  # params: { label }
         ANSWER_INVALID_OPTION = "survey.answer_invalid_option"  # params: { label }
         ANSWER_MUST_BE_NUMBER = "survey.answer_must_be_number"  # params: { label }
-        ANSWER_MUST_BE_YES_NO = "survey.answer_must_be_yes_no"  # params: { label }
+        ANSWER_MUST_BE_BOOLEAN = "survey.answer_must_be_boolean"  # params: { label }
         ANSWER_RATING_OUT_OF_RANGE = "survey.answer_rating_out_of_range"  # params: { label }
         ANSWER_INVALID_DATETIME_OPTION = (
             "survey.answer_invalid_datetime_option"  # params: { label }
@@ -176,6 +184,13 @@ class Code:
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
         TOO_LARGE = "photo.too_large"  # params: { max_mb: int }
+
+    class AttendanceImport:
+        CSV_EMPTY = "attendance_import.csv_empty"
+        CSV_MALFORMED = "attendance_import.csv_malformed"
+        EVENT_OR_TITLE_REQUIRED = "attendance_import.event_or_title_required"
+        INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
+        AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
 
     class Perm:
         DENIED = "perm.denied"  # params: { action?: str }

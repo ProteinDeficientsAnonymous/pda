@@ -15,7 +15,7 @@ export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor, 
     ? RSVP_STATUS_LABELS.filter((p) => statuses.includes(p.status))
     : RSVP_STATUS_LABELS;
   return (
-    <div className="-mx-1 flex justify-center-safe gap-2 overflow-x-auto px-1 py-1">
+    <div className="-mx-1 flex shrink-0 justify-center-safe gap-2 overflow-x-auto overflow-y-clip px-1 py-1">
       {options.map((p) => {
         const label = labelFor ? labelFor(p.status, p.label) : p.label;
         const active = value === p.status;

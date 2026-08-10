@@ -127,8 +127,8 @@
         "params": []
       },
       {
-        "name": "ATTENDANCE_ONLY_FOR_GOING_RSVPS",
-        "value": "event.attendance_only_for_going_rsvps",
+        "name": "NO_PLUS_ONE_TO_CHECK_IN",
+        "value": "event.no_plus_one_to_check_in",
         "params": []
       },
       {
@@ -153,6 +153,53 @@
         "value": "event.would_remove_non_members",
         "params": [
           "count"
+        ]
+      },
+      {
+        "name": "RSVP_QUESTION_NOT_FOUND",
+        "value": "event.rsvp_question_not_found",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_DUPLICATE",
+        "value": "event.rsvp_question_duplicate",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_CONFLICT",
+        "value": "event.rsvp_question_conflict",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_OPTIONS_REQUIRED",
+        "value": "event.rsvp_question_options_required",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_OPTION_NO_COMMA",
+        "value": "event.rsvp_question_option_no_comma",
+        "params": []
+      },
+      {
+        "name": "RSVP_ANSWER_REQUIRED",
+        "value": "event.rsvp_answer_required",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_INVALID_OPTION",
+        "value": "event.rsvp_answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_TOO_LONG",
+        "value": "event.rsvp_answer_too_long",
+        "params": [
+          "label",
+          "max"
         ]
       },
       {
@@ -617,8 +664,8 @@
         ]
       },
       {
-        "name": "ANSWER_MUST_BE_YES_NO",
-        "value": "survey.answer_must_be_yes_no",
+        "name": "ANSWER_MUST_BE_BOOLEAN",
+        "value": "survey.answer_must_be_boolean",
         "params": [
           "label"
         ]
@@ -740,6 +787,35 @@
         "value": "photo.too_large",
         "params": [
           "max_mb"
+        ]
+      }
+    ],
+    "AttendanceImport": [
+      {
+        "name": "CSV_EMPTY",
+        "value": "attendance_import.csv_empty",
+        "params": []
+      },
+      {
+        "name": "CSV_MALFORMED",
+        "value": "attendance_import.csv_malformed",
+        "params": []
+      },
+      {
+        "name": "EVENT_OR_TITLE_REQUIRED",
+        "value": "attendance_import.event_or_title_required",
+        "params": []
+      },
+      {
+        "name": "INVALID_EVENT_TYPE",
+        "value": "attendance_import.invalid_event_type",
+        "params": []
+      },
+      {
+        "name": "AMBIGUOUS_USER_PICK",
+        "value": "attendance_import.ambiguous_user_pick",
+        "params": [
+          "row_index"
         ]
       }
     ],

@@ -287,15 +287,21 @@ class TestRSVP:
             content_type="application/json",
             **auth_headers,
         )
-        # other_user (not creator) fetches event
+        # other_user (not creator, but RSVP'd, so allowed to see the guest list)
+        api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.MAYBE},
+            content_type="application/json",
+            **other_headers,
+        )
         response = api_client.get(
             f"/api/community/events/{rsvp_event.id}/",
             **other_headers,
         )
         assert response.status_code == 200
         guests = response.json()["guests"]
-        assert len(guests) == 1
-        assert guests[0]["phone"] is None
+        assert len(guests) == 2
+        assert all(g["phone"] is None for g in guests)
 
     def test_guest_list_flags_non_members(self, api_client, auth_headers, rsvp_event):
         non_member = User.objects.create_user(

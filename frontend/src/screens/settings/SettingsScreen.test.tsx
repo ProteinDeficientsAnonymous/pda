@@ -31,7 +31,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccessibilityStore } from '@/accessibility/store';
 import * as authApi from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
-import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import SettingsScreen from './SettingsScreen';
 
@@ -67,34 +67,14 @@ vi.mock('@/api/auth', () => ({
   deleteProfilePhoto: vi.fn(),
 }));
 
-const TEST_USER: User = {
+const TEST_USER = makeUser({
   id: 'u1',
   phoneNumber: '+12125550001',
   firstName: 'Test',
   lastName: 'User',
   fullName: 'Test User',
-  nickname: '',
   email: 'test@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

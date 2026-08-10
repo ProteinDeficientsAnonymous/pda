@@ -10,11 +10,12 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
-import { optionalPersonName, personName } from '@/utils/validators';
+import { email, optionalPersonName, personName, ValidationMessage } from '@/utils/validators';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { EmailPreferences } from './EmailPreferences';
 import { InlineBirthday } from './InlineBirthday';
 import { PrivacyToggles } from './PrivacyToggles';
 
@@ -55,7 +56,8 @@ export default function SettingsScreen() {
           label="email"
           value={user.email}
           onSave={(v) => updateProfile({ email: v })}
-          placeholder="add an email"
+          required
+          validate={email}
         />
         <InlineText
           label="pronouns"
@@ -90,6 +92,10 @@ export default function SettingsScreen() {
 
       <Section label="privacy">
         <PrivacyToggles user={user} onChange={(patch) => void updateProfile(patch)} />
+      </Section>
+
+      <Section label="emails">
+        <EmailPreferences user={user} onChange={(patch) => void updateProfile(patch)} />
       </Section>
 
       <Section label="calendar">
@@ -162,7 +168,9 @@ function InlineText({
     }
     const validationError = validate?.(draft);
     if (validationError) {
-      setError(validationError === 'Required' ? `${label} required` : validationError);
+      setError(
+        validationError === ValidationMessage.REQUIRED ? `${label} required` : validationError,
+      );
       return;
     }
     if (draft.trim() === value) {

@@ -10,6 +10,7 @@ import { Feature } from '@/models/featureFlags';
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { canEditEvent } from './eventEditGate';
 import { GroupTextDialog } from './GroupTextDialog';
+import { hasSavedQuestionnaireResponses } from './rsvpQuestions';
 
 interface Props {
   event: Event;
@@ -26,7 +27,9 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const user = useAuthStore((s) => s.user);
   const showCheckInReport = eventHasEnded && reportFlagOn;
-  const showManageRsvps = canManageRsvps && !eventHasEnded;
+  const hasQuestionHistory =
+    event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
+  const showManageRsvps = canManageRsvps && (!eventHasEnded || hasQuestionHistory);
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
   const showEdit = canEditEvent(event, user);
 
@@ -88,7 +91,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
             </MenuLink>
           ) : null}
           <MenuLink
-            to={`/events/${eventId}/attendance`}
+            to={`/events/${eventId}/check-in`}
             onSelect={() => {
               setOpen(false);
             }}

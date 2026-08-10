@@ -15,6 +15,7 @@ import {
 } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
+import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
   event: Event;
@@ -72,6 +73,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     comment?: string;
     hasPlusOne: boolean;
     paidConfirmed?: boolean;
+    questionnaireResponses: Record<string, RsvpAnswerValue>;
   }) {
     setError(null);
     try {
@@ -80,6 +82,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
+          questionnaireResponses: args.questionnaireResponses,
           ...(args.comment !== undefined ? { comment: args.comment } : {}),
           ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });
@@ -88,6 +91,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
+          questionnaireResponses: args.questionnaireResponses,
           ...(args.comment === undefined ? {} : { comment: args.comment }),
           ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });
@@ -170,6 +174,10 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           allowComment={Boolean(token) || box.mode === 'create'}
           atCapacity={atCapacity}
           busy={busy}
+          questions={event.rsvpQuestions}
+          initialAnswers={Object.fromEntries(
+            Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
+          )}
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {

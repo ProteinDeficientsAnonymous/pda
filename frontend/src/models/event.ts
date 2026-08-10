@@ -1,5 +1,9 @@
+import type { components } from '@/api/types.gen';
+
 import { hasPermission, Permission } from './permissions';
 import type { User } from './user';
+
+export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export const EventType = {
   Community: 'community',
@@ -64,7 +68,7 @@ export function rsvpGroupLabel(status: string): string {
 export const AttendanceStatus = {
   Unknown: 'unknown',
   Attended: 'attended',
-  NoShow: 'no_show',
+  DidntGo: 'didnt_go',
 } as const;
 export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
@@ -75,6 +79,16 @@ export interface EventTag {
   slug: string;
 }
 
+export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
+
+export interface EventRsvpQuestion {
+  id: string;
+  label: string;
+  fieldType: EventRsvpQuestionType;
+  options: string[];
+  required: boolean;
+}
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -83,8 +97,11 @@ export interface EventGuest {
   photoUrl: string;
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
+  plusOneAttendance: AttendanceStatusValue;
   isMember: boolean;
   paidConfirmed: boolean;
+  /** Host-only RSVP question snapshots; empty for non-hosts. */
+  questionnaireResponses: Record<string, { label: string; answer: string }>;
 }
 
 export interface EventCancellation {
@@ -101,7 +118,7 @@ export interface EventStats {
   noResponseCount: number;
   waitlistedCount: number;
   attendedCount: number;
-  noShowCount: number;
+  didntGoCount: number;
   notMarkedCount: number;
   cancellations: EventCancellation[];
 }
@@ -152,6 +169,9 @@ export interface Event {
   guests: EventGuest[];
   myRsvp: string | null;
   myPaidConfirmed: boolean;
+  /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
+  myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
+  rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   surveySlugs: string[];
   invitedUserIds: string[];
@@ -184,6 +204,10 @@ export interface PendingCohostInvite {
 
 export function isHosting(event: Event, userId: string): boolean {
   return event.coHostIds.includes(userId);
+}
+
+export function eventHostCount(event: Event): number {
+  return event.coHostIds.length + event.pendingCohostInvites.length;
 }
 
 export function canManageEvent(event: Event, user: User | null): boolean {

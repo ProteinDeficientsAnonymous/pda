@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { JoinQuestion } from '@/api/join';
 import { useDeleteJoinQuestion, useJoinQuestions, useReorderJoinQuestions } from '@/api/join';
+import { questionTypeWantsOptions } from '@/components/questions/questionTypeOptions';
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -67,7 +68,7 @@ export default function JoinFormAdminScreen() {
                 </p>
                 <p className="text-muted text-xs break-words">
                   {q.fieldType}
-                  {q.fieldType === 'select' && q.options.length > 0
+                  {questionTypeWantsOptions(q.fieldType) && q.options.length > 0
                     ? ` · ${String(q.options.length)} options`
                     : ''}
                 </p>

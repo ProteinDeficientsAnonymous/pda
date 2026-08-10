@@ -32,11 +32,19 @@ export const Code = {
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
-    AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
+    NoPlusOneToCheckIn: 'event.no_plus_one_to_check_in',
     PermDenied: 'event.perm_denied',
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
     WouldRemoveNonMembers: 'event.would_remove_non_members',
+    RsvpQuestionNotFound: 'event.rsvp_question_not_found',
+    RsvpQuestionDuplicate: 'event.rsvp_question_duplicate',
+    RsvpQuestionConflict: 'event.rsvp_question_conflict',
+    RsvpQuestionOptionsRequired: 'event.rsvp_question_options_required',
+    RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
+    RsvpAnswerRequired: 'event.rsvp_answer_required',
+    RsvpAnswerInvalidOption: 'event.rsvp_answer_invalid_option',
+    RsvpAnswerTooLong: 'event.rsvp_answer_too_long',
     PaymentConfirmationRequired: 'event.payment_confirmation_required',
     CheckInReportNotYetAvailable: 'event.check_in_report_not_yet_available',
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
@@ -148,7 +156,7 @@ export const Code = {
     AnswerInvalidFormat: 'survey.answer_invalid_format',
     AnswerInvalidOption: 'survey.answer_invalid_option',
     AnswerMustBeNumber: 'survey.answer_must_be_number',
-    AnswerMustBeYesNo: 'survey.answer_must_be_yes_no',
+    AnswerMustBeBoolean: 'survey.answer_must_be_boolean',
     AnswerRatingOutOfRange: 'survey.answer_rating_out_of_range',
     AnswerInvalidDatetimeOption: 'survey.answer_invalid_datetime_option',
     AnswerInvalidAvailability: 'survey.answer_invalid_availability',
@@ -172,6 +180,13 @@ export const Code = {
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
     TooLarge: 'photo.too_large',
+  },
+  AttendanceImport: {
+    CsvEmpty: 'attendance_import.csv_empty',
+    CsvMalformed: 'attendance_import.csv_malformed',
+    EventOrTitleRequired: 'attendance_import.event_or_title_required',
+    InvalidEventType: 'attendance_import.invalid_event_type',
+    AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
   },
   Perm: {
     Denied: 'perm.denied',
@@ -253,11 +268,19 @@ export type ValidationCode =
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
-  | 'event.attendance_only_for_going_rsvps'
+  | 'event.no_plus_one_to_check_in'
   | 'event.perm_denied'
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
   | 'event.would_remove_non_members'
+  | 'event.rsvp_question_not_found'
+  | 'event.rsvp_question_duplicate'
+  | 'event.rsvp_question_conflict'
+  | 'event.rsvp_question_options_required'
+  | 'event.rsvp_question_option_no_comma'
+  | 'event.rsvp_answer_required'
+  | 'event.rsvp_answer_invalid_option'
+  | 'event.rsvp_answer_too_long'
   | 'event.payment_confirmation_required'
   | 'event.check_in_report_not_yet_available'
   | 'event.check_in_report_invalid_column'
@@ -341,7 +364,7 @@ export type ValidationCode =
   | 'survey.answer_invalid_format'
   | 'survey.answer_invalid_option'
   | 'survey.answer_must_be_number'
-  | 'survey.answer_must_be_yes_no'
+  | 'survey.answer_must_be_boolean'
   | 'survey.answer_rating_out_of_range'
   | 'survey.answer_invalid_datetime_option'
   | 'survey.answer_invalid_availability'
@@ -361,6 +384,11 @@ export type ValidationCode =
   | 'join_request.guidelines_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
+  | 'attendance_import.csv_empty'
+  | 'attendance_import.csv_malformed'
+  | 'attendance_import.event_or_title_required'
+  | 'attendance_import.invalid_event_type'
+  | 'attendance_import.ambiguous_user_pick'
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
@@ -414,11 +442,19 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
-  'event.attendance_only_for_going_rsvps': [],
+  'event.no_plus_one_to_check_in': [],
   'event.perm_denied': ['action'],
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
   'event.would_remove_non_members': ['count'],
+  'event.rsvp_question_not_found': [],
+  'event.rsvp_question_duplicate': [],
+  'event.rsvp_question_conflict': [],
+  'event.rsvp_question_options_required': [],
+  'event.rsvp_question_option_no_comma': [],
+  'event.rsvp_answer_required': ['label'],
+  'event.rsvp_answer_invalid_option': ['label'],
+  'event.rsvp_answer_too_long': ['label', 'max'],
   'event.payment_confirmation_required': [],
   'event.check_in_report_not_yet_available': [],
   'event.check_in_report_invalid_column': ['column'],
@@ -502,7 +538,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.answer_invalid_format': ['label'],
   'survey.answer_invalid_option': ['label'],
   'survey.answer_must_be_number': ['label'],
-  'survey.answer_must_be_yes_no': ['label'],
+  'survey.answer_must_be_boolean': ['label'],
   'survey.answer_rating_out_of_range': ['label'],
   'survey.answer_invalid_datetime_option': ['label'],
   'survey.answer_invalid_availability': ['label', 'value'],
@@ -522,6 +558,11 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.guidelines_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
+  'attendance_import.csv_empty': [],
+  'attendance_import.csv_malformed': [],
+  'attendance_import.event_or_title_required': [],
+  'attendance_import.invalid_event_type': [],
+  'attendance_import.ambiguous_user_pick': ['row_index'],
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],

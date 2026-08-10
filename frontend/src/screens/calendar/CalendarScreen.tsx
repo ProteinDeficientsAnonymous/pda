@@ -8,7 +8,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { useIsWideScreen } from '@/hooks/useResponsive';
-import { type Event as PdaEvent, eventClass, eventPath } from '@/models/event';
+import {
+  DEFAULT_EVENT_DURATION_MS,
+  type Event as PdaEvent,
+  eventClass,
+  eventPath,
+} from '@/models/event';
 
 import { AgendaList } from './AgendaList';
 import { makeLocalizer } from './calendarLocalizer';
@@ -23,7 +28,7 @@ import { WideWeekView } from './WideWeekView';
 function toBigCalEvent(e: PdaEvent): BigCalEvent | null {
   // TBD events have no date — skip them on the calendar.
   if (!e.startDatetime) return null;
-  const end = e.endDatetime ?? new Date(e.startDatetime.getTime() + 60 * 60 * 1000);
+  const end = e.endDatetime ?? new Date(e.startDatetime.getTime() + DEFAULT_EVENT_DURATION_MS);
   return { id: e.id, title: e.title, start: e.startDatetime, end, resource: e };
 }
 

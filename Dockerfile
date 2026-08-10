@@ -23,6 +23,7 @@ RUN uv sync --locked --no-dev --no-install-project
 
 COPY backend/ ./backend/
 COPY static/ ./static/
+COPY scripts/ ./scripts/
 
 COPY --from=vite-build /app/frontend/dist/ /usr/share/nginx/html/
 

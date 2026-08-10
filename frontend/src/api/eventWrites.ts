@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/auth/store';
 import {
   type Event,
+  type EventRsvpQuestion,
   EventStatus as EventStatusEnum,
   EventType as EventTypeEnum,
   EventVisibility,
@@ -14,7 +15,7 @@ import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/
 import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { eventKeys, setEventDetailData } from './events';
 import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
@@ -47,6 +48,10 @@ export interface EventFormValues {
   tagIds: string[];
   status: EventStatus;
 }
+
+type CreateEventValues = EventFormValues & {
+  rsvpQuestions?: readonly EventRsvpQuestion[];
+};
 
 type WireBody = Record<string, unknown>;
 
@@ -128,15 +133,19 @@ export function useCreateEvent() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (values: EventFormValues) => {
-      const { data } = await apiClient.post<WireEvent>(
-        '/api/community/events/',
-        toWireBody(values),
-      );
+    mutationFn: async ({ rsvpQuestions = [], ...values }: CreateEventValues) => {
+      const body = toWireBody(values);
+      body.rsvp_questions = rsvpQuestions.map((question) => ({
+        label: question.label,
+        field_type: question.fieldType,
+        options: question.options,
+        required: question.required,
+      }));
+      const { data } = await apiClient.post<WireEvent>('/api/community/events/', body);
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -161,7 +170,7 @@ export function useInviteToEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
     },
@@ -185,7 +194,7 @@ export function useUpdateEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -209,7 +218,7 @@ export function useCancelEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -230,7 +239,7 @@ export function useDeleteEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -258,7 +267,7 @@ export function useUploadEventPhoto() {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err, { eventId }) => {

@@ -79,7 +79,7 @@ class TestComputeAnchor:
         user = _make_user(date_joined=date(2020, 1, 1))
         event = _make_event(event_type=EventType.CLUB, start=date(2026, 9, 10))
         EventRSVP.objects.create(
-            user=user, event=event, status="attending", attendance=AttendanceStatus.NO_SHOW
+            user=user, event=event, status="attending", attendance=AttendanceStatus.DIDNT_GO
         )
         anchor = compute_anchor(user, today=date(2026, 12, 1))
         assert anchor == date(2026, 8, 1)

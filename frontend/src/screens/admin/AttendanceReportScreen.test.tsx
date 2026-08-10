@@ -21,6 +21,11 @@ vi.mock('@/api/featureFlags', () => ({
 vi.mock('./MemberAttendanceTab', () => ({
   MemberAttendanceTab: () => <div>members tab content</div>,
 }));
+vi.mock('@/api/attendanceImport', () => ({
+  useAttendanceImportEventOptions: vi.fn(() => ({ data: [] })),
+  usePreviewAttendanceImport: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useCommitAttendanceImport: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
 
 const mockUseReport = vi.mocked(useAttendanceReport);
 const mockUseFlag = vi.mocked(useFlag);
@@ -37,7 +42,11 @@ function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) 
   mockUseReport.mockReturnValue({
     isPending: false,
     isError: false,
-    data: [],
+    data: {
+      events: [],
+      officialNoShowCount: 0,
+      clubNoShowCount: 0,
+    },
     ...overrides,
   } as ReturnType<typeof useAttendanceReport>);
 }
@@ -59,8 +68,14 @@ beforeEach(() => {
 });
 
 describe('AttendanceReportScreen', () => {
-  it('renders per-event attended / no-show / going counts', () => {
-    mockResult({ data: [makeRow()] });
+  it('renders per-event attended / no-show counts', () => {
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ report: true });
 
     renderScreen();
@@ -69,12 +84,17 @@ describe('AttendanceReportScreen', () => {
     const row = screen.getByRole('link');
     expect(row).toHaveTextContent('4 attended');
     expect(row).toHaveTextContent('1 no-show');
-    expect(row).toHaveTextContent('6 going');
     expect(row).toHaveAttribute('href', '/events/e1/report');
   });
 
   it('links each event row to its check-in report when host_attendance_report is on', () => {
-    mockResult({ data: [makeRow()] });
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true, report: true });
 
     renderScreen();
@@ -83,7 +103,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('renders event rows as plain text (no link) when host_attendance_report is off', () => {
-    mockResult({ data: [makeRow()] });
+    mockResult({
+      data: {
+        events: [makeRow()],
+        officialNoShowCount: 1,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true, report: false });
 
     renderScreen();
@@ -93,7 +119,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('shows the empty state when nothing is marked', () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
 
     renderScreen();
 
@@ -117,7 +149,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('hides the members tab when the flag is off', () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: false });
 
     renderScreen();
@@ -126,7 +164,13 @@ describe('AttendanceReportScreen', () => {
   });
 
   it('switches to the members tab when the flag is on', async () => {
-    mockResult({ data: [] });
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
     mockFlags({ analytics: true });
     const user = userEvent.setup();
 
@@ -134,5 +178,22 @@ describe('AttendanceReportScreen', () => {
     await user.click(screen.getByRole('tab', { name: 'members' }));
 
     expect(screen.getByText('members tab content')).toBeInTheDocument();
+  });
+
+  it('opens the partiful import dialog from the import button', async () => {
+    mockResult({
+      data: {
+        events: [],
+        officialNoShowCount: 0,
+        clubNoShowCount: 0,
+      },
+    });
+    const user = userEvent.setup();
+
+    renderScreen();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'import from partiful' }));
+
+    expect(screen.getByRole('dialog', { name: 'import partiful attendance' })).toBeInTheDocument();
   });
 });

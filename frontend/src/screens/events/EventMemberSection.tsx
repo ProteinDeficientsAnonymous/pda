@@ -5,7 +5,7 @@ import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
-import { spotsLeft } from '@/models/event';
+import { eventHostCount, spotsLeft } from '@/models/event';
 import { Feature } from '@/models/featureFlags';
 import { formatPrice } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
@@ -20,8 +20,9 @@ import { EventFlagDialog } from './EventFlagDialog';
 import { EventHostSection } from './EventHostSection';
 import { eventMemberSectionFlags } from './eventMemberFlags';
 import { GroupTextButton } from './GroupTextButton';
+import { InvitedList } from './GuestChip';
 import { InviteDialog } from './InviteDialog';
-import { InvitedList, RsvpGuestList } from './RsvpGuestList';
+import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
   event: Event;
@@ -34,16 +35,19 @@ export function EventMemberSection({ event, token }: Props) {
 
   const { isHostOrEventManager, canEdit, canInvite, showRsvp, showStandaloneInvited } =
     eventMemberSectionFlags(event, user);
+  const hostCount = eventHostCount(event);
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      {user ? (
-        <EventHostSection
-          event={event}
-          isHostOrEventManager={isHostOrEventManager}
-          canEdit={canEdit}
-          viewerId={user.id}
-        />
+      {user && (hostCount > 0 || isHostOrEventManager) ? (
+        <Card label={hostCount > 1 ? 'hosts' : 'host'}>
+          <EventHostSection
+            event={event}
+            isHostOrEventManager={isHostOrEventManager}
+            canEdit={canEdit}
+            viewerId={user.id}
+          />
+        </Card>
       ) : null}
       <LocationSection event={event} />
       <LinksSection event={event} />
@@ -70,7 +74,9 @@ export function EventMemberSection({ event, token }: Props) {
           <InvitedList event={event} />
         </Card>
       ) : null}
-      <EventCommentsCard eventId={event.id} {...(token ? { token } : {})} />
+      {event.rsvpEnabled ? (
+        <EventCommentsCard eventId={event.id} {...(token ? { token } : {})} />
+      ) : null}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>

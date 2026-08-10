@@ -41,6 +41,35 @@ describe('mapEvent', () => {
     expect(result.guests[1]!.paidConfirmed).toBe(false);
   });
 
+  it('should map rsvp_questions and my_questionnaire_responses', () => {
+    const result = mapEvent(
+      wireEvent({
+        rsvp_questions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            field_type: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+        my_questionnaire_responses: { q1: { label: 'dietary?', answer: 'none' } },
+      }),
+    );
+    expect(result.rsvpQuestions).toEqual([
+      {
+        id: 'q1',
+        label: 'dietary?',
+        fieldType: 'textarea',
+        options: [],
+        required: true,
+      },
+    ]);
+    expect(result.myQuestionnaireResponses).toEqual({
+      q1: { label: 'dietary?', answer: 'none' },
+    });
+  });
+
   it('converts ISO start_datetime to Date', () => {
     const result = mapEvent(wireEvent({ start_datetime: '2026-01-05T09:05:03Z' }));
     expect(result.startDatetime!.getUTCFullYear()).toBe(2026);

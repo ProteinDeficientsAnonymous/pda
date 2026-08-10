@@ -1,7 +1,4 @@
-import type { SyntheticEvent } from 'react';
-import { useState } from 'react';
-
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   type SurveyQuestion,
   type SurveyQuestionInput,
@@ -9,23 +6,9 @@ import {
   useCreateSurveyQuestion,
   useUpdateSurveyQuestion,
 } from '@/api/surveyAdmin';
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { TextField } from '@/components/ui/TextField';
-
-const TYPES: { value: SurveyQuestionType; label: string; wantsOptions: boolean }[] = [
-  { value: 'text', label: 'short text', wantsOptions: false },
-  { value: 'textarea', label: 'long text', wantsOptions: false },
-  { value: 'number', label: 'number', wantsOptions: false },
-  { value: 'select', label: 'single choice (radio)', wantsOptions: true },
-  { value: 'dropdown', label: 'dropdown', wantsOptions: true },
-  { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
-  { value: 'yes_no', label: 'yes / no', wantsOptions: false },
-  { value: 'rating', label: '1–5 rating', wantsOptions: true },
-  { value: 'datetime_poll', label: 'datetime poll (iso options)', wantsOptions: true },
-];
+import { DEFAULT_SURVEY_QUESTION_TYPE } from '@/api/surveys';
+import { QuestionAuthorDialog } from '@/components/questions/QuestionAuthorDialog';
+import { QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 
 interface Props {
   surveyId: string;
@@ -36,123 +19,44 @@ interface Props {
 
 export function SurveyQuestionDialog(props: Props) {
   if (!props.open) return null;
-  // Dialog body lives in a sibling component keyed by `existing.id` so each
-  // edit session gets fresh state via remount (avoids setState-in-effect).
   return <SurveyQuestionDialogBody key={props.existing?.id ?? 'new'} {...props} />;
 }
 
 function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) {
   const create = useCreateSurveyQuestion(surveyId);
   const update = useUpdateSurveyQuestion(surveyId, existing?.id ?? '');
-
-  const [label, setLabel] = useState(() => existing?.label ?? '');
-  const [fieldType, setFieldType] = useState<SurveyQuestionType>(
-    () => existing?.fieldType ?? 'text',
-  );
-  const [required, setRequired] = useState(() => existing?.required ?? false);
-  const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
-  const [error, setError] = useState<string | null>(null);
-
-  const wantsOptions = TYPES.find((t) => t.value === fieldType)?.wantsOptions ?? false;
   const busy = create.isPending || update.isPending;
 
-  async function submit(e: SyntheticEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!label.trim()) {
-      setError('label required');
-      return;
-    }
-    const options = wantsOptions
-      ? optionsText
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
-    if (wantsOptions && options.length === 0) {
-      setError('add at least one option');
-      return;
-    }
-    const input: SurveyQuestionInput = {
-      label: label.trim(),
-      fieldType,
-      options,
-      required,
-    };
-    try {
-      if (existing) await update.mutateAsync(input);
-      else await create.mutateAsync(input);
-      onClose();
-    } catch (err) {
-      setError(extractError(err));
-    }
-  }
-
-  const optionsHint =
-    fieldType === 'rating'
-      ? 'one label per star (up to 5)'
-      : fieldType === 'datetime_poll'
-        ? 'one ISO-8601 datetime per line'
-        : 'one option per line';
-
   return (
-    <Dialog open={open} onClose={onClose} title={existing ? 'edit question' : 'add question'}>
-      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-        <TextField
-          label="label"
-          value={label}
-          onChange={(e) => {
-            setLabel(e.target.value);
-          }}
-          maxLength={200}
-        />
-        <Select
-          label="type"
-          value={fieldType}
-          onChange={(e) => {
-            setFieldType(e.target.value as SurveyQuestionType);
-          }}
-          options={TYPES.map((t) => ({ value: t.value, label: t.label }))}
-        />
-        {wantsOptions ? (
-          <Textarea
-            label="options"
-            value={optionsText}
-            onChange={(e) => {
-              setOptionsText(e.target.value);
-            }}
-            hint={optionsHint}
-            rows={5}
-          />
-        ) : null}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={required}
-            onChange={(e) => {
-              setRequired(e.target.checked);
-            }}
-          />
-          <span>required</span>
-        </label>
-        {error ? (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        ) : null}
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={busy} type="button">
-            cancel
-          </Button>
-          <Button type="submit" disabled={busy}>
-            {busy ? 'saving…' : 'save'}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
+    <QuestionAuthorDialog<SurveyQuestionType>
+      open={open}
+      onClose={onClose}
+      title={existing ? 'edit question' : 'add question'}
+      initial={{
+        label: existing?.label ?? '',
+        fieldType: existing?.fieldType ?? DEFAULT_SURVEY_QUESTION_TYPE,
+        options: existing?.options ?? [],
+        required: existing?.required ?? false,
+      }}
+      typeOptions={QUESTION_TYPE_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
+      optionsHint={(fieldType) =>
+        fieldType === QuestionType.Rating
+          ? 'up to 5 star labels'
+          : fieldType === QuestionType.DatetimePoll
+            ? 'ISO-8601 datetime values'
+            : undefined
+      }
+      busy={busy}
+      onSave={async (values) => {
+        const input: SurveyQuestionInput = {
+          label: values.label,
+          fieldType: values.fieldType,
+          options: values.options,
+          required: values.required,
+        };
+        if (existing) await update.mutateAsync(input);
+        else await create.mutateAsync(input);
+      }}
+    />
   );
-}
-
-function extractError(err: unknown): string {
-  return extractApiErrorOr(err, "couldn't save — try again");
 }

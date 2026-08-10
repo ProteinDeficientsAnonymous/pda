@@ -1,3 +1,4 @@
+import { QuestionType } from '@/api/questionTypes';
 import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
@@ -5,19 +6,20 @@ import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
 interface Props {
-  question: SurveyQuestion;
+  question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required'>;
   value: AnswerValue | undefined;
   onChange: (v: AnswerValue) => void;
   error?: string | undefined;
   readOnly?: boolean;
 }
 
-export function SurveyQuestionField({ question, value, onChange, error, readOnly }: Props) {
+/** Shared answer field for surveys and join form questions. */
+export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
   const label = question.required ? question.label : `${question.label} (optional)`;
   const common = { label, error, disabled: readOnly };
 
   switch (question.fieldType) {
-    case 'textarea':
+    case QuestionType.Textarea:
       return (
         <Textarea
           {...common}
@@ -29,7 +31,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           maxLength={2000}
         />
       );
-    case 'number':
+    case QuestionType.Number:
       return (
         <TextField
           {...common}
@@ -40,7 +42,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'select':
+    case QuestionType.Radio:
       return (
         <RadioGroup
           {...common}
@@ -49,7 +51,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'dropdown':
+    case QuestionType.Select:
       return (
         <Select
           {...common}
@@ -61,7 +63,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           placeholder="select one"
         />
       );
-    case 'multiselect':
+    case QuestionType.Checkbox:
       return (
         <CheckboxGroup
           {...common}
@@ -72,7 +74,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'yes_no':
+    case QuestionType.Boolean:
       return (
         <RadioGroup
           {...common}
@@ -81,7 +83,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'rating':
+    case QuestionType.Rating:
       return (
         <StarRating
           label={label}
@@ -94,7 +96,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           }}
         />
       );
-    case 'datetime_poll':
+    case QuestionType.DatetimePoll:
       return (
         <DatetimePoll
           {...common}
@@ -103,7 +105,7 @@ export function SurveyQuestionField({ question, value, onChange, error, readOnly
           onChange={onChange}
         />
       );
-    case 'text':
+    case QuestionType.Text:
     default:
       return (
         <TextField
@@ -127,6 +129,15 @@ function asCsv(v: AnswerValue | undefined): string[] {
 }
 function asAvailabilityMap(v: AnswerValue | undefined): Record<string, string> {
   return typeof v === 'object' ? v : {};
+}
+
+function FieldError({ error }: { error?: string | undefined }) {
+  if (!error) return null;
+  return (
+    <p role="alert" className="text-xs text-red-600">
+      {error}
+    </p>
+  );
 }
 
 function RadioGroup({
@@ -162,11 +173,7 @@ function RadioGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -206,11 +213,7 @@ function CheckboxGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -257,11 +260,7 @@ function StarRating({
           );
         })}
       </div>
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -325,11 +324,7 @@ function DatetimePoll({
           </div>
         );
       })}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }

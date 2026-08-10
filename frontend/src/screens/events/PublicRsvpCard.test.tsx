@@ -73,6 +73,76 @@ describe('PublicRsvpCard', () => {
     );
   });
 
+  it('shows questions when attending', () => {
+    renderCard({
+      status: RsvpServerStatus.Attending,
+      event: {
+        myQuestionnaireResponses: {
+          q1: { label: 'travel details', answer: 'taking transit' },
+        },
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'travel details',
+            fieldType: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByLabelText('travel details')).toHaveValue('taking transit');
+  });
+
+  it('hides questions when status is maybe and allows status change without answers', () => {
+    renderCard({
+      status: RsvpServerStatus.Maybe,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'travel details',
+            fieldType: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+      },
+    });
+
+    expect(screen.queryByLabelText('travel details')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    expect(updateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: RsvpServerStatus.CantGo,
+        questionnaireResponses: {},
+      }),
+    );
+  });
+
+  it('requires answers when changing from maybe to going', () => {
+    renderCard({
+      status: RsvpServerStatus.Maybe,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'travel details',
+            fieldType: 'textarea',
+            options: [],
+            required: true,
+          },
+        ],
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /i'm going/i }));
+    expect(updateMutate).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('travel details')).toBeInTheDocument();
+    expect(screen.getByText(/required/i)).toBeInTheDocument();
+  });
+
   it('renders the comment field', () => {
     renderCard({ status: RsvpServerStatus.Attending });
     expect(screen.getByLabelText('comment (optional)')).toBeInTheDocument();

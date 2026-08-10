@@ -1,5 +1,6 @@
 from ninja import Router
 
+from community._attendance_import import router as attendance_import_router
 from community._attendance_report import router as attendance_report_router
 from community._calendar import router as calendar_router
 from community._dev_tools import router as dev_tools_router
@@ -21,6 +22,7 @@ from community._event_host_actions import router as event_host_actions_router
 from community._event_host_rsvps import router as event_host_rsvps_router
 from community._event_invitations import router as event_invitations_router
 from community._event_report import router as event_report_router
+from community._event_rsvp_questions import router as event_rsvp_questions_router
 from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
 from community._event_tags import router as event_tags_router
@@ -64,13 +66,13 @@ router.add_router("", join_request_submit_router)
 router.add_router("", join_request_resend_router)
 router.add_router("", login_link_router)
 router.add_router("", feedback_router)
-# Mount before events_router so the literal `/events/attendance-report/` and
-# `/events/attendance-analytics/members/` routes resolve before that router's
-# `/events/{event_id}/` parameterized route.
+# Mount before events_router so literal /events/attendance-* routes resolve before its /events/{event_id}/ param route.
 router.add_router("", attendance_report_router)
+router.add_router("", attendance_import_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)
+router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
 router.add_router("", event_host_rsvps_router)
 router.add_router("", event_report_router)

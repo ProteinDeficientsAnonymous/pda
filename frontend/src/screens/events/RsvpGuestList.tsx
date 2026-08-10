@@ -1,25 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 
 import type { Event, EventGuest } from '@/models/event';
-import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { RsvpServerStatus } from '@/models/event';
 
-type Tab = 'going' | 'maybe' | 'cant' | 'waitlist' | 'invited';
+import { GuestListDialog, type GuestTab } from './GuestListDialog';
+import { countWithPlusOnes, previewGuests } from './guestSort';
 
-function countWithPlusOnes(guests: EventGuest[]): number {
-  return guests.reduce((acc, g) => acc + 1 + (g.hasPlusOne ? 1 : 0), 0);
-}
-
-function bucket(guests: EventGuest[]): Record<Tab, EventGuest[]> {
-  return {
-    going: guests.filter((g) => g.status === RsvpServerStatus.Attending),
-    maybe: guests.filter((g) => g.status === RsvpServerStatus.Maybe),
-    cant: guests.filter((g) => g.status === RsvpServerStatus.CantGo),
-    waitlist: guests.filter((g) => g.status === RsvpServerStatus.Waitlisted),
-    invited: [],
-  };
-}
+const PREVIEW_LIMIT = 5;
 
 interface Props {
   event: Event;
@@ -27,146 +14,94 @@ interface Props {
 }
 
 export function RsvpGuestList({ event, canSeeInvited }: Props) {
-  const buckets = useMemo(() => bucket(event.guests), [event.guests]);
-  const counts: Record<Tab, number> = {
-    going: countWithPlusOnes(buckets.going),
-    maybe: countWithPlusOnes(buckets.maybe),
-    cant: countWithPlusOnes(buckets.cant),
-    waitlist: countWithPlusOnes(buckets.waitlist),
-    invited: canSeeInvited ? event.invitedCount : 0,
-  };
+  const [openTab, setOpenTab] = useState<GuestTab | null>(null);
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'going', label: 'going' },
-    { key: 'maybe', label: 'maybe' },
-  ];
-  if (canSeeInvited) {
-    tabs.push({ key: 'cant', label: "can't go" });
-    if (counts.waitlist > 0) tabs.push({ key: 'waitlist', label: 'waitlist' });
-    tabs.push({ key: 'invited', label: 'invited' });
-  }
+  const going = event.guests.filter((g) => g.status === RsvpServerStatus.Attending);
+  const maybe = event.guests.filter((g) => g.status === RsvpServerStatus.Maybe);
+  const goingCount = countWithPlusOnes(going);
+  const maybeCount = countWithPlusOnes(maybe);
 
-  const defaultTab = tabs.find((t) => counts[t.key] > 0)?.key ?? 'going';
-  const [active, setActive] = useState<Tab>(defaultTab);
-  const visible = active === 'invited' ? [] : buckets[active];
-
-  if (tabs.every((t) => counts[t.key] === 0)) {
-    return <p className="text-muted text-xs">no one yet</p>;
-  }
-
-  return (
-    <div>
-      <div
-        role="tablist"
-        aria-label="guest status"
-        className="border-border-strong bg-surface mb-2 flex w-full rounded-full border p-1"
-      >
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={active === t.key}
-            onClick={() => {
-              setActive(t.key);
-            }}
-            className={cn(
-              'inline-flex flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-sm leading-tight whitespace-nowrap transition-colors',
-              active === t.key
-                ? 'bg-brand-600 text-brand-on'
-                : 'text-foreground-secondary hover:bg-surface-dim',
-            )}
-          >
-            <span>{t.label}</span>
-            <span className="text-xs opacity-80">{counts[t.key]}</span>
-          </button>
-        ))}
-      </div>
-      {active === 'invited' ? (
-        <InvitedList event={event} />
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {visible.map((g) => (
-            <GuestChip key={g.userId} guest={g} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GuestChip({ guest }: { guest: EventGuest }) {
-  const content = (
-    <>
-      {guest.photoUrl ? (
-        <img
-          src={guest.photoUrl}
-          alt=""
-          className="h-5 w-5 rounded-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="bg-toggle-off text-foreground-secondary flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
-        >
-          {guest.name.slice(0, 1).toLowerCase()}
-        </span>
-      )}
-      {guest.name}
-      {guest.hasPlusOne ? <span className="text-muted">+1</span> : null}
-    </>
-  );
-
-  if (!guest.isMember) {
+  if (goingCount === 0 && maybeCount === 0) {
+    const guestListHidden = event.guests.length === 0 && event.attendingCount > 0;
     return (
-      <span
-        className="bg-surface-dim/60 text-foreground-secondary inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs opacity-60 grayscale"
-        title={`${guest.name} (not a member)`}
-        aria-label={`${guest.name} (not a member)`}
-      >
-        {content}
-      </span>
+      <p className="text-muted text-xs">
+        {guestListHidden ? "rsvp to see who's going" : 'no one yet'}
+      </p>
     );
   }
 
+  const preview = previewGuests([...going, ...maybe], PREVIEW_LIMIT);
+  const overflow = going.length + maybe.length - preview.length;
+
   return (
-    <Link
-      to={`/members/${guest.userId}`}
-      className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
-      title={guest.name}
-    >
-      {content}
-    </Link>
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-foreground-secondary text-sm">
+          {goingCount} going
+          {maybeCount > 0 ? <span className="text-muted"> · {maybeCount} maybe</span> : null}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setOpenTab('going');
+          }}
+          className="text-brand-600 hover:bg-surface-dim rounded-full px-2 py-1 text-sm"
+        >
+          view all
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {preview.map((g) => (
+          <PreviewAvatar key={g.userId} guest={g} />
+        ))}
+        {overflow > 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setOpenTab('going');
+            }}
+            aria-label={`view all ${String(going.length + maybe.length)} guests`}
+            className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px]"
+          >
+            +{overflow}
+          </button>
+        ) : null}
+      </div>
+
+      {openTab ? (
+        <GuestListDialog
+          event={event}
+          canSeeInvited={canSeeInvited}
+          initialTab={openTab}
+          onClose={() => {
+            setOpenTab(null);
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 
-export function InvitedList({ event }: { event: Event }) {
-  if (event.invitedUserIds.length === 0) {
-    return <p className="text-muted text-xs">no one invited yet</p>;
+function PreviewAvatar({ guest }: { guest: EventGuest }) {
+  if (guest.photoUrl) {
+    return (
+      <img
+        src={guest.photoUrl}
+        alt={guest.name}
+        title={guest.name}
+        loading="lazy"
+        className="h-8 w-8 shrink-0 rounded-full object-cover"
+      />
+    );
   }
   return (
-    <div className="flex flex-wrap gap-2">
-      {event.invitedUserIds.map((id, i) => {
-        const name = event.invitedUserNames[i] ?? 'member';
-        const photoUrl = event.invitedUserPhotoUrls[i] ?? '';
-        return (
-          <GuestChip
-            key={id}
-            guest={{
-              userId: id,
-              name,
-              status: 'invited',
-              phone: null,
-              photoUrl,
-              hasPlusOne: false,
-              attendance: AttendanceStatus.Unknown,
-              isMember: true,
-              paidConfirmed: false,
-            }}
-          />
-        );
-      })}
-    </div>
+    <span
+      title={guest.name}
+      aria-label={guest.name}
+      className="bg-toggle-off text-foreground-secondary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs"
+    >
+      {guest.name.slice(0, 1).toLowerCase()}
+    </span>
   );
 }

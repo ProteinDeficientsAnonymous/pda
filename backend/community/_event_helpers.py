@@ -1,34 +1,24 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
-from notifications._cohost_notifications import create_cohost_invite_notifications
-from notifications.service import (
-    broadcast_cohost_change,
-    broadcast_event_update,
-    create_event_invite_notifications,
-    create_waitlist_promoted_notifications,
-)
+from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
 from users._helpers import visible_display_name
-from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._cohost_invite_helpers import (
-    diff_cohost_invites,
-    get_my_pending_invite,
-    get_pending_invites_for_event,
-    send_cohost_invite_emails,
+from community._cohost_invite_helpers import get_my_pending_invite
+from community._event_cohost_helpers import _pending_cohost_invites_out
+from community._event_rsvp_answers import (
+    can_see_guest_questionnaire_responses,
+    find_my_questionnaire_responses,
 )
-from community._event_schemas import (
-    CancellationOut,
-    EventOut,
-    PendingCoHostInviteOut,
-    RSVPGuestOut,
-    TagOut,
-)
+from community._event_rsvp_serialize import event_rsvp_question_out
+from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
     _attending_headcount_db,
@@ -36,11 +26,14 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
 from community._shared import _authenticated_user, _gated
+from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventRSVP,
     EventTag,
+    EventType,
     FeatureFlag,
+    PageVisibility,
     RSVPStatus,
     SurveyQuestionType,
     flag_enabled,
@@ -53,7 +46,7 @@ if TYPE_CHECKING:
 def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     return (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
         .filter(id=event_id)
         .first()
     )
@@ -66,7 +59,7 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     def _run() -> None:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
             .filter(id=event_id)
             .first()
         )
@@ -83,10 +76,25 @@ def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
+_GUEST_LIST_STATUS_ORDER = {
+    RSVPStatus.ATTENDING: 0,
+    RSVPStatus.MAYBE: 1,
+    RSVPStatus.CANT_GO: 2,
+    RSVPStatus.WAITLISTED: 3,
+}
+
+
 def _build_guest_list(
-    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+    rsvps,
+    can_see_phones: bool,
+    viewer=None,
+    can_see_payment_status: bool = False,
+    *,
+    include_questionnaire_responses: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone and payment-status visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
+    payment-status, and answer visibility."""
+    ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -97,10 +105,15 @@ def _build_guest_list(
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
+            plus_one_attendance=r.plus_one_attendance,
+            plus_one_checked_in_at=r.plus_one_checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
+            questionnaire_responses=(
+                dict(r.questionnaire_responses or {}) if include_questionnaire_responses else {}
+            ),
         )
-        for r in rsvps
+        for r in ordered_rsvps
     ]
 
 
@@ -217,15 +230,20 @@ def _can_see_invited(
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
-def _can_manage_cohost_invites(
-    requesting_user,
-    co_host_ids: set[str],
-) -> bool:
-    """Accepted co-hosts can see and rescind pending invites. Admins are
-    intentionally excluded — this is a host-only workflow, not admin moderation."""
+_INACTIVE_RSVP_STATUSES = {RSVPStatus.CANT_GO, RSVPStatus.REMOVED}
+
+
+def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str | None) -> bool:
+    """Hosts, event managers, and active RSVPs can see the guest list.
+
+    A cancelled (CANT_GO) or host-removed (REMOVED) RSVP row still exists, so
+    my_rsvp_status is checked against active statuses rather than just None.
+    """
     if requesting_user is None:
         return False
-    return str(requesting_user.pk) in co_host_ids
+    if viewer_is_cohost or requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
 
 
 def _can_see_invite_only(
@@ -277,23 +295,6 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
     return poll_survey
 
 
-def _pending_cohost_invites_out(
-    event: Event, auth_user, co_host_ids: set[str]
-) -> list[PendingCoHostInviteOut]:
-    if not _can_manage_cohost_invites(auth_user, co_host_ids):
-        return []
-    return [
-        PendingCoHostInviteOut(
-            id=str(inv.id),
-            user_id=str(inv.user_id),
-            user_name=visible_display_name(inv.user, auth_user),
-            user_photo_url=media_path(inv.user.profile_photo),
-            invited_at=inv.invited_at,
-        )
-        for inv in get_pending_invites_for_event(event)
-    ]
-
-
 def _resolve_comment_count(event: Event) -> int:
     """Read the annotated comment_count, falling back to a per-event count query."""
     annotated = getattr(event, "comment_count", None)
@@ -317,7 +318,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
+    responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or responses_visible else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -325,7 +327,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
+    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -358,11 +361,18 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(rsvps, viewer_is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(
+                all_rsvps,
+                viewer_is_cohost,
+                auth_user,
+                payment_status_visible,
+                include_questionnaire_responses=responses_visible,
+            ),
             [],
-            is_authed,
+            can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
+        my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
@@ -381,46 +391,54 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),
+        rsvp_questions=[
+            event_rsvp_question_out(question) for question in event.rsvp_questions.all()
+        ],
     )
 
 
-def _update_co_hosts(
-    event: Event,
-    co_host_ids: Iterable[str],
-    updater: UserModel,
-) -> None:
-    """Reconcile cohost invites against the requested ids and broadcast updates.
+def _can_edit_event(user, event: Event) -> bool:
+    """Check if user can edit/delete this event (host or manager)."""
+    if user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    return event.co_hosts.filter(pk=user.pk).exists()
 
-    With the invite-approval flow, this no longer mutates ``event.co_hosts``
-    directly for newly-added users — those go to ``EventCoHostInvite`` as
-    PENDING and only land in ``event.co_hosts`` once accepted. Removals still
-    take effect immediately (the rescind helper drops them from
-    ``event.co_hosts`` if they had been accepted).
-    """
-    next_ids = {str(uid) for uid in co_host_ids}
-    newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
-    if newly_invited:
-        create_cohost_invite_notifications(event, newly_invited, updater)
-        send_cohost_invite_emails(event, newly_invited, updater)
 
-    if newly_invited or removed_accepted_ids:
-        broadcast_cohost_change(
-            event,
-            exclude_user_ids={str(updater.pk)},
-            extra_user_ids=set(newly_invited) | set(removed_accepted_ids),
+_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
+
+# Event types that require an explicit permission to tag. Community events need
+# none. Maps type → the permission that gates it.
+_TYPE_TAG_PERMISSIONS = {
+    EventType.OFFICIAL: PermissionKey.TAG_OFFICIAL_EVENT,
+    EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
+}
+
+
+def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+    """Public-only event types (official, club) must have public visibility."""
+    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+
+
+def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+    """Raise 403 if the event type requires a tag permission the user lacks."""
+    required = _TYPE_TAG_PERMISSIONS.get(event_type)
+    if required is None or request.auth.has_permission(required):
+        return
+    details = {"endpoint": endpoint, "required_permission": required}
+    if event_id is not None:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id), details=details),
         )
-
-
-def _update_invited_users(
-    event: Event,
-    invited_user_ids: Iterable[str],
-    inviter: UserModel,
-) -> None:
-    """Update event.invited_users and notify newly added users."""
-    id_list = list(invited_user_ids)
-    old_ids = set(event.invited_users.values_list("pk", flat=True))
-    invited = UserModel.objects.filter(pk__in=id_list)
-    event.invited_users.set(invited)
-    new_ids = {str(uid) for uid in id_list} - {str(uid) for uid in old_ids}
-    if new_ids:
-        create_event_invite_notifications(event, new_ids, inviter)
+    else:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(details=details),
+        )
+    raise_validation(Code.Perm.DENIED, status_code=403, action=required)

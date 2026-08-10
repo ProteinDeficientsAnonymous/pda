@@ -5,38 +5,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import InstallAppScreen from './InstallAppScreen';
 
-const baseUser: User = {
+const baseUser = makeUser({
   id: '1',
   phoneNumber: '+15551234567',
-  firstName: 'Test',
-  lastName: 'User',
-  fullName: 'Test User',
-  nickname: '',
   email: 'test@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
   weekStart: 'monday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 function renderWith(component: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

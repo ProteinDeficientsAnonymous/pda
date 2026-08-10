@@ -14,17 +14,19 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import broadcast_event_created
 from users._helpers import visible_display_name
-from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
+    _can_edit_event,
     _can_see_invite_only,
+    _enforce_type_tag_permission,
     _event_out,
     _get_creator_name,
+    _is_invalid_typed_visibility,
     _my_rsvp_fields,
     _set_event_tags,
     _tags_out,
-    _update_co_hosts,
+    broadcast_capacity_change,
 )
 from community._event_nonmember_removal import (
     email_removed_non_members,
@@ -35,72 +37,29 @@ from community._event_schemas import (
     EventListOut,
     EventOut,
     EventPatchIn,
+    validate_event_rsvp_question,
 )
-from community._event_transitions import (
-    _handle_status_update,
-    _set_event_participants,
+from community._event_transitions import _handle_status_update, _set_event_participants
+from community._event_update import (
+    _apply_field_updates,
+    _guard_can_edit_event,
+    _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
+from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import _attending_headcount, _waitlisted_count
 from community._rsvp_payment import can_see_payment_details
 from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
+    EventRsvpQuestion,
     EventStatus,
-    EventType,
     PageVisibility,
     parse_event_ref,
 )
 
 router = Router()
-
-
-def _can_edit_event(user, event: Event) -> bool:
-    """Check if user can edit/delete this event (host or manager)."""
-    if user.has_permission(PermissionKey.MANAGE_EVENTS):
-        return True
-    return event.co_hosts.filter(pk=user.pk).exists()
-
-
-_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
-
-# Event types that require an explicit permission to tag. Community events need
-# none. Maps type → the permission that gates it.
-_TYPE_TAG_PERMISSIONS = {
-    EventType.OFFICIAL: PermissionKey.TAG_OFFICIAL_EVENT,
-    EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
-}
-
-
-def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
-    """Public-only event types (official, club) must have public visibility."""
-    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
-
-
-def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
-    """Raise 403 if the event type requires a tag permission the user lacks."""
-    required = _TYPE_TAG_PERMISSIONS.get(event_type)
-    if required is None or request.auth.has_permission(required):
-        return
-    details = {"endpoint": endpoint, "required_permission": required}
-    if event_id is not None:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id), details=details),
-        )
-    else:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(details=details),
-        )
-    raise_validation(Code.Perm.DENIED, status_code=403, action=required)
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -113,38 +72,6 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
         raise_validation(Code.Event.END_BEFORE_START, field="end_datetime")
     if check_past and not datetime_tbd and start < timezone.now():
         raise_validation(Code.Event.START_DATETIME_MUST_BE_FUTURE, field="start_datetime")
-
-
-def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
-    """Validate PATCH payload fields. Raises ValidationException on failure."""
-    if "event_type" in updates:
-        _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
-    effective_type = updates.get("event_type", event.event_type)
-    effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_typed_visibility(effective_type, effective_visibility):
-        raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
-    # While a poll is active, the poll is the source of truth for when. Block
-    # direct edits to start/end so the event time can't drift from the poll.
-    # Host must finalize (or delete) the poll before setting a time.
-    time_fields_edited = any(
-        f in updates for f in ("start_datetime", "end_datetime", "datetime_tbd")
-    )
-    if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
-        raise_validation(Code.Event.DATE_LOCKED_BY_POLL, status_code=400)
-    effective_start = updates.get("start_datetime", event.start_datetime)
-    effective_end = updates.get("end_datetime", event.end_datetime)
-    effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
-    # Drafts can legitimately have no start yet (see #357) — don't enforce
-    # "start required" or past-check when a draft stays dateless. But if the
-    # draft has a start (existing or being set), it must be a future date.
-    if event.is_draft and effective_start is None:
-        return
-    # Past-check applies when start_datetime is being touched, or on any
-    # edit to a draft that already has a start (stale-draft guard). Non-
-    # draft past events keep being tweakable for non-date fields within
-    # the 6-hour grace window (enforced client-side).
-    check_past = "start_datetime" in updates or event.is_draft
-    _validate_event_datetimes(effective_start, effective_end, effective_tbd, check_past=check_past)
 
 
 def _build_events_queryset(status: str, auth_user, is_authed):
@@ -297,7 +224,7 @@ def get_event(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -343,6 +270,9 @@ def create_event(request, payload: EventIn):
             check_past=True,
         )
 
+    for question in payload.rsvp_questions:
+        validate_event_rsvp_question(question)
+
     event = Event.objects.create(
         title=payload.title,
         description=payload.description,
@@ -370,6 +300,19 @@ def create_event(request, payload: EventIn):
     )
     _set_event_participants(request, event, payload.co_host_ids)
     _set_event_tags(event, payload.tag_ids)
+    EventRsvpQuestion.objects.bulk_create(
+        [
+            EventRsvpQuestion(
+                event=event,
+                label=question.label,
+                field_type=question.field_type,
+                options=question.options,
+                required=question.required,
+                display_order=display_order,
+            )
+            for display_order, question in enumerate(payload.rsvp_questions)
+        ]
+    )
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
@@ -390,35 +333,6 @@ def create_event(request, payload: EventIn):
     return Status(201, _event_out(event, request.auth))
 
 
-def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
-    """Apply non-status field edits to an event. Raises ValidationException on failure."""
-    if not updates:
-        return
-    _validate_update_payload(request, event, event_id, updates)
-    co_host_ids = updates.pop("co_host_ids", None)
-    tag_ids = updates.pop("tag_ids", None)
-    changed_fields = list(updates.keys())
-    if co_host_ids is not None:
-        changed_fields.append("co_host_ids")
-    if tag_ids is not None:
-        changed_fields.append("tag_ids")
-    for field, value in updates.items():
-        setattr(event, field, value)
-    if co_host_ids is not None:
-        _update_co_hosts(event, co_host_ids, request.auth)
-    if tag_ids is not None:
-        _set_event_tags(event, tag_ids)
-    event.save()
-    audit_log(
-        logging.INFO,
-        "event_updated",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.EVENT, id=str(event_id), details={"fields_changed": changed_fields}
-        ),
-    )
-
-
 @router.patch(
     "/events/{event_id}/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 409: ErrorOut},
@@ -428,7 +342,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .get(id=event_id)
         )
     except Event.DoesNotExist:
@@ -437,17 +351,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    if not _can_edit_event(request.auth, event):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.EVENT, id=str(event_id), details={"endpoint": "update_event"}
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
+    _guard_can_edit_event(request, event, event_id)
 
     updates = payload.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
@@ -455,7 +359,9 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     force = updates.pop("force", False) or False
     # Checked before status transitions, which have their own attendee notifications.
     was_eligible = event.is_public_rsvp_eligible
+    old_max_attendees = event.max_attendees
     removed_user_ids: list[str] = []
+    promoted_user_ids: list[str] = []
 
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
@@ -469,7 +375,12 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             if early is not None:
                 return early
 
+        promoted_user_ids = _promote_if_capacity_increased(event, updates, old_max_attendees)
+
     email_removed_non_members(request, event, removed_user_ids)
+    if promoted_user_ids:
+        broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
+        _email_promoted_non_members(request, event, promoted_user_ids)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

@@ -1,14 +1,17 @@
 import re
 from datetime import datetime
+from typing import Annotated, Literal
 from urllib.parse import urlparse
+from uuid import UUID
 
 import phonenumbers
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, WithJsonSchema, field_validator, model_validator
 
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
 from community.models import (
+    RSVP_CHOICE_TYPES,
     AttendanceStatus,
     EventStatus,
     EventType,
@@ -17,9 +20,66 @@ from community.models import (
     RSVPStatus,
 )
 
-# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
-# overkill for a free-text payment field, and we don't need DNS lookups.
+# Loose email check for free-text Zelle — EmailStr/DNS is overkill here.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
+RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
+RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
+
+
+class EventRsvpQuestionOut(BaseModel):
+    id: str
+    label: str
+    field_type: RsvpQuestionFieldType
+    options: list[str] = []
+    required: bool
+    display_order: int
+
+
+class EventRsvpQuestionIn(BaseModel):
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: RsvpQuestionFieldType
+    options: list[RsvpQuestionOption] = []
+    required: bool = False
+
+    @field_validator("label")
+    @classmethod
+    def label_not_blank(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("label required")
+        return trimmed
+
+    @field_validator("options")
+    @classmethod
+    def trim_options(cls, value: list[str]) -> list[str]:
+        trimmed = [o.strip() for o in value if o.strip()]
+        if any(len(option) > FieldLimit.OPTION_TEXT for option in trimmed):
+            raise ValueError(f"options must be {FieldLimit.OPTION_TEXT} characters or fewer")
+        return trimmed
+
+
+class EventRsvpQuestionSyncIn(EventRsvpQuestionIn):
+    id: UUID | None = None
+
+
+class EventRsvpQuestionExpectedIn(EventRsvpQuestionIn):
+    id: UUID
+
+
+class EventRsvpQuestionSyncPayload(BaseModel):
+    expected: list[EventRsvpQuestionExpectedIn]
+    questions: list[EventRsvpQuestionSyncIn]
+
+
+def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
+    if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED, field="options", status_code=400
+        )
+    if payload.field_type == "checkbox" and any("," in option for option in payload.options):
+        raise_validation(Code.Event.RSVP_QUESTION_OPTION_NO_COMMA, field="options", status_code=400)
 
 
 def _looks_like_email(s: str) -> bool:
@@ -111,10 +171,13 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: RSVPStatus
     has_plus_one: bool = False
+    questionnaire_responses: dict = {}
     phone: str | None = None
     photo_url: str = ""
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
+    plus_one_attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
+    plus_one_checked_in_at: datetime | None = None
     is_member: bool = True
     paid_confirmed: bool = False
 
@@ -195,6 +258,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
+    my_questionnaire_responses: dict = {}
     my_paid_confirmed: bool = False
     viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
@@ -220,15 +284,19 @@ class EventOut(BaseModel):
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []
+    rsvp_questions: list[EventRsvpQuestionOut] = []
 
 
 class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
     paid_confirmed: bool = False
-    # Not persisted on the RSVP — a non-empty value is a one-time post: a
-    # public EventComment (going/maybe) or a host-only notification (can't go).
+    # One-shot post (EventComment / host notify); not stored on the RSVP row.
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    questionnaire_responses: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; checkbox values are comma-separated.",
+    )
 
 
 class HostRSVPIn(BaseModel):
@@ -263,7 +331,7 @@ class EventStatsOut(BaseModel):
     no_response_count: int = 0
     waitlisted_count: int = 0
     attended_count: int = 0
-    no_show_count: int = 0
+    didnt_go_count: int = 0
     not_marked_count: int = 0
     cancellations: list[CancellationOut] = []
 
@@ -273,6 +341,7 @@ class EventAttendanceRowOut(BaseModel):
 
     event_id: str
     title: str
+    event_type: str
     start_datetime: datetime | None = None
     attended_count: int = 0
     no_show_count: int = 0
@@ -281,10 +350,13 @@ class EventAttendanceRowOut(BaseModel):
 
 class AttendanceReportOut(BaseModel):
     events: list[EventAttendanceRowOut] = []
+    official_no_show_count: int = 0
+    club_no_show_count: int = 0
 
 
 class AttendanceIn(BaseModel):
     attendance: AttendanceStatus
+    for_plus_one: bool = False
 
 
 class EventIn(BaseModel):
@@ -313,6 +385,7 @@ class EventIn(BaseModel):
     )
     co_host_ids: list[str] = []
     tag_ids: list[str] = []
+    rsvp_questions: list[EventRsvpQuestionIn] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @model_validator(mode="after")

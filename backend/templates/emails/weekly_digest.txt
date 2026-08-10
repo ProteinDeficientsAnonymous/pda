@@ -1,0 +1,18 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+here's what's coming up this week:
+{% for event in events %}
+{{ event.title|lower }}{% if event.when %}
+{{ event.when|lower }}{% endif %}{% if event.location %}
+{{ event.location|lower }}{% endif %}
+{{ event.url }}
+{% endfor %}
+see the full calendar:
+
+{{ calendar_url }}
+
+— pda
+
+don't want emails like this? update your preferences: {{ settings_url }}
+
+{% include "emails/_no_reply_footer.txt" %}

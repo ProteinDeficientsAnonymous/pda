@@ -1,14 +1,21 @@
 export const nameCharsRe = /^[\p{L}\p{M}' .-]+$/u;
 
+export const ValidationMessage = {
+  REQUIRED: 'required',
+  NAME_CHARS: 'letters, spaces, hyphens, and apostrophes only',
+  NAME_MAX_LENGTH: 'max 64 characters',
+  INVALID_EMAIL: 'enter a valid email address',
+} as const;
+
 export function personName(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
-    return 'Required';
+    return ValidationMessage.REQUIRED;
   }
   if (!nameCharsRe.test(value.trim())) {
-    return 'letters, spaces, hyphens, and apostrophes only';
+    return ValidationMessage.NAME_CHARS;
   }
   if (value.trim().length > 64) {
-    return 'Max 64 characters';
+    return ValidationMessage.NAME_MAX_LENGTH;
   }
   return null;
 }
@@ -18,10 +25,10 @@ export function optionalPersonName(value: string | null | undefined): string | n
     return null;
   }
   if (!nameCharsRe.test(value.trim())) {
-    return 'letters, spaces, hyphens, and apostrophes only';
+    return ValidationMessage.NAME_CHARS;
   }
   if (value.trim().length > 64) {
-    return 'Max 64 characters';
+    return ValidationMessage.NAME_MAX_LENGTH;
   }
   return null;
 }
@@ -33,7 +40,17 @@ export function optionalEmail(value: string | null | undefined): string | null {
     return null;
   }
   if (!emailRe.test(value.trim())) {
-    return 'enter a valid email address';
+    return ValidationMessage.INVALID_EMAIL;
+  }
+  return null;
+}
+
+export function email(value: string | null | undefined): string | null {
+  if (!value || value.trim() === '') {
+    return ValidationMessage.REQUIRED;
+  }
+  if (!emailRe.test(value.trim())) {
+    return ValidationMessage.INVALID_EMAIL;
   }
   return null;
 }
@@ -66,7 +83,7 @@ export function optionalUrl(
 
 export function password(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
-    return 'Required';
+    return ValidationMessage.REQUIRED;
   }
   if (value.length < 12) {
     return 'at least 12 characters';
@@ -87,20 +104,20 @@ const roleNameRe = /^[a-zA-Z0-9_-]+$/;
 
 export function roleName(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
-    return 'Required';
+    return ValidationMessage.REQUIRED;
   }
   if (!roleNameRe.test(value.trim())) {
-    return 'Letters, numbers, underscores and hyphens only';
+    return 'letters, numbers, underscores and hyphens only';
   }
   if (value.trim().length > 50) {
-    return 'Max 50 characters';
+    return 'max 50 characters';
   }
   return null;
 }
 
 export function required(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
-    return 'Required';
+    return ValidationMessage.REQUIRED;
   }
   return null;
 }
@@ -108,7 +125,7 @@ export function required(value: string | null | undefined): string | null {
 export function maxLength(max: number) {
   return (value: string | null | undefined): string | null => {
     if (value && value.trim().length > max) {
-      return `Max ${String(max)} characters`;
+      return `max ${String(max)} characters`;
     }
     return null;
   };
@@ -123,7 +140,7 @@ export function minLength(
       return null;
     }
     if (value.trim().length < min) {
-      return message ?? `At least ${String(min)} characters required`;
+      return message ?? `at least ${String(min)} characters required`;
     }
     return null;
   };

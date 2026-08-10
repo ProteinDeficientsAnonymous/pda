@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useEventPoll } from '@/api/eventPolls';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import type { Event } from '@/models/event';
+import { type Event, eventPath } from '@/models/event';
 import { hasPermission, Permission, type UserLike } from '@/models/permissions';
 
 import { PollFinalizeDialog } from './PollFinalizeDialog';
@@ -76,7 +76,7 @@ export function EventPollCard({ event, className }: Props) {
           </Button>
         ) : (
           <Link
-            to="/login"
+            to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
             className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
           >
             sign in to vote

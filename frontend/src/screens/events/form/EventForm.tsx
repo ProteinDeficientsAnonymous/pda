@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
+import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import {
   emptyEventFormValues,
   type EventFormValues,
@@ -20,13 +21,18 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventPath, EventType } from '@/models/event';
+import { type Event, eventHostCount, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
+import type { User } from '@/models/user';
 
+import { EventHostSection } from '../EventHostSection';
+import { eventMemberSectionFlags } from '../eventMemberFlags';
+import type { RsvpQuestionDraft } from '../rsvpQuestions';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
 import { EventFormPhoto } from './EventFormPhoto';
+import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormTags } from './EventFormTags';
 import { validateEventForm } from './validateEventForm';
@@ -84,7 +90,12 @@ export function EventForm({ existing }: Props) {
   // draft whose start is now in the past) are visible immediately instead of
   // waiting for the first save attempt.
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>(() =>
-    existing ? validateEventForm(eventToFormValues(existing)) : {},
+    existing
+      ? validateEventForm(
+          eventToFormValues(existing),
+          existing.startDatetime ? existing.startDatetime.toISOString() : null,
+        )
+      : {},
   );
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
@@ -102,6 +113,12 @@ export function EventForm({ existing }: Props) {
   // then POST the poll. If the poll POST fails we still land on the new
   // event's detail page and the host can retry from there.
   const [bufferedPollOptions, setBufferedPollOptions] = useState<Date[] | null>(null);
+  const [rsvpQuestions, setRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
+  );
+  const [savedRsvpQuestions, setSavedRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
+  );
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
@@ -124,7 +141,10 @@ export function EventForm({ existing }: Props) {
       coHostIds,
       status: nextStatus,
     };
-    const errs = validateEventForm(merged);
+    const errs = validateEventForm(
+      merged,
+      existing?.startDatetime ? existing.startDatetime.toISOString() : undefined,
+    );
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       // Let the sections open first (via forceOpen), then scroll to the
@@ -176,11 +196,23 @@ export function EventForm({ existing }: Props) {
           if (!ok) return;
           await update.mutateAsync({ ...patchBody, force: true });
         }
+        try {
+          const synced = await syncEventRsvpQuestions(
+            existing.id,
+            rsvpQuestions,
+            savedRsvpQuestions,
+          );
+          setRsvpQuestions(synced);
+          setSavedRsvpQuestions(synced);
+        } catch (err) {
+          setServerError(extractEventError(err));
+          return;
+        }
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(eventPath(existing));
         return;
       }
-      const created = await create.mutateAsync(merged);
+      const created = await create.mutateAsync({ ...merged, rsvpQuestions });
       if (pendingPhoto) {
         try {
           await uploadPhoto.mutateAsync({ eventId: created.id, blob: pendingPhoto });
@@ -223,7 +255,7 @@ export function EventForm({ existing }: Props) {
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
-  const hostsCount = coHosts.length;
+  const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
     <form
@@ -263,15 +295,17 @@ export function EventForm({ existing }: Props) {
           onBufferPoll={setBufferedPollOptions}
         />
 
-        {!existing && (
-          <CollapsibleCard
-            title="hosts"
-            summary={
-              hostsCount > 0
-                ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-                : undefined
-            }
-          >
+        <CollapsibleCard
+          title="hosts"
+          summary={
+            hostsCount > 0
+              ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+              : undefined
+          }
+        >
+          {existing ? (
+            <ExistingEventHosts event={existing} user={user} />
+          ) : (
             <MemberPicker
               label="co-hosts"
               selected={coHosts}
@@ -279,13 +313,8 @@ export function EventForm({ existing }: Props) {
               excludeIds={user ? [user.id] : []}
               hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
             />
-          </CollapsibleCard>
-        )}
-        {existing && (
-          <CollapsibleCard title="hosts">
-            <p className="text-foreground-tertiary text-sm">manage co-hosts on the event page</p>
-          </CollapsibleCard>
-        )}
+          )}
+        </CollapsibleCard>
 
         <CollapsibleCard
           title="details"
@@ -324,6 +353,21 @@ export function EventForm({ existing }: Props) {
         </CollapsibleCard>
 
         <CollapsibleCard
+          title="questions"
+          summary={
+            rsvpQuestions.length > 0
+              ? `${String(rsvpQuestions.length)} question${rsvpQuestions.length === 1 ? '' : 's'}`
+              : undefined
+          }
+        >
+          <EventFormQuestions
+            rsvpEnabled={values.rsvpEnabled}
+            questions={rsvpQuestions}
+            onQuestionsChange={setRsvpQuestions}
+          />
+        </CollapsibleCard>
+
+        <CollapsibleCard
           title="links"
           summary={
             linkCount > 0 ? `${String(linkCount)} link${linkCount === 1 ? '' : 's'}` : undefined
@@ -341,7 +385,7 @@ export function EventForm({ existing }: Props) {
         {serverError ? (
           <p
             role="alert"
-            className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            className="border-destructive-border bg-destructive-subtle text-destructive rounded-[var(--radius-md)] border p-3 text-sm"
           >
             {serverError}
           </p>
@@ -375,5 +419,17 @@ export function EventForm({ existing }: Props) {
       </div>
       {confirmElement}
     </form>
+  );
+}
+
+function ExistingEventHosts({ event, user }: { event: Event; user: User | null }) {
+  const { isHostOrEventManager, canEdit } = eventMemberSectionFlags(event, user);
+  return (
+    <EventHostSection
+      event={event}
+      isHostOrEventManager={isHostOrEventManager}
+      canEdit={canEdit}
+      viewerId={user?.id ?? null}
+    />
   );
 }

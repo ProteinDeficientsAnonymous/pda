@@ -97,7 +97,7 @@ def stocked_event(past_event, members, guest_user):
         event=past_event,
         user=members[1],
         status=RSVPStatus.ATTENDING,
-        attendance=AttendanceStatus.NO_SHOW,
+        attendance=AttendanceStatus.DIDNT_GO,
     )
     EventRSVP.objects.create(
         event=past_event,
@@ -159,6 +159,29 @@ class TestCheckInReportEndpoint:
         response = api_client.get(f"/api/community/events/{stocked_event.id}/report/")
         assert response.status_code == 401
 
+    def test_plus_one_attendance_tracked_independently_of_member(
+        self, api_client, past_event, members, host_user
+    ):
+        EventRSVP.objects.create(
+            event=past_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+            attendance=AttendanceStatus.ATTENDED,
+            checked_in_at=timezone.now() - timedelta(days=2),
+            plus_one_attendance=AttendanceStatus.DIDNT_GO,
+        )
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        )
+        data = response.json()
+        assert data["attended_count"] == 1
+        assert data["no_show_count"] == 1
+        attended_row = data["attended"][0]
+        assert attended_row["is_plus_one_guest"] is False
+        no_show_row = data["no_shows"][0]
+        assert no_show_row["is_plus_one_guest"] is True
+
     def test_not_found(self, api_client, host_user):
         response = api_client.get(
             "/api/community/events/00000000-0000-0000-0000-000000000000/report/",
@@ -206,6 +229,7 @@ class TestCheckInReportEndpoint:
         total = (
             data["attended_count"]
             + data["no_show_count"]
+            + data["didnt_go_count"]
             + data["canceled_count"]
             + data["unmarked_count"]
         )
@@ -219,6 +243,83 @@ class TestCheckInReportEndpoint:
         response = api_client.get(f"/api/community/events/{past_event.id}/report/", **_auth(host))
         row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
         assert row["name"] == "Ada Lovelace"
+
+    def test_marked_as_attended_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 1
+        assert report["attended_count"] == 0
+        rsvp.attendance = AttendanceStatus.ATTENDED
+        rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 0, "member should not be in unmarked after mark-in"
+        assert report["attended_count"] == 1, "member should be in attended after mark-in"
+        assert report["attended"][0]["user_id"] == str(member.pk)
+
+    def test_maybe_rsvp_marked_in_shows_in_attended_list(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.MAYBE)
+        rsvp.attendance = AttendanceStatus.ATTENDED
+        rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["unmarked_count"] == 0, "maybe RSVP marked in should not stay unmarked"
+        assert report["attended_count"] == 1
+        assert report["attended"][0]["user_id"] == str(member.pk)
+
+    def test_cant_go_rsvp_marked_didnt_attend_is_not_a_no_show(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.CANT_GO)
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["no_show_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
+        assert report["canceled_count"] == 1
+        assert report["canceled"][0]["user_id"] == str(member.pk)
+
+    def test_maybe_rsvp_marked_didnt_attend_is_in_didnt_go_not_unmarked(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.MAYBE)
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["didnt_go_count"] == 1, "a maybe marked didn't-attend isn't left unmarked"
+        assert report["didnt_go"][0]["user_id"] == str(member.pk)
+        assert report["no_show_count"] == 0
+        assert report["unmarked_count"] == 0
+
+    def test_attending_rsvp_marked_didnt_attend_is_a_no_show(
+        self, api_client, past_event, members, host_user
+    ):
+        member = members[0]
+        rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
+        rsvp.attendance = AttendanceStatus.DIDNT_GO
+        rsvp.save(update_fields=["attendance"])
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        assert report["no_show_count"] == 1
+        assert report["no_shows"][0]["user_id"] == str(member.pk)
 
 
 @pytest.mark.django_db
@@ -284,6 +385,7 @@ class TestCheckInReportCsvEndpoint:
         report_total = (
             report["attended_count"]
             + report["no_show_count"]
+            + report["didnt_go_count"]
             + report["canceled_count"]
             + report["unmarked_count"]
         )

@@ -4,10 +4,9 @@ import { useParams } from 'react-router-dom';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
+import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
-
-import { SurveyQuestionField } from './SurveyQuestionField';
 
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
@@ -90,7 +89,7 @@ function SurveyForm({ survey }: { survey: Survey }) {
 
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5" noValidate>
         {survey.questions.map((q) => (
-          <SurveyQuestionField
+          <QuestionField
             key={q.id}
             question={q}
             value={answers[q.id]}
@@ -114,7 +113,7 @@ function SurveyForm({ survey }: { survey: Survey }) {
           </Button>
         ) : null}
 
-        {submit.isSuccess && !readOnly ? <p className="text-sm text-green-700">saved ✓</p> : null}
+        {submit.isSuccess && !readOnly ? <p className="text-success text-sm">saved ✓</p> : null}
       </form>
     </ContentContainer>
   );

@@ -50,4 +50,21 @@ describe('NotificationRow', () => {
     await userEvent.click(screen.getByRole('button'));
     expect(onMarkRead).toHaveBeenCalledTimes(1);
   });
+
+  it('navigates to event for rsvp status changed notification', async () => {
+    const rsvpNotification = {
+      id: 'n2',
+      notificationType: NotificationType.RsvpStatusChanged,
+      eventId: 'e456',
+      relatedUserId: null,
+      message: 'someone is going',
+      isRead: false,
+      createdAt: '2026-07-10T00:00:00Z',
+    };
+
+    render(<NotificationRow n={rsvpNotification} onMarkRead={vi.fn()} onActivate={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/e456');
+  });
 });

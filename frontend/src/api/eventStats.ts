@@ -9,8 +9,9 @@ import type {
 
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
+import { checkInReportKeys } from './eventCheckInReport';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { invalidateEventDetail, setEventDetailData } from './events';
 import { USERS_KEY } from './users';
 
 interface WireCancellation {
@@ -27,7 +28,7 @@ interface WireStats {
   no_response_count: number;
   waitlisted_count: number;
   attended_count: number;
-  no_show_count: number;
+  didnt_go_count: number;
   not_marked_count: number;
   cancellations: WireCancellation[];
 }
@@ -49,7 +50,7 @@ function mapStats(w: WireStats): EventStats {
     noResponseCount: w.no_response_count,
     waitlistedCount: w.waitlisted_count,
     attendedCount: w.attended_count,
-    noShowCount: w.no_show_count,
+    didntGoCount: w.didnt_go_count,
     notMarkedCount: w.not_marked_count,
     cancellations: w.cancellations.map(mapCancellation),
   };
@@ -75,16 +76,21 @@ export function useEventStats(eventId: string | undefined, enabled: boolean) {
 export function useSetAttendance(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { userId: string; attendance: AttendanceStatusValue }) => {
+    mutationFn: async (args: {
+      userId: string;
+      attendance: AttendanceStatusValue;
+      forPlusOne?: boolean;
+    }) => {
       const { data } = await apiClient.post<WireEvent>(
         `/api/community/events/${eventId}/rsvps/${args.userId}/attendance/`,
-        { attendance: args.attendance },
+        { attendance: args.attendance, for_plus_one: args.forPlusOne ?? false },
       );
       return mapEvent(data);
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
+      invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+      void qc.invalidateQueries({ queryKey: checkInReportKeys.detail(eventId) });
       // attendance marks feed the admin report + members-list last_attended.
       void qc.invalidateQueries({ queryKey: attendanceReportKey });
       void qc.invalidateQueries({ queryKey: USERS_KEY });
@@ -103,7 +109,7 @@ export function useSetGuestRsvp(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, true), event);
+      setEventDetailData(qc, event, true);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
@@ -120,7 +126,7 @@ export function useSetGuestPayment(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, true), event);
+      setEventDetailData(qc, event, true);
     },
   });
 }
@@ -132,7 +138,7 @@ export function useRemoveGuestRsvp(eventId: string) {
       await apiClient.delete(`/api/community/events/${eventId}/rsvps/${args.userId}/rsvp/`);
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
+      invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });

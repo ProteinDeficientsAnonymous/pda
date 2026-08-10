@@ -28,16 +28,14 @@ function NumberField({
   return (
     <TextField
       label={label}
-      type="number"
+      type="text"
       inputMode="numeric"
-      min={0}
-      max={50}
       value={String(value)}
       onChange={(e) => {
-        onChange(Number(e.target.value));
+        const digits = e.target.value.replace(/\D/g, '');
+        onChange(digits === '' ? 0 : Number(digits));
       }}
       disabled={disabled}
-      className="[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     />
   );
 }
@@ -82,14 +80,14 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           label="make me a host"
           checked={options.makeMeHost}
           onChange={(v) => {
-            onChange({ ...options, makeMeHost: v, makeMeGuest: v ? false : options.makeMeGuest });
+            set('makeMeHost', v);
           }}
         />
         <Toggle
           label="make me a guest"
           checked={options.makeMeGuest}
           onChange={(v) => {
-            onChange({ ...options, makeMeGuest: v, makeMeHost: v ? false : options.makeMeHost });
+            set('makeMeGuest', v);
           }}
         />
         <Toggle

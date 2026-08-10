@@ -15,7 +15,7 @@ from ninja.responses import Status
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
-from users._consents import stamp_consents
+from users._consents import ConsentType, stamp_consents
 from users._helpers import (
     _check_and_set_email,
     _require_first_name,
@@ -107,9 +107,13 @@ def refresh_token(request, response: HttpResponse):
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
-        refresh = RefreshToken(token)
+        old_refresh = RefreshToken(token)
+        # Mint fresh, don't reuse old_refresh — it keeps the original exp.
+        user = User.objects.get(pk=old_refresh.payload["user_id"])
+        refresh = RefreshToken.for_user(user)
+        set_refresh_cookie(response, str(refresh))
         return Status(200, AccessOut(access=str(refresh.access_token)))
-    except TokenError:
+    except (TokenError, User.DoesNotExist):
         raise_validation(
             Code.Auth.REFRESH_TOKEN_INVALID, status_code=401, clear_refresh_cookie=True
         )
@@ -140,6 +144,7 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "show_email",
     "show_birthday",
     "hide_last_name",
+    "weekly_digest_opt_out",
     "week_start",
     "calendar_feed_scope",
 )
@@ -282,7 +287,8 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
-    stamp_consents(user, payload.consent_types)
+    # The onboarding profile step already shows the privacy toggles.
+    stamp_consents(user, [*payload.consent_types, ConsentType.CONTACT_PRIVACY])
     user.save()
     audit_log(
         logging.INFO,

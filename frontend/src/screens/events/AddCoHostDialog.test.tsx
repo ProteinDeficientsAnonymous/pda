@@ -7,8 +7,8 @@ import { AddCoHostDialog } from './AddCoHostDialog';
 
 const updateMutateAsync = vi.hoisted(() => vi.fn());
 
-vi.mock('@/api/eventWrites', () => ({
-  useUpdateEvent: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
+vi.mock('@/api/cohostInvites', () => ({
+  useAddCohosts: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
 }));
 
 vi.mock('@/api/userSearch', () => ({
@@ -52,5 +52,23 @@ describe('AddCoHostDialog', () => {
     expect(screen.getByText('Available Member')).toBeInTheDocument();
     expect(screen.queryByText('Pending Invitee')).not.toBeInTheDocument();
     expect(screen.queryByText('Accepted Host')).not.toBeInTheDocument();
+  });
+
+  it('sends only the newly added members, never the existing roster', async () => {
+    updateMutateAsync.mockClear();
+    updateMutateAsync.mockResolvedValue(undefined);
+    render(<AddCoHostDialog event={BASE_EVENT} open onClose={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('search members'), { target: { value: 'me' } });
+    fireEvent.click(screen.getByText('Available Member'));
+    fireEvent.click(screen.getByRole('button', { name: 'add 1' }));
+
+    await vi.waitFor(() => {
+      expect(updateMutateAsync).toHaveBeenCalledTimes(1);
+    });
+    expect(updateMutateAsync).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      userIds: ['user-available'],
+    });
   });
 });

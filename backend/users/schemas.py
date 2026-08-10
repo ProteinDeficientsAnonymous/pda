@@ -137,6 +137,7 @@ class UserOut(BaseModel):
     show_email: bool = True
     show_birthday: bool = True
     hide_last_name: bool = False
+    weekly_digest_opt_out: bool = False
     is_paused: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
@@ -146,6 +147,7 @@ class UserOut(BaseModel):
     calendar_feed_scope: str = "all"
     # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
+    date_joined: datetime
     roles: list[RoleOut]
 
     @classmethod
@@ -174,12 +176,14 @@ class UserOut(BaseModel):
             show_email=user.show_email,
             show_birthday=user.show_birthday,
             hide_last_name=user.hide_last_name,
+            weekly_digest_opt_out=user.weekly_digest_opt_out,
             is_paused=user.is_paused,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
             last_attended=getattr(user, "last_attended", None),
+            date_joined=user.date_joined,
             roles=[
                 RoleOut(
                     id=str(r.id),
@@ -273,6 +277,7 @@ class MePatchIn(BaseModel):
     show_email: bool | None = None
     show_birthday: bool | None = None
     hide_last_name: bool | None = None
+    weekly_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
 

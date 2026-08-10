@@ -27,6 +27,24 @@
         "title": "AccessOut",
         "type": "object"
       },
+      "AddCoHostsIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "AddCoHostsIn",
+        "type": "object"
+      },
       "ApproveJoinRequestOut": {
         "properties": {
           "first_name": {
@@ -93,10 +111,131 @@
         "title": "ApproveJoinRequestOut",
         "type": "object"
       },
+      "AttendanceImportCommitIn": {
+        "properties": {
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRowResolutionIn"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "AttendanceImportCommitIn",
+        "type": "object"
+      },
+      "AttendanceImportCommitOut": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "updated_count": {
+            "title": "Updated Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_title",
+          "created_count",
+          "updated_count",
+          "skipped_count"
+        ],
+        "title": "AttendanceImportCommitOut",
+        "type": "object"
+      },
+      "AttendanceImportPreviewOut": {
+        "properties": {
+          "matched": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "title": "Matched",
+            "type": "array"
+          },
+          "needs_review": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "title": "Needs Review",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceImportPreviewOut",
+        "type": "object"
+      },
       "AttendanceIn": {
         "properties": {
           "attendance": {
             "$ref": "#/components/schemas/AttendanceStatus"
+          },
+          "for_plus_one": {
+            "default": false,
+            "title": "For Plus One",
+            "type": "boolean"
           }
         },
         "required": [
@@ -107,6 +246,11 @@
       },
       "AttendanceReportOut": {
         "properties": {
+          "club_no_show_count": {
+            "default": 0,
+            "title": "Club No Show Count",
+            "type": "integer"
+          },
           "events": {
             "default": [],
             "items": {
@@ -114,6 +258,11 @@
             },
             "title": "Events",
             "type": "array"
+          },
+          "official_no_show_count": {
+            "default": 0,
+            "title": "Official No Show Count",
+            "type": "integer"
           }
         },
         "title": "AttendanceReportOut",
@@ -123,7 +272,7 @@
         "enum": [
           "unknown",
           "attended",
-          "no_show"
+          "didnt_go"
         ],
         "title": "AttendanceStatus",
         "type": "string"
@@ -145,6 +294,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -355,6 +509,11 @@
             "title": "Is Member",
             "type": "boolean"
           },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -460,6 +619,19 @@
             "title": "Canceled Count",
             "type": "integer"
           },
+          "didnt_go": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "Didnt Go",
+            "type": "array"
+          },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "no_show_count": {
             "default": 0,
             "title": "No Show Count",
@@ -495,6 +667,11 @@
           "is_member": {
             "default": true,
             "title": "Is Member",
+            "type": "boolean"
+          },
+          "is_plus_one_guest": {
+            "default": false,
+            "title": "Is Plus One Guest",
             "type": "boolean"
           },
           "name": {
@@ -1180,6 +1357,10 @@
             "title": "Event Id",
             "type": "string"
           },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
           "going_count": {
             "default": 0,
             "title": "Going Count",
@@ -1209,7 +1390,8 @@
         },
         "required": [
           "event_id",
-          "title"
+          "title",
+          "event_type"
         ],
         "title": "EventAttendanceRowOut",
         "type": "object"
@@ -1579,6 +1761,14 @@
             "title": "Rsvp Enabled",
             "type": "boolean"
           },
+          "rsvp_questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionIn"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
+          },
           "start_datetime": {
             "anyOf": [
               {
@@ -1912,6 +2102,36 @@
         "title": "EventListOut",
         "type": "object"
       },
+      "EventOptionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "EventOptionOut",
+        "type": "object"
+      },
       "EventOut": {
         "properties": {
           "allow_plus_ones": {
@@ -2131,6 +2351,12 @@
             ],
             "title": "My Pending Cohost Invite Id"
           },
+          "my_questionnaire_responses": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "My Questionnaire Responses",
+            "type": "object"
+          },
           "my_rsvp": {
             "anyOf": [
               {
@@ -2185,6 +2411,14 @@
             "default": false,
             "title": "Rsvp Enabled",
             "type": "boolean"
+          },
+          "rsvp_questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionOut"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
           },
           "slug": {
             "default": "",
@@ -2782,6 +3016,208 @@
         "title": "EventPollVoteIn",
         "type": "object"
       },
+      "EventRsvpQuestionExpectedIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "select",
+              "checkbox"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type",
+          "id"
+        ],
+        "title": "EventRsvpQuestionExpectedIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "select",
+              "checkbox"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type"
+        ],
+        "title": "EventRsvpQuestionIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionOut": {
+        "properties": {
+          "display_order": {
+            "title": "Display Order",
+            "type": "integer"
+          },
+          "field_type": {
+            "enum": [
+              "textarea",
+              "select",
+              "checkbox"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "field_type",
+          "required",
+          "display_order"
+        ],
+        "title": "EventRsvpQuestionOut",
+        "type": "object"
+      },
+      "EventRsvpQuestionSyncIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "select",
+              "checkbox"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type"
+        ],
+        "title": "EventRsvpQuestionSyncIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionSyncPayload": {
+        "properties": {
+          "expected": {
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionExpectedIn"
+            },
+            "title": "Expected",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionSyncIn"
+            },
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected",
+          "questions"
+        ],
+        "title": "EventRsvpQuestionSyncPayload",
+        "type": "object"
+      },
       "EventStatsOut": {
         "properties": {
           "attended_count": {
@@ -2802,6 +3238,11 @@
             "title": "Cant Go Count",
             "type": "integer"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "going_count": {
             "default": 0,
             "title": "Going Count",
@@ -2815,11 +3256,6 @@
           "no_response_count": {
             "default": 0,
             "title": "No Response Count",
-            "type": "integer"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
             "type": "integer"
           },
           "not_marked_count": {
@@ -3279,6 +3715,136 @@
         "title": "HostRSVPPaymentIn",
         "type": "object"
       },
+      "ImportCandidateOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "full_name",
+          "phone_number"
+        ],
+        "title": "ImportCandidateOut",
+        "type": "object"
+      },
+      "ImportRowOut": {
+        "properties": {
+          "candidates": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "checked_in": {
+            "title": "Checked In",
+            "type": "boolean"
+          },
+          "has_existing_rsvp": {
+            "default": false,
+            "title": "Has Existing Rsvp",
+            "type": "boolean"
+          },
+          "matched_full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Full Name"
+          },
+          "matched_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched User Id"
+          },
+          "partiful_status": {
+            "title": "Partiful Status",
+            "type": "string"
+          },
+          "raw_name": {
+            "title": "Raw Name",
+            "type": "string"
+          },
+          "row_index": {
+            "title": "Row Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row_index",
+          "raw_name",
+          "partiful_status",
+          "checked_in"
+        ],
+        "title": "ImportRowOut",
+        "type": "object"
+      },
+      "ImportRowResolutionIn": {
+        "properties": {
+          "checked_in": {
+            "title": "Checked In",
+            "type": "boolean"
+          },
+          "partiful_status": {
+            "title": "Partiful Status",
+            "type": "string"
+          },
+          "raw_name": {
+            "title": "Raw Name",
+            "type": "string"
+          },
+          "row_index": {
+            "title": "Row Index",
+            "type": "integer"
+          },
+          "skip": {
+            "default": false,
+            "title": "Skip",
+            "type": "boolean"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "row_index",
+          "raw_name",
+          "partiful_status",
+          "checked_in"
+        ],
+        "title": "ImportRowResolutionIn",
+        "type": "object"
+      },
       "InviteIn": {
         "properties": {
           "user_ids": {
@@ -3300,10 +3866,12 @@
       "JoinFormQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JoinFormQuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -3353,8 +3921,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/JoinFormQuestionType"
           },
           "id": {
             "title": "Id",
@@ -3386,6 +3953,16 @@
         ],
         "title": "JoinFormQuestionOut",
         "type": "object"
+      },
+      "JoinFormQuestionType": {
+        "description": "Question types supported by join forms.",
+        "enum": [
+          "text",
+          "textarea",
+          "select"
+        ],
+        "title": "JoinFormQuestionType",
+        "type": "string"
       },
       "JoinRequestAnswerOut": {
         "properties": {
@@ -3913,6 +4490,17 @@
               }
             ],
             "title": "Week Start"
+          },
+          "weekly_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Digest Opt Out"
           }
         },
         "title": "MePatchIn",
@@ -3950,6 +4538,11 @@
             "title": "Compliant",
             "type": "boolean"
           },
+          "didnt_go_count": {
+            "default": 0,
+            "title": "Didnt Go Count",
+            "type": "integer"
+          },
           "full_name": {
             "title": "Full Name",
             "type": "string"
@@ -3985,11 +4578,6 @@
               }
             ],
             "title": "Months Since Last Qualifying"
-          },
-          "no_show_count": {
-            "default": 0,
-            "title": "No Show Count",
-            "type": "integer"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -4462,6 +5050,15 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "questionnaire_responses": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "title": "Questionnaire Responses",
+            "type": "object"
+          },
           "status": {
             "maxLength": 20,
             "title": "Status",
@@ -4506,6 +5103,22 @@
             "default": false,
             "title": "Paid Confirmed",
             "type": "boolean"
+          },
+          "questionnaire_responses": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Question UUID to answer; omit or send null to preserve saved answers.",
+            "title": "Questionnaire Responses"
           },
           "status": {
             "title": "Status",
@@ -4657,6 +5270,22 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
+      "QuestionType": {
+        "description": "HTML-aligned question type catalog (wire values).",
+        "enum": [
+          "text",
+          "textarea",
+          "radio",
+          "select",
+          "checkbox",
+          "number",
+          "boolean",
+          "rating",
+          "datetime_poll"
+        ],
+        "title": "QuestionType",
+        "type": "string"
+      },
       "RSVPGuestOut": {
         "properties": {
           "attendance": {
@@ -4714,6 +5343,32 @@
             "title": "Photo Url",
             "type": "string"
           },
+          "plus_one_attendance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceStatus"
+              }
+            ],
+            "default": "unknown"
+          },
+          "plus_one_checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus One Checked In At"
+          },
+          "questionnaire_responses": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Questionnaire Responses",
+            "type": "object"
+          },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"
           },
@@ -4753,6 +5408,15 @@
             "default": false,
             "title": "Paid Confirmed",
             "type": "boolean"
+          },
+          "questionnaire_responses": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "title": "Questionnaire Responses",
+            "type": "object"
           },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"
@@ -5365,10 +6029,12 @@
       "SurveyQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -5418,8 +6084,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/QuestionType"
           },
           "id": {
             "title": "Id",
@@ -5748,6 +6413,11 @@
             "title": "Calendar Feed Scope",
             "type": "string"
           },
+          "date_joined": {
+            "format": "date-time",
+            "title": "Date Joined",
+            "type": "string"
+          },
           "email": {
             "default": "",
             "title": "Email",
@@ -5895,11 +6565,17 @@
             "default": "sunday",
             "title": "Week Start",
             "type": "string"
+          },
+          "weekly_digest_opt_out": {
+            "default": false,
+            "title": "Weekly Digest Opt Out",
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "phone_number",
+          "date_joined",
           "roles"
         ],
         "title": "UserOut",
@@ -8721,6 +9397,230 @@
         ]
       }
     },
+    "/api/community/events/attendance-import/commit/": {
+      "post": {
+        "operationId": "community__attendance_import_commit_attendance_import",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceImportCommitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceImportCommitOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Commit Attendance Import",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-import/events/": {
+      "get": {
+        "operationId": "community__attendance_import_list_attendance_import_event_options",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventOptionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Attendance Import Event Options",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-import/preview/": {
+      "post": {
+        "operationId": "community__attendance_import_preview_attendance_import",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "csv_file": {
+                    "format": "binary",
+                    "title": "Csv File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "csv_file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceImportPreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Preview Attendance Import",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/attendance-report/": {
       "get": {
         "description": "Per-event attendance summary, newest first, for events with any mark.",
@@ -8897,6 +9797,85 @@
           }
         ],
         "summary": "Update Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/cohost-invites/": {
+      "post": {
+        "description": "Invite co-hosts with set-union semantics \u2014 nobody already on the event\nis touched. PATCH co_host_ids treats its list as a replacement set, so a\ncaller that didn't resend pending invitees silently rescinded them.",
+        "operationId": "community__event_cohost_invites_add_cohosts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCoHostsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Add Cohosts",
         "tags": [
           "community"
         ]
@@ -10691,7 +11670,7 @@
             "name": "columns",
             "required": false,
             "schema": {
-              "default": "name,phone,rsvp_status,attendance,checked_in_at,cancelled_at,plus_one",
+              "default": "name,phone,rsvp_status,attendance,cancelled_at,plus_one",
               "title": "Columns",
               "type": "string"
             }
@@ -10813,6 +11792,108 @@
           }
         ],
         "summary": "Get Check In Report",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/rsvp-questions/": {
+      "put": {
+        "operationId": "community__event_rsvp_questions_replace_event_rsvp_questions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRsvpQuestionSyncPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventRsvpQuestionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Replace Event Rsvp Questions",
         "tags": [
           "community"
         ]
@@ -12829,6 +13910,16 @@
             },
             "description": "Conflict"
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -13069,6 +14160,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
           },
           "429": {
             "content": {

@@ -238,7 +238,10 @@ describe('PublicRsvpForm', () => {
     await fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await screen.findByText('looks like you already have an account — sign in to rsvp');
-    expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute(
+      'href',
+      '/login?redirect=%2Fevents%2Ftest-event',
+    );
   });
 
   it('focuses the submit error alert so it is not missed below the fold', async () => {

@@ -16,12 +16,19 @@ from ninja.responses import Status
 from notifications._cohost_notifications import (
     create_cohost_invite_accepted_notification,
     create_cohost_invite_declined_notification,
+    create_cohost_invite_notifications,
     create_cohost_removed_notification,
 )
 from notifications.service import broadcast_cohost_change
+from pydantic import BaseModel, Field
 
-from community._cohost_invite_helpers import expire_stale_cohost_invites
-from community._event_helpers import _can_manage_cohost_invites, _event_out
+from community._cohost_invite_helpers import (
+    add_cohost_invites,
+    expire_stale_cohost_invites,
+    send_cohost_invite_emails,
+)
+from community._event_cohost_helpers import _can_manage_cohost_invites
+from community._event_helpers import _event_out
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -44,6 +51,46 @@ def _reload_event_for_response(event_id: UUID) -> Event:
         .prefetch_related("co_hosts", "invited_users", "rsvps__user", "cohost_invites__user")
         .get(id=event_id)
     )
+
+
+class AddCoHostsIn(BaseModel):
+    user_ids: list[str] = Field(..., min_length=1, max_length=50)
+
+
+@router.post(
+    "/events/{event_id}/cohost-invites/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def add_cohosts(request, event_id: UUID, payload: AddCoHostsIn):
+    """Invite co-hosts with set-union semantics — nobody already on the event
+    is touched. PATCH co_host_ids treats its list as a replacement set, so a
+    caller that didn't resend pending invitees silently rescinded them."""
+    event = get_object_or_404(
+        Event.objects.select_related("created_by").prefetch_related(
+            "co_hosts", "cohost_invites__user"
+        ),
+        id=event_id,
+    )
+    if event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+
+    co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
+    if not _can_manage_cohost_invites(request.auth, co_host_ids):
+        raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
+
+    newly_invited = add_cohost_invites(event, payload.user_ids, request.auth)
+
+    event = _reload_event_for_response(event_id)
+    if newly_invited:
+        create_cohost_invite_notifications(event, newly_invited, request.auth)
+        send_cohost_invite_emails(event, newly_invited, request.auth)
+        broadcast_cohost_change(
+            event,
+            exclude_user_ids={str(request.auth.pk)},
+            extra_user_ids=set(newly_invited),
+        )
+    return Status(200, _event_out(event, request.auth))
 
 
 @router.post(

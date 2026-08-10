@@ -42,7 +42,8 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
-        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
+        agent-frontend-eslint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
+        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
@@ -296,10 +297,17 @@ agent-complexity:
 	cd backend && env UV_NO_PROGRESS=1 uvx -q --with flake8-cognitive-complexity flake8 -q \
 		--max-cognitive-complexity 10 --select CCR001 .
 	violations=$$(find backend -name '*.py' -not -path '*/migrations/*' | while read f; do lines=$$(wc -l < "$$f"); if [ "$$lines" -gt 500 ]; then echo "$$f: $$lines lines"; fi; done); \
-	if [ -n "$$violations" ]; then echo "Error: files exceed 500-line limit:\n$$violations"; exit 1; fi
-
-agent-frontend-lint:
+	if [ -n "$$violations" ]; then \
+		echo "Error: files exceed 500-line limit:"; \
+		echo "$$violations"; \
+		exit 1; \
+	fi
+agent-frontend-eslint:
 	cd frontend && pnpm exec eslint . --max-warnings 0
+
+# Cheap pre-push gate: ESLint + Prettier in parallel (~same wall time as eslint).
+agent-frontend-lint:
+	$(MAKE) -j2 agent-frontend-eslint agent-frontend-format-check
 
 agent-frontend-format:
 	cd frontend && pnpm exec prettier --write --log-level warn .
@@ -328,8 +336,9 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 
 agent-frontend-ci: parallel-agent-frontend
 
+# Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:
-	$(MAKE) -j5 agent-frontend-lint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
+	$(MAKE) -j5 agent-frontend-eslint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:

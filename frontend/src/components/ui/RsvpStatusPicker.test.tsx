@@ -35,6 +35,15 @@ describe('RsvpStatusPicker', () => {
     expect(row).toHaveClass('justify-center-safe');
   });
 
+  it('should not open a vertical scrollport when nested in a height-capped flex column', () => {
+    // overflow-x-auto alone computes overflow-y to auto, which lets a max-height
+    // flex parent clip the pills into a tiny vertical scroll window.
+    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} />);
+    const row = screen.getByRole('button', { name: 'maybe' }).parentElement;
+    expect(row).toHaveClass('shrink-0');
+    expect(row).toHaveClass('overflow-y-clip');
+  });
+
   it('keeps each pill from shrinking so labels are never truncated', () => {
     render(<RsvpStatusPicker value={null} onSelect={vi.fn()} />);
     expect(screen.getByRole('button', { name: "i'm going" })).toHaveClass('shrink-0');

@@ -7,8 +7,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
-import { makeEvent, makeGuest } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventMemberSection } from './EventMemberSection';
 
@@ -32,6 +31,9 @@ vi.mock('@/api/publicRsvp', () => ({
 // Stub heavy sub-sections so we focus on the host row.
 vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
+}));
+vi.mock('./GuestChip', () => ({
+  GuestChip: () => null,
   InvitedList: () => null,
 }));
 vi.mock('./EventAdminActions', () => ({ EventAdminActions: () => null }));
@@ -54,43 +56,22 @@ const BASE_EVENT = makeEvent({
   guests: [],
 });
 
-const CREATOR: User = {
+const CREATOR = makeUser({
   id: 'user-creator',
   phoneNumber: '+12125550001',
   firstName: 'Alice',
   lastName: '',
   fullName: 'Alice',
-  nickname: '',
-  email: '',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
-const STRANGER: User = {
+const STRANGER = {
   ...CREATOR,
   id: 'user-stranger',
   firstName: 'Stranger',
   fullName: 'Stranger',
 };
 
-const MANAGER: User = {
+const MANAGER = {
   ...STRANGER,
   id: 'user-manager',
   firstName: 'Manager',
@@ -128,7 +109,7 @@ const ACCEPTED_COHOST_EVENT: Event = {
   coHostPhotoUrls: ['', ''],
 };
 
-const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
+const COHOST_BOB = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
 
 describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {
@@ -265,10 +246,10 @@ describe('EventMemberSection — manage events permission holder (Issue 1189)', 
 describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
 
-  it("renders the comments card regardless of rsvpEnabled — gating is the card's own job", () => {
+  it('hides the comments card when rsvp is disabled for the event', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...BASE_EVENT, rsvpEnabled: false });
-    expect(screen.getByTestId('comments-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('comments-card')).not.toBeInTheDocument();
   });
 
   it('shows the comments section when rsvp is enabled', () => {

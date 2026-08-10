@@ -24,8 +24,10 @@ export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
     photoUrl: '',
     hasPlusOne: false,
     attendance: AttendanceStatus.Unknown,
+    plusOneAttendance: AttendanceStatus.Unknown,
     isMember: true,
     paidConfirmed: false,
+    questionnaireResponses: {},
     ...overrides,
   };
 }
@@ -74,6 +76,8 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     ],
     myRsvp: null,
     myPaidConfirmed: false,
+    myQuestionnaireResponses: {},
+    rsvpQuestions: [],
     viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
@@ -126,6 +130,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     showEmail: false,
     showBirthday: false,
     hideLastName: false,
+    weeklyDigestOptOut: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     profilePhotoUrl: '',
@@ -153,6 +158,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     needsOnboarding: false,
     loginLinkRequested: false,
     lastAttendedAt: null,
+    dateJoined: new Date('2026-01-01T00:00:00Z'),
     roles: [],
     ...overrides,
   };
@@ -190,6 +196,7 @@ export function makeRow(overrides: Partial<EventAttendanceRow> = {}): EventAtten
   return {
     eventId: 'e1',
     title: 'Potluck',
+    eventType: EventType.Official,
     startDatetime: new Date('2026-03-15T18:00:00Z'),
     attendedCount: 4,
     noShowCount: 1,

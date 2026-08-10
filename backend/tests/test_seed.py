@@ -1,4 +1,8 @@
 import pytest
+from community.management.commands._seed_data import (
+    COOKING_WORKSHOP_TITLE,
+    SEED_EVENT_RSVP_QUESTIONS,
+)
 from community.models import Event, EventRSVP, JoinRequest, RSVPStatus
 from community.models.choices import AttendanceStatus
 from django.core.management import call_command
@@ -57,10 +61,10 @@ def test_seed_marks_attendance_on_past_event():
 
     event = Event.objects.get(title="Past Potluck (seed)")
     marked = event.rsvps.filter(
-        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW]
+        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO]
     )
     assert marked.filter(attendance=AttendanceStatus.ATTENDED).exists()
-    assert marked.filter(attendance=AttendanceStatus.NO_SHOW).exists()
+    assert marked.filter(attendance=AttendanceStatus.DIDNT_GO).exists()
 
 
 @pytest.mark.django_db
@@ -78,3 +82,43 @@ def test_seed_admin_has_superuser_privileges():
     assert admin.is_superuser
     assert admin.is_staff
     assert admin.roles.filter(name="admin").exists()
+
+
+@pytest.mark.django_db
+def test_seed_creates_rsvp_questions_on_configured_events():
+    call_command("seed")
+
+    for title, specs in SEED_EVENT_RSVP_QUESTIONS.items():
+        event = Event.objects.get(title=title)
+        labels = list(
+            event.rsvp_questions.order_by("display_order").values_list("label", flat=True)
+        )
+        assert labels == [spec.label for spec in specs]
+
+
+@pytest.mark.django_db
+def test_seed_rsvps_include_partial_and_complete_questionnaire_responses():
+    call_command("seed")
+
+    event = Event.objects.get(title=COOKING_WORKSHOP_TITLE)
+    questions = {q.label: q for q in event.rsvp_questions.all()}
+    assert len(questions) == 2
+
+    complete = EventRSVP.objects.get(event=event, user__phone_number="+17025550002")
+    assert set(complete.questionnaire_responses) == {str(q.id) for q in questions.values()}
+    assert {
+        snap["label"]: snap["answer"] for snap in complete.questionnaire_responses.values()
+    } == {
+        "How are you getting there?": "transit",
+        "Anything we should know?": "Nut allergy — please avoid shared utensils.",
+    }
+
+    partial = EventRSVP.objects.get(event=event, user__phone_number="+17025550003")
+    assert set(partial.questionnaire_responses) == {str(questions["How are you getting there?"].id)}
+    assert (
+        partial.questionnaire_responses[str(questions["How are you getting there?"].id)]["answer"]
+        == "bike"
+    )
+
+    unanswered = EventRSVP.objects.get(event=event, user__phone_number="+17025550004")
+    assert unanswered.questionnaire_responses == {}

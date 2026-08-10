@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest';
+
+import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
+import type { JoinQuestionType } from '@/api/join';
+import { QuestionType } from '@/api/questionTypes';
+import type { SurveyQuestionType } from '@/api/surveys';
+import type { components } from '@/api/types.gen';
+
+import {
+  JOIN_QUESTION_TYPE_OPTIONS,
+  normalizeQuestionOptions,
+  QUESTION_TYPE_OPTIONS,
+  questionOptionsError,
+  questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
+} from './questionTypeOptions';
+
+type AssertExtends<_A extends B, B> = true;
+type _SurveyIsCatalog = AssertExtends<SurveyQuestionType, QuestionType>;
+type _CatalogMatchesOpenApi = AssertExtends<QuestionType, components['schemas']['QuestionType']>;
+type _JoinSubsetOfCatalog = AssertExtends<JoinQuestionType, QuestionType>;
+type _JoinMatchesOpenApi = AssertExtends<
+  JoinQuestionType,
+  components['schemas']['JoinFormQuestionType']
+>;
+type _RsvpSubsetOfCatalog = AssertExtends<RsvpQuestionType, QuestionType>;
+type _RsvpMatchesOpenApi = AssertExtends<
+  RsvpQuestionType,
+  components['schemas']['EventRsvpQuestionIn']['field_type']
+>;
+
+const FULL_TYPES: QuestionType[] = Object.values(QuestionType);
+
+describe('question type options', () => {
+  it('should expose metadata for every catalog type from QuestionType members', () => {
+    expect(QUESTION_TYPE_OPTIONS.map((o) => o.value).sort()).toEqual([...FULL_TYPES].sort());
+    expect(QUESTION_TYPE_OPTIONS.find((o) => o.value === QuestionType.Text)).toEqual({
+      value: QuestionType.Text,
+      label: 'short text',
+      wantsOptions: false,
+    });
+    expect(QUESTION_TYPE_OPTIONS.find((o) => o.value === QuestionType.Select)).toEqual({
+      value: QuestionType.Select,
+      label: 'select',
+      wantsOptions: true,
+    });
+  });
+
+  it('should look up wantsOptions from the catalog', () => {
+    expect(questionTypeWantsOptions(QuestionType.Text)).toBe(false);
+    expect(questionTypeWantsOptions(QuestionType.Select)).toBe(true);
+  });
+
+  it('should return generic validation copy when a question requires options', () => {
+    expect(questionOptionsError(true, [])).toBe('add at least one option');
+    expect(questionOptionsError(true, ['first'])).toBeNull();
+    expect(questionOptionsError(false, [])).toBeNull();
+  });
+
+  it('should trim and drop blank options', () => {
+    expect(normalizeQuestionOptions(['  a ', '', 'b', '   '])).toEqual(['a', 'b']);
+  });
+
+  it('should expose the join subset projected from catalog metadata', () => {
+    expect(JOIN_QUESTION_TYPE_OPTIONS).toEqual([
+      { value: QuestionType.Text, label: 'short text', wantsOptions: false },
+      { value: QuestionType.Textarea, label: 'short answer', wantsOptions: false },
+      { value: QuestionType.Select, label: 'select', wantsOptions: true },
+    ]);
+    expect(JOIN_QUESTION_TYPE_OPTIONS.map(({ value }) => questionTypeWantsOptions(value))).toEqual([
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it('should expose the RSVP subset projected from catalog metadata', () => {
+    expect(RSVP_QUESTION_TYPE_OPTIONS).toEqual([
+      { value: QuestionType.Textarea, label: 'short answer', wantsOptions: false },
+      { value: QuestionType.Select, label: 'select', wantsOptions: true },
+      { value: QuestionType.Checkbox, label: 'checkbox', wantsOptions: true },
+    ]);
+  });
+});

@@ -37,7 +37,7 @@ function makeMemberRow(overrides: Partial<MemberAttendanceRow> = {}): MemberAtte
     qualifyingCount12mo: 3,
     compliant: true,
     communityCount: 1,
-    noShowCount: 0,
+    didntGoCount: 0,
     cancelCount: 0,
     monthsSinceLastQualifying: 2,
     isPauseCandidate: false,
@@ -157,5 +157,100 @@ describe('MemberAttendanceTab', () => {
     render(<MemberAttendanceTab />);
     expect(screen.getByText('paused')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'pause member' })).not.toBeInTheDocument();
+  });
+
+  it('displays the member count', () => {
+    mockRows([makeMemberRow(), makeMemberRow({ userId: 'u2', fullName: 'Bob Smith' })]);
+    render(<MemberAttendanceTab />);
+    expect(screen.getByText('2 members')).toBeInTheDocument();
+  });
+
+  it('displays singular member count when only one member', () => {
+    mockRows([makeMemberRow()]);
+    render(<MemberAttendanceTab />);
+    expect(screen.getByText('1 member')).toBeInTheDocument();
+  });
+
+  it('hides member count when list is empty', () => {
+    mockRows([]);
+    render(<MemberAttendanceTab />);
+    expect(screen.queryByText(/^\d+ members?$/)).not.toBeInTheDocument();
+  });
+
+  it('filters members by search query (case-insensitive)', async () => {
+    mockRows([
+      makeMemberRow({ userId: 'u1', fullName: 'Ada Lovelace' }),
+      makeMemberRow({ userId: 'u2', fullName: 'Bob Smith' }),
+      makeMemberRow({ userId: 'u3', fullName: 'Charlie Chen' }),
+    ]);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    const searchInput = screen.getByPlaceholderText('name');
+    await user.type(searchInput, 'ada');
+
+    expect(screen.getByText('ada lovelace')).toBeInTheDocument();
+    expect(screen.queryByText('bob smith')).not.toBeInTheDocument();
+    expect(screen.queryByText('charlie chen')).not.toBeInTheDocument();
+    expect(screen.getByText('1 member')).toBeInTheDocument();
+  });
+
+  it('updates member count when search filter is applied', async () => {
+    mockRows([
+      makeMemberRow({ userId: 'u1', fullName: 'Alice Brown' }),
+      makeMemberRow({ userId: 'u2', fullName: 'Amy Johnson' }),
+      makeMemberRow({ userId: 'u3', fullName: 'Bob Smith' }),
+    ]);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    expect(screen.getByText('3 members')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('name');
+    await user.type(searchInput, 'alice');
+
+    expect(screen.getByText('1 member')).toBeInTheDocument();
+  });
+
+  it('combines search filter with at-risk filter', async () => {
+    mockRows([
+      makeMemberRow({
+        userId: 'u1',
+        fullName: 'Alice Risk',
+        isPauseCandidate: true,
+        lastQualifyingAt: null,
+      }),
+      makeMemberRow({
+        userId: 'u2',
+        fullName: 'Bob Risk',
+        isPauseCandidate: true,
+        lastQualifyingAt: null,
+      }),
+      makeMemberRow({ userId: 'u3', fullName: 'Alice Safe', isPauseCandidate: false }),
+    ]);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    await user.click(screen.getByRole('button', { name: 'at risk' }));
+    expect(screen.getByText('2 members')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('name');
+    await user.type(searchInput, 'alice');
+
+    expect(screen.getByText('1 member')).toBeInTheDocument();
+    expect(screen.getByText('alice risk')).toBeInTheDocument();
+    expect(screen.queryByText('bob risk')).not.toBeInTheDocument();
+  });
+
+  it('shows empty state when search does not match any members', async () => {
+    mockRows([makeMemberRow({ fullName: 'Ada Lovelace' })]);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    const searchInput = screen.getByPlaceholderText('name');
+    await user.type(searchInput, 'xyz');
+
+    expect(screen.getByText(/nothing here/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^\d+ members?$/)).not.toBeInTheDocument();
   });
 });

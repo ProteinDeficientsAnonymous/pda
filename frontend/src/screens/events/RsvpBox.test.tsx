@@ -6,6 +6,7 @@ import { RsvpStatus } from '@/models/event';
 import { makeEvent, makePaidEvent } from '@/test/fixtures';
 
 import { RsvpBox } from './RsvpBox';
+import type { RsvpQuestionDraft } from './rsvpQuestions';
 
 const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
 vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
@@ -17,6 +18,22 @@ const base = {
   allowPlusOnes: true,
   onClose: () => {},
   event: makeEvent(),
+};
+
+const requiredSelect: RsvpQuestionDraft = {
+  id: 'q-transport',
+  label: 'how are you getting there?',
+  fieldType: 'select',
+  options: ['driving', 'transit'],
+  required: true,
+};
+
+const optionalText: RsvpQuestionDraft = {
+  id: 'q-notes',
+  label: 'anything else?',
+  fieldType: 'textarea',
+  options: [],
+  required: false,
 };
 
 describe('RsvpBox', () => {
@@ -40,6 +57,7 @@ describe('RsvpBox', () => {
         status: RsvpStatus.Attending,
         comment: 'snacks',
         hasPlusOne: false,
+        questionnaireResponses: {},
       }),
     );
   });
@@ -156,6 +174,92 @@ describe('RsvpBox', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending }),
     );
+  });
+
+  it('should show questions when attending', () => {
+    render(
+      <RsvpBox
+        {...base}
+        mode="create"
+        questions={[requiredSelect, optionalText]}
+        onConfirm={() => {}}
+      />,
+    );
+    expect(screen.getByText('how are you getting there?')).toBeInTheDocument();
+    expect(screen.getByLabelText('anything else? (optional)')).toBeInTheDocument();
+  });
+
+  it('should keep status controls outside the questions/comment scroll region', () => {
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
+    const scroll = screen.getByTestId('rsvp-details-scroll');
+    expect(scroll).toContainElement(screen.getByText('how are you getting there?'));
+    expect(scroll).toContainElement(screen.getByLabelText('comment (optional)'));
+    const controls = screen.getByTestId('rsvp-status-controls');
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /i'm going/i }));
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /add \+1/i }));
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /^confirm$/i }));
+    // Status/+1 sit in a shrink-0 shell so the height-capped column cannot clip
+    // the pills into RsvpStatusPicker's overflow-x scrollport.
+    expect(controls).toHaveClass('shrink-0');
+    expect(controls).toContainElement(screen.getByRole('button', { name: /i'm going/i }));
+    expect(controls).toContainElement(screen.getByRole('button', { name: /add \+1/i }));
+  });
+
+  it('should hide questions when status is can’t go', () => {
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
+  });
+
+  it('should hide questions when status is maybe', () => {
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
+  });
+
+  it('should allow confirm for maybe without answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Maybe, questionnaireResponses: {} }),
+    );
+  });
+
+  it('should block confirm when a required question is unanswered', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(/required/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'how are you getting there?' })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+  });
+
+  it('should confirm after answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'how are you getting there?' }), {
+      target: { value: 'driving' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: RsvpStatus.Attending,
+        questionnaireResponses: { 'q-transport': 'driving' },
+      }),
+    );
+  });
+
+  it('should allow confirm for can’t go without answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ status: RsvpStatus.CantGo }));
   });
 });
 

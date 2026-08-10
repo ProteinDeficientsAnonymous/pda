@@ -6,7 +6,7 @@ import type { Event } from '@/models/event';
 import { apiClient } from './client';
 import type { WireEvent } from './eventMapper';
 import { mapEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { eventKeys, setEventDetailData } from './events';
 
 interface CohostInviteArgs {
   eventId: string;
@@ -47,6 +47,20 @@ async function deleteCohost({
   return mapEvent(data);
 }
 
+async function postAddCohosts({
+  eventId,
+  userIds,
+}: {
+  eventId: string;
+  userIds: string[];
+}): Promise<Event> {
+  const { data } = await apiClient.post<WireEvent>(
+    `/api/community/events/${eventId}/cohost-invites/`,
+    { user_ids: userIds },
+  );
+  return mapEvent(data);
+}
+
 function useCohostInviteMutation<TArgs extends { eventId: string }>(
   fn: (args: TArgs) => Promise<Event>,
 ) {
@@ -54,8 +68,8 @@ function useCohostInviteMutation<TArgs extends { eventId: string }>(
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: fn,
-    onSuccess: (event, vars) => {
-      qc.setQueryData(eventKeys.detail(vars.eventId, isAuthed), event);
+    onSuccess: (event) => {
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
   });
@@ -75,4 +89,8 @@ export function useRescindCohostInvite() {
 
 export function useRemoveCohost() {
   return useCohostInviteMutation(deleteCohost);
+}
+
+export function useAddCohosts() {
+  return useCohostInviteMutation(postAddCohosts);
 }

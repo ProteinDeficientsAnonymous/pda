@@ -684,6 +684,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-import/commit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit Attendance Import */
+        post: operations["community__attendance_import_commit_attendance_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-import/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Attendance Import Event Options */
+        get: operations["community__attendance_import_list_attendance_import_event_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-import/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Attendance Import */
+        post: operations["community__attendance_import_preview_attendance_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/attendance-report/": {
         parameters: {
             query?: never;
@@ -720,6 +771,28 @@ export interface paths {
         head?: never;
         /** Update Event */
         patch: operations["community__events_update_event"];
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/cohost-invites/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Cohosts
+         * @description Invite co-hosts with set-union semantics — nobody already on the event
+         *     is touched. PATCH co_host_ids treats its list as a replacement set, so a
+         *     caller that didn't resend pending invitees silently rescinded them.
+         */
+        post: operations["community__event_cohost_invites_add_cohosts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/": {
@@ -1072,6 +1145,23 @@ export interface paths {
         /** Get Check In Report */
         get: operations["community__event_report_get_check_in_report"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/rsvp-questions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Event Rsvp Questions */
+        put: operations["community__event_rsvp_questions_replace_event_rsvp_questions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2041,6 +2131,11 @@ export interface components {
             /** Access */
             access: string;
         };
+        /** AddCoHostsIn */
+        AddCoHostsIn: {
+            /** User Ids */
+            user_ids: string[];
+        };
         /** ApproveJoinRequestOut */
         ApproveJoinRequestOut: {
             /**
@@ -2066,23 +2161,77 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
+        /** AttendanceImportCommitIn */
+        AttendanceImportCommitIn: {
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Title */
+            event_title?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /** Rows */
+            rows: components["schemas"]["ImportRowResolutionIn"][];
+        };
+        /** AttendanceImportCommitOut */
+        AttendanceImportCommitOut: {
+            /** Created Count */
+            created_count: number;
+            /** Event Id */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Updated Count */
+            updated_count: number;
+        };
+        /** AttendanceImportPreviewOut */
+        AttendanceImportPreviewOut: {
+            /**
+             * Matched
+             * @default []
+             */
+            matched: components["schemas"]["ImportRowOut"][];
+            /**
+             * Needs Review
+             * @default []
+             */
+            needs_review: components["schemas"]["ImportRowOut"][];
+        };
         /** AttendanceIn */
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
+            /**
+             * For Plus One
+             * @default false
+             */
+            for_plus_one: boolean;
         };
         /** AttendanceReportOut */
         AttendanceReportOut: {
+            /**
+             * Club No Show Count
+             * @default 0
+             */
+            club_no_show_count: number;
             /**
              * Events
              * @default []
              */
             events: components["schemas"]["EventAttendanceRowOut"][];
+            /**
+             * Official No Show Count
+             * @default 0
+             */
+            official_no_show_count: number;
         };
         /**
          * AttendanceStatus
          * @enum {string}
          */
-        AttendanceStatus: "unknown" | "attended" | "no_show";
+        AttendanceStatus: "unknown" | "attended" | "didnt_go";
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -2092,6 +2241,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2163,6 +2317,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2214,6 +2373,16 @@ export interface components {
              */
             canceled_count: number;
             /**
+             * Didnt Go
+             * @default []
+             */
+            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * No Show Count
              * @default 0
              */
@@ -2241,6 +2410,11 @@ export interface components {
              * @default true
              */
             is_member: boolean;
+            /**
+             * Is Plus One Guest
+             * @default false
+             */
+            is_plus_one_guest: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2570,6 +2744,8 @@ export interface components {
             attended_count: number;
             /** Event Id */
             event_id: string;
+            /** Event Type */
+            event_type: string;
             /**
              * Going Count
              * @default 0
@@ -2748,6 +2924,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
             /** Start Datetime */
             start_datetime?: string | null;
             /**
@@ -2942,6 +3123,15 @@ export interface components {
              */
             zelle_info: string;
         };
+        /** EventOptionOut */
+        EventOptionOut: {
+            /** Id */
+            id: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** EventOut */
         EventOut: {
             /**
@@ -3061,6 +3251,13 @@ export interface components {
             my_paid_confirmed: boolean;
             /** My Pending Cohost Invite Id */
             my_pending_cohost_invite_id?: string | null;
+            /**
+             * My Questionnaire Responses
+             * @default {}
+             */
+            my_questionnaire_responses: {
+                [key: string]: unknown;
+            };
             /** My Rsvp */
             my_rsvp?: string | null;
             /**
@@ -3095,6 +3292,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
             /**
              * Slug
              * @default
@@ -3284,6 +3486,101 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** EventRsvpQuestionExpectedIn */
+        EventRsvpQuestionExpectedIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "select" | "checkbox";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionIn */
+        EventRsvpQuestionIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "select" | "checkbox";
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionOut */
+        EventRsvpQuestionOut: {
+            /** Display Order */
+            display_order: number;
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "select" | "checkbox";
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /** Required */
+            required: boolean;
+        };
+        /** EventRsvpQuestionSyncIn */
+        EventRsvpQuestionSyncIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "select" | "checkbox";
+            /** Id */
+            id?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionSyncPayload */
+        EventRsvpQuestionSyncPayload: {
+            /** Expected */
+            expected: components["schemas"]["EventRsvpQuestionExpectedIn"][];
+            /** Questions */
+            questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
+        };
         /** EventStatsOut */
         EventStatsOut: {
             /**
@@ -3302,6 +3599,11 @@ export interface components {
              */
             cant_go_count: number;
             /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
+            /**
              * Going Count
              * @default 0
              */
@@ -3316,11 +3618,6 @@ export interface components {
              * @default 0
              */
             no_response_count: number;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /**
              * Not Marked Count
              * @default 0
@@ -3521,6 +3818,58 @@ export interface components {
             /** Paid Confirmed */
             paid_confirmed: boolean;
         };
+        /** ImportCandidateOut */
+        ImportCandidateOut: {
+            /** Full Name */
+            full_name: string;
+            /** Phone Number */
+            phone_number: string;
+            /** User Id */
+            user_id: string;
+        };
+        /** ImportRowOut */
+        ImportRowOut: {
+            /**
+             * Candidates
+             * @default []
+             */
+            candidates: components["schemas"]["ImportCandidateOut"][];
+            /** Checked In */
+            checked_in: boolean;
+            /**
+             * Has Existing Rsvp
+             * @default false
+             */
+            has_existing_rsvp: boolean;
+            /** Matched Full Name */
+            matched_full_name?: string | null;
+            /** Matched User Id */
+            matched_user_id?: string | null;
+            /** Partiful Status */
+            partiful_status: string;
+            /** Raw Name */
+            raw_name: string;
+            /** Row Index */
+            row_index: number;
+        };
+        /** ImportRowResolutionIn */
+        ImportRowResolutionIn: {
+            /** Checked In */
+            checked_in: boolean;
+            /** Partiful Status */
+            partiful_status: string;
+            /** Raw Name */
+            raw_name: string;
+            /** Row Index */
+            row_index: number;
+            /**
+             * Skip
+             * @default false
+             */
+            skip: boolean;
+            /** User Id */
+            user_id?: string | null;
+        };
         /** InviteIn */
         InviteIn: {
             /** User Ids */
@@ -3528,11 +3877,8 @@ export interface components {
         };
         /** JoinFormQuestionIn */
         JoinFormQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Label */
             label: string;
             /**
@@ -3555,8 +3901,7 @@ export interface components {
         JoinFormQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -3569,6 +3914,12 @@ export interface components {
             /** Required */
             required: boolean;
         };
+        /**
+         * JoinFormQuestionType
+         * @description Question types supported by join forms.
+         * @enum {string}
+         */
+        JoinFormQuestionType: "text" | "textarea" | "select";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
@@ -3772,6 +4123,8 @@ export interface components {
             show_phone?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
+            /** Weekly Digest Opt Out */
+            weekly_digest_opt_out?: boolean | null;
         };
         /** MemberAttendanceAnalyticsOut */
         MemberAttendanceAnalyticsOut: {
@@ -3801,6 +4154,11 @@ export interface components {
              * @default false
              */
             compliant: boolean;
+            /**
+             * Didnt Go Count
+             * @default 0
+             */
+            didnt_go_count: number;
             /** Full Name */
             full_name: string;
             /**
@@ -3814,11 +4172,6 @@ export interface components {
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
             months_since_last_qualifying?: number | null;
-            /**
-             * No Show Count
-             * @default 0
-             */
-            no_show_count: number;
             /** Phone Number */
             phone_number: string;
             /**
@@ -4059,6 +4412,13 @@ export interface components {
             paid_confirmed: boolean;
             /** Phone Number */
             phone_number: string;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            };
             /** Status */
             status: string;
             /**
@@ -4081,6 +4441,13 @@ export interface components {
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; omit or send null to preserve saved answers.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            } | null;
             /** Status */
             status: string;
         };
@@ -4135,6 +4502,12 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * QuestionType
+         * @description HTML-aligned question type catalog (wire values).
+         * @enum {string}
+         */
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -4165,6 +4538,17 @@ export interface components {
              * @default
              */
             photo_url: string;
+            /** @default unknown */
+            plus_one_attendance: components["schemas"]["AttendanceStatus"];
+            /** Plus One Checked In At */
+            plus_one_checked_in_at?: string | null;
+            /**
+             * Questionnaire Responses
+             * @default {}
+             */
+            questionnaire_responses: {
+                [key: string]: unknown;
+            };
             status: components["schemas"]["RSVPStatus"];
             /** User Id */
             user_id: string;
@@ -4183,6 +4567,13 @@ export interface components {
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            };
             status: components["schemas"]["RSVPStatus"];
         };
         /**
@@ -4411,11 +4802,8 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["QuestionType"];
             /** Label */
             label: string;
             /**
@@ -4438,8 +4826,7 @@ export interface components {
         SurveyQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["QuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -4597,6 +4984,11 @@ export interface components {
              */
             calendar_feed_scope: string;
             /**
+             * Date Joined
+             * Format: date-time
+             */
+            date_joined: string;
+            /**
              * Email
              * @default
              */
@@ -4716,6 +5108,11 @@ export interface components {
              * @default sunday
              */
             week_start: string;
+            /**
+             * Weekly Digest Opt Out
+             * @default false
+             */
+            weekly_digest_opt_out: boolean;
         };
         /** UserPatchIn */
         UserPatchIn: {
@@ -6667,6 +7064,156 @@ export interface operations {
             };
         };
     };
+    community__attendance_import_commit_attendance_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceImportCommitIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceImportCommitOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_import_list_attendance_import_event_options: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOptionOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_import_preview_attendance_import: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Csv File
+                     * Format: binary
+                     */
+                    csv_file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceImportPreviewOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__attendance_report_attendance_report: {
         parameters: {
             query?: never;
@@ -6789,6 +7336,59 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_add_cohosts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCoHostsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8096,6 +8696,77 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvp_questions_replace_event_rsvp_questions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRsvpQuestionSyncPayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRsvpQuestionOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9518,6 +10189,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -9639,6 +10319,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

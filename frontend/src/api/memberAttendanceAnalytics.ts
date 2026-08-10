@@ -11,7 +11,7 @@ export interface MemberAttendanceRow {
   qualifyingCount12mo: number;
   compliant: boolean;
   communityCount: number;
-  noShowCount: number;
+  didntGoCount: number;
   cancelCount: number;
   monthsSinceLastQualifying: number | null;
   isPauseCandidate: boolean;
@@ -26,7 +26,7 @@ interface WireRow {
   qualifying_count_12mo: number;
   compliant: boolean;
   community_count: number;
-  no_show_count: number;
+  didnt_go_count: number;
   cancel_count: number;
   months_since_last_qualifying: number | null;
   is_pause_candidate: boolean;
@@ -46,7 +46,7 @@ function mapRow(w: WireRow): MemberAttendanceRow {
     qualifyingCount12mo: w.qualifying_count_12mo,
     compliant: w.compliant,
     communityCount: w.community_count,
-    noShowCount: w.no_show_count,
+    didntGoCount: w.didnt_go_count,
     cancelCount: w.cancel_count,
     monthsSinceLastQualifying: w.months_since_last_qualifying,
     isPauseCandidate: w.is_pause_candidate,

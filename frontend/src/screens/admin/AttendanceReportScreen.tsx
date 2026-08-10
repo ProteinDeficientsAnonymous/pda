@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 
 import { type EventAttendanceRow, useAttendanceReport } from '@/api/attendanceReport';
 import { useFlag } from '@/api/featureFlags';
+import { Button } from '@/components/ui/Button';
 import { Feature } from '@/models/featureFlags';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
+import { AttendanceImportDialog } from './AttendanceImportDialog';
 import { MemberAttendanceTab } from './MemberAttendanceTab';
 
 type Tab = 'events' | 'members';
@@ -15,13 +17,30 @@ type Tab = 'events' | 'members';
 export default function AttendanceReportScreen() {
   const membersTabEnabled = useFlag(Feature.AdminAttendanceAnalytics);
   const [tab, setTab] = useState<Tab>('events');
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <ContentContainer>
-      <header className="mb-4">
-        <h1 className="mb-1 text-2xl font-medium tracking-tight">attendance</h1>
-        <p className="text-muted text-sm">who actually showed up, per event and per member</p>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="mb-1 text-2xl font-medium tracking-tight">attendance</h1>
+          <p className="text-muted text-sm">who actually showed up, per event and per member</p>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setImportOpen(true);
+          }}
+        >
+          import from partiful
+        </Button>
       </header>
+      <AttendanceImportDialog
+        open={importOpen}
+        onClose={() => {
+          setImportOpen(false);
+        }}
+      />
 
       {membersTabEnabled ? (
         <div
@@ -79,24 +98,26 @@ function TabButton({
 }
 
 function EventsTab() {
-  const { data = [], isPending, isError } = useAttendanceReport();
-  // The per-event report at /events/:id/report is behind its own flag; only
-  // link rows there when it's on, otherwise the row dead-links to /calendar.
+  const { data, isPending, isError } = useAttendanceReport();
   const reportEnabled = useFlag(Feature.HostAttendanceReport);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load attendance — try refreshing" />;
 
-  return data.length === 0 ? (
-    <p className="text-muted text-sm">no attendance marked yet 🌿</p>
-  ) : (
-    <ul className="flex flex-col gap-2">
-      {data.map((row) => (
-        <li key={row.eventId}>
-          <AttendanceRow row={row} linkable={reportEnabled} />
-        </li>
-      ))}
-    </ul>
+  if (data.events.length === 0) {
+    return <p className="text-muted text-sm">no attendance marked yet 🌿</p>;
+  }
+
+  return (
+    <>
+      <ul className="flex flex-col gap-2">
+        {data.events.map((row) => (
+          <li key={row.eventId}>
+            <AttendanceRow row={row} linkable={reportEnabled} />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -114,7 +135,6 @@ function AttendanceRow({ row, linkable }: { row: EventAttendanceRow; linkable: b
       <div className="flex shrink-0 flex-wrap justify-end gap-1 text-xs">
         <Stat label="attended" value={row.attendedCount} />
         <Stat label="no-show" value={row.noShowCount} />
-        <Stat label="going (heads)" value={row.goingCount} />
       </div>
     </>
   );

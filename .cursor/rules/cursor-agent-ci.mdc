@@ -11,6 +11,8 @@ These expectations apply to Cursor agents in this repo. They are intentionally *
 
 Run `make agent-ci` before committing when your changes touch application code, tests, or build config. Use individual `make agent-*` targets when you only need part of the suite.
 
+At minimum before a push that touches frontend files, run **`make agent-frontend-lint`** (ESLint + Prettier). For backend files, run **`make agent-lint`** (and stage any ruff auto-fixes). These are the checks that most often fail on GitHub when agents skip the full suite.
+
 ## before reporting work complete
 
 Tooling can report success even when the tree does not pass CI. Do not report a coding task as complete until you have run `make agent-ci` (or the project's equivalent) and fixed all errors it reports.

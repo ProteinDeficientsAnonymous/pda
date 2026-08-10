@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 
 import type { ConsentTypeValue } from '@/models/consent';
 import { normalizePermissions } from '@/models/permissions';
@@ -44,6 +45,7 @@ interface WireUser {
   show_email?: boolean;
   show_birthday?: boolean;
   hide_last_name?: boolean;
+  weekly_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
   profile_photo_url?: string;
@@ -99,6 +101,7 @@ function mapUser(u: WireUser): User {
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
     hideLastName: u.hide_last_name ?? false,
+    weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
     profilePhotoUrl: u.profile_photo_url ?? '',
@@ -132,15 +135,23 @@ export async function magicLogin(token: string): Promise<{ access: string; user:
   return { access: data.access, user };
 }
 
+async function tryRestoreSession(): Promise<{ access: string; user: User } | null> {
+  const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
+  const user = await fetchMeWithToken(data.access);
+  return { access: data.access, user };
+}
+
 export async function restoreSession(): Promise<{ access: string; user: User } | null> {
-  // The refresh cookie is sent automatically. If it's missing/invalid, /refresh/
-  // returns 401 and we treat the session as gone.
+  // Retry once unless it's a real 401 — avoids re-login on a transient 5xx.
   try {
-    const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
-    const user = await fetchMeWithToken(data.access);
-    return { access: data.access, user };
-  } catch {
-    return null;
+    return await tryRestoreSession();
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 401) return null;
+    try {
+      return await tryRestoreSession();
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -212,6 +223,7 @@ export interface ProfileUpdate {
   showEmail?: boolean;
   showBirthday?: boolean;
   hideLastName?: boolean;
+  weeklyDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
 }
@@ -234,6 +246,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
+  if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);

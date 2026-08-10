@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import { OnboardingProfileStep } from './OnboardingProfileStep';
 
@@ -16,34 +17,14 @@ vi.mock('@/screens/settings/AvatarUpload', () => ({
   AvatarUpload: () => <div data-testid="avatar-upload" />,
 }));
 
-const baseUser: User = {
+const baseUser = makeUser({
   id: 'u1',
   phoneNumber: '+15551234567',
   firstName: 'Tester',
   lastName: '',
   fullName: 'Tester',
-  nickname: '',
   email: 'tester@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 describe('OnboardingProfileStep', () => {
   const updateProfile = vi.fn();

@@ -134,6 +134,21 @@ describe('PhotoLibraryDialog', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
+  it('shows the giphy mark when results include gifs', async () => {
+    vi.mocked(giphyApi.searchGifs).mockResolvedValue([GIFS[0]!]);
+    render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
+
+    expect(await screen.findAllByAltText('powered by GIPHY')).not.toHaveLength(0);
+  });
+
+  it('hides the giphy mark when results are photos only', async () => {
+    vi.mocked(giphyApi.searchGifs).mockResolvedValue([GIFS[1]!]);
+    render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
+
+    expect(await screen.findByRole('button', { name: 'carrot spin' })).toBeInTheDocument();
+    expect(screen.queryByAltText('powered by GIPHY')).not.toBeInTheDocument();
+  });
+
   it('dialog container has role="dialog" and is accessible', () => {
     render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
 
