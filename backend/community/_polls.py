@@ -391,9 +391,11 @@ def delete_event_poll(request, event_id: UUID):
 def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOption]:
     """Return (poll, winning_option) for finalize_event_poll. Raises on failure."""
     try:
+        # winning_option is a nullable FK, so select_related on it produces an outer
+        # join — Postgres rejects FOR UPDATE there. Lock the poll row on its own first.
+        EventPoll.objects.select_for_update().get(event=event)
         poll = (
-            EventPoll.objects.select_for_update()
-            .select_related("winning_option")
+            EventPoll.objects.select_related("winning_option")
             .prefetch_related("options__votes__user")
             .get(event=event)
         )
