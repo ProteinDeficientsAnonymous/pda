@@ -1,15 +1,16 @@
-# INACTIVE: not currently wired to the Railway service.
-# The `railwayConfigFile` setting was cleared on the cron-checkin-nudges service
-# because config-as-code silently reverted every API-side config change. Live
-# config is set directly on the service; keep this file in sync by hand, or
-# re-point the service at it once the cron execution issue (deployments flagged
-# buildOnly, so the start command never runs) is resolved.
+# INACTIVE: this service's `railwayConfigFile` is unset, so config here is not
+# applied. Live config is set directly on the Railway service.
+#
+# Note the `sh -c` wrapper: Railway runs startCommand as exec-form argv, so a
+# bare `cd x && y` is passed as literal arguments and the container dies in
+# under a second with no log output. The wrapper is required for any command
+# using shell operators.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "cd backend && uv run python manage.py send_checkin_nudges"
+startCommand = "sh -c \"cd backend && uv run --no-dev python manage.py send_checkin_nudges\""
 cronSchedule = "*/15 * * * *"
 restartPolicyType = "NEVER"
