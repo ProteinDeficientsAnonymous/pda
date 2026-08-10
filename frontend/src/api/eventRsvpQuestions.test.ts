@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { EventRsvpQuestion } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 import { apiClient } from './client';
 import {
@@ -9,12 +10,19 @@ import {
   newRsvpQuestionId,
   syncEventRsvpQuestions,
 } from './eventRsvpQuestions';
+import { eventKeys } from './events';
+import { queryClient } from './queryClient';
 
-vi.mock('./client', () => ({
-  apiClient: {
-    put: vi.fn(),
-  },
-}));
+vi.mock('./client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./client')>();
+  return {
+    ...actual,
+    apiClient: {
+      ...actual.apiClient,
+      put: vi.fn(),
+    },
+  };
+});
 
 const q = (
   partial: Partial<EventRsvpQuestion> & Pick<EventRsvpQuestion, 'id'>,
@@ -38,6 +46,7 @@ describe('draft RSVP question ids', () => {
 describe('syncEventRsvpQuestions', () => {
   beforeEach(() => {
     vi.mocked(apiClient.put).mockReset();
+    queryClient.clear();
   });
 
   it('should replace all questions in one request', async () => {
@@ -98,5 +107,44 @@ describe('syncEventRsvpQuestions', () => {
       ],
     });
     expect(result.map((question) => question.id)).toEqual(['keep', 'new']);
+  });
+
+  it('should patch cached event detail so the RSVP dialog sees synced questions', async () => {
+    const eventId = 'evt-sync-cache';
+    const slug = 'sync-cache-event';
+    queryClient.setQueryData(
+      eventKeys.detail(slug, true),
+      makeEvent({ id: eventId, slug, rsvpQuestions: [] }),
+    );
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: [
+        {
+          id: 'q1',
+          label: 'how are you getting there?',
+          field_type: 'select',
+          options: ['transit'],
+          required: true,
+          display_order: 0,
+        },
+      ],
+    });
+
+    await syncEventRsvpQuestions(
+      eventId,
+      [q({ id: `${DRAFT_RSVP_QUESTION_ID_PREFIX}draft`, label: 'how are you getting there?' })],
+      [],
+    );
+
+    expect(queryClient.getQueryData(eventKeys.detail(slug, true))).toMatchObject({
+      rsvpQuestions: [
+        {
+          id: 'q1',
+          label: 'how are you getting there?',
+          fieldType: 'select',
+          options: ['transit'],
+          required: true,
+        },
+      ],
+    });
   });
 });
