@@ -1,3 +1,17 @@
+## [0.90.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.2...v0.90.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* **seed:** recreate join form questions in seed_staging ([#1359](https://github.com/ProteinDeficientsAnonymous/pda/issues/1359)) ([cf7e40e](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf7e40e6b87ad5671daf1ae1398f32c8715e9619))
+
+## [0.90.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.1...v0.90.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1360 - stop duplicate privacy prompt after onboarding ([#1363](https://github.com/ProteinDeficientsAnonymous/pda/issues/1363)) ([33afae9](https://github.com/ProteinDeficientsAnonymous/pda/commit/33afae9cf56daa05f393b45462992a7187d28a73))
+
 ## [0.90.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.0...v0.90.1) (2026-08-10)
 
 
