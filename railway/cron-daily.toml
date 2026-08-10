@@ -4,6 +4,6 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "sh scripts/cron_daily.sh"
-cronSchedule = "0 3 * * *"
-restartPolicyType = "ON_FAILURE"
+cronSchedule = "0 12 * * *"
+restartPolicyType = "NEVER"
 restartPolicyMaxRetries = 10
