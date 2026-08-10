@@ -1,0 +1,78 @@
+name: deploy railway cron (production)
+
+# `railway up` uploads the checked-out working directory, not a git ref, so the
+# `ref` input is what decides the deployed code.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "git ref to deploy (branch, tag, or SHA)"
+        required: true
+        default: main
+      services:
+        description: "comma-separated cron services to deploy"
+        required: true
+        default: cron-daily,cron-checkin-nudges
+
+permissions:
+  contents: read
+
+env:
+  RAILWAY_CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c
+
+jobs:
+  deploy-cron:
+    name: deploy cron services to railway (production)
+    runs-on: ubuntu-latest
+    environment: railway-production
+    concurrency:
+      group: railway-deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: print deploy context (no token)
+        env:
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
+          RAILWAY_CRON_SERVICES: ${{ inputs.services }}
+        run: |
+          echo "railway cron deploy context (production target)"
+          echo "  requested_ref=${{ inputs.ref }}"
+          echo "  commit=$(git rev-parse --short=7 HEAD)"
+          echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
+          echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
+          echo "  railway_cron_services=${RAILWAY_CRON_SERVICES}"
+
+      - name: railway up (production token only in this job)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
+          RAILWAY_CRON_SERVICES: ${{ inputs.services }}
+        run: |
+          set -eu
+          test -n "${RAILWAY_TOKEN}"
+          test -n "${RAILWAY_PROJECT_ID}"
+          test -n "${RAILWAY_ENVIRONMENT}"
+          test -n "${RAILWAY_CRON_SERVICES}"
+          docker_run=(docker run --rm --platform linux/amd64
+            -v "${GITHUB_WORKSPACE}:/workspace"
+            -w /workspace
+            -e RAILWAY_TOKEN
+            "${RAILWAY_CLI_IMAGE}")
+          echo "railway cli version:"
+          "${docker_run[@]}" railway --version
+
+          IFS=',' read -ra services <<< "${RAILWAY_CRON_SERVICES}"
+          for service in "${services[@]}"; do
+            service="$(echo "${service}" | tr -d '[:space:]')"
+            [ -n "${service}" ] || continue
+            echo "railway up (verbose) for service '${service}' — 404 here often means wrong project id, environment id/name, or service slug for this token"
+            "${docker_run[@]}" railway up --ci --verbose \
+              --project "${RAILWAY_PROJECT_ID}" \
+              --environment "${RAILWAY_ENVIRONMENT}" \
+              --service "${service}"
+          done
