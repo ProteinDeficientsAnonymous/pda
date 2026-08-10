@@ -80,14 +80,14 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           label="make me a host"
           checked={options.makeMeHost}
           onChange={(v) => {
-            onChange({ ...options, makeMeHost: v, makeMeGuest: v ? false : options.makeMeGuest });
+            set('makeMeHost', v);
           }}
         />
         <Toggle
           label="make me a guest"
           checked={options.makeMeGuest}
           onChange={(v) => {
-            onChange({ ...options, makeMeGuest: v, makeMeHost: v ? false : options.makeMeHost });
+            set('makeMeGuest', v);
           }}
         />
         <Toggle
