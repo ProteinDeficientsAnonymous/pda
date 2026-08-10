@@ -66,7 +66,10 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  const joiningWaitlist = pickerStatus === RsvpStatus.Attending && atCapacity;
+  // Already waitlisted — they're editing their spot in the queue, not joining it.
+  const alreadyWaitlisted = initialStatus === RsvpServerStatus.Waitlisted;
+  const joiningWaitlist =
+    pickerStatus === RsvpStatus.Attending && atCapacity && !alreadyWaitlisted;
   const status: RsvpServerStatusValue =
     pickerStatus === RsvpStatus.Attending && initialStatus === RsvpServerStatus.Waitlisted
       ? RsvpServerStatus.Waitlisted
@@ -108,7 +111,9 @@ export function RsvpBox({
             onSelect={setPickerStatus}
             disabled={busy}
             labelFor={(s, defaultLabel) =>
-              s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+              s === RsvpStatus.Attending && atCapacity && !alreadyWaitlisted
+                ? 'join the waitlist'
+                : defaultLabel
             }
           />
 

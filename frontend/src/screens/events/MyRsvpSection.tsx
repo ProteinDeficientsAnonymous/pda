@@ -99,19 +99,6 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     }
   }
 
-  async function leaveWaitlist() {
-    setError(null);
-    try {
-      if (token) {
-        await cancelPublicRsvp.mutateAsync(event.id);
-      } else {
-        await removeRsvp.mutateAsync(event.id);
-      }
-    } catch (err) {
-      setError(extractError(err));
-    }
-  }
-
   async function removeMyRsvp() {
     setError(null);
     try {
@@ -136,7 +123,6 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {!locked && onWaitlist ? (
         <WaitlistView
-          onLeave={() => void leaveWaitlist()}
           onEdit={() => {
             setBox({ mode: 'edit', initialStatus: RsvpServerStatus.Waitlisted });
           }}
@@ -243,28 +229,15 @@ function RsvpControls({
   );
 }
 
-function WaitlistView({
-  onLeave,
-  onEdit,
-  busy,
-}: {
-  onLeave: () => void;
-  onEdit: () => void;
-  busy: boolean;
-}) {
+function WaitlistView({ onEdit, busy }: { onEdit: () => void; busy: boolean }) {
   return (
     <div className="bg-warning-subtle flex items-center justify-between gap-3 rounded-lg px-4 py-3">
       <span role="status" className="text-warning text-sm font-medium">
         you're on the waitlist
       </span>
-      <div className="flex gap-2">
-        <Button variant="ghost" onClick={onEdit} disabled={busy}>
-          edit
-        </Button>
-        <Button variant="ghost" onClick={onLeave} disabled={busy}>
-          leave waitlist
-        </Button>
-      </div>
+      <Button variant="ghost" onClick={onEdit} disabled={busy}>
+        edit
+      </Button>
     </div>
   );
 }

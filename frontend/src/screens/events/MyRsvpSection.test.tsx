@@ -151,7 +151,7 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
   });
 
-  it('shows only "leave waitlist" when on the waitlist (no pills, no status line, no edit button)', () => {
+  it('shows the waitlist banner and an edit button (no pills, no status line)', () => {
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Waitlisted,
@@ -160,7 +160,7 @@ describe('MyRsvpSection — after RSVPing', () => {
     );
 
     expect(screen.getByText("you're on the waitlist")).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'leave waitlist' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'edit' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
     expect(screen.queryByText("you're going")).not.toBeInTheDocument();
@@ -183,6 +183,23 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(setRsvpMutate).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpServerStatus.Waitlisted, hasPlusOne: true }),
     );
+  });
+
+  it('says "save", not "join the waitlist", when already waitlisted on a full event', () => {
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Waitlisted,
+        maxAttendees: 2,
+        attendingCount: 2,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^join the waitlist$/i }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -212,11 +229,11 @@ describe('MyRsvpSection — locked (past event)', () => {
     expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
   });
 
-  it('shows nothing and no "leave waitlist" action for a locked waitlist entry', () => {
+  it('shows nothing and no edit action for a locked waitlist entry', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }), undefined, true);
 
     expect(screen.queryByText(/waitlist/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'leave waitlist' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
   });
 
   it('never opens the RSVP box when locked', () => {
@@ -269,7 +286,8 @@ describe('MyRsvpSection — leave waitlist error handling (issue #633)', () => {
     removeRsvpMutate.mockRejectedValue(new Error('boom'));
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+    fireEvent.click(screen.getByRole('button', { name: /remove rsvp/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
   });
