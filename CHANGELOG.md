@@ -1,3 +1,17 @@
+# [0.90.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.4...v0.90.0) (2026-08-10)
+
+
+### Features
+
+* **events:** accept and validate member RSVP answers ([#1310](https://github.com/ProteinDeficientsAnonymous/pda/issues/1310)) ([acd8594](https://github.com/ProteinDeficientsAnonymous/pda/commit/acd859484e496968cd9794be0655aec424a3e767))
+* **events:** add host RSVP response reporting ([#1314](https://github.com/ProteinDeficientsAnonymous/pda/issues/1314)) ([237cd93](https://github.com/ProteinDeficientsAnonymous/pda/commit/237cd939118d4fd3ef2d94487b3f2c60ac1ea389))
+* **events:** add RSVP question authoring to event form ([#1311](https://github.com/ProteinDeficientsAnonymous/pda/issues/1311)) ([e7261b1](https://github.com/ProteinDeficientsAnonymous/pda/commit/e7261b1aebf575979427cd2ad604ad520a83f329))
+* **events:** add RSVP question model and host sync API ([#1309](https://github.com/ProteinDeficientsAnonymous/pda/issues/1309)) ([af5fe4d](https://github.com/ProteinDeficientsAnonymous/pda/commit/af5fe4d4ffdac5d09f035568be33a7d7a808141f))
+* **events:** collect RSVP question answers in member RSVP UI ([#1312](https://github.com/ProteinDeficientsAnonymous/pda/issues/1312)) ([dd2e59f](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd2e59ff9476d92532f294c418551a0242c852a9))
+* **join:** add configurable question types and shared authoring UI ([#1308](https://github.com/ProteinDeficientsAnonymous/pda/issues/1308)) ([a207718](https://github.com/ProteinDeficientsAnonymous/pda/commit/a2077185a77533337b49863838e67093d936bdcf))
+* make rsvp notifications clickable (Issue 1294) ([#1355](https://github.com/ProteinDeficientsAnonymous/pda/issues/1355)) ([adce2d2](https://github.com/ProteinDeficientsAnonymous/pda/commit/adce2d247c033327eab1437162ebec1bdf8b2626))
+* **public-rsvp:** collect and preserve custom answers ([#1313](https://github.com/ProteinDeficientsAnonymous/pda/issues/1313)) ([689e652](https://github.com/ProteinDeficientsAnonymous/pda/commit/689e652dc0ff0c3fddfddbbc9985d64822f8ebc6))
+
 ## [0.89.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.3...v0.89.4) (2026-08-10)
 
 
