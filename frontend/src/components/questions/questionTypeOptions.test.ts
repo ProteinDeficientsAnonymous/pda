@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import type { JoinQuestionType } from '@/api/join';
 import { QuestionType } from '@/api/questionTypes';
 import type { SurveyQuestionType } from '@/api/surveys';
@@ -10,6 +11,7 @@ import {
   QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
 } from './questionTypeOptions';
 
 type AssertExtends<_A extends B, B> = true;
@@ -19,6 +21,11 @@ type _JoinSubsetOfCatalog = AssertExtends<JoinQuestionType, QuestionType>;
 type _JoinMatchesOpenApi = AssertExtends<
   JoinQuestionType,
   components['schemas']['JoinFormQuestionType']
+>;
+type _RsvpSubsetOfCatalog = AssertExtends<RsvpQuestionType, QuestionType>;
+type _RsvpMatchesOpenApi = AssertExtends<
+  RsvpQuestionType,
+  components['schemas']['EventRsvpQuestionIn']['field_type']
 >;
 
 const FULL_TYPES: QuestionType[] = Object.values(QuestionType);
@@ -59,6 +66,14 @@ describe('question type options', () => {
       false,
       false,
       true,
+    ]);
+  });
+
+  it('should expose the RSVP subset projected from catalog metadata', () => {
+    expect(RSVP_QUESTION_TYPE_OPTIONS).toEqual([
+      { value: QuestionType.Textarea, label: 'long text', wantsOptions: false },
+      { value: QuestionType.Select, label: 'select', wantsOptions: true },
+      { value: QuestionType.Checkbox, label: 'checkbox', wantsOptions: true },
     ]);
   });
 });

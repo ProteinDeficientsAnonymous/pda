@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
+import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import {
   emptyEventFormValues,
   type EventFormValues,
@@ -26,10 +27,12 @@ import type { User } from '@/models/user';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
+import type { RsvpQuestionDraft } from '../rsvpQuestions';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
 import { EventFormPhoto } from './EventFormPhoto';
+import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormTags } from './EventFormTags';
 import { validateEventForm } from './validateEventForm';
@@ -110,6 +113,12 @@ export function EventForm({ existing }: Props) {
   // then POST the poll. If the poll POST fails we still land on the new
   // event's detail page and the host can retry from there.
   const [bufferedPollOptions, setBufferedPollOptions] = useState<Date[] | null>(null);
+  const [rsvpQuestions, setRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
+  );
+  const [savedRsvpQuestions, setSavedRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
+  );
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
@@ -187,11 +196,23 @@ export function EventForm({ existing }: Props) {
           if (!ok) return;
           await update.mutateAsync({ ...patchBody, force: true });
         }
+        try {
+          const synced = await syncEventRsvpQuestions(
+            existing.id,
+            rsvpQuestions,
+            savedRsvpQuestions,
+          );
+          setRsvpQuestions(synced);
+          setSavedRsvpQuestions(synced);
+        } catch (err) {
+          setServerError(extractEventError(err));
+          return;
+        }
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(eventPath(existing));
         return;
       }
-      const created = await create.mutateAsync(merged);
+      const created = await create.mutateAsync({ ...merged, rsvpQuestions });
       if (pendingPhoto) {
         try {
           await uploadPhoto.mutateAsync({ eventId: created.id, blob: pendingPhoto });
@@ -329,6 +350,21 @@ export function EventForm({ existing }: Props) {
           forceOpen={hasAnyError(errors, RSVP_FIELDS)}
         >
           <EventFormRsvp values={values} onChange={patch} errors={errors} />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          title="questions"
+          summary={
+            rsvpQuestions.length > 0
+              ? `${String(rsvpQuestions.length)} question${rsvpQuestions.length === 1 ? '' : 's'}`
+              : undefined
+          }
+        >
+          <EventFormQuestions
+            rsvpEnabled={values.rsvpEnabled}
+            questions={rsvpQuestions}
+            onQuestionsChange={setRsvpQuestions}
+          />
         </CollapsibleCard>
 
         <CollapsibleCard

@@ -82,6 +82,7 @@ export function InvitedList({ event, row = false }: { event: Event; row?: boolea
               plusOneAttendance: AttendanceStatus.Unknown,
               isMember: true,
               paidConfirmed: false,
+              questionnaireResponses: {},
             }}
           />
         );
