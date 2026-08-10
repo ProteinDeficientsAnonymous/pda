@@ -1,3 +1,10 @@
+# INACTIVE: not currently wired to the Railway service.
+# The `railwayConfigFile` setting was cleared on the cron-daily service because
+# config-as-code silently reverted every API-side config change. Live config is
+# set directly on the service; keep this file in sync by hand, or re-point the
+# service at it once the cron execution issue (deployments flagged buildOnly,
+# so the start command never runs) is resolved.
+
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
@@ -6,4 +13,3 @@ dockerfilePath = "Dockerfile"
 startCommand = "sh scripts/cron_daily.sh"
 cronSchedule = "0 12 * * *"
 restartPolicyType = "NEVER"
-restartPolicyMaxRetries = 10
