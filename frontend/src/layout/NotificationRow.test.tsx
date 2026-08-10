@@ -62,9 +62,7 @@ describe('NotificationRow', () => {
       createdAt: '2026-07-10T00:00:00Z',
     };
 
-    render(
-      <NotificationRow n={rsvpNotification} onMarkRead={vi.fn()} onActivate={vi.fn()} />,
-    );
+    render(<NotificationRow n={rsvpNotification} onMarkRead={vi.fn()} onActivate={vi.fn()} />);
     await userEvent.click(screen.getByRole('button'));
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/e456');
