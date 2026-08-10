@@ -1,3 +1,10 @@
+## [0.90.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.3...v0.90.4) (2026-08-10)
+
+
+### Bug Fixes
+
+* **railway:** get cron jobs running, skip dev deps ([#1361](https://github.com/ProteinDeficientsAnonymous/pda/issues/1361)) ([2b14397](https://github.com/ProteinDeficientsAnonymous/pda/commit/2b14397deedacb1685926e13d8d676fe3b298ee5))
+
 ## [0.90.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.2...v0.90.3) (2026-08-10)
 
 
