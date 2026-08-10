@@ -14,7 +14,7 @@ from users.roles import Role
 
 from community.models import Event, EventType, RSVPStatus
 
-from ._seed_join_requests import reset_join_requests, seed_join_requests
+from ._seed_join_requests import reset_join_requests, seed_join_form_questions, seed_join_requests
 from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
 from ._seed_staging_data import (
     MEMBER_RSVP_SPECS,
@@ -71,6 +71,7 @@ class Command(BaseCommand):
             events = self._seed_events(admin)
             self._seed_member_rsvps(cond_users, events)
             non_members = self._seed_non_members(events)
+            seed_join_form_questions(self.stdout)
             join_requests = seed_join_requests(self.stdout, admin)
         self._print_summary(
             {

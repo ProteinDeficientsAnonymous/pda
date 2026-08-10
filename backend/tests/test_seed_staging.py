@@ -29,6 +29,7 @@ from community.models import (
     Event,
     EventRSVP,
     EventType,
+    JoinFormQuestion,
     JoinRequest,
     JoinRequestStatus,
     PageVisibility,
@@ -383,6 +384,17 @@ def test_seed_staging_creates_join_requests_matching_specs():
 @pytest.mark.django_db
 def test_seed_staging_join_requests_carry_custom_answers():
     call_command("seed_staging")
+    for index in range(len(JOIN_REQUEST_SPECS)):
+        jr = JoinRequest.objects.get(phone_number=joinreq_phone(index))
+        assert jr.custom_answers
+
+
+@pytest.mark.django_db
+def test_seed_staging_recreates_join_form_questions_when_missing():
+    call_command("seed_staging")
+    JoinFormQuestion.objects.all().delete()
+    call_command("seed_staging", "--reset")
+    assert JoinFormQuestion.objects.filter(required=True).exists()
     for index in range(len(JOIN_REQUEST_SPECS)):
         jr = JoinRequest.objects.get(phone_number=joinreq_phone(index))
         assert jr.custom_answers
