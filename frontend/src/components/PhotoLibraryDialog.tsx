@@ -42,6 +42,43 @@ async function toFile(gif: GiphyResult): Promise<File> {
   return new File([blob], `${gif.id}.${ext}`, { type });
 }
 
+function Attribution({ results }: { results: GiphyResult[] }) {
+  const hasGif = results.some((r) => r.source === 'gif');
+  const hasPhoto = results.some((r) => r.source === 'photo');
+  if (!hasGif && !hasPhoto) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      {hasGif ? (
+        <>
+          <img
+            src="/powered-by-giphy-light.png"
+            alt="powered by GIPHY"
+            className="h-[13px] w-auto dark:hidden"
+          />
+          <img
+            src="/powered-by-giphy-dark.png"
+            alt="powered by GIPHY"
+            className="hidden h-[13px] w-auto dark:block"
+          />
+        </>
+      ) : (
+        <span />
+      )}
+      {hasPhoto ? (
+        <a
+          href="https://www.pexels.com"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-foreground/60 text-xs underline"
+        >
+          photos from pexels
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
 export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
   const [tab, setTab] = useState<Tab>('library');
   const [query, setQuery] = useState('');
@@ -202,6 +239,8 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
             {!searching && query.trim().length > 0 && results.length === 0 && !error ? (
               <p className="text-foreground/60 text-xs">nothing found — try another search</p>
             ) : null}
+
+            <Attribution results={results} />
           </>
         ) : (
           <>

@@ -134,6 +134,25 @@ describe('PhotoLibraryDialog', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
+  it('credits only the sources present in results', async () => {
+    vi.mocked(giphyApi.searchGifs).mockResolvedValue([GIFS[0]!]);
+    render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
+
+    expect(await screen.findAllByAltText('powered by GIPHY')).not.toHaveLength(0);
+    expect(screen.queryByText('photos from pexels')).not.toBeInTheDocument();
+  });
+
+  it('shows no attribution when there are no results', async () => {
+    vi.mocked(giphyApi.searchGifs).mockResolvedValue([]);
+    render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(giphyApi.searchGifs).toHaveBeenCalled();
+    });
+    expect(screen.queryByAltText('powered by GIPHY')).not.toBeInTheDocument();
+    expect(screen.queryByText('photos from pexels')).not.toBeInTheDocument();
+  });
+
   it('dialog container has role="dialog" and is accessible', () => {
     render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
 
