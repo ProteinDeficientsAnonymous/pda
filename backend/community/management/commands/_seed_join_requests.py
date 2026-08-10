@@ -36,11 +36,26 @@ def seed_join_form_questions(stdout) -> dict[str, JoinFormQuestion]:
     return questions
 
 
+def _answer_for_question(spec, question: JoinFormQuestion) -> str:
+    label = question.label.lower()
+    if question.required or "why" in label:
+        return spec.answer
+    if "pronoun" in label:
+        return spec.pronouns
+    if "hear" in label:
+        return "A friend" if "friend" in spec.answer.lower() else "Instagram"
+    return "doing well"
+
+
 def _custom_answers(spec) -> dict:
-    question = JoinFormQuestion.objects.filter(required=True).first()
-    if question is None:
-        return {}
-    return {str(question.id): {"label": question.label, "answer": spec.answer}}
+    """Snapshot one answer per current join-form question for staging fixtures."""
+    return {
+        str(question.id): {
+            "label": question.label,
+            "answer": _answer_for_question(spec, question),
+        }
+        for question in JoinFormQuestion.objects.order_by("display_order")
+    }
 
 
 def _reviewer_fields(spec, reviewer: User | None, submitted_at) -> dict:
@@ -72,7 +87,7 @@ def seed_join_requests(stdout, reviewer: User | None) -> list[JoinRequest]:
         )
         if created:
             JoinRequest.objects.filter(pk=join_request.pk).update(submitted_at=submitted_at)
-        elif not join_request.custom_answers and answers:
+        elif join_request.custom_answers != answers:
             join_request.custom_answers = answers
             join_request.save(update_fields=["custom_answers"])
         requests.append(join_request)
