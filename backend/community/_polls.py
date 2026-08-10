@@ -100,7 +100,9 @@ def _voter_out(user, viewer=None) -> VoterOut:
     )
 
 
-def _option_out(option: PollOption, my_votes: dict[str, str], viewer=None) -> EventPollOptionOut:
+def _option_out(
+    option: PollOption, my_votes: dict[str, str], viewer=None, is_authed: bool = False
+) -> EventPollOptionOut:
     votes = list(option.votes.select_related("user").all())
     yes_voters = [
         _voter_out(v.user, viewer) for v in votes if v.availability == PollAvailability.YES
@@ -116,9 +118,9 @@ def _option_out(option: PollOption, my_votes: dict[str, str], viewer=None) -> Ev
         yes_count=len(yes_voters),
         maybe_count=len(maybe_voters),
         no_count=len(no_voters),
-        yes_voters=yes_voters,
-        maybe_voters=maybe_voters,
-        no_voters=no_voters,
+        yes_voters=yes_voters if is_authed else [],
+        maybe_voters=maybe_voters if is_authed else [],
+        no_voters=no_voters if is_authed else [],
     )
 
 
@@ -134,14 +136,15 @@ def _build_my_votes(options, auth_user) -> dict[str, str]:
 
 def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
     auth_user = _authenticated_user(requesting_user)
+    is_authed = auth_user is not None
     options = list(poll.options.prefetch_related("votes__user").all())
-    my_votes = _build_my_votes(options, auth_user) if auth_user is not None else {}
+    my_votes = _build_my_votes(options, auth_user) if is_authed else {}
     winning_option = poll.winning_option
     return EventPollOut(
         id=str(poll.id),
         event_id=str(poll.event_id),  # ty: ignore[unresolved-attribute]
         is_active=poll.is_active,
-        options=[_option_out(opt, my_votes, auth_user) for opt in options],
+        options=[_option_out(opt, my_votes, auth_user, is_authed=is_authed) for opt in options],
         winning_option_id=str(winning_option.id) if winning_option else None,
         winning_datetime=winning_option.datetime if winning_option else None,
         finalized_by_id=str(poll.finalized_by_id) if poll.finalized_by_id else None,
