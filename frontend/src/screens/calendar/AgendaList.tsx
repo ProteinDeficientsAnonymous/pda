@@ -34,7 +34,7 @@ const lower = (d: Date, f: string) => format(d, f).toLowerCase();
 
 function buildWhenLabel(event: PdaEvent): string {
   const start = event.startDatetime;
-  if (!start) return '';
+  if (!start || event.datetimeTbd) return event.hasPoll ? 'vote for a date' : 'date tbd';
   const startDate = lower(start, 'EEE, MMM d');
   const startTime = lower(start, 'h:mmaaa');
   const end = event.endDatetime;
@@ -55,13 +55,38 @@ function upcomingEvents(events: PdaEvent[]): PdaEvent[] {
     .sort((a, b) => (a.startDatetime?.getTime() ?? 0) - (b.startDatetime?.getTime() ?? 0));
 }
 
+function tbdEvents(events: PdaEvent[]): PdaEvent[] {
+  return events.filter((e) => !e.startDatetime || e.datetimeTbd);
+}
+
+function byType(events: PdaEvent[], typeFilter: TypeFilter): PdaEvent[] {
+  return typeFilter === 'all' ? events : events.filter((e) => e.eventType === typeFilter);
+}
+
 export function AgendaList({ events, onSelectEvent }: Props) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const upcoming = useMemo(() => upcomingEvents(events), [events]);
-  const filtered = useMemo(
-    () => (typeFilter === 'all' ? upcoming : upcoming.filter((e) => e.eventType === typeFilter)),
-    [upcoming, typeFilter],
+  const filtered = useMemo(() => byType(upcoming, typeFilter), [upcoming, typeFilter]);
+
+  const tbd = useMemo(() => tbdEvents(events), [events]);
+  const pollTbd = useMemo(
+    () =>
+      byType(
+        tbd.filter((e) => e.hasPoll),
+        typeFilter,
+      ),
+    [tbd, typeFilter],
   );
+  const plainTbd = useMemo(
+    () =>
+      byType(
+        tbd.filter((e) => !e.hasPoll),
+        typeFilter,
+      ),
+    [tbd, typeFilter],
+  );
+
+  const isEmpty = filtered.length === 0 && pollTbd.length === 0 && plainTbd.length === 0;
 
   return (
     <div className="flex flex-col">
@@ -74,17 +99,45 @@ export function AgendaList({ events, onSelectEvent }: Props) {
           onChange={setTypeFilter}
         />
       </div>
-      {filtered.length === 0 ? (
+      {isEmpty ? (
         <EmptyState filter={typeFilter} />
       ) : (
-        <ul className="flex flex-col gap-2.5 p-3">
-          {filtered.map((event) => (
-            <li key={event.id}>
-              <AgendaCard event={event} onSelect={onSelectEvent} />
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col gap-2.5 p-3">
+          <TbdSection title="needs a vote" events={pollTbd} onSelect={onSelectEvent} />
+          <ul className="flex flex-col gap-2.5">
+            {filtered.map((event) => (
+              <li key={event.id}>
+                <AgendaCard event={event} onSelect={onSelectEvent} />
+              </li>
+            ))}
+          </ul>
+          <TbdSection title="date tbd" events={plainTbd} onSelect={onSelectEvent} />
+        </div>
       )}
+    </div>
+  );
+}
+
+function TbdSection({
+  title,
+  events,
+  onSelect,
+}: {
+  title: string;
+  events: PdaEvent[];
+  onSelect: (event: PdaEvent) => void;
+}) {
+  if (events.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2.5">
+      <h2 className="text-foreground-tertiary px-0.5 text-xs font-medium uppercase">{title}</h2>
+      <ul className="flex flex-col gap-2.5">
+        {events.map((event) => (
+          <li key={event.id}>
+            <AgendaCard event={event} onSelect={onSelect} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -128,9 +181,16 @@ function AgendaCard({ event, onSelect }: CardProps) {
       )}
     >
       <div className="text-[15px] font-semibold">{event.title}</div>
-      {event.eventType === EventType.Official || event.eventType === EventType.Club ? (
+      {event.eventType === EventType.Official ||
+      event.eventType === EventType.Club ||
+      (event.hasPoll && event.datetimeTbd) ? (
         <div className="mt-1 flex flex-wrap gap-1.5">
           <EventBadge event={event} onCard />
+          {event.hasPoll && event.datetimeTbd ? (
+            <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/15">
+              poll open
+            </span>
+          ) : null}
         </div>
       ) : null}
       {when ? <div className="mt-1 text-[13px] opacity-90">{when}</div> : null}

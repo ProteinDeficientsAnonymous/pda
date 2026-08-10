@@ -204,7 +204,7 @@ export default function CalendarScreen() {
           </>
         ) : useAgendaList ? (
           <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-            <AgendaList events={datedEvents} onSelectEvent={goToEvent} />
+            <AgendaList events={events} onSelectEvent={goToEvent} />
           </div>
         ) : (
           <Calendar<BigCalEvent>

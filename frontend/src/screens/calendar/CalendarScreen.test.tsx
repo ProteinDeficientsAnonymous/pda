@@ -8,14 +8,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
+import { makeEvent } from '@/test/fixtures';
 
 import CalendarScreen from './CalendarScreen';
 
 // react-big-calendar is a heavy component that requires CSS imports and relies
 // on browser layout. Stub it so tests focus on CalendarScreen logic.
 vi.mock('react-big-calendar', () => ({
-  Calendar: ({ isPending }: { isPending?: boolean }) => (
-    <div data-testid="rbc-calendar">{isPending ? 'loading…' : 'calendar'}</div>
+  Calendar: ({
+    isPending,
+    events,
+  }: {
+    isPending?: boolean;
+    events?: { id: string; title: string }[];
+  }) => (
+    <div data-testid="rbc-calendar">
+      {isPending ? 'loading…' : 'calendar'}
+      <ul>
+        {(events ?? []).map((e) => (
+          <li key={e.id}>{e.title}</li>
+        ))}
+      </ul>
+    </div>
   ),
   dateFnsLocalizer: vi.fn().mockReturnValue({}),
 }));
@@ -186,5 +200,67 @@ describe('CalendarScreen', () => {
       expect(container.querySelector('main > div.min-h-0.flex-1')).not.toBeNull();
     });
     expect(container.querySelector('.overflow-y-auto')).not.toBeNull();
+  });
+
+  it('excludes date-tbd and poll events from the month grid', () => {
+    mockUseEvents.mockReturnValue({
+      data: [
+        makeEvent({ id: 'dated', title: 'dated event' }),
+        makeEvent({
+          id: 'poll',
+          title: 'poll event',
+          startDatetime: null,
+          datetimeTbd: true,
+          hasPoll: true,
+        }),
+        makeEvent({
+          id: 'tbd',
+          title: 'plain tbd event',
+          startDatetime: null,
+          datetimeTbd: true,
+        }),
+      ],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useEvents>);
+
+    renderCalendar();
+
+    expect(screen.getByText('dated event')).toBeInTheDocument();
+    expect(screen.queryByText('poll event')).not.toBeInTheDocument();
+    expect(screen.queryByText('plain tbd event')).not.toBeInTheDocument();
+  });
+
+  it('surfaces date-tbd and poll events in list view', async () => {
+    const user = userEvent.setup();
+    mockUseEvents.mockReturnValue({
+      data: [
+        makeEvent({
+          id: 'poll',
+          title: 'poll event',
+          startDatetime: null,
+          datetimeTbd: true,
+          hasPoll: true,
+        }),
+        makeEvent({
+          id: 'tbd',
+          title: 'plain tbd event',
+          startDatetime: null,
+          datetimeTbd: true,
+        }),
+      ],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useEvents>);
+
+    renderCalendar();
+    await user.click(screen.getByRole('radio', { name: /^list$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'poll event' })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: 'plain tbd event' })).toBeInTheDocument();
   });
 });

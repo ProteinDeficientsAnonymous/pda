@@ -74,3 +74,37 @@ describe('AgendaList upcoming filter', () => {
     expect(screen.getByRole('button', { name: 'evening social' })).toBeInTheDocument();
   });
 });
+
+describe('AgendaList date-tbd events', () => {
+  it('shows a poll-active event under the needs-a-vote section', () => {
+    const events = [
+      makeEvent({
+        id: 'poll',
+        title: 'scheduling poll event',
+        startDatetime: null,
+        datetimeTbd: true,
+        hasPoll: true,
+      }),
+    ];
+    render(<AgendaList events={events} onSelectEvent={vi.fn()} />);
+    expect(screen.getByText('needs a vote')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'scheduling poll event' })).toBeInTheDocument();
+    expect(screen.getByText('poll open')).toBeInTheDocument();
+  });
+
+  it('shows a plain tbd event under the date-tbd section', () => {
+    const events = [
+      makeEvent({
+        id: 'tbd',
+        title: 'plain tbd event',
+        startDatetime: null,
+        datetimeTbd: true,
+        hasPoll: false,
+      }),
+    ];
+    render(<AgendaList events={events} onSelectEvent={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: 'date tbd' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'plain tbd event' })).toBeInTheDocument();
+    expect(screen.queryByText('poll open')).not.toBeInTheDocument();
+  });
+});
