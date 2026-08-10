@@ -113,9 +113,7 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
     const answer = g.questionnaireResponses[question.id]?.answer;
     if (!answer?.trim()) continue;
     const values =
-      question.fieldType === QuestionType.Checkbox
-        ? answer.split(',').filter(Boolean)
-        : [answer];
+      question.fieldType === QuestionType.Checkbox ? answer.split(',').filter(Boolean) : [answer];
     answered += 1;
     for (const v of values) {
       counts.set(v, (counts.get(v) ?? 0) + 1);
