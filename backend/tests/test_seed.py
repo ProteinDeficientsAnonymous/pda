@@ -1,5 +1,8 @@
 import pytest
-from community.management.commands._seed_data import SEED_EVENT_RSVP_QUESTIONS
+from community.management.commands._seed_data import (
+    COOKING_WORKSHOP_TITLE,
+    SEED_EVENT_RSVP_QUESTIONS,
+)
 from community.models import Event, EventRSVP, JoinRequest, RSVPStatus
 from community.models.choices import AttendanceStatus
 from django.core.management import call_command
@@ -97,7 +100,7 @@ def test_seed_creates_rsvp_questions_on_configured_events():
 def test_seed_rsvps_include_partial_and_complete_questionnaire_responses():
     call_command("seed")
 
-    event = Event.objects.get(title="Plant-Based Cooking Workshop")
+    event = Event.objects.get(title=COOKING_WORKSHOP_TITLE)
     questions = {q.label: q for q in event.rsvp_questions.all()}
     assert len(questions) == 2
 
