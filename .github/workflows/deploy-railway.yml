@@ -30,6 +30,7 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
           RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_PRODUCTION }}
+          RAILWAY_CRON_SERVICE_NAMES: ${{ vars.RAILWAY_CRON_SERVICE_NAMES_PRODUCTION }}
         run: |
           echo "railway deploy context (production target)"
           echo "  github_ref=${GITHUB_REF}"
@@ -37,6 +38,7 @@ jobs:
           echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
           echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
           echo "  railway_service=${RAILWAY_SERVICE_NAME}"
+          echo "  railway_cron_services=${RAILWAY_CRON_SERVICE_NAMES}"
 
       - name: railway up (production token only in this job)
         env:
@@ -44,6 +46,7 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
           RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_PRODUCTION }}
+          RAILWAY_CRON_SERVICE_NAMES: ${{ vars.RAILWAY_CRON_SERVICE_NAMES_PRODUCTION }}
         run: |
           set -eu
           test -n "${RAILWAY_TOKEN}"
@@ -58,9 +61,21 @@ jobs:
           echo "railway cli version:"
           "${docker_run[@]}" railway --version
 
-          # Cron services deploy separately via deploy-railway-cron.yml.
-          echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
-          "${docker_run[@]}" railway up --ci --verbose \
-            --project "${RAILWAY_PROJECT_ID}" \
-            --environment "${RAILWAY_ENVIRONMENT}" \
-            --service "${RAILWAY_SERVICE_NAME}"
+          deploy_service() {
+            local service="$1"
+            echo "railway up (verbose) for service '${service}' — 404 here often means wrong project id, environment id/name, or service slug for this token"
+            "${docker_run[@]}" railway up --ci --verbose \
+              --project "${RAILWAY_PROJECT_ID}" \
+              --environment "${RAILWAY_ENVIRONMENT}" \
+              --service "${service}"
+          }
+
+          deploy_service "${RAILWAY_SERVICE_NAME}"
+
+          # RAILWAY_CRON_SERVICE_NAMES_PRODUCTION: comma-separated cron service names, e.g. "cron-daily,cron-checkin-nudges"
+          if [ -n "${RAILWAY_CRON_SERVICE_NAMES}" ]; then
+            IFS=',' read -ra cron_services <<< "${RAILWAY_CRON_SERVICE_NAMES}"
+            for service in "${cron_services[@]}"; do
+              deploy_service "${service}"
+            done
+          fi
