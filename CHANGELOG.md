@@ -1,3 +1,10 @@
+# [0.93.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.92.0...v0.93.0) (2026-08-10)
+
+
+### Features
+
+* add powered-by-giphy attribution mark ([#1383](https://github.com/ProteinDeficientsAnonymous/pda/issues/1383)) ([2e392c7](https://github.com/ProteinDeficientsAnonymous/pda/commit/2e392c77b556ef125d84cab36966875dc69aa978))
+
 # [0.92.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.5...v0.92.0) (2026-08-10)
 
 
