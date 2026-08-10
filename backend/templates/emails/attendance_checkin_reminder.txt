@@ -1,6 +1,6 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-{{ event_title|lower }} just started — head to check-in to check people in.
+{{ event_title|lower }} just started — remember to check people in!
 
 go to check-in:
 
