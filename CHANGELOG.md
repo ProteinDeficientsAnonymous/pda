@@ -1,3 +1,10 @@
+## [0.90.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.4...v0.90.5) (2026-08-10)
+
+
+### Bug Fixes
+
+* **docker:** copy scripts/ into image for cron-daily ([#1368](https://github.com/ProteinDeficientsAnonymous/pda/issues/1368)) ([6d92d65](https://github.com/ProteinDeficientsAnonymous/pda/commit/6d92d6588bdce39d9de1c63137a8d02da2c1d8c5))
+
 ## [0.90.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.3...v0.90.4) (2026-08-10)
 
 
