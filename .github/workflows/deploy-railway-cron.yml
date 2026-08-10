@@ -1,10 +1,7 @@
 name: deploy railway cron (production)
 
-# Deploys ONLY the cron services, so cron changes can ship without releasing
-# whatever else has landed on main. Pick `ref` to control what gets built —
 # `railway up` uploads the checked-out working directory, not a git ref, so the
-# checkout below is what decides the deployed code.
-# Pin matches image pulled 2026-04-20; bump intentionally when upgrading CLI.
+# `ref` input is what decides the deployed code.
 on:
   workflow_dispatch:
     inputs:

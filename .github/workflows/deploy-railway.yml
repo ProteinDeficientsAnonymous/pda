@@ -58,8 +58,7 @@ jobs:
           echo "railway cli version:"
           "${docker_run[@]}" railway --version
 
-          # Cron services deploy separately via deploy-railway-cron.yml, so cron
-          # changes can ship without releasing everything else on main.
+          # Cron services deploy separately via deploy-railway-cron.yml.
           echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
           "${docker_run[@]}" railway up --ci --verbose \
             --project "${RAILWAY_PROJECT_ID}" \
