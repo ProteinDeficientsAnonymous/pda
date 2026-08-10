@@ -42,7 +42,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend-slow \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
-        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-style \
+        agent-frontend-eslint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
 
 help:
@@ -92,7 +92,6 @@ help:
 	@echo "  make agent-ci         Same as ci with minimal output (for agents / logs)"
 	@echo "  make agent-backend-ci   agent-ci backend portion only"
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
-	@echo "  make agent-frontend-style  ESLint + Prettier check only (cheap pre-push)"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 
 # Backend + Frontend
@@ -303,19 +302,18 @@ agent-complexity:
 		echo "$$violations"; \
 		exit 1; \
 	fi
-agent-frontend-lint:
+agent-frontend-eslint:
 	cd frontend && pnpm exec eslint . --max-warnings 0
+
+# Cheap pre-push gate: ESLint + Prettier in parallel (~same wall time as eslint).
+agent-frontend-lint:
+	$(MAKE) -j2 agent-frontend-eslint agent-frontend-format-check
 
 agent-frontend-format:
 	cd frontend && pnpm exec prettier --write --log-level warn .
 
 agent-frontend-format-check:
 	cd frontend && pnpm exec prettier --check --log-level warn .
-
-# Cheap pre-push gate: ESLint + Prettier only (~seconds). Prefer this while
-# iterating; full agent-frontend-ci still runs these before the slow suite.
-agent-frontend-style:
-	$(MAKE) -j2 agent-frontend-lint agent-frontend-format-check
 
 agent-frontend-test:
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
@@ -338,7 +336,7 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 
 # Fail-fast: ESLint + Prettier before Vitest/tsc so agents catch the common
 # push failures in seconds instead of after a multi-minute parallel suite.
-agent-frontend-ci: agent-frontend-style
+agent-frontend-ci: agent-frontend-lint
 	$(MAKE) parallel-agent-frontend-slow
 
 parallel-agent-frontend-slow:

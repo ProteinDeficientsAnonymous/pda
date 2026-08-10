@@ -40,8 +40,7 @@ make agent-typecheck  # Run ty type checker (minimal output)
 make agent-complexity # Run cognitive complexity check (minimal output)
 make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
 make agent-frontend-test      # Run Vitest suite (minimal output)
-make agent-frontend-lint      # ESLint only (minimal output)
-make agent-frontend-style     # ESLint + Prettier check (cheap pre-push)
+make agent-frontend-lint      # ESLint + Prettier check (cheap pre-push)
 make agent-frontend-typecheck # Run tsc --noEmit (plain output)
 make frontend-types   # Regenerate API types from OpenAPI
 make frontend-build   # Build Vite production bundle
@@ -95,7 +94,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Standards
 
-**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-style`** (ESLint + Prettier) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests. `agent-frontend-ci` runs the style gate first so lint/prettier fail in seconds.
+**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-lint`** (ESLint + Prettier) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests. `agent-frontend-ci` runs lint first so those checks fail in seconds.
 
 References: `~/.claude/rules/standards-django-ninja.md`
 
