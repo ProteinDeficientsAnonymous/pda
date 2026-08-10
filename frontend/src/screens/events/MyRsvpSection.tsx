@@ -10,6 +10,7 @@ import {
   isRsvpInputStatus,
   type RsvpInputStatus,
   RsvpServerStatus,
+  type RsvpServerStatusValue,
   RsvpStatus,
   spotsLeft,
 } from '@/models/event';
@@ -42,7 +43,7 @@ const PAST_STATUS_LABELS: Record<RsvpInputStatus, string> = {
 
 interface BoxState {
   mode: 'create' | 'edit';
-  initialStatus: RsvpInputStatus;
+  initialStatus: RsvpServerStatusValue;
 }
 
 export function MyRsvpSection({ event, token, locked = false }: Props) {
@@ -68,7 +69,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const atCapacity = spotsLeft(event) === 0;
 
   async function confirmRsvp(args: {
-    status: RsvpInputStatus;
+    status: RsvpServerStatusValue;
     comment?: string;
     hasPlusOne: boolean;
     paidConfirmed?: boolean;
@@ -137,7 +138,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
         <WaitlistView
           onLeave={() => void leaveWaitlist()}
           onEdit={() => {
-            setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
+            setBox({ mode: 'edit', initialStatus: RsvpServerStatus.Waitlisted });
           }}
           busy={busy}
         />

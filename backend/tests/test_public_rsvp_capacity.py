@@ -27,6 +27,34 @@ class TestPublicRsvpCapacity:
         # Confirmation email reflects the waitlist.
         assert "waitlist" in fake_email_sender.send.call_args.kwargs["subject"]
 
+    def test_waitlisted_submission_with_room_seats_them(self, api_client, fake_email_sender):
+        # A client-submitted "waitlisted" is a request to attend — capacity
+        # decides the outcome, same as submitting "attending" would.
+        event = _capped_event(max_attendees=1)
+        response = post(
+            api_client,
+            event,
+            phone_number="+14155550101",
+            email="a@e.com",
+            status=RSVPStatus.WAITLISTED,
+        )
+        assert response.status_code == 200
+        assert response.json()["rsvp"]["status"] == RSVPStatus.ATTENDING
+
+    def test_waitlisted_submission_at_cap_stays_waitlisted(self, api_client, fake_email_sender):
+        event = _capped_event(max_attendees=1)
+        post(api_client, event, phone_number="+14155550101", email="a@e.com")
+
+        response = post(
+            api_client,
+            event,
+            phone_number="+14155550102",
+            email="b@e.com",
+            status=RSVPStatus.WAITLISTED,
+        )
+        assert response.status_code == 200
+        assert response.json()["rsvp"]["status"] == RSVPStatus.WAITLISTED
+
     def test_plus_one_at_cap_auto_waitlists(self, api_client, fake_email_sender):
         event = _capped_event(max_attendees=1)
         post(api_client, event, phone_number="+14155550101", email="a@e.com")

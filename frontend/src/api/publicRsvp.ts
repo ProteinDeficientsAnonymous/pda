@@ -4,7 +4,7 @@ import { eventCommentKeys } from '@/api/eventComments';
 import { mapEvent, type WireEvent } from '@/api/eventMapper';
 import { eventKeys } from '@/api/events';
 import type { components } from '@/api/types.gen';
-import type { Event, RsvpInputStatus } from '@/models/event';
+import type { Event, RsvpServerStatusValue } from '@/models/event';
 
 import { apiClient } from './client';
 
@@ -105,7 +105,7 @@ export function usePublicMyRsvps(token: string) {
 
 interface UpdateArgs {
   eventId: string;
-  status: RsvpInputStatus;
+  status: RsvpServerStatusValue;
   hasPlusOne: boolean;
   comment?: string;
   paidConfirmed?: boolean;

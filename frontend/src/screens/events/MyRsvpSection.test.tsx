@@ -181,7 +181,7 @@ describe('MyRsvpSection — after RSVPing', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(setRsvpMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ status: RsvpServerStatus.Attending, hasPlusOne: true }),
+      expect.objectContaining({ status: RsvpServerStatus.Waitlisted, hasPlusOne: true }),
     );
   });
 });

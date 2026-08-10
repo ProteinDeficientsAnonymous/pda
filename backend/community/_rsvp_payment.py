@@ -23,8 +23,9 @@ def payment_enforced_for_event(event: Event) -> bool:
 
 def requires_payment_gate(event: Event, existing: EventRSVP | None, requested_status: str) -> bool:
     # Checked against the requested status, not the post-capacity one: at
-    # capacity attending resolves to waitlisted, which must still gate.
-    if requested_status != RSVPStatus.ATTENDING:
+    # capacity attending resolves to waitlisted, which must still gate. A
+    # client-submitted waitlisted request is also a request to attend.
+    if requested_status not in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
         return False
     if not payment_enforced_for_event(event):
         return False

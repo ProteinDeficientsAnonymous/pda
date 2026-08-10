@@ -3,14 +3,20 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type Event, type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import {
+  type Event,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  type RsvpServerStatusValue,
+  RsvpStatus,
+} from '@/models/event';
 
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { usePaymentGate } from './usePaymentGate';
 
 interface ConfirmArgs {
-  status: RsvpInputStatus;
+  status: RsvpServerStatusValue;
   comment?: string;
   hasPlusOne: boolean;
   paidConfirmed?: boolean;
@@ -20,7 +26,7 @@ interface Props {
   open: boolean;
   mode: 'create' | 'edit';
   event: Event;
-  initialStatus: RsvpInputStatus;
+  initialStatus: RsvpServerStatusValue;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
   allowComment?: boolean;
@@ -45,7 +51,14 @@ export function RsvpBox({
   onRemove,
   onClose,
 }: Props) {
-  const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
+  // The picker only ever offers attending/maybe/cant_go — waitlisted isn't a
+  // pickable choice, it's what attending resolves to at capacity. Still
+  // choosing "attending" while having started out waitlisted resubmits as
+  // waitlisted so the backend re-runs capacity rather than treating this as
+  // a brand new attending request.
+  const initialPickerStatus =
+    initialStatus === RsvpServerStatus.Waitlisted ? RsvpStatus.Attending : initialStatus;
+  const [pickerStatus, setPickerStatus] = useState<RsvpInputStatus>(initialPickerStatus);
   const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
   const [showPayment, setShowPayment] = useState(false);
@@ -53,7 +66,11 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
+  const joiningWaitlist = pickerStatus === RsvpStatus.Attending && atCapacity;
+  const status: RsvpServerStatusValue =
+    pickerStatus === RsvpStatus.Attending && initialStatus === RsvpServerStatus.Waitlisted
+      ? RsvpServerStatus.Waitlisted
+      : pickerStatus;
 
   function submit(paidConfirmed: boolean) {
     const trimmed = comment.trim();
@@ -64,7 +81,7 @@ export function RsvpBox({
   }
 
   function confirm() {
-    if (needsPaymentFor(status)) {
+    if (needsPaymentFor(pickerStatus)) {
       setShowPayment(true);
       return;
     }
@@ -87,8 +104,8 @@ export function RsvpBox({
       ) : (
         <div className="flex flex-col gap-4">
           <RsvpStatusPicker
-            value={status}
-            onSelect={setStatus}
+            value={pickerStatus}
+            onSelect={setPickerStatus}
             disabled={busy}
             labelFor={(s, defaultLabel) =>
               s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel

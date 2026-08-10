@@ -63,14 +63,19 @@ def _resolve_rsvp_status(
     if not event.allow_plus_ones:
         has_plus_one = False
 
-    if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
+    # A client may submit "waitlisted" directly (e.g. a waitlisted member editing
+    # their +1) — treat it as requesting attendance and let capacity decide.
+    if (
+        requested_status not in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED)
+        or event.max_attendees is None
+    ):
         return requested_status, has_plus_one
 
     headcount = _attending_headcount_db(event, exclude_user=user)
     new_spots = 1 + (1 if has_plus_one else 0)
 
     if headcount + new_spots <= event.max_attendees:
-        return requested_status, has_plus_one
+        return RSVPStatus.ATTENDING, has_plus_one
 
     # Over capacity — check if user is already attending (just toggling +1)
     existing = EventRSVP.objects.filter(event=event, user=user).first()
@@ -78,7 +83,7 @@ def _resolve_rsvp_status(
         if has_plus_one:
             raise_validation(Code.Event.NO_PLUS_ONE_SPOTS, status_code=400)
         # Removing +1 is always fine
-        return requested_status, has_plus_one
+        return RSVPStatus.ATTENDING, has_plus_one
 
     # New attending RSVP (or +1 party) at capacity — waitlist the whole party.
     # Keep has_plus_one so promotion seats them together later; never drop the +1.
@@ -87,8 +92,13 @@ def _resolve_rsvp_status(
 
 def _validate_rsvp_status(status: str) -> None:
     """Raise ValidationException if the requested RSVP status is invalid."""
-    valid_statuses = {RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.CANT_GO}
-    if status == RSVPStatus.WAITLISTED or status not in valid_statuses:
+    valid_statuses = {
+        RSVPStatus.ATTENDING,
+        RSVPStatus.MAYBE,
+        RSVPStatus.CANT_GO,
+        RSVPStatus.WAITLISTED,
+    }
+    if status not in valid_statuses:
         raise_validation(
             Code.Event.RSVP_INVALID_STATUS,
             field="status",

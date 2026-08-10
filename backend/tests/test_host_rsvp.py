@@ -148,17 +148,20 @@ class TestSetGuestRsvp:
         assert response.status_code == 404
         assert_error_code(response, "user.not_found")
 
-    def test_rejects_waitlisted_as_input_status(
+    def test_accepts_waitlisted_as_input_status(
         self, api_client, host_rsvp_event, host_user, guest
     ):
+        # host_rsvp_event has no max_attendees, so capacity never kicks in —
+        # a host-submitted "waitlisted" is stored verbatim.
         response = api_client.post(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.WAITLISTED},
             content_type="application/json",
             **_auth(host_user),
         )
-        assert response.status_code == 400
-        assert_error_code(response, "event.rsvp_invalid_status")
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
+        assert rsvp.status == RSVPStatus.WAITLISTED
 
     def test_rejects_when_event_cancelled(self, api_client, host_rsvp_event, host_user, guest):
         host_rsvp_event.status = EventStatus.CANCELLED

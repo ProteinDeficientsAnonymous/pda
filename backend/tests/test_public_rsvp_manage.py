@@ -230,10 +230,26 @@ class TestPostMyRsvps:
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
-            {"status": RSVPStatus.WAITLISTED},
+            {"status": "bogus"},
             content_type="application/json",
         )
         assert resp.status_code == 400
+
+    def test_waitlisted_status_accepted(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        # official_event has no max_attendees, so capacity never kicks in — a
+        # client-submitted "waitlisted" is accepted and stored verbatim.
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.post(
+            f"{_post_url(official_event)}?token={token.token}",
+            {"status": RSVPStatus.WAITLISTED},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        rsvp = EventRSVP.objects.get(event=official_event, user=nonmember)
+        assert rsvp.status == RSVPStatus.WAITLISTED
 
     def test_ineligible_event_404(self, api_client, nonmember):
         community_event = make_official_event(title="C", event_type=EventType.COMMUNITY)

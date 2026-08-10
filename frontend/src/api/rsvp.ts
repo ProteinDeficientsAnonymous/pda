@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import type { RsvpStatus } from '@/models/event';
+import type { Event, RsvpServerStatusValue } from '@/models/event';
 
 import { apiClient } from './client';
 import { eventCommentKeys } from './eventComments';
@@ -10,11 +9,9 @@ import { mapEvent, type WireEvent } from './eventMapper';
 import { eventKeys } from './events';
 import { eventStatsKeys } from './eventStats';
 
-type RsvpInput = (typeof RsvpStatus)[keyof typeof RsvpStatus];
-
 interface SetRsvpArgs {
   eventId: string;
-  status: RsvpInput;
+  status: RsvpServerStatusValue;
   hasPlusOne?: boolean;
   // Not persisted server-side — a non-empty comment is posted once, as a
   // public EventComment or a host-only decline notification.
