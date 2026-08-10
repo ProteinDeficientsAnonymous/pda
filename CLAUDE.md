@@ -50,31 +50,7 @@ Use `make test`, `make lint`, `make ci`, etc. for verbose output when debugging.
 
 ## Architecture
 
-### Project Layout
-
-```
-backend/
-├── config/       # Django settings, urls, wsgi
-├── users/        # Custom User model (phone_number login, UUID PKs) — admin-only creation
-├── community/    # JoinRequest, Event models + API
-└── tests/        # Pytest tests
-
-frontend/
-└── src/
-    ├── api/          # axios client, TanStack Query hooks, generated API types
-    ├── auth/         # Zustand auth store, route guards
-    ├── components/   # Reusable UI primitives (Button, Dialog, TextField, etc.)
-    ├── layout/       # AppShell, BottomNav, NotificationBell
-    ├── models/       # Domain types: User, Event, Notification, Permissions
-    ├── router/       # React Router config, lazy-loaded routes
-    └── screens/      # auth, public, admin, calendar, events, profile, settings, surveys, docs
-```
-
-### Key Models
-
 - **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created by admins only via members screen.
-- **JoinRequest** (`community/models.py`): name, email, pronouns, how_they_heard, why_join, submitted_at
-- **Event** (`community/models.py`): title, description, start_datetime, end_datetime, location
 
 ### API & Routes
 
@@ -96,7 +72,8 @@ Routes: see `.claude/docs/routes.md`
 
 **Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-lint`** (ESLint + Prettier) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests.
 
-References: `~/.claude/rules/standards-django-ninja.md`
+### response style
+Be succinct — short, direct answers. Don't restate the task or summarize what you just did unless asked.
 
 ### comments
 - Avoid verbose or redundant comments. Code should be self-explanatory; comments are the exception, not the default.
