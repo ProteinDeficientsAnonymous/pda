@@ -117,9 +117,7 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
       </div>
 
       {data.length > 0 ? (
-        <p className="text-foreground-tertiary mb-3 text-sm">
-          {countText}
-        </p>
+        <p className="text-foreground-tertiary mb-3 text-sm">{countText}</p>
       ) : null}
 
       <MembersList

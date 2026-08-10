@@ -96,13 +96,11 @@ function mockUsersResult(overrides: Partial<ReturnType<typeof useUsers>>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useRoles).mockReturnValue(
-    {
-      data: [],
-      isPending: false,
-      isError: false,
-    } as unknown as ReturnType<typeof useRoles>,
-  );
+  vi.mocked(useRoles).mockReturnValue({
+    data: [],
+    isPending: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useRoles>);
   useAuthStore.setState({
     status: 'authed',
     user: adminUser(),
@@ -393,16 +391,14 @@ describe('MembersScreen', () => {
       user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
       accessToken: 'tok',
     });
-    vi.mocked(useRoles).mockReturnValue(
-      {
-        data: [
-          { id: 'r1', name: 'organizer', isDefault: false, permissions: [] },
-          { id: 'r2', name: 'core', isDefault: false, permissions: [] },
-        ],
-        isPending: false,
-        isError: false,
-      } as unknown as ReturnType<typeof useRoles>,
-    );
+    vi.mocked(useRoles).mockReturnValue({
+      data: [
+        { id: 'r1', name: 'organizer', isDefault: false, permissions: [] },
+        { id: 'r2', name: 'core', isDefault: false, permissions: [] },
+      ],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoles>);
     mockUsersResult({
       data: [
         makeMember({
