@@ -24,7 +24,6 @@ interface WireGuest {
   questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
 }
 
-
 export interface WireEvent {
   id: string;
   slug?: string;

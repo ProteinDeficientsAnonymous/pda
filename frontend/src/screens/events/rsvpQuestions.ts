@@ -1,9 +1,6 @@
 /** Draft / wire-aligned RSVP question helpers used by authoring + RSVP dialog. */
 
-import {
-  newRsvpQuestionId,
-  type RsvpQuestionType,
-} from '@/api/eventRsvpQuestions';
+import { newRsvpQuestionId, type RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import {
   questionTypeWantsOptions,
   RSVP_QUESTION_TYPE_OPTIONS,
@@ -52,8 +49,7 @@ export function isRsvpRespondentStatus(status: string): boolean {
 export function hasSavedQuestionnaireResponses(event: Event): boolean {
   return event.guests.some(
     (guest) =>
-      isRsvpRespondentStatus(guest.status) &&
-      Object.keys(guest.questionnaireResponses).length > 0,
+      isRsvpRespondentStatus(guest.status) && Object.keys(guest.questionnaireResponses).length > 0,
   );
 }
 
