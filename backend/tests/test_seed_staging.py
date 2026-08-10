@@ -384,11 +384,11 @@ def test_seed_staging_creates_join_requests_matching_specs():
 @pytest.mark.django_db
 def test_seed_staging_join_requests_carry_custom_answers():
     call_command("seed_staging")
-    question_ids = {str(q.id) for q in JoinFormQuestion.objects.all()}
-    assert question_ids
-    for index in range(len(JOIN_REQUEST_SPECS)):
+    for index, spec in enumerate(JOIN_REQUEST_SPECS):
         jr = JoinRequest.objects.get(phone_number=joinreq_phone(index))
-        assert set(jr.custom_answers) == question_ids
+        assert {
+            data["label"]: data["answer"] for data in jr.custom_answers.values()
+        } == spec.answers
 
 
 @pytest.mark.django_db

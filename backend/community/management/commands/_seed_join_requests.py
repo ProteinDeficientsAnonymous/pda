@@ -8,7 +8,7 @@ from users.models import User
 from community.models import JoinFormQuestion, JoinRequest, JoinRequestStatus
 
 from ._seed_data import SEED_JOIN_FORM_QUESTIONS
-from ._seed_staging_data import JOIN_REQUEST_SPECS, joinreq_email, joinreq_phone
+from ._seed_staging_data import JOIN_REQUEST_SPECS, JoinRequestSpec, joinreq_email, joinreq_phone
 
 
 def reset_join_requests() -> None:
@@ -36,25 +36,11 @@ def seed_join_form_questions(stdout) -> dict[str, JoinFormQuestion]:
     return questions
 
 
-def _answer_for_question(spec, question: JoinFormQuestion) -> str:
-    label = question.label.lower()
-    if question.required or "why" in label:
-        return spec.answer
-    if "pronoun" in label:
-        return spec.pronouns
-    if "hear" in label:
-        return "A friend" if "friend" in spec.answer.lower() else "Instagram"
-    return "doing well"
-
-
-def _custom_answers(spec) -> dict:
-    """Snapshot one answer per current join-form question for staging fixtures."""
+def _custom_answers(spec: JoinRequestSpec, questions_by_label: dict[str, JoinFormQuestion]) -> dict:
+    """Map each seeded answer onto the matching join-form question by label."""
     return {
-        str(question.id): {
-            "label": question.label,
-            "answer": _answer_for_question(spec, question),
-        }
-        for question in JoinFormQuestion.objects.order_by("display_order")
+        str(questions_by_label[label].id): {"label": label, "answer": answer}
+        for label, answer in spec.answers.items()
     }
 
 
@@ -66,12 +52,16 @@ def _reviewer_fields(spec, reviewer: User | None, submitted_at) -> dict:
     return {}
 
 
-def seed_join_requests(stdout, reviewer: User | None) -> list[JoinRequest]:
+def seed_join_requests(
+    stdout,
+    reviewer: User | None,
+    questions_by_label: dict[str, JoinFormQuestion],
+) -> list[JoinRequest]:
     now = timezone.now()
     requests: list[JoinRequest] = []
     for index, spec in enumerate(JOIN_REQUEST_SPECS):
         submitted_at = now - timedelta(days=spec.days_ago)
-        answers = _custom_answers(spec)
+        answers = _custom_answers(spec, questions_by_label)
         join_request, created = JoinRequest.objects.get_or_create(
             phone_number=joinreq_phone(index),
             defaults={

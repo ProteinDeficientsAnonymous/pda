@@ -329,111 +329,155 @@ NON_MEMBER_SPECS = [
 class JoinRequestSpec:
     first_name: str
     last_name: str
-    pronouns: str
     has_email: bool
     status: str
     days_ago: int
-    answer: str
+    answers: dict[str, str]
 
 
 JOIN_REQUEST_SPECS = [
     JoinRequestSpec(
-        "Sage",
-        "Blackwood",
-        "they/them",
-        True,
-        JoinRequestStatus.PENDING,
-        0,
-        "I've been vegan for three years and want to connect with a local community.",
+        first_name="Sage",
+        last_name="Blackwood",
+        has_email=True,
+        status=JoinRequestStatus.PENDING,
+        days_ago=0,
+        answers={
+            "Why do you want to join?": (
+                "I've been vegan for three years and want to connect with a local community."
+            ),
+            "How did you hear about us?": "Instagram",
+            "What are your pronouns?": "they/them",
+        },
     ),
     JoinRequestSpec(
-        "Rowan",
-        "Ashfield",
-        "she/her",
-        True,
-        JoinRequestStatus.PENDING,
-        1,
-        "Looking for like-minded folks to organize with on animal liberation.",
+        first_name="Rowan",
+        last_name="Ashfield",
+        has_email=True,
+        status=JoinRequestStatus.PENDING,
+        days_ago=1,
+        answers={
+            "Why do you want to join?": (
+                "Looking for like-minded folks to organize with on animal liberation."
+            ),
+            "How did you hear about us?": "A friend",
+            "What are your pronouns?": "she/her",
+        },
     ),
     JoinRequestSpec(
-        "Fern",
-        "Whitaker",
-        "he/him",
-        False,
-        JoinRequestStatus.PENDING,
-        2,
-        "A friend recommended this group after I went vegan last month.",
+        first_name="Fern",
+        last_name="Whitaker",
+        has_email=False,
+        status=JoinRequestStatus.PENDING,
+        days_ago=2,
+        answers={
+            "Why do you want to join?": (
+                "A friend recommended this group after I went vegan last month."
+            ),
+            "How did you hear about us?": "A friend",
+            "What are your pronouns?": "he/him",
+        },
     ),
     JoinRequestSpec(
-        "River",
-        "Okafor",
-        "they/them",
-        True,
-        JoinRequestStatus.PENDING,
-        3,
-        "I want to volunteer at events and help with outreach.",
+        first_name="River",
+        last_name="Okafor",
+        has_email=True,
+        status=JoinRequestStatus.PENDING,
+        days_ago=3,
+        answers={
+            "Why do you want to join?": "I want to volunteer at events and help with outreach.",
+            "How did you hear about us?": "Flyer",
+            "What are your pronouns?": "they/them",
+        },
     ),
     JoinRequestSpec(
-        "Wren",
-        "Castellano",
-        "she/her",
-        True,
-        JoinRequestStatus.PENDING,
-        5,
-        "Interested in the intersection of veganism and collective liberation.",
+        first_name="Wren",
+        last_name="Castellano",
+        has_email=True,
+        status=JoinRequestStatus.PENDING,
+        days_ago=5,
+        answers={
+            "Why do you want to join?": (
+                "Interested in the intersection of veganism and collective liberation."
+            ),
+            "How did you hear about us?": "Instagram",
+            "What are your pronouns?": "she/her",
+        },
     ),
     JoinRequestSpec(
-        "Ash",
-        "Delgado",
-        "he/him",
-        False,
-        JoinRequestStatus.PENDING,
-        8,
-        "New to the area and looking for community.",
+        first_name="Ash",
+        last_name="Delgado",
+        has_email=False,
+        status=JoinRequestStatus.PENDING,
+        days_ago=8,
+        answers={
+            "Why do you want to join?": "New to the area and looking for community.",
+            "How did you hear about us?": "Meetup",
+            "What are your pronouns?": "he/him",
+        },
     ),
     JoinRequestSpec(
-        "Juniper",
-        "Osei",
-        "they/them",
-        True,
-        JoinRequestStatus.APPROVED,
-        14,
-        "Been following the group's work for a while and finally ready to join.",
+        first_name="Juniper",
+        last_name="Osei",
+        has_email=True,
+        status=JoinRequestStatus.APPROVED,
+        days_ago=14,
+        answers={
+            "Why do you want to join?": (
+                "Been following the group's work for a while and finally ready to join."
+            ),
+            "How did you hear about us?": "Instagram",
+            "What are your pronouns?": "they/them",
+        },
     ),
     JoinRequestSpec(
-        "Marlowe",
-        "Fontaine",
-        "she/her",
-        True,
-        JoinRequestStatus.APPROVED,
-        20,
-        "A member invited me after a potluck.",
+        first_name="Marlowe",
+        last_name="Fontaine",
+        has_email=True,
+        status=JoinRequestStatus.APPROVED,
+        days_ago=20,
+        answers={
+            "Why do you want to join?": "A member invited me after a potluck.",
+            "How did you hear about us?": "A member",
+            "What are your pronouns?": "she/her",
+        },
     ),
     JoinRequestSpec(
-        "Briar",
-        "Nakamura",
-        "he/him",
-        True,
-        JoinRequestStatus.APPROVED,
-        30,
-        "I run a plant-based cooking blog and want to get more involved locally.",
+        first_name="Briar",
+        last_name="Nakamura",
+        has_email=True,
+        status=JoinRequestStatus.APPROVED,
+        days_ago=30,
+        answers={
+            "Why do you want to join?": (
+                "I run a plant-based cooking blog and want to get more involved locally."
+            ),
+            "How did you hear about us?": "Website",
+            "What are your pronouns?": "he/him",
+        },
     ),
     JoinRequestSpec(
-        "Sparrow",
-        "Reyes",
-        "they/them",
-        False,
-        JoinRequestStatus.REJECTED,
-        12,
-        "Just filling out the form to see what happens.",
+        first_name="Sparrow",
+        last_name="Reyes",
+        has_email=False,
+        status=JoinRequestStatus.REJECTED,
+        days_ago=12,
+        answers={
+            "Why do you want to join?": "Just filling out the form to see what happens.",
+            "How did you hear about us?": "Google",
+            "What are your pronouns?": "they/them",
+        },
     ),
     JoinRequestSpec(
-        "Indigo",
-        "Marchetti",
-        "she/her",
-        True,
-        JoinRequestStatus.REJECTED,
-        25,
-        "not really sure what this group does but sure",
+        first_name="Indigo",
+        last_name="Marchetti",
+        has_email=True,
+        status=JoinRequestStatus.REJECTED,
+        days_ago=25,
+        answers={
+            "Why do you want to join?": "not really sure what this group does but sure",
+            "How did you hear about us?": "TikTok",
+            "What are your pronouns?": "she/her",
+        },
     ),
 ]
