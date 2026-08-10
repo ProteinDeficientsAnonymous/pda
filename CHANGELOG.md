@@ -1,3 +1,10 @@
+# [0.92.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.5...v0.92.0) (2026-08-10)
+
+
+### Features
+
+* 1153 - weekly digest email ([#1271](https://github.com/ProteinDeficientsAnonymous/pda/issues/1271)) ([6a0063c](https://github.com/ProteinDeficientsAnonymous/pda/commit/6a0063c6035cfa2ed8e87606b1f2f5b7695ade30))
+
 ## [0.91.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.4...v0.91.5) (2026-08-10)
 
 
