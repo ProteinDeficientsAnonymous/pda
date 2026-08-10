@@ -87,7 +87,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
                 setOpen(false);
               }}
             >
-              {eventHasEnded ? 'question responses' : 'manage rsvps'}
+              manage rsvps
             </MenuLink>
           ) : null}
           <MenuLink
