@@ -15,16 +15,18 @@ from users.roles import Role
 from community.models import Event, EventType, RSVPStatus
 
 from ._seed_join_requests import reset_join_requests, seed_join_form_questions, seed_join_requests
-from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
+from ._seed_shared import (
+    apply_rsvp,
+    get_or_create_seed_user,
+    questionnaire_snapshot,
+    seed_event_rsvp_questions,
+    seed_events,
+)
 from ._seed_staging_data import (
-    MEMBER_RSVP_SPECS,
     NON_MEMBER_EVENT_TITLE,
-    NON_MEMBER_SPECS,
     PASSWORD,
     PRIVACY_SPECS,
     STAGING_EVENTS,
-    TOKEN_EXPIRED,
-    TOKEN_NONE,
     cond_email,
     cond_phone,
     condition_combinations,
@@ -37,6 +39,13 @@ from ._seed_staging_data import (
     privacy_phone,
     reset_member_email,
     reset_member_phone,
+)
+from ._seed_staging_rsvps import (
+    MEMBER_RSVP_SPECS,
+    NON_MEMBER_SPECS,
+    STAGING_EVENT_RSVP_QUESTIONS,
+    TOKEN_EXPIRED,
+    TOKEN_NONE,
 )
 
 
@@ -69,8 +78,9 @@ class Command(BaseCommand):
             self._seed_reset_member()
             admin = perm_users[0] if perm_users else None
             events = self._seed_events(admin)
-            self._seed_member_rsvps(cond_users, events)
-            non_members = self._seed_non_members(events)
+            rsvp_questions = self._seed_event_rsvp_questions(events)
+            self._seed_member_rsvps(cond_users, events, rsvp_questions)
+            non_members = self._seed_non_members(events, rsvp_questions)
             questions = seed_join_form_questions(self.stdout)
             join_requests = seed_join_requests(self.stdout, admin, questions)
         self._print_summary(
@@ -229,23 +239,43 @@ class Command(BaseCommand):
     def _seed_events(self, created_by) -> list[Event]:
         return list(seed_events(self.stdout, STAGING_EVENTS, created_by).values())
 
-    def _apply_rsvps(self, user, rsvps, events_by_title: dict) -> None:
+    def _seed_event_rsvp_questions(self, events: list[Event]) -> dict[str, dict]:
+        events_by_title = {e.title: e for e in events}
+        by_event: dict[str, dict] = {}
+        for title, specs in STAGING_EVENT_RSVP_QUESTIONS.items():
+            event = events_by_title.get(title)
+            if event is None:
+                self.stdout.write(f"  skipped rsvp questions (missing event): {title}")
+                continue
+            by_event[title] = seed_event_rsvp_questions(self.stdout, event, specs)
+        return by_event
+
+    def _apply_rsvps(self, user, rsvps, events_by_title: dict, rsvp_questions: dict) -> None:
         for rsvp in rsvps:
             event = events_by_title.get(rsvp.event_title)
-            if event is not None:
-                apply_rsvp(
-                    event,
-                    user,
-                    {"status": rsvp.status, "attendance": rsvp.attendance},
-                    overwrite=True,
+            if event is None:
+                continue
+            defaults: dict[str, object] = {
+                "status": rsvp.status,
+                "attendance": rsvp.attendance,
+            }
+            questions = rsvp_questions.get(rsvp.event_title)
+            if questions is not None:
+                defaults["questionnaire_responses"] = questionnaire_snapshot(
+                    questions, rsvp.answers
                 )
+            apply_rsvp(event, user, defaults, overwrite=True)
 
-    def _seed_member_rsvps(self, cond_users: list[User], events: list[Event]) -> None:
+    def _seed_member_rsvps(
+        self, cond_users: list[User], events: list[Event], rsvp_questions: dict
+    ) -> None:
         events_by_title = {e.title: e for e in events}
         for spec in MEMBER_RSVP_SPECS:
             if spec.cond_index >= len(cond_users):
                 continue
-            self._apply_rsvps(cond_users[spec.cond_index], spec.rsvps, events_by_title)
+            self._apply_rsvps(
+                cond_users[spec.cond_index], spec.rsvps, events_by_title, rsvp_questions
+            )
         self.stdout.write(f"  seeded member rsvps for {len(MEMBER_RSVP_SPECS)} members")
 
     def _ensure_non_member(self, index: int, spec) -> User:
@@ -281,12 +311,12 @@ class Command(BaseCommand):
             return
         NonMemberRsvpToken.issue_or_extend(user)
 
-    def _seed_non_members(self, events: list[Event]) -> list[User]:
+    def _seed_non_members(self, events: list[Event], rsvp_questions: dict) -> list[User]:
         events_by_title = {e.title: e for e in events}
         users: list[User] = []
         for index, spec in enumerate(NON_MEMBER_SPECS):
             user = self._ensure_non_member(index, spec)
-            self._apply_rsvps(user, spec.rsvps, events_by_title)
+            self._apply_rsvps(user, spec.rsvps, events_by_title, rsvp_questions)
             self._apply_token_state(user, spec.token_state)
             users.append(user)
         return users

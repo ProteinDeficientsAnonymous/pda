@@ -1,11 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 from django.utils import timezone
 from users.models import User
 from users.roles import Role
 
-from community.models import Event, EventRSVP, EventType, PageVisibility
+from community.models import Event, EventRSVP, EventRsvpQuestion, EventType, PageVisibility
 
 
 @dataclass
@@ -20,6 +20,15 @@ class SeedEvent:
     rsvp_enabled: bool = False
     allow_plus_ones: bool = False
     max_attendees: int | None = None
+
+
+@dataclass
+class SeedRsvpQuestion:
+    label: str
+    field_type: str
+    options: list[str] = field(default_factory=list)
+    required: bool = False
+    display_order: int = 0
 
 
 def seed_events(stdout, events: list[SeedEvent], created_by: User | None) -> dict[str, Event]:
@@ -67,3 +76,49 @@ def apply_rsvp(event: Event, user: User, defaults: dict, *, overwrite: bool = Fa
         EventRSVP.objects.update_or_create(event=event, user=user, defaults=defaults)
     else:
         EventRSVP.objects.get_or_create(event=event, user=user, defaults=defaults)
+
+
+def _sync_seed_rsvp_question(question: EventRsvpQuestion, data: SeedRsvpQuestion) -> None:
+    updates: list[str] = []
+    for attr in ("field_type", "options", "required", "display_order"):
+        value = getattr(data, attr)
+        if getattr(question, attr) != value:
+            setattr(question, attr, value)
+            updates.append(attr)
+    if updates:
+        question.save(update_fields=updates)
+
+
+def seed_event_rsvp_questions(
+    stdout, event: Event, specs: list[SeedRsvpQuestion]
+) -> dict[str, EventRsvpQuestion]:
+    """Ensure RSVP questions exist on an event. Returns label→question mapping."""
+    questions: dict[str, EventRsvpQuestion] = {}
+    for data in specs:
+        question, created = EventRsvpQuestion.objects.get_or_create(
+            event=event,
+            label=data.label,
+            defaults={
+                "field_type": data.field_type,
+                "options": data.options,
+                "required": data.required,
+                "display_order": data.display_order,
+            },
+        )
+        if not created:
+            _sync_seed_rsvp_question(question, data)
+        stdout.write(
+            f"  {'created' if created else 'exists'} rsvp question: {event.title} / {question.label}"
+        )
+        questions[question.label] = question
+    return questions
+
+
+def questionnaire_snapshot(
+    questions_by_label: dict[str, EventRsvpQuestion], answers: dict[str, str]
+) -> dict:
+    """Build {question_id: {label, answer}} from explicit label→answer pairs."""
+    return {
+        str(questions_by_label[label].id): {"label": label, "answer": answer}
+        for label, answer in answers.items()
+    }

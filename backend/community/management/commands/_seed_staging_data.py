@@ -2,13 +2,7 @@
 
 from dataclasses import dataclass
 
-from community.models.choices import (
-    AttendanceStatus,
-    EventType,
-    JoinRequestStatus,
-    PageVisibility,
-    RSVPStatus,
-)
+from community.models.choices import EventType, JoinRequestStatus, PageVisibility
 
 from ._seed_shared import SeedEvent
 
@@ -247,81 +241,6 @@ STAGING_EVENTS = [
         rsvp_enabled=True,
         max_attendees=2,
     ),
-]
-
-
-# Non-member manage-token lifecycle states, controlling what the seed leaves behind.
-TOKEN_VALID = "valid"
-TOKEN_EXPIRED = "expired"
-TOKEN_NONE = "none"
-
-
-_ATTENDED = AttendanceStatus.ATTENDED
-_NO_SHOW = AttendanceStatus.DIDNT_GO
-
-
-@dataclass
-class RsvpOnEvent:
-    """One RSVP row a seeded user should hold on a named event."""
-
-    event_title: str
-    status: str
-    attendance: str = AttendanceStatus.UNKNOWN
-
-
-def _rsvps(*rows: tuple) -> list[RsvpOnEvent]:
-    """Build RsvpOnEvent rows from compact (title, status[, attendance]) tuples."""
-    return [RsvpOnEvent(*row) for row in rows]
-
-
-_A, _M, _C, _W = RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.CANT_GO, RSVPStatus.WAITLISTED
-
-
-@dataclass
-class MemberRsvpSpec:
-    """RSVPs to attach to the condition member at ``cond_index``."""
-
-    cond_index: int
-    rsvps: list[RsvpOnEvent]
-
-
-# Members across every RSVP state on the official events; the past event carries
-# attendance marks so the attendance report shows a non-trivial member/non-member mix.
-MEMBER_RSVP_SPECS = [
-    MemberRsvpSpec(0, _rsvps((OFFICIAL_PAST_TITLE, _A, _ATTENDED), (OFFICIAL_TODAY_TITLE, _A))),
-    MemberRsvpSpec(1, _rsvps((OFFICIAL_PAST_TITLE, _A, _NO_SHOW), (OFFICIAL_TODAY_TITLE, _M))),
-    MemberRsvpSpec(2, _rsvps((OFFICIAL_PAST_TITLE, _M), (OFFICIAL_TODAY_TITLE, _C))),
-    MemberRsvpSpec(3, _rsvps((OFFICIAL_PAST_TITLE, _A, _ATTENDED), (OFFICIAL_FULL_TITLE, _A))),
-    MemberRsvpSpec(4, _rsvps((OFFICIAL_FULL_TITLE, _A))),
-    MemberRsvpSpec(5, _rsvps((OFFICIAL_FULL_TITLE, _W))),
-]
-
-
-@dataclass
-class NonMemberSpec:
-    label: str
-    rsvps: list[RsvpOnEvent]
-    has_email: bool = True
-    token_state: str = TOKEN_VALID
-
-
-NON_MEMBER_SPECS = [
-    NonMemberSpec("attending (valid token, email)", _rsvps((NON_MEMBER_EVENT_TITLE, _A))),
-    NonMemberSpec(
-        "maybe (valid token, no email)", _rsvps((NON_MEMBER_EVENT_TITLE, _M)), has_email=False
-    ),
-    NonMemberSpec(
-        "can't-go (expired token)",
-        _rsvps((NON_MEMBER_EVENT_TITLE, _C)),
-        token_state=TOKEN_EXPIRED,
-    ),
-    NonMemberSpec(
-        "multi-event attended (past + today)",
-        _rsvps((OFFICIAL_PAST_TITLE, _A, _ATTENDED), (OFFICIAL_TODAY_TITLE, _A)),
-    ),
-    NonMemberSpec("past no-show (attendance report)", _rsvps((OFFICIAL_PAST_TITLE, _A, _NO_SHOW))),
-    NonMemberSpec("waitlisted at capacity", _rsvps((OFFICIAL_FULL_TITLE, _W))),
-    NonMemberSpec("no-rsvp (no token)", [], token_state=TOKEN_NONE),
 ]
 
 

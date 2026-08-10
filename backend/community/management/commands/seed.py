@@ -11,6 +11,7 @@ from community.models.join_form import JoinFormQuestion
 
 from ._seed_data import (
     PASSWORD,
+    SEED_EVENT_RSVP_QUESTIONS,
     SEED_EVENTS,
     SEED_FAQ,
     SEED_GUIDELINES,
@@ -22,7 +23,13 @@ from ._seed_data import (
     SeedUser,
 )
 from ._seed_join_requests import seed_join_form_questions
-from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
+from ._seed_shared import (
+    apply_rsvp,
+    get_or_create_seed_user,
+    questionnaire_snapshot,
+    seed_event_rsvp_questions,
+    seed_events,
+)
 
 
 def _seed_singleton(model_cls, seed_data: dict, fields: tuple[str, ...], cmd: "Command") -> None:
@@ -46,7 +53,8 @@ class Command(BaseCommand):
         questions = self._seed_join_form_questions()
         self._seed_event_tags()
         events = self._seed_events(admin_user)
-        self._seed_rsvps(events)
+        rsvp_questions = self._seed_event_rsvp_questions(events)
+        self._seed_rsvps(events, rsvp_questions)
         self._seed_join_requests(questions, admin_user)
         self._seed_content()
         self._print_summary()
@@ -140,7 +148,18 @@ class Command(BaseCommand):
         """Seed events. Returns a title→Event mapping for RSVP seeding."""
         return seed_events(self.stdout, SEED_EVENTS, created_by)
 
-    def _seed_rsvps(self, events: dict[str, Event]) -> None:
+    def _seed_event_rsvp_questions(self, events: dict[str, Event]) -> dict[str, dict]:
+        """Seed RSVP questions on configured events. Returns title→label→question."""
+        by_event: dict[str, dict] = {}
+        for title, specs in SEED_EVENT_RSVP_QUESTIONS.items():
+            event = events.get(title)
+            if event is None:
+                self.stdout.write(f"  Skipped RSVP questions (missing event): {title}")
+                continue
+            by_event[title] = seed_event_rsvp_questions(self.stdout, event, specs)
+        return by_event
+
+    def _seed_rsvps(self, events: dict[str, Event], rsvp_questions: dict[str, dict]) -> None:
         """Seed RSVPs so the roster, waitlist, and stats panel are QA-able."""
         users = {
             u.phone_number: u for u in User.objects.filter(phone_number__startswith="+1702555")
@@ -153,15 +172,17 @@ class Command(BaseCommand):
                     f"  Skipped RSVP (missing event/user): {data.event_title} / {data.phone_number}"
                 )
                 continue
-            apply_rsvp(
-                event,
-                user,
-                {
-                    "status": data.status,
-                    "attendance": data.attendance,
-                    "has_plus_one": data.has_plus_one,
-                },
-            )
+            defaults: dict[str, object] = {
+                "status": data.status,
+                "attendance": data.attendance,
+                "has_plus_one": data.has_plus_one,
+            }
+            questions = rsvp_questions.get(data.event_title)
+            if questions is not None:
+                defaults["questionnaire_responses"] = questionnaire_snapshot(
+                    questions, data.answers
+                )
+            apply_rsvp(event, user, defaults)
             self.stdout.write(f"  RSVP: {user.full_name} → {data.event_title}")
 
     def _seed_join_requests(self, questions: dict[str, JoinFormQuestion], admin_user: User) -> None:
