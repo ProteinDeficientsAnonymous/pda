@@ -1,11 +1,10 @@
 import { QuestionType } from '@/api/questionTypes';
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
-import { RsvpServerStatus } from '@/models/event';
+import { rsvpGroupLabel } from '@/models/event';
 
 import { isRsvpRespondentStatus } from './rsvpQuestions';
 
 interface ResponseColumn {
-  key: string;
   id: string;
   label: string;
   fieldType?: EventRsvpQuestion['fieldType'];
@@ -16,26 +15,27 @@ interface Props {
   event: Event;
 }
 
-/** Live questions plus orphaned snapshot keys so edits/deletes keep history visible. */
+/** Live questions, plus deleted-question ids that still have saved guest answers. */
 function responseColumns(
   questions: readonly EventRsvpQuestion[],
   guests: readonly EventGuest[],
 ): ResponseColumn[] {
   const cols: ResponseColumn[] = questions.map((q) => ({
-    key: `${q.id}:${q.label}`,
     id: q.id,
     label: q.label,
     fieldType: q.fieldType,
     options: q.options,
   }));
-  const seen = new Set(cols.map((column) => column.key));
+  const liveIds = new Set(cols.map((column) => column.id));
+  const orphanLabels = new Map<string, string>();
   for (const g of guests) {
     for (const [qid, snap] of Object.entries(g.questionnaireResponses)) {
-      const key = `${qid}:${snap.label}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      cols.push({ key, id: qid, label: snap.label, options: [] });
+      if (liveIds.has(qid) || orphanLabels.has(qid)) continue;
+      orphanLabels.set(qid, snap.label);
     }
+  }
+  for (const [qid, label] of orphanLabels) {
+    cols.push({ id: qid, label, options: [] });
   }
   return cols;
 }
@@ -63,7 +63,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
         <div className="flex flex-col gap-3">
           <h3 className="text-muted text-xs font-medium tracking-wide">tallies</h3>
           {choiceColumns.map((q) => (
-            <ChoiceTallyCard key={q.key} question={q} guests={respondents} />
+            <ChoiceTallyCard key={q.id} question={q} guests={respondents} />
           ))}
         </div>
       ) : null}
@@ -78,7 +78,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
                 <th className="px-3 py-2">guest</th>
                 <th className="px-3 py-2">status</th>
                 {columns.map((q) => (
-                  <th key={q.key} className="px-3 py-2">
+                  <th key={q.id} className="px-3 py-2">
                     {q.label}
                   </th>
                 ))}
@@ -88,10 +88,10 @@ export function EventRsvpResponsesSection({ event }: Props) {
               {respondents.map((g) => (
                 <tr key={g.userId} className="border-border border-t align-top">
                   <td className="text-foreground px-3 py-2">{g.name}</td>
-                  <td className="text-muted px-3 py-2 text-xs">{statusLabel(g.status)}</td>
+                  <td className="text-muted px-3 py-2 text-xs">{rsvpGroupLabel(g.status)}</td>
                   {columns.map((q) => (
-                    <td key={q.key} className="text-foreground px-3 py-2 whitespace-pre-wrap">
-                      {renderAnswerForColumn(g.questionnaireResponses[q.id], q)}
+                    <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
+                      {renderAnswer(g.questionnaireResponses[q.id]?.answer)}
                     </td>
                   ))}
                 </tr>
@@ -110,15 +110,12 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
 
   let answered = 0;
   for (const g of guests) {
-    const snap = g.questionnaireResponses[question.id];
-    if (snap?.label !== question.label) continue;
+    const answer = g.questionnaireResponses[question.id]?.answer;
+    if (!answer?.trim()) continue;
     const values =
       question.fieldType === QuestionType.Checkbox
-        ? snap.answer.split(',').filter(Boolean)
-        : snap.answer
-          ? [snap.answer]
-          : [];
-    if (values.length === 0) continue;
+        ? answer.split(',').filter(Boolean)
+        : [answer];
     answered += 1;
     for (const v of values) {
       counts.set(v, (counts.get(v) ?? 0) + 1);
@@ -143,17 +140,8 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
   );
 }
 
-function statusLabel(status: string): string {
-  if (status === RsvpServerStatus.Attending) return 'going';
-  if (status === RsvpServerStatus.Maybe) return 'maybe';
-  if (status === RsvpServerStatus.Waitlisted) return 'waitlist';
-  return status;
-}
-
-function renderAnswerForColumn(
-  snap: { label: string; answer: string } | undefined,
-  column: ResponseColumn,
-): string {
-  if (snap?.label !== column.label) return '—';
-  return snap.answer.trim().replaceAll(',', ', ') || '—';
+function renderAnswer(answer: string | undefined): string {
+  const trimmed = answer?.trim();
+  if (!trimmed) return '—';
+  return trimmed.replaceAll(',', ', ');
 }

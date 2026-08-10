@@ -115,7 +115,7 @@ describe('EventRsvpResponsesSection', () => {
     expect(screen.getByText('vegan')).toBeInTheDocument();
   });
 
-  it('keeps edited-question answers under their snapshot labels', () => {
+  it('shows answers under the current question when the snapshot label differs', () => {
     render(
       <EventRsvpResponsesSection
         event={makeEvent({
@@ -142,7 +142,37 @@ describe('EventRsvpResponsesSection', () => {
     );
 
     expect(screen.getByText('new question')).toBeInTheDocument();
-    expect(screen.getByText('old question')).toBeInTheDocument();
+    expect(screen.queryByText('old question')).not.toBeInTheDocument();
     expect(screen.getByText('old answer')).toBeInTheDocument();
+  });
+
+  it('tallies choice answers even when the snapshot label was renamed', () => {
+    render(
+      <EventRsvpResponsesSection
+        event={makeEvent({
+          rsvpQuestions: [
+            {
+              id: 'q1',
+              label: 'transport now',
+              fieldType: QuestionType.Select,
+              options: ['driving', 'transit'],
+              required: true,
+            },
+          ],
+          guests: [
+            makeGuest({
+              userId: 'a',
+              name: 'alice',
+              status: RsvpServerStatus.Attending,
+              questionnaireResponses: {
+                q1: { label: 'transport before', answer: 'driving' },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('list')).toHaveTextContent(/driving\s*1/);
   });
 });
