@@ -4,8 +4,7 @@ from community.models import Event, EventRSVP, PollAvailability, PollOption, RSV
 
 
 def _yes_votes(winning_option: PollOption) -> list:
-    # voted_at is auto_now, so this orders by last change, not first vote —
-    # the only ordering signal PollVote records.
+    # voted_at is auto_now, so this orders by last vote change, not first vote cast.
     return list(
         winning_option.votes.filter(availability=PollAvailability.YES)
         .select_related("user")
