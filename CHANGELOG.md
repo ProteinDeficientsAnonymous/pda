@@ -1,3 +1,10 @@
+## [0.91.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.1...v0.91.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1372 - allow dev-test event to be both host and guest ([#1377](https://github.com/ProteinDeficientsAnonymous/pda/issues/1377)) ([4a6f9d8](https://github.com/ProteinDeficientsAnonymous/pda/commit/4a6f9d8f8d73bf58cb2e748cc1c3ab08ca177bb7))
+
 ## [0.91.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.0...v0.91.1) (2026-08-10)
 
 
