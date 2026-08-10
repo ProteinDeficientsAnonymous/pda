@@ -33,9 +33,9 @@ function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/ev1/attendance']}>
+      <MemoryRouter initialEntries={['/events/ev1/check-in']}>
         <Routes>
-          <Route path="/events/:id/attendance" element={<EventAttendanceScreen />} />
+          <Route path="/events/:id/check-in" element={<EventAttendanceScreen />} />
           <Route path="/events/:id" element={<div>event detail</div>} />
         </Routes>
       </MemoryRouter>

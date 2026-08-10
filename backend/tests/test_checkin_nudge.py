@@ -143,8 +143,8 @@ class TestSendCheckinNudge:
         send_checkin_nudge(event)
 
         sent = fake_email_sender.send.call_args.kwargs
-        assert f"/events/{event.pk}/attendance" in sent["html"]
-        assert f"/events/{event.pk}/attendance" in sent["text"]
+        assert f"/events/{event.pk}/check-in" in sent["html"]
+        assert f"/events/{event.pk}/check-in" in sent["text"]
 
 
 @pytest.mark.django_db

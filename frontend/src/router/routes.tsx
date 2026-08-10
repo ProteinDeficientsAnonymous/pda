@@ -112,7 +112,7 @@ export const router = createBrowserRouter([
                   { path: '/events/mine', element: el(<MyEvents />) },
                   { path: '/events/add', element: el(<EventCreate />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
-                  { path: '/events/:id/attendance', element: el(<EventAttendance />) },
+                  { path: '/events/:id/check-in', element: el(<EventAttendance />) },
                   { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
