@@ -7,8 +7,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
-import { makeEvent, makeGuest } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventMemberSection } from './EventMemberSection';
 
@@ -57,43 +56,22 @@ const BASE_EVENT = makeEvent({
   guests: [],
 });
 
-const CREATOR: User = {
+const CREATOR = makeUser({
   id: 'user-creator',
   phoneNumber: '+12125550001',
   firstName: 'Alice',
   lastName: '',
   fullName: 'Alice',
-  nickname: '',
-  email: '',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
-const STRANGER: User = {
+const STRANGER = {
   ...CREATOR,
   id: 'user-stranger',
   firstName: 'Stranger',
   fullName: 'Stranger',
 };
 
-const MANAGER: User = {
+const MANAGER = {
   ...STRANGER,
   id: 'user-manager',
   firstName: 'Manager',
@@ -131,7 +109,7 @@ const ACCEPTED_COHOST_EVENT: Event = {
   coHostPhotoUrls: ['', ''],
 };
 
-const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
+const COHOST_BOB = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
 
 describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {

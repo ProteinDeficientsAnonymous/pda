@@ -9,7 +9,7 @@ import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { makeMember } from '@/test/fixtures';
+import { makeMember, makeUser } from '@/test/fixtures';
 
 import MembersScreen from './MembersScreen';
 
@@ -31,34 +31,15 @@ vi.mock('@/api/roles', () => ({
 
 const mockUseUsers = vi.mocked(useUsers);
 
-const baseUser: User = {
+const baseUser = makeUser({
   id: 'me',
   phoneNumber: '+15551230000',
   firstName: 'Admin',
   lastName: 'User',
   fullName: 'Admin User',
-  nickname: '',
   email: 'admin@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
   weekStart: 'monday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
   return {
