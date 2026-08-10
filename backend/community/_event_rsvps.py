@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
@@ -220,14 +221,15 @@ def _rsvp_unchanged(
     )
 
 
-def _apply_rsvp_in_transaction(  # noqa: PLR0913
-    event_id,
-    user,
-    status: str,
-    has_plus_one: bool,
-    paid_confirmed: bool = False,
-    answers: dict[str, str] | None = None,
-) -> tuple[str, list[str], bool]:
+@dataclass(frozen=True, slots=True)
+class _RsvpApply:
+    status: str
+    has_plus_one: bool = False
+    paid_confirmed: bool = False
+    answers: dict[str, str] | None = None
+
+
+def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
     Returns (final_status, promoted_user_ids, created). promoted_user_ids is the
@@ -251,15 +253,15 @@ def _apply_rsvp_in_transaction(  # noqa: PLR0913
     created = existing is None
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
-    if not paid_confirmed and requires_payment_gate(event, existing, status):
+    if not rsvp.paid_confirmed and requires_payment_gate(event, existing, rsvp.status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
-    answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, answers)
+    final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
+    answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, rsvp.answers)
 
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
-    new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
+    new_confirmed_at = _resolve_paid_confirmed_at(existing, rsvp.paid_confirmed, final_status)
 
     if _rsvp_unchanged(
         existing,
@@ -308,10 +310,12 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
             event_id,
             request.auth,
-            payload.status,
-            payload.has_plus_one,
-            payload.paid_confirmed,
-            payload.questionnaire_responses,
+            _RsvpApply(
+                status=payload.status,
+                has_plus_one=payload.has_plus_one,
+                paid_confirmed=payload.paid_confirmed,
+                answers=payload.questionnaire_responses,
+            ),
         )
 
     sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
