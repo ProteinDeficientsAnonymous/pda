@@ -105,7 +105,7 @@ describe('EventDetailKebabMenu', () => {
     await openMenu();
 
     const checkIn = screen.getByRole('menuitem', { name: 'check-in' });
-    expect(checkIn).toHaveAttribute('href', '/events/ev1/attendance');
+    expect(checkIn).toHaveAttribute('href', '/events/ev1/check-in');
   });
 
   it('hides check-in report when the event has not ended', async () => {

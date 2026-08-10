@@ -91,7 +91,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
             </MenuLink>
           ) : null}
           <MenuLink
-            to={`/events/${eventId}/attendance`}
+            to={`/events/${eventId}/check-in`}
             onSelect={() => {
               setOpen(false);
             }}
