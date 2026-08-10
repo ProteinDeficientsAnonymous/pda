@@ -1,3 +1,10 @@
+## [0.90.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.2...v0.90.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* **seed:** recreate join form questions in seed_staging ([#1359](https://github.com/ProteinDeficientsAnonymous/pda/issues/1359)) ([cf7e40e](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf7e40e6b87ad5671daf1ae1398f32c8715e9619))
+
 ## [0.90.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.1...v0.90.2) (2026-08-10)
 
 
