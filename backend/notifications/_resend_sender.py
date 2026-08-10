@@ -2,6 +2,7 @@
 
 import logging
 import time
+import uuid
 
 import resend
 from django.conf import settings
@@ -64,13 +65,19 @@ class ResendSender:
         # holds a request thread for up to 30s on a hung connection.
         resend.default_http_client = resend.RequestsClient(timeout=_REQUEST_TIMEOUT_SECONDS)
 
-    def _attempt_send(self, params: dict, masked: str, attempt: int) -> SendResult:
+    def _attempt_send(
+        self, params: dict, masked: str, attempt: int, idempotency_key: str
+    ) -> SendResult:
         """Perform a single send and log success.
 
         Never catches — the caller owns the retry/error policy. Returns a
         successful SendResult; on failure the underlying exception propagates.
         """
-        response = resend.Emails.send(params)
+        # A 5xx/429 can come back after Resend already queued the email, so a
+        # bare retry delivers a duplicate. The key is stable across attempts of
+        # one logical send, so Resend dedupes them (24h window).
+        options: resend.Emails.SendOptions = {"idempotency_key": idempotency_key}
+        response = resend.Emails.send(params, options)
         # SendResponse is a dict subclass; access id via .get() for safety
         message_id = response.get("id") if isinstance(response, dict) else None
         logger.info(
@@ -103,12 +110,13 @@ class ResendSender:
             "text": text,
         }
         masked = mask_recipient(to)
+        idempotency_key = str(uuid.uuid4())
         last_error: Exception | None = None
         attempt = 0
 
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             try:
-                return self._attempt_send(params, masked, attempt)
+                return self._attempt_send(params, masked, attempt, idempotency_key)
             except ResendError as exc:
                 last_error = exc
                 if attempt < _MAX_ATTEMPTS and _is_retryable(exc):

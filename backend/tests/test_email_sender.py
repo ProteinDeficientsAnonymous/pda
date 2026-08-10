@@ -149,6 +149,29 @@ class TestResendSender:
         assert result.provider_message_id == "msg_after_retry"
         assert mock_send.call_count == 2
 
+    def test_retry_reuses_idempotency_key(self):
+        """Resend can queue the email then 5xx; a fresh key on retry would duplicate it."""
+        transient = RateLimitError(
+            code="429", error_type="rate_limit_exceeded", message="slow down"
+        )
+        with patch.object(_resend_sender.time, "sleep"):
+            with patch(
+                "resend.Emails.send",
+                side_effect=[transient, {"id": "msg_after_retry"}],
+            ) as mock_send:
+                ResendSender().send(to="user@example.com", subject="hi", html="<p>x</p>", text="x")
+        keys = [call.args[1]["idempotency_key"] for call in mock_send.call_args_list]
+        assert len(keys) == 2
+        assert keys[0] == keys[1]
+
+    def test_separate_sends_use_distinct_idempotency_keys(self):
+        with patch("resend.Emails.send", return_value={"id": "m"}) as mock_send:
+            sender = ResendSender()
+            for _ in range(2):
+                sender.send(to="user@example.com", subject="hi", html="<p>x</p>", text="x")
+        keys = [call.args[1]["idempotency_key"] for call in mock_send.call_args_list]
+        assert keys[0] != keys[1]
+
     def test_send_does_not_retry_client_error(self):
         err = ValidationError(code="400", error_type="validation_error", message="bad")
         with patch("resend.Emails.send", side_effect=err) as mock_send:
