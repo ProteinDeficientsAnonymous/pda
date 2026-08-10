@@ -237,6 +237,26 @@ class TestOnboardingConsent:
         assert needs_onboarding_user.guidelines_consent_at is None
         assert needs_onboarding_user.sms_consent_at is None
 
+    def test_contact_privacy_stamped_without_being_requested(
+        self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
+    ):
+        needs_onboarding_user.contact_privacy_consent_at = None
+        needs_onboarding_user.save(update_fields=["contact_privacy_consent_at"])
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={
+                "new_password": "abcd1234ABCD!",
+                "first_name": "Newby",
+                "email": "newby@example.com",
+            },
+            content_type="application/json",
+            **needs_onboarding_auth_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["needs_contact_privacy_consent"] is False
+        needs_onboarding_user.refresh_from_db()
+        assert needs_onboarding_user.contact_privacy_consent_at is not None
+
     def test_accept_does_not_overwrite_existing_consent(
         self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
     ):
