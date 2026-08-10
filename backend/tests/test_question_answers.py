@@ -1,5 +1,3 @@
-"""Unit tests for shared question-answer validation helpers."""
-
 import pytest
 from community._question_answers import (
     assert_checkbox_members,

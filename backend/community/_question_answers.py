@@ -1,5 +1,3 @@
-"""Shared answer validation helpers for question surfaces."""
-
 from collections.abc import Sequence
 
 from community._validation import raise_validation

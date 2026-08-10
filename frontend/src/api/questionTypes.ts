@@ -1,4 +1,3 @@
-/** Full question-type catalog wire values (OpenAPI `QuestionType`). */
 export const QuestionType = {
   Text: 'text',
   Textarea: 'textarea',
