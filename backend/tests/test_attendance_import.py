@@ -102,7 +102,7 @@ class TestPreviewEndpoint:
     def test_unmatched_name_goes_to_needs_review(self, api_client, events_admin):
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
-            {"csv_file": _csv(["Nobody Here,Maybe,No,2026-01-01 00:00:00"])},
+            {"csv_file": _csv(["Nobody Here,Maybe,Yes,2026-01-01 00:00:00"])},
             **_auth(events_admin),
         )
         body = response.json()
@@ -111,6 +111,23 @@ class TestPreviewEndpoint:
         row = body["needs_review"][0]
         assert row["raw_name"] == "Nobody Here"
         assert row["candidates"] == []
+
+    def test_not_checked_in_rows_are_dropped(self, api_client, events_admin, alice):
+        response = api_client.post(
+            "/api/community/events/attendance-import/preview/",
+            {
+                "csv_file": _csv(
+                    [
+                        "Alice Smith,Going,No,2026-01-01 00:00:00",
+                        "Nobody Here,Maybe,No,2026-01-01 00:00:00",
+                    ]
+                )
+            },
+            **_auth(events_admin),
+        )
+        body = response.json()
+        assert body["matched"] == []
+        assert body["needs_review"] == []
 
     def test_ambiguous_name_goes_to_needs_review_with_candidates(self, api_client, events_admin):
         User.objects.create_user(
