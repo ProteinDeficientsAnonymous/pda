@@ -8,6 +8,7 @@ import type { components } from '@/api/types.gen';
 
 import {
   JOIN_QUESTION_TYPE_OPTIONS,
+  normalizeQuestionOptions,
   QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
@@ -54,6 +55,10 @@ describe('question type options', () => {
     expect(questionOptionsError(true, [])).toBe('add at least one option');
     expect(questionOptionsError(true, ['first'])).toBeNull();
     expect(questionOptionsError(false, [])).toBeNull();
+  });
+
+  it('should trim and drop blank options', () => {
+    expect(normalizeQuestionOptions(['  a ', '', 'b', '   '])).toEqual(['a', 'b']);
   });
 
   it('should expose the join subset projected from catalog metadata', () => {

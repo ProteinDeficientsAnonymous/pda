@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -15,8 +15,8 @@ import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
   missingRequiredQuestionIds,
-  rsvpQuestionsApplyToStatus,
   type RsvpAnswerValue,
+  rsvpQuestionsApplyToStatus,
 } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 
@@ -58,15 +58,16 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   );
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const [draftStatus, setDraftStatus] = useState(status);
+  const [statusFromProps, setStatusFromProps] = useState(status);
   const [pendingStatus, setPendingStatus] = useState<RsvpInputStatus | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
   const needsPaymentFor = usePaymentGate(event);
-  const showQuestions = event.rsvpQuestions.length > 0 && rsvpQuestionsApplyToStatus(draftStatus);
-
-  useEffect(() => {
+  if (status !== statusFromProps) {
+    setStatusFromProps(status);
     setDraftStatus(status);
-  }, [status]);
+  }
+  const showQuestions = event.rsvpQuestions.length > 0 && rsvpQuestionsApplyToStatus(draftStatus);
 
   function filledQuestionnaireResponses(forStatus: string): Record<string, RsvpAnswerValue> {
     if (!rsvpQuestionsApplyToStatus(forStatus)) return {};

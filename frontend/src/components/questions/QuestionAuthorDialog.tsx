@@ -8,8 +8,12 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 
-import { normalizeQuestionOptions, QuestionOptionsEditor } from './QuestionOptionsEditor';
-import { questionOptionsError, questionTypeWantsOptions } from './questionTypeOptions';
+import { QuestionOptionsEditor } from './QuestionOptionsEditor';
+import {
+  normalizeQuestionOptions,
+  questionOptionsError,
+  questionTypeWantsOptions,
+} from './questionTypeOptions';
 
 export interface QuestionAuthorValues<T extends string = QuestionType> {
   label: string;

@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { QuestionType } from '@/api/questionTypes';
-
 import { RsvpServerStatus } from '@/models/event';
 
 import {
   isAnswerFilled,
   missingRequiredQuestionIds,
-  rsvpQuestionsApplyToStatus,
   type RsvpQuestionDraft,
+  rsvpQuestionsApplyToStatus,
   wantsOptions,
 } from './rsvpQuestions';
 

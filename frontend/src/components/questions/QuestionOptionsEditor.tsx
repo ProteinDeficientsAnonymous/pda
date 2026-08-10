@@ -8,10 +8,6 @@ interface Props {
   maxLength?: number;
 }
 
-export function normalizeQuestionOptions(options: readonly string[]): string[] {
-  return options.map((option) => option.trim()).filter(Boolean);
-}
-
 export function QuestionOptionsEditor({ options, onChange, hint, maxLength }: Props) {
   const rows = options.length === 0 ? [''] : [...options];
 

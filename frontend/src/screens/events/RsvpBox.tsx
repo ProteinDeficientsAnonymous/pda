@@ -10,9 +10,9 @@ import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
   missingRequiredQuestionIds,
-  rsvpQuestionsApplyToStatus,
   type RsvpAnswerValue,
   type RsvpQuestionDraft,
+  rsvpQuestionsApplyToStatus,
 } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 

@@ -3,11 +3,11 @@ import { useState } from 'react';
 
 import { DEFAULT_RSVP_QUESTION_TYPE } from '@/api/eventRsvpQuestions';
 import { QuestionType } from '@/api/questionTypes';
+import { QuestionOptionsEditor } from '@/components/questions/QuestionOptionsEditor';
 import {
   normalizeQuestionOptions,
-  QuestionOptionsEditor,
-} from '@/components/questions/QuestionOptionsEditor';
-import { questionOptionsError } from '@/components/questions/questionTypeOptions';
+  questionOptionsError,
+} from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';

@@ -14,7 +14,10 @@ import { eventKeys } from './events';
 import { queryClient } from './queryClient';
 
 vi.mock('./client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./client')>();
+  const actual = (await importOriginal()) as {
+    apiClient: Record<string, unknown>;
+    [key: string]: unknown;
+  };
   return {
     ...actual,
     apiClient: {

@@ -31,8 +31,8 @@ import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
   missingRequiredQuestionIds,
-  rsvpQuestionsApplyToStatus,
   type RsvpAnswerValue,
+  rsvpQuestionsApplyToStatus,
 } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 

@@ -2,13 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { normalizeQuestionOptions, QuestionOptionsEditor } from './QuestionOptionsEditor';
-
-describe('normalizeQuestionOptions', () => {
-  it('should trim and drop blank options', () => {
-    expect(normalizeQuestionOptions(['  a ', '', 'b', '   '])).toEqual(['a', 'b']);
-  });
-});
+import { QuestionOptionsEditor } from './QuestionOptionsEditor';
 
 describe('QuestionOptionsEditor', () => {
   it('should render each option as its own field', () => {

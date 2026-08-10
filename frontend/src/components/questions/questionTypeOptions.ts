@@ -68,3 +68,7 @@ export function questionOptionsError(
 ): string | null {
   return wantsOptions && options.length === 0 ? 'add at least one option' : null;
 }
+
+export function normalizeQuestionOptions(options: readonly string[]): string[] {
+  return options.map((option) => option.trim()).filter(Boolean);
+}
