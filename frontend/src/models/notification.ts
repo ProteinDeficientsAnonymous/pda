@@ -14,6 +14,7 @@ export const NotificationType = {
   EventComment: 'event_comment',
   CommentReaction: 'comment_reaction',
   RsvpDeclinedNote: 'rsvp_declined_note',
+  RsvpStatusChanged: 'rsvp_status_changed',
   CheckinNudge: 'checkin_nudge',
 } as const;
 
