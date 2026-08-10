@@ -6,8 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as EventWritesModule from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import type { User } from '@/models/user';
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -33,14 +32,11 @@ vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
 
 import { EventForm } from './EventForm';
 
-const HOST: User = {
+const HOST = makeUser({
   id: 'creator',
   fullName: 'creator person',
   phoneNumber: '+15551110000',
-  photoUrl: '',
-  roles: [],
-  permissions: [],
-} as unknown as User;
+});
 
 function renderForm(existing?: Event) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

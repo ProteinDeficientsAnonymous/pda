@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFaq } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
-import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import FaqScreen from './FaqScreen';
 
@@ -28,35 +28,12 @@ const baseFaqData = {
   updatedAt: '2024-01-01T00:00:00Z',
 };
 
-const baseUser: User = {
+const baseUser = makeUser({
   id: '1',
   phoneNumber: '+15551234567',
-  firstName: 'Test',
-  lastName: 'User',
-  fullName: 'Test User',
-  nickname: '',
   email: 'test@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weeklyDigestOptOut: false,
   weekStart: 'monday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 function renderWith(component: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -86,7 +63,7 @@ describe('FaqScreen', () => {
   });
 
   it('hides edit button for member without edit_faq permission', () => {
-    const memberUser: User = {
+    const memberUser = {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'member', isDefault: true, permissions: [] }],
     };
@@ -103,7 +80,7 @@ describe('FaqScreen', () => {
   });
 
   it('shows edit button for user with edit_faq permission', () => {
-    const editorUser: User = {
+    const editorUser = {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'faq-editor', isDefault: true, permissions: ['edit_faq'] }],
     };

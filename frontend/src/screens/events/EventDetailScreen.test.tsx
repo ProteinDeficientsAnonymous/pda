@@ -8,7 +8,7 @@ import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 import EventDetailScreen from './EventDetailScreen';
 
@@ -50,35 +50,14 @@ const BASE_EVENT = makeEvent({
   invitePermission: InvitePermission.CoHostsOnly,
 });
 
-const AUTHED_USER: User = {
+const AUTHED_USER = makeUser({
   id: 'user-me',
   phoneNumber: '+12125550001',
   firstName: 'Test',
   lastName: 'Member',
   fullName: 'Test Member',
-  nickname: '',
   email: 'test@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weeklyDigestOptOut: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

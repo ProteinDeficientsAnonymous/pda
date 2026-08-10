@@ -102,6 +102,12 @@ class TestSendWeeklyDigestCommand:
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
+    def test_skips_paused_member(self, fake_sender):
+        _make_member("+12025550212", is_paused=True)
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_not_called()
+
     def test_email_links_to_settings(self, fake_sender):
         _make_member("+12025550211")
         _make_event("potluck", 2)

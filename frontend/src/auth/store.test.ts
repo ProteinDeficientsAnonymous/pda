@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as authApi from '@/api/auth';
-import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import { useAuthStore } from './store';
 
@@ -27,35 +27,14 @@ vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
 
-const mockUser: User = {
+const mockUser = makeUser({
   id: 'user-1',
   phoneNumber: '+12125551234',
   firstName: 'Alice',
   lastName: '',
   fullName: 'Alice',
-  nickname: '',
   email: 'alice@example.com',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weeklyDigestOptOut: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -171,7 +150,7 @@ describe('useAuthStore', () => {
   describe('completeOnboarding', () => {
     it('sets user without touching profileStepActive by default', async () => {
       useAuthStore.setState({ status: 'authed', user: mockUser, profileStepActive: false });
-      const updated: User = { ...mockUser, needsOnboarding: false };
+      const updated = { ...mockUser, needsOnboarding: false };
       vi.mocked(authApi.completeOnboarding).mockResolvedValueOnce(updated);
 
       await useAuthStore.getState().completeOnboarding({ newPassword: 'abcd1234ABCD!' });
@@ -187,7 +166,7 @@ describe('useAuthStore', () => {
       // the user away (to /guidelines or /consent) before the second update
       // landed. Setting both in the same set() call closes that gap.
       useAuthStore.setState({ status: 'authed', user: mockUser, profileStepActive: false });
-      const updated: User = { ...mockUser, needsOnboarding: false };
+      const updated = { ...mockUser, needsOnboarding: false };
       vi.mocked(authApi.completeOnboarding).mockResolvedValueOnce(updated);
 
       await useAuthStore
