@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-import { extractPollError, useVotePoll } from '@/api/eventPolls';
+import { extractPollError, useFreshMyVotes, useVotePoll } from '@/api/eventPolls';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { ALL_VOTE_CHOICES, type EventPoll, VoteChoice } from '@/models/eventPoll';
@@ -17,10 +17,15 @@ interface Props {
 
 export function PollRespondDialog({ open, onClose, poll }: Props) {
   const vote = useVotePoll(poll.eventId);
+  const getFreshMyVotes = useFreshMyVotes(poll.eventId);
 
   async function onPick(optionId: string, choice: VoteChoice) {
-    const merged: Record<string, VoteChoice> = { ...poll.myVotes, [optionId]: choice };
+    const isRetract = poll.myVotes[optionId] === choice;
     try {
+      const freshVotes = await getFreshMyVotes();
+      const merged: Record<string, VoteChoice> = isRetract
+        ? Object.fromEntries(Object.entries(freshVotes).filter(([id]) => id !== optionId))
+        : { ...freshVotes, [optionId]: choice };
       await vote.mutateAsync(merged);
     } catch (err) {
       toast.error(extractPollError(err));
@@ -33,7 +38,7 @@ export function PollRespondDialog({ open, onClose, poll }: Props) {
     <Dialog open={open} onClose={onClose} title="respond to poll">
       <div className="flex flex-col gap-3">
         <p className="text-foreground-secondary text-sm">
-          pick one per option — tap again to switch
+          pick one per option — tap again to clear
         </p>
 
         <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto">
