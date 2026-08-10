@@ -2,7 +2,7 @@ import json
 
 import pytest
 from community.models import Event, EventComment, EventCommentReaction, EventRSVP, RSVPStatus
-from django.core.cache import cache
+from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
@@ -187,7 +187,7 @@ class TestReactionToggle:
     def test_rate_limit_kicks_in(self, api_client, rsvp_headers, event_with_rsvp, rsvp_user):
         """11th write in 60s should 429. Toggles back-and-forth to avoid the
         unique-constraint blocking the second create — toggle on, off, on, off..."""
-        cache.clear()
+        caches["ratelimit"].clear()
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
         url = f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/"
         for _ in range(10):

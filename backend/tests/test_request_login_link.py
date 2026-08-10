@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import pytest
-from django.core.cache import cache
+from django.core.cache import caches
 from django.utils import timezone
 from notifications.email_sender import SendResult
 from notifications.models import Notification, NotificationType
@@ -28,9 +28,9 @@ _PHONE = "+12025558800"
 
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
-    cache.clear()
+    caches["ratelimit"].clear()
     yield
-    cache.clear()
+    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
@@ -215,7 +215,7 @@ class TestRequestLoginLink:
         assert user.login_link_requested is True
 
     def test_rate_limited_after_five_requests_per_minute(self, api_client):
-        cache.clear()
+        caches["ratelimit"].clear()
         for _ in range(5):
             resp = api_client.post(
                 _URL,
@@ -230,7 +230,7 @@ class TestRequestLoginLink:
         )
         assert resp.status_code == 429
         assert resp.json()["detail"][0]["code"] == "rate.limited"
-        cache.clear()
+        caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db

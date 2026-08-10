@@ -14,11 +14,11 @@ from tests._asserts import assert_error_code
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
     # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import cache
+    from django.core.cache import caches
 
-    cache.clear()
+    caches["ratelimit"].clear()
     yield
-    cache.clear()
+    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
@@ -121,9 +121,9 @@ class TestMagicLogin:
         assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
 
     def test_magic_login_rate_limited(self, api_client, test_user):
-        from django.core.cache import cache
+        from django.core.cache import caches
 
-        cache.clear()
+        caches["ratelimit"].clear()
         # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
         for _ in range(5):
             resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
@@ -133,9 +133,9 @@ class TestMagicLogin:
         assert resp.json()["detail"][0]["code"] == "rate.limited"
 
     def test_rate_limit_survives_spoofed_xff(self, api_client, settings):
-        from django.core.cache import cache
+        from django.core.cache import caches
 
-        cache.clear()
+        caches["ratelimit"].clear()
         # Railway puts exactly one trusted proxy in front of the app.
         settings.TRUSTED_PROXY_COUNT = 1
         url = "/api/auth/magic-login/00000000-0000-0000-0000-000000000000/"

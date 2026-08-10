@@ -4,7 +4,7 @@ import pytest
 from community._validation import Code
 from community.api import EventPatchIn
 from community.models import Event, EventStatus
-from django.core.cache import cache
+from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -469,7 +469,7 @@ class TestEventManagement:
 @pytest.mark.django_db
 class TestEventRateLimiting:
     def test_create_event_rate_limited(self, api_client, manage_events_headers):
-        cache.clear()
+        caches["ratelimit"].clear()
         for i in range(10):
             resp = api_client.post(
                 "/api/community/events/",
@@ -487,4 +487,4 @@ class TestEventRateLimiting:
         )
         assert resp.status_code == 429
         assert resp.json()["detail"][0]["code"] == "rate.limited"
-        cache.clear()
+        caches["ratelimit"].clear()

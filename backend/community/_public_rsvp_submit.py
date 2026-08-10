@@ -5,8 +5,8 @@ from typing import NoReturn
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
-from django.core.cache import cache
-from django.db import IntegrityError, transaction
+from django.core.cache import caches
+from django.db import DatabaseError, IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
@@ -155,11 +155,31 @@ def _send_confirmation_email(
 
 _RECOGNIZED_EMAIL_COOLDOWN_SECONDS = 300
 
+_ratelimit_cache = caches["ratelimit"]
+
+
+def _cooldown_already_active(request, user: User, cooldown_key: str) -> bool:
+    """True only on a genuine cooldown hit; a cache DB error must not be treated as one."""
+    try:
+        return not _ratelimit_cache.add(
+            cooldown_key, True, timeout=_RECOGNIZED_EMAIL_COOLDOWN_SECONDS
+        )
+    except DatabaseError as exc:
+        audit_log(
+            logging.WARNING,
+            "public_rsvp_cooldown_cache_error",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=str(user.pk), details={"error": str(exc)}
+            ),
+        )
+        return False
+
 
 def _send_recognized_login_link(request, user: User) -> None:
     """Email a returning non-member their manage link; best-effort, failures don't block the response."""
     cooldown_key = f"rsvp-phone-check-email:{user.pk}"
-    if not cache.add(cooldown_key, True, timeout=_RECOGNIZED_EMAIL_COOLDOWN_SECONDS):
+    if _cooldown_already_active(request, user, cooldown_key):
         # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return

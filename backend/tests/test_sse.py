@@ -31,11 +31,11 @@ def _auth_headers(user) -> dict:
 
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
-    from django.core.cache import cache
+    from django.core.cache import caches
 
-    cache.clear()
+    caches["ratelimit"].clear()
     yield
-    cache.clear()
+    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
