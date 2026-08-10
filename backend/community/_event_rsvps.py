@@ -63,8 +63,6 @@ def _resolve_rsvp_status(
     if not event.allow_plus_ones:
         has_plus_one = False
 
-    # A client may submit "waitlisted" directly (e.g. a waitlisted member editing
-    # their +1) — treat it as requesting attendance and let capacity decide.
     if (
         requested_status not in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED)
         or event.max_attendees is None

@@ -151,8 +151,6 @@ class TestSetGuestRsvp:
     def test_accepts_waitlisted_as_input_status(
         self, api_client, host_rsvp_event, host_user, guest
     ):
-        # host_rsvp_event has no max_attendees, so capacity never kicks in —
-        # a host-submitted "waitlisted" is stored verbatim.
         response = api_client.post(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.WAITLISTED},

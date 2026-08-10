@@ -238,8 +238,6 @@ class TestPostMyRsvps:
     def test_waitlisted_status_accepted(
         self, api_client, nonmember, official_event, fake_email_sender
     ):
-        # official_event has no max_attendees, so capacity never kicks in — a
-        # client-submitted "waitlisted" is accepted and stored verbatim.
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(

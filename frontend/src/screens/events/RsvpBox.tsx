@@ -51,11 +51,6 @@ export function RsvpBox({
   onRemove,
   onClose,
 }: Props) {
-  // The picker only ever offers attending/maybe/cant_go — waitlisted isn't a
-  // pickable choice, it's what attending resolves to at capacity. Still
-  // choosing "attending" while having started out waitlisted resubmits as
-  // waitlisted so the backend re-runs capacity rather than treating this as
-  // a brand new attending request.
   const initialPickerStatus =
     initialStatus === RsvpServerStatus.Waitlisted ? RsvpStatus.Attending : initialStatus;
   const [pickerStatus, setPickerStatus] = useState<RsvpInputStatus>(initialPickerStatus);
@@ -66,7 +61,6 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  // Already waitlisted — they're editing their spot in the queue, not joining it.
   const alreadyWaitlisted = initialStatus === RsvpServerStatus.Waitlisted;
   const joiningWaitlist =
     pickerStatus === RsvpStatus.Attending && atCapacity && !alreadyWaitlisted;

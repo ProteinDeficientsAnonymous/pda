@@ -335,8 +335,6 @@ class TestPublicRsvpValidation:
         assert first_code(response) == Code.Event.RSVP_INVALID_STATUS
 
     def test_waitlisted_status_accepted(self, api_client, official_event, fake_email_sender):
-        # official_event has no max_attendees, so capacity never kicks in — a
-        # client-submitted "waitlisted" is accepted and stored verbatim.
         response = post(api_client, official_event, status=RSVPStatus.WAITLISTED)
         assert response.status_code == 200
         assert response.json()["rsvp"]["status"] == RSVPStatus.WAITLISTED
