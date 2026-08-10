@@ -46,6 +46,9 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
     [data, query, sort, selectedRoles],
   );
 
+  const hasFilters = query.trim() !== '' || selectedRoles.size > 0;
+  const countText = formatCountText(visible.length, data.length, hasFilters);
+
   if (isPending) return <ContentLoading />;
   if (isError)
     return (
@@ -114,9 +117,7 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
       </div>
 
       {data.length > 0 ? (
-        <p className="text-foreground-tertiary mb-3 text-sm">
-          {data.length === 1 ? '1 user' : `${String(data.length)} users`}
-        </p>
+        <p className="text-foreground-tertiary mb-3 text-sm">{countText}</p>
       ) : null}
 
       <MembersList
@@ -308,6 +309,13 @@ function RoleFilter({
       ) : null}
     </div>
   );
+}
+
+function formatCountText(visibleCount: number, totalCount: number, hasFilters: boolean): string {
+  if (hasFilters) {
+    return `${String(visibleCount)} of ${String(totalCount)} ${totalCount === 1 ? 'user' : 'users'}`;
+  }
+  return visibleCount === 1 ? '1 user' : `${String(visibleCount)} users`;
 }
 
 function filterAndSort(

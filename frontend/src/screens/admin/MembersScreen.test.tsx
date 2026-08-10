@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
@@ -22,6 +23,10 @@ vi.mock('@/api/users', () => ({
     isPending: false,
     reset: vi.fn(),
   })),
+}));
+
+vi.mock('@/api/roles', () => ({
+  useRoles: vi.fn(),
 }));
 
 const mockUseUsers = vi.mocked(useUsers);
@@ -91,6 +96,11 @@ function mockUsersResult(overrides: Partial<ReturnType<typeof useUsers>>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(useRoles).mockReturnValue({
+    data: [],
+    isPending: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useRoles>);
   useAuthStore.setState({
     status: 'authed',
     user: adminUser(),
@@ -343,5 +353,84 @@ describe('MembersScreen', () => {
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(1);
     expect(links[0]?.textContent).toContain('Ada Member');
+  });
+
+  it('shows total count when no filters are active', () => {
+    mockUsersResult({
+      data: [
+        makeMember({ id: 'm1', fullName: 'Ada Lovelace' }),
+        makeMember({ id: 'm2', fullName: 'Grace Hopper' }),
+        makeMember({ id: 'm3', fullName: 'Alan Turing' }),
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('3 users')).toBeInTheDocument();
+  });
+
+  it('shows filtered count as "N of M" when search filter is active', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({ id: 'm1', fullName: 'Ada Lovelace' }),
+        makeMember({ id: 'm2', fullName: 'Grace Hopper' }),
+        makeMember({ id: 'm3', fullName: 'Alan Turing' }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/^search$/i), 'Ada');
+
+    expect(screen.getByText('1 of 3 users')).toBeInTheDocument();
+  });
+
+  it('shows filtered count as "N of M" when role filter is active', async () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
+      accessToken: 'tok',
+    });
+    vi.mocked(useRoles).mockReturnValue({
+      data: [
+        { id: 'r1', name: 'organizer', isDefault: false, permissions: [] },
+        { id: 'r2', name: 'core', isDefault: false, permissions: [] },
+      ],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoles>);
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Lovelace',
+          roles: [{ id: 'r1', name: 'organizer', isDefault: false, permissions: [] }],
+        }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Grace Hopper',
+          roles: [{ id: 'r2', name: 'core', isDefault: false, permissions: [] }],
+        }),
+        makeMember({ id: 'm3', fullName: 'Alan Turing', roles: [] }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    // Open the role filter dropdown and select 'organizer'
+    await user.click(screen.getByRole('button', { name: /all roles/i }));
+    await user.click(screen.getByRole('checkbox', { name: 'organizer' }));
+
+    expect(screen.getByText('1 of 3 users')).toBeInTheDocument();
+  });
+
+  it('shows single user count without "of" format', () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', fullName: 'Ada Lovelace' })],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('1 user')).toBeInTheDocument();
   });
 });
