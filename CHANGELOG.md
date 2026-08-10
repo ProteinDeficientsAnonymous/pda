@@ -1,3 +1,10 @@
+## [0.91.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.3...v0.91.4) (2026-08-10)
+
+
+### Bug Fixes
+
+* **events:** RSVP question copy + seed event titles ([#1379](https://github.com/ProteinDeficientsAnonymous/pda/issues/1379)) ([ad9ad65](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad9ad6513cb5f1a36aecaa69452971d984268fde))
+
 ## [0.91.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.2...v0.91.3) (2026-08-10)
 
 
