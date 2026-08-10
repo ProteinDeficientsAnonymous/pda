@@ -286,8 +286,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
-    # Onboarding's profile step already shows the privacy toggles, so the
-    # retroactive /consent gate would be a duplicate prompt (Issue 1360).
+    # The onboarding profile step already shows the privacy toggles.
     stamp_consents(user, [*payload.consent_types, ConsentType.CONTACT_PRIVACY])
     user.save()
     audit_log(
