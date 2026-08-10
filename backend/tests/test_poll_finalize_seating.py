@@ -1,5 +1,3 @@
-"""Finalize seats yes-voters through the shared RSVP write path (Issue 1238)."""
-
 import json
 
 import pytest
