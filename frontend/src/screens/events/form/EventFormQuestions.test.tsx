@@ -31,7 +31,7 @@ describe('EventFormQuestions', () => {
   it('lists questions with type and required marker', () => {
     render(<EventFormQuestions rsvpEnabled questions={[sample]} onQuestionsChange={vi.fn()} />);
     expect(screen.getByText('bring anything?')).toBeInTheDocument();
-    expect(screen.getByText(/long text/)).toBeInTheDocument();
+    expect(screen.getByText(/short answer/)).toBeInTheDocument();
     expect(screen.getByText(/required/)).toBeInTheDocument();
   });
 

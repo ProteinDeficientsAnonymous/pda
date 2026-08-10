@@ -46,7 +46,7 @@ describe('EventRsvpResponsesSection', () => {
         makeGuest({
           userId: 'b',
           name: 'bob',
-          status: RsvpServerStatus.Maybe,
+          status: RsvpServerStatus.Waitlisted,
           questionnaireResponses: {
             q1: { label: 'how are you getting there?', answer: 'transit' },
           },
@@ -54,6 +54,14 @@ describe('EventRsvpResponsesSection', () => {
         makeGuest({
           userId: 'c',
           name: 'cara',
+          status: RsvpServerStatus.Maybe,
+          questionnaireResponses: {
+            q1: { label: 'how are you getting there?', answer: 'bike' },
+          },
+        }),
+        makeGuest({
+          userId: 'd',
+          name: 'dana',
           status: RsvpServerStatus.CantGo,
           questionnaireResponses: {},
         }),
@@ -63,17 +71,19 @@ describe('EventRsvpResponsesSection', () => {
     render(<EventRsvpResponsesSection event={event} />);
 
     expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
-    expect(screen.getByText('2 guests with going / maybe / waitlist')).toBeInTheDocument();
+    expect(screen.getByText('2 guests going or waitlisted')).toBeInTheDocument();
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('bob')).toBeInTheDocument();
     expect(screen.queryByText('cara')).not.toBeInTheDocument();
+    expect(screen.queryByText('dana')).not.toBeInTheDocument();
     expect(screen.getByText('bringing chips')).toBeInTheDocument();
     const tallies = screen.getByRole('list');
     expect(tallies).toHaveTextContent(/driving\s*1/);
     expect(tallies).toHaveTextContent(/transit\s*1/);
+    expect(tallies).not.toHaveTextContent(/bike/);
   });
 
-  it('shows empty state when no going/maybe guests', () => {
+  it('shows empty state when no going or waitlisted guests', () => {
     render(
       <EventRsvpResponsesSection
         event={makeEvent({

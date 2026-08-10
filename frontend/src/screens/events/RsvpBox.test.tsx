@@ -205,6 +205,22 @@ describe('RsvpBox', () => {
     expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
   });
 
+  it('should hide questions when status is maybe', () => {
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
+  });
+
+  it('should allow confirm for maybe without answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Maybe, questionnaireResponses: {} }),
+    );
+  });
+
   it('should block confirm when a required question is unanswered', () => {
     const onConfirm = vi.fn();
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);

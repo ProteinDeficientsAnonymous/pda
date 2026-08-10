@@ -11,7 +11,7 @@ export interface QuestionTypeOption {
 /** Labels / option-requirement flags keyed by catalog wire value. */
 const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>> = {
   [QuestionType.Text]: { label: 'short text', wantsOptions: false },
-  [QuestionType.Textarea]: { label: 'long text', wantsOptions: false },
+  [QuestionType.Textarea]: { label: 'short answer', wantsOptions: false },
   [QuestionType.Number]: { label: 'number', wantsOptions: false },
   [QuestionType.Radio]: { label: 'radio', wantsOptions: true },
   [QuestionType.Select]: { label: 'select', wantsOptions: true },
@@ -67,4 +67,8 @@ export function questionOptionsError(
   options: readonly string[],
 ): string | null {
   return wantsOptions && options.length === 0 ? 'add at least one option' : null;
+}
+
+export function normalizeQuestionOptions(options: readonly string[]): string[] {
+  return options.map((option) => option.trim()).filter(Boolean);
 }

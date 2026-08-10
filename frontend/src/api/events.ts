@@ -1,8 +1,7 @@
 import { type QueryClient, useQuery } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import type { EventStatus } from '@/models/event';
+import type { Event, EventRsvpQuestion, EventStatus } from '@/models/event';
 
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
@@ -49,6 +48,19 @@ export function invalidateEventDetail(qc: QueryClient, eventIdOrSlug: string): v
       return cached?.id === eventIdOrSlug || cached?.slug === eventIdOrSlug;
     },
   });
+}
+
+/** Patch rsvpQuestions on every cached detail entry for this event (uuid or slug keys). */
+export function patchEventDetailRsvpQuestions(
+  qc: QueryClient,
+  eventId: string,
+  rsvpQuestions: EventRsvpQuestion[],
+): void {
+  for (const [key, cached] of qc.getQueriesData<Event>({ queryKey: eventKeys.all })) {
+    if (key[1] !== 'detail' || !cached) continue;
+    if (cached.id !== eventId && key[2] !== eventId) continue;
+    qc.setQueryData(key, { ...cached, rsvpQuestions });
+  }
 }
 
 export async function fetchEvents(status?: EventListStatus): Promise<Event[]> {

@@ -30,7 +30,7 @@ describe('QuestionAuthorDialog', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('should require options for option-backed types and save parsed values', async () => {
+  it('should require options for option-backed types and save filled rows', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(
@@ -48,7 +48,9 @@ describe('QuestionAuthorDialog', () => {
     await user.click(screen.getByRole('button', { name: 'save' }));
     expect(screen.getByRole('alert')).toHaveTextContent('add at least one option');
 
-    await user.type(screen.getByLabelText('options'), 'vegan\nomni');
+    await user.type(screen.getByLabelText('option 1'), 'vegan');
+    await user.click(screen.getByRole('button', { name: /add option/i }));
+    await user.type(screen.getByLabelText('option 2'), 'omni');
     await user.click(screen.getByRole('button', { name: 'save' }));
     expect(onSave).toHaveBeenCalledWith({
       label: 'Meal',

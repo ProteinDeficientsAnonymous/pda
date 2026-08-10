@@ -1,6 +1,8 @@
 import type { EventRsvpQuestion } from '@/models/event';
 
 import { apiClient } from './client';
+import { patchEventDetailRsvpQuestions } from './events';
+import { queryClient } from './queryClient';
 import { QuestionType } from './questionTypes';
 import type { components } from './types.gen';
 
@@ -60,5 +62,9 @@ export async function syncEventRsvpQuestions(
       questions: next.map((question) => questionPayload(question, true)),
     },
   );
-  return data.map(mapRsvpQuestion);
+  const questions = data.map(mapRsvpQuestion);
+  // UpdateEvent caches EventOut before this sync runs; without this patch the
+  // RSVP dialog keeps stale/empty questions while the API still requires answers.
+  patchEventDetailRsvpQuestions(queryClient, eventId, questions);
+  return questions;
 }

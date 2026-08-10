@@ -3,16 +3,18 @@ import { useState } from 'react';
 
 import { DEFAULT_RSVP_QUESTION_TYPE } from '@/api/eventRsvpQuestions';
 import { QuestionType } from '@/api/questionTypes';
-import { questionOptionsError } from '@/components/questions/questionTypeOptions';
+import { QuestionOptionsEditor } from '@/components/questions/QuestionOptionsEditor';
+import {
+  normalizeQuestionOptions,
+  questionOptionsError,
+} from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 
 import {
   newQuestionId,
-  parseOptionsText,
   RSVP_QUESTION_TYPE_OPTIONS,
   type RsvpQuestionDraft,
   type RsvpQuestionType,
@@ -39,7 +41,9 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
     () => existing?.fieldType ?? DEFAULT_RSVP_QUESTION_TYPE,
   );
   const [required, setRequired] = useState(() => existing?.required ?? false);
-  const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
+  const [options, setOptions] = useState<string[]>(() =>
+    existing?.options.length ? [...existing.options] : [''],
+  );
   const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: SyntheticEvent) {
@@ -51,17 +55,17 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       return;
     }
     const needsOptions = wantsOptions(fieldType);
-    const options = needsOptions ? parseOptionsText(optionsText) : [];
-    const optionsError = questionOptionsError(needsOptions, options);
+    const normalized = needsOptions ? normalizeQuestionOptions(options) : [];
+    const optionsError = questionOptionsError(needsOptions, normalized);
     if (optionsError) {
       setError(optionsError);
       return;
     }
-    if (options.some((option) => option.length > MAX_OPTION_LENGTH)) {
+    if (normalized.some((option) => option.length > MAX_OPTION_LENGTH)) {
       setError(`options must be ${String(MAX_OPTION_LENGTH)} characters or fewer`);
       return;
     }
-    if (fieldType === QuestionType.Checkbox && options.some((option) => option.includes(','))) {
+    if (fieldType === QuestionType.Checkbox && normalized.some((option) => option.includes(','))) {
       setError('options cannot contain commas');
       return;
     }
@@ -69,7 +73,7 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       id: existing?.id ?? newQuestionId(),
       label: label.trim(),
       fieldType,
-      options,
+      options: normalized,
       required,
     });
     onClose();
@@ -90,7 +94,11 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
           label="type"
           value={fieldType}
           onChange={(e) => {
-            setFieldType(e.target.value as RsvpQuestionType);
+            const next = e.target.value as RsvpQuestionType;
+            setFieldType(next);
+            if (wantsOptions(next) && options.every((option) => !option.trim())) {
+              setOptions(['']);
+            }
           }}
           options={RSVP_QUESTION_TYPE_OPTIONS.map((o) => ({
             value: o.value,
@@ -98,14 +106,10 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
           }))}
         />
         {wantsOptions(fieldType) ? (
-          <Textarea
-            label="options"
-            value={optionsText}
-            onChange={(e) => {
-              setOptionsText(e.target.value);
-            }}
-            hint="one per line"
-            rows={5}
+          <QuestionOptionsEditor
+            options={options}
+            onChange={setOptions}
+            maxLength={MAX_OPTION_LENGTH}
           />
         ) : null}
         <label className="flex items-center gap-2 text-sm">
