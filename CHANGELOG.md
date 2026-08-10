@@ -1,3 +1,15 @@
+## [0.91.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.0...v0.91.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* **events:** stop RSVP status pills from vertical scroll clipping ([#1373](https://github.com/ProteinDeficientsAnonymous/pda/issues/1373)) ([0fae369](https://github.com/ProteinDeficientsAnonymous/pda/commit/0fae36956351ad8ec65914d85cc705a718723fb4))
+
+
+### Reverts
+
+* cron-only deploy workflow ([#1369](https://github.com/ProteinDeficientsAnonymous/pda/issues/1369)) ([#1370](https://github.com/ProteinDeficientsAnonymous/pda/issues/1370)) ([fc84918](https://github.com/ProteinDeficientsAnonymous/pda/commit/fc849184db74799285c2c0821c30ccfb60f24bf6))
+
 # [0.91.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.5...v0.91.0) (2026-08-10)
 
 
