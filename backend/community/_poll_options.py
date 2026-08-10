@@ -6,6 +6,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
@@ -35,7 +36,8 @@ def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     try:
         poll = (
-            EventPoll.objects.select_related("winning_option")
+            EventPoll.objects.select_for_update()
+            .select_related("winning_option")
             .prefetch_related("options__votes__user")
             .get(event=event)
         )
@@ -53,11 +55,14 @@ def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
-    _, poll = _get_active_poll(request.auth, event_id)
     _validate_poll_options([payload.datetime], require_at_least_one=False)
-    next_order = poll.options.count()
-    with _duplicate_option_time_guard():
-        PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
+    with transaction.atomic():
+        _, poll = _get_active_poll(request.auth, event_id)
+        next_order = poll.options.count()
+        with _duplicate_option_time_guard():
+            PollOption.objects.create(
+                poll=poll, datetime=payload.datetime, display_order=next_order
+            )
     audit_log(
         logging.INFO,
         "poll_option_added",
@@ -81,15 +86,16 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
-    _, poll = _get_active_poll(request.auth, event_id)
     _validate_poll_options([payload.datetime], require_at_least_one=False)
-    try:
-        option = poll.options.get(id=option_id)
-    except PollOption.DoesNotExist:
-        raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
-    with _duplicate_option_time_guard():
-        option.datetime = payload.datetime
-        option.save(update_fields=["datetime"])
+    with transaction.atomic():
+        _, poll = _get_active_poll(request.auth, event_id)
+        try:
+            option = poll.options.get(id=option_id)
+        except PollOption.DoesNotExist:
+            raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
+        with _duplicate_option_time_guard():
+            option.datetime = payload.datetime
+            option.save(update_fields=["datetime"])
     audit_log(
         logging.INFO,
         "poll_option_updated",
@@ -115,14 +121,15 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def delete_poll_option(request, event_id: UUID, option_id: UUID):
-    _, poll = _get_active_poll(request.auth, event_id)
-    try:
-        option = poll.options.get(id=option_id)
-    except PollOption.DoesNotExist:
-        raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
-    if poll.options.count() <= 2:
-        raise_validation(Code.Poll.MIN_TWO_OPTIONS, status_code=400)
-    option.delete()
+    with transaction.atomic():
+        _, poll = _get_active_poll(request.auth, event_id)
+        try:
+            option = poll.options.get(id=option_id)
+        except PollOption.DoesNotExist:
+            raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
+        if poll.options.count() <= 2:
+            raise_validation(Code.Poll.MIN_TWO_OPTIONS, status_code=400)
+        option.delete()
     audit_log(
         logging.INFO,
         "poll_option_deleted",

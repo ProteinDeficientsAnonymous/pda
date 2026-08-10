@@ -312,8 +312,8 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_event_poll")
     if event.status == EventStatus.CANCELLED:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
-    poll, winning_option = _get_poll_and_option(event, payload.winning_option_id)
     with transaction.atomic():
+        poll, winning_option = _get_poll_and_option(event, payload.winning_option_id)
         poll.winning_option = winning_option
         poll.finalized_by = request.auth
         poll.finalized_at = timezone.now()
@@ -392,7 +392,8 @@ def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOptio
     """Return (poll, winning_option) for finalize_event_poll. Raises on failure."""
     try:
         poll = (
-            EventPoll.objects.select_related("winning_option")
+            EventPoll.objects.select_for_update()
+            .select_related("winning_option")
             .prefetch_related("options__votes__user")
             .get(event=event)
         )
