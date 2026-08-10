@@ -7,6 +7,17 @@ import type { components } from './types.gen';
 export type RsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 export const DEFAULT_RSVP_QUESTION_TYPE: RsvpQuestionType = QuestionType.Textarea;
 
+/** Client-only draft ids; sent as null on sync so the server assigns UUIDs. */
+export const DRAFT_RSVP_QUESTION_ID_PREFIX = 'q-' as const;
+
+export function isDraftRsvpQuestionId(id: string): boolean {
+  return id.startsWith(DRAFT_RSVP_QUESTION_ID_PREFIX);
+}
+
+export function newRsvpQuestionId(): string {
+  return `${DRAFT_RSVP_QUESTION_ID_PREFIX}${crypto.randomUUID()}`;
+}
+
 interface WireQuestion {
   id: string;
   label: string;
@@ -28,7 +39,7 @@ export function mapRsvpQuestion(w: WireQuestion): EventRsvpQuestion {
 
 function questionPayload(question: EventRsvpQuestion, newIdsAsNull: boolean) {
   return {
-    id: newIdsAsNull && question.id.startsWith('q-') ? null : question.id,
+    id: newIdsAsNull && isDraftRsvpQuestionId(question.id) ? null : question.id,
     label: question.label,
     field_type: question.fieldType,
     options: question.options,

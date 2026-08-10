@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EventRsvpQuestion } from '@/models/event';
 
 import { apiClient } from './client';
-import { syncEventRsvpQuestions } from './eventRsvpQuestions';
+import {
+  DRAFT_RSVP_QUESTION_ID_PREFIX,
+  isDraftRsvpQuestionId,
+  newRsvpQuestionId,
+  syncEventRsvpQuestions,
+} from './eventRsvpQuestions';
 
 vi.mock('./client', () => ({
   apiClient: {
@@ -19,6 +24,15 @@ const q = (
   options: [],
   required: false,
   ...partial,
+});
+
+describe('draft RSVP question ids', () => {
+  it('should recognize and mint ids with the shared draft prefix', () => {
+    expect(DRAFT_RSVP_QUESTION_ID_PREFIX).toBe('q-');
+    expect(isDraftRsvpQuestionId(`${DRAFT_RSVP_QUESTION_ID_PREFIX}temp`)).toBe(true);
+    expect(isDraftRsvpQuestionId('keep')).toBe(false);
+    expect(newRsvpQuestionId().startsWith(DRAFT_RSVP_QUESTION_ID_PREFIX)).toBe(true);
+  });
 });
 
 describe('syncEventRsvpQuestions', () => {
@@ -49,9 +63,10 @@ describe('syncEventRsvpQuestions', () => {
     });
 
     const previous = [q({ id: 'keep', label: 'old' })];
+    const draftId = `${DRAFT_RSVP_QUESTION_ID_PREFIX}temp-new`;
     const result = await syncEventRsvpQuestions(
       'evt',
-      [q({ id: 'keep', label: 'updated' }), q({ id: 'q-temp-new', label: 'new' })],
+      [q({ id: 'keep', label: 'updated' }), q({ id: draftId, label: 'new' })],
       previous,
     );
 
