@@ -105,6 +105,9 @@ def _require_all_rows_resolved(payload: AttendanceImportCommitIn) -> None:
             )
 
 
+_IMPORTABLE_EVENT_TYPES = {EventType.OFFICIAL, EventType.CLUB}
+
+
 def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
     if payload.event_id:
         try:
@@ -115,13 +118,17 @@ def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
     if not payload.event_title or not payload.event_date:
         raise_validation(Code.AttendanceImport.EVENT_OR_TITLE_REQUIRED, status_code=400)
 
+    event_type = payload.event_type or EventType.COMMUNITY
+    if event_type not in (*_IMPORTABLE_EVENT_TYPES, EventType.COMMUNITY):
+        raise_validation(Code.AttendanceImport.INVALID_EVENT_TYPE, status_code=400)
+
     start = timezone.make_aware(
         timezone.datetime.combine(payload.event_date, timezone.datetime.min.time())
     )
     return Event.objects.create(
         title=payload.event_title,
         start_datetime=start,
-        event_type=EventType.COMMUNITY,
+        event_type=event_type,
         visibility=PageVisibility.PUBLIC,
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,

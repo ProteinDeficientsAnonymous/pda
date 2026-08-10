@@ -4,11 +4,14 @@ import { useState } from 'react';
 import { type EventOption, useAttendanceImportEventOptions } from '@/api/attendanceImport';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
+import { EventType } from '@/models/event';
 
 export interface EventTarget {
   eventId?: string;
   eventTitle?: string;
   eventDate?: string;
+  eventType?: (typeof EventType)[keyof typeof EventType];
 }
 
 interface Props {
@@ -20,6 +23,9 @@ export function AttendanceImportEventStep({ onNext }: Props) {
   const [query, setQuery] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newDate, setNewDate] = useState('');
+  const [newEventType, setNewEventType] = useState<(typeof EventType)[keyof typeof EventType]>(
+    EventType.Community,
+  );
   const { data: options = [] } = useAttendanceImportEventOptions(query);
 
   return (
@@ -60,10 +66,12 @@ export function AttendanceImportEventStep({ onNext }: Props) {
         <NewEventFields
           title={newTitle}
           date={newDate}
+          eventType={newEventType}
           onTitleChange={setNewTitle}
           onDateChange={setNewDate}
+          onEventTypeChange={setNewEventType}
           onNext={() => {
-            onNext({ eventTitle: newTitle, eventDate: newDate });
+            onNext({ eventTitle: newTitle, eventDate: newDate, eventType: newEventType });
           }}
         />
       )}
@@ -145,14 +153,18 @@ function ExistingEventPicker({
 function NewEventFields({
   title,
   date,
+  eventType,
   onTitleChange,
   onDateChange,
+  onEventTypeChange,
   onNext,
 }: {
   title: string;
   date: string;
+  eventType: (typeof EventType)[keyof typeof EventType];
   onTitleChange: (v: string) => void;
   onDateChange: (v: string) => void;
+  onEventTypeChange: (v: (typeof EventType)[keyof typeof EventType]) => void;
   onNext: () => void;
 }) {
   return (
@@ -173,6 +185,22 @@ function NewEventFields({
           onDateChange(e.target.value);
         }}
       />
+      <div className="flex flex-col gap-1">
+        <Toggle
+          label="official pda event"
+          checked={eventType === EventType.Official}
+          onChange={(checked) => {
+            onEventTypeChange(checked ? EventType.Official : EventType.Community);
+          }}
+        />
+        <Toggle
+          label="pda club event"
+          checked={eventType === EventType.Club}
+          onChange={(checked) => {
+            onEventTypeChange(checked ? EventType.Club : EventType.Community);
+          }}
+        />
+      </div>
       <Button disabled={!title.trim() || !date} onClick={onNext}>
         continue
       </Button>
