@@ -41,10 +41,10 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
       typeOptions={QUESTION_TYPE_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
       optionsHint={(fieldType) =>
         fieldType === QuestionType.Rating
-          ? 'one label per star (up to 5)'
+          ? 'up to 5 star labels'
           : fieldType === QuestionType.DatetimePoll
-            ? 'one ISO-8601 datetime per line'
-            : 'one option per line'
+            ? 'ISO-8601 datetime values'
+            : undefined
       }
       busy={busy}
       onSave={async (values) => {

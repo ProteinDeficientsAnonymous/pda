@@ -6,9 +6,9 @@ import type { QuestionType } from '@/api/questionTypes';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 
+import { normalizeQuestionOptions, QuestionOptionsEditor } from './QuestionOptionsEditor';
 import { questionOptionsError, questionTypeWantsOptions } from './questionTypeOptions';
 
 export interface QuestionAuthorValues<T extends string = QuestionType> {
@@ -29,7 +29,7 @@ interface Props<T extends string> {
   title: string;
   initial: QuestionAuthorValues<T>;
   typeOptions: TypeOption<T>[];
-  optionsHint?: string | ((fieldType: T) => string);
+  optionsHint?: string | ((fieldType: T) => string | undefined);
   busy: boolean;
   onSave: (values: QuestionAuthorValues<T>) => Promise<void>;
   errorFallback?: string;
@@ -46,7 +46,7 @@ function QuestionAuthorDialogBody<T extends string>({
   title,
   initial,
   typeOptions,
-  optionsHint = 'one per line',
+  optionsHint,
   busy,
   onSave,
   errorFallback = "couldn't save — try again",
@@ -54,7 +54,9 @@ function QuestionAuthorDialogBody<T extends string>({
   const [label, setLabel] = useState(() => initial.label);
   const [fieldType, setFieldType] = useState<T>(() => initial.fieldType);
   const [required, setRequired] = useState(() => initial.required);
-  const [optionsText, setOptionsText] = useState(() => initial.options.join('\n'));
+  const [options, setOptions] = useState<string[]>(() =>
+    initial.options.length > 0 ? [...initial.options] : [''],
+  );
   const [error, setError] = useState<string | null>(null);
 
   const wantsOptions = questionTypeWantsOptions(fieldType as QuestionType);
@@ -67,13 +69,8 @@ function QuestionAuthorDialogBody<T extends string>({
       setError('label required');
       return;
     }
-    const options = wantsOptions
-      ? optionsText
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
-    const optionsError = questionOptionsError(wantsOptions, options);
+    const normalized = wantsOptions ? normalizeQuestionOptions(options) : [];
+    const optionsError = questionOptionsError(wantsOptions, normalized);
     if (optionsError) {
       setError(optionsError);
       return;
@@ -82,7 +79,7 @@ function QuestionAuthorDialogBody<T extends string>({
       await onSave({
         label: label.trim(),
         fieldType,
-        options,
+        options: normalized,
         required,
       });
       onClose();
@@ -106,20 +103,16 @@ function QuestionAuthorDialogBody<T extends string>({
           label="type"
           value={fieldType}
           onChange={(e) => {
-            setFieldType(e.target.value as T);
+            const next = e.target.value as T;
+            setFieldType(next);
+            if (questionTypeWantsOptions(next as QuestionType) && options.every((o) => !o.trim())) {
+              setOptions(['']);
+            }
           }}
           options={typeOptions}
         />
         {wantsOptions ? (
-          <Textarea
-            label="options"
-            value={optionsText}
-            onChange={(e) => {
-              setOptionsText(e.target.value);
-            }}
-            hint={hint}
-            rows={5}
-          />
+          <QuestionOptionsEditor options={options} onChange={setOptions} hint={hint} />
         ) : null}
         <label className="flex items-center gap-2 text-sm">
           <input

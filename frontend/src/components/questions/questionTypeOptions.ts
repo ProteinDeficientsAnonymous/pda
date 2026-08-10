@@ -11,7 +11,7 @@ export interface QuestionTypeOption {
 /** Labels / option-requirement flags keyed by catalog wire value. */
 const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>> = {
   [QuestionType.Text]: { label: 'short text', wantsOptions: false },
-  [QuestionType.Textarea]: { label: 'long text', wantsOptions: false },
+  [QuestionType.Textarea]: { label: 'short answer', wantsOptions: false },
   [QuestionType.Number]: { label: 'number', wantsOptions: false },
   [QuestionType.Radio]: { label: 'radio', wantsOptions: true },
   [QuestionType.Select]: { label: 'select', wantsOptions: true },

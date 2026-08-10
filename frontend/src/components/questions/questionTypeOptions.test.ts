@@ -59,7 +59,7 @@ describe('question type options', () => {
   it('should expose the join subset projected from catalog metadata', () => {
     expect(JOIN_QUESTION_TYPE_OPTIONS).toEqual([
       { value: QuestionType.Text, label: 'short text', wantsOptions: false },
-      { value: QuestionType.Textarea, label: 'long text', wantsOptions: false },
+      { value: QuestionType.Textarea, label: 'short answer', wantsOptions: false },
       { value: QuestionType.Select, label: 'select', wantsOptions: true },
     ]);
     expect(JOIN_QUESTION_TYPE_OPTIONS.map(({ value }) => questionTypeWantsOptions(value))).toEqual([
@@ -71,7 +71,7 @@ describe('question type options', () => {
 
   it('should expose the RSVP subset projected from catalog metadata', () => {
     expect(RSVP_QUESTION_TYPE_OPTIONS).toEqual([
-      { value: QuestionType.Textarea, label: 'long text', wantsOptions: false },
+      { value: QuestionType.Textarea, label: 'short answer', wantsOptions: false },
       { value: QuestionType.Select, label: 'select', wantsOptions: true },
       { value: QuestionType.Checkbox, label: 'checkbox', wantsOptions: true },
     ]);
