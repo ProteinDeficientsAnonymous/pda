@@ -760,6 +760,11 @@
         "params": []
       },
       {
+        "name": "INVALID_EVENT_TYPE",
+        "value": "attendance_import.invalid_event_type",
+        "params": []
+      },
+      {
         "name": "AMBIGUOUS_USER_PICK",
         "value": "attendance_import.ambiguous_user_pick",
         "params": [
