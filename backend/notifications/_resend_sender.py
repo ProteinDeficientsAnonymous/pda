@@ -73,9 +73,7 @@ class ResendSender:
         Never catches — the caller owns the retry/error policy. Returns a
         successful SendResult; on failure the underlying exception propagates.
         """
-        # A 5xx/429 can come back after Resend already queued the email, so a
-        # bare retry delivers a duplicate. The key is stable across attempts of
-        # one logical send, so Resend dedupes them (24h window).
+        # Stable key across attempts so a retry after a queued-but-5xx'd send doesn't duplicate it.
         options: resend.Emails.SendOptions = {"idempotency_key": idempotency_key}
         response = resend.Emails.send(params, options)
         # SendResponse is a dict subclass; access id via .get() for safety
