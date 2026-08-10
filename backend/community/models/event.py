@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from community.models.choices import (
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
     EventStatus,
@@ -265,6 +266,7 @@ class EventRSVP(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
     status = models.CharField(max_length=20, choices=RSVPStatus.choices)
     has_plus_one = models.BooleanField(default=False)
+    questionnaire_responses = models.JSONField(default=dict, blank=True)
     attendance = models.CharField(
         max_length=20,
         choices=AttendanceStatus.choices,
@@ -348,3 +350,20 @@ class EventEmailBlast(models.Model):
 
     def __str__(self):
         return f"Blast '{self.subject}' to '{self.event.title}'"
+
+
+class EventRsvpQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvp_questions")
+    label = models.CharField(max_length=300)
+    field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
+    options = models.JSONField(default=list, blank=True)
+    required = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["display_order"]
+
+    def __str__(self):
+        return f"{self.label} ({self.event.title})"

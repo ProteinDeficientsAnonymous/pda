@@ -35,6 +35,14 @@ class Code:
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
+        RSVP_QUESTION_NOT_FOUND = "event.rsvp_question_not_found"
+        RSVP_QUESTION_DUPLICATE = "event.rsvp_question_duplicate"
+        RSVP_QUESTION_CONFLICT = "event.rsvp_question_conflict"
+        RSVP_QUESTION_OPTIONS_REQUIRED = "event.rsvp_question_options_required"
+        RSVP_QUESTION_OPTION_NO_COMMA = "event.rsvp_question_option_no_comma"
+        RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }
+        RSVP_ANSWER_INVALID_OPTION = "event.rsvp_answer_invalid_option"  # params: { label: str }
+        RSVP_ANSWER_TOO_LONG = "event.rsvp_answer_too_long"  # params: { label: str, max: int }
         PAYMENT_CONFIRMATION_REQUIRED = "event.payment_confirmation_required"
         CHECK_IN_REPORT_NOT_YET_AVAILABLE = "event.check_in_report_not_yet_available"
         CHECK_IN_REPORT_INVALID_COLUMN = (
