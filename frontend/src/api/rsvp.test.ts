@@ -33,6 +33,33 @@ function buildWrapper() {
   return { qc, Wrapper };
 }
 
+describe('useSetRsvp', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should post questionnaire_responses with the RSVP body', async () => {
+    const { Wrapper } = buildWrapper();
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: { id: EVENT_ID, title: 'potluck', my_rsvp: RsvpStatus.Attending },
+    });
+    const { result } = renderHook(() => useSetRsvp(), { wrapper: Wrapper });
+    result.current.mutate({
+      eventId: EVENT_ID,
+      status: RsvpStatus.Attending,
+      questionnaireResponses: { q1: 'vegan' },
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(apiClient.post).toHaveBeenCalledWith(
+      `/api/community/events/${EVENT_ID}/rsvp/`,
+      expect.objectContaining({
+        status: RsvpStatus.Attending,
+        questionnaire_responses: { q1: 'vegan' },
+      }),
+    );
+  });
+});
+
 describe('useSetRsvp cache patching (issue 1242)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
