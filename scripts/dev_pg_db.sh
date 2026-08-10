@@ -129,6 +129,7 @@ ensure() {
   (
     cd "$ROOT/backend"
     DATABASE_URL="$url" uv run python manage.py migrate
+    DATABASE_URL="$url" uv run python manage.py createcachetable
     DATABASE_URL="$url" uv run python manage.py seed
   )
   write_stamp

@@ -45,6 +45,7 @@ ensure() {
   (
     cd "$ROOT/backend"
     DATABASE_URL="sqlite:///$db" uv run python manage.py migrate
+    DATABASE_URL="sqlite:///$db" uv run python manage.py createcachetable
     DATABASE_URL="sqlite:///$db" uv run python manage.py seed
   )
   write_stamp "$db"

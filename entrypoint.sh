@@ -17,11 +17,14 @@ nginx -g 'daemon off;' || kill "$$" &
 
 cd backend
 uv run python manage.py migrate
-uv run python manage.py createcachetable
+# Table creation isn't atomic; a concurrent replica may win the race and create it first.
+uv run python manage.py createcachetable || true
 
 # --max-requests recycles workers to release allocator memory the OS never reclaims (RSS ~200MB -> ~650MB/day otherwise).
+# --graceful-timeout gives the open SSE notification stream (backend/notifications/sse.py) time to close on recycle.
 uv run gunicorn config.asgi:application \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:8000 \
     --max-requests 10000 \
-    --max-requests-jitter 1000
+    --max-requests-jitter 1000 \
+    --graceful-timeout 35
