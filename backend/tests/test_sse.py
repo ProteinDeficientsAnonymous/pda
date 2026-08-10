@@ -5,7 +5,12 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from notifications.sse import _format_notify_for_user
+from notifications.sse import (
+    _MAX_ANONYMOUS_CONNECTIONS,
+    _format_notify_for_user,
+    _release_anonymous_slot,
+    _try_acquire_anonymous_slot,
+)
 
 
 class TestFormatNotifyForUser:
@@ -21,6 +26,27 @@ class TestFormatNotifyForUser:
         frame = _format_notify_for_user("event_updates", "*:event-1", "user-2")
         assert frame is not None
         assert "event: event_updated" in frame
+
+    def test_event_update_wildcard_matches_anonymous_viewer(self):
+        frame = _format_notify_for_user("event_updates", "*:event-1", None)
+        assert frame is not None
+        assert "event: event_updated" in frame
+
+    def test_personal_notification_never_matches_anonymous_viewer(self):
+        assert _format_notify_for_user("notifications", "user-1", None) is None
+
+
+class TestAnonymousConnectionCap:
+    def test_acquire_fails_once_at_capacity(self):
+        for _ in range(_MAX_ANONYMOUS_CONNECTIONS):
+            assert _try_acquire_anonymous_slot() is True
+        assert _try_acquire_anonymous_slot() is False
+
+    def test_release_frees_a_slot_for_reuse(self):
+        for _ in range(_MAX_ANONYMOUS_CONNECTIONS):
+            assert _try_acquire_anonymous_slot() is True
+        _release_anonymous_slot()
+        assert _try_acquire_anonymous_slot() is True
 
 
 def _auth_headers(user) -> dict:
@@ -39,10 +65,6 @@ def _clear_rate_limit_cache():
 
 @pytest.mark.django_db
 class TestSseTicketMint:
-    def test_mint_requires_auth(self, api_client):
-        response = api_client.post("/api/notifications/sse-ticket/")
-        assert response.status_code == 401
-
     def test_mint_returns_ticket(self, test_user, api_client):
         response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
         assert response.status_code == 200
@@ -56,6 +78,19 @@ class TestSseTicketMint:
         ticket = SseTicket.objects.get(token=token)
         assert ticket.user_id == test_user.pk
         assert ticket.used is False
+
+    def test_anonymous_mint_returns_ticket(self, api_client):
+        response = api_client.post("/api/notifications/sse-ticket/")
+        assert response.status_code == 200
+        assert response.json()["ticket"]
+
+    def test_anonymous_ticket_has_no_user(self, api_client):
+        from notifications.models import SseTicket
+
+        response = api_client.post("/api/notifications/sse-ticket/")
+        token = response.json()["ticket"]
+        ticket = SseTicket.objects.get(token=token)
+        assert ticket.user_id is None
 
 
 @pytest.mark.django_db
