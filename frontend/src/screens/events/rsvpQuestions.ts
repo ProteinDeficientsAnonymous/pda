@@ -1,5 +1,3 @@
-/** Draft / wire-aligned RSVP question helpers used by authoring + RSVP dialog. */
-
 import { newRsvpQuestionId, type RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import {
   questionTypeWantsOptions,
