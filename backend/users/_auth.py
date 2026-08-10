@@ -5,6 +5,7 @@ import logging
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from config.media_proxy import AVATAR_MAX_DIMENSION, resize_image
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
 from django.http import HttpResponse
@@ -224,9 +225,10 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
         user.profile_photo.delete(save=False)
-    name = photo.name or ""
+    resized = resize_image(photo, AVATAR_MAX_DIMENSION)
+    name = resized.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
+    user.profile_photo.save(f"{user.pk}.{ext}", resized, save=False)
     user.photo_updated_at = timezone.now()
     user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
