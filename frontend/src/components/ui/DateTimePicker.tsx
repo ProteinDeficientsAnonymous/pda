@@ -7,11 +7,9 @@ interface Props {
   label: string;
   value: string | null;
   onChange: (iso: string | null) => void;
-  disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
-  /** Disable calendar days before today (inclusive). For event start times. */
-  disablePast?: boolean;
+  min?: string | null;
 }
 
 function isoToDate(iso: string | null): Date | undefined {
@@ -26,26 +24,28 @@ function dateToIso(date: Date, hours: number, minutes: number): string {
   return copy.toISOString();
 }
 
-export function DateTimePicker({
-  label,
-  value,
-  onChange,
-  disabled,
-  error,
-  optional,
-  disablePast,
-}: Props) {
+function clampToMin(date: Date, hours: number, minutes: number, minInstant: Date): string {
+  const picked = dateToIso(date, hours, minutes);
+  return new Date(picked) < minInstant
+    ? dateToIso(date, minInstant.getHours(), minInstant.getMinutes())
+    : picked;
+}
+
+export function DateTimePicker({ label, value, onChange, error, optional, min }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
-  // Start-of-today so "today" itself is still selectable.
-  const todayStart = (() => {
-    const d = new Date();
+  const minInstant = min ? (isoToDate(min) ?? new Date()) : new Date();
+  const floorStart = (() => {
+    const d = new Date(minInstant);
     d.setHours(0, 0, 0, 0);
     return d;
   })();
+  const minTime =
+    minInstant.toDateString() === selectedDate?.toDateString()
+      ? `${String(minInstant.getHours()).padStart(2, '0')}:${String(minInstant.getMinutes()).padStart(2, '0')}`
+      : undefined;
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function onClick(e: MouseEvent) {
@@ -59,7 +59,6 @@ export function DateTimePicker({
     };
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -90,9 +89,8 @@ export function DateTimePicker({
 
       <button
         type="button"
-        disabled={disabled}
         onClick={() => {
-          if (!disabled) setOpen((v) => !v);
+          setOpen((v) => !v);
         }}
         aria-expanded={open}
         className={[
@@ -101,7 +99,6 @@ export function DateTimePicker({
             ? 'border-brand-200 bg-brand-50 text-brand-900 font-medium'
             : 'border-border-strong bg-surface text-muted-foreground',
           error && 'border-destructive bg-destructive-subtle text-destructive',
-          disabled && 'bg-surface-dim text-muted-foreground',
         ].join(' ')}
       >
         {display || 'pick a date & time'}
@@ -116,11 +113,11 @@ export function DateTimePicker({
               if (!day) return;
               const h = selectedDate?.getHours() ?? 12;
               const m = selectedDate?.getMinutes() ?? 0;
-              onChange(dateToIso(day, h, m));
+              onChange(clampToMin(day, h, m, minInstant));
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
-            {...(disablePast ? { disabled: { before: todayStart } } : {})}
+            disabled={{ before: floorStart }}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
@@ -137,8 +134,9 @@ export function DateTimePicker({
               onChange={(e) => {
                 const [h, m] = e.target.value.split(':').map(Number) as [number, number];
                 const base = selectedDate ?? new Date();
-                onChange(dateToIso(base, h, m));
+                onChange(clampToMin(base, h, m, minInstant));
               }}
+              min={minTime}
               className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
             />
           </div>
