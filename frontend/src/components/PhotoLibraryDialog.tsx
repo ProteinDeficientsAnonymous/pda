@@ -42,6 +42,29 @@ async function toFile(gif: GiphyResult): Promise<File> {
   return new File([blob], `${gif.id}.${ext}`, { type });
 }
 
+function Attribution({ results }: { results: GiphyResult[] }) {
+  if (!results.some((r) => r.source === 'gif')) return null;
+
+  return (
+    <>
+      <img
+        src="/powered-by-giphy-light.png"
+        alt="powered by GIPHY"
+        width={100}
+        height={13}
+        className="self-start dark:hidden"
+      />
+      <img
+        src="/powered-by-giphy-dark.png"
+        alt="powered by GIPHY"
+        width={100}
+        height={13}
+        className="hidden self-start dark:block"
+      />
+    </>
+  );
+}
+
 export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
   const [tab, setTab] = useState<Tab>('library');
   const [query, setQuery] = useState('');
@@ -202,6 +225,8 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
             {!searching && query.trim().length > 0 && results.length === 0 && !error ? (
               <p className="text-foreground/60 text-xs">nothing found — try another search</p>
             ) : null}
+
+            <Attribution results={results} />
           </>
         ) : (
           <>
