@@ -1,3 +1,10 @@
+## [0.91.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.4...v0.91.5) (2026-08-10)
+
+
+### Bug Fixes
+
+* **events:** rename check-in route from /attendance to /check-in ([#1381](https://github.com/ProteinDeficientsAnonymous/pda/issues/1381)) ([e581668](https://github.com/ProteinDeficientsAnonymous/pda/commit/e581668bc6fa3bf39ba382d39bb5e83928f7881d))
+
 ## [0.91.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.3...v0.91.4) (2026-08-10)
 
 
