@@ -85,6 +85,9 @@ Be succinct — short, direct answers. Don't restate the task or summarize what 
 - All user-facing text in the frontend app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
 - Use `.toLowerCase()` on any dynamic/format-driven strings (e.g. `date-fns` output).
 
+### branch naming
+Use hyphenated prefixes: `feat-slug`, `fix-slug`, `chore-slug` — not `feat/slug`.
+
 ## Agent Directives
 
 1. **STEP 0 RULE**: Before ANY structural refactor on a file >300 LOC, first remove all dead props, unused exports, unused imports, and debug logs. Commit this cleanup separately.
