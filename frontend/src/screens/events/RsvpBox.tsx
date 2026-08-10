@@ -129,29 +129,31 @@ export function RsvpBox({
         />
       ) : (
         <div className="flex max-h-[min(70vh,32rem)] flex-col gap-4">
-          <RsvpStatusPicker
-            value={status}
-            onSelect={setStatus}
-            disabled={busy}
-            labelFor={(s, defaultLabel) =>
-              s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
-            }
-          />
+          <div data-testid="rsvp-status-controls" className="flex shrink-0 flex-col gap-4">
+            <RsvpStatusPicker
+              value={status}
+              onSelect={setStatus}
+              disabled={busy}
+              labelFor={(s, defaultLabel) =>
+                s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+              }
+            />
 
-          {showPlusOne ? (
-            <div className="flex justify-center">
-              <Button
-                type="button"
-                variant={hasPlusOne ? 'primary' : 'secondary'}
-                onClick={() => {
-                  setHasPlusOne(!hasPlusOne);
-                }}
-                disabled={busy}
-              >
-                {hasPlusOne ? 'remove +1' : 'add +1'}
-              </Button>
-            </div>
-          ) : null}
+            {showPlusOne ? (
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant={hasPlusOne ? 'primary' : 'secondary'}
+                  onClick={() => {
+                    setHasPlusOne(!hasPlusOne);
+                  }}
+                  disabled={busy}
+                >
+                  {hasPlusOne ? 'remove +1' : 'add +1'}
+                </Button>
+              </div>
+            ) : null}
+          </div>
 
           {showQuestions || showComment ? (
             <div

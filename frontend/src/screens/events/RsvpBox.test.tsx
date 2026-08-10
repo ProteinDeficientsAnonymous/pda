@@ -194,9 +194,15 @@ describe('RsvpBox', () => {
     const scroll = screen.getByTestId('rsvp-details-scroll');
     expect(scroll).toContainElement(screen.getByText('how are you getting there?'));
     expect(scroll).toContainElement(screen.getByLabelText('comment (optional)'));
+    const controls = screen.getByTestId('rsvp-status-controls');
     expect(scroll).not.toContainElement(screen.getByRole('button', { name: /i'm going/i }));
     expect(scroll).not.toContainElement(screen.getByRole('button', { name: /add \+1/i }));
     expect(scroll).not.toContainElement(screen.getByRole('button', { name: /^confirm$/i }));
+    // Status/+1 sit in a shrink-0 shell so the height-capped column cannot clip
+    // the pills into RsvpStatusPicker's overflow-x scrollport.
+    expect(controls).toHaveClass('shrink-0');
+    expect(controls).toContainElement(screen.getByRole('button', { name: /i'm going/i }));
+    expect(controls).toContainElement(screen.getByRole('button', { name: /add \+1/i }));
   });
 
   it('should hide questions when status is can’t go', () => {
