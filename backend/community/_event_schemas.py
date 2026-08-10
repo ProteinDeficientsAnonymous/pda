@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 import phonenumbers
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, WithJsonSchema, field_validator, model_validator
 
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
@@ -20,12 +20,12 @@ from community.models import (
     RSVPStatus,
 )
 
-# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
-# overkill for a free-text payment field, and we don't need DNS lookups.
+# Loose email check for free-text Zelle — EmailStr/DNS is overkill here.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
+RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
 
 
 class EventRsvpQuestionOut(BaseModel):
@@ -76,16 +76,10 @@ class EventRsvpQuestionSyncPayload(BaseModel):
 def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
     if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
         raise_validation(
-            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED,
-            field="options",
-            status_code=400,
+            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED, field="options", status_code=400
         )
     if payload.field_type == "checkbox" and any("," in option for option in payload.options):
-        raise_validation(
-            Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
-            field="options",
-            status_code=400,
-        )
+        raise_validation(Code.Event.RSVP_QUESTION_OPTION_NO_COMMA, field="options", status_code=400)
 
 
 def _looks_like_email(s: str) -> bool:
@@ -177,6 +171,7 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: RSVPStatus
     has_plus_one: bool = False
+    questionnaire_responses: dict = {}
     phone: str | None = None
     photo_url: str = ""
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
@@ -263,7 +258,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
-    my_rsvp_answers: dict = {}
+    my_questionnaire_responses: dict = {}
     my_paid_confirmed: bool = False
     viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
@@ -296,9 +291,12 @@ class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
     paid_confirmed: bool = False
-    # Not persisted on the RSVP — a non-empty value is a one-time post: a
-    # public EventComment (going/maybe) or a host-only notification (can't go).
+    # One-shot post (EventComment / host notify); not stored on the RSVP row.
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    questionnaire_responses: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; checkbox values are comma-separated.",
+    )
 
 
 class HostRSVPIn(BaseModel):

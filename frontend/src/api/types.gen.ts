@@ -3249,15 +3249,15 @@ export interface components {
             my_paid_confirmed: boolean;
             /** My Pending Cohost Invite Id */
             my_pending_cohost_invite_id?: string | null;
-            /** My Rsvp */
-            my_rsvp?: string | null;
             /**
-             * My Rsvp Answers
+             * My Questionnaire Responses
              * @default {}
              */
-            my_rsvp_answers: {
+            my_questionnaire_responses: {
                 [key: string]: unknown;
             };
+            /** My Rsvp */
+            my_rsvp?: string | null;
             /**
              * Other Link
              * @default
@@ -4524,6 +4524,13 @@ export interface components {
             plus_one_attendance: components["schemas"]["AttendanceStatus"];
             /** Plus One Checked In At */
             plus_one_checked_in_at?: string | null;
+            /**
+             * Questionnaire Responses
+             * @default {}
+             */
+            questionnaire_responses: {
+                [key: string]: unknown;
+            };
             status: components["schemas"]["RSVPStatus"];
             /** User Id */
             user_id: string;
@@ -4542,6 +4549,13 @@ export interface components {
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            };
             status: components["schemas"]["RSVPStatus"];
         };
         /**

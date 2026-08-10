@@ -18,6 +18,7 @@ from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
+    _RsvpApply,
     _validate_rsvp_status,
     payment_audit_details,
 )
@@ -241,7 +242,9 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             phone=validated_phone,
         )
         final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False, payload.paid_confirmed
+            event.id,
+            user,
+            _RsvpApply(status=payload.status, paid_confirmed=payload.paid_confirmed),
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 

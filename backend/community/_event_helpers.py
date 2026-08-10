@@ -13,6 +13,10 @@ from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import get_my_pending_invite
 from community._event_cohost_helpers import _pending_cohost_invites_out
+from community._event_rsvp_answers import (
+    can_see_guest_questionnaire_responses,
+    find_my_questionnaire_responses,
+)
 from community._event_rsvp_serialize import event_rsvp_question_out
 from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
@@ -81,10 +85,15 @@ _GUEST_LIST_STATUS_ORDER = {
 
 
 def _build_guest_list(
-    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+    rsvps,
+    can_see_phones: bool,
+    viewer=None,
+    can_see_payment_status: bool = False,
+    *,
+    include_questionnaire_responses: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone
-    and payment-status visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
+    payment-status, and answer visibility."""
     ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
@@ -100,6 +109,9 @@ def _build_guest_list(
             plus_one_checked_in_at=r.plus_one_checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
+            questionnaire_responses=(
+                dict(r.questionnaire_responses or {}) if include_questionnaire_responses else {}
+            ),
         )
         for r in ordered_rsvps
     ]
@@ -113,15 +125,6 @@ def _find_my_rsvp(rsvps, user):
         if r.user_id == user.pk:
             return r
     return None
-
-
-def _find_my_rsvp_answers(rsvps, user) -> dict:
-    if user is None:
-        return {}
-    for r in rsvps:
-        if r.user_id == user.pk:
-            return dict(r.questionnaire_responses or {})
-    return {}
 
 
 def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
@@ -315,7 +318,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled else []
+    responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or responses_visible else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -357,11 +361,18 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(all_rsvps, viewer_is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(
+                all_rsvps,
+                viewer_is_cohost,
+                auth_user,
+                payment_status_visible,
+                include_questionnaire_responses=responses_visible,
+            ),
             [],
             can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
+        my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
