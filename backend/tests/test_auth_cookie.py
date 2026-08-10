@@ -13,19 +13,19 @@ from users.models import MagicLoginToken
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
     # login / magic-login are rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import cache
+    from django.core.cache import caches
 
-    cache.clear()
+    caches["ratelimit"].clear()
     yield
-    cache.clear()
+    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
 class TestLoginRateLimit:
     def test_login_rate_limited_after_five_attempts(self, api_client, test_user):
-        from django.core.cache import cache
+        from django.core.cache import caches
 
-        cache.clear()
+        caches["ratelimit"].clear()
         for _ in range(5):
             resp = api_client.post(
                 "/api/auth/login/",

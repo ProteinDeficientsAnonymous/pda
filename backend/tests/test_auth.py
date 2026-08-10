@@ -16,11 +16,11 @@ from tests._asserts import assert_error_code
 def _clear_rate_limit_cache():
     # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
     # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
-    from django.core.cache import cache
+    from django.core.cache import caches
 
-    cache.clear()
+    caches["ratelimit"].clear()
     yield
-    cache.clear()
+    caches["ratelimit"].clear()
 
 
 @pytest.fixture

@@ -73,12 +73,13 @@ AUTH_USER_MODEL = "users.User"
 
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
-# DB-backed so rate limits (config/ratelimit.py) survive worker recycling instead of resetting per-process.
+# "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
 CACHES = {
-    "default": {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "ratelimit": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
-    }
+    },
 }
 
 NINJA_JWT = {

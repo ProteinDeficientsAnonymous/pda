@@ -3,9 +3,11 @@ from functools import wraps
 
 from community._validation import Code, raise_validation
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import caches
 
 _PERIOD_MAP = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
+cache = caches["ratelimit"]
 
 
 def _parse_rate(rate: str) -> tuple[int, int]:

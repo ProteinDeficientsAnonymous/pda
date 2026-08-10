@@ -4,7 +4,8 @@ from unittest.mock import MagicMock
 import pytest
 from community.models import FeatureFlagState, JoinFormQuestion, JoinRequest
 from django.conf import settings as django_settings
-from django.core.cache import cache
+from django.core.cache import caches
+from django.db import DatabaseError
 from django.test import Client
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
@@ -55,11 +56,23 @@ def why_join_id(db):
     return str(q.id) if q else ""
 
 
+def _clear_ratelimit_cache_quietly() -> None:
+    # Shares the test's DB connection; swallow errors from an unrolled-back transaction.
+    try:
+        caches["ratelimit"].clear()
+    except DatabaseError:
+        pass
+
+
 @pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    cache.clear()
+def _clear_rate_limit_cache(request):
+    # DB-backed cache: skip it for tests with no DB access (no @pytest.mark.django_db).
+    if request.node.get_closest_marker("django_db") is None:
+        yield
+        return
+    _clear_ratelimit_cache_quietly()
     yield
-    cache.clear()
+    _clear_ratelimit_cache_quietly()
 
 
 @pytest.fixture(autouse=True)
