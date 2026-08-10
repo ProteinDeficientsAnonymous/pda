@@ -197,6 +197,7 @@ describe('PublicRsvpsScreen', () => {
         eventId: 'ev1',
         status: RsvpStatus.Maybe,
         hasPlusOne: false,
+        questionnaireResponses: {},
       });
     });
     expect(toastSuccess).toHaveBeenCalledWith(

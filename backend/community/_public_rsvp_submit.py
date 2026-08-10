@@ -22,6 +22,7 @@ from community._event_rsvps import (
     _validate_rsvp_status,
     payment_audit_details,
 )
+from community._event_schemas import RsvpAnswer
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
@@ -47,6 +48,10 @@ class PublicRsvpIn(BaseModel):
     has_plus_one: bool = False
     paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    questionnaire_responses: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; checkbox values are comma-separated.",
+    )
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
 
@@ -206,7 +211,14 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
 
 @router.post(
     "/public/events/{event_id}/rsvp/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    response={
+        200: PublicRsvpOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="5/h")
@@ -244,7 +256,11 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
             event.id,
             user,
-            _RsvpApply(status=payload.status, paid_confirmed=payload.paid_confirmed),
+            _RsvpApply(
+                status=payload.status,
+                paid_confirmed=payload.paid_confirmed,
+                answers=payload.questionnaire_responses,
+            ),
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 

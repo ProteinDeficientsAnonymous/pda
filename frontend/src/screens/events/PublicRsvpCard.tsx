@@ -12,6 +12,8 @@ import { buildEventLinks } from '@/utils/eventLinks';
 
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
+import { RsvpQuestionFields } from './RsvpQuestionFields';
+import { missingRequiredQuestionIds, type RsvpAnswerValue } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 
 const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
@@ -42,6 +44,15 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState('');
+  const [answers, setAnswers] = useState<Record<string, RsvpAnswerValue>>(() =>
+    Object.fromEntries(
+      Object.entries(event.myQuestionnaireResponses).map(([questionId, snapshot]) => [
+        questionId,
+        snapshot.answer,
+      ]),
+    ),
+  );
+  const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const [pendingStatus, setPendingStatus] = useState<RsvpInputStatus | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
@@ -49,11 +60,20 @@ export function PublicRsvpCard({ token, event, status }: Props) {
 
   async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string, paidConfirmed?: boolean) {
     setError(null);
+    const missing =
+      next === RsvpServerStatus.CantGo
+        ? []
+        : missingRequiredQuestionIds(event.rsvpQuestions, answers);
+    if (missing.length > 0) {
+      setAnswerErrors(Object.fromEntries(missing.map((id) => [id, 'required'])));
+      return;
+    }
     try {
       await update.mutateAsync({
         eventId: event.id,
         status: next,
         hasPlusOne: false,
+        questionnaireResponses: answers,
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
         ...(paidConfirmed ? { paidConfirmed: true } : {}),
       });
@@ -139,6 +159,21 @@ export function PublicRsvpCard({ token, event, status }: Props) {
         ) : (
           <>
             <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
+
+            <RsvpQuestionFields
+              questions={event.rsvpQuestions}
+              answers={answers}
+              onChange={(id, value) => {
+                setAnswers((current) => ({ ...current, [id]: value }));
+                setAnswerErrors((current) => {
+                  if (!(id in current)) return current;
+                  const { [id]: _removed, ...rest } = current;
+                  return rest;
+                });
+              }}
+              errors={answerErrors}
+              disabled={busy}
+            />
 
             <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
             <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>

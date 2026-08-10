@@ -4408,6 +4408,13 @@ export interface components {
             paid_confirmed: boolean;
             /** Phone Number */
             phone_number: string;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; checkbox values are comma-separated.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            };
             /** Status */
             status: string;
             /**
@@ -4430,6 +4437,13 @@ export interface components {
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Questionnaire Responses
+             * @description Question UUID to answer; omit or send null to preserve saved answers.
+             */
+            questionnaire_responses?: {
+                [key: string]: string;
+            } | null;
             /** Status */
             status: string;
         };
@@ -10166,6 +10180,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -10287,6 +10310,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
