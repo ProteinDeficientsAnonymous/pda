@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -46,7 +45,11 @@ export function EventPollCard({ event, className }: Props) {
     );
   }
 
-  const isFinalized = !!poll.winningDatetime;
+  // Finalized — winningDatetime is copied onto event.startDatetime, so
+  // WhenLine already shows it as the normal event time. Nothing left to add here.
+  if (poll.winningDatetime) {
+    return null;
+  }
 
   return (
     <div
@@ -61,52 +64,44 @@ export function EventPollCard({ event, className }: Props) {
 
       <PollOptionStrip poll={poll} />
 
-      {!isFinalized ? (
-        <div className="flex flex-wrap gap-2">
-          {isAuthed ? (
+      <div className="flex flex-wrap gap-2">
+        {isAuthed ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setRespondOpen(true);
+            }}
+          >
+            respond to poll
+          </Button>
+        ) : (
+          <Link
+            to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
+            className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
+          >
+            sign in to vote
+          </Link>
+        )}
+        {canManage ? (
+          <>
             <Button
-              variant="secondary"
               onClick={() => {
-                setRespondOpen(true);
+                setFinalizeOpen(true);
               }}
             >
-              respond to poll
+              finalize
             </Button>
-          ) : (
-            <Link
-              to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
-              className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setManageOpen(true);
+              }}
             >
-              sign in to vote
-            </Link>
-          )}
-          {canManage ? (
-            <>
-              <Button
-                onClick={() => {
-                  setFinalizeOpen(true);
-                }}
-              >
-                finalize
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setManageOpen(true);
-                }}
-              >
-                edit options
-              </Button>
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {poll.finalizedAt ? (
-        <p className="text-foreground-tertiary text-xs">
-          finalized {format(poll.finalizedAt, 'MMM d').toLowerCase()}
-        </p>
-      ) : null}
+              edit options
+            </Button>
+          </>
+        ) : null}
+      </div>
 
       <PollRespondDialog
         open={respondOpen}
