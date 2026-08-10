@@ -9,11 +9,11 @@ from PIL import Image
 from tests.conftest import future_iso
 
 
-def _make_test_image():
+def _make_test_image(fmt="JPEG", filename="test.jpg", content_type="image/jpeg"):
     buf = io.BytesIO()
-    Image.new("RGB", (20, 20)).save(buf, format="JPEG")
+    Image.new("RGB", (20, 20)).save(buf, format=fmt)
     buf.seek(0)
-    return SimpleUploadedFile("test.jpg", buf.read(), content_type="image/jpeg")
+    return SimpleUploadedFile(filename, buf.read(), content_type=content_type)
 
 
 def _preview_url(event_id) -> str:
@@ -149,3 +149,51 @@ class TestEventOgPreview:
         html = response.content.decode()
         assert "<script>alert(1)</script>" not in html
         assert "&lt;script&gt;" in html
+
+    def test_gif_photo_renders_event_title(self, api_client, db, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        event = Event.objects.create(
+            title="Skate w/ Meeee",
+            description="Come skate with us!",
+            start_datetime=future_iso(),
+            visibility=PageVisibility.PUBLIC,
+            status=EventStatus.ACTIVE,
+            photo=_make_test_image(fmt="GIF", filename="skate.gif", content_type="image/gif"),
+        )
+        response = api_client.get(_preview_url(event.slug))
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Skate w/ Meeee"' in html
+        assert (
+            '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
+        )
+
+
+@pytest.mark.django_db
+class TestStaticPageOgPreview:
+    def test_faq_renders_page_title_and_logo(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        response = api_client.get("/pages/faq/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="faq · pda"' in html
+        assert '<meta property="og:url" content="https://pda.example.com/faq"' in html
+        assert (
+            '<meta property="og:image" content="https://pda.example.com/static/og/pda-logo.png"'
+            in html
+        )
+
+    def test_home_renders_bare_title(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        response = api_client.get("/pages//preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="pda"' in html
+        assert '<meta property="og:url" content="https://pda.example.com/"' in html
+
+    def test_unknown_page_returns_404(self, api_client):
+        response = api_client.get("/pages/not-a-real-page/preview/")
+        assert response.status_code == 404
