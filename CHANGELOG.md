@@ -1,3 +1,10 @@
+## [0.93.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.0...v0.93.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* poll finalize bypasses RSVP capacity (Issue 1238) ([#1272](https://github.com/ProteinDeficientsAnonymous/pda/issues/1272)) ([c4dfc99](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4dfc99f7fad5e7102d664edeba9232353dfb554))
+
 # [0.93.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.92.0...v0.93.0) (2026-08-10)
 
 

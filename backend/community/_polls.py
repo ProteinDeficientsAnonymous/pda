@@ -27,17 +27,16 @@ from community._event_poll_schemas import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._events import _enforce_event_read_visibility
+from community._poll_finalize import seat_yes_voters
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventPoll,
-    EventRSVP,
     EventStatus,
     PollAvailability,
     PollOption,
     PollVote,
-    RSVPStatus,
 )
 
 router = Router()
@@ -101,7 +100,9 @@ def _voter_out(user, viewer=None) -> VoterOut:
     )
 
 
-def _option_out(option: PollOption, my_votes: dict[str, str], viewer=None) -> EventPollOptionOut:
+def _option_out(
+    option: PollOption, my_votes: dict[str, str], viewer=None, is_authed: bool = False
+) -> EventPollOptionOut:
     votes = list(option.votes.select_related("user").all())
     yes_voters = [
         _voter_out(v.user, viewer) for v in votes if v.availability == PollAvailability.YES
@@ -117,9 +118,9 @@ def _option_out(option: PollOption, my_votes: dict[str, str], viewer=None) -> Ev
         yes_count=len(yes_voters),
         maybe_count=len(maybe_voters),
         no_count=len(no_voters),
-        yes_voters=yes_voters,
-        maybe_voters=maybe_voters,
-        no_voters=no_voters,
+        yes_voters=yes_voters if is_authed else [],
+        maybe_voters=maybe_voters if is_authed else [],
+        no_voters=no_voters if is_authed else [],
     )
 
 
@@ -135,14 +136,15 @@ def _build_my_votes(options, auth_user) -> dict[str, str]:
 
 def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
     auth_user = _authenticated_user(requesting_user)
+    is_authed = auth_user is not None
     options = list(poll.options.prefetch_related("votes__user").all())
-    my_votes = _build_my_votes(options, auth_user) if auth_user is not None else {}
+    my_votes = _build_my_votes(options, auth_user) if is_authed else {}
     winning_option = poll.winning_option
     return EventPollOut(
         id=str(poll.id),
         event_id=str(poll.event_id),  # ty: ignore[unresolved-attribute]
         is_active=poll.is_active,
-        options=[_option_out(opt, my_votes, auth_user) for opt in options],
+        options=[_option_out(opt, my_votes, auth_user, is_authed=is_authed) for opt in options],
         winning_option_id=str(winning_option.id) if winning_option else None,
         winning_datetime=winning_option.datetime if winning_option else None,
         finalized_by_id=str(poll.finalized_by_id) if poll.finalized_by_id else None,
@@ -310,8 +312,8 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_event_poll")
     if event.status == EventStatus.CANCELLED:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
-    poll, winning_option = _get_poll_and_option(event, payload.winning_option_id)
     with transaction.atomic():
+        poll, winning_option = _get_poll_and_option(event, payload.winning_option_id)
         poll.winning_option = winning_option
         poll.finalized_by = request.auth
         poll.finalized_at = timezone.now()
@@ -320,16 +322,9 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
         event.save(update_fields=["start_datetime", "datetime_tbd"])
-        yes_voter_ids = winning_option.votes.filter(availability=PollAvailability.YES).values_list(
-            "user_id", flat=True
-        )
-        for user_id in yes_voter_ids:
-            # paid_confirmed_at omitted from defaults: preserves an existing stamp, else unconfirmed.
-            EventRSVP.objects.update_or_create(
-                event=event,
-                user_id=user_id,
-                defaults={"status": RSVPStatus.ATTENDING, "cancelled_at": None},
-            )
+        # Save the date first: seating re-reads the event, and its past/upcoming
+        # check has to see the finalized start, not the pre-finalize TBD one.
+        seat_yes_voters(event, winning_option)
     broadcast_capacity_change(event_id)
     audit_log(
         logging.INFO,
@@ -396,6 +391,9 @@ def delete_event_poll(request, event_id: UUID):
 def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOption]:
     """Return (poll, winning_option) for finalize_event_poll. Raises on failure."""
     try:
+        # winning_option is a nullable FK, so select_related on it produces an outer
+        # join — Postgres rejects FOR UPDATE there. Lock the poll row on its own first.
+        EventPoll.objects.select_for_update().get(event=event)
         poll = (
             EventPoll.objects.select_related("winning_option")
             .prefetch_related("options__votes__user")

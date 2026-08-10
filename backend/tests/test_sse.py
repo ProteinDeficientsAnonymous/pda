@@ -8,6 +8,7 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.sse import _format_notify_for_user
 
 
+@pytest.mark.django_db
 class TestFormatNotifyForUser:
     def test_event_update_matches_target_user(self):
         frame = _format_notify_for_user("event_updates", "user-1:event-1", "user-1")
