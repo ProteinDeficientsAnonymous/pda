@@ -177,6 +177,7 @@ export const Code = {
     CsvEmpty: 'attendance_import.csv_empty',
     CsvMalformed: 'attendance_import.csv_malformed',
     EventOrTitleRequired: 'attendance_import.event_or_title_required',
+    InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
   },
   Perm: {
@@ -370,6 +371,7 @@ export type ValidationCode =
   | 'attendance_import.csv_empty'
   | 'attendance_import.csv_malformed'
   | 'attendance_import.event_or_title_required'
+  | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
   | 'perm.denied'
   | 'rate.limited'
@@ -535,6 +537,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'attendance_import.csv_empty': [],
   'attendance_import.csv_malformed': [],
   'attendance_import.event_or_title_required': [],
+  'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
   'perm.denied': ['action'],
   'rate.limited': [],
