@@ -190,14 +190,7 @@ describe('RsvpBox', () => {
   });
 
   it('should keep status controls outside the questions/comment scroll region', () => {
-    render(
-      <RsvpBox
-        {...base}
-        mode="create"
-        questions={[requiredSelect]}
-        onConfirm={() => {}}
-      />,
-    );
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
     const scroll = screen.getByTestId('rsvp-details-scroll');
     expect(scroll).toContainElement(screen.getByText('how are you getting there?'));
     expect(scroll).toContainElement(screen.getByLabelText('comment (optional)'));
