@@ -180,7 +180,12 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         raise_validation(Code.Poll.EVENT_ALREADY_HAS_POLL, status_code=400)
     _validate_poll_options(payload.options, require_at_least_one=True)
     with transaction.atomic():
-        poll = EventPoll.objects.create(event=event, created_by=request.auth)
+        poll = EventPoll.objects.create(
+            event=event,
+            created_by=request.auth,
+            original_start_datetime=event.start_datetime,
+            original_end_datetime=event.end_datetime,
+        )
         for i, dt in enumerate(payload.options):
             PollOption.objects.create(poll=poll, datetime=dt, display_order=i)
         # While a poll is active, the poll is the source of truth for when. Clear
@@ -318,7 +323,11 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         poll.save(update_fields=["winning_option", "finalized_by", "finalized_at", "is_active"])
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
-        event.save(update_fields=["start_datetime", "datetime_tbd"])
+        # Restore end_datetime by reapplying the original duration to the winning start time.
+        if poll.original_start_datetime and poll.original_end_datetime:
+            duration = poll.original_end_datetime - poll.original_start_datetime
+            event.end_datetime = winning_option.datetime + duration
+        event.save(update_fields=["start_datetime", "end_datetime", "datetime_tbd"])
         # Save the date first: seating re-reads the event, and its past/upcoming
         # check has to see the finalized start, not the pre-finalize TBD one.
         seat_yes_voters(event, winning_option)
@@ -373,7 +382,13 @@ def delete_event_poll(request, event_id: UUID):
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     poll_id = str(poll.id)
-    poll.delete()
+    with transaction.atomic():
+        # Restore the event's original start/end datetimes before deleting the poll.
+        event.start_datetime = poll.original_start_datetime
+        event.end_datetime = poll.original_end_datetime
+        event.datetime_tbd = False if poll.original_start_datetime else True
+        event.save(update_fields=["start_datetime", "end_datetime", "datetime_tbd"])
+        poll.delete()
     audit_log(
         logging.INFO,
         "poll_deleted",

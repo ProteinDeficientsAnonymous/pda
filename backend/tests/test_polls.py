@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
+from django.utils.dateparse import parse_datetime
 from ninja_jwt.tokens import RefreshToken
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
@@ -427,3 +428,120 @@ class TestDeletePoll:
             **auth_headers,
         )
         assert response.status_code == 404
+
+    def test_create_poll_snapshots_original_datetimes(self, api_client, auth_headers, test_user):
+        start_iso = future_iso(days=90)
+        end_iso = future_iso(days=91)
+        start_dt = parse_datetime(start_iso)
+        end_dt = parse_datetime(end_iso)
+        event = Event.objects.create(
+            title="Datetime Snapshot Event",
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+            created_by=test_user,
+        )
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
+        api_client.post(
+            f"/api/community/events/{event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        poll = EventPoll.objects.get(event=event)
+        assert poll.original_start_datetime == start_dt
+        assert poll.original_end_datetime == end_dt
+
+    def test_delete_poll_restores_original_datetimes(self, api_client, auth_headers, test_user):
+        start_iso = future_iso(days=90)
+        end_iso = future_iso(days=91)
+        start_dt = parse_datetime(start_iso)
+        end_dt = parse_datetime(end_iso)
+        event = Event.objects.create(
+            title="Restore Datetime Event",
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+            created_by=test_user,
+        )
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
+        api_client.post(
+            f"/api/community/events/{event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        event.refresh_from_db()
+        assert event.start_datetime is None
+        assert event.end_datetime is None
+        assert event.datetime_tbd is True
+        api_client.delete(
+            f"/api/community/events/{event.id}/poll/",
+            **auth_headers,
+        )
+        event.refresh_from_db()
+        assert event.start_datetime == start_dt
+        assert event.end_datetime == end_dt
+        assert event.datetime_tbd is False
+
+    def test_delete_poll_with_no_original_times_keeps_tbd(
+        self, api_client, auth_headers, test_user
+    ):
+        event = Event.objects.create(
+            title="TBD Event",
+            start_datetime=None,
+            end_datetime=None,
+            datetime_tbd=True,
+            created_by=test_user,
+        )
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
+        api_client.post(
+            f"/api/community/events/{event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        api_client.delete(
+            f"/api/community/events/{event.id}/poll/",
+            **auth_headers,
+        )
+        event.refresh_from_db()
+        assert event.start_datetime is None
+        assert event.end_datetime is None
+        assert event.datetime_tbd is True
+
+    def test_finalize_poll_preserves_end_datetime_with_duration(
+        self, api_client, auth_headers, test_user
+    ):
+        start_iso = future_iso(days=90)
+        end_iso = future_iso(days=91)
+        start_dt = parse_datetime(start_iso)
+        end_dt = parse_datetime(end_iso)
+        event = Event.objects.create(
+            title="Duration Preservation Event",
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+            created_by=test_user,
+        )
+        winning_time_iso = future_iso(days=120)
+        winning_time_dt = parse_datetime(winning_time_iso)
+        payload = {"options": [winning_time_iso, future_iso(days=121)]}
+        api_client.post(
+            f"/api/community/events/{event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        poll = EventPoll.objects.get(event=event)
+        option = poll.options.get(datetime=winning_time_dt)
+        finalize_payload = {"winning_option_id": str(option.id)}
+        api_client.post(
+            f"/api/community/events/{event.id}/poll/finalize/",
+            data=json.dumps(finalize_payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        event.refresh_from_db()
+        duration = end_dt - start_dt
+        expected_end = winning_time_dt + duration
+        assert event.start_datetime == winning_time_dt
+        assert event.end_datetime == expected_end
+        assert event.datetime_tbd is False

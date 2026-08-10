@@ -41,6 +41,8 @@ class EventPoll(models.Model):
         related_name="finalized_event_polls",
     )
     finalized_at = models.DateTimeField(null=True, blank=True)
+    original_start_datetime = models.DateTimeField(null=True, blank=True)
+    original_end_datetime = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
