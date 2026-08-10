@@ -1,3 +1,10 @@
+## [0.89.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.3...v0.89.4) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1280 - members count reflects search and role filters ([#1356](https://github.com/ProteinDeficientsAnonymous/pda/issues/1356)) ([f80d18d](https://github.com/ProteinDeficientsAnonymous/pda/commit/f80d18d34ea4bd7aa73643b0b9e2ba761466113e))
+
 ## [0.89.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.2...v0.89.3) (2026-08-10)
 
 
