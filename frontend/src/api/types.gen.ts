@@ -3746,11 +3746,8 @@ export interface components {
         };
         /** JoinFormQuestionIn */
         JoinFormQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Label */
             label: string;
             /**
@@ -3773,8 +3770,7 @@ export interface components {
         JoinFormQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -3787,6 +3783,12 @@ export interface components {
             /** Required */
             required: boolean;
         };
+        /**
+         * JoinFormQuestionType
+         * @description Question types supported by join forms.
+         * @enum {string}
+         */
+        JoinFormQuestionType: "text" | "textarea" | "select";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
@@ -4353,6 +4355,12 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * QuestionType
+         * @description HTML-aligned question type catalog (wire values).
+         * @enum {string}
+         */
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -4633,11 +4641,8 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["QuestionType"];
             /** Label */
             label: string;
             /**
@@ -4660,8 +4665,7 @@ export interface components {
         SurveyQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["QuestionType"];
             /** Id */
             id: string;
             /** Label */

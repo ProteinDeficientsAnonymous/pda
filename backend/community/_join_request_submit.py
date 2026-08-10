@@ -17,6 +17,7 @@ from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
 
 from community._field_limits import FieldLimit
 from community._join_requests import JoinRequestOut, _join_request_out
+from community._question_answers import assert_single_choice_member, is_answer_empty
 from community._shared import (
     ErrorOut,
     flatten_to_single_line,
@@ -81,19 +82,17 @@ def _validate_answers(
     """Validate answers against questions. Raises ValidationException on failure."""
     for q_id, q in questions.items():
         answer = answers.get(q_id, "").strip()
-        if q.required and not answer:
+        if q.required and is_answer_empty(answer):
             raise_validation(
                 Code.JoinRequest.ANSWER_REQUIRED,
                 field=f"answers.{q_id}",
                 label=q.label,
             )
-        if (
-            q.field_type == JoinFormQuestionType.SELECT
-            and answer
-            and answer not in (q.options or [])
-        ):
-            raise_validation(
-                Code.JoinRequest.ANSWER_INVALID_OPTION,
+        if q.field_type == JoinFormQuestionType.SELECT and not is_answer_empty(answer):
+            assert_single_choice_member(
+                answer,
+                q.options,
+                code=Code.JoinRequest.ANSWER_INVALID_OPTION,
                 field=f"answers.{q_id}",
                 label=q.label,
             )
