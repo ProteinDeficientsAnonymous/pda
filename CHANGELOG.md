@@ -1,3 +1,10 @@
+## [0.91.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.2...v0.91.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1375 - use calendar picker for partiful import event date ([#1378](https://github.com/ProteinDeficientsAnonymous/pda/issues/1378)) ([e71a8d6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e71a8d6299ee14052778c3ce24051dece8d2c1aa))
+
 ## [0.91.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.91.1...v0.91.2) (2026-08-10)
 
 
