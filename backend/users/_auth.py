@@ -15,7 +15,7 @@ from ninja.responses import Status
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
-from users._consents import stamp_consents
+from users._consents import ConsentType, stamp_consents
 from users._helpers import (
     _check_and_set_email,
     _require_first_name,
@@ -286,7 +286,9 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
-    stamp_consents(user, payload.consent_types)
+    # Onboarding's profile step already shows the privacy toggles, so the
+    # retroactive /consent gate would be a duplicate prompt (Issue 1360).
+    stamp_consents(user, [*payload.consent_types, ConsentType.CONTACT_PRIVACY])
     user.save()
     audit_log(
         logging.INFO,
