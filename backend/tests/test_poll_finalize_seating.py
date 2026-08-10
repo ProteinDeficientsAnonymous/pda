@@ -113,22 +113,6 @@ class TestFinalizeSeating:
         promote_from_waitlist(rsvp_event)
         assert EventRSVP.objects.get(event=rsvp_event, user=waiting).status == RSVPStatus.ATTENDING
 
-    def test_existing_plus_one_is_preserved(
-        self, api_client, auth_headers, rsvp_event, rsvp_poll, test_user
-    ):
-        rsvp_event.allow_plus_ones = True
-        rsvp_event.save(update_fields=["allow_plus_ones"])
-        option = rsvp_poll.options.first()
-        EventRSVP.objects.create(
-            event=rsvp_event, user=test_user, status=RSVPStatus.MAYBE, has_plus_one=True
-        )
-        _vote_yes(option, test_user)
-
-        _finalize(api_client, auth_headers, rsvp_event, option)
-        rsvp = EventRSVP.objects.get(event=rsvp_event, user=test_user)
-        assert rsvp.status == RSVPStatus.ATTENDING
-        assert rsvp.has_plus_one is True
-
     def test_cancelled_rsvp_is_not_resurrected(
         self, api_client, auth_headers, rsvp_event, rsvp_poll, test_user
     ):

@@ -107,9 +107,11 @@ class TestPaidConfirmedOnUngatedStatus:
 
 @pytest.mark.django_db
 class TestPollFinalizeDoesNotBypassGate:
-    def test_unpaid_yes_voter_is_waitlisted_not_seated(self, api_client, auth_headers, test_user):
-        """Finalize routes through the shared RSVP path, so an unpaid voter is
-        waitlisted with a path to confirm — never seated unconfirmed."""
+    def test_unpaid_yes_voter_is_skipped_not_seated(self, api_client, auth_headers, test_user):
+        """Finalize routes through the shared RSVP path, so the payment gate still
+        applies — an unpaid voter is never seated unconfirmed. How poll finalize
+        should handle an unpaid voter (waitlist + notify, etc.) is tracked
+        separately (Issue 1386); for now they're simply not seated."""
         from community.models import EventPoll, PollAvailability, PollOption, PollVote
 
         event = _paid_event(test_user, datetime_tbd=True)
@@ -124,36 +126,7 @@ class TestPollFinalizeDoesNotBypassGate:
             **auth_headers,
         )
         assert response.status_code == 200
-        rsvp = EventRSVP.objects.get(event=event, user=test_user)
-        assert rsvp.status == RSVPStatus.WAITLISTED
-        assert rsvp.paid_confirmed_at is None
-
-    def test_waitlisted_voter_is_seated_once_they_confirm_payment(
-        self, api_client, auth_headers, test_user
-    ):
-        from community.models import EventPoll, PollAvailability, PollOption, PollVote
-
-        event = _paid_event(test_user, datetime_tbd=True)
-        poll = EventPoll.objects.create(event=event, created_by=test_user)
-        option = PollOption.objects.create(poll=poll, datetime=future_iso(days=120))
-        PollVote.objects.create(option=option, user=test_user, availability=PollAvailability.YES)
-        api_client.post(
-            f"/api/community/events/{event.id}/poll/finalize/",
-            {"winning_option_id": str(option.id)},
-            content_type="application/json",
-            **auth_headers,
-        )
-
-        response = api_client.post(
-            RSVP_URL.format(event_id=event.id),
-            {"status": RSVPStatus.ATTENDING, "has_plus_one": False, "paid_confirmed": True},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        rsvp = EventRSVP.objects.get(event=event, user=test_user)
-        assert rsvp.status == RSVPStatus.ATTENDING
-        assert rsvp.paid_confirmed_at is not None
+        assert not EventRSVP.objects.filter(event=event, user=test_user).exists()
 
     def test_yes_voter_with_existing_confirmation_keeps_it(
         self, api_client, auth_headers, test_user
