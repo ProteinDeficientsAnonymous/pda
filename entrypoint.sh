@@ -19,11 +19,7 @@ cd backend
 uv run python manage.py migrate
 uv run python manage.py createcachetable
 
-# --max-requests recycles each worker periodically to release memory the
-# allocator holds onto but never returns to the OS (RSS grows ~200MB -> ~650MB
-# over a day otherwise); jitter staggers recycles across workers. gunicorn
-# keeps the listening socket open across a worker restart, so this is a
-# clean respawn rather than the downtime a bare `uvicorn` restart would cause.
+# --max-requests recycles workers to release allocator memory the OS never reclaims (RSS ~200MB -> ~650MB/day otherwise).
 uv run gunicorn config.asgi:application \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:8000 \

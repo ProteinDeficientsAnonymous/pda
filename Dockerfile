@@ -14,9 +14,7 @@ FROM python:3.13-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends nginx gettext-base && rm -rf /var/lib/apt/lists/*
 
-# Caps glibc's per-thread malloc arenas so freed memory is returned to the OS
-# instead of held in allocator-owned arenas (the main driver of gunicorn RSS
-# growth between --max-requests recycles).
+# Caps glibc malloc arenas so freed memory is returned to the OS instead of held by the allocator.
 ENV MALLOC_ARENA_MAX=2
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
