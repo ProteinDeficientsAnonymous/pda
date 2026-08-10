@@ -12,11 +12,12 @@
       <p style="margin: 0; font-size: 14px;"><a href="{{ event.url }}" style="color: #3c6939;">view event</a></p>
     </div>
     {% endfor %}
-    <p style="margin: 0;">
+    <p style="margin: 0; text-align: center;">
       <a href="{{ calendar_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">see the full calendar</a>
     </p>
   </div>
   <p style="text-align: center; margin: 16px 0 0; font-size: 12px; color: #888;">— pda</p>
+  <p style="text-align: center; margin: 8px 0 0; font-size: 12px; color: #999;">don't want emails like this? <a href="{{ settings_url }}" style="color: #999;">update your preferences</a></p>
   {% include "emails/_no_reply_footer.html" %}
 </body>
 </html>

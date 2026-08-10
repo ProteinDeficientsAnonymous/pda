@@ -4123,6 +4123,8 @@ export interface components {
             show_phone?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
+            /** Weekly Digest Opt Out */
+            weekly_digest_opt_out?: boolean | null;
         };
         /** MemberAttendanceAnalyticsOut */
         MemberAttendanceAnalyticsOut: {
@@ -5106,6 +5108,11 @@ export interface components {
              * @default sunday
              */
             week_start: string;
+            /**
+             * Weekly Digest Opt Out
+             * @default false
+             */
+            weekly_digest_opt_out: boolean;
         };
         /** UserPatchIn */
         UserPatchIn: {

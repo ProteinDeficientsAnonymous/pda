@@ -72,6 +72,7 @@ const AUTHED_USER: User = {
   showEmail: false,
   showBirthday: false,
   hideLastName: false,
+  weeklyDigestOptOut: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',

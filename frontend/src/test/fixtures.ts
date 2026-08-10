@@ -130,6 +130,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     showEmail: false,
     showBirthday: false,
     hideLastName: false,
+    weeklyDigestOptOut: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     profilePhotoUrl: '',

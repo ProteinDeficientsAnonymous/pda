@@ -45,6 +45,7 @@ interface WireUser {
   show_email?: boolean;
   show_birthday?: boolean;
   hide_last_name?: boolean;
+  weekly_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
   profile_photo_url?: string;
@@ -100,6 +101,7 @@ function mapUser(u: WireUser): User {
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
     hideLastName: u.hide_last_name ?? false,
+    weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
     profilePhotoUrl: u.profile_photo_url ?? '',
@@ -221,6 +223,7 @@ export interface ProfileUpdate {
   showEmail?: boolean;
   showBirthday?: boolean;
   hideLastName?: boolean;
+  weeklyDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
 }
@@ -243,6 +246,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
+  if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);

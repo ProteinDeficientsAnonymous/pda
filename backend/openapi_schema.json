@@ -4490,6 +4490,17 @@
               }
             ],
             "title": "Week Start"
+          },
+          "weekly_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Digest Opt Out"
           }
         },
         "title": "MePatchIn",
@@ -6554,6 +6565,11 @@
             "default": "sunday",
             "title": "Week Start",
             "type": "string"
+          },
+          "weekly_digest_opt_out": {
+            "default": false,
+            "title": "Weekly Digest Opt Out",
+            "type": "boolean"
           }
         },
         "required": [

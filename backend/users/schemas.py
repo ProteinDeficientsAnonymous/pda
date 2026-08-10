@@ -137,6 +137,7 @@ class UserOut(BaseModel):
     show_email: bool = True
     show_birthday: bool = True
     hide_last_name: bool = False
+    weekly_digest_opt_out: bool = False
     is_paused: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
@@ -175,6 +176,7 @@ class UserOut(BaseModel):
             show_email=user.show_email,
             show_birthday=user.show_birthday,
             hide_last_name=user.hide_last_name,
+            weekly_digest_opt_out=user.weekly_digest_opt_out,
             is_paused=user.is_paused,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
@@ -275,6 +277,7 @@ class MePatchIn(BaseModel):
     show_email: bool | None = None
     show_birthday: bool | None = None
     hide_last_name: bool | None = None
+    weekly_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
 

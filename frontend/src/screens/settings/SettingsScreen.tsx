@@ -15,6 +15,7 @@ import { email, optionalPersonName, personName, ValidationMessage } from '@/util
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { EmailPreferences } from './EmailPreferences';
 import { InlineBirthday } from './InlineBirthday';
 import { PrivacyToggles } from './PrivacyToggles';
 
@@ -91,6 +92,10 @@ export default function SettingsScreen() {
 
       <Section label="privacy">
         <PrivacyToggles user={user} onChange={(patch) => void updateProfile(patch)} />
+      </Section>
+
+      <Section label="emails">
+        <EmailPreferences user={user} onChange={(patch) => void updateProfile(patch)} />
       </Section>
 
       <Section label="calendar">

@@ -4,14 +4,12 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import Event, EventStatus, FeatureFlag
+from community.models import Event, EventStatus
 from django.core.management import call_command
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
-
-from tests.conftest import set_flag
 
 
 def _make_member(phone_number: str, **extra) -> User:
@@ -42,20 +40,8 @@ def fake_sender(monkeypatch):
     return fake
 
 
-@pytest.fixture(autouse=True)
-def _enable_flag(db):
-    set_flag(FeatureFlag.WEEKLY_DIGEST_EMAIL)
-
-
 @pytest.mark.django_db
 class TestSendWeeklyDigestCommand:
-    def test_noop_when_flag_off(self, fake_sender):
-        set_flag(FeatureFlag.WEEKLY_DIGEST_EMAIL, enabled=False)
-        _make_member("+12025550201")
-        _make_event("potluck", 2)
-        call_command("send_weekly_digest")
-        fake_sender.send.assert_not_called()
-
     def test_no_events_in_range_sends_nothing(self, fake_sender):
         _make_member("+12025550202")
         _make_event("far off potluck", 30)
@@ -109,3 +95,16 @@ class TestSendWeeklyDigestCommand:
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
+
+    def test_skips_member_opted_out(self, fake_sender):
+        _make_member("+12025550210", weekly_digest_opt_out=True)
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_not_called()
+
+    def test_email_links_to_settings(self, fake_sender):
+        _make_member("+12025550211")
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        assert "/settings" in text

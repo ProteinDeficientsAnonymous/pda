@@ -47,6 +47,7 @@ export interface User {
   showEmail: boolean;
   showBirthday: boolean;
   hideLastName: boolean;
+  weeklyDigestOptOut: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
   profilePhotoUrl: string;

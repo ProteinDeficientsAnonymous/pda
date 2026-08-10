@@ -8,7 +8,7 @@ from notifications._email_helpers import send_weekly_digest_email
 from notifications.email_sender import get_email_sender
 from users.models import User
 
-from community.models import Event, EventStatus, FeatureFlag, flag_enabled
+from community.models import Event, EventStatus
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,6 @@ class Command(BaseCommand):
     help = "Email active members a digest of events starting in the next 7 days."
 
     def handle(self, *args, **options):
-        if not flag_enabled(FeatureFlag.WEEKLY_DIGEST_EMAIL):
-            return
-
         now = timezone.now()
         upcoming = Event.objects.filter(
             status=EventStatus.ACTIVE,
@@ -52,17 +49,25 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("No upcoming events; sent 0 digest(s)."))
             return
 
-        calendar_url = f"{settings.FRONTEND_BASE_URL}/calendar"
+        urls = {
+            "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
+            "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
+        }
         sender = get_email_sender()
         sent_count = 0
 
-        for user in User.objects.active_members().filter(email__isnull=False).exclude(email=""):
+        recipients = (
+            User.objects.active_members()
+            .filter(email__isnull=False, weekly_digest_opt_out=False)
+            .exclude(email="")
+        )
+        for user in recipients:
             send_weekly_digest_email(
                 sender=sender,
                 to=user.email,
                 display_name=user.first_name,
                 events=events,
-                calendar_url=calendar_url,
+                urls=urls,
             )
             sent_count += 1
 

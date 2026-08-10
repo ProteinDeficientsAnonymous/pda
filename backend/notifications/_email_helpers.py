@@ -285,16 +285,17 @@ def send_weekly_digest_email(
     to: str,
     display_name: str,
     events: list[dict],
-    calendar_url: str,
+    urls: dict[str, str],
 ) -> SendResult:
     """Render and send the weekly "what's coming up" digest to one member.
 
     param events(list[dict]): upcoming events, each with title/when/location/url keys
+    param urls(dict[str, str]): calendar_url and settings_url for the email footer/CTA
     """
     context = {
         "display_name": display_name or "",
         "events": events,
-        "calendar_url": calendar_url,
+        **urls,
     }
     html = render_to_string("emails/weekly_digest.html", context)
     text = render_to_string("emails/weekly_digest.txt", context)

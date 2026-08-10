@@ -52,6 +52,7 @@ const baseUser: User = {
   showEmail: false,
   showBirthday: false,
   hideLastName: false,
+  weeklyDigestOptOut: false,
   weekStart: 'monday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',

@@ -13,4 +13,6 @@ see the full calendar:
 
 — pda
 
+don't want emails like this? update your preferences: {{ settings_url }}
+
 {% include "emails/_no_reply_footer.txt" %}
