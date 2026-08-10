@@ -73,6 +73,16 @@ AUTH_USER_MODEL = "users.User"
 
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
+# DB-backed so rate limits (config/ratelimit.py) are shared across gunicorn
+# workers/restarts instead of the default per-process LocMemCache, which lets
+# each worker enforce its own separate limit.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
+
 NINJA_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
