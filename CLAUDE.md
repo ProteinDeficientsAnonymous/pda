@@ -94,7 +94,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Standards
 
-**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-lint`** (ESLint + Prettier) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests. `agent-frontend-ci` runs lint first so those checks fail in seconds.
+**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-lint`** (ESLint + Prettier) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests.
 
 References: `~/.claude/rules/standards-django-ninja.md`
 

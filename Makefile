@@ -40,7 +40,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
-        parallel-frontend parallel-agent-frontend-slow \
+        parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-eslint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
@@ -334,13 +334,11 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 	node frontend/scripts/generate-validation-codes.mjs --check
 	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py dump_openapi_schema --check
 
-# Fail-fast: ESLint + Prettier before Vitest/tsc so agents catch the common
-# push failures in seconds instead of after a multi-minute parallel suite.
-agent-frontend-ci: agent-frontend-lint
-	$(MAKE) parallel-agent-frontend-slow
+agent-frontend-ci: parallel-agent-frontend
 
-parallel-agent-frontend-slow:
-	$(MAKE) -j3 agent-frontend-test agent-frontend-typecheck frontend-types-check
+# Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
+parallel-agent-frontend:
+	$(MAKE) -j5 agent-frontend-eslint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:
