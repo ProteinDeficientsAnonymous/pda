@@ -1,3 +1,10 @@
+## [0.90.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.0...v0.90.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1354 - let partiful import mark events as official/club ([#1357](https://github.com/ProteinDeficientsAnonymous/pda/issues/1357)) ([9a7fdf0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9a7fdf01aa3cae4baae8e7020b2bbda13b29f95c))
+
 # [0.90.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.4...v0.90.0) (2026-08-10)
 
 
