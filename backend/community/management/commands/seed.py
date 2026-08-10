@@ -15,13 +15,13 @@ from ._seed_data import (
     SEED_FAQ,
     SEED_GUIDELINES,
     SEED_HOME_PAGE,
-    SEED_JOIN_FORM_QUESTIONS,
     SEED_JOIN_REQUESTS,
     SEED_NON_MEMBERS,
     SEED_RSVPS,
     SEED_USERS,
     SeedUser,
 )
+from ._seed_join_requests import seed_join_form_questions
 from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
 
 
@@ -128,24 +128,7 @@ class Command(BaseCommand):
 
     def _seed_join_form_questions(self) -> dict[str, JoinFormQuestion]:
         """Seed default join form questions. Returns a label→question mapping."""
-        questions: dict[str, JoinFormQuestion] = {}
-        for data in SEED_JOIN_FORM_QUESTIONS:
-            q, created = JoinFormQuestion.objects.get_or_create(
-                label=data.label,
-                defaults={
-                    "field_type": data.field_type,
-                    "required": data.required,
-                    "options": data.options,
-                    "display_order": data.display_order,
-                },
-            )
-            if not created and q.field_type != data.field_type:
-                q.field_type = data.field_type
-                q.save(update_fields=["field_type"])
-            label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} question: {q.label}")
-            questions[q.label] = q
-        return questions
+        return seed_join_form_questions(self.stdout)
 
     def _seed_event_tags(self) -> None:
         for name in ["walk", "restaurant meetup"]:
