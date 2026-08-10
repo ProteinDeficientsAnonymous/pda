@@ -15,9 +15,9 @@ from users.models import NonMemberRsvpToken, User
 
 from community._event_helpers import _event_out, broadcast_capacity_change, promote_from_waitlist
 from community._event_rsvps import (
-    _RsvpApply,
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
+    _RsvpApply,
     _validate_rsvp_status,
     payment_audit_details,
 )

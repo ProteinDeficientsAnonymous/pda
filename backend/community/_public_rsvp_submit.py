@@ -16,9 +16,9 @@ from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, val
 
 from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import (
-    _RsvpApply,
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
+    _RsvpApply,
     _validate_rsvp_status,
     payment_audit_details,
 )
