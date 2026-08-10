@@ -57,7 +57,7 @@ NON_MEMBER_EVENT_TITLE = "[staging] official public rsvp demo"
 
 # Official, RSVP-enabled events the attendance + public-RSVP surfaces read from.
 OFFICIAL_PAST_TITLE = "[staging] official past attendance-marked"
-OFFICIAL_TODAY_TITLE = "[staging] official today rsvp open"
+OFFICIAL_TODAY_TITLE = "[staging] official today · rsvp questions"
 OFFICIAL_FULL_TITLE = "[staging] official over-capacity waitlist"
 
 

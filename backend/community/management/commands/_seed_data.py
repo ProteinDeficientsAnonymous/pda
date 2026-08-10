@@ -15,6 +15,9 @@ from ._seed_shared import SeedEvent, SeedRsvpQuestion
 
 PASSWORD = "testpass123"
 
+# Title includes "rsvp questions" so the event is easy to find when testing questionnaires.
+COOKING_WORKSHOP_TITLE = "Plant-Based Cooking Workshop · rsvp questions"
+
 
 @dataclass
 class SeedUser:
@@ -156,7 +159,7 @@ SEED_EVENTS = [
         max_attendees=3,
     ),
     SeedEvent(
-        title="Plant-Based Cooking Workshop",
+        title=COOKING_WORKSHOP_TITLE,
         description="Learn to make tofu scramble, cashew cheese, and more.",
         delta_days=14,
         duration_hours=2,
@@ -236,7 +239,7 @@ _TRAVEL_Q = "How are you getting there?"
 _NOTES_Q = "Anything we should know?"
 
 SEED_EVENT_RSVP_QUESTIONS: dict[str, list[SeedRsvpQuestion]] = {
-    "Plant-Based Cooking Workshop": [
+    COOKING_WORKSHOP_TITLE: [
         SeedRsvpQuestion(
             label=_TRAVEL_Q,
             field_type=RsvpQuestionType.SELECT,
@@ -261,9 +264,9 @@ SEED_RSVPS = [
     SeedRSVP("Vegan Potluck", _JAMIE, RSVPStatus.WAITLISTED),
     SeedRSVP("Vegan Potluck", _RIN, RSVPStatus.WAITLISTED),
     SeedRSVP("Vegan Potluck", _ASH, RSVPStatus.MAYBE),
-    # Plant-Based Cooking Workshop — uncapped, mixed statuses + questionnaire coverage.
+    # Cooking workshop — uncapped, mixed statuses + questionnaire coverage.
     SeedRSVP(
-        "Plant-Based Cooking Workshop",
+        COOKING_WORKSHOP_TITLE,
         _MEMBER,
         RSVPStatus.ATTENDING,
         has_plus_one=True,
@@ -273,13 +276,13 @@ SEED_RSVPS = [
         },
     ),
     SeedRSVP(
-        "Plant-Based Cooking Workshop",
+        COOKING_WORKSHOP_TITLE,
         _JAMIE,
         RSVPStatus.ATTENDING,
         answers={_TRAVEL_Q: "bike"},
     ),
-    SeedRSVP("Plant-Based Cooking Workshop", _RIN, RSVPStatus.MAYBE),
-    SeedRSVP("Plant-Based Cooking Workshop", _ASH, RSVPStatus.CANT_GO),
+    SeedRSVP(COOKING_WORKSHOP_TITLE, _RIN, RSVPStatus.MAYBE),
+    SeedRSVP(COOKING_WORKSHOP_TITLE, _ASH, RSVPStatus.CANT_GO),
     # Past Potluck — attendance marked (attended / no_show) on attending RSVPs.
     SeedRSVP(
         "Past Potluck (seed)",
@@ -318,8 +321,8 @@ SEED_RSVPS = [
         RSVPStatus.ATTENDING,
         attendance=AttendanceStatus.ATTENDED,
     ),
-    SeedRSVP("Plant-Based Cooking Workshop", _RILEY_NON_MEMBER, RSVPStatus.ATTENDING),
-    SeedRSVP("Plant-Based Cooking Workshop", _TAYLOR_NON_MEMBER, RSVPStatus.ATTENDING),
+    SeedRSVP(COOKING_WORKSHOP_TITLE, _RILEY_NON_MEMBER, RSVPStatus.ATTENDING),
+    SeedRSVP(COOKING_WORKSHOP_TITLE, _TAYLOR_NON_MEMBER, RSVPStatus.ATTENDING),
 ]
 
 SEED_HOME_PAGE = {
