@@ -37,6 +37,20 @@ export function useEventPoll(eventId: string, hasPoll: boolean) {
   });
 }
 
+// Refetches immediately before a vote is sent so a stale myVotes snapshot
+// (e.g. left open in another tab) can't clobber votes cast elsewhere.
+export function useFreshMyVotes(eventId: string) {
+  const qc = useQueryClient();
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return async (): Promise<Record<string, VoteChoice>> => {
+    const poll = await qc.fetchQuery({
+      queryKey: eventPollKeys.detail(eventId, isAuthed),
+      queryFn: () => fetchEventPoll(eventId),
+    });
+    return poll?.myVotes ?? {};
+  };
+}
+
 function extractPollError(err: unknown): string {
   if (getApiStatus(err) === 429) return 'slow down — try again in a moment';
   return extractApiErrorOr(err, "couldn't update the poll — try again");
