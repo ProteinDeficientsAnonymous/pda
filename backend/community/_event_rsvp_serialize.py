@@ -1,5 +1,3 @@
-"""Leaf serializers for RSVP question payloads (no helper/event imports)."""
-
 from community._event_schemas import EventRsvpQuestionOut
 from community.models import EventRsvpQuestion
 

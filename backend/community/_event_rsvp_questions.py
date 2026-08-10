@@ -1,5 +1,3 @@
-"""CRUD endpoints for per-event RSVP questions."""
-
 import logging
 from uuid import UUID
 
