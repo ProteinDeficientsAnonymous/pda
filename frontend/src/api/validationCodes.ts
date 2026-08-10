@@ -404,6 +404,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "couldn't read that csv — make sure it's the raw partiful export";
     case Code.AttendanceImport.EventOrTitleRequired:
       return 'pick an existing event or give the new event a name and date';
+    case Code.AttendanceImport.InvalidEventType:
+      return 'pick official or club for the new event';
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
 
