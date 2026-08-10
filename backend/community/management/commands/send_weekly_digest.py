@@ -8,7 +8,7 @@ from notifications._email_helpers import send_weekly_digest_email
 from notifications.email_sender import get_email_sender
 from users.models import User
 
-from community.models import Event, EventStatus
+from community.models import Event, EventStatus, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ class Command(BaseCommand):
         now = timezone.now()
         upcoming = Event.objects.filter(
             status=EventStatus.ACTIVE,
+            event_type__in=(EventType.OFFICIAL, EventType.CLUB),
             deleted_at__isnull=True,
             start_datetime__gte=now,
             start_datetime__lt=now + timedelta(days=7),
