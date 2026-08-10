@@ -7,10 +7,11 @@ from community.models.choices import (
     AttendanceStatus,
     EventType,
     JoinFormQuestionType,
+    RsvpQuestionType,
     RSVPStatus,
 )
 
-from ._seed_shared import SeedEvent
+from ._seed_shared import SeedEvent, SeedRsvpQuestion
 
 PASSWORD = "testpass123"
 
@@ -43,6 +44,7 @@ class SeedRSVP:
 
     `attendance` only applies to attending RSVPs on a past / in-check-in-window
     event — mirroring the API, which rejects attendance on non-attending RSVPs.
+    `answers` is an explicit label→answer map for that event's RSVP questions.
     """
 
     event_title: str
@@ -50,6 +52,7 @@ class SeedRSVP:
     status: str
     has_plus_one: bool = False
     attendance: str = AttendanceStatus.UNKNOWN
+    answers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -229,6 +232,27 @@ SEED_NON_MEMBERS = [
     ),
 ]
 
+_TRAVEL_Q = "How are you getting there?"
+_NOTES_Q = "Anything we should know?"
+
+SEED_EVENT_RSVP_QUESTIONS: dict[str, list[SeedRsvpQuestion]] = {
+    "Plant-Based Cooking Workshop": [
+        SeedRsvpQuestion(
+            label=_TRAVEL_Q,
+            field_type=RsvpQuestionType.SELECT,
+            options=["driving", "transit", "bike"],
+            required=True,
+            display_order=0,
+        ),
+        SeedRsvpQuestion(
+            label=_NOTES_Q,
+            field_type=RsvpQuestionType.TEXTAREA,
+            required=False,
+            display_order=1,
+        ),
+    ],
+}
+
 SEED_RSVPS = [
     # Vegan Potluck — max_attendees=3. Admin +1 (2 spots) and Member (1 spot)
     # fill it, so the rest sit on the FIFO waitlist (ordered by insertion below).
@@ -237,9 +261,23 @@ SEED_RSVPS = [
     SeedRSVP("Vegan Potluck", _JAMIE, RSVPStatus.WAITLISTED),
     SeedRSVP("Vegan Potluck", _RIN, RSVPStatus.WAITLISTED),
     SeedRSVP("Vegan Potluck", _ASH, RSVPStatus.MAYBE),
-    # Plant-Based Cooking Workshop — uncapped, mixed statuses.
-    SeedRSVP("Plant-Based Cooking Workshop", _MEMBER, RSVPStatus.ATTENDING, has_plus_one=True),
-    SeedRSVP("Plant-Based Cooking Workshop", _JAMIE, RSVPStatus.ATTENDING),
+    # Plant-Based Cooking Workshop — uncapped, mixed statuses + questionnaire coverage.
+    SeedRSVP(
+        "Plant-Based Cooking Workshop",
+        _MEMBER,
+        RSVPStatus.ATTENDING,
+        has_plus_one=True,
+        answers={
+            _TRAVEL_Q: "transit",
+            _NOTES_Q: "Nut allergy — please avoid shared utensils.",
+        },
+    ),
+    SeedRSVP(
+        "Plant-Based Cooking Workshop",
+        _JAMIE,
+        RSVPStatus.ATTENDING,
+        answers={_TRAVEL_Q: "bike"},
+    ),
     SeedRSVP("Plant-Based Cooking Workshop", _RIN, RSVPStatus.MAYBE),
     SeedRSVP("Plant-Based Cooking Workshop", _ASH, RSVPStatus.CANT_GO),
     # Past Potluck — attendance marked (attended / no_show) on attending RSVPs.
