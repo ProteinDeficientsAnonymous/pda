@@ -26,9 +26,6 @@ class TestWaitlistPromotionBypass:
     def test_unconfirmed_attending_at_capacity_is_rejected_before_waitlisting(
         self, api_client, auth_headers, test_user, django_user_model
     ):
-        """The gate must check the requested status, not the capacity-resolved
-        one — otherwise an unconfirmed request queues as an unconfirmed
-        waitlist row that later gets promoted with no gate ever having run."""
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
             phone_number="+14155550111", first_name="Seated", is_member=True
@@ -51,7 +48,6 @@ class TestPaidConfirmedOnUngatedStatus:
     def test_maybe_with_paid_confirmed_does_not_bank_a_stamp(
         self, api_client, auth_headers, test_user
     ):
-        """paid_confirmed on an ungated status must not pre-authorize a later attending."""
         event = _paid_event(test_user)
         response = api_client.post(
             RSVP_URL.format(event_id=event.id),
@@ -108,10 +104,6 @@ class TestPaidConfirmedOnUngatedStatus:
 @pytest.mark.django_db
 class TestPollFinalizeDoesNotBypassGate:
     def test_unpaid_yes_voter_is_skipped_not_seated(self, api_client, auth_headers, test_user):
-        """Finalize routes through the shared RSVP path, so the payment gate still
-        applies — an unpaid voter is never seated unconfirmed. How poll finalize
-        should handle an unpaid voter (waitlist + notify, etc.) is tracked
-        separately (Issue 1386); for now they're simply not seated."""
         from community.models import EventPoll, PollAvailability, PollOption, PollVote
 
         event = _paid_event(test_user, datetime_tbd=True)
@@ -160,9 +152,6 @@ class TestNoOpEarlyReturnStillStamps:
     def test_confirming_an_already_seated_unconfirmed_row_persists_the_stamp(
         self, api_client, auth_headers, test_user
     ):
-        """An unconfirmed attending row (e.g. from waitlist promotion) confirmed
-        via the same status/plus-one must still get the stamp written — the
-        unchanged-state early return must not discard it."""
         event = _paid_event(test_user)
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
 
@@ -178,7 +167,6 @@ class TestNoOpEarlyReturnStillStamps:
 
 @pytest.mark.django_db
 def test_stamp_is_a_real_datetime(api_client, auth_headers, test_user):
-    """Guards against asserting on a truthy ISO string instead of a datetime."""
     event = _paid_event(test_user)
     api_client.post(
         RSVP_URL.format(event_id=event.id),
