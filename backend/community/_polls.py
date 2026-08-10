@@ -323,7 +323,6 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         poll.save(update_fields=["winning_option", "finalized_by", "finalized_at", "is_active"])
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
-        # Restore end_datetime by reapplying the original duration to the winning start time.
         if poll.original_start_datetime and poll.original_end_datetime:
             duration = poll.original_end_datetime - poll.original_start_datetime
             event.end_datetime = winning_option.datetime + duration
@@ -383,10 +382,9 @@ def delete_event_poll(request, event_id: UUID):
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     poll_id = str(poll.id)
     with transaction.atomic():
-        # Restore the event's original start/end datetimes before deleting the poll.
         event.start_datetime = poll.original_start_datetime
         event.end_datetime = poll.original_end_datetime
-        event.datetime_tbd = False if poll.original_start_datetime else True
+        event.datetime_tbd = not poll.original_start_datetime
         event.save(update_fields=["start_datetime", "end_datetime", "datetime_tbd"])
         poll.delete()
     audit_log(

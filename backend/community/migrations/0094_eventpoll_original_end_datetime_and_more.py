@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0093_event_rsvp_questions'),
+        ("community", "0093_event_rsvp_questions"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='eventpoll',
-            name='original_end_datetime',
+            model_name="eventpoll",
+            name="original_end_datetime",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='eventpoll',
-            name='original_start_datetime',
+            model_name="eventpoll",
+            name="original_start_datetime",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]
