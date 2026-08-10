@@ -1,3 +1,10 @@
+# [0.91.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.5...v0.91.0) (2026-08-10)
+
+
+### Features
+
+* **events:** RSVP questionnaire UX and host dialog cache fix ([#1367](https://github.com/ProteinDeficientsAnonymous/pda/issues/1367)) ([f3c1744](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3c174488a98beec89ceaddce3afb662158944e4))
+
 ## [0.90.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.90.4...v0.90.5) (2026-08-10)
 
 
