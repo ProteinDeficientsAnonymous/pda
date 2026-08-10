@@ -1,5 +1,5 @@
 import pytest
-from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
@@ -338,6 +338,54 @@ class TestCommitEndpoint:
         event = Event.objects.get(id=body["event_id"])
         assert event.title == "Legacy Mixer"
         assert EventRSVP.objects.filter(event=event, user=alice).exists()
+
+    def test_defaults_to_community_event_type(self, api_client, events_admin, alice):
+        response = api_client.post(
+            "/api/community/events/attendance-import/commit/",
+            {
+                "event_title": "Legacy Mixer",
+                "event_date": "2025-06-13",
+                "rows": [self._row(user_id=str(alice.id), checked_in=True)],
+            },
+            content_type="application/json",
+            **_auth(events_admin),
+        )
+        event = Event.objects.get(id=response.json()["event_id"])
+        assert event.event_type == EventType.COMMUNITY
+
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_creates_event_with_requested_qualifying_type(
+        self, api_client, events_admin, alice, event_type
+    ):
+        response = api_client.post(
+            "/api/community/events/attendance-import/commit/",
+            {
+                "event_title": "Club Mixer",
+                "event_date": "2025-06-13",
+                "event_type": event_type,
+                "rows": [self._row(user_id=str(alice.id), checked_in=True)],
+            },
+            content_type="application/json",
+            **_auth(events_admin),
+        )
+        assert response.status_code == 200
+        event = Event.objects.get(id=response.json()["event_id"])
+        assert event.event_type == event_type
+
+    def test_invalid_event_type_rejected(self, api_client, events_admin, alice):
+        response = api_client.post(
+            "/api/community/events/attendance-import/commit/",
+            {
+                "event_title": "Legacy Mixer",
+                "event_date": "2025-06-13",
+                "event_type": "not_a_real_type",
+                "rows": [self._row(user_id=str(alice.id), checked_in=True)],
+            },
+            content_type="application/json",
+            **_auth(events_admin),
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"][0]["code"] == "attendance_import.invalid_event_type"
 
     def test_missing_event_and_title_rejected(self, api_client, events_admin, alice):
         response = api_client.post(

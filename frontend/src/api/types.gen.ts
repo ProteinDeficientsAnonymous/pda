@@ -2169,6 +2169,8 @@ export interface components {
             event_id?: string | null;
             /** Event Title */
             event_title?: string | null;
+            /** Event Type */
+            event_type?: string | null;
             /** Rows */
             rows: components["schemas"]["ImportRowResolutionIn"][];
         };

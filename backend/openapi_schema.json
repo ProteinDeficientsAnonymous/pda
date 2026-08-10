@@ -147,6 +147,17 @@
             ],
             "title": "Event Title"
           },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
           "rows": {
             "items": {
               "$ref": "#/components/schemas/ImportRowResolutionIn"

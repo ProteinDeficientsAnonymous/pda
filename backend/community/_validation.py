@@ -189,6 +189,7 @@ class Code:
         CSV_EMPTY = "attendance_import.csv_empty"
         CSV_MALFORMED = "attendance_import.csv_malformed"
         EVENT_OR_TITLE_REQUIRED = "attendance_import.event_or_title_required"
+        INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
         AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
 
     class Perm:

@@ -38,6 +38,7 @@ class AttendanceImportCommitIn(BaseModel):
     event_id: str | None = None
     event_title: str | None = None
     event_date: date | None = None
+    event_type: str | None = None
     rows: list[ImportRowResolutionIn]
 
 

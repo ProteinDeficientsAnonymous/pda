@@ -133,6 +133,7 @@ export interface CommitAttendanceImportInput {
   eventId?: string;
   eventTitle?: string;
   eventDate?: string;
+  eventType?: string;
   rows: RowResolution[];
 }
 
@@ -154,6 +155,7 @@ export function useCommitAttendanceImport() {
           event_id: input.eventId,
           event_title: input.eventTitle,
           event_date: input.eventDate,
+          event_type: input.eventType,
           rows: input.rows.map((r) => ({
             row_index: r.rowIndex,
             raw_name: r.rawName,
