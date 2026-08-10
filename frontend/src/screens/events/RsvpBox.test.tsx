@@ -189,6 +189,23 @@ describe('RsvpBox', () => {
     expect(screen.getByLabelText('anything else? (optional)')).toBeInTheDocument();
   });
 
+  it('should keep status controls outside the questions/comment scroll region', () => {
+    render(
+      <RsvpBox
+        {...base}
+        mode="create"
+        questions={[requiredSelect]}
+        onConfirm={() => {}}
+      />,
+    );
+    const scroll = screen.getByTestId('rsvp-details-scroll');
+    expect(scroll).toContainElement(screen.getByText('how are you getting there?'));
+    expect(scroll).toContainElement(screen.getByLabelText('comment (optional)'));
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /i'm going/i }));
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /add \+1/i }));
+    expect(scroll).not.toContainElement(screen.getByRole('button', { name: /^confirm$/i }));
+  });
+
   it('should hide questions when status is can’t go', () => {
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /can't go/i }));

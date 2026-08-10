@@ -129,50 +129,55 @@ export function RsvpBox({
         />
       ) : (
         <div className="flex max-h-[min(70vh,32rem)] flex-col gap-4">
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pe-1">
-            <RsvpStatusPicker
-              value={status}
-              onSelect={setStatus}
-              disabled={busy}
-              labelFor={(s, defaultLabel) =>
-                s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
-              }
-            />
+          <RsvpStatusPicker
+            value={status}
+            onSelect={setStatus}
+            disabled={busy}
+            labelFor={(s, defaultLabel) =>
+              s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+            }
+          />
 
-            {showPlusOne ? (
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  variant={hasPlusOne ? 'primary' : 'secondary'}
-                  onClick={() => {
-                    setHasPlusOne(!hasPlusOne);
-                  }}
-                  disabled={busy}
-                >
-                  {hasPlusOne ? 'remove +1' : 'add +1'}
-                </Button>
-              </div>
-            ) : null}
-
-            {showQuestions ? (
-              <RsvpQuestionFields
-                questions={questions}
-                answers={answers}
-                errors={questionErrors}
-                disabled={busy}
-                onChange={(questionId, value) => {
-                  setAnswers((prev) => ({ ...prev, [questionId]: value }));
-                  setQuestionErrors((prev) => {
-                    if (!prev[questionId]) return prev;
-                    const { [questionId]: _removed, ...rest } = prev;
-                    return rest;
-                  });
+          {showPlusOne ? (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant={hasPlusOne ? 'primary' : 'secondary'}
+                onClick={() => {
+                  setHasPlusOne(!hasPlusOne);
                 }}
-              />
-            ) : null}
+                disabled={busy}
+              >
+                {hasPlusOne ? 'remove +1' : 'add +1'}
+              </Button>
+            </div>
+          ) : null}
 
-            {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
-          </div>
+          {showQuestions || showComment ? (
+            <div
+              data-testid="rsvp-details-scroll"
+              className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pe-1"
+            >
+              {showQuestions ? (
+                <RsvpQuestionFields
+                  questions={questions}
+                  answers={answers}
+                  errors={questionErrors}
+                  disabled={busy}
+                  onChange={(questionId, value) => {
+                    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+                    setQuestionErrors((prev) => {
+                      if (!prev[questionId]) return prev;
+                      const { [questionId]: _removed, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
+                />
+              ) : null}
+
+              {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
+            </div>
+          ) : null}
 
           <div className="border-border flex shrink-0 items-center justify-between gap-2 border-t pt-3">
             {mode === 'edit' && onRemove ? (
