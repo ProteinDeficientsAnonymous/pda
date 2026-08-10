@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { type EventOption, useAttendanceImportEventOptions } from '@/api/attendanceImport';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { EventType } from '@/models/event';
@@ -177,12 +178,11 @@ function NewEventFields({
         }}
         placeholder="e.g. summer potluck"
       />
-      <TextField
+      <DatePicker
         label="event date"
-        type="date"
-        value={date}
-        onChange={(e) => {
-          onDateChange(e.target.value);
+        value={date || null}
+        onChange={(v) => {
+          onDateChange(v ?? '');
         }}
       />
       <div className="flex flex-col gap-1">
