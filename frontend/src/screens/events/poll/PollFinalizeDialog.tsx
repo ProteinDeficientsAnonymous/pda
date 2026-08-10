@@ -45,6 +45,7 @@ export function PollFinalizeDialog({ open, onClose, event, poll }: Props) {
     }
   }
 
+  const hasEndTime = !!event.endDatetime;
   const options = sortOptionsChrono(poll.options);
   const submitting = finalize.isPending;
 
@@ -54,6 +55,15 @@ export function PollFinalizeDialog({ open, onClose, event, poll }: Props) {
         <p className="text-foreground-secondary text-sm">
           pick the winning date — yes-voters get auto-rsvp'd
         </p>
+
+        {hasEndTime ? (
+          <p
+            role="alert"
+            className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"
+          >
+            heads up — this won't update the end time. edit the event after to fix it.
+          </p>
+        ) : null}
 
         <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto">
           {options.map((opt) => {
