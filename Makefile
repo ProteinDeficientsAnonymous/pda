@@ -42,7 +42,8 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
-        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
+        agent-frontend-eslint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
+        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
@@ -301,8 +302,12 @@ agent-complexity:
 		echo "$$violations"; \
 		exit 1; \
 	fi
-agent-frontend-lint:
+agent-frontend-eslint:
 	cd frontend && pnpm exec eslint . --max-warnings 0
+
+# Cheap pre-push gate: ESLint + Prettier in parallel (~same wall time as eslint).
+agent-frontend-lint:
+	$(MAKE) -j2 agent-frontend-eslint agent-frontend-format-check
 
 agent-frontend-format:
 	cd frontend && pnpm exec prettier --write --log-level warn .
@@ -331,8 +336,9 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 
 agent-frontend-ci: parallel-agent-frontend
 
+# Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:
-	$(MAKE) -j5 agent-frontend-lint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
+	$(MAKE) -j5 agent-frontend-eslint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:
