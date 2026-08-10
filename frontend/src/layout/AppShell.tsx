@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
 import { DevTestEventsButton } from '@/components/DevTestEventsButton';
+import { DevTestUserButton } from '@/components/DevTestUserButton';
 import { FeedbackButton } from '@/components/FeedbackButton';
 
 import { BottomNav } from './BottomNav';
@@ -53,6 +54,7 @@ export function AppShell() {
       </div>
       <FeedbackButton />
       <DevTestEventsButton />
+      <DevTestUserButton />
       <BottomNav />
     </div>
   );

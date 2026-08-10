@@ -71,3 +71,51 @@ export function useCreateDevTestEvents() {
     },
   });
 }
+
+export const DEFAULT_DEV_TEST_USER_PASSWORD = 'testPassword1@';
+
+export interface DevTestUserOptions {
+  firstName: string;
+  lastName: string;
+  password: string;
+  isMember: boolean;
+  needsOnboarding: boolean;
+  needsPasswordReset: boolean;
+  isPaused: boolean;
+  isArchived: boolean;
+  guidelinesConsent: boolean;
+  smsConsent: boolean;
+  contactPrivacyConsent: boolean;
+}
+
+interface CreateDevTestUserResponse {
+  id: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+}
+
+export function useCreateDevTestUser() {
+  return useMutation({
+    mutationFn: async (options: DevTestUserOptions) => {
+      const { data } = await apiClient.post<CreateDevTestUserResponse>(
+        '/api/auth/dev/test-users/',
+        {
+          first_name: options.firstName,
+          last_name: options.lastName,
+          password: options.password,
+          is_member: options.isMember,
+          needs_onboarding: options.needsOnboarding,
+          needs_password_reset: options.needsPasswordReset,
+          is_paused: options.isPaused,
+          is_archived: options.isArchived,
+          guidelines_consent: options.guidelinesConsent,
+          sms_consent: options.smsConsent,
+          contact_privacy_consent: options.contactPrivacyConsent,
+        },
+      );
+      return data;
+    },
+  });
+}
