@@ -32,11 +32,8 @@ def find_my_questionnaire_responses(rsvps, user) -> dict:
 
 
 def answers_required_for_status(status: str) -> bool:
-    return status in {
-        RSVPStatus.ATTENDING,
-        RSVPStatus.MAYBE,
-        RSVPStatus.WAITLISTED,
-    }
+    # Waitlisted is the capacity overflow of "going", so it still requires answers.
+    return status in {RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED}
 
 
 def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:

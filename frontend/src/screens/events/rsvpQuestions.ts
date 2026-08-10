@@ -14,20 +14,12 @@ export { newRsvpQuestionId as newQuestionId };
 
 const RESPONDENT_STATUSES = new Set<string>([
   RsvpServerStatus.Attending,
-  RsvpServerStatus.Maybe,
   RsvpServerStatus.Waitlisted,
 ]);
 
 export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = Object.fromEntries(
   RSVP_QUESTION_TYPE_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<RsvpQuestionType, string>;
-
-export function parseOptionsText(text: string): string[] {
-  return text
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 export function isAnswerFilled(value: RsvpAnswerValue | undefined): boolean {
   return Boolean(value?.trim());
@@ -41,6 +33,10 @@ export function missingRequiredQuestionIds(
 }
 
 export function isRsvpRespondentStatus(status: string): boolean {
+  return RESPONDENT_STATUSES.has(status);
+}
+
+export function rsvpQuestionsApplyToStatus(status: string): boolean {
   return RESPONDENT_STATUSES.has(status);
 }
 

@@ -54,8 +54,8 @@ export function EventRsvpResponsesSection({ event }: Props) {
       <div>
         <h2 className="text-base font-medium">question responses</h2>
         <p className="text-muted text-sm">
-          {String(respondents.length)} guest{respondents.length === 1 ? '' : 's'} with going / maybe
-          / waitlist
+          {String(respondents.length)} guest{respondents.length === 1 ? '' : 's'} going or
+          waitlisted
         </p>
       </div>
 

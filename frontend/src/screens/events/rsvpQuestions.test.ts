@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { QuestionType } from '@/api/questionTypes';
 
+import { RsvpServerStatus } from '@/models/event';
+
 import {
   isAnswerFilled,
   missingRequiredQuestionIds,
-  parseOptionsText,
+  rsvpQuestionsApplyToStatus,
   type RsvpQuestionDraft,
   wantsOptions,
 } from './rsvpQuestions';
@@ -28,12 +30,6 @@ describe('wantsOptions', () => {
   });
 });
 
-describe('parseOptionsText', () => {
-  it('splits trimmed non-empty lines', () => {
-    expect(parseOptionsText('  a\n\nb  \n')).toEqual(['a', 'b']);
-  });
-});
-
 describe('isAnswerFilled', () => {
   it('treats empty or whitespace as unfilled', () => {
     expect(isAnswerFilled(undefined)).toBe(false);
@@ -52,5 +48,14 @@ describe('missingRequiredQuestionIds', () => {
     ];
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: '' })).toEqual(['c']);
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: 'x' })).toEqual([]);
+  });
+});
+
+describe('rsvpQuestionsApplyToStatus', () => {
+  it('should apply only for going and waitlisted statuses', () => {
+    expect(rsvpQuestionsApplyToStatus(RsvpServerStatus.Attending)).toBe(true);
+    expect(rsvpQuestionsApplyToStatus(RsvpServerStatus.Waitlisted)).toBe(true);
+    expect(rsvpQuestionsApplyToStatus(RsvpServerStatus.Maybe)).toBe(false);
+    expect(rsvpQuestionsApplyToStatus(RsvpServerStatus.CantGo)).toBe(false);
   });
 });

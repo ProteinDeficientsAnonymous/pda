@@ -10,6 +10,7 @@ import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
   missingRequiredQuestionIds,
+  rsvpQuestionsApplyToStatus,
   type RsvpAnswerValue,
   type RsvpQuestionDraft,
 } from './rsvpQuestions';
@@ -69,8 +70,7 @@ export function RsvpBox({
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
   const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
-  const showQuestions =
-    questions.length > 0 && (status === RsvpStatus.Attending || status === RsvpStatus.Maybe);
+  const showQuestions = questions.length > 0 && rsvpQuestionsApplyToStatus(status);
 
   function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
     const next: Record<string, RsvpAnswerValue> = {};

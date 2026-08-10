@@ -111,12 +111,26 @@ class TestRsvpWithAnswers:
         )
         assert response.status_code == 200
 
+    def test_maybe_skips_required_answers(
+        self, api_client, other_headers, auth_headers, rsvp_event
+    ):
+        _create_question(rsvp_event)
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.MAYBE, "has_plus_one": False},
+            content_type="application/json",
+            **other_headers,
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=rsvp_event)
+        assert rsvp.questionnaire_responses == {}
+
     def test_invalid_option_rejected(self, api_client, other_headers, auth_headers, rsvp_event):
         q = _create_question(rsvp_event)
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
             {
-                "status": RSVPStatus.MAYBE,
+                "status": RSVPStatus.ATTENDING,
                 "questionnaire_responses": {q["id"]: "helicopter"},
             },
             content_type="application/json",

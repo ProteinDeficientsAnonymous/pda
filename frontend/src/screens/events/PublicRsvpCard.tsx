@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -13,7 +13,11 @@ import { buildEventLinks } from '@/utils/eventLinks';
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
-import { missingRequiredQuestionIds, type RsvpAnswerValue } from './rsvpQuestions';
+import {
+  missingRequiredQuestionIds,
+  rsvpQuestionsApplyToStatus,
+  type RsvpAnswerValue,
+} from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 
 const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
@@ -53,27 +57,42 @@ export function PublicRsvpCard({ token, event, status }: Props) {
     ),
   );
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
+  const [draftStatus, setDraftStatus] = useState(status);
   const [pendingStatus, setPendingStatus] = useState<RsvpInputStatus | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
   const needsPaymentFor = usePaymentGate(event);
+  const showQuestions = event.rsvpQuestions.length > 0 && rsvpQuestionsApplyToStatus(draftStatus);
+
+  useEffect(() => {
+    setDraftStatus(status);
+  }, [status]);
+
+  function filledQuestionnaireResponses(forStatus: string): Record<string, RsvpAnswerValue> {
+    if (!rsvpQuestionsApplyToStatus(forStatus)) return {};
+    const next: Record<string, RsvpAnswerValue> = {};
+    for (const question of event.rsvpQuestions) {
+      const value = answers[question.id];
+      if (value?.trim()) next[question.id] = value;
+    }
+    return next;
+  }
 
   async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string, paidConfirmed?: boolean) {
     setError(null);
-    const missing =
-      next === RsvpServerStatus.CantGo
-        ? []
-        : missingRequiredQuestionIds(event.rsvpQuestions, answers);
+    const requiresAnswers = rsvpQuestionsApplyToStatus(next);
+    const missing = requiresAnswers ? missingRequiredQuestionIds(event.rsvpQuestions, answers) : [];
     if (missing.length > 0) {
       setAnswerErrors(Object.fromEntries(missing.map((id) => [id, 'required'])));
       return;
     }
+    setAnswerErrors({});
     try {
       await update.mutateAsync({
         eventId: event.id,
         status: next,
         hasPlusOne: false,
-        questionnaireResponses: answers,
+        questionnaireResponses: filledQuestionnaireResponses(next),
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
         ...(paidConfirmed ? { paidConfirmed: true } : {}),
       });
@@ -84,6 +103,14 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   }
 
   function changeStatus(next: RsvpInputStatus) {
+    setDraftStatus(next);
+    if (rsvpQuestionsApplyToStatus(next)) {
+      const missing = missingRequiredQuestionIds(event.rsvpQuestions, answers);
+      if (missing.length > 0) {
+        setAnswerErrors(Object.fromEntries(missing.map((id) => [id, 'required'])));
+        return;
+      }
+    }
     if (next === status) return;
     if (needsPaymentFor(next)) {
       setPendingStatus(next);
@@ -95,7 +122,7 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   function saveComment() {
     const trimmed = comment.trim();
     if (!trimmed) return;
-    void applyRsvp(status as RsvpInputStatus, trimmed);
+    void applyRsvp(draftStatus as RsvpInputStatus, trimmed);
     setComment('');
   }
 
@@ -158,22 +185,24 @@ export function PublicRsvpCard({ token, event, status }: Props) {
           />
         ) : (
           <>
-            <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
+            <RsvpStatusPicker value={draftStatus} onSelect={changeStatus} disabled={busy} />
 
-            <RsvpQuestionFields
-              questions={event.rsvpQuestions}
-              answers={answers}
-              onChange={(id, value) => {
-                setAnswers((current) => ({ ...current, [id]: value }));
-                setAnswerErrors((current) => {
-                  if (!(id in current)) return current;
-                  const { [id]: _removed, ...rest } = current;
-                  return rest;
-                });
-              }}
-              errors={answerErrors}
-              disabled={busy}
-            />
+            {showQuestions ? (
+              <RsvpQuestionFields
+                questions={event.rsvpQuestions}
+                answers={answers}
+                onChange={(id, value) => {
+                  setAnswers((current) => ({ ...current, [id]: value }));
+                  setAnswerErrors((current) => {
+                    if (!(id in current)) return current;
+                    const { [id]: _removed, ...rest } = current;
+                    return rest;
+                  });
+                }}
+                errors={answerErrors}
+                disabled={busy}
+              />
+            ) : null}
 
             <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
             <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>
