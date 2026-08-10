@@ -56,6 +56,7 @@ class Command(BaseCommand):
         }
         sender = get_email_sender()
         sent_count = 0
+        failed_count = 0
 
         recipients = (
             User.objects.active_members()
@@ -63,14 +64,19 @@ class Command(BaseCommand):
             .exclude(email="")
         )
         for user in recipients:
-            send_weekly_digest_email(
+            result = send_weekly_digest_email(
                 sender=sender,
                 to=user.email,
                 display_name=user.first_name,
                 events=events,
                 urls=urls,
             )
-            sent_count += 1
+            if result.success:
+                sent_count += 1
+            else:
+                failed_count += 1
 
-        logger.info("send_weekly_digest: sent %d digest(s)", sent_count)
-        self.stdout.write(self.style.SUCCESS(f"Sent {sent_count} digest(s)."))
+        logger.info("send_weekly_digest: sent %d digest(s), %d failed", sent_count, failed_count)
+        summary = f"Sent {sent_count} digest(s); {failed_count} failed."
+        style = self.style.WARNING if failed_count else self.style.SUCCESS
+        self.stdout.write(style(summary))

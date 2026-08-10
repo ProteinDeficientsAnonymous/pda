@@ -1,6 +1,7 @@
 """Tests for the send_weekly_digest management command."""
 
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
@@ -130,3 +131,18 @@ class TestSendWeeklyDigestCommand:
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
         assert "/settings" in text
+
+    def test_counts_failed_sends_separately(self, fake_sender):
+        fake_sender.send.return_value = SendResult(success=False, error="boom")
+        _make_member("+12025550215")
+        _make_event("potluck", 2)
+        out = StringIO()
+        call_command("send_weekly_digest", stdout=out)
+        assert "Sent 0 digest(s); 1 failed." in out.getvalue()
+
+    def test_reports_zero_failures_on_success(self, fake_sender):
+        _make_member("+12025550216")
+        _make_event("potluck", 2)
+        out = StringIO()
+        call_command("send_weekly_digest", stdout=out)
+        assert "Sent 1 digest(s); 0 failed." in out.getvalue()
