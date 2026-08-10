@@ -50,12 +50,16 @@ function Attribution({ results }: { results: GiphyResult[] }) {
       <img
         src="/powered-by-giphy-light.png"
         alt="powered by GIPHY"
-        className="h-[13px] w-auto dark:hidden"
+        width={100}
+        height={13}
+        className="self-start dark:hidden"
       />
       <img
         src="/powered-by-giphy-dark.png"
         alt="powered by GIPHY"
-        className="hidden h-[13px] w-auto dark:block"
+        width={100}
+        height={13}
+        className="hidden self-start dark:block"
       />
     </>
   );
