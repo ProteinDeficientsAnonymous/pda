@@ -46,10 +46,7 @@ export function EventPollCard({ event, className }: Props) {
     );
   }
 
-  // Finalized — parent resumes the normal datetime line.
-  if (poll.winningDatetime) {
-    return null;
-  }
+  const isFinalized = !!poll.winningDatetime;
 
   return (
     <div
@@ -64,44 +61,46 @@ export function EventPollCard({ event, className }: Props) {
 
       <PollOptionStrip poll={poll} />
 
-      <div className="flex flex-wrap gap-2">
-        {isAuthed ? (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setRespondOpen(true);
-            }}
-          >
-            respond to poll
-          </Button>
-        ) : (
-          <Link
-            to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
-            className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
-          >
-            sign in to vote
-          </Link>
-        )}
-        {canManage ? (
-          <>
+      {!isFinalized ? (
+        <div className="flex flex-wrap gap-2">
+          {isAuthed ? (
             <Button
+              variant="secondary"
               onClick={() => {
-                setFinalizeOpen(true);
+                setRespondOpen(true);
               }}
             >
-              finalize
+              respond to poll
             </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setManageOpen(true);
-              }}
+          ) : (
+            <Link
+              to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
+              className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
             >
-              edit options
-            </Button>
-          </>
-        ) : null}
-      </div>
+              sign in to vote
+            </Link>
+          )}
+          {canManage ? (
+            <>
+              <Button
+                onClick={() => {
+                  setFinalizeOpen(true);
+                }}
+              >
+                finalize
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setManageOpen(true);
+                }}
+              >
+                edit options
+              </Button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       {poll.finalizedAt ? (
         <p className="text-foreground-tertiary text-xs">
