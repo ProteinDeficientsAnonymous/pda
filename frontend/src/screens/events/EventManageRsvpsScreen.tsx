@@ -7,6 +7,7 @@ import { canManageEvent } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
+import { hasSavedQuestionnaireResponses } from './rsvpQuestions';
 
 export default function EventManageRsvpsScreen() {
   const { id } = useParams<{ id: string }>();
@@ -27,10 +28,9 @@ export default function EventManageRsvpsScreen() {
       <ForbiddenNotice eventId={event.id} message="only the host or a co-host can manage rsvps" />
     );
   }
-  if (event.isPast) {
-    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
-  }
-  if (!event.rsvpEnabled) {
+  const hasQuestionHistory =
+    event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
+  if (!event.rsvpEnabled && !hasQuestionHistory) {
     return (
       <ForbiddenNotice
         eventId={event.id}
@@ -38,13 +38,23 @@ export default function EventManageRsvpsScreen() {
       />
     );
   }
+  // Past events / RSVPs-off with questions stay open so hosts can review responses.
+  if (event.isPast && !hasQuestionHistory) {
+    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
+  }
 
   return (
     <ContentContainer>
       <BackLink eventId={event.id} />
       <h1 className="mb-1 text-2xl font-medium tracking-tight">manage rsvps</h1>
       <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
-      <EventManageRsvpsPanel event={event} />
+      {event.isPast ? (
+        <p className="text-muted mb-4 text-sm">this event is over — guest edits are closed</p>
+      ) : null}
+      {!event.rsvpEnabled ? (
+        <p className="text-muted mb-4 text-sm">rsvps are off — reviewing question responses</p>
+      ) : null}
+      <EventManageRsvpsPanel event={event} readOnly={event.isPast || !event.rsvpEnabled} />
     </ContentContainer>
   );
 }

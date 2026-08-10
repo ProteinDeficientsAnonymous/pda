@@ -7,7 +7,7 @@ import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
@@ -142,9 +142,81 @@ describe('EventDetailKebabMenu', () => {
     expect(manageRsvps).toHaveAttribute('href', '/events/ev1/manage-rsvps');
   });
 
-  it('hides "manage rsvps" once the event has ended', async () => {
+  it('hides rsvp management once the event has ended without question history', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ eventHasEnded: true, canManageRsvps: true });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
+  });
+
+  it('keeps "manage rsvps" label on past events with questions', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
+      'href',
+      '/events/ev1/manage-rsvps',
+    );
+  });
+
+  it('keeps "manage rsvps" when only saved answer history remains', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            questionnaireResponses: {
+              deleted: { label: 'deleted question', answer: 'saved answer' },
+            },
+          }),
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
+      'href',
+      '/events/ev1/manage-rsvps',
+    );
+  });
+
+  it('hides "manage rsvps" when only declined snapshots remain', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            status: 'cant_go',
+            questionnaireResponses: {
+              deleted: { label: 'deleted question', answer: 'saved answer' },
+            },
+          }),
+        ],
+      },
+    });
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
