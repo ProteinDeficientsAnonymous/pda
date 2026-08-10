@@ -165,6 +165,25 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
     expect(screen.queryByText("you're going")).not.toBeInTheDocument();
   });
+
+  it('lets a waitlisted member open the edit dialog and toggle +1 (Issue 1289)', () => {
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Waitlisted,
+        guests: [makeGuest({ userId: 'user-me', name: 'Me', status: RsvpServerStatus.Waitlisted })],
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+    expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^add \+1$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(setRsvpMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpServerStatus.Attending, hasPlusOne: true }),
+    );
+  });
 });
 
 describe('MyRsvpSection — locked (past event)', () => {

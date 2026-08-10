@@ -134,7 +134,13 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {!locked && onWaitlist ? (
-        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
+        <WaitlistView
+          onLeave={() => void leaveWaitlist()}
+          onEdit={() => {
+            setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
+          }}
+          busy={busy}
+        />
       ) : (
         <RsvpControls
           myInputStatus={myInputStatus}
@@ -236,15 +242,28 @@ function RsvpControls({
   );
 }
 
-function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean }) {
+function WaitlistView({
+  onLeave,
+  onEdit,
+  busy,
+}: {
+  onLeave: () => void;
+  onEdit: () => void;
+  busy: boolean;
+}) {
   return (
     <div className="bg-warning-subtle flex items-center justify-between gap-3 rounded-lg px-4 py-3">
       <span role="status" className="text-warning text-sm font-medium">
         you're on the waitlist
       </span>
-      <Button variant="ghost" onClick={onLeave} disabled={busy}>
-        leave waitlist
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="ghost" onClick={onEdit} disabled={busy}>
+          edit
+        </Button>
+        <Button variant="ghost" onClick={onLeave} disabled={busy}>
+          leave waitlist
+        </Button>
+      </div>
     </div>
   );
 }
