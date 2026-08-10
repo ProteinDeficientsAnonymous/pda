@@ -149,6 +149,11 @@ jobs:
       - name: Migrate database
         run: cd backend && uv run python manage.py migrate
 
+      # DatabaseCache's table isn't a migration; entrypoint.sh/dev scripts create
+      # it separately and this job needs the same step or rate-limited endpoints 500.
+      - name: Create cache table
+        run: cd backend && uv run python manage.py createcachetable
+
       # Start both servers and run the specs in a single step: background
       # processes started in one step aren't guaranteed to survive into the
       # next, so serving and testing must share a step.
