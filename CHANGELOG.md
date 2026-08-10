@@ -1,3 +1,10 @@
+## [0.89.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.1...v0.89.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* 1348 - remove no-show summary bubbles from attendance report ([#1351](https://github.com/ProteinDeficientsAnonymous/pda/issues/1351)) ([8f60b0a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f60b0a170829c2b4e7503a210f3057a958b4570))
+
 ## [0.89.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.89.0...v0.89.1) (2026-08-09)
 
 
