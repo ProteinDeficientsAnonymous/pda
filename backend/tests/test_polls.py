@@ -427,3 +427,38 @@ class TestDeletePoll:
             **auth_headers,
         )
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestUpdatePollOption:
+    def test_update_clears_votes_on_changed_option(
+        self, api_client, auth_headers, poll_with_options, poll_event, test_user
+    ):
+        option = poll_with_options.options.first()
+        PollVote.objects.create(option=option, user=test_user, availability=PollAvailability.YES)
+        response = api_client.patch(
+            f"/api/community/events/{poll_event.id}/poll/options/{option.id}/",
+            data=json.dumps({"datetime": future_iso(days=200)}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert not PollVote.objects.filter(option=option).exists()
+        data = response.json()
+        updated = next(o for o in data["options"] if o["id"] == str(option.id))
+        assert updated["yes_count"] == 0
+
+    def test_update_no_votes_still_succeeds(
+        self, api_client, auth_headers, poll_with_options, poll_event
+    ):
+        option = poll_with_options.options.first()
+        new_datetime = future_iso(days=200)
+        response = api_client.patch(
+            f"/api/community/events/{poll_event.id}/poll/options/{option.id}/",
+            data=json.dumps({"datetime": new_datetime}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        option.refresh_from_db()
+        assert option.datetime.isoformat().startswith(new_datetime[:16])

@@ -19,7 +19,7 @@ from community._polls import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventPoll, EventStatus, PollOption
+from community.models import Event, EventPoll, EventStatus, PollOption, PollVote
 
 router = Router()
 
@@ -98,6 +98,8 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
         with _duplicate_option_time_guard():
             option.datetime = payload.datetime
             option.save(update_fields=["datetime"])
+            # Votes were cast for the old datetime and no longer represent this option.
+            PollVote.objects.filter(option=option).delete()
     audit_log(
         logging.INFO,
         "poll_option_updated",
