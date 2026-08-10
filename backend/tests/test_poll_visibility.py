@@ -95,6 +95,86 @@ class TestGetPollVisibility:
         response = api_client.get(f"/api/community/events/{event.id}/poll/")
         assert response.status_code == 200
 
+    def test_anonymous_cannot_see_voter_identities_on_public_poll(self, api_client, db, test_user):
+        from community.models import PollAvailability, PollVote
+
+        event = Event.objects.create(
+            title="Public poll event",
+            start_datetime=future_iso(days=30),
+            created_by=test_user,
+        )
+        poll = EventPoll.objects.create(event=event, created_by=test_user)
+        option = PollOption.objects.create(
+            poll=poll, datetime=future_iso(days=120), display_order=0
+        )
+
+        voter1 = User.objects.create_user(
+            phone_number="+12025550701",
+            password="voter1pass",
+            first_name="Voter1",
+        )
+        voter2 = User.objects.create_user(
+            phone_number="+12025550702",
+            password="voter2pass",
+            first_name="Voter2",
+        )
+        PollVote.objects.create(option=option, user=voter1, availability=PollAvailability.YES)
+        PollVote.objects.create(option=option, user=voter2, availability=PollAvailability.MAYBE)
+
+        response = api_client.get(f"/api/community/events/{event.id}/poll/")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["options"]) == 1
+        option_data = data["options"][0]
+        assert option_data["yes_count"] == 1
+        assert option_data["maybe_count"] == 1
+        assert option_data["no_count"] == 0
+        assert option_data["yes_voters"] == []
+        assert option_data["maybe_voters"] == []
+        assert option_data["no_voters"] == []
+
+    def test_authenticated_can_see_voter_identities_on_public_poll(
+        self, api_client, db, auth_headers, test_user
+    ):
+        from community.models import PollAvailability, PollVote
+
+        event = Event.objects.create(
+            title="Public poll event",
+            start_datetime=future_iso(days=30),
+            created_by=test_user,
+        )
+        poll = EventPoll.objects.create(event=event, created_by=test_user)
+        option = PollOption.objects.create(
+            poll=poll, datetime=future_iso(days=120), display_order=0
+        )
+
+        voter1 = User.objects.create_user(
+            phone_number="+12025550701",
+            password="voter1pass",
+            first_name="Voter1",
+        )
+        voter2 = User.objects.create_user(
+            phone_number="+12025550702",
+            password="voter2pass",
+            first_name="Voter2",
+        )
+        PollVote.objects.create(option=option, user=voter1, availability=PollAvailability.YES)
+        PollVote.objects.create(option=option, user=voter2, availability=PollAvailability.MAYBE)
+
+        response = api_client.get(f"/api/community/events/{event.id}/poll/", **auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["options"]) == 1
+        option_data = data["options"][0]
+        assert option_data["yes_count"] == 1
+        assert option_data["maybe_count"] == 1
+        assert option_data["no_count"] == 0
+        assert len(option_data["yes_voters"]) == 1
+        assert option_data["yes_voters"][0]["name"] == "Voter1"
+        assert len(option_data["maybe_voters"]) == 1
+        assert option_data["maybe_voters"][0]["name"] == "Voter2"
+        assert option_data["no_voters"] == []
+
 
 @pytest.mark.django_db
 class TestVotePollVisibility:
