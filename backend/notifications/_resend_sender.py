@@ -79,11 +79,12 @@ class ResendSender:
         # SendResponse is a dict subclass; access id via .get() for safety
         message_id = response.get("id") if isinstance(response, dict) else None
         logger.info(
-            "resend_send_success subject=%s message_id=%s recipient=%s attempt=%d",
+            "resend_send_success subject=%s message_id=%s recipient=%s attempt=%d idempotency_key=%s",
             params["subject"],
             message_id,
             masked,
             attempt,
+            idempotency_key,
         )
         return SendResult(success=True, provider_message_id=message_id)
 
@@ -99,7 +100,12 @@ class ResendSender:
         time.sleep(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)))
 
     def send(self, to: str, subject: str, html: str, text: str) -> SendResult:
-        validate_recipient(to)
+        try:
+            validate_recipient(to)
+        except ValueError as exc:
+            logger.warning("resend_send_failure subject=%s error=invalid_recipient", subject)
+            return SendResult(success=False, error=str(exc))
+
         params = {
             "from": settings.RESEND_FROM_EMAIL,
             "to": [to],
@@ -129,10 +135,11 @@ class ResendSender:
         # one), and attach the traceback so unexpected (non-ResendError) failures
         # stay debuggable.
         logger.warning(
-            "resend_send_failure subject=%s recipient=%s attempts=%d",
+            "resend_send_failure subject=%s recipient=%s attempts=%d idempotency_key=%s",
             subject,
             masked,
             attempt,
+            idempotency_key,
             exc_info=last_error,
         )
         return SendResult(success=False, error=str(last_error))

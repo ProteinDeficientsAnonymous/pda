@@ -182,6 +182,12 @@ class TestResendSender:
         # 4xx (other than 429) is not transient → no retry.
         assert mock_send.call_count == 1
 
+    def test_send_reports_failure_for_invalid_recipient_instead_of_raising(self):
+        with patch("resend.Emails.send") as mock_send:
+            result = ResendSender().send(to="not-an-email", subject="hi", html="<p>x</p>", text="x")
+        assert result.success is False
+        mock_send.assert_not_called()
+
     def test_failure_log_reports_true_attempt_count(self, caplog):
         """A non-retryable error breaks after one try; the log must say attempts=1."""
         err = ValidationError(code="400", error_type="validation_error", message="bad")
