@@ -84,8 +84,18 @@ class TestCreatePoll:
         )
         assert response.status_code == 400
 
-    def test_create_poll_with_one_option_succeeds(self, api_client, auth_headers, poll_event):
+    def test_create_poll_with_one_option_fails(self, api_client, auth_headers, poll_event):
         payload = {"options": [future_iso(days=120)]}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+
+    def test_create_poll_with_two_options_succeeds(self, api_client, auth_headers, poll_event):
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -424,6 +434,43 @@ class TestDeletePoll:
     def test_delete_not_found(self, api_client, auth_headers, poll_event):
         response = api_client.delete(
             f"/api/community/events/{poll_event.id}/poll/",
+            **auth_headers,
+        )
+        assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# TestDeletePollOption
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestDeletePollOption:
+    def test_delete_option_cannot_delete_when_only_two_options(
+        self, api_client, auth_headers, poll_with_options, poll_event
+    ):
+        option = poll_with_options.options.first()
+        response = api_client.delete(
+            f"/api/community/events/{poll_event.id}/poll/options/{option.id}/",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        poll_with_options.refresh_from_db()
+        assert poll_with_options.options.count() == 2
+
+    def test_delete_option_non_creator_forbidden(
+        self, api_client, other_headers, poll_with_options, poll_event
+    ):
+        option = poll_with_options.options.first()
+        response = api_client.delete(
+            f"/api/community/events/{poll_event.id}/poll/options/{option.id}/",
+            **other_headers,
+        )
+        assert response.status_code == 403
+
+    def test_delete_option_not_found(self, api_client, auth_headers, poll_event, poll_with_options):
+        response = api_client.delete(
+            f"/api/community/events/{poll_event.id}/poll/options/{uuid.uuid4()}/",
             **auth_headers,
         )
         assert response.status_code == 404
