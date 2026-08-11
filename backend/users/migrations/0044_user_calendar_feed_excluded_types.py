@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("users", "0042_normalize_phone_numbers"),
+        ("users", "0043_user_weekly_digest_opt_out"),
     ]
 
     operations = [
