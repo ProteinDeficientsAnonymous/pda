@@ -305,8 +305,7 @@ function CalendarFeedTypeToggles({
     { value: EventType.Community, label: 'community events' },
   ];
 
-  // Compose off the last requested value so rapid toggles don't clobber each
-  // other while an earlier save is still in flight.
+  // avoid clobbering an in-flight save when toggles fire rapidly
   const shown = pending ?? excluded;
 
   async function toggle(value: EventTypeValue, checked: boolean) {

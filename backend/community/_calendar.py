@@ -92,9 +92,12 @@ def _feed_events(user: UserModel):
         )
     )
 
-    # Events the member is personally attached to always stay in the feed —
-    # the type filter only hides events they have no relationship to.
-    excluded_types = user.calendar_feed_excluded_types or []
+    # own events bypass the type filter
+    excluded_types = (
+        user.calendar_feed_excluded_types
+        if isinstance(user.calendar_feed_excluded_types, list)
+        else []
+    )
     if excluded_types:
         events = events.exclude(Q(event_type__in=excluded_types) & ~mine).distinct()
 

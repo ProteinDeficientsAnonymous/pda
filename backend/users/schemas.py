@@ -184,7 +184,11 @@ class UserOut(BaseModel):
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
-            calendar_feed_excluded_types=user.calendar_feed_excluded_types or [],
+            calendar_feed_excluded_types=(
+                user.calendar_feed_excluded_types
+                if isinstance(user.calendar_feed_excluded_types, list)
+                else []
+            ),
             last_attended=getattr(user, "last_attended", None),
             date_joined=user.date_joined,
             roles=[
