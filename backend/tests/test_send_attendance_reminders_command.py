@@ -1,6 +1,7 @@
 """Tests for the send_attendance_reminders management command."""
 
 from datetime import UTC, datetime
+from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
@@ -106,6 +107,30 @@ class TestSendAttendanceRemindersCommand:
             call_command("send_attendance_reminders")
         fake_sender.send.assert_not_called()
         assert AttendanceReminder.objects.count() == 0
+
+    def test_failed_send_does_not_record_reminder(self, fake_sender):
+        user = _make_member("+12025550120")
+        fake_sender.send.return_value = SendResult(success=False, error="boom")
+        with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
+            call_command("send_attendance_reminders")
+        assert not AttendanceReminder.objects.filter(user=user).exists()
+
+    def test_failed_send_retried_on_next_run(self, fake_sender):
+        user = _make_member("+12025550121")
+        fake_sender.send.return_value = SendResult(success=False, error="boom")
+        with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
+            call_command("send_attendance_reminders")
+            fake_sender.send.return_value = SendResult(success=True, provider_message_id="msg")
+            call_command("send_attendance_reminders")
+        assert AttendanceReminder.objects.filter(user=user, milestone="m12").exists()
+
+    def test_counts_failed_sends_separately(self, fake_sender):
+        fake_sender.send.return_value = SendResult(success=False, error="boom")
+        out = StringIO()
+        _make_member("+12025550122")
+        with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
+            call_command("send_attendance_reminders", stdout=out)
+        assert "Sent 0 reminder(s); 1 failed." in out.getvalue()
 
     def test_sends_only_latest_milestone_when_multiple_crossed(self, fake_sender):
         """A member whose clock jumped past 10mo and 11mo (e.g. cron was down)

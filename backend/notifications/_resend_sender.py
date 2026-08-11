@@ -2,6 +2,7 @@
 
 import logging
 import time
+import uuid
 
 import resend
 from django.conf import settings
@@ -64,21 +65,26 @@ class ResendSender:
         # holds a request thread for up to 30s on a hung connection.
         resend.default_http_client = resend.RequestsClient(timeout=_REQUEST_TIMEOUT_SECONDS)
 
-    def _attempt_send(self, params: dict, masked: str, attempt: int) -> SendResult:
+    def _attempt_send(
+        self, params: dict, masked: str, attempt: int, idempotency_key: str
+    ) -> SendResult:
         """Perform a single send and log success.
 
         Never catches — the caller owns the retry/error policy. Returns a
         successful SendResult; on failure the underlying exception propagates.
         """
-        response = resend.Emails.send(params)
+        # Stable key across attempts so a retry after a queued-but-5xx'd send doesn't duplicate it.
+        options: resend.Emails.SendOptions = {"idempotency_key": idempotency_key}
+        response = resend.Emails.send(params, options)
         # SendResponse is a dict subclass; access id via .get() for safety
         message_id = response.get("id") if isinstance(response, dict) else None
         logger.info(
-            "resend_send_success subject=%s message_id=%s recipient=%s attempt=%d",
+            "resend_send_success subject=%s message_id=%s recipient=%s attempt=%d idempotency_key=%s",
             params["subject"],
             message_id,
             masked,
             attempt,
+            idempotency_key,
         )
         return SendResult(success=True, provider_message_id=message_id)
 
@@ -94,7 +100,12 @@ class ResendSender:
         time.sleep(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)))
 
     def send(self, to: str, subject: str, html: str, text: str) -> SendResult:
-        validate_recipient(to)
+        try:
+            validate_recipient(to)
+        except ValueError as exc:
+            logger.warning("resend_send_failure subject=%s error=invalid_recipient", subject)
+            return SendResult(success=False, error=str(exc))
+
         params = {
             "from": settings.RESEND_FROM_EMAIL,
             "to": [to],
@@ -103,12 +114,13 @@ class ResendSender:
             "text": text,
         }
         masked = mask_recipient(to)
+        idempotency_key = str(uuid.uuid4())
         last_error: Exception | None = None
         attempt = 0
 
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             try:
-                return self._attempt_send(params, masked, attempt)
+                return self._attempt_send(params, masked, attempt, idempotency_key)
             except ResendError as exc:
                 last_error = exc
                 if attempt < _MAX_ATTEMPTS and _is_retryable(exc):
@@ -123,10 +135,11 @@ class ResendSender:
         # one), and attach the traceback so unexpected (non-ResendError) failures
         # stay debuggable.
         logger.warning(
-            "resend_send_failure subject=%s recipient=%s attempts=%d",
+            "resend_send_failure subject=%s recipient=%s attempts=%d idempotency_key=%s",
             subject,
             masked,
             attempt,
+            idempotency_key,
             exc_info=last_error,
         )
         return SendResult(success=False, error=str(last_error))
