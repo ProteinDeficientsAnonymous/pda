@@ -184,8 +184,9 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     _validate_poll_options(payload.options, require_at_least_one=True)
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
-        for i, dt in enumerate(payload.options):
-            PollOption.objects.create(poll=poll, datetime=dt, display_order=i)
+        with _duplicate_option_time_guard():
+            for i, dt in enumerate(payload.options):
+                PollOption.objects.create(poll=poll, datetime=dt, display_order=i)
         # While a poll is active, the poll is the source of truth for when. Clear
         # any previously set start/end so the event can't have a stale time that
         # doesn't match any poll option.

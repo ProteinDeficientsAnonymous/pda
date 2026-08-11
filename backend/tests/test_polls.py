@@ -135,6 +135,21 @@ class TestCreatePoll:
         )
         assert response.status_code == 404
 
+    def test_create_poll_with_duplicate_datetimes_within_options(
+        self, api_client, auth_headers, poll_event
+    ):
+        same_datetime = future_iso(days=120)
+        payload = {"options": [same_datetime, same_datetime, future_iso(days=121)]}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["detail"][0]["code"] == "poll.option_already_exists"
+
 
 # ---------------------------------------------------------------------------
 # TestGetPoll
