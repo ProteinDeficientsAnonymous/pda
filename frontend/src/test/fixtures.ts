@@ -133,6 +133,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     weeklyDigestOptOut: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
+    calendarFeedExcludedTypes: [],
     profilePhotoUrl: '',
     photoUpdatedAt: null,
     roles: [],

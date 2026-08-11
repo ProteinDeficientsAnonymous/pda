@@ -147,6 +147,7 @@ class User(AbstractUser):
         choices=CalendarFeedScope.CHOICES,
         default=CalendarFeedScope.ALL,
     )
+    calendar_feed_excluded_types = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

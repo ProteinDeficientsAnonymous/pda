@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
 from community._validation import Code, raise_validation
+from community.models.choices import EventType
 from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
 
@@ -145,6 +146,7 @@ class UserOut(BaseModel):
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
+    calendar_feed_excluded_types: list[str] = []
     # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
     date_joined: datetime
@@ -182,6 +184,11 @@ class UserOut(BaseModel):
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
+            calendar_feed_excluded_types=(
+                user.calendar_feed_excluded_types
+                if isinstance(user.calendar_feed_excluded_types, list)
+                else []
+            ),
             last_attended=getattr(user, "last_attended", None),
             date_joined=user.date_joined,
             roles=[
@@ -280,6 +287,14 @@ class MePatchIn(BaseModel):
     weekly_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
+    calendar_feed_excluded_types: (
+        list[Literal[EventType.OFFICIAL, EventType.COMMUNITY, EventType.CLUB]] | None
+    ) = None
+
+    @field_validator("calendar_feed_excluded_types")
+    @classmethod
+    def _dedupe_excluded_types(cls, v: list[str] | None) -> list[str] | None:
+        return sorted(set(v)) if v is not None else None
 
 
 class ChangePasswordIn(BaseModel):

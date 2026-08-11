@@ -136,6 +136,46 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('renders every event type as checked when nothing is excluded', () => {
+    renderSettings();
+
+    for (const label of [/official events/i, /club events/i, /community events/i]) {
+      expect(screen.getByRole('switch', { name: label })).toHaveAttribute('aria-checked', 'true');
+    }
+  });
+
+  it('unchecking an event type excludes it via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('switch', { name: /club events/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ calendarFeedExcludedTypes: ['club'] });
+    });
+  });
+
+  it('re-checking an excluded event type removes it from the exclusion list', async () => {
+    useAuthStore.setState({
+      user: { ...TEST_USER, calendarFeedExcludedTypes: ['club', 'official'] },
+    });
+    const user = userEvent.setup();
+    renderSettings();
+
+    expect(screen.getByRole('switch', { name: /club events/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+
+    await user.click(screen.getByRole('switch', { name: /club events/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        calendarFeedExcludedTypes: ['official'],
+      });
+    });
+  });
+
   it('saves an edited pronouns value via updateProfile', async () => {
     const user = userEvent.setup();
     renderSettings();

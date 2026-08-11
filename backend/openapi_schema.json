@@ -4346,6 +4346,25 @@
               }
             ]
           },
+          "calendar_feed_excluded_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "official",
+                    "community",
+                    "club"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Feed Excluded Types"
+          },
           "calendar_feed_scope": {
             "anyOf": [
               {
@@ -6407,6 +6426,14 @@
                 "type": "null"
               }
             ]
+          },
+          "calendar_feed_excluded_types": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Calendar Feed Excluded Types",
+            "type": "array"
           },
           "calendar_feed_scope": {
             "default": "all",
