@@ -4,6 +4,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { PhotoLibraryDialog } from '@/components/PhotoLibraryDialog';
 import { cn } from '@/utils/cn';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 interface Props {
   photoUrl: string;
@@ -19,11 +20,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const displayUrl = photoUrl
-    ? photoUpdatedAt
-      ? `${photoUrl}?v=${encodeURIComponent(photoUpdatedAt)}`
-      : photoUrl
-    : '';
+  const displayUrl = cacheBustMediaUrl(photoUrl, photoUpdatedAt);
   const hasPhoto = Boolean(displayUrl);
   const locked = (disabled ?? false) || busy;
 

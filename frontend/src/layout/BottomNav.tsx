@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -12,9 +13,7 @@ export function BottomNav() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
   const photoUrl = user?.profilePhotoUrl
-    ? user.photoUpdatedAt
-      ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
-      : user.profilePhotoUrl
+    ? cacheBustMediaUrl(user.profilePhotoUrl, user.photoUpdatedAt)
     : '';
   const myEventsTo = myRsvpsDestination(isAuthed);
 

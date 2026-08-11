@@ -118,6 +118,8 @@ if os.environ.get("B2_KEY_ID"):
             "bucket_name": os.environ["B2_BUCKET_NAME"],
             "endpoint_url": os.environ["B2_ENDPOINT_URL"],
             "region_name": os.environ.get("B2_REGION", "us-west-004"),
+            # 7d: covers cached API payloads / OG scrapers without minting forever.
+            "querystring_expire": 60 * 60 * 24 * 7,
         },
     }
 
