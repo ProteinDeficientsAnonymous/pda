@@ -1,3 +1,10 @@
+## [0.93.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.2...v0.93.3) (2026-08-11)
+
+
+### Bug Fixes
+
+* prevent duplicate digest emails and report real send counts ([#1382](https://github.com/ProteinDeficientsAnonymous/pda/issues/1382)) ([b3e0c6d](https://github.com/ProteinDeficientsAnonymous/pda/commit/b3e0c6d793254154a0ab1bc08fd3c982a3b52811))
+
 ## [0.93.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.1...v0.93.2) (2026-08-11)
 
 
