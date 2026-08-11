@@ -1,3 +1,10 @@
+# [0.94.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.4...v0.94.0) (2026-08-11)
+
+
+### Features
+
+* **calendar:** let members filter event types in their subscription feed (Issue 1169) ([#1181](https://github.com/ProteinDeficientsAnonymous/pda/issues/1181)) ([a04d8a5](https://github.com/ProteinDeficientsAnonymous/pda/commit/a04d8a5f99462300466efe83fba6fd7992a82f03))
+
 ## [0.93.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.3...v0.93.4) (2026-08-11)
 
 
