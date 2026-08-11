@@ -146,3 +146,15 @@ class TestSendWeeklyDigestCommand:
         out = StringIO()
         call_command("send_weekly_digest", stdout=out)
         assert "Sent 1 digest(s); 0 failed." in out.getvalue()
+
+    def test_counts_mixed_success_and_failure(self, fake_sender):
+        fake_sender.send.side_effect = [
+            SendResult(success=True, provider_message_id="test_msg"),
+            SendResult(success=False, error="boom"),
+        ]
+        _make_member("+12025550217")
+        _make_member("+12025550218")
+        _make_event("potluck", 2)
+        out = StringIO()
+        call_command("send_weekly_digest", stdout=out)
+        assert "Sent 1 digest(s); 1 failed." in out.getvalue()

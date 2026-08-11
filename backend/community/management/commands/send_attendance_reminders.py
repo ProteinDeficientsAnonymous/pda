@@ -24,6 +24,7 @@ class Command(BaseCommand):
         calendar_url = f"{settings.FRONTEND_BASE_URL}/calendar"
         sender = get_email_sender()
         sent_count = 0
+        failed_count = 0
 
         for user in User.objects.active_members().filter(email__isnull=False).exclude(email=""):
             anchor = compute_anchor(user, today)
@@ -35,17 +36,24 @@ class Command(BaseCommand):
             ).exists():
                 continue
 
-            send_attendance_reminder_email(
+            result = send_attendance_reminder_email(
                 sender=sender,
                 to=user.email,
                 display_name=user.first_name,
                 calendar_url=calendar_url,
                 milestone=due.milestone,
             )
+            if not result.success:
+                failed_count += 1
+                continue
             AttendanceReminder.objects.create(
                 user=user, milestone=due.milestone, anchor_date=due.anchor_date
             )
             sent_count += 1
 
-        logger.info("send_attendance_reminders: sent %d reminder(s)", sent_count)
-        self.stdout.write(self.style.SUCCESS(f"Sent {sent_count} reminder(s)."))
+        logger.info(
+            "send_attendance_reminders: sent %d reminder(s), %d failed", sent_count, failed_count
+        )
+        summary = f"Sent {sent_count} reminder(s); {failed_count} failed."
+        style = self.style.WARNING if failed_count else self.style.SUCCESS
+        self.stdout.write(style(summary))
