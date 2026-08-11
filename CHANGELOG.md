@@ -1,3 +1,16 @@
+## [0.93.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.1...v0.93.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* 1296 - gate poll voter identities behind authentication ([#1389](https://github.com/ProteinDeficientsAnonymous/pda/issues/1389)) ([d7daf96](https://github.com/ProteinDeficientsAnonymous/pda/commit/d7daf965fc9efcd0f91a9f1ecaf276824b3d3950))
+* 1297 - lock poll row against concurrent finalize ([#1391](https://github.com/ProteinDeficientsAnonymous/pda/issues/1391)) ([223b85c](https://github.com/ProteinDeficientsAnonymous/pda/commit/223b85ccd47c1da99ed1dcd0c972c1ca8e65f6b1))
+* 1300 - clear poll option votes on datetime edit ([#1393](https://github.com/ProteinDeficientsAnonymous/pda/issues/1393)) ([7b53cb5](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b53cb52c55138673786b8a91330601ecf0f343e))
+* 1303 - refetch before poll vote submit, add retract affordance ([#1395](https://github.com/ProteinDeficientsAnonymous/pda/issues/1395)) ([ffc79cd](https://github.com/ProteinDeficientsAnonymous/pda/commit/ffc79cd6ce0d83c86379c4b3e879a699b1f160bc))
+* mark TestFormatNotifyForUser with django_db ([#1396](https://github.com/ProteinDeficientsAnonymous/pda/issues/1396)) ([eeac3d9](https://github.com/ProteinDeficientsAnonymous/pda/commit/eeac3d99dec16ede5206a08c273da635967f0290))
+* recycle gunicorn workers to release fragmented memory ([#1384](https://github.com/ProteinDeficientsAnonymous/pda/issues/1384)) ([d608bc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/d608bc50dbd49e99e79933f8b8bee5842b280e65))
+* reject duplicate poll option datetimes with 400 ([#1400](https://github.com/ProteinDeficientsAnonymous/pda/issues/1400)) ([77fe232](https://github.com/ProteinDeficientsAnonymous/pda/commit/77fe2321e84cbaeda4e0cd53df2650f791445216))
+
 ## [0.93.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.0...v0.93.1) (2026-08-10)
 
 
