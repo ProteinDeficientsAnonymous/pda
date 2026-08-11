@@ -1,3 +1,10 @@
+## [0.93.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.3...v0.93.4) (2026-08-11)
+
+
+### Bug Fixes
+
+* enforce minimum of 2 poll options at create time ([#1398](https://github.com/ProteinDeficientsAnonymous/pda/issues/1398)) ([0f38517](https://github.com/ProteinDeficientsAnonymous/pda/commit/0f38517dba65b98b665f1d5dc2efa5f7acc05357))
+
 ## [0.93.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.2...v0.93.3) (2026-08-11)
 
 
