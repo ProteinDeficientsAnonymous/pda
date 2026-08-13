@@ -1,3 +1,10 @@
+## [0.95.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.3...v0.95.4) (2026-08-13)
+
+
+### Performance Improvements
+
+* **events:** sign only preview guest photos on event detail ([#1412](https://github.com/ProteinDeficientsAnonymous/pda/issues/1412)) ([a96d3a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/a96d3a1b3bcfa8fd58368b4751def5f9df0f8c1d))
+
 ## [0.95.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.2...v0.95.3) (2026-08-13)
 
 
