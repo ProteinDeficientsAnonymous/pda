@@ -303,8 +303,53 @@ def _resolve_comment_count(event: Event) -> int:
     return event.comments.filter(deleted_at__isnull=True).count()
 
 
+def _annotated_or(event: Event, attr: str, fallback):
+    annotated = getattr(event, attr, None)
+    if annotated is not None:
+        return annotated
+    return fallback()
+
+
+def _viewer_rsvp_rows(event: Event, auth_user) -> list:
+    cached = getattr(event, "_viewer_rsvps", None)
+    if cached is not None:
+        return cached
+    if auth_user is None:
+        return []
+    return list(event.rsvps.filter(user=auth_user))
+
+
+def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
+    viewer_rsvps = _viewer_rsvp_rows(event, auth_user)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(viewer_rsvps, auth_user)
+    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
+    if not (can_see_guests or responses_visible):
+        return viewer_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
+    all_rsvps = list(event.rsvps.select_related("user").all())
+    if auth_user is None:
+        return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
+    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
+    return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
+
+
+def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str]):
+    can_see = _can_see_invited(auth_user, creator, co_host_ids)
+    invited = list(event.invited_users.all()) if can_see else []
+    count = _annotated_or(
+        event,
+        "invited_count",
+        lambda: len(invited) if can_see else event.invited_users.count(),
+    )
+    return invited, count
+
+
 def _iso_or_none(value) -> str | None:
     return value.isoformat() if value else None
+
+
+def _float_or_none(value) -> float | None:
+    return float(value) if value is not None else None
 
 
 def _event_out(event: Event, requesting_user=None) -> EventOut:
@@ -319,16 +364,14 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or responses_visible else []
-    all_invited = list(event.invited_users.all())
-    invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
+    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
+        event, auth_user, viewer_is_cohost, responses_visible
+    )
+    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids)
 
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
-    comment_count = _resolve_comment_count(event)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
-    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -337,8 +380,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         start_datetime=event.start_datetime,
         end_datetime=event.end_datetime,
         location=event.location,
-        latitude=float(event.latitude) if event.latitude is not None else None,
-        longitude=float(event.longitude) if event.longitude is not None else None,
+        latitude=_float_or_none(event.latitude),
+        longitude=_float_or_none(event.longitude),
         whatsapp_link=_gated(event.whatsapp_link, "", is_authed),
         partiful_link=_gated(event.partiful_link, "", is_authed),
         other_link=_gated(event.other_link, "", is_authed),
@@ -350,10 +393,12 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
-        attending_count=_attending_headcount(event),
-        waitlisted_count=_waitlisted_count(event),
-        invited_count=len(all_invited),
-        comment_count=comment_count,
+        attending_count=_annotated_or(
+            event, "attending_count", lambda: _attending_headcount(event)
+        ),
+        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
+        invited_count=invited_count,
+        comment_count=_resolve_comment_count(event),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator, auth_user),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",

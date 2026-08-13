@@ -1,6 +1,6 @@
 """RSVP headcount and attendance predicates shared across event surfaces."""
 
-from django.db.models import Case, IntegerField, Q, Sum, Value, When
+from django.db.models import Case, Count, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 
 from community.models import (
@@ -59,6 +59,40 @@ def _plus_one_weight_case(prefix: str = "") -> Case:
 def going_headcount_expr(prefix: str = "rsvps") -> Coalesce:
     """Sum of ATTENDING spots incl. plus-ones, matching _attending_headcount."""
     return Coalesce(Sum(_plus_one_weight_case(prefix), filter=going_q(prefix)), Value(0))
+
+
+def _rsvp_headcount_subquery(status: str) -> Subquery:
+    return Subquery(
+        EventRSVP.objects.filter(event_id=OuterRef("pk"), status=status)
+        .order_by()
+        .values("event_id")
+        .annotate(total=Sum(_plus_one_weight_case()))
+        .values("total")[:1],
+        output_field=IntegerField(),
+    )
+
+
+def attending_count_annotation() -> Coalesce:
+    return Coalesce(_rsvp_headcount_subquery(RSVPStatus.ATTENDING), Value(0))
+
+
+def waitlisted_count_annotation() -> Coalesce:
+    return Coalesce(_rsvp_headcount_subquery(RSVPStatus.WAITLISTED), Value(0))
+
+
+def invited_count_annotation() -> Coalesce:
+    through = Event.invited_users.through
+    return Coalesce(
+        Subquery(
+            through.objects.filter(event_id=OuterRef("pk"))
+            .order_by()
+            .values("event_id")
+            .annotate(total=Count("id"))
+            .values("total")[:1],
+            output_field=IntegerField(),
+        ),
+        Value(0),
+    )
 
 
 def is_attended(rsvp: EventRSVP) -> bool:
