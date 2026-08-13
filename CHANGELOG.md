@@ -1,3 +1,10 @@
+## [0.95.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.2...v0.95.3) (2026-08-13)
+
+
+### Performance Improvements
+
+* **events:** skip RSVP and photo hydration on calendar reads ([#1411](https://github.com/ProteinDeficientsAnonymous/pda/issues/1411)) ([3cf2107](https://github.com/ProteinDeficientsAnonymous/pda/commit/3cf210785fa39fed75a139e02588ec69c9c051b5))
+
 ## [0.95.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.1...v0.95.2) (2026-08-13)
 
 
