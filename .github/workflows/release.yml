@@ -84,11 +84,19 @@ jobs:
           RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
           RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_STAGING }}
         run: |
+          set -eu
+          deploy_message="$(bash .github/scripts/railway-deploy-message.sh)"
           echo "railway deploy context (staging target)"
           echo "  commit=$(git rev-parse --short=7 HEAD)"
+          echo "  deploy_message=${deploy_message}"
           echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
           echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
           echo "  railway_service=${RAILWAY_SERVICE_NAME}"
+          {
+            echo "RAILWAY_DEPLOY_MESSAGE<<EOF"
+            printf '%s\n' "${deploy_message}"
+            echo "EOF"
+          } >> "${GITHUB_ENV}"
 
       - name: railway up (staging token only in this job)
         env:
@@ -102,6 +110,7 @@ jobs:
           test -n "${RAILWAY_PROJECT_ID}"
           test -n "${RAILWAY_ENVIRONMENT}"
           test -n "${RAILWAY_SERVICE_NAME}"
+          test -n "${RAILWAY_DEPLOY_MESSAGE}"
           docker_run=(docker run --rm --platform linux/amd64
             -v "${GITHUB_WORKSPACE}:/workspace"
             -w /workspace
@@ -110,7 +119,9 @@ jobs:
           echo "railway cli version:"
           "${docker_run[@]}" railway --version
           echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
+          echo "railway deploy message: ${RAILWAY_DEPLOY_MESSAGE}"
           "${docker_run[@]}" railway up --ci --verbose \
+            --message "${RAILWAY_DEPLOY_MESSAGE}" \
             --project "${RAILWAY_PROJECT_ID}" \
             --environment "${RAILWAY_ENVIRONMENT}" \
             --service "${RAILWAY_SERVICE_NAME}"
