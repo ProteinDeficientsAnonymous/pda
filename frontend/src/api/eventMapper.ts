@@ -221,3 +221,41 @@ export function mapEvent(e: WireEvent): Event {
     status: e.status ?? 'active',
   };
 }
+
+export interface WireEventGuests {
+  guests?: WireGuest[];
+  invited_user_ids?: string[];
+  invited_user_names?: string[];
+  invited_user_photo_urls?: string[];
+}
+
+export function mapEventGuests(
+  w: WireEventGuests,
+): Pick<Event, 'guests' | 'invitedUserIds' | 'invitedUserNames' | 'invitedUserPhotoUrls'> {
+  return {
+    guests: (w.guests ?? []).map(mapGuest),
+    invitedUserIds: w.invited_user_ids ?? [],
+    invitedUserNames: w.invited_user_names ?? [],
+    invitedUserPhotoUrls: w.invited_user_photo_urls ?? [],
+  };
+}
+
+export function mergeEventGuestPhotos(
+  event: Event,
+  photos:
+    | Pick<Event, 'guests' | 'invitedUserIds' | 'invitedUserNames' | 'invitedUserPhotoUrls'>
+    | undefined,
+): Event {
+  if (!photos) return event;
+  const photoById = new Map(photos.guests.map((g) => [g.userId, g.photoUrl]));
+  return {
+    ...event,
+    guests: event.guests.map((g) => {
+      const photoUrl = photoById.get(g.userId);
+      return photoUrl ? { ...g, photoUrl } : g;
+    }),
+    invitedUserPhotoUrls: photos.invitedUserPhotoUrls.length
+      ? photos.invitedUserPhotoUrls
+      : event.invitedUserPhotoUrls,
+  };
+}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { mergeEventGuestPhotos } from '@/api/eventMapper';
+import { useEventGuests } from '@/api/events';
 import { useRemoveGuestRsvp, useSetGuestPayment, useSetGuestRsvp } from '@/api/eventStats';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { MemberPicker } from '@/components/MemberPicker';
@@ -26,6 +28,8 @@ export function EventManageRsvpsPanel({
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
   const setGuestPayment = useSetGuestPayment(event.id);
   const showPaymentStatus = !readOnly && eventRequiresPaymentConfirmation(event);
+  const { data: withPhotos } = useEventGuests(event.id);
+  const displayEvent = mergeEventGuestPhotos(event, withPhotos);
 
   return (
     <div className="flex flex-col gap-8">
@@ -45,11 +49,11 @@ export function EventManageRsvpsPanel({
           }}
         />
       )}
-      {event.guests.length === 0 ? (
+      {displayEvent.guests.length === 0 ? (
         <p className="text-muted text-sm">no one yet 🌿</p>
       ) : (
         RSVP_GROUP_LABELS.map((group) => {
-          const guests = event.guests.filter((g) => g.status === group.status);
+          const guests = displayEvent.guests.filter((g) => g.status === group.status);
           if (guests.length === 0) return null;
           return (
             <GuestGroup
@@ -100,7 +104,7 @@ export function EventManageRsvpsPanel({
           );
         })
       )}
-      <EventRsvpResponsesSection event={event} />
+      <EventRsvpResponsesSection event={displayEvent} />
     </div>
   );
 }

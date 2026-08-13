@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
+import { mergeEventGuestPhotos } from '@/api/eventMapper';
+import { useEventGuests } from '@/api/events';
 import { TextField } from '@/components/ui/TextField';
 import type { Event, RsvpServerStatusValue } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
@@ -39,17 +41,18 @@ interface Props {
   canSeeInvited: boolean;
   initialTab: GuestTab;
   onClose: () => void;
+  token?: string;
 }
 
-export function GuestListDialog({ event, canSeeInvited, initialTab, onClose }: Props) {
-  const tabs = guestTabs(event, canSeeInvited);
+export function GuestListDialog({ event, canSeeInvited, initialTab, onClose, token }: Props) {
+  const { data: withPhotos } = useEventGuests(event.id, token);
+  const displayEvent = mergeEventGuestPhotos(event, withPhotos);
+  const tabs = guestTabs(displayEvent, canSeeInvited);
   const [active, setActive] = useState<GuestTab>(initialTab);
   const [query, setQuery] = useState('');
 
-  const inTab = useMemo(
-    () => (active === 'invited' ? [] : event.guests.filter((g) => g.status === TAB_STATUS[active])),
-    [event.guests, active],
-  );
+  const inTab =
+    active === 'invited' ? [] : displayEvent.guests.filter((g) => g.status === TAB_STATUS[active]);
 
   const needle = query.trim().toLowerCase();
   const visible = needle ? inTab.filter((g) => g.name.toLowerCase().includes(needle)) : inTab;
@@ -100,7 +103,7 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose }: P
                   : 'text-foreground-secondary hover:bg-surface-dim',
               )}
             >
-              {TAB_LABELS[t]} {tabCount(event, t)}
+              {TAB_LABELS[t]} {tabCount(displayEvent, t)}
             </button>
           ))}
         </div>
@@ -122,7 +125,7 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose }: P
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {active === 'invited' ? (
-            <InvitedList event={event} row />
+            <InvitedList event={displayEvent} row />
           ) : visible.length === 0 ? (
             <p className="text-muted text-xs">{needle ? 'no one matches' : 'no one yet'}</p>
           ) : (

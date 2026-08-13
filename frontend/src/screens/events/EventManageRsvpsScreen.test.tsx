@@ -11,6 +11,7 @@ import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
+  useEventGuests: () => ({ data: undefined, isPending: false, isError: false }),
   eventKeys: { all: ['events'], list: vi.fn(), detail: vi.fn() },
 }));
 

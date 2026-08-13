@@ -11,9 +11,10 @@ const PREVIEW_LIMIT = 5;
 interface Props {
   event: Event;
   canSeeInvited: boolean;
+  token?: string;
 }
 
-export function RsvpGuestList({ event, canSeeInvited }: Props) {
+export function RsvpGuestList({ event, canSeeInvited, token }: Props) {
   const [openTab, setOpenTab] = useState<GuestTab | null>(null);
 
   const going = event.guests.filter((g) => g.status === RsvpServerStatus.Attending);
@@ -74,6 +75,7 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
           event={event}
           canSeeInvited={canSeeInvited}
           initialTab={openTab}
+          {...(token ? { token } : {})}
           onClose={() => {
             setOpenTab(null);
           }}

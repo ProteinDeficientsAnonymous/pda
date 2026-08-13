@@ -979,6 +979,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/guests/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Guests */
+        get: operations["community__events_get_event_guests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/ics/": {
         parameters: {
             query?: never;
@@ -2853,6 +2870,29 @@ export interface components {
         EventFlagStatusIn: {
             /** Status */
             status: string;
+        };
+        /** EventGuestsOut */
+        EventGuestsOut: {
+            /**
+             * Guests
+             * @default []
+             */
+            guests: components["schemas"]["RSVPGuestOut"][];
+            /**
+             * Invited User Ids
+             * @default []
+             */
+            invited_user_ids: string[];
+            /**
+             * Invited User Names
+             * @default []
+             */
+            invited_user_names: string[];
+            /**
+             * Invited User Photo Urls
+             * @default []
+             */
+            invited_user_photo_urls: string[];
         };
         /** EventIn */
         EventIn: {
@@ -8005,6 +8045,46 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__events_get_event_guests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGuestsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

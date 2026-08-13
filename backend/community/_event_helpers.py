@@ -17,7 +17,7 @@ from community._event_rsvp_answers import (
     can_see_guest_questionnaire_responses,
     find_my_questionnaire_responses,
 )
-from community._event_rsvp_serialize import event_rsvp_question_out
+from community._event_rsvp_serialize import event_rsvp_question_out, preview_photo_user_ids
 from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
@@ -84,16 +84,16 @@ _GUEST_LIST_STATUS_ORDER = {
 }
 
 
-def _build_guest_list(
+def _build_guest_list(  # noqa: PLR0913
     rsvps,
     can_see_phones: bool,
     viewer=None,
     can_see_payment_status: bool = False,
     *,
     include_questionnaire_responses: bool = False,
+    photo_user_ids: set[str] | None = None,
 ) -> list[RSVPGuestOut]:
-    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
-    payment-status, and answer visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted."""
     ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
@@ -102,7 +102,11 @@ def _build_guest_list(
             status=r.status,
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
-            photo_url=media_path(r.user.profile_photo),
+            photo_url=(
+                media_path(r.user.profile_photo)
+                if photo_user_ids is None or str(r.user_id) in photo_user_ids
+                else ""
+            ),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             plus_one_attendance=r.plus_one_attendance,
@@ -349,7 +353,7 @@ def _float_or_none(value) -> float | None:
     return float(value) if value is not None else None
 
 
-def _event_out(event: Event, requesting_user=None) -> EventOut:
+def _event_out(event: Event, requesting_user=None, *, all_guest_photos: bool = False) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
@@ -409,6 +413,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
                 auth_user,
                 payment_status_visible,
                 include_questionnaire_responses=responses_visible,
+                photo_user_ids=None if all_guest_photos else preview_photo_user_ids(all_rsvps),
             )
             if can_see_guests
             else []

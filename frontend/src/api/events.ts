@@ -4,7 +4,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event, EventRsvpQuestion, EventStatus } from '@/models/event';
 
 import { apiClient } from './client';
-import { mapEvent, type WireEvent } from './eventMapper';
+import { mapEvent, mapEventGuests, type WireEvent, type WireEventGuests } from './eventMapper';
 
 type EventListStatus = typeof EventStatus.Draft | typeof EventStatus.Cancelled;
 
@@ -14,6 +14,7 @@ export const eventKeys = {
     ['events', 'list', { authed: isAuthed, status: status ?? 'active' }] as const,
   detail: (id: string, isAuthed: boolean, token?: string) =>
     ['events', 'detail', id, { authed: isAuthed, token: token ?? '' }] as const,
+  guests: (id: string, token?: string) => ['events', 'guests', id, { token: token ?? '' }] as const,
 };
 
 /**
@@ -50,6 +51,10 @@ export function invalidateEventDetail(qc: QueryClient, eventIdOrSlug: string): v
   });
 }
 
+export function invalidateEventGuests(qc: QueryClient, eventId: string): void {
+  void qc.invalidateQueries({ queryKey: ['events', 'guests', eventId] });
+}
+
 /** Patch rsvpQuestions on every cached detail entry for this event (uuid or slug keys). */
 export function patchEventDetailRsvpQuestions(
   qc: QueryClient,
@@ -77,6 +82,13 @@ export async function fetchEvent(id: string, token?: string): Promise<Event> {
   return mapEvent(data);
 }
 
+export async function fetchEventGuests(id: string, token?: string) {
+  const { data } = await apiClient.get<WireEventGuests>(`/api/community/events/${id}/guests/`, {
+    params: token ? { token } : undefined,
+  });
+  return mapEventGuests(data);
+}
+
 export function useEvents(status?: EventListStatus) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useQuery({
@@ -94,5 +106,13 @@ export function useEvent(id: string | undefined, placeholder?: Event, token?: st
     queryFn: () => fetchEvent(id ?? '', token),
     enabled: Boolean(id),
     ...(placeholder ? { placeholderData: placeholder } : {}),
+  });
+}
+
+export function useEventGuests(id: string | undefined, token?: string) {
+  return useQuery({
+    queryKey: eventKeys.guests(id ?? '', token),
+    queryFn: () => fetchEventGuests(id ?? '', token),
+    enabled: Boolean(id),
   });
 }

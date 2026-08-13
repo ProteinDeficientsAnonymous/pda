@@ -12,6 +12,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import broadcast_event_created
+from pydantic import BaseModel
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -40,6 +41,7 @@ from community._event_schemas import (
     EventListOut,
     EventOut,
     EventPatchIn,
+    RSVPGuestOut,
     validate_event_rsvp_question,
 )
 from community._event_transitions import _handle_status_update, _set_event_participants
@@ -257,6 +259,43 @@ def get_event(request, event_id: str):
     viewer = resolve_event_viewer(request, event.id)
     _enforce_event_read_visibility(event, viewer)
     return Status(200, _event_out(event, viewer))
+
+
+class EventGuestsOut(BaseModel):
+    guests: list[RSVPGuestOut] = []
+    invited_user_ids: list[str] = []
+    invited_user_names: list[str] = []
+    invited_user_photo_urls: list[str] = []
+
+
+@router.get(
+    "/events/{event_id}/guests/",
+    response={200: EventGuestsOut, 403: ErrorOut, 404: ErrorOut},
+    auth=_optional_jwt,
+)
+def get_event_guests(request, event_id: str):
+    ref = parse_event_ref(event_id)
+    try:
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "tags", "rsvp_questions", "poll")
+            .annotate(**_list_count_annotations())
+            .get(ref.as_q())
+        )
+    except Event.DoesNotExist:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    viewer = resolve_event_viewer(request, event.id)
+    _enforce_event_read_visibility(event, viewer)
+    out = _event_out(event, viewer, all_guest_photos=True)
+    return Status(
+        200,
+        EventGuestsOut(
+            guests=out.guests,
+            invited_user_ids=out.invited_user_ids,
+            invited_user_names=out.invited_user_names,
+            invited_user_photo_urls=out.invited_user_photo_urls,
+        ),
+    )
 
 
 @router.post(

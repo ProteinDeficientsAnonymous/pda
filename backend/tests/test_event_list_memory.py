@@ -189,6 +189,84 @@ class TestGetEventMemory:
         assert body["invited_user_ids"] == []
         assert body["invited_count"] == 0
 
+    def test_detail_presigns_only_preview_guest_photos(self, api_client, test_user, auth_headers):
+        packed = []
+        for i in range(6):
+            guest = _user(f"+141555566{i:02d}", f"G{i}")
+            guest.profile_photo = _image(f"guest{i}.jpg")
+            guest.save()
+            packed.append(guest)
+        invitee = _user("+14155556699", "Inv")
+        invitee.profile_photo = _image("inv.jpg")
+        invitee.save()
+        test_user.profile_photo = _image("host.jpg")
+        test_user.save()
+        event = Event.objects.create(
+            title="Guest Photos",
+            start_datetime=future_iso(days=15),
+            rsvp_enabled=True,
+            created_by=test_user,
+            photo=_image("event.jpg"),
+        )
+        for guest in packed:
+            EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        event.invited_users.add(invitee)
+
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["photo_url"]
+        assert body["created_by_photo_url"]
+        signed = [g for g in body["guests"] if g["photo_url"]]
+        unsigned = [g for g in body["guests"] if not g["photo_url"]]
+        assert len(signed) == 5
+        assert len(unsigned) == 2
+        assert body["invited_user_ids"] == [str(invitee.id)]
+        assert all(body["invited_user_photo_urls"])
+
+    def test_guests_endpoint_presigns_every_guest_photo(self, api_client, test_user, auth_headers):
+        packed = []
+        for i in range(6):
+            guest = _user(f"+141555567{i:02d}", f"P{i}")
+            guest.profile_photo = _image(f"p{i}.jpg")
+            guest.save()
+            packed.append(guest)
+        event = Event.objects.create(
+            title="All Guest Photos",
+            start_datetime=future_iso(days=16),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        for guest in packed:
+            EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+
+        response = api_client.get(f"/api/community/events/{event.id}/guests/", **auth_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["guests"]) == 7
+        packed_ids = {str(g.id) for g in packed}
+        assert all(g["photo_url"] for g in body["guests"] if g["user_id"] in packed_ids)
+
+    def test_guests_endpoint_hides_list_when_viewer_cannot_see_guests(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Hidden Guests",
+            start_datetime=future_iso(days=17),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=_user("+14155556800", "Going"),
+            status=RSVPStatus.ATTENDING,
+        )
+        stranger = _user("+14155556801", "Stranger")
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(stranger).access_token}"}
+        response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
+        assert response.status_code == 200
+        assert response.json()["guests"] == []
+
     def test_detail_host_receives_invited_count(self, api_client, test_user, auth_headers):
         event = Event.objects.create(
             title="Host Invites",

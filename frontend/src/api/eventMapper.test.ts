@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapEvent, type WireEvent } from './eventMapper';
+import { makeEvent, makeGuest } from '@/test/fixtures';
+
+import { mapEvent, mapEventGuests, mergeEventGuestPhotos, type WireEvent } from './eventMapper';
 
 function wireEvent(overrides: Partial<WireEvent> = {}): WireEvent {
   return {
@@ -200,5 +202,47 @@ describe('mapEvent', () => {
     expect(guest.phone).toBeNull();
     expect(guest.photoUrl).toBe('');
     expect(guest.hasPlusOne).toBe(false);
+  });
+});
+
+describe('mapEventGuests', () => {
+  it('should map guests and invited photos', () => {
+    const result = mapEventGuests({
+      guests: [
+        { user_id: 'u1', name: 'Alex', status: 'attending', photo_url: 'https://cdn/a.jpg' },
+      ],
+      invited_user_ids: ['u2'],
+      invited_user_names: ['Sam'],
+      invited_user_photo_urls: ['https://cdn/s.jpg'],
+    });
+    expect(result.guests[0]).toMatchObject({ userId: 'u1', photoUrl: 'https://cdn/a.jpg' });
+    expect(result.invitedUserPhotoUrls).toEqual(['https://cdn/s.jpg']);
+  });
+});
+
+describe('mergeEventGuestPhotos', () => {
+  it('should keep the event guest list and fill in photos from the guests payload', () => {
+    const event = makeEvent({
+      guests: [
+        makeGuest({ userId: 'u1', name: 'Alex', photoUrl: '' }),
+        makeGuest({ userId: 'u-new', name: 'Just added', photoUrl: '' }),
+      ],
+    });
+    const photos = {
+      guests: [makeGuest({ userId: 'u1', name: 'Stale Alex', photoUrl: 'https://cdn/alex.jpg' })],
+      invitedUserIds: [],
+      invitedUserNames: [],
+      invitedUserPhotoUrls: ['https://cdn/inv.jpg'],
+    };
+    const merged = mergeEventGuestPhotos(event, photos);
+    expect(merged.guests.map((g) => g.userId)).toEqual(['u1', 'u-new']);
+    expect(merged.guests[0]!.photoUrl).toBe('https://cdn/alex.jpg');
+    expect(merged.guests[1]!.name).toBe('Just added');
+    expect(merged.invitedUserPhotoUrls).toEqual(['https://cdn/inv.jpg']);
+  });
+
+  it('should return the event unchanged when guests have not loaded', () => {
+    const event = makeEvent({ guests: [makeGuest({ userId: 'u1' })] });
+    expect(mergeEventGuestPhotos(event, undefined)).toBe(event);
   });
 });
