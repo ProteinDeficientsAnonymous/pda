@@ -37,27 +37,30 @@ class TestSnapshot:
 
 @pytest.mark.unit
 class TestGunicornArgv:
-    def test_plain_gunicorn_when_memray_off(self, monkeypatch):
+    def test_plain_gunicorn_uses_existing_venv_binary(self, monkeypatch):
         monkeypatch.delenv("PDA_MEMRAY", raising=False)
         argv = gunicorn_argv()
-        assert argv[0] == "gunicorn"
+        gunicorn = Path(argv[0])
+        assert gunicorn.is_absolute()
+        assert gunicorn.name == "gunicorn"
+        assert gunicorn.is_file()
         assert "config.asgi:application" in argv
         assert "--max-requests" in argv
-        assert "memray" not in argv
+        assert all(Path(part).name != "memray" for part in argv)
 
     def test_wraps_gunicorn_with_memray_when_enabled(self, monkeypatch):
         monkeypatch.setenv("PDA_MEMRAY", "1")
         monkeypatch.setenv("PDA_MEMRAY_OUTPUT", "/tmp/custom.bin")
         argv = gunicorn_argv()
-        assert argv[:6] == [
-            "memray",
-            "run",
-            "--follow-fork",
-            "--compress",
-            "--output",
-            "/tmp/custom.bin",
-        ]
-        assert argv[6] == "gunicorn"
+        memray = Path(argv[0])
+        gunicorn = Path(argv[6])
+        assert memray.is_absolute()
+        assert memray.name == "memray"
+        assert memray.is_file()
+        assert argv[1:6] == ["run", "--follow-fork", "--compress", "--output", "/tmp/custom.bin"]
+        assert gunicorn.is_absolute()
+        assert gunicorn.name == "gunicorn"
+        assert gunicorn.is_file()
 
 
 @pytest.mark.unit
