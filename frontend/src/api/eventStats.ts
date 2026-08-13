@@ -11,7 +11,7 @@ import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
 import { checkInReportKeys } from './eventCheckInReport';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { invalidateEventDetail, setEventDetailData } from './events';
+import { invalidateEventDetail, invalidateEventGuests, setEventDetailData } from './events';
 import { USERS_KEY } from './users';
 
 interface WireCancellation {
@@ -110,6 +110,7 @@ export function useSetGuestRsvp(eventId: string) {
     },
     onSuccess: (event) => {
       setEventDetailData(qc, event, true);
+      invalidateEventGuests(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
@@ -139,6 +140,7 @@ export function useRemoveGuestRsvp(eventId: string) {
     },
     onSuccess: () => {
       invalidateEventDetail(qc, eventId);
+      invalidateEventGuests(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });

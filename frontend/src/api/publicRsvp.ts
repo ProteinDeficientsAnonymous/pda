@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { eventCommentKeys } from '@/api/eventComments';
 import { mapEvent, type WireEvent } from '@/api/eventMapper';
-import { eventKeys } from '@/api/events';
+import { eventKeys, invalidateEventGuests } from '@/api/events';
 import type { components } from '@/api/types.gen';
 import type { Event, RsvpInputStatus } from '@/models/event';
 
@@ -121,6 +121,7 @@ function useManageInvalidate(token: string) {
     // non-member sees their own rsvp/comment without a reload (issue 1047).
     void queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId, false, token) });
     void queryClient.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+    invalidateEventGuests(queryClient, eventId);
   };
 }
 

@@ -1,14 +1,22 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
 import type { Event } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
 import { RsvpGuestList } from './RsvpGuestList';
+
+vi.mock('@/api/client', () => ({
+  apiClient: {
+    get: vi.fn(),
+  },
+  setAuthBridge: vi.fn(),
+}));
 
 function renderList(event: Event, canSeeInvited = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -20,6 +28,18 @@ function renderList(event: Event, canSeeInvited = false) {
     </QueryClientProvider>,
   );
 }
+
+beforeEach(() => {
+  vi.mocked(apiClient.get).mockReset();
+  vi.mocked(apiClient.get).mockResolvedValue({
+    data: {
+      guests: [],
+      invited_user_ids: [],
+      invited_user_names: [],
+      invited_user_photo_urls: [],
+    },
+  });
+});
 
 describe('RsvpGuestList summary', () => {
   it('shows going and maybe counts', () => {
@@ -179,5 +199,40 @@ describe('RsvpGuestList dialog', () => {
     const dialog = screen.getByRole('dialog', { name: /guest list/i });
     expect(within(dialog).queryByRole('link', { name: /sam/i })).not.toBeInTheDocument();
     expect(within(dialog).getByText('Sam')).toBeInTheDocument();
+  });
+
+  it('loads guest photos from the guests endpoint when opened', async () => {
+    const user = userEvent.setup();
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: {
+        guests: [
+          {
+            user_id: 'u1',
+            name: 'Alex',
+            status: RsvpServerStatus.Attending,
+            photo_url: 'https://cdn.example/alex.jpg',
+            is_member: true,
+          },
+        ],
+        invited_user_ids: [],
+        invited_user_names: [],
+        invited_user_photo_urls: [],
+      },
+    });
+    const event = makeEvent({
+      guests: [makeGuest({ userId: 'u1', name: 'Alex', photoUrl: '' })],
+    });
+    renderList(event);
+    await user.click(screen.getByRole('button', { name: 'view all' }));
+
+    const dialog = screen.getByRole('dialog', { name: /guest list/i });
+    await waitFor(() => {
+      expect(
+        within(dialog).getByRole('link', { name: /alex/i }).querySelector('img'),
+      ).toHaveAttribute('src', 'https://cdn.example/alex.jpg');
+    });
+    expect(apiClient.get).toHaveBeenCalledWith('/api/community/events/ev1/guests/', {
+      params: undefined,
+    });
   });
 });

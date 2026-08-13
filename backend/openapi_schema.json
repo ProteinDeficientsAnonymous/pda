@@ -1643,6 +1643,44 @@
         "title": "EventFlagStatusIn",
         "type": "object"
       },
+      "EventGuestsOut": {
+        "properties": {
+          "guests": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RSVPGuestOut"
+            },
+            "title": "Guests",
+            "type": "array"
+          },
+          "invited_user_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Ids",
+            "type": "array"
+          },
+          "invited_user_names": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Names",
+            "type": "array"
+          },
+          "invited_user_photo_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Photo Urls",
+            "type": "array"
+          }
+        },
+        "title": "EventGuestsOut",
+        "type": "object"
+      },
       "EventIn": {
         "properties": {
           "allow_plus_ones": {
@@ -5359,6 +5397,7 @@
           },
           "photo_url": {
             "default": "",
+            "description": "Empty on event detail when unsigned.",
             "title": "Photo Url",
             "type": "string"
           },
@@ -9688,6 +9727,7 @@
     },
     "/api/community/events/{event_id}/": {
       "get": {
+        "description": "Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest.",
         "operationId": "community__events_get_event",
         "parameters": [
           {
@@ -10815,6 +10855,64 @@
           }
         ],
         "summary": "Flag Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/guests/": {
+      "get": {
+        "description": "Full signed guest and invited photos, same visibility as event detail.",
+        "operationId": "community__events_get_event_guests",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventGuestsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Guests",
         "tags": [
           "community"
         ]

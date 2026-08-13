@@ -17,7 +17,7 @@ from community._event_rsvp_answers import (
     can_see_guest_questionnaire_responses,
     find_my_questionnaire_responses,
 )
-from community._event_rsvp_serialize import event_rsvp_question_out
+from community._event_rsvp_serialize import event_rsvp_question_out, with_guest_photos
 from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
@@ -92,8 +92,7 @@ def _build_guest_list(
     *,
     include_questionnaire_responses: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
-    payment-status, and answer visibility."""
+    """Build guest list ordered going > maybe > can't go > waitlisted."""
     ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
     return [
         RSVPGuestOut(
@@ -102,7 +101,6 @@ def _build_guest_list(
             status=r.status,
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
-            photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             plus_one_attendance=r.plus_one_attendance,
@@ -402,16 +400,20 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=(
-            _build_guest_list(
-                all_rsvps,
-                viewer_is_cohost,
-                auth_user,
-                payment_status_visible,
-                include_questionnaire_responses=responses_visible,
-            )
-            if can_see_guests
-            else []
+        guests=with_guest_photos(
+            (
+                _build_guest_list(
+                    all_rsvps,
+                    viewer_is_cohost,
+                    auth_user,
+                    payment_status_visible,
+                    include_questionnaire_responses=responses_visible,
+                )
+                if can_see_guests
+                else []
+            ),
+            all_rsvps,
+            all_photos=False,
         ),
         my_rsvp=my_rsvp_status,
         my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),

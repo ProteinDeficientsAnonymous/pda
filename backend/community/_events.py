@@ -5,6 +5,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
@@ -12,17 +13,21 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import broadcast_event_created
+from pydantic import BaseModel
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
+    _build_guest_list,
     _can_edit_event,
     _can_see_invite_only,
     _enforce_type_tag_permission,
     _event_out,
+    _event_rsvp_payload,
     _float_or_none,
     _get_creator_name,
+    _invited_payload,
     _is_invalid_typed_visibility,
     _iso_or_none,
     _my_rsvp_fields,
@@ -30,16 +35,20 @@ from community._event_helpers import (
     _tags_out,
     _viewer_rsvp_rows,
     broadcast_capacity_change,
+    is_cohost,
 )
 from community._event_nonmember_removal import (
     email_removed_non_members,
     guard_or_remove_ineligible_non_members,
 )
+from community._event_rsvp_answers import can_see_guest_questionnaire_responses
+from community._event_rsvp_serialize import with_guest_photos
 from community._event_schemas import (
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
+    RSVPGuestOut,
     validate_event_rsvp_question,
 )
 from community._event_transitions import _handle_status_update, _set_event_participants
@@ -62,7 +71,9 @@ from community.models import (
     EventRSVP,
     EventRsvpQuestion,
     EventStatus,
+    FeatureFlag,
     PageVisibility,
+    flag_enabled,
     parse_event_ref,
 )
 
@@ -238,12 +249,7 @@ def _can_see_invite_only_event(user, event: Event) -> bool:
     return event.invited_users.filter(pk=user.pk).exists()
 
 
-@router.get(
-    "/events/{event_id}/",
-    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
-)
-def get_event(request, event_id: str):
+def _get_visible_event(request, event_id: str):
     ref = parse_event_ref(event_id)
     try:
         event = (
@@ -256,7 +262,73 @@ def get_event(request, event_id: str):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     viewer = resolve_event_viewer(request, event.id)
     _enforce_event_read_visibility(event, viewer)
+    return event, viewer
+
+
+class EventGuestsOut(BaseModel):
+    guests: list[RSVPGuestOut] = []
+    invited_user_ids: list[str] = []
+    invited_user_names: list[str] = []
+    invited_user_photo_urls: list[str] = []
+
+
+def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
+    co_hosts = list(event.co_hosts.all())
+    creator = event.created_by
+    auth_user = _authenticated_user(requesting_user)
+    co_host_ids = {str(u.id) for u in co_hosts}
+    viewer_is_cohost = is_cohost(auth_user, co_host_ids)
+    payment_status_visible = viewer_is_cohost and flag_enabled(
+        FeatureFlag.EVENT_PAYMENT_CONFIRMATION
+    )
+    responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
+    all_rsvps, _status, _paid, can_see_guests = _event_rsvp_payload(
+        event, auth_user, viewer_is_cohost, responses_visible
+    )
+    invited, _count = _invited_payload(event, auth_user, creator, co_host_ids)
+    guests = with_guest_photos(
+        (
+            _build_guest_list(
+                all_rsvps,
+                viewer_is_cohost,
+                auth_user,
+                payment_status_visible,
+                include_questionnaire_responses=responses_visible,
+            )
+            if can_see_guests
+            else []
+        ),
+        all_rsvps,
+        all_photos=True,
+    )
+    return EventGuestsOut(
+        guests=guests,
+        invited_user_ids=[str(u.id) for u in invited],
+        invited_user_names=[visible_display_name(u, auth_user) for u in invited],
+        invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
+    )
+
+
+@router.get(
+    "/events/{event_id}/",
+    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
+    auth=_optional_jwt,
+)
+def get_event(request, event_id: str):
+    """Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest."""
+    event, viewer = _get_visible_event(request, event_id)
     return Status(200, _event_out(event, viewer))
+
+
+@router.get(
+    "/events/{event_id}/guests/",
+    response={200: EventGuestsOut, 403: ErrorOut, 404: ErrorOut},
+    auth=_optional_jwt,
+)
+def get_event_guests(request, event_id: str):
+    """Full signed guest and invited photos, same visibility as event detail."""
+    event, viewer = _get_visible_event(request, event_id)
+    return Status(200, _event_guests_out(event, viewer))
 
 
 @router.post(

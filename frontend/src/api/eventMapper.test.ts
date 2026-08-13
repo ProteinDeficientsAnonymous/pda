@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapEvent, type WireEvent } from './eventMapper';
+import { RsvpServerStatus } from '@/models/event';
+import { makeEvent, makeGuest } from '@/test/fixtures';
+
+import { mapEvent, mapEventGuests, mergeEventGuestPhotos, type WireEvent } from './eventMapper';
 
 function wireEvent(overrides: Partial<WireEvent> = {}): WireEvent {
   return {
@@ -200,5 +203,77 @@ describe('mapEvent', () => {
     expect(guest.phone).toBeNull();
     expect(guest.photoUrl).toBe('');
     expect(guest.hasPlusOne).toBe(false);
+  });
+});
+
+describe('mapEventGuests', () => {
+  it('should map guests and invited photos', () => {
+    const result = mapEventGuests({
+      guests: [
+        { user_id: 'u1', name: 'Alex', status: 'attending', photo_url: 'https://cdn/a.jpg' },
+      ],
+      invited_user_ids: ['u2'],
+      invited_user_names: ['Sam'],
+      invited_user_photo_urls: ['https://cdn/s.jpg'],
+    });
+    expect(result.guests[0]).toMatchObject({ userId: 'u1', photoUrl: 'https://cdn/a.jpg' });
+    expect(result.invitedUserPhotoUrls).toEqual(['https://cdn/s.jpg']);
+  });
+});
+
+describe('mergeEventGuestPhotos', () => {
+  it('should keep live guest name and status when the photos payload is stale', () => {
+    const event = makeEvent({
+      guests: [
+        makeGuest({
+          userId: 'u1',
+          name: 'Alex',
+          status: RsvpServerStatus.Attending,
+          photoUrl: '',
+          hasPlusOne: true,
+        }),
+        makeGuest({ userId: 'u-new', name: 'Just added', photoUrl: '' }),
+      ],
+      invitedUserIds: ['inv-1'],
+      invitedUserNames: ['Sam'],
+      invitedUserPhotoUrls: ['https://cdn/sam.jpg'],
+    });
+    const photos = {
+      guests: [
+        makeGuest({
+          userId: 'u1',
+          name: 'Stale Alex',
+          status: RsvpServerStatus.Maybe,
+          photoUrl: 'https://cdn/alex.jpg',
+        }),
+      ],
+    };
+    const merged = mergeEventGuestPhotos(event, photos);
+    expect(merged.guests.map((g) => g.userId)).toEqual(['u1', 'u-new']);
+    expect(merged.guests[0]).toMatchObject({
+      name: 'Alex',
+      status: RsvpServerStatus.Attending,
+      hasPlusOne: true,
+      photoUrl: 'https://cdn/alex.jpg',
+    });
+    expect(merged.guests[1]!.name).toBe('Just added');
+    expect(merged.invitedUserIds).toEqual(['inv-1']);
+    expect(merged.invitedUserNames).toEqual(['Sam']);
+    expect(merged.invitedUserPhotoUrls).toEqual(['https://cdn/sam.jpg']);
+  });
+
+  it('should clear a leftover preview photo when the guests payload has an empty url', () => {
+    const event = makeEvent({
+      guests: [makeGuest({ userId: 'u1', photoUrl: 'https://cdn/old.jpg' })],
+    });
+    const merged = mergeEventGuestPhotos(event, {
+      guests: [makeGuest({ userId: 'u1', photoUrl: '' })],
+    });
+    expect(merged.guests[0]!.photoUrl).toBe('');
+  });
+
+  it('should return the event unchanged when guests have not loaded', () => {
+    const event = makeEvent({ guests: [makeGuest({ userId: 'u1' })] });
+    expect(mergeEventGuestPhotos(event, undefined)).toBe(event);
   });
 });
