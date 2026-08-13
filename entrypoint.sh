@@ -20,7 +20,7 @@ uv run --no-dev python manage.py migrate
 # Table creation isn't atomic; a concurrent replica may win the race and create it first.
 uv run --no-dev python manage.py createcachetable || true
 
-# gunicorn_conf: max-requests 100 + max-age (PDA_WORKER_MAX_AGE) recycle RSS;
+# gunicorn_conf: max-requests 2000 + max-age (PDA_WORKER_MAX_AGE) recycle RSS;
 # graceful-timeout covers the SSE notification stream (notifications/sse.py).
 if [ "${PDA_MEMORY_PROFILE:-}" = "1" ]; then
   export PYTHONTRACEMALLOC="${PYTHONTRACEMALLOC:-1}"

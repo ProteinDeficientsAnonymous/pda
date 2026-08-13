@@ -173,11 +173,11 @@ class TestMemorySnapshotView:
 
 @pytest.mark.unit
 class TestGunicornConf:
-    def test_recycles_worker_every_100_requests(self):
+    def test_recycles_worker_every_2000_requests(self):
         from config import gunicorn_conf
 
-        assert gunicorn_conf.max_requests == 100
-        assert gunicorn_conf.max_requests_jitter == 20
+        assert gunicorn_conf.max_requests == 2000
+        assert gunicorn_conf.max_requests_jitter == 200
         assert gunicorn_conf.graceful_timeout == 35
 
     def test_worker_max_age_defaults_to_30_minutes(self, monkeypatch):
