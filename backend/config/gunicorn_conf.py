@@ -6,9 +6,9 @@ import time
 
 bind = "0.0.0.0:8000"
 worker_class = "uvicorn.workers.UvicornWorker"
-# Recycle before fragmented RSS from event/calendar payloads sticks around.
-max_requests = 100
-max_requests_jitter = 20
+# Sized above observed production bursts (~1900 req/hour); max-age bounds RSS.
+max_requests = 2000
+max_requests_jitter = 200
 # SSE notification stream (notifications/sse.py) needs time to close on recycle.
 graceful_timeout = 35
 
