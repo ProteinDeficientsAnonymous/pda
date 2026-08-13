@@ -1,3 +1,10 @@
+## [0.95.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.4...v0.95.5) (2026-08-13)
+
+
+### Bug Fixes
+
+* raise gunicorn max_requests for bursty traffic ([#1413](https://github.com/ProteinDeficientsAnonymous/pda/issues/1413)) ([f4adcb4](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4adcb4c0264a5ac5e5d3571d1d4ee3e5cdf5790))
+
 ## [0.95.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.3...v0.95.4) (2026-08-13)
 
 
