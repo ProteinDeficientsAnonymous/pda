@@ -1,3 +1,10 @@
+## [0.95.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.1...v0.95.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* recycle gunicorn workers every 100 requests or 30 minutes ([#1410](https://github.com/ProteinDeficientsAnonymous/pda/issues/1410)) ([19dae3e](https://github.com/ProteinDeficientsAnonymous/pda/commit/19dae3ec9de9ba51cb04a787be8ff2b87b68c811))
+
 ## [0.95.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.0...v0.95.1) (2026-08-13)
 
 
