@@ -1,9 +1,11 @@
 import logging
+import os
+import signal
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from config.media_proxy import media_path
+from config.media_proxy import media_path, preload_media_storage
 from config.memory import gunicorn_argv, media_path_calls, memory_profile_enabled, rss_kb, snapshot
 from config.middleware import RequestLoggingMiddleware
 from django.http import JsonResponse, StreamingHttpResponse
@@ -45,7 +47,7 @@ class TestGunicornArgv:
         assert gunicorn.name == "gunicorn"
         assert gunicorn.is_file()
         assert "config.asgi:application" in argv
-        assert "--max-requests" in argv
+        assert argv[argv.index("--config") + 1] == "python:config.gunicorn_conf"
         assert all(Path(part).name != "memray" for part in argv)
 
     def test_wraps_gunicorn_with_memray_when_enabled(self, monkeypatch):
@@ -167,3 +169,93 @@ class TestMemorySnapshotView:
         data = response.json()
         assert data["rss_kb"] >= 0
         assert "pid" in data
+
+
+@pytest.mark.unit
+class TestGunicornConf:
+    def test_recycles_worker_every_100_requests(self):
+        from config import gunicorn_conf
+
+        assert gunicorn_conf.max_requests == 100
+        assert gunicorn_conf.max_requests_jitter == 20
+        assert gunicorn_conf.graceful_timeout == 35
+
+    def test_worker_max_age_defaults_to_30_minutes(self, monkeypatch):
+        monkeypatch.delenv("PDA_WORKER_MAX_AGE", raising=False)
+        from config.gunicorn_conf import worker_max_age_seconds
+
+        assert worker_max_age_seconds() == 1800
+
+    def test_worker_max_age_zero_disables_recycle(self, monkeypatch):
+        monkeypatch.setenv("PDA_WORKER_MAX_AGE", "0")
+        from config.gunicorn_conf import worker_max_age_seconds
+
+        assert worker_max_age_seconds() == 0
+
+    def test_post_fork_sends_sigterm_after_max_age(self, monkeypatch):
+        monkeypatch.setenv("PDA_WORKER_MAX_AGE", "60")
+        monkeypatch.setenv("PDA_WORKER_MAX_AGE_JITTER", "0")
+        slept: list[float] = []
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr("config.gunicorn_conf.time.sleep", lambda s: slept.append(s))
+        monkeypatch.setattr(
+            "config.gunicorn_conf.os.kill", lambda pid, sig: killed.append((pid, sig))
+        )
+
+        class ImmediateThread:
+            def __init__(self, target=None, daemon=None, name=None):
+                self._target = target
+
+            def start(self):
+                self._target()
+
+        monkeypatch.setattr("config.gunicorn_conf.threading.Thread", ImmediateThread)
+        from config.gunicorn_conf import post_fork
+
+        post_fork(
+            SimpleNamespace(log=SimpleNamespace(info=lambda *a, **k: None)), SimpleNamespace()
+        )
+        assert slept == [60]
+        assert killed == [(os.getpid(), signal.SIGTERM)]
+
+    def test_post_fork_skips_timer_when_max_age_disabled(self, monkeypatch):
+        monkeypatch.setenv("PDA_WORKER_MAX_AGE", "0")
+        started: list[bool] = []
+
+        class TrackingThread:
+            def __init__(self, target=None, daemon=None, name=None):
+                pass
+
+            def start(self):
+                started.append(True)
+
+        monkeypatch.setattr("config.gunicorn_conf.threading.Thread", TrackingThread)
+        from config.gunicorn_conf import post_fork
+
+        post_fork(
+            SimpleNamespace(log=SimpleNamespace(info=lambda *a, **k: None)), SimpleNamespace()
+        )
+        assert started == []
+
+
+@pytest.mark.unit
+class TestPreloadMediaStorage:
+    def test_skips_when_not_s3(self, settings):
+        settings.STORAGES = {
+            "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        }
+        preload_media_storage()
+
+    def test_touches_s3_bucket_to_load_botocore(self, settings, monkeypatch):
+        settings.STORAGES = {"default": {"BACKEND": "storages.backends.s3.S3Storage"}}
+        touched: list[bool] = []
+
+        class FakeStorage:
+            @property
+            def bucket(self):
+                touched.append(True)
+                return object()
+
+        monkeypatch.setattr("config.media_proxy.default_storage", FakeStorage())
+        preload_media_storage()
+        assert touched == [True]
