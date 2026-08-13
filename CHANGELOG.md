@@ -1,3 +1,10 @@
+# [0.95.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.94.1...v0.95.0) (2026-08-13)
+
+
+### Features
+
+* instrument staging memory with rss logs and memray ([#1407](https://github.com/ProteinDeficientsAnonymous/pda/issues/1407)) ([85fe95d](https://github.com/ProteinDeficientsAnonymous/pda/commit/85fe95d2f2742ac56d0ebd62f1f905dd8d97ea38))
+
 ## [0.94.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.94.0...v0.94.1) (2026-08-13)
 
 
