@@ -6,6 +6,7 @@ from notifications.sse import notification_stream
 from users.api import router as auth_router
 
 from config.media_proxy import serve_media
+from config.memory_view import memory_snapshot_view
 from config.og_preview import event_og_preview
 from config.validation_handlers import register_validation_handlers
 
@@ -16,6 +17,7 @@ api.add_router("/community/", community_router, tags=["community"])
 api.add_router("/notifications/", notifications_router, tags=["notifications"])
 
 urlpatterns = [
+    path("api/community/debug/memory/", memory_snapshot_view),
     path("api/", api.urls),
     # SSE endpoint — raw async view (Ninja doesn't support streaming responses)
     path("api/notifications/stream/", notification_stream),

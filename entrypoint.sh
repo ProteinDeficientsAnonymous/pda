@@ -22,9 +22,7 @@ uv run python manage.py createcachetable || true
 
 # --max-requests recycles workers to release allocator memory the OS never reclaims (RSS ~200MB -> ~650MB/day otherwise).
 # --graceful-timeout gives the open SSE notification stream (backend/notifications/sse.py) time to close on recycle.
-uv run gunicorn config.asgi:application \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000 \
-    --max-requests 10000 \
-    --max-requests-jitter 1000 \
-    --graceful-timeout 35
+if [ "${PDA_MEMORY_PROFILE:-}" = "1" ]; then
+  export PYTHONTRACEMALLOC="${PYTHONTRACEMALLOC:-1}"
+fi
+uv run python -m config.run_gunicorn
