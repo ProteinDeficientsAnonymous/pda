@@ -1,8 +1,10 @@
 import os
 import resource
+import shutil
 import sys
 import tracemalloc
 from contextvars import ContextVar
+from pathlib import Path
 
 # max-requests recycles workers so fragmented RSS is released; graceful-timeout covers SSE.
 _GUNICORN = [
@@ -75,16 +77,27 @@ def snapshot(*, top: int = 15) -> dict:
     return data
 
 
+def _venv_bin(name: str) -> str:
+    extra = [str(Path(sys.executable).resolve().parent), str(Path(sys.prefix) / "bin")]
+    if os.environ.get("VIRTUAL_ENV"):
+        extra.append(str(Path(os.environ["VIRTUAL_ENV"]) / "bin"))
+    found = shutil.which(name, path=os.pathsep.join([*extra, os.environ.get("PATH", "")]))
+    if not found:
+        raise FileNotFoundError(name)
+    return found
+
+
 def gunicorn_argv() -> list[str]:
+    gunicorn = [_venv_bin("gunicorn"), *_GUNICORN[1:]]
     if os.environ.get("PDA_MEMRAY") != "1":
-        return list(_GUNICORN)
+        return gunicorn
     output = os.environ.get("PDA_MEMRAY_OUTPUT", "/tmp/memray.bin")
     return [
-        "memray",
+        _venv_bin("memray"),
         "run",
         "--follow-fork",
         "--compress",
         "--output",
         output,
-        *_GUNICORN,
+        *gunicorn,
     ]
