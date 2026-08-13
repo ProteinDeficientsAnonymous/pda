@@ -1,3 +1,10 @@
+## [0.94.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.94.0...v0.94.1) (2026-08-13)
+
+
+### Performance Improvements
+
+* **media:** serve B2 photos via presigned URLs ([#1402](https://github.com/ProteinDeficientsAnonymous/pda/issues/1402)) ([3658532](https://github.com/ProteinDeficientsAnonymous/pda/commit/36585323d1d80898fc7c88ed317be886ceb0c8e3))
+
 # [0.94.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.93.4...v0.94.0) (2026-08-11)
 
 
