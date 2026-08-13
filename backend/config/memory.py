@@ -6,20 +6,11 @@ import tracemalloc
 from contextvars import ContextVar
 from pathlib import Path
 
-# max-requests recycles workers so fragmented RSS is released; graceful-timeout covers SSE.
 _GUNICORN = [
     "gunicorn",
+    "--config",
+    "python:config.gunicorn_conf",
     "config.asgi:application",
-    "--worker-class",
-    "uvicorn.workers.UvicornWorker",
-    "--bind",
-    "0.0.0.0:8000",
-    "--max-requests",
-    "10000",
-    "--max-requests-jitter",
-    "1000",
-    "--graceful-timeout",
-    "35",
 ]
 
 _media_path_calls: ContextVar[int] = ContextVar("pda_media_path_calls", default=0)

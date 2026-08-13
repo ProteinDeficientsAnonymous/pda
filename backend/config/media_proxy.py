@@ -37,6 +37,19 @@ def media_path(field) -> str:
     return field.url
 
 
+def preload_media_storage() -> None:
+    """Load botocore in this process before the first media_path() call.
+
+    django-storages S3Storage.url() lazy-imports botocore (~45MB). Recycled
+    gunicorn workers would otherwise pay that on the first /auth/me/ or event
+    photo URL. Filesystem storage is a no-op.
+    """
+    backend = settings.STORAGES["default"]["BACKEND"]
+    if backend != "storages.backends.s3.S3Storage":
+        return
+    default_storage.bucket
+
+
 def _is_safe_path(path: str) -> bool:
     """Reject traversal, absolute paths, backslashes, and null bytes."""
     if not path or "\x00" in path or "\\" in path:

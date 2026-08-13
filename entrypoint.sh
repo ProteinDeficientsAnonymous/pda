@@ -20,8 +20,8 @@ uv run --no-dev python manage.py migrate
 # Table creation isn't atomic; a concurrent replica may win the race and create it first.
 uv run --no-dev python manage.py createcachetable || true
 
-# --max-requests recycles workers to release allocator memory the OS never reclaims (RSS ~200MB -> ~650MB/day otherwise).
-# --graceful-timeout gives the open SSE notification stream (backend/notifications/sse.py) time to close on recycle.
+# gunicorn_conf: max-requests 100 + max-age (PDA_WORKER_MAX_AGE) recycle RSS;
+# graceful-timeout covers the SSE notification stream (notifications/sse.py).
 if [ "${PDA_MEMORY_PROFILE:-}" = "1" ]; then
   export PYTHONTRACEMALLOC="${PYTHONTRACEMALLOC:-1}"
 fi
