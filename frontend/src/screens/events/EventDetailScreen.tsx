@@ -10,6 +10,7 @@ import { canManageEvent, canPublicRsvp, eventPath } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
@@ -21,11 +22,6 @@ import { EventTagChips } from './EventTagChips';
 import { MyRsvpSection } from './MyRsvpSection';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
-
-function photoSrc(url: string, updatedAt: string | null): string {
-  if (!updatedAt) return url;
-  return `${url}?v=${encodeURIComponent(updatedAt)}`;
-}
 
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -149,7 +145,7 @@ export default function EventDetailScreen() {
 
   const photo = (
     <img
-      src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
+      src={cacheBustMediaUrl(event.photoUrl, event.photoUpdatedAt)}
       alt=""
       className="mx-auto block max-h-[70vh] w-full max-w-md rounded-lg object-contain"
       loading="lazy"

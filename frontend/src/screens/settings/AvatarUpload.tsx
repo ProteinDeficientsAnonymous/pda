@@ -5,6 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { cn } from '@/utils/cn';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = [
@@ -29,11 +30,7 @@ export function AvatarUpload({ size = 'md' }: Props) {
 
   if (!user) return null;
   const initials = user.fullName.slice(0, 2).toLowerCase() || '?';
-  const photoUrl = user.profilePhotoUrl
-    ? user.photoUpdatedAt
-      ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
-      : user.profilePhotoUrl
-    : '';
+  const photoUrl = cacheBustMediaUrl(user.profilePhotoUrl, user.photoUpdatedAt);
 
   const avatarSize = size === 'lg' ? 'h-28 w-28' : 'h-20 w-20';
   const initialsSize = size === 'lg' ? 'text-3xl' : 'text-2xl';

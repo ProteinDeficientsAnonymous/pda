@@ -27,10 +27,10 @@ _INLINE_CONTENT_TYPES = frozenset(
 
 
 def media_path(field) -> str:
-    """Return a relative /media/ URL for a FileField, or '' if empty."""
+    """Return storage URL (/media/… locally, presigned absolute URL on B2), or ''."""
     if not field:
         return ""
-    return f"/media/{field.name}"
+    return field.url
 
 
 def _is_safe_path(path: str) -> bool:
