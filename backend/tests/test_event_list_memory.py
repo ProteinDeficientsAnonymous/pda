@@ -79,7 +79,7 @@ class TestListEventsMemory:
         row = next(e for e in response.json() if e["id"] == str(event.id))
         assert row["attending_count"] == 13  # 12 going, first has plus-one
         assert row["waitlisted_count"] == 2
-        assert row["invited_count"] == 9
+        assert row["invited_count"] == 0
         assert instantiated["n"] == 0
 
     def test_list_events_does_not_presign_photos(self, api_client, test_user, auth_headers):
@@ -165,7 +165,44 @@ class TestGetEventMemory:
         assert body["attending_count"] == 10
         assert body["guests"] == []
         assert body["invited_user_ids"] == []
+        assert body["invited_count"] == 0
         assert instantiated["n"] == 0
+
+    def test_detail_attendee_does_not_receive_invited_count(
+        self, api_client, test_user, auth_headers
+    ):
+        event = Event.objects.create(
+            title="Attendee Detail",
+            start_datetime=future_iso(days=13),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        event.invited_users.add(_user("+14155556400", "Invitee"))
+        attendee = _user("+14155556401", "Going")
+        EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(attendee).access_token}"}
+        response = api_client.get(f"/api/community/events/{event.id}/", **headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["guests"]) >= 1
+        assert body["invited_user_ids"] == []
+        assert body["invited_count"] == 0
+
+    def test_detail_host_receives_invited_count(self, api_client, test_user, auth_headers):
+        event = Event.objects.create(
+            title="Host Invites",
+            start_datetime=future_iso(days=14),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        invitees = [_user(f"+141555565{i:02d}", f"HInv{i}") for i in range(4)]
+        event.invited_users.add(*invitees)
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["invited_count"] == 4
+        assert set(body["invited_user_ids"]) == {str(u.id) for u in invitees}
 
     def test_invite_only_detail_does_not_hydrate_invitees(self, api_client, monkeypatch):
         creator = _user("+14155556000", "Host")

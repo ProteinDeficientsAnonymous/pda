@@ -1,6 +1,6 @@
 """RSVP headcount and attendance predicates shared across event surfaces."""
 
-from django.db.models import Case, Count, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models import Case, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 
 from community.models import (
@@ -81,22 +81,6 @@ def attending_count_annotation() -> Coalesce:
 def waitlisted_count_annotation() -> Coalesce:
     """SQL waitlisted headcount (incl. plus-ones) without instantiating RSVP rows."""
     return Coalesce(_rsvp_headcount_subquery(RSVPStatus.WAITLISTED), Value(0))
-
-
-def invited_count_annotation() -> Coalesce:
-    """SQL invited-user count without hydrating invitees."""
-    through = Event.invited_users.through
-    return Coalesce(
-        Subquery(
-            through.objects.filter(event_id=OuterRef("pk"))
-            .order_by()
-            .values("event_id")
-            .annotate(total=Count("id"))
-            .values("total")[:1],
-            output_field=IntegerField(),
-        ),
-        Value(0),
-    )
 
 
 def is_attended(rsvp: EventRSVP) -> bool:

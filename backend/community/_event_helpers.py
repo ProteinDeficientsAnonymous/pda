@@ -230,20 +230,17 @@ def _can_see_invited(
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
-_INACTIVE_RSVP_STATUSES = {RSVPStatus.CANT_GO, RSVPStatus.REMOVED}
-
-
 def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str | None) -> bool:
-    """Hosts, event managers, and active RSVPs can see the guest list.
+    """Hosts, event managers, and RSVP'd members can see the guest list.
 
-    A cancelled (CANT_GO) or host-removed (REMOVED) RSVP row still exists, so
-    my_rsvp_status is checked against active statuses rather than just None.
+    Host-removed (REMOVED) RSVP rows still exist, so presence alone is not enough.
+    Can't-go still counts as RSVP'd — those viewers can see who is going.
     """
     if requesting_user is None:
         return False
     if viewer_is_cohost or requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
+    return my_rsvp_status is not None and my_rsvp_status != RSVPStatus.REMOVED
 
 
 def _can_see_invite_only(
@@ -338,14 +335,10 @@ def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, respons
 
 
 def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str]):
-    can_see = _can_see_invited(auth_user, creator, co_host_ids)
-    invited = list(event.invited_users.all()) if can_see else []
-    count = _annotated_or(
-        event,
-        "invited_count",
-        lambda: len(invited) if can_see else event.invited_users.count(),
-    )
-    return invited, count
+    if not _can_see_invited(auth_user, creator, co_host_ids):
+        return [], 0
+    invited = list(event.invited_users.all())
+    return invited, len(invited)
 
 
 def _iso_or_none(value) -> str | None:

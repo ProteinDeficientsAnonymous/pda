@@ -52,7 +52,6 @@ from community._event_viewer import resolve_event_viewer
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import (
     attending_count_annotation,
-    invited_count_annotation,
     waitlisted_count_annotation,
 )
 from community._rsvp_payment import can_see_payment_details
@@ -99,7 +98,6 @@ def _list_count_annotations():
         ),
         "attending_count": attending_count_annotation(),
         "waitlisted_count": waitlisted_count_annotation(),
-        "invited_count": invited_count_annotation(),
     }
 
 
@@ -176,7 +174,7 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         max_attendees=e.max_attendees,
         attending_count=e.attending_count,
         waitlisted_count=e.waitlisted_count,
-        invited_count=e.invited_count,
+        invited_count=0,  # host-only; filled on event detail, not the calendar list
         comment_count=e.comment_count,
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
