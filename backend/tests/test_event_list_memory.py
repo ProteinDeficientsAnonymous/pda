@@ -15,12 +15,13 @@ from users.models import User
 from tests.conftest import future_iso
 
 
-def _user(phone: str, name: str) -> User:
+def _user(phone: str, name: str, *, is_member: bool = True) -> User:
     return User.objects.create_user(
         phone_number=phone,
         password="Testpass123!",
         first_name=name,
         last_name="",
+        is_member=is_member,
     )
 
 
@@ -220,8 +221,8 @@ class TestGetEventMemory:
         assert body["created_by_photo_url"]
         signed = [g for g in body["guests"] if g["photo_url"]]
         unsigned = [g for g in body["guests"] if not g["photo_url"]]
-        assert len(signed) == 5
-        assert len(unsigned) == 2
+        assert {g["user_id"] for g in signed} == {str(g.id) for g in packed[:5]}
+        assert {g["user_id"] for g in unsigned} == {str(packed[5].id), str(test_user.id)}
         assert body["invited_user_ids"] == [str(invitee.id)]
         assert all(body["invited_user_photo_urls"])
 
@@ -265,7 +266,106 @@ class TestGetEventMemory:
         headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(stranger).access_token}"}
         response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
         assert response.status_code == 200
-        assert response.json()["guests"] == []
+        body = response.json()
+        assert body["guests"] == []
+        assert body["invited_user_ids"] == []
+        assert body["invited_user_names"] == []
+        assert body["invited_user_photo_urls"] == []
+
+    def test_guests_endpoint_hides_invited_from_attendee(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Attendee Guests",
+            start_datetime=future_iso(days=18),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        attendee = _user("+14155556810", "Going")
+        EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
+        event.invited_users.add(_user("+14155556811", "Invitee"))
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(attendee).access_token}"}
+        response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert [g["user_id"] for g in body["guests"]] == [str(attendee.id)]
+        assert body["invited_user_ids"] == []
+        assert body["invited_user_photo_urls"] == []
+
+    def test_guests_endpoint_returns_404_for_unknown_event(
+        self, api_client, test_user, auth_headers
+    ):
+        response = api_client.get(
+            "/api/community/events/00000000-0000-0000-0000-000000000000/guests/",
+            **auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_detail_signed_guest_ids_match_preview_cohort(
+        self, api_client, test_user, auth_headers
+    ):
+        attending_members = [
+            _user("+14155556900", "M1"),
+            _user("+14155556901", "M2"),
+        ]
+        maybe_member = _user("+14155556902", "MM")
+        attending_nonmembers = [
+            _user("+14155556903", "N1", is_member=False),
+            _user("+14155556904", "N2", is_member=False),
+            _user("+14155556905", "N3", is_member=False),
+        ]
+        maybe_nonmember = _user("+14155556906", "NM", is_member=False)
+        waitlisted = _user("+14155556907", "W")
+        for guest in (
+            *attending_members,
+            maybe_member,
+            *attending_nonmembers,
+            maybe_nonmember,
+            waitlisted,
+        ):
+            guest.profile_photo = _image(f"{guest.first_name}.jpg")
+            guest.save()
+        event = Event.objects.create(
+            title="Mixed Preview",
+            start_datetime=future_iso(days=19),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        EventRSVP.objects.create(
+            event=event, user=attending_nonmembers[0], status=RSVPStatus.ATTENDING
+        )
+        EventRSVP.objects.create(
+            event=event, user=attending_members[0], status=RSVPStatus.ATTENDING
+        )
+        EventRSVP.objects.create(event=event, user=maybe_member, status=RSVPStatus.MAYBE)
+        EventRSVP.objects.create(
+            event=event, user=attending_nonmembers[1], status=RSVPStatus.ATTENDING
+        )
+        EventRSVP.objects.create(event=event, user=maybe_nonmember, status=RSVPStatus.MAYBE)
+        EventRSVP.objects.create(
+            event=event, user=attending_members[1], status=RSVPStatus.ATTENDING
+        )
+        EventRSVP.objects.create(
+            event=event, user=attending_nonmembers[2], status=RSVPStatus.ATTENDING
+        )
+        EventRSVP.objects.create(event=event, user=waitlisted, status=RSVPStatus.WAITLISTED)
+
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        guests = response.json()["guests"]
+        preview_ids = [
+            g["user_id"]
+            for status, is_member in (
+                (RSVPStatus.ATTENDING, True),
+                (RSVPStatus.MAYBE, True),
+                (RSVPStatus.ATTENDING, False),
+                (RSVPStatus.MAYBE, False),
+            )
+            for g in guests
+            if g["status"] == status and g["is_member"] is is_member
+        ]
+        assert {g["user_id"] for g in guests if g["photo_url"]} == set(preview_ids[:5])
+        assert str(attending_nonmembers[2].id) not in preview_ids[:5]
+        assert str(maybe_nonmember.id) not in preview_ids[:5]
+        assert str(waitlisted.id) not in preview_ids[:5]
 
     def test_detail_host_receives_invited_count(self, api_client, test_user, auth_headers):
         event = Event.objects.create(

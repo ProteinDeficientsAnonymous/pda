@@ -173,7 +173,7 @@ class RSVPGuestOut(BaseModel):
     has_plus_one: bool = False
     questionnaire_responses: dict = {}
     phone: str | None = None
-    photo_url: str = ""
+    photo_url: str = Field(default="", description="Empty on event detail when unsigned.")
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
     plus_one_attendance: AttendanceStatus = AttendanceStatus.UNKNOWN

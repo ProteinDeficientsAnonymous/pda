@@ -52,7 +52,10 @@ export function invalidateEventDetail(qc: QueryClient, eventIdOrSlug: string): v
 }
 
 export function invalidateEventGuests(qc: QueryClient, eventId: string): void {
-  void qc.invalidateQueries({ queryKey: ['events', 'guests', eventId] });
+  void qc.invalidateQueries({
+    queryKey: eventKeys.all,
+    predicate: (query) => query.queryKey[1] === 'guests' && query.queryKey[2] === eventId,
+  });
 }
 
 /** Patch rsvpQuestions on every cached detail entry for this event (uuid or slug keys). */
@@ -82,7 +85,10 @@ export async function fetchEvent(id: string, token?: string): Promise<Event> {
   return mapEvent(data);
 }
 
-export async function fetchEventGuests(id: string, token?: string) {
+export async function fetchEventGuests(
+  id: string,
+  token?: string,
+): Promise<ReturnType<typeof mapEventGuests>> {
   const { data } = await apiClient.get<WireEventGuests>(`/api/community/events/${id}/guests/`, {
     params: token ? { token } : undefined,
   });
@@ -109,6 +115,7 @@ export function useEvent(id: string | undefined, placeholder?: Event, token?: st
   });
 }
 
+/** Full signed guest photos; merge onto the live guest list, do not replace it. */
 export function useEventGuests(id: string | undefined, token?: string) {
   return useQuery({
     queryKey: eventKeys.guests(id ?? '', token),

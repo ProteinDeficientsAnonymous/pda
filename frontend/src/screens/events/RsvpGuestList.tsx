@@ -4,9 +4,7 @@ import type { Event, EventGuest } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 
 import { GuestListDialog, type GuestTab } from './GuestListDialog';
-import { countWithPlusOnes, previewGuests } from './guestSort';
-
-const PREVIEW_LIMIT = 5;
+import { countWithPlusOnes, PREVIEW_LIMIT, previewGuests } from './guestSort';
 
 interface Props {
   event: Event;

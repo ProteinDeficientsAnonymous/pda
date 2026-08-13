@@ -762,7 +762,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Event */
+        /**
+         * Get Event
+         * @description Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest.
+         */
         get: operations["community__events_get_event"];
         put?: never;
         post?: never;
@@ -986,7 +989,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Event Guests */
+        /**
+         * Get Event Guests
+         * @description Full signed guest and invited photos, same visibility as event detail.
+         */
         get: operations["community__events_get_event_guests"];
         put?: never;
         post?: never;
@@ -4577,6 +4583,7 @@ export interface components {
             phone?: string | null;
             /**
              * Photo Url
+             * @description Empty on event detail when unsigned.
              * @default
              */
             photo_url: string;

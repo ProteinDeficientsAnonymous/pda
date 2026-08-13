@@ -31,6 +31,14 @@ function renderList(event: Event, canSeeInvited = false) {
 
 beforeEach(() => {
   vi.mocked(apiClient.get).mockReset();
+  vi.mocked(apiClient.get).mockResolvedValue({
+    data: {
+      guests: [],
+      invited_user_ids: [],
+      invited_user_names: [],
+      invited_user_photo_urls: [],
+    },
+  });
 });
 
 describe('RsvpGuestList summary', () => {
@@ -222,6 +230,9 @@ describe('RsvpGuestList dialog', () => {
       expect(
         within(dialog).getByRole('link', { name: /alex/i }).querySelector('img'),
       ).toHaveAttribute('src', 'https://cdn.example/alex.jpg');
+    });
+    expect(apiClient.get).toHaveBeenCalledWith('/api/community/events/ev1/guests/', {
+      params: undefined,
     });
   });
 });

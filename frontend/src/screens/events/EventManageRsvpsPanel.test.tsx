@@ -16,9 +16,6 @@ vi.mock('@/api/eventStats', () => ({
   useRemoveGuestRsvp: () => ({ mutate: removeGuestRsvpMutate, isPending: false }),
   useSetGuestPayment: () => ({ mutate: setGuestPaymentMutate, isPending: false }),
 }));
-vi.mock('@/api/events', () => ({
-  useEventGuests: () => ({ data: undefined, isPending: false }),
-}));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/api/userSearch', () => ({
   useUserSearch: () => ({

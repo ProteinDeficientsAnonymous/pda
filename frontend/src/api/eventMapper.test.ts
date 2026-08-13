@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
 import { mapEvent, mapEventGuests, mergeEventGuestPhotos, type WireEvent } from './eventMapper';
@@ -221,24 +222,54 @@ describe('mapEventGuests', () => {
 });
 
 describe('mergeEventGuestPhotos', () => {
-  it('should keep the event guest list and fill in photos from the guests payload', () => {
+  it('should keep live guest name and status when the photos payload is stale', () => {
     const event = makeEvent({
       guests: [
-        makeGuest({ userId: 'u1', name: 'Alex', photoUrl: '' }),
+        makeGuest({
+          userId: 'u1',
+          name: 'Alex',
+          status: RsvpServerStatus.Attending,
+          photoUrl: '',
+          hasPlusOne: true,
+        }),
         makeGuest({ userId: 'u-new', name: 'Just added', photoUrl: '' }),
       ],
+      invitedUserIds: ['inv-1'],
+      invitedUserNames: ['Sam'],
+      invitedUserPhotoUrls: ['https://cdn/sam.jpg'],
     });
     const photos = {
-      guests: [makeGuest({ userId: 'u1', name: 'Stale Alex', photoUrl: 'https://cdn/alex.jpg' })],
-      invitedUserIds: [],
-      invitedUserNames: [],
-      invitedUserPhotoUrls: ['https://cdn/inv.jpg'],
+      guests: [
+        makeGuest({
+          userId: 'u1',
+          name: 'Stale Alex',
+          status: RsvpServerStatus.Maybe,
+          photoUrl: 'https://cdn/alex.jpg',
+        }),
+      ],
     };
     const merged = mergeEventGuestPhotos(event, photos);
     expect(merged.guests.map((g) => g.userId)).toEqual(['u1', 'u-new']);
-    expect(merged.guests[0]!.photoUrl).toBe('https://cdn/alex.jpg');
+    expect(merged.guests[0]).toMatchObject({
+      name: 'Alex',
+      status: RsvpServerStatus.Attending,
+      hasPlusOne: true,
+      photoUrl: 'https://cdn/alex.jpg',
+    });
     expect(merged.guests[1]!.name).toBe('Just added');
-    expect(merged.invitedUserPhotoUrls).toEqual(['https://cdn/inv.jpg']);
+    expect(merged.invitedUserIds).toEqual(['inv-1']);
+    expect(merged.invitedUserNames).toEqual(['Sam']);
+    expect(merged.invitedUserPhotoUrls).toEqual(['https://cdn/sam.jpg']);
+  });
+
+  it('should clear a leftover preview photo when the guests payload has an empty url', () => {
+    const event = makeEvent({
+      guests: [makeGuest({ userId: 'u1', photoUrl: 'https://cdn/old.jpg' })],
+    });
+    const merged = mergeEventGuestPhotos(event, {
+      guests: [makeGuest({ userId: 'u1', photoUrl: '' })],
+    });
+    expect(merged.guests[0]!.photoUrl).toBe('');
   });
 
   it('should return the event unchanged when guests have not loaded', () => {

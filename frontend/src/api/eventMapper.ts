@@ -240,11 +240,10 @@ export function mapEventGuests(
   };
 }
 
+/** Keep the live guest list; fill photoUrl from /guests/. Invited photos stay on event detail. */
 export function mergeEventGuestPhotos(
   event: Event,
-  photos:
-    | Pick<Event, 'guests' | 'invitedUserIds' | 'invitedUserNames' | 'invitedUserPhotoUrls'>
-    | undefined,
+  photos: Pick<Event, 'guests'> | undefined,
 ): Event {
   if (!photos) return event;
   const photoById = new Map(photos.guests.map((g) => [g.userId, g.photoUrl]));
@@ -252,10 +251,7 @@ export function mergeEventGuestPhotos(
     ...event,
     guests: event.guests.map((g) => {
       const photoUrl = photoById.get(g.userId);
-      return photoUrl ? { ...g, photoUrl } : g;
+      return photoUrl !== undefined ? { ...g, photoUrl } : g;
     }),
-    invitedUserPhotoUrls: photos.invitedUserPhotoUrls.length
-      ? photos.invitedUserPhotoUrls
-      : event.invitedUserPhotoUrls,
   };
 }

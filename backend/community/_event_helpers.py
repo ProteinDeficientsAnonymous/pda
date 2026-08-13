@@ -347,7 +347,7 @@ def _float_or_none(value) -> float | None:
     return float(value) if value is not None else None
 
 
-def _event_out(event: Event, requesting_user=None, *, all_guest_photos: bool = False) -> EventOut:
+def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
@@ -413,7 +413,7 @@ def _event_out(event: Event, requesting_user=None, *, all_guest_photos: bool = F
                 else []
             ),
             all_rsvps,
-            all_photos=all_guest_photos,
+            all_photos=False,
         ),
         my_rsvp=my_rsvp_status,
         my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),

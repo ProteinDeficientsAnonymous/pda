@@ -15,7 +15,7 @@ import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/
 import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys, setEventDetailData } from './events';
+import { eventKeys, invalidateEventGuests, setEventDetailData } from './events';
 import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
@@ -173,6 +173,7 @@ export function useInviteToEvent(eventId: string) {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
+      invalidateEventGuests(qc, event.id);
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'invite-to-event', eventId });
