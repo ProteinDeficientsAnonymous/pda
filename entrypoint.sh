@@ -16,13 +16,13 @@ nginx -t
 nginx -g 'daemon off;' || kill "$$" &
 
 cd backend
-uv run python manage.py migrate
+uv run --no-dev python manage.py migrate
 # Table creation isn't atomic; a concurrent replica may win the race and create it first.
-uv run python manage.py createcachetable || true
+uv run --no-dev python manage.py createcachetable || true
 
 # --max-requests recycles workers to release allocator memory the OS never reclaims (RSS ~200MB -> ~650MB/day otherwise).
 # --graceful-timeout gives the open SSE notification stream (backend/notifications/sse.py) time to close on recycle.
 if [ "${PDA_MEMORY_PROFILE:-}" = "1" ]; then
   export PYTHONTRACEMALLOC="${PYTHONTRACEMALLOC:-1}"
 fi
-uv run python -m config.run_gunicorn
+uv run --no-dev python -m config.run_gunicorn
