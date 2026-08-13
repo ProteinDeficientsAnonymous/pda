@@ -79,12 +79,19 @@ class TestEventGuestListVisibility:
         assert len(guests) > 0
         assert any(g["user_id"] == str(other_user.id) for g in guests)
 
-    @pytest.mark.parametrize("status", [RSVPStatus.CANT_GO, RSVPStatus.REMOVED])
-    def test_cancelled_or_removed_rsvp_cannot_see_guests(
-        self, api_client, test_user, auth_headers, other_user, status
-    ):
+    def test_cant_go_rsvp_can_see_guests(self, api_client, test_user, auth_headers, other_user):
         event = make_official_event()
-        event.rsvps.create(user=test_user, status=status)
+        event.rsvps.create(user=test_user, status=RSVPStatus.CANT_GO)
+        event.rsvps.create(user=other_user, status=RSVPStatus.ATTENDING)
+
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        guests = response.json()["guests"]
+        assert any(g["user_id"] == str(other_user.id) for g in guests)
+
+    def test_removed_rsvp_cannot_see_guests(self, api_client, test_user, auth_headers, other_user):
+        event = make_official_event()
+        event.rsvps.create(user=test_user, status=RSVPStatus.REMOVED)
         event.rsvps.create(user=other_user, status=RSVPStatus.ATTENDING)
 
         response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
