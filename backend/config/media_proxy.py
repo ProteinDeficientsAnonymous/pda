@@ -9,6 +9,8 @@ from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils._os import safe_join
 
+from config.memory import memory_profile_enabled, record_media_path_call
+
 logger = logging.getLogger("pda.media")
 
 # Content types we're willing to serve inline. Everything else (notably
@@ -28,6 +30,8 @@ _INLINE_CONTENT_TYPES = frozenset(
 
 def media_path(field) -> str:
     """Return storage URL (/media/… locally, presigned absolute URL on B2), or ''."""
+    if memory_profile_enabled():
+        record_media_path_call()
     if not field:
         return ""
     return field.url
