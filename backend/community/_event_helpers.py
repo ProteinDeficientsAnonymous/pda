@@ -249,7 +249,7 @@ def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str
 def _can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
-    """Check if user can see an invite-only event (using prefetched sets)."""
+    """Invite-only visibility from already-loaded id sets (calendar feed)."""
     if user is None:
         return False
     if created_by_id is not None and str(user.pk) == str(created_by_id):
@@ -295,19 +295,21 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
     return poll_survey
 
 
-def _resolve_comment_count(event: Event) -> int:
-    """Read the annotated comment_count, falling back to a per-event count query."""
-    annotated = getattr(event, "comment_count", None)
-    if annotated is not None:
-        return annotated
-    return event.comments.filter(deleted_at__isnull=True).count()
-
-
 def _annotated_or(event: Event, attr: str, fallback):
+    """Use an annotated value when present, including 0."""
     annotated = getattr(event, attr, None)
     if annotated is not None:
         return annotated
     return fallback()
+
+
+def _resolve_comment_count(event: Event) -> int:
+    """Read the annotated comment_count, falling back to a per-event count query."""
+    return _annotated_or(
+        event,
+        "comment_count",
+        lambda: event.comments.filter(deleted_at__isnull=True).count(),
+    )
 
 
 def _viewer_rsvp_rows(event: Event, auth_user) -> list:
@@ -316,20 +318,22 @@ def _viewer_rsvp_rows(event: Event, auth_user) -> list:
         return cached
     if auth_user is None:
         return []
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        return [r for r in event.rsvps.all() if r.user_id == auth_user.pk]
     return list(event.rsvps.filter(user=auth_user))
 
 
 def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
+    """Load every RSVP only when the viewer can see guests or questionnaire responses."""
     viewer_rsvps = _viewer_rsvp_rows(event, auth_user)
     my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(viewer_rsvps, auth_user)
     can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     if not (can_see_guests or responses_visible):
         return viewer_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
-    all_rsvps = list(event.rsvps.select_related("user").all())
-    if auth_user is None:
-        return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
-    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        all_rsvps = list(event.rsvps.all())
+    else:
+        all_rsvps = list(event.rsvps.select_related("user").all())
     return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
 
 
@@ -405,16 +409,16 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=_gated(
+        guests=(
             _build_guest_list(
                 all_rsvps,
                 viewer_is_cohost,
                 auth_user,
                 payment_status_visible,
                 include_questionnaire_responses=responses_visible,
-            ),
-            [],
-            can_see_guests,
+            )
+            if can_see_guests
+            else []
         ),
         my_rsvp=my_rsvp_status,
         my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),

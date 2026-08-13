@@ -62,6 +62,7 @@ def going_headcount_expr(prefix: str = "rsvps") -> Coalesce:
 
 
 def _rsvp_headcount_subquery(status: str) -> Subquery:
+    """Per-event RSVP headcount (incl. plus-ones) without instantiating rows."""
     return Subquery(
         EventRSVP.objects.filter(event_id=OuterRef("pk"), status=status)
         .order_by()
@@ -73,14 +74,17 @@ def _rsvp_headcount_subquery(status: str) -> Subquery:
 
 
 def attending_count_annotation() -> Coalesce:
+    """SQL attending headcount (incl. plus-ones) without instantiating RSVP rows."""
     return Coalesce(_rsvp_headcount_subquery(RSVPStatus.ATTENDING), Value(0))
 
 
 def waitlisted_count_annotation() -> Coalesce:
+    """SQL waitlisted headcount (incl. plus-ones) without instantiating RSVP rows."""
     return Coalesce(_rsvp_headcount_subquery(RSVPStatus.WAITLISTED), Value(0))
 
 
 def invited_count_annotation() -> Coalesce:
+    """SQL invited-user count without hydrating invitees."""
     through = Event.invited_users.through
     return Coalesce(
         Subquery(

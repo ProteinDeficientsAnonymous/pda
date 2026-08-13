@@ -21,11 +21,14 @@ from community._event_helpers import (
     _can_see_invite_only,
     _enforce_type_tag_permission,
     _event_out,
+    _float_or_none,
     _get_creator_name,
     _is_invalid_typed_visibility,
+    _iso_or_none,
     _my_rsvp_fields,
     _set_event_tags,
     _tags_out,
+    _viewer_rsvp_rows,
     broadcast_capacity_change,
 )
 from community._event_nonmember_removal import (
@@ -80,10 +83,11 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 
 def _list_rsvp_prefetch(auth_user):
+    """Viewer RSVP only, on `_viewer_rsvps` so `event.rsvps` is not a filtered cache."""
     qs = EventRSVP.objects.none()
     if auth_user is not None:
         qs = EventRSVP.objects.filter(user=auth_user)
-    return Prefetch("rsvps", queryset=qs)
+    return Prefetch("rsvps", queryset=qs, to_attr="_viewer_rsvps")
 
 
 def _list_count_annotations():
@@ -138,7 +142,7 @@ def _filter_invite_only(events, auth_user, status: str):
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
     show_payment_details = can_see_payment_details(e, is_authed)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(e.rsvps.all(), auth_user)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(_viewer_rsvp_rows(e, auth_user), auth_user)
     co_hosts = list(e.co_hosts.all())
     return EventListOut(
         id=str(e.id),
@@ -148,12 +152,13 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         start_datetime=e.start_datetime,
         end_datetime=e.end_datetime,
         location=e.location,
-        latitude=float(e.latitude) if e.latitude is not None else None,
-        longitude=float(e.longitude) if e.longitude is not None else None,
+        latitude=_float_or_none(e.latitude),
+        longitude=_float_or_none(e.longitude),
         event_type=e.event_type,
         visibility=e.visibility,
+        # Calendar/My Events never render these; skip media_path to avoid per-row presigns.
         photo_url="",
-        photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
+        photo_updated_at=_iso_or_none(e.photo_updated_at),
         whatsapp_link=_gated(e.whatsapp_link, "", is_authed),
         partiful_link=_gated(e.partiful_link, "", is_authed),
         other_link=_gated(e.other_link, "", is_authed),
@@ -218,12 +223,21 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
     if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.visibility == PageVisibility.INVITE_ONLY:
-        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
-        if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
+        if not _can_see_invite_only_event(auth_user, event):
             raise_validation(
                 Code.Event.PERM_DENIED, status_code=403, action="view_invite_only_event"
             )
+
+
+def _can_see_invite_only_event(user, event: Event) -> bool:
+    """Invite-only visibility without hydrating invitees."""
+    if user is None:
+        return False
+    if _can_see_invite_only(
+        user, {str(c.id) for c in event.co_hosts.all()}, set(), event.created_by_id
+    ):
+        return True
+    return event.invited_users.filter(pk=user.pk).exists()
 
 
 @router.get(
@@ -237,16 +251,7 @@ def get_event(request, event_id: str):
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "tags", "rsvp_questions", "poll")
-            .annotate(
-                comment_count=Count(
-                    "comments",
-                    filter=Q(comments__deleted_at__isnull=True),
-                    distinct=True,
-                ),
-                attending_count=attending_count_annotation(),
-                waitlisted_count=waitlisted_count_annotation(),
-                invited_count=invited_count_annotation(),
-            )
+            .annotate(**_list_count_annotations())
             .get(ref.as_q())
         )
     except Event.DoesNotExist:
