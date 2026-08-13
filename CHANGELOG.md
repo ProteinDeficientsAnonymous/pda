@@ -1,3 +1,10 @@
+## [0.95.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.0...v0.95.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* exec gunicorn from the venv instead of PATH ([#1408](https://github.com/ProteinDeficientsAnonymous/pda/issues/1408)) ([49fae6a](https://github.com/ProteinDeficientsAnonymous/pda/commit/49fae6a4139befc4e42b69f0cfbc070ee56c3ce3))
+
 # [0.95.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.94.1...v0.95.0) (2026-08-13)
 
 
