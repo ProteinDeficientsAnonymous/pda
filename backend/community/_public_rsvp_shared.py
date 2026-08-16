@@ -2,9 +2,9 @@ import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
-from django.utils import timezone
 from notifications._email_helpers import (
     RsvpEmailDetails,
+    format_eastern_datetime,
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import get_email_sender
@@ -50,8 +50,7 @@ def _load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
 def _format_event_when(event: Event) -> str:
     if event.datetime_tbd or event.start_datetime is None:
         return "to be decided"
-    local = timezone.localtime(event.start_datetime)
-    return local.strftime("%A, %B %d at %I:%M %p").replace(" 0", " ")
+    return format_eastern_datetime(event.start_datetime)
 
 
 def _event_links(event: Event) -> list[str]:

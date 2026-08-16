@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from notifications._email_helpers import send_weekly_digest_email
+from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
 from notifications.email_sender import get_email_sender
 from users.models import User
 
@@ -16,11 +16,7 @@ logger = logging.getLogger(__name__)
 def _format_event_when(event: Event) -> str:
     if event.datetime_tbd or event.start_datetime is None:
         return "to be decided"
-    return (
-        timezone.localtime(event.start_datetime)
-        .strftime("%A, %B %d at %I:%M %p")
-        .replace(" 0", " ")
-    )
+    return format_eastern_datetime(event.start_datetime)
 
 
 class Command(BaseCommand):

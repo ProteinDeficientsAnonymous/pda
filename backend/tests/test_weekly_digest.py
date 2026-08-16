@@ -1,8 +1,9 @@
 """Tests for the send_weekly_digest management command."""
 
-from datetime import timedelta
+from datetime import UTC, timedelta
 from io import StringIO
 from unittest.mock import MagicMock
+from zoneinfo import ZoneInfo
 
 import pytest
 from community.models import Event, EventStatus, EventType
@@ -158,3 +159,22 @@ class TestSendWeeklyDigestCommand:
         out = StringIO()
         call_command("send_weekly_digest", stdout=out)
         assert "Sent 1 digest(s); 1 failed." in out.getvalue()
+
+    def test_formats_event_time_in_eastern_not_utc(self, fake_sender):
+        _make_member("+12025550219")
+        start = (
+            (timezone.now() + timedelta(days=2))
+            .astimezone(ZoneInfo("America/New_York"))
+            .replace(hour=18, minute=0, second=0, microsecond=0)
+        )
+        Event.objects.create(
+            title="potluck",
+            start_datetime=start,
+            location="the park",
+            event_type=EventType.OFFICIAL,
+        )
+        call_command("send_weekly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        assert "6:00 pm" in text
+        utc_clock = start.astimezone(UTC).strftime("%I:%M %p").lstrip("0").lower()
+        assert utc_clock not in text
