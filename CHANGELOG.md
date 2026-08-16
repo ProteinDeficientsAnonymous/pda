@@ -1,3 +1,10 @@
+## [0.95.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.5...v0.95.6) (2026-08-16)
+
+
+### Bug Fixes
+
+* **email:** format event times in eastern, not utc (Issue 1414) ([#1416](https://github.com/ProteinDeficientsAnonymous/pda/issues/1416)) ([1262a07](https://github.com/ProteinDeficientsAnonymous/pda/commit/1262a07bdf78e7b62b514c9c1ce84ec290beb17c))
+
 ## [0.95.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.4...v0.95.5) (2026-08-13)
 
 
