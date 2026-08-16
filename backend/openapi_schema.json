@@ -1982,6 +1982,11 @@
             "title": "Invited Count",
             "type": "integer"
           },
+          "is_partiful_import": {
+            "default": false,
+            "title": "Is Partiful Import",
+            "type": "boolean"
+          },
           "is_past": {
             "default": false,
             "title": "Is Past",
@@ -2330,6 +2335,11 @@
             },
             "title": "Invited User Photo Urls",
             "type": "array"
+          },
+          "is_partiful_import": {
+            "default": false,
+            "title": "Is Partiful Import",
+            "type": "boolean"
           },
           "is_past": {
             "default": false,

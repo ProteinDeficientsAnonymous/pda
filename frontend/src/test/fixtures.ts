@@ -93,6 +93,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     tags: [],
     isPast: false,
     status: EventStatus.Active,
+    isPartifulImport: false,
     ...overrides,
   };
 }

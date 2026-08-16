@@ -82,7 +82,8 @@ export default function CalendarScreen() {
   const localizer = useMemo(() => makeLocalizer(weekStartsOn), [weekStartsOn]);
   const isWide = useIsWideScreen(720);
 
-  const { data: events = [], isPending, isError, refetch } = useEvents();
+  const { data: allEvents = [], isPending, isError, refetch } = useEvents();
+  const events = useMemo(() => allEvents.filter((e) => !e.isPartifulImport), [allEvents]);
   const bigCalEvents = useMemo<BigCalEvent[]>(
     () =>
       events

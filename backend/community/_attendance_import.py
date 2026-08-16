@@ -132,6 +132,7 @@ def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
         visibility=PageVisibility.PUBLIC,
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,
+        is_partiful_import=True,
         created_by=request.auth,
     )
 

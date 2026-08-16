@@ -194,6 +194,7 @@ export interface Event {
 
   isPast: boolean;
   status: string;
+  isPartifulImport: boolean;
 }
 
 export interface PendingCohostInvite {
