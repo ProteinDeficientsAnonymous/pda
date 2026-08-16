@@ -1,8 +1,17 @@
 from dataclasses import dataclass
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from notifications.email_sender import EmailSender, SendResult
+
+_ET = ZoneInfo("America/New_York")
+
+
+def format_eastern_datetime(dt: datetime) -> str:
+    return timezone.localtime(dt, _ET).strftime("%A, %B %d at %I:%M %p").replace(" 0", " ")
 
 
 @dataclass(frozen=True)
