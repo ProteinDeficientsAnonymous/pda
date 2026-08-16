@@ -7,7 +7,7 @@ from config.ratelimit import rate_limit
 from ninja import Router, Schema
 from ninja.responses import Status
 from notifications._email_helpers import send_event_blast_email
-from notifications.email_sender import get_email_sender
+from notifications.email_sender import EmailStream, get_email_sender
 from pydantic import Field
 
 from community._events import _can_edit_event
@@ -72,7 +72,7 @@ def _collect_recipients(event: Event, statuses: list[str]) -> tuple[list, int]:
 
 def _send_blast(event: Event, subject: str, message: str, recipients: list) -> int:
     """Send one message per recipient so addresses are never shared. Returns failed_count."""
-    sender = get_email_sender()
+    sender = get_email_sender(EmailStream.BULK)
     failed = 0
     for email, _display_name in recipients:
         try:

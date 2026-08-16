@@ -236,9 +236,13 @@ def fake_email_sender(monkeypatch):
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
 
-    # Set the module-level cache directly. get_email_sender() returns
-    # whatever is in _cached_sender if it's not None.
-    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    # Prime the per-stream cache directly, for every stream, so the fixture works
+    # whether the code under test asks for the transactional or the bulk sender.
+    monkeypatch.setattr(
+        email_sender_module,
+        "_cached_senders",
+        dict.fromkeys(email_sender_module.EmailStream, fake),
+    )
     yield fake
     # monkeypatch auto-cleans up.
 
