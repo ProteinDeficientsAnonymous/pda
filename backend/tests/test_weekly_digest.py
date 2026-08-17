@@ -10,7 +10,7 @@ from community.models import Event, EventStatus, EventType
 from django.core.management import call_command
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
-from notifications.email_sender import SendResult
+from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 
 
@@ -39,7 +39,11 @@ def _make_event(title: str, days_out: float, **extra) -> Event:
 def fake_sender(monkeypatch):
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
-    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    monkeypatch.setattr(
+        email_sender_module,
+        "_cached_senders",
+        dict.fromkeys(email_sender_module.EmailStream, fake),
+    )
     return fake
 
 
@@ -59,6 +63,17 @@ class TestSendWeeklyDigestCommand:
         _make_event("film night", 5)
         call_command("send_weekly_digest")
         assert fake_sender.send.call_count == 2
+
+    def test_uses_bulk_email_stream(self, fake_sender, monkeypatch):
+        """The digest fans out to every member — it must not spend transactional quota."""
+        from community.management.commands import send_weekly_digest as digest_command
+
+        spy = MagicMock(return_value=fake_sender)
+        monkeypatch.setattr(digest_command, "get_email_sender", spy)
+        _make_member("+12025550250")
+        _make_event("park cleanup", 2)
+        call_command("send_weekly_digest")
+        assert spy.call_args.args[0] is EmailStream.BULK
 
     def test_digest_lists_both_events(self, fake_sender):
         _make_member("+12025550205")

@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
-from notifications.email_sender import get_email_sender
+from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
 from community.models import Event, EventStatus, EventType
@@ -50,7 +50,7 @@ class Command(BaseCommand):
             "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
             "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
         }
-        sender = get_email_sender()
+        sender = get_email_sender(EmailStream.BULK)
         sent_count = 0
         failed_count = 0
 

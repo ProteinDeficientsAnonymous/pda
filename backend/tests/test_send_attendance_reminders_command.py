@@ -35,7 +35,11 @@ def _make_member(phone_number: str, **extra) -> User:
 def fake_sender(monkeypatch):
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
-    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    monkeypatch.setattr(
+        email_sender_module,
+        "_cached_senders",
+        dict.fromkeys(email_sender_module.EmailStream, fake),
+    )
     return fake
 
 

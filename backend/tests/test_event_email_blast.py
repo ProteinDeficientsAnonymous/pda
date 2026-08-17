@@ -219,6 +219,25 @@ class TestEmailBlastSending:
             assert isinstance(to, str)
             assert "," not in to
 
+    def test_uses_bulk_email_stream(
+        self, api_client, event_with_attendees, host_headers, fake_email_sender, monkeypatch
+    ):
+        """A blast fans out to every rsvp — it must not spend transactional quota."""
+        from unittest.mock import MagicMock
+
+        from community import _event_blasts
+        from notifications.email_sender import EmailStream
+
+        spy = MagicMock(return_value=fake_email_sender)
+        monkeypatch.setattr(_event_blasts, "get_email_sender", spy)
+        api_client.post(
+            BLAST_URL.format(event_id=event_with_attendees.id),
+            _payload(),
+            content_type="application/json",
+            **host_headers,
+        )
+        assert spy.call_args.args[0] is EmailStream.BULK
+
     def test_audience_narrowing_filter(
         self, api_client, event_with_attendees, host_headers, fake_email_sender
     ):
