@@ -193,6 +193,7 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         co_host_names=[visible_display_name(c, auth_user) for c in co_hosts],
         is_past=e.is_past,
         status=e.status,
+        is_partiful_import=e.is_partiful_import,
         tags=_tags_out(e),
     )
 

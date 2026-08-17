@@ -3083,6 +3083,11 @@ export interface components {
              */
             invited_count: number;
             /**
+             * Is Partiful Import
+             * @default false
+             */
+            is_partiful_import: boolean;
+            /**
              * Is Past
              * @default false
              */
@@ -3277,6 +3282,11 @@ export interface components {
              * @default []
              */
             invited_user_photo_urls: string[];
+            /**
+             * Is Partiful Import
+             * @default false
+             */
+            is_partiful_import: boolean;
             /**
              * Is Past
              * @default false

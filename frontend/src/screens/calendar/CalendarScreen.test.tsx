@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
+import { makeEvent } from '@/test/fixtures';
 
 import CalendarScreen from './CalendarScreen';
 
@@ -174,6 +175,32 @@ describe('CalendarScreen', () => {
     await waitFor(() => {
       expect(screen.getByText(new RegExp(tomorrowLabel, 'i'))).toBeInTheDocument();
     });
+  });
+
+  it('leaves events hidden from the calendar out of the list view', async () => {
+    const user = userEvent.setup();
+    mockUseEvents.mockReturnValue({
+      data: [
+        makeEvent({ id: 'e1', title: 'community potluck', startDatetime: new Date() }),
+        makeEvent({
+          id: 'e2',
+          title: 'imported backfill',
+          startDatetime: new Date(),
+          isPartifulImport: true,
+        }),
+      ],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useEvents>);
+
+    renderCalendar();
+    await user.click(screen.getByRole('radio', { name: /^list$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('community potluck')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('imported backfill')).not.toBeInTheDocument();
   });
 
   it('scrolls the list inside the view box so the toggles stay put', async () => {
