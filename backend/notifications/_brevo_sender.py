@@ -31,11 +31,7 @@ class _BrevoApiError(Exception):
 
 
 def _response_code(response: httpx.Response) -> str:
-    """Return Brevo's machine-readable error code, never its free-text message.
-
-    The message can echo the submitted address; the code cannot, so only the
-    code is safe to put in a log line.
-    """
+    """Return Brevo's error code only — its free-text message can echo the recipient."""
     try:
         body = response.json()
     except ValueError:
@@ -52,15 +48,10 @@ def _message_id(response: httpx.Response) -> str | None:
 
 
 class BrevoSender:
-    """Sends bulk emails via Brevo's transactional HTTP API.
+    """Sends bulk email via Brevo's HTTP API; one pooled client per process.
 
-    Holds one pooled client for the process so a several-hundred-recipient
-    digest reuses connections instead of renegotiating TLS per send.
-
-    Brevo exposes no idempotency key on this endpoint, so a retry after a
-    queued-but-5xx'd send can duplicate it. Retries stay bounded for that reason.
-
-    Callers must inspect ``SendResult.success`` — a failed send never raises.
+    Brevo exposes no idempotency key here, so a retry after a queued-then-5xx'd
+    send can duplicate it — retries stay bounded for that reason.
     """
 
     def __init__(self) -> None:
@@ -86,11 +77,7 @@ class BrevoSender:
         }
 
     def _attempt_send(self, payload: dict, masked: str, subject: str, attempt: int) -> SendResult:
-        """Perform a single send and log success.
-
-        Raises ``_RetryableBrevoError`` for transient failures and
-        ``_BrevoApiError`` for client errors; the caller owns the retry policy.
-        """
+        """Perform a single send; raises for the caller's retry policy to classify."""
         try:
             response = self._client.post(_API_URL, json=payload)
         except httpx.HTTPError as exc:
@@ -114,7 +101,6 @@ class BrevoSender:
         return SendResult(success=True, provider_message_id=message_id)
 
     def _backoff(self, exc: Exception, masked: str, subject: str, attempt: int) -> None:
-        """Log a retry and sleep with exponential backoff before the next attempt."""
         logger.warning(
             "brevo_send_retry subject=%s recipient=%s attempt=%d error=%s",
             subject,

@@ -1,23 +1,3 @@
-"""Provider-agnostic email sender.
-
-`EmailSender` is the protocol every concrete sender (Resend, Brevo, Console)
-must satisfy. `SendResult` is the response shape callers can inspect to decide
-whether to surface or fall back.
-
-Sends are split into two streams so one-per-member broadcasts cannot exhaust
-the transactional provider's daily allowance:
-
-- `EmailStream.TRANSACTIONAL` (Resend) — login links, RSVP confirmations,
-  join approvals, invites, host nudges. Low volume, latency-sensitive.
-- `EmailStream.BULK` (Brevo) — weekly digest, event blasts. High volume,
-  fan-out to the whole membership.
-
-Resolution: `get_email_sender(stream)` returns the right implementation based
-on the provider key configured for that stream. Production with no key raises
-(fail-fast) so bulk volume never silently falls back onto the transactional
-provider; dev and test use the console sender.
-"""
-
 import hashlib
 import logging
 import threading
@@ -70,8 +50,6 @@ class EmailSender(Protocol):
 
 
 class EmailStream(StrEnum):
-    """Which provider a send is routed to. See the module docstring."""
-
     TRANSACTIONAL = "transactional"
     BULK = "bulk"
 
@@ -85,7 +63,6 @@ def _console_sender() -> EmailSender:
 
 def _resolve_transactional() -> EmailSender:
     if settings.RESEND_API_KEY:
-        # lazy import avoids circular dependency with email_sender
         from notifications._resend_sender import ResendSender
 
         return ResendSender()
@@ -96,14 +73,12 @@ def _resolve_transactional() -> EmailSender:
 
 def _resolve_bulk() -> EmailSender:
     if settings.BREVO_API_KEY:
-        # lazy import avoids circular dependency with email_sender
         from notifications._brevo_sender import BrevoSender
 
         return BrevoSender()
     if getattr(settings, "IS_PRODUCTION", False):
-        # Deliberately not falling back to Resend: bulk fan-out is exactly what
-        # exhausts the transactional daily allowance, so an unconfigured bulk
-        # provider must fail the digest/blast rather than quietly consume it.
+        # Deliberately no Resend fallback: bulk fan-out is what exhausts the
+        # transactional allowance, so an unconfigured provider must fail loudly.
         raise RuntimeError("BREVO_API_KEY is required in production but is not set")
     return _console_sender()
 
@@ -118,18 +93,13 @@ _cache_lock = threading.Lock()
 
 
 def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSender:
-    """Resolve the configured sender for a stream. Cached per process (thread-safe).
-
-    param stream(EmailStream): which provider to route through; defaults to transactional
-    return(EmailSender): the resolved sender for that stream
-    """
+    """Resolve the configured sender for a stream. Cached per process (thread-safe)."""
     cached = _cached_senders.get(stream)
     if cached is not None:
         return cached
 
     with _cache_lock:
-        # Double-checked: another thread may have populated the cache while we
-        # were waiting on the lock.
+        # Double-checked: another thread may have populated the cache while we waited.
         cached = _cached_senders.get(stream)
         if cached is not None:
             return cached
