@@ -1,3 +1,10 @@
+## [0.95.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.6...v0.95.7) (2026-08-17)
+
+
+### Bug Fixes
+
+* **events:** keep partiful attendance imports off the calendar ([#1417](https://github.com/ProteinDeficientsAnonymous/pda/issues/1417)) ([1fcf84b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1fcf84b08d83a21ae091a3b4b9f3dafd43f8e492))
+
 ## [0.95.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.5...v0.95.6) (2026-08-16)
 
 
