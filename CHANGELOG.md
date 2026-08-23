@@ -1,3 +1,10 @@
+# [0.96.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.7...v0.96.0) (2026-08-23)
+
+
+### Features
+
+* 1419 - provide link to event in email blasts ([#1424](https://github.com/ProteinDeficientsAnonymous/pda/issues/1424)) ([eda1dcd](https://github.com/ProteinDeficientsAnonymous/pda/commit/eda1dcd8bbee196b2692e2702744a1c28e63f219))
+
 ## [0.95.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.6...v0.95.7) (2026-08-17)
 
 
