@@ -8,9 +8,10 @@ from zoneinfo import ZoneInfo
 import pytest
 from community.models import Event, EventStatus, EventType
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
-from notifications.email_sender import SendResult
+from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 
 
@@ -39,7 +40,11 @@ def _make_event(title: str, days_out: float, **extra) -> Event:
 def fake_sender(monkeypatch):
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
-    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    monkeypatch.setattr(
+        email_sender_module,
+        "_cached_senders",
+        dict.fromkeys(email_sender_module.EmailStream, fake),
+    )
     return fake
 
 
@@ -59,6 +64,48 @@ class TestSendWeeklyDigestCommand:
         _make_event("film night", 5)
         call_command("send_weekly_digest")
         assert fake_sender.send.call_count == 2
+
+    def test_uses_bulk_email_stream(self, fake_sender, monkeypatch):
+        """The digest fans out to every member — it must not spend transactional quota."""
+        from community.management.commands import send_weekly_digest as digest_command
+
+        spy = MagicMock(return_value=fake_sender)
+        monkeypatch.setattr(digest_command, "get_email_sender", spy)
+        _make_member("+12025550250")
+        _make_event("park cleanup", 2)
+        call_command("send_weekly_digest")
+        assert spy.call_args.args[0] is EmailStream.BULK
+
+    def test_to_sends_single_digest_to_that_address(self, fake_sender):
+        _make_member("+12025550260")
+        _make_member("+12025550261")
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest", to="probe@example.com")
+        assert fake_sender.send.call_count == 1
+        assert fake_sender.send.call_args.kwargs["to"] == "probe@example.com"
+
+    def test_to_uses_first_name_of_matching_user(self, fake_sender):
+        _make_member("+12025550262", email="known@example.com")
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest", to="known@example.com")
+        assert "hi test" in fake_sender.send.call_args.kwargs["text"]
+
+    def test_to_raises_when_send_fails(self, fake_sender):
+        fake_sender.send.return_value = SendResult(
+            success=False, error="http 401 code=unauthorized"
+        )
+        _make_event("potluck", 2)
+        with pytest.raises(CommandError, match="unauthorized"):
+            call_command("send_weekly_digest", to="probe@example.com")
+
+    def test_to_still_uses_bulk_stream(self, fake_sender, monkeypatch):
+        from community.management.commands import send_weekly_digest as digest_command
+
+        spy = MagicMock(return_value=fake_sender)
+        monkeypatch.setattr(digest_command, "get_email_sender", spy)
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest", to="probe@example.com")
+        assert spy.call_args.args[0] is EmailStream.BULK
 
     def test_digest_lists_both_events(self, fake_sender):
         _make_member("+12025550205")

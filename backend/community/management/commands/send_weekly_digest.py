@@ -2,10 +2,10 @@ import logging
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
-from notifications.email_sender import get_email_sender
+from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
 from community.models import Event, EventStatus, EventType
@@ -21,6 +21,29 @@ def _format_event_when(event: Event) -> str:
 
 class Command(BaseCommand):
     help = "Email active members a digest of events starting in the next 7 days."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--to",
+            help="send one digest to this address instead of the membership (provider smoke test)",
+        )
+
+    def _send_test(self, sender, to: str, events: list[dict], urls: dict[str, str]) -> None:
+        """Send one real digest to an explicit address so a provider swap can be verified live."""
+        user = User.objects.filter(email__iexact=to).first()
+        result = send_weekly_digest_email(
+            sender=sender,
+            to=to,
+            display_name=user.first_name if user else "",
+            events=events,
+            urls=urls,
+        )
+        if not result.success:
+            raise CommandError(f"test digest failed: {result.error}")
+        logger.info("send_weekly_digest: test send succeeded id=%s", result.provider_message_id)
+        self.stdout.write(
+            self.style.SUCCESS(f"Sent 1 test digest (message id: {result.provider_message_id}).")
+        )
 
     def handle(self, *args, **options):
         now = timezone.now()
@@ -50,7 +73,11 @@ class Command(BaseCommand):
             "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
             "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
         }
-        sender = get_email_sender()
+        sender = get_email_sender(EmailStream.BULK)
+        if options["to"]:
+            self._send_test(sender, options["to"], events, urls)
+            return
+
         sent_count = 0
         failed_count = 0
 

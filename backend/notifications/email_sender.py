@@ -1,17 +1,8 @@
-"""Provider-agnostic email sender.
-
-`EmailSender` is the protocol every concrete sender (Resend, Console, future
-providers) must satisfy. `SendResult` is the response shape callers can
-inspect to decide whether to surface or fall back.
-
-Resolution: `get_email_sender()` returns the right implementation based on
-`settings.RESEND_API_KEY`. Production with no key raises (fail-fast); dev
-and test use the console sender.
-"""
-
 import hashlib
 import logging
 import threading
+from collections.abc import Callable
+from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from django.conf import settings
@@ -58,41 +49,70 @@ class EmailSender(Protocol):
     def send(self, to: str, subject: str, html: str, text: str) -> SendResult: ...
 
 
-_cached_sender: EmailSender | None = None
+class EmailStream(StrEnum):
+    TRANSACTIONAL = "transactional"
+    BULK = "bulk"
+
+
+def _console_sender() -> EmailSender:
+    # lazy import avoids circular dependency with email_sender
+    from notifications._console_sender import ConsoleSender
+
+    return ConsoleSender()
+
+
+def _resolve_transactional() -> EmailSender:
+    if settings.RESEND_API_KEY:
+        from notifications._resend_sender import ResendSender
+
+        return ResendSender()
+    if getattr(settings, "IS_PRODUCTION", False):
+        raise RuntimeError("RESEND_API_KEY is required in production but is not set")
+    return _console_sender()
+
+
+def _resolve_bulk() -> EmailSender:
+    if settings.BREVO_API_KEY:
+        from notifications._brevo_sender import BrevoSender
+
+        return BrevoSender()
+    if getattr(settings, "IS_PRODUCTION", False):
+        # Deliberately no Resend fallback: bulk fan-out is what exhausts the
+        # transactional allowance, so an unconfigured provider must fail loudly.
+        raise RuntimeError("BREVO_API_KEY is required in production but is not set")
+    return _console_sender()
+
+
+_RESOLVERS: dict[EmailStream, Callable[[], EmailSender]] = {
+    EmailStream.TRANSACTIONAL: _resolve_transactional,
+    EmailStream.BULK: _resolve_bulk,
+}
+
+_cached_senders: dict[EmailStream, EmailSender] = {}
 _cache_lock = threading.Lock()
 
 
-def get_email_sender() -> EmailSender:
-    """Resolve the configured email sender. Cached per process (thread-safe)."""
-    global _cached_sender
-    if _cached_sender is not None:
-        return _cached_sender
+def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSender:
+    """Resolve the configured sender for a stream. Cached per process (thread-safe)."""
+    cached = _cached_senders.get(stream)
+    if cached is not None:
+        return cached
 
     with _cache_lock:
-        # Double-checked: another thread may have populated the cache while we
-        # were waiting on the lock.
-        if _cached_sender is not None:
-            return _cached_sender
+        # Double-checked: another thread may have populated the cache while we waited.
+        cached = _cached_senders.get(stream)
+        if cached is not None:
+            return cached
 
-        if settings.RESEND_API_KEY:
-            # lazy import avoids circular dependency with email_sender
-            from notifications._resend_sender import ResendSender
-
-            _cached_sender = ResendSender()
-            logger.info("email sender resolved: ResendSender")
-        else:
-            if getattr(settings, "IS_PRODUCTION", False):
-                raise RuntimeError("RESEND_API_KEY is required in production but is not set")
-            # lazy import avoids circular dependency with email_sender
-            from notifications._console_sender import ConsoleSender
-
-            _cached_sender = ConsoleSender()
-            logger.info("email sender resolved: ConsoleSender (no RESEND_API_KEY)")
-        return _cached_sender
+        sender = _RESOLVERS[stream]()
+        _cached_senders[stream] = sender
+        logger.info(
+            "email sender resolved: stream=%s sender=%s", stream.value, type(sender).__name__
+        )
+        return sender
 
 
 def reset_email_sender_cache() -> None:
-    """Test-only helper for clearing the cached sender between tests."""
-    global _cached_sender
+    """Test-only helper for clearing the cached senders between tests."""
     with _cache_lock:
-        _cached_sender = None
+        _cached_senders.clear()

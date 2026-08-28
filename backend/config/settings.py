@@ -233,6 +233,13 @@ RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")
 if IS_PRODUCTION and RESEND_API_KEY and not RESEND_FROM_EMAIL:
     raise ValueError("RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured")
 
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+BREVO_FROM_EMAIL = os.environ.get("BREVO_FROM_EMAIL", "")
+BREVO_FROM_NAME = os.environ.get("BREVO_FROM_NAME", "pda")
+
+if IS_PRODUCTION and BREVO_API_KEY and not BREVO_FROM_EMAIL:
+    raise ValueError("BREVO_FROM_EMAIL must be set when BREVO_API_KEY is configured")
+
 # Frontend URL used to construct magic-login links in transactional emails.
 # In production, set to the public app URL (e.g. https://pda.example.com).
 # In dev/test, defaults to localhost:3000.
