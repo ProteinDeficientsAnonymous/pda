@@ -1,3 +1,4 @@
+import { missingConsents } from './consent';
 import type { EventTypeValue } from './event';
 
 export const CalendarFeedScope = {
@@ -69,10 +70,15 @@ export interface User {
  *     collects neither). Anyone missing either goes to /onboarding, which
  *     collects whatever's missing (legacy accounts approved before email was
  *     required land here).
+ *   - Outstanding consent counts as missing too, for a first-time user:
+ *     /onboarding is the only setup screen carrying the consent checkboxes, and
+ *     the profile step it hands off to writes through endpoints the backend
+ *     gate rejects until consent is on file.
  */
 export function passwordSetupRedirect(user: User | null): '/new-password' | '/onboarding' | null {
   if (!user) return null;
   if (!user.needsOnboarding && !user.needsPasswordReset) return null;
+  if (user.needsOnboarding && missingConsents(user).length > 0) return '/onboarding';
   const hasNameAndEmail = user.firstName.length > 0 && !!user.email;
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }

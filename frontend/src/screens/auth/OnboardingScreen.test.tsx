@@ -136,6 +136,19 @@ describe('OnboardingScreen', () => {
     });
   });
 
+  it('prefills the email already on file', () => {
+    // Admin-created users are routed here by an outstanding consent — the admin
+    // typed their email, so they'd otherwise have to guess it.
+    setupMock(makeUser({ firstName: 'Jamie', email: 'jamie@example.com' }));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByLabelText(/^email$/i)).toHaveValue('jamie@example.com');
+    expect(screen.getByLabelText(/first name/i)).toHaveValue('Jamie');
+  });
+
   it('does not render consent checkboxes when user already consented to both', () => {
     setupMock(makeUser({ needsGuidelinesConsent: false, needsSmsConsent: false }));
     render(

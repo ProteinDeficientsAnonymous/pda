@@ -30,6 +30,27 @@ describe('passwordSetupRedirect', () => {
     );
   });
 
+  it('sends a first-time user who still owes a consent to /onboarding', () => {
+    // /new-password carries no consent checkboxes, and the profile step it hands
+    // off to saves through endpoints the backend blocks until consent is on file.
+    const adminCreated = makeUser({ needsOnboarding: true, needsGuidelinesConsent: true });
+    expect(passwordSetupRedirect(adminCreated)).toBe('/onboarding');
+    const smsOnly = makeUser({ needsOnboarding: true, needsSmsConsent: true });
+    expect(passwordSetupRedirect(smsOnly)).toBe('/onboarding');
+  });
+
+  it('keeps a reset-only user on /new-password even with a consent outstanding', () => {
+    // No profile step follows a plain reset — the gate takes them to /consent,
+    // where "not now" is still an option.
+    const resetting = makeUser({ needsPasswordReset: true, needsGuidelinesConsent: true });
+    expect(passwordSetupRedirect(resetting)).toBe('/new-password');
+  });
+
+  it('ignores contact-privacy consent, which has no checkbox on /onboarding', () => {
+    const user = makeUser({ needsOnboarding: true, needsContactPrivacyConsent: true });
+    expect(passwordSetupRedirect(user)).toBe('/new-password');
+  });
+
   it('uses firstName presence for the name check', () => {
     const noFirstName = makeUser({
       firstName: '',

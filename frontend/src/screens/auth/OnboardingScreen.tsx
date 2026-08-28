@@ -32,9 +32,12 @@ export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
-  // prefill name for legacy users approved before email was required
+  // prefill name for legacy users approved before email was required, and email
+  // for admin-created users routed here by an outstanding consent — they never
+  // typed the address themselves and shouldn't have to guess it
   const existingFirstName = useAuthStore((s) => s.user?.firstName ?? '');
   const existingLastName = useAuthStore((s) => s.user?.lastName ?? '');
+  const existingEmail = useAuthStore((s) => s.user?.email ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
@@ -51,7 +54,7 @@ export default function OnboardingScreen() {
     defaultValues: {
       firstName: existingFirstName,
       lastName: existingLastName,
-      email: '',
+      email: existingEmail,
       pronouns: '',
       newPassword: '',
     },
