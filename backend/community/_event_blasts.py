@@ -4,9 +4,10 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
+from django.conf import settings
 from ninja import Router, Schema
 from ninja.responses import Status
-from notifications._email_helpers import send_event_blast_email
+from notifications._email_helpers import EventBlastEmailDetails, send_event_blast_email
 from notifications.email_sender import EmailStream, get_email_sender
 from pydantic import Field
 
@@ -73,15 +74,19 @@ def _collect_recipients(event: Event, statuses: list[str]) -> tuple[list, int]:
 def _send_blast(event: Event, subject: str, message: str, recipients: list) -> int:
     """Send one message per recipient so addresses are never shared. Returns failed_count."""
     sender = get_email_sender(EmailStream.BULK)
+    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}"
     failed = 0
     for email, _display_name in recipients:
         try:
             result = send_event_blast_email(
                 sender=sender,
-                to=email,
-                event_title=event.title,
-                subject=subject,
-                message=message,
+                details=EventBlastEmailDetails(
+                    to=email,
+                    event_title=event.title,
+                    event_url=event_url,
+                    subject=subject,
+                    message=message,
+                ),
             )
         except Exception:  # noqa: BLE001 — one bad send must not abort the batch
             logger.warning("event_blast_send_exception", exc_info=True)

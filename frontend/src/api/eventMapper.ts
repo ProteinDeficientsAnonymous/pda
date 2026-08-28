@@ -93,6 +93,7 @@ export interface WireEvent {
 
   is_past?: boolean;
   status?: string;
+  is_partiful_import?: boolean;
 }
 
 interface WireTag {
@@ -219,6 +220,7 @@ export function mapEvent(e: WireEvent): Event {
 
     isPast: e.is_past ?? false,
     status: e.status ?? 'active',
+    isPartifulImport: e.is_partiful_import ?? false,
   };
 }
 

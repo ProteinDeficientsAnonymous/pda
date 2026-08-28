@@ -1,3 +1,17 @@
+# [0.96.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.7...v0.96.0) (2026-08-23)
+
+
+### Features
+
+* 1419 - provide link to event in email blasts ([#1424](https://github.com/ProteinDeficientsAnonymous/pda/issues/1424)) ([eda1dcd](https://github.com/ProteinDeficientsAnonymous/pda/commit/eda1dcd8bbee196b2692e2702744a1c28e63f219))
+
+## [0.95.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.6...v0.95.7) (2026-08-17)
+
+
+### Bug Fixes
+
+* **events:** keep partiful attendance imports off the calendar ([#1417](https://github.com/ProteinDeficientsAnonymous/pda/issues/1417)) ([1fcf84b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1fcf84b08d83a21ae091a3b4b9f3dafd43f8e492))
+
 ## [0.95.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.5...v0.95.6) (2026-08-16)
 
 

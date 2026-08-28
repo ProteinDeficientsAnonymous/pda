@@ -316,24 +316,33 @@ def send_weekly_digest_email(
     )
 
 
+@dataclass(frozen=True)
+class EventBlastEmailDetails:
+    """Recipient + event details for a host email-blast message."""
+
+    to: str
+    event_title: str
+    event_url: str
+    subject: str
+    message: str
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,
-    to: str,
-    event_title: str,
-    subject: str,
-    message: str,
+    details: EventBlastEmailDetails,
 ) -> SendResult:
     """Render and send one event email-blast message to a single recipient."""
     context = {
-        "event_title": event_title,
-        "message": message,
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+        "message": details.message,
     }
     html = render_to_string("emails/event_blast.html", context)
     text = render_to_string("emails/event_blast.txt", context)
     return sender.send(
-        to=to,
-        subject=subject,
+        to=details.to,
+        subject=details.subject,
         html=html,
         text=text,
     )
