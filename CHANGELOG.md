@@ -1,3 +1,10 @@
+# [0.97.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.96.0...v0.97.0) (2026-08-28)
+
+
+### Features
+
+* **email:** route bulk sends through brevo, keep resend transactional ([#1418](https://github.com/ProteinDeficientsAnonymous/pda/issues/1418)) ([877a35a](https://github.com/ProteinDeficientsAnonymous/pda/commit/877a35acced8159124e9f7b73e8d43de4ee5677a))
+
 # [0.96.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.95.7...v0.96.0) (2026-08-23)
 
 
