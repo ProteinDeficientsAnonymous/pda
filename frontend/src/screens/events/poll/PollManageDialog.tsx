@@ -82,7 +82,7 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
           <span className="text-sm font-medium">add an option</span>
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <DateTimePicker label="date & time" value={newIso} onChange={setNewIso} disablePast />
+              <DateTimePicker label="date & time" value={newIso} onChange={setNewIso} />
             </div>
             <Button
               variant="secondary"
@@ -223,7 +223,7 @@ function OptionRow({
   return (
     <li className="border-border bg-surface flex items-end gap-2 rounded-md border p-2">
       <div className="flex-1">
-        <DateTimePicker label="date & time" value={iso} onChange={setIso} disablePast />
+        <DateTimePicker label="date & time" value={iso} onChange={setIso} />
       </div>
       <Button
         variant="ghost"
