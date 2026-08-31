@@ -160,6 +160,30 @@ class TestCreatePoll:
         data = response.json()
         assert data["detail"][0]["code"] == "poll.option_already_exists"
 
+    def test_create_poll_exceeds_max_options(self, api_client, auth_headers, poll_event):
+        options = [future_iso(days=120 + i) for i in range(11)]
+        payload = {"options": options}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_poll_at_max_options(self, api_client, auth_headers, poll_event):
+        options = [future_iso(days=120 + i) for i in range(10)]
+        payload = {"options": options}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert len(data["options"]) == 10
+
 
 # ---------------------------------------------------------------------------
 # TestGetPoll
@@ -189,6 +213,35 @@ class TestGetPoll:
     def test_get_poll_not_found(self, api_client, poll_event):
         response = api_client.get(f"/api/community/events/{poll_event.id}/poll/")
         assert response.status_code == 404
+
+    def test_get_poll_with_many_voters(self, api_client, auth_headers, poll_event, test_user):
+        poll = EventPoll.objects.create(event=poll_event, created_by=test_user)
+        options = []
+        for i in range(3):
+            opt = PollOption.objects.create(
+                poll=poll, datetime=future_iso(days=120 + i), display_order=i
+            )
+            options.append(opt)
+        voters = [
+            User.objects.create_user(
+                phone_number=f"+1202555{i:04d}",
+                password="pass",
+                first_name=f"User{i}",
+                last_name=f"Member{i}",
+            )
+            for i in range(5)
+        ]
+        for i, opt in enumerate(options):
+            for voter in voters[:2]:
+                PollVote.objects.create(option=opt, user=voter, availability=PollAvailability.YES)
+        response = api_client.get(f"/api/community/events/{poll_event.id}/poll/", **auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["options"]) == 3
+        for opt in data["options"]:
+            assert len(opt["yes_voters"]) == 2
+            assert opt["maybe_voters"] == []
+            assert opt["no_voters"] == []
 
 
 # ---------------------------------------------------------------------------
