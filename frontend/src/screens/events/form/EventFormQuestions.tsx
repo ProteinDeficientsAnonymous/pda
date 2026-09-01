@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 
 import { RSVP_QUESTION_TYPE_LABELS, type RsvpQuestionDraft } from '../rsvpQuestions';
@@ -16,6 +17,16 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
     undefined,
   );
   const dialogOpen = dialogQuestion !== undefined;
+
+  function reorderQuestions(nextIds: string[]) {
+    const questionsById = new Map(questions.map((question) => [question.id, question]));
+    onQuestionsChange(
+      nextIds.flatMap((id) => {
+        const question = questionsById.get(id);
+        return question ? [question] : [];
+      }),
+    );
+  }
 
   if (!rsvpEnabled) {
     return (
@@ -40,46 +51,45 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
       {questions.length === 0 ? (
         <p className="text-muted text-sm">no questions yet</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {questions.map((q) => (
-            <li key={q.id}>
-              <article className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {q.label}
-                    {q.required ? (
-                      <span className="text-muted ms-1 text-xs">· required</span>
-                    ) : null}
-                  </p>
-                  <p className="text-muted text-xs">
-                    {RSVP_QUESTION_TYPE_LABELS[q.fieldType]}
-                    {q.options.length > 0 ? ` · ${String(q.options.length)} options` : ''}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setDialogQuestion(q);
-                    }}
-                  >
-                    edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      onQuestionsChange(questions.filter((item) => item.id !== q.id));
-                    }}
-                  >
-                    delete
-                  </Button>
-                </div>
-              </article>
-            </li>
-          ))}
-        </ul>
+        <SortableList
+          items={questions}
+          onReorder={reorderQuestions}
+          ariaLabel="rsvp questions"
+          renderItem={(q) => (
+            <article className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {q.label}
+                  {q.required ? <span className="text-muted ms-1 text-xs">· required</span> : null}
+                </p>
+                <p className="text-muted text-xs">
+                  {RSVP_QUESTION_TYPE_LABELS[q.fieldType]}
+                  {q.options.length > 0 ? ` · ${String(q.options.length)} options` : ''}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setDialogQuestion(q);
+                  }}
+                >
+                  edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    onQuestionsChange(questions.filter((item) => item.id !== q.id));
+                  }}
+                >
+                  delete
+                </Button>
+              </div>
+            </article>
+          )}
+        />
       )}
 
       <EventRsvpQuestionDialog
