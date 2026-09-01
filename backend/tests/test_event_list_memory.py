@@ -382,6 +382,31 @@ class TestGetEventMemory:
         assert body["invited_count"] == 4
         assert set(body["invited_user_ids"]) == {str(u.id) for u in invitees}
 
+    def test_detail_host_invited_list_excludes_rsvp_responders(
+        self, api_client, test_user, auth_headers
+    ):
+        event = Event.objects.create(
+            title="Responded Invites",
+            start_datetime=future_iso(days=14),
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        going = _user("+14155556510", "Going")
+        declined = _user("+14155556511", "Declined")
+        unanswered = _user("+14155556512", "Unanswered")
+        event.invited_users.add(going, declined, unanswered)
+        EventRSVP.objects.create(event=event, user=going, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=declined, status=RSVPStatus.CANT_GO)
+
+        detail = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        guests = api_client.get(f"/api/community/events/{event.id}/guests/", **auth_headers)
+
+        assert detail.status_code == 200
+        assert detail.json()["invited_count"] == 1
+        assert detail.json()["invited_user_ids"] == [str(unanswered.id)]
+        assert guests.status_code == 200
+        assert guests.json()["invited_user_ids"] == [str(unanswered.id)]
+
     def test_invite_only_detail_does_not_hydrate_invitees(self, api_client, monkeypatch):
         creator = _user("+14155556000", "Host")
         event = Event.objects.create(

@@ -286,7 +286,7 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
     all_rsvps, _status, _paid, can_see_guests = _event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, _count = _invited_payload(event, auth_user, creator, co_host_ids)
+    invited, _count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
     guests = with_guest_photos(
         (
             _build_guest_list(
