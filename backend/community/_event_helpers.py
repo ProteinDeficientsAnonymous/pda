@@ -332,10 +332,11 @@ def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, respons
     return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
 
 
-def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str]):
+def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
     if not _can_see_invited(auth_user, creator, co_host_ids):
         return [], 0
-    invited = list(event.invited_users.all())
+    responded_user_ids = {rsvp.user_id for rsvp in rsvps}
+    invited = [user for user in event.invited_users.all() if user.pk not in responded_user_ids]
     return invited, len(invited)
 
 
@@ -362,7 +363,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids)
+    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
 
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
