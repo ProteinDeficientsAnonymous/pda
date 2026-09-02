@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';
-import type { Birthday } from '@/models/user';
+import type { Birthday, Veganversary } from '@/models/user';
 
 import { apiClient } from './client';
 
@@ -311,6 +311,7 @@ export interface MemberProfile {
   bio: string;
   pronouns: string;
   birthday: Birthday | null;
+  veganversary: Veganversary | null;
   profilePhotoUrl: string;
   loginLinkRequested: boolean;
 }
@@ -324,6 +325,7 @@ interface WireMemberProfile {
   bio: string;
   pronouns: string;
   birthday?: Birthday | null;
+  veganversary?: Veganversary | null;
   profile_photo_url: string;
   login_link_requested: boolean;
 }
@@ -338,6 +340,7 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
     bio: w.bio,
     pronouns: w.pronouns,
     birthday: w.birthday ?? null,
+    veganversary: w.veganversary ?? null,
     profilePhotoUrl: w.profile_photo_url,
     loginLinkRequested: w.login_link_requested,
   };

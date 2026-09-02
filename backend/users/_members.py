@@ -12,9 +12,18 @@ from users.schemas import (
     ErrorOut,
     MemberDirectoryOut,
     MemberProfileOut,
+    VeganversaryOut,
 )
 
 router = Router()
+
+
+def _birthday_for_profile(user: User) -> BirthdayOut | None:
+    return BirthdayOut.from_user(user) if user.show_birthday else None
+
+
+def _veganversary_for_profile(user: User) -> VeganversaryOut | None:
+    return VeganversaryOut.from_user(user) if user.show_veganversary else None
 
 
 @router.get(
@@ -75,7 +84,8 @@ def get_member_profile(request, user_id: str):
             email=(user.email or "") if user.show_email else "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
-            birthday=BirthdayOut.from_user(user) if user.show_birthday else None,
+            birthday=_birthday_for_profile(user),
+            veganversary=_veganversary_for_profile(user),
             profile_photo_url=media_path(user.profile_photo),
             login_link_requested=user.login_link_requested if can_manage_users else False,
         ),

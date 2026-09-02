@@ -4543,6 +4543,38 @@
             ],
             "title": "Show Phone"
           },
+          "show_veganversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Veganversary"
+          },
+          "veganversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganversaryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganversary_shoutout_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Veganversary Shoutout Opt Out"
+          },
           "week_start": {
             "anyOf": [
               {
@@ -4776,6 +4808,16 @@
             "default": "",
             "title": "Pronouns",
             "type": "string"
+          },
+          "veganversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6637,6 +6679,26 @@
             "title": "Show Phone",
             "type": "boolean"
           },
+          "show_veganversary": {
+            "default": true,
+            "title": "Show Veganversary",
+            "type": "boolean"
+          },
+          "veganversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganversary_shoutout_opt_out": {
+            "default": false,
+            "title": "Veganversary Shoutout Opt Out",
+            "type": "boolean"
+          },
           "week_start": {
             "default": "sunday",
             "title": "Week Start",
@@ -6769,6 +6831,70 @@
           "phone_number"
         ],
         "title": "UserSearchOut",
+        "type": "object"
+      },
+      "VeganversaryIn": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "maximum": 2026,
+            "minimum": 1900,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganversaryIn",
+        "type": "object"
+      },
+      "VeganversaryOut": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganversaryOut",
         "type": "object"
       },
       "VersionOut": {

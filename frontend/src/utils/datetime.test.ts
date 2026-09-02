@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatBirthday, formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
+import {
+  formatBirthday,
+  formatDayHeader,
+  formatEventDateTime,
+  formatVeganversary,
+  parseIsoDate,
+} from './datetime';
 
 describe('parseIsoDate', () => {
   it('parses ISO 8601 string', () => {
@@ -22,6 +28,16 @@ describe('formatBirthday', () => {
 
   it('formats a leap day without a year', () => {
     expect(formatBirthday({ month: 2, day: 29, year: null })).toBe('february 29');
+  });
+});
+
+describe('formatVeganversary', () => {
+  it('formats month day, year when a day is set', () => {
+    expect(formatVeganversary({ month: 6, day: 15, year: 2019 })).toBe('june 15, 2019');
+  });
+
+  it('formats month year when day is omitted', () => {
+    expect(formatVeganversary({ month: 3, day: null, year: 2020 })).toBe('march 2020');
   });
 });
 
