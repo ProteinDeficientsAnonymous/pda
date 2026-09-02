@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 
 import { type MemberProfile, useMemberProfile } from '@/api/users';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
-import { formatBirthday } from '@/utils/datetime';
+import { formatBirthday, formatVeganversary } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 export default function MemberProfileScreen() {
@@ -21,6 +21,9 @@ export default function MemberProfileScreen() {
         {data.pronouns ? <p className="text-muted text-sm">{data.pronouns}</p> : null}
         {data.birthday ? (
           <p className="text-muted text-sm">🎂 {formatBirthday(data.birthday)}</p>
+        ) : null}
+        {data.veganversary ? (
+          <p className="text-muted text-sm">🌱 {formatVeganversary(data.veganversary)}</p>
         ) : null}
         <ContactLines member={data} />
       </header>

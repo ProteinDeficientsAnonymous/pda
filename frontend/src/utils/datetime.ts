@@ -1,6 +1,6 @@
 import { format, isSameDay } from 'date-fns';
 
-import type { Birthday } from '@/models/user';
+import type { Birthday, Veganversary } from '@/models/user';
 
 export function formatEventDateTime(
   start: Date | null,
@@ -33,4 +33,13 @@ export function parseIsoDate(iso: string): Date {
 export function formatBirthday(birthday: Birthday): string {
   const monthDay = format(new Date(2000, birthday.month - 1, birthday.day), 'MMMM d').toLowerCase();
   return birthday.year ? `${monthDay}, ${String(birthday.year)}` : monthDay;
+}
+
+export function formatVeganversary(v: Veganversary): string {
+  const month = format(new Date(2000, v.month - 1, 1), 'MMMM').toLowerCase();
+  if (v.day) {
+    const monthDay = format(new Date(2000, v.month - 1, v.day), 'MMMM d').toLowerCase();
+    return `${monthDay}, ${String(v.year)}`;
+  }
+  return `${month} ${String(v.year)}`;
 }

@@ -1,12 +1,19 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
-
+{% if events %}
 here's what's coming up this week:
 {% for event in events %}
 {{ event.title|lower }}{% if event.when %}
 {{ event.when|lower }}{% endif %}{% if event.location %}
 {{ event.location|lower }}{% endif %}
 {{ event.url }}
+{% endfor %}{% endif %}{% if veganversaries %}
+if you see these people, tell them happy veganversary!
+{% for group in veganversaries %}
+{{ group.label }}
+{% for person in group.people %}{{ person.name|lower }}
+{{ person.url }}
 {% endfor %}
+{% endfor %}{% endif %}
 see the full calendar:
 
 {{ calendar_url }}

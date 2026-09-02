@@ -238,6 +238,38 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('saves a veganversary with month and year only via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        veganversary: { month: 6, day: null, year: 2020 },
+      });
+    });
+  });
+
+  it('saves veganversary privacy toggles from the editor', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
+    await user.click(screen.getByRole('switch', { name: /display on my profile/i }));
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ showVeganversary: false });
+    });
+
+    await user.click(screen.getByRole('switch', { name: /don't celebrate me by name/i }));
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganversaryShoutoutOptOut: true });
+    });
+  });
+
   it('saves an edited first name via updateProfile', async () => {
     const authApi = await import('@/api/auth');
     const user = userEvent.setup();

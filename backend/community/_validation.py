@@ -144,6 +144,7 @@ class Code:
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
+        INVALID_VEGANVERSARY = "user.invalid_veganversary"
 
     class Survey:
         NOT_FOUND = "survey.not_found"

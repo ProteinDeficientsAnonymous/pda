@@ -602,6 +602,11 @@
         "name": "INVALID_BIRTHDAY",
         "value": "user.invalid_birthday",
         "params": []
+      },
+      {
+        "name": "INVALID_VEGANVERSARY",
+        "value": "user.invalid_veganversary",
+        "params": []
       }
     ],
     "Survey": [

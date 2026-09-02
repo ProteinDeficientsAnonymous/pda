@@ -186,6 +186,111 @@ class TestUpdateBirthday:
 
 
 @pytest.mark.django_db
+class TestUpdateVeganversary:
+    def test_set_veganversary_with_day_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": {"month": 3, "day": 12, "year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganversary"] == {"month": 3, "day": 12, "year": 2019}
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganversary_month,
+            test_user.veganversary_day,
+            test_user.veganversary_year,
+        ) == (3, 12, 2019)
+
+    def test_set_veganversary_without_day_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": {"month": 6, "year": 2020}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganversary"] == {"month": 6, "day": None, "year": 2020}
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganversary_month,
+            test_user.veganversary_day,
+            test_user.veganversary_year,
+        ) == (6, None, 2020)
+
+    def test_month_only_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": {"month": 6}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_year_only_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": {"year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_veganversary_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.veganversary_month = 3
+        test_user.veganversary_day = 12
+        test_user.veganversary_year = 2019
+        test_user.save(
+            update_fields=["veganversary_month", "veganversary_day", "veganversary_year"]
+        )
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": None},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganversary"] is None
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganversary_month,
+            test_user.veganversary_day,
+            test_user.veganversary_year,
+        ) == (None, None, None)
+
+    def test_veganversary_omitted_leaves_value_untouched(self, api_client, auth_headers, test_user):
+        test_user.veganversary_month = 3
+        test_user.veganversary_day = 12
+        test_user.veganversary_year = 2019
+        test_user.save(
+            update_fields=["veganversary_month", "veganversary_day", "veganversary_year"]
+        )
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "they/them"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganversary_month,
+            test_user.veganversary_day,
+            test_user.veganversary_year,
+        ) == (3, 12, 2019)
+
+    def test_invalid_day_for_month_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganversary": {"month": 4, "day": 31, "year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+
+@pytest.mark.django_db
 class TestPatchMeEmail:
     def test_update_email_lowercases(self, api_client, auth_headers, test_user):
         resp = api_client.patch(

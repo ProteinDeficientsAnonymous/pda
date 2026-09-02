@@ -1,11 +1,17 @@
 import { getDaysInMonth } from 'date-fns';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import type { Birthday } from '@/models/user';
-import { formatBirthday } from '@/utils/datetime';
+import { Toggle } from '@/components/ui/Toggle';
+import { formatBirthday, formatVeganversary } from '@/utils/datetime';
+
+export interface DateParts {
+  month: number;
+  day: number | null;
+  year: number | null;
+}
 
 const MONTH_OPTIONS = [
   'january',
@@ -24,17 +30,25 @@ const MONTH_OPTIONS = [
 
 const NO_YEAR = '';
 const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = [
-  { value: NO_YEAR, label: 'prefer not to say' },
-  ...Array.from({ length: 120 }, (_, i) => {
-    const year = CURRENT_YEAR - i;
-    return { value: String(year), label: String(year) };
-  }),
-];
+const YEARS = Array.from({ length: 120 }, (_, i) => {
+  const year = CURRENT_YEAR - i;
+  return { value: String(year), label: String(year) };
+});
+const OPTIONAL_YEAR_OPTIONS = [{ value: NO_YEAR, label: 'prefer not to say' }, ...YEARS];
 
 function dayOptions(month: number | null) {
   const count = month ? getDaysInMonth(new Date(2000, month - 1)) : 31;
   return Array.from({ length: count }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+}
+
+function displayValue(value: DateParts, requireDay: boolean, requireYear: boolean): string {
+  if (requireYear && value.year != null) {
+    return formatVeganversary({ month: value.month, day: value.day, year: value.year });
+  }
+  if (requireDay && value.day != null) {
+    return formatBirthday({ month: value.month, day: value.day, year: value.year });
+  }
+  return '';
 }
 
 export function InlineBirthday({
@@ -42,11 +56,24 @@ export function InlineBirthday({
   value,
   onSave,
   placeholder,
+  hint,
+  requireDay = true,
+  requireYear = false,
+  privacy,
 }: {
   label: string;
-  value: Birthday | null;
-  onSave: (v: Birthday | null) => Promise<void>;
+  value: DateParts | null;
+  onSave: (v: DateParts | null) => Promise<void>;
   placeholder?: string;
+  hint?: ReactNode;
+  requireDay?: boolean;
+  requireYear?: boolean;
+  privacy?: {
+    showOnProfile: boolean;
+    onShowOnProfileChange: (v: boolean) => void;
+    optOutShoutout: boolean;
+    onOptOutShoutoutChange: (v: boolean) => void;
+  };
 }) {
   const [editing, setEditing] = useState(false);
   const [month, setMonth] = useState(value?.month ?? null);
@@ -63,7 +90,7 @@ export function InlineBirthday({
     setEditing(true);
   }
 
-  async function save(next: Birthday | null) {
+  async function save(next: DateParts | null) {
     setSaving(true);
     setError(null);
     try {
@@ -76,23 +103,29 @@ export function InlineBirthday({
     }
   }
 
+  const yearOptions = requireYear ? YEARS : OPTIONAL_YEAR_OPTIONS;
+
   if (!editing) {
     return (
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-muted text-xs">{label}</div>
-          <div className="text-foreground text-sm">
-            {value ? formatBirthday(value) : placeholder}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-muted text-xs">{label}</div>
+            <div className="text-foreground text-sm">
+              {value ? displayValue(value, requireDay, requireYear) : placeholder}
+            </div>
           </div>
+          <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
+            edit
+          </Button>
         </div>
-        <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
-          edit
-        </Button>
+        {hint ? <p className="text-foreground-tertiary text-xs">{hint}</p> : null}
       </div>
     );
   }
 
-  const canSave = month !== null && day !== null;
+  const canSave =
+    month !== null && (!requireDay || day !== null) && (!requireYear || year !== null);
 
   return (
     <div className="flex flex-col gap-2">
@@ -123,14 +156,17 @@ export function InlineBirthday({
         />
         <Select
           label="year"
-          options={YEAR_OPTIONS}
-          value={year ? String(year) : NO_YEAR}
+          options={yearOptions}
+          value={year ? String(year) : ''}
+          placeholder="year"
           onChange={(e) => {
             setYear(e.target.value ? Number(e.target.value) : null);
             if (error) setError(null);
           }}
         />
       </div>
+      {hint ? <p className="text-foreground-tertiary text-xs">{hint}</p> : null}
+      {privacy ? <VeganversaryPrivacy privacy={privacy} /> : null}
       {error ? <p className="text-destructive text-xs">{error}</p> : null}
       <div className="flex items-center justify-end gap-2">
         {value ? (
@@ -150,13 +186,40 @@ export function InlineBirthday({
         </Button>
         <Button
           onClick={() => {
-            if (canSave) void save({ month, day, year });
+            if (month == null) return;
+            void save({ month, day, year });
           }}
           disabled={saving || !canSave}
         >
           save
         </Button>
       </div>
+    </div>
+  );
+}
+
+function VeganversaryPrivacy({
+  privacy,
+}: {
+  privacy: {
+    showOnProfile: boolean;
+    onShowOnProfileChange: (v: boolean) => void;
+    optOutShoutout: boolean;
+    onOptOutShoutoutChange: (v: boolean) => void;
+  };
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <Toggle
+        label="display on my profile"
+        checked={privacy.showOnProfile}
+        onChange={privacy.onShowOnProfileChange}
+      />
+      <Toggle
+        label="don't celebrate me by name"
+        checked={privacy.optOutShoutout}
+        onChange={privacy.onOptOutShoutoutChange}
+      />
     </div>
   );
 }
