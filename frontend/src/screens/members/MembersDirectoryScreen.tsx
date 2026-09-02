@@ -26,7 +26,7 @@ export default function MembersDirectoryScreen() {
 
   return (
     <ContentContainer className="pt-4 md:pt-6">
-      <div className="bg-background sticky top-10 z-10 -mx-4 mb-4 px-4 pt-2 pb-3">
+      <div className="bg-background sticky top-10 z-0 -mx-4 mb-4 px-4 pt-2 pb-3">
         <TextField
           label="search"
           hideLabel
