@@ -4275,6 +4275,11 @@ export interface components {
             show_email?: boolean | null;
             /** Show Phone */
             show_phone?: boolean | null;
+            /** Show Veganversary */
+            show_veganversary?: boolean | null;
+            veganversary?: components["schemas"]["VeganversaryIn"] | null;
+            /** Veganversary Shoutout Opt Out */
+            veganversary_shoutout_opt_out?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
@@ -4423,6 +4428,7 @@ export interface components {
              * @default
              */
             pronouns: string;
+            veganversary?: components["schemas"]["VeganversaryOut"] | null;
         };
         /** MemberPromotionEmailOut */
         MemberPromotionEmailOut: {
@@ -5284,6 +5290,17 @@ export interface components {
              */
             show_phone: boolean;
             /**
+             * Show Veganversary
+             * @default true
+             */
+            show_veganversary: boolean;
+            veganversary?: components["schemas"]["VeganversaryOut"] | null;
+            /**
+             * Veganversary Shoutout Opt Out
+             * @default false
+             */
+            veganversary_shoutout_opt_out: boolean;
+            /**
              * Week Start
              * @default sunday
              */
@@ -5335,6 +5352,24 @@ export interface components {
             last_name: string;
             /** Phone Number */
             phone_number: string;
+        };
+        /** VeganversaryIn */
+        VeganversaryIn: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
+        };
+        /** VeganversaryOut */
+        VeganversaryOut: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
         };
         /** VersionOut */
         VersionOut: {

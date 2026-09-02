@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
 import { cn } from '@/utils/cn';
-import { formatBirthday } from '@/utils/datetime';
+import { formatBirthday, formatVeganversary } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { BioEditDialog } from './BioEditDialog';
@@ -36,6 +36,9 @@ export default function ProfileScreen() {
           {user.pronouns ? <p className="text-muted text-sm">{user.pronouns}</p> : null}
           {user.birthday ? (
             <p className="text-muted text-sm">🎂 {formatBirthday(user.birthday)}</p>
+          ) : null}
+          {user.veganversary ? (
+            <p className="text-muted text-sm">🌱 {formatVeganversary(user.veganversary)}</p>
           ) : null}
           <ContactLine value={formatPhone(user.phoneNumber)} visible={user.showPhone} />
           {user.email ? <ContactLine value={user.email} visible={user.showEmail} /> : null}
