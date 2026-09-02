@@ -76,8 +76,38 @@ export default function SettingsScreen() {
         <InlineBirthday
           label="birthday"
           value={user.birthday}
-          onSave={(v) => updateProfile({ birthday: v })}
+          onSave={(v) =>
+            updateProfile({
+              birthday: v?.day != null ? { month: v.month, day: v.day, year: v.year } : null,
+            })
+          }
           placeholder="add your birthday"
+        />
+        <InlineBirthday
+          label="veganversary"
+          value={user.veganversary}
+          onSave={(v) =>
+            updateProfile({
+              veganversary: v?.year != null ? { month: v.month, day: v.day, year: v.year } : null,
+            })
+          }
+          placeholder="add your veganversary"
+          requireDay={false}
+          requireYear
+          hint={
+            <>
+              the exact date isn't required, but please let us know at least the month and year!
+              <br />
+              if you enter your veganversary, we'll celebrate you by name when your veganversary
+              comes up!
+            </>
+          }
+          privacy={{
+            showOnProfile: user.showVeganversary,
+            onShowOnProfileChange: (v) => void updateProfile({ showVeganversary: v }),
+            optOutShoutout: user.veganversaryShoutoutOptOut,
+            onOptOutShoutoutChange: (v) => void updateProfile({ veganversaryShoutoutOptOut: v }),
+          }}
         />
       </Section>
 

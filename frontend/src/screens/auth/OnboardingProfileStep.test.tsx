@@ -86,6 +86,30 @@ describe('OnboardingProfileStep', () => {
     expect(screen.getByRole('button', { name: /edit birthday/i })).toBeInTheDocument();
   });
 
+  it('shows a veganversary field with helper copy', () => {
+    render(<OnboardingProfileStep onDone={onDone} />);
+    expect(screen.getByText(/^veganversary$/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit veganversary/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /if you enter your veganversary, we'll celebrate you by name when your veganversary comes up/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows veganversary privacy toggles in the editor', async () => {
+    const user = userEvent.setup();
+    render(<OnboardingProfileStep onDone={onDone} />);
+    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
+    expect(screen.getByRole('switch', { name: /display on my profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /don't celebrate me by name/i })).toBeInTheDocument();
+  });
+
   it('shows the "photo added" confirmation once a profile photo exists', () => {
     mockStore({ ...baseUser, profilePhotoUrl: 'https://example.com/p.png' });
     render(<OnboardingProfileStep onDone={onDone} />);

@@ -21,6 +21,7 @@ const BASE: MemberProfile = {
   bio: '',
   pronouns: '',
   birthday: null,
+  veganversary: null,
   profilePhotoUrl: '',
   loginLinkRequested: false,
 };
@@ -70,5 +71,22 @@ describe('MemberProfileScreen', () => {
     useMemberProfileMock.mockReturnValue({ data: BASE, isPending: false, isError: false });
     renderScreen();
     expect(screen.queryByText(/^".*"$/)).not.toBeInTheDocument();
+  });
+
+  it('shows veganversary when the member shared it', () => {
+    useMemberProfileMock.mockReturnValue({
+      data: { ...BASE, veganversary: { month: 6, day: null, year: 2019 } },
+      isPending: false,
+      isError: false,
+    });
+    renderScreen();
+    expect(screen.getByText(/🌱/)).toBeInTheDocument();
+    expect(screen.getByText(/june 2019/i)).toBeInTheDocument();
+  });
+
+  it('omits veganversary when the member did not share it', () => {
+    useMemberProfileMock.mockReturnValue({ data: BASE, isPending: false, isError: false });
+    renderScreen();
+    expect(screen.queryByText(/🌱/)).not.toBeInTheDocument();
   });
 });
