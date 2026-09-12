@@ -4,6 +4,7 @@ import os
 import posixpath
 
 from django.conf import settings
+from django.core.cache import caches
 from django.core.exceptions import SuspiciousOperation
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, HttpResponse
@@ -12,6 +13,9 @@ from django.utils._os import safe_join
 from config.memory import memory_profile_enabled, record_media_path_call
 
 logger = logging.getLogger("pda.media")
+
+# 6d: 1d slack vs S3 querystring_expire (7d) so we never serve a signature about to die.
+SIGNED_URL_CACHE_TTL = 60 * 60 * 24 * 6
 
 # Content types we're willing to serve inline. Everything else (notably
 # text/html and image/svg+xml, which can execute JS on the app origin) is
@@ -28,13 +32,31 @@ _INLINE_CONTENT_TYPES = frozenset(
 )
 
 
+def _signed_url_cache_key(field) -> str | None:
+    name = getattr(field, "name", None)
+    if not name:
+        return None
+    instance = getattr(field, "instance", None)
+    updated = getattr(instance, "photo_updated_at", None) if instance is not None else None
+    stamp = updated.isoformat() if hasattr(updated, "isoformat") else updated
+    return f"media_url:{name}:{stamp}"
+
+
 def media_path(field) -> str:
     """Return storage URL (/media/… locally, presigned absolute URL on B2), or ''."""
     if memory_profile_enabled():
         record_media_path_call()
     if not field:
         return ""
-    return field.url
+    cache_key = _signed_url_cache_key(field)
+    if cache_key:
+        cached = caches["media"].get(cache_key)
+        if cached is not None:
+            return cached
+    url = field.url
+    if cache_key and url.startswith(("http://", "https://")):
+        caches["media"].set(cache_key, url, SIGNED_URL_CACHE_TTL)
+    return url
 
 
 def preload_media_storage() -> None:
