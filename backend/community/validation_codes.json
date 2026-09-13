@@ -604,8 +604,8 @@
         "params": []
       },
       {
-        "name": "INVALID_VEGANVERSARY",
-        "value": "user.invalid_veganversary",
+        "name": "INVALID_VEGANNIVERSARY",
+        "value": "user.invalid_veganniversary",
         "params": []
       }
     ],

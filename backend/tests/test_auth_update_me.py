@@ -186,43 +186,43 @@ class TestUpdateBirthday:
 
 
 @pytest.mark.django_db
-class TestUpdateVeganversary:
-    def test_set_veganversary_with_day_accepted(self, api_client, auth_headers, test_user):
+class TestUpdateVeganniversary:
+    def test_set_veganniversary_with_day_accepted(self, api_client, auth_headers, test_user):
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": {"month": 3, "day": 12, "year": 2019}},
+            {"veganniversary": {"month": 3, "day": 12, "year": 2019}},
             content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 200
-        assert response.json()["veganversary"] == {"month": 3, "day": 12, "year": 2019}
+        assert response.json()["veganniversary"] == {"month": 3, "day": 12, "year": 2019}
         test_user.refresh_from_db()
         assert (
-            test_user.veganversary_month,
-            test_user.veganversary_day,
-            test_user.veganversary_year,
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
         ) == (3, 12, 2019)
 
-    def test_set_veganversary_without_day_accepted(self, api_client, auth_headers, test_user):
+    def test_set_veganniversary_without_day_accepted(self, api_client, auth_headers, test_user):
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": {"month": 6, "year": 2020}},
+            {"veganniversary": {"month": 6, "year": 2020}},
             content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 200
-        assert response.json()["veganversary"] == {"month": 6, "day": None, "year": 2020}
+        assert response.json()["veganniversary"] == {"month": 6, "day": None, "year": 2020}
         test_user.refresh_from_db()
         assert (
-            test_user.veganversary_month,
-            test_user.veganversary_day,
-            test_user.veganversary_year,
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
         ) == (6, None, 2020)
 
     def test_month_only_rejected(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": {"month": 6}},
+            {"veganniversary": {"month": 6}},
             content_type="application/json",
             **auth_headers,
         )
@@ -231,40 +231,42 @@ class TestUpdateVeganversary:
     def test_year_only_rejected(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": {"year": 2019}},
+            {"veganniversary": {"year": 2019}},
             content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 422
 
-    def test_veganversary_can_be_cleared(self, api_client, auth_headers, test_user):
-        test_user.veganversary_month = 3
-        test_user.veganversary_day = 12
-        test_user.veganversary_year = 2019
+    def test_veganniversary_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.veganniversary_month = 3
+        test_user.veganniversary_day = 12
+        test_user.veganniversary_year = 2019
         test_user.save(
-            update_fields=["veganversary_month", "veganversary_day", "veganversary_year"]
+            update_fields=["veganniversary_month", "veganniversary_day", "veganniversary_year"]
         )
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": None},
+            {"veganniversary": None},
             content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 200
-        assert response.json()["veganversary"] is None
+        assert response.json()["veganniversary"] is None
         test_user.refresh_from_db()
         assert (
-            test_user.veganversary_month,
-            test_user.veganversary_day,
-            test_user.veganversary_year,
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
         ) == (None, None, None)
 
-    def test_veganversary_omitted_leaves_value_untouched(self, api_client, auth_headers, test_user):
-        test_user.veganversary_month = 3
-        test_user.veganversary_day = 12
-        test_user.veganversary_year = 2019
+    def test_veganniversary_omitted_leaves_value_untouched(
+        self, api_client, auth_headers, test_user
+    ):
+        test_user.veganniversary_month = 3
+        test_user.veganniversary_day = 12
+        test_user.veganniversary_year = 2019
         test_user.save(
-            update_fields=["veganversary_month", "veganversary_day", "veganversary_year"]
+            update_fields=["veganniversary_month", "veganniversary_day", "veganniversary_year"]
         )
         response = api_client.patch(
             "/api/auth/me/",
@@ -275,15 +277,15 @@ class TestUpdateVeganversary:
         assert response.status_code == 200
         test_user.refresh_from_db()
         assert (
-            test_user.veganversary_month,
-            test_user.veganversary_day,
-            test_user.veganversary_year,
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
         ) == (3, 12, 2019)
 
     def test_invalid_day_for_month_rejected(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/auth/me/",
-            {"veganversary": {"month": 4, "day": 31, "year": 2019}},
+            {"veganniversary": {"month": 4, "day": 31, "year": 2019}},
             content_type="application/json",
             **auth_headers,
         )

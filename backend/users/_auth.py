@@ -40,7 +40,7 @@ from users.schemas import (
     OnboardingIn,
     TokenOut,
     UserOut,
-    VeganversaryIn,
+    VeganniversaryIn,
 )
 
 logger = logging.getLogger("pda.auth")
@@ -144,8 +144,9 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "show_phone",
     "show_email",
     "show_birthday",
-    "show_veganversary",
-    "veganversary_shoutout_opt_out",
+    "show_veganniversary",
+    "veganniversary_shoutout_opt_in",
+    "has_seen_veganniversary",
     "hide_last_name",
     "weekly_digest_opt_out",
     "week_start",
@@ -162,10 +163,10 @@ def _apply_birthday(user, birthday: BirthdayIn | None) -> None:
     user.birthday_year = birthday.year if birthday else None
 
 
-def _apply_veganversary(user, veganversary: VeganversaryIn | None) -> None:
-    user.veganversary_month = veganversary.month if veganversary else None
-    user.veganversary_day = veganversary.day if veganversary else None
-    user.veganversary_year = veganversary.year if veganversary else None
+def _apply_veganniversary(user, veganniversary: VeganniversaryIn | None) -> None:
+    user.veganniversary_month = veganniversary.month if veganniversary else None
+    user.veganniversary_day = veganniversary.day if veganniversary else None
+    user.veganniversary_year = veganniversary.year if veganniversary else None
 
 
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
@@ -195,9 +196,9 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if "birthday" in payload.model_fields_set:
         _apply_birthday(user, payload.birthday)
         changed.append("birthday")
-    if "veganversary" in payload.model_fields_set:
-        _apply_veganversary(user, payload.veganversary)
-        changed.append("veganversary")
+    if "veganniversary" in payload.model_fields_set:
+        _apply_veganniversary(user, payload.veganniversary)
+        changed.append("veganniversary")
     return changed
 
 

@@ -38,20 +38,13 @@ def _empty_str_to_none(v: str | None) -> str | None:
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
-_DAYS_IN_MONTH = {
-    1: 31,
-    2: 29,  # allow Feb 29 regardless of year, since the year may be unknown
-    3: 31,
-    4: 30,
-    5: 31,
-    6: 30,
-    7: 31,
-    8: 31,
-    9: 30,
-    10: 31,
-    11: 30,
-    12: 31,
-}
+def _require_real_day(month: int | None, day: int, code: str) -> None:
+    if month is None:
+        return
+    try:
+        date(2000, month, day)  # leap year: Feb 29 allowed when year is unknown
+    except ValueError:
+        raise_validation(code, field="day")
 
 
 class BirthdayOut(BaseModel):
@@ -76,29 +69,27 @@ class BirthdayIn(BaseModel):
     @field_validator("day")
     @classmethod
     def _validate_day(cls, day: int, info) -> int:
-        month = info.data.get("month")
-        if month is not None and day > _DAYS_IN_MONTH[month]:
-            raise_validation(Code.User.INVALID_BIRTHDAY, field="day")
+        _require_real_day(info.data.get("month"), day, Code.User.INVALID_BIRTHDAY)
         return day
 
 
-class VeganversaryOut(BaseModel):
+class VeganniversaryOut(BaseModel):
     month: int
     day: int | None = None
     year: int
 
     @staticmethod
-    def from_user(user: User) -> "VeganversaryOut | None":
-        if user.veganversary_month is None or user.veganversary_year is None:
+    def from_user(user: User) -> "VeganniversaryOut | None":
+        if user.veganniversary_month is None or user.veganniversary_year is None:
             return None
-        return VeganversaryOut(
-            month=user.veganversary_month,
-            day=user.veganversary_day,
-            year=user.veganversary_year,
+        return VeganniversaryOut(
+            month=user.veganniversary_month,
+            day=user.veganniversary_day,
+            year=user.veganniversary_year,
         )
 
 
-class VeganversaryIn(BaseModel):
+class VeganniversaryIn(BaseModel):
     month: int = Field(ge=1, le=12)
     day: int | None = Field(default=None, ge=1, le=31)
     year: int = Field(ge=1900, le=date.today().year)
@@ -108,9 +99,7 @@ class VeganversaryIn(BaseModel):
     def _validate_day(cls, day: int | None, info) -> int | None:
         if day is None:
             return None
-        month = info.data.get("month")
-        if month is not None and day > _DAYS_IN_MONTH[month]:
-            raise_validation(Code.User.INVALID_VEGANVERSARY, field="day")
+        _require_real_day(info.data.get("month"), day, Code.User.INVALID_VEGANNIVERSARY)
         return day
 
 
@@ -157,7 +146,7 @@ class UserOut(BaseModel):
     bio: str = ""
     pronouns: str = ""
     birthday: BirthdayOut | None = None
-    veganversary: VeganversaryOut | None = None
+    veganniversary: VeganniversaryOut | None = None
     is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
@@ -170,8 +159,9 @@ class UserOut(BaseModel):
     show_phone: bool = True
     show_email: bool = True
     show_birthday: bool = True
-    show_veganversary: bool = True
-    veganversary_shoutout_opt_out: bool = False
+    show_veganniversary: bool = True
+    veganniversary_shoutout_opt_in: bool = False
+    has_seen_veganniversary: bool = False
     hide_last_name: bool = False
     weekly_digest_opt_out: bool = False
     is_paused: bool = False
@@ -200,7 +190,7 @@ class UserOut(BaseModel):
             bio=user.bio or "",
             pronouns=user.pronouns or "",
             birthday=BirthdayOut.from_user(user),
-            veganversary=VeganversaryOut.from_user(user),
+            veganniversary=VeganniversaryOut.from_user(user),
             is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
@@ -213,8 +203,9 @@ class UserOut(BaseModel):
             show_phone=user.show_phone,
             show_email=user.show_email,
             show_birthday=user.show_birthday,
-            show_veganversary=user.show_veganversary,
-            veganversary_shoutout_opt_out=user.veganversary_shoutout_opt_out,
+            show_veganniversary=user.show_veganniversary,
+            veganniversary_shoutout_opt_in=user.veganniversary_shoutout_opt_in,
+            has_seen_veganniversary=user.has_seen_veganniversary,
             hide_last_name=user.hide_last_name,
             weekly_digest_opt_out=user.weekly_digest_opt_out,
             is_paused=user.is_paused,
@@ -252,7 +243,7 @@ class MemberProfileOut(BaseModel):
     bio: str = ""
     pronouns: str = ""
     birthday: BirthdayOut | None = None
-    veganversary: VeganversaryOut | None = None
+    veganniversary: VeganniversaryOut | None = None
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
@@ -318,13 +309,14 @@ class MePatchIn(BaseModel):
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
     birthday: BirthdayIn | None = None
-    veganversary: VeganversaryIn | None = None
+    veganniversary: VeganniversaryIn | None = None
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
     show_birthday: bool | None = None
-    show_veganversary: bool | None = None
-    veganversary_shoutout_opt_out: bool | None = None
+    show_veganniversary: bool | None = None
+    veganniversary_shoutout_opt_in: bool | None = None
+    has_seen_veganniversary: bool | None = None
     hide_last_name: bool | None = None
     weekly_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None

@@ -326,8 +326,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
       return "that's not a valid birthday";
-    case Code.User.InvalidVeganversary:
-      return "that's not a valid veganversary";
+    case Code.User.InvalidVeganniversary:
+      return "that's not a valid veganniversary";
 
     // Survey
     case Code.Survey.NotFound:

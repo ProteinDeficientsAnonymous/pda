@@ -14,9 +14,9 @@
     </div>
     {% endfor %}
     {% endif %}
-    {% if veganversaries %}
-    <p style="margin: 0 0 16px;">if you see these people, tell them happy veganversary!</p>
-    {% for group in veganversaries %}
+    {% if veganniversaries %}
+    <p style="margin: 0 0 16px;">Happy veganniversary!</p>
+    {% for group in veganniversaries %}
     <p style="margin: 0 0 4px;"><strong>{{ group.label }}</strong></p>
     <p style="margin: 0 0 16px; font-size: 14px; color: #666;">{% for person in group.people %}<a href="{{ person.url }}" style="color: #3c6939;">{{ person.name|lower }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
     {% endfor %}

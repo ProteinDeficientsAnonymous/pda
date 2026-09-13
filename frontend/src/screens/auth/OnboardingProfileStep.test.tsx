@@ -43,10 +43,10 @@ describe('OnboardingProfileStep', () => {
     mockStore(baseUser);
   });
 
-  it('skips without saving when "do this later" is clicked', async () => {
+  it('marks veganniversary seen without other fields when "do this later" is clicked', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /do this later/i }));
-    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -54,14 +54,17 @@ describe('OnboardingProfileStep', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.type(screen.getByLabelText(/^bio$/i), 'i love tofu');
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).toHaveBeenCalledWith({ bio: 'i love tofu' });
+    expect(updateProfile).toHaveBeenCalledWith({
+      bio: 'i love tofu',
+      hasSeenVeganniversary: true,
+    });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('finishes without calling updateProfile when bio and pronouns are left empty', async () => {
+  it('marks veganniversary seen when bio and pronouns are left empty', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -69,7 +72,10 @@ describe('OnboardingProfileStep', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).toHaveBeenCalledWith({ pronouns: 'they/them' });
+    expect(updateProfile).toHaveBeenCalledWith({
+      pronouns: 'they/them',
+      hasSeenVeganniversary: true,
+    });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -86,28 +92,32 @@ describe('OnboardingProfileStep', () => {
     expect(screen.getByRole('button', { name: /edit birthday/i })).toBeInTheDocument();
   });
 
-  it('shows a veganversary field with helper copy', () => {
+  it('shows a veganniversary field without the month/year hint until editing', async () => {
+    const user = userEvent.setup();
     render(<OnboardingProfileStep onDone={onDone} />);
-    expect(screen.getByText(/^veganversary$/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /edit veganversary/i })).toBeInTheDocument();
+    expect(screen.getByText(/^veganniversary$/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit veganniversary/i })).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
     expect(
       screen.getByText(
         /the exact date isn't required, but please let us know at least the month and year/i,
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /if you enter your veganversary, we'll celebrate you by name when your veganversary comes up/i,
-      ),
-    ).toBeInTheDocument();
   });
 
-  it('shows veganversary privacy toggles in the editor', async () => {
-    const user = userEvent.setup();
+  it('shows veganniversary privacy toggles in the privacy section', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
-    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
-    expect(screen.getByRole('switch', { name: /display on my profile/i })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: /don't celebrate me by name/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('switch', { name: /show veganniversary on my profile/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('switch', { name: /show my name in veganniversary shout out emails/i }),
+    ).not.toBeChecked();
   });
 
   it('shows the "photo added" confirmation once a profile photo exists', () => {

@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 import type { ConsentTypeValue } from '@/models/consent';
 import type { EventTypeValue } from '@/models/event';
 import { normalizePermissions } from '@/models/permissions';
-import type { Birthday, Role, User, Veganversary } from '@/models/user';
+import type { Birthday, Role, User, Veganniversary } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 
 import { apiClient, authClient, getCurrentAccessToken } from './client';
@@ -24,7 +24,7 @@ interface WireBirthday {
   year: number | null;
 }
 
-interface WireVeganversary {
+interface WireVeganniversary {
   month: number;
   day: number | null;
   year: number;
@@ -41,7 +41,7 @@ interface WireUser {
   bio?: string;
   pronouns?: string;
   birthday?: WireBirthday | null;
-  veganversary?: WireVeganversary | null;
+  veganniversary?: WireVeganniversary | null;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -52,8 +52,9 @@ interface WireUser {
   show_phone?: boolean;
   show_email?: boolean;
   show_birthday?: boolean;
-  show_veganversary?: boolean;
-  veganversary_shoutout_opt_out?: boolean;
+  show_veganniversary?: boolean;
+  veganniversary_shoutout_opt_in?: boolean;
+  has_seen_veganniversary?: boolean;
   hide_last_name?: boolean;
   weekly_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
@@ -89,7 +90,7 @@ function mapBirthday(b: WireBirthday | null | undefined): Birthday | null {
   return { month: b.month, day: b.day, year: b.year };
 }
 
-function mapVeganversary(v: WireVeganversary | null | undefined): Veganversary | null {
+function mapVeganniversary(v: WireVeganniversary | null | undefined): Veganniversary | null {
   if (!v) return null;
   return { month: v.month, day: v.day, year: v.year };
 }
@@ -106,7 +107,7 @@ function mapUser(u: WireUser): User {
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
     birthday: mapBirthday(u.birthday),
-    veganversary: mapVeganversary(u.veganversary),
+    veganniversary: mapVeganniversary(u.veganniversary),
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -117,8 +118,9 @@ function mapUser(u: WireUser): User {
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
-    showVeganversary: u.show_veganversary ?? true,
-    veganversaryShoutoutOptOut: u.veganversary_shoutout_opt_out ?? false,
+    showVeganniversary: u.show_veganniversary ?? true,
+    veganniversaryShoutoutOptIn: u.veganniversary_shoutout_opt_in ?? false,
+    hasSeenVeganniversary: u.has_seen_veganniversary ?? false,
     hideLastName: u.hide_last_name ?? false,
     weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
@@ -239,12 +241,13 @@ export interface ProfileUpdate {
   pronouns?: string;
   // null clears the stored birthday; a Birthday sets it (year is optional).
   birthday?: Birthday | null;
-  veganversary?: Veganversary | null;
+  veganniversary?: Veganniversary | null;
   showPhone?: boolean;
   showEmail?: boolean;
   showBirthday?: boolean;
-  showVeganversary?: boolean;
-  veganversaryShoutoutOptOut?: boolean;
+  showVeganniversary?: boolean;
+  veganniversaryShoutoutOptIn?: boolean;
+  hasSeenVeganniversary?: boolean;
   hideLastName?: boolean;
   weeklyDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
@@ -266,21 +269,23 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
       ? { month: patch.birthday.month, day: patch.birthday.day, year: patch.birthday.year }
       : null;
   }
-  if (patch.veganversary !== undefined) {
-    body.veganversary = patch.veganversary
+  if (patch.veganniversary !== undefined) {
+    body.veganniversary = patch.veganniversary
       ? {
-          month: patch.veganversary.month,
-          day: patch.veganversary.day,
-          year: patch.veganversary.year,
+          month: patch.veganniversary.month,
+          day: patch.veganniversary.day,
+          year: patch.veganniversary.year,
         }
       : null;
   }
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;
-  if (patch.showVeganversary !== undefined) body.show_veganversary = patch.showVeganversary;
-  if (patch.veganversaryShoutoutOptOut !== undefined)
-    body.veganversary_shoutout_opt_out = patch.veganversaryShoutoutOptOut;
+  if (patch.showVeganniversary !== undefined) body.show_veganniversary = patch.showVeganniversary;
+  if (patch.veganniversaryShoutoutOptIn !== undefined)
+    body.veganniversary_shoutout_opt_in = patch.veganniversaryShoutoutOptIn;
+  if (patch.hasSeenVeganniversary !== undefined)
+    body.has_seen_veganniversary = patch.hasSeenVeganniversary;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;

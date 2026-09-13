@@ -4163,6 +4163,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Has Seen Veganniversary */
+            has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
             /** Last Name */
@@ -4179,11 +4181,11 @@ export interface components {
             show_email?: boolean | null;
             /** Show Phone */
             show_phone?: boolean | null;
-            /** Show Veganversary */
-            show_veganversary?: boolean | null;
-            veganversary?: components["schemas"]["VeganversaryIn"] | null;
-            /** Veganversary Shoutout Opt Out */
-            veganversary_shoutout_opt_out?: boolean | null;
+            /** Show Veganniversary */
+            show_veganniversary?: boolean | null;
+            veganniversary?: components["schemas"]["VeganniversaryIn"] | null;
+            /** Veganniversary Shoutout Opt In */
+            veganniversary_shoutout_opt_in?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
@@ -4332,7 +4334,7 @@ export interface components {
              * @default
              */
             pronouns: string;
-            veganversary?: components["schemas"]["VeganversaryOut"] | null;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
         };
         /** MemberPromotionMessageOut */
         MemberPromotionMessageOut: {
@@ -5079,6 +5081,11 @@ export interface components {
              */
             has_logged_in: boolean;
             /**
+             * Has Seen Veganniversary
+             * @default false
+             */
+            has_seen_veganniversary: boolean;
+            /**
              * Hide Last Name
              * @default false
              */
@@ -5174,16 +5181,16 @@ export interface components {
              */
             show_phone: boolean;
             /**
-             * Show Veganversary
+             * Show Veganniversary
              * @default true
              */
-            show_veganversary: boolean;
-            veganversary?: components["schemas"]["VeganversaryOut"] | null;
+            show_veganniversary: boolean;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
             /**
-             * Veganversary Shoutout Opt Out
+             * Veganniversary Shoutout Opt In
              * @default false
              */
-            veganversary_shoutout_opt_out: boolean;
+            veganniversary_shoutout_opt_in: boolean;
             /**
              * Week Start
              * @default sunday
@@ -5235,8 +5242,8 @@ export interface components {
             /** Phone Number */
             phone_number: string;
         };
-        /** VeganversaryIn */
-        VeganversaryIn: {
+        /** VeganniversaryIn */
+        VeganniversaryIn: {
             /** Day */
             day?: number | null;
             /** Month */
@@ -5244,8 +5251,8 @@ export interface components {
             /** Year */
             year: number;
         };
-        /** VeganversaryOut */
-        VeganversaryOut: {
+        /** VeganniversaryOut */
+        VeganniversaryOut: {
             /** Day */
             day?: number | null;
             /** Month */

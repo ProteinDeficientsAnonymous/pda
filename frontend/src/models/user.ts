@@ -20,7 +20,7 @@ export interface Birthday {
   year: number | null;
 }
 
-export interface Veganversary {
+export interface Veganniversary {
   month: number;
   day: number | null;
   year: number;
@@ -37,7 +37,7 @@ export interface User {
   bio: string;
   pronouns: string;
   birthday: Birthday | null;
-  veganversary: Veganversary | null;
+  veganniversary: Veganniversary | null;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;
@@ -55,8 +55,9 @@ export interface User {
   showPhone: boolean;
   showEmail: boolean;
   showBirthday: boolean;
-  showVeganversary: boolean;
-  veganversaryShoutoutOptOut: boolean;
+  showVeganniversary: boolean;
+  veganniversaryShoutoutOptIn: boolean;
+  hasSeenVeganniversary: boolean;
   hideLastName: boolean;
   weeklyDigestOptOut: boolean;
   weekStart: 'sunday' | 'monday';
