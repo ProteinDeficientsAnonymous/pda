@@ -56,8 +56,17 @@ class TestMediaPath:
         assert field.calls == 2
 
     def test_does_not_cache_relative_media_urls(self):
-        field = SimpleNamespace(name="profile_photos/a.jpg", url="/media/profile_photos/a.jpg")
+        field = SimpleNamespace(
+            name="profile_photos/a.jpg",
+            url="/media/profile_photos/a.jpg",
+            instance=SimpleNamespace(photo_updated_at="2026-01-01T00:00:00Z"),
+        )
         assert media_path(field) == "/media/profile_photos/a.jpg"
+        field.url = "/media/profile_photos/mutated.jpg"
+        assert media_path(field) == "/media/profile_photos/mutated.jpg"
+
+    def test_signed_url_cache_max_entries_exceeds_django_default(self, settings):
+        assert settings.CACHES["ratelimit"]["OPTIONS"]["MAX_ENTRIES"] > 300
 
     def test_signed_url_cache_does_not_reuse_across_object_names(self):
         stamp = "2026-01-01T00:00:00Z"

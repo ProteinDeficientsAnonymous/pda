@@ -90,4 +90,7 @@ class TestCompressExistingPhotos:
     def test_help_says_originals_stay_in_storage(self):
         from community.management.commands.compress_existing_photos import Command
 
-        assert "originals stay" in Command.help
+        help_text = Command.help.lower()
+        assert "originals stay" in help_text
+        assert "dry-run" in help_text
+        assert "skipped" in help_text

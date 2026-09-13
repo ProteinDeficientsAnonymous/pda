@@ -184,6 +184,7 @@ class Code:
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
         TOO_LARGE = "photo.too_large"  # params: { max_mb: int }
+        UNSAFE = "photo.unsafe"
 
     class AttendanceImport:
         CSV_EMPTY = "attendance_import.csv_empty"

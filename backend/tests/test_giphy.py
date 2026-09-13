@@ -188,7 +188,7 @@ class TestImageSearch:
         assert response.status_code == 200
         assert response.json()["results"][0]["original_url"] == "https://example.com/big-large.gif"
 
-    def test_gif_keeps_downsized_large_when_webp_over_upload_cap(
+    def test_omits_result_when_webp_and_gif_exceed_upload_cap(
         self, api_client, auth_headers, settings
     ):
         settings.GIPHY_API_KEY = "giphy-key"
@@ -216,7 +216,7 @@ class TestImageSearch:
         with patch("community._giphy.httpx.get", side_effect=_by_url(gif_payload=payload)):
             response = api_client.get(f"{_URL}?q=party", **auth_headers)
         assert response.status_code == 200
-        assert response.json()["results"][0]["original_url"] == "https://example.com/big-large.gif"
+        assert response.json()["results"] == []
 
     def test_malformed_gif_size_does_not_500(self, api_client, auth_headers, settings):
         settings.GIPHY_API_KEY = "giphy-key"

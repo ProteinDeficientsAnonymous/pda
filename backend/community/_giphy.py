@@ -50,7 +50,9 @@ def _full_gif_url(images: dict) -> str:
         and (not gif_size or webp_size <= gif_size)
     ):
         return webp_url
-    return gif_url
+    if gif_url and (not gif_size or gif_size <= _MAX_EVENT_PHOTO_SIZE):
+        return gif_url
+    return ""
 
 
 def _parse_gif(gif: dict) -> GiphyResult | None:

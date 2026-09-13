@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
 import { cn } from '@/utils/cn';
-import { cropImage } from '@/utils/cropImage';
+import { AVATAR_MAX_EDGE, cropImage } from '@/utils/cropImage';
 
 import {
   coverCrop,
@@ -37,7 +37,7 @@ interface Props {
 export function ImageCropDialog({
   file,
   shape = 'round',
-  outputSize = 512,
+  outputSize = AVATAR_MAX_EDGE,
   onCancel,
   onCrop,
 }: Props) {

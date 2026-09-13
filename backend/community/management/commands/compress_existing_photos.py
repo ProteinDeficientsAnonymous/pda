@@ -5,14 +5,21 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from users.models import User
 
-from community._image_compress import AVATAR_MAX_EDGE, EVENT_MAX_EDGE, compress_photo
+from community._image_compress import (
+    AVATAR_MAX_EDGE,
+    EVENT_MAX_EDGE,
+    UnsafeImageError,
+    compress_photo,
+)
 from community.models import Event
 
 
 class Command(BaseCommand):
     help = (
-        "Recompress stored event and profile photos into new objects; "
-        "originals stay in storage. Dry-run unless --commit."
+        "Recompress stored event and profile photos into new objects. "
+        "Always downloads every object (including dry-run). "
+        "Originals stay in storage and accumulate. Dry-run unless --commit. "
+        "skipped = already small, unreadable, or unsafe (pixel bomb)."
     )
 
     def add_arguments(self, parser):
@@ -46,12 +53,12 @@ class Command(BaseCommand):
     ) -> bool:
         field = getattr(instance, field_name)
         try:
-            field.open("rb")
-            try:
-                raw = field.read()
-            finally:
-                field.close()
+            with field.open("rb") as fh:
+                raw = fh.read()
             result = compress_photo(raw, max_edge)
+        except UnsafeImageError:
+            self.stdout.write(f"skip {field.name}: unsafe")
+            return False
         except OSError:
             self.stdout.write(f"skip {field.name}: cannot read")
             return False

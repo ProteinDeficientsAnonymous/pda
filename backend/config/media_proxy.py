@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import os
 import posixpath
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import caches
@@ -15,7 +16,8 @@ from config.memory import memory_profile_enabled, record_media_path_call
 logger = logging.getLogger("pda.media")
 
 # 6d: 1d slack vs S3 querystring_expire (7d) so we never serve a signature about to die.
-SIGNED_URL_CACHE_TTL = 60 * 60 * 24 * 6
+SIGNED_URL_CACHE_TTL = int(timedelta(days=6).total_seconds())
+_SIGNED_URL_CACHE_PREFIX = "media_url"
 
 # Content types we're willing to serve inline. Everything else (notably
 # text/html and image/svg+xml, which can execute JS on the app origin) is
@@ -37,8 +39,8 @@ def _signed_url_cache_key(field) -> str | None:
     if not name:
         return None
     updated = getattr(getattr(field, "instance", None), "photo_updated_at", None)
-    stamp = updated.isoformat() if hasattr(updated, "isoformat") else updated
-    return f"media_url:{name}:{stamp}"
+    stamp = updated.isoformat() if isinstance(updated, datetime) else updated
+    return f"{_SIGNED_URL_CACHE_PREFIX}:{name}:{stamp}"
 
 
 def media_path(field) -> str:

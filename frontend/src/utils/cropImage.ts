@@ -5,7 +5,18 @@ export interface CropArea {
   height: number;
 }
 
-export async function cropImage(source: Blob, area: CropArea, maxSize = 512): Promise<Blob> {
+/** Matches backend AVATAR_MAX_EDGE / EVENT_MAX_EDGE. */
+export const AVATAR_MAX_EDGE = 512;
+export const EVENT_MAX_EDGE = 1200;
+/** Canvas JPEG quality; matches backend `_QUALITY = 80`. */
+export const JPEG_QUALITY = 0.8;
+export const JPEG_TYPE = 'image/jpeg';
+
+export async function cropImage(
+  source: Blob,
+  area: CropArea,
+  maxSize = AVATAR_MAX_EDGE,
+): Promise<Blob> {
   const url = URL.createObjectURL(source);
   try {
     const img = await loadImage(url);
@@ -30,7 +41,7 @@ function fitToMaxSize(w: number, h: number, maxSize: number): { width: number; h
 }
 
 // iOS Safari can leave Image.onload / canvas.toBlob callbacks pending forever; bound them (issue 580).
-const IMAGE_OP_TIMEOUT_MS = 15000;
+export const IMAGE_OP_TIMEOUT_MS = 15000;
 
 function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -67,8 +78,8 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
           if (blob) resolve(blob);
           else reject(new Error('canvas.toBlob returned null'));
         },
-        'image/jpeg',
-        0.8,
+        JPEG_TYPE,
+        JPEG_QUALITY,
       );
     }),
     'timed out processing image',

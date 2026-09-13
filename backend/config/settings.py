@@ -80,6 +80,9 @@ CACHES = {
     "ratelimit": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
+        # Django default is 300. ~80 B2 objects today + short-lived rl: keys;
+        # 2k is ~10× photos plus rate-limit room before a cull.
+        "OPTIONS": {"MAX_ENTRIES": 2_000},
     },
 }
 

@@ -15,9 +15,13 @@ vi.mock('react-image-crop', () => ({
   makeAspectCrop: () => ({ unit: '%', x: 0, y: 0, width: 80, height: 80 }),
 }));
 
-vi.mock('@/utils/cropImage', () => ({
-  cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
-}));
+vi.mock('@/utils/cropImage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/cropImage')>();
+  return {
+    ...actual,
+    cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
+  };
+});
 
 beforeEach(() => {
   vi.stubGlobal('URL', {

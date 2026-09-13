@@ -209,6 +209,17 @@ class TestEventPhoto:
             assert im.format == "WEBP"
             assert im.n_frames == 12
 
+    def test_upload_rejects_pixel_bomb_gif(self, api_client, member, event, monkeypatch):
+        monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 96 * 96 * 3)
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": _animated_gif_file()},
+            **_auth(member),
+        )
+        assert response.status_code == 400
+        event.refresh_from_db()
+        assert not event.photo
+
     def test_upload_transcodes_gif_bytes_even_when_named_png(self, api_client, member, event):
         photo = _animated_gif_file(name="dance.png", content_type="image/png")
         response = api_client.post(

@@ -420,6 +420,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       const maxMb = typeof err.params?.max_mb === 'number' ? err.params.max_mb : null;
       return maxMb !== null ? `photo must be under ${String(maxMb)} mb` : 'photo is too large';
     }
+    case Code.Photo.Unsafe:
+      return "that photo can't be processed — try a smaller image";
 
     // Attendance import
     case Code.AttendanceImport.CsvEmpty:

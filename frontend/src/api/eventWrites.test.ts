@@ -257,6 +257,16 @@ describe('useUploadEventPhoto', () => {
     });
     const webp = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
     expect((webp.get('photo') as File).name).toBe('event.webp');
+
+    result.current.mutate({
+      eventId: EVENT_ID,
+      blob: new Blob(['x'], { type: 'image/gif' }),
+    });
+    await waitFor(() => {
+      expect(vi.mocked(apiClient.post).mock.calls).toHaveLength(2);
+    });
+    const gif = vi.mocked(apiClient.post).mock.calls[1][1] as FormData;
+    expect((gif.get('photo') as File).name).toBe('event.gif');
   });
 });
 
