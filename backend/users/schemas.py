@@ -5,7 +5,7 @@ from community._field_limits import FieldLimit
 from community._validation import Code, raise_validation
 from community.models.choices import EventType
 from config.media_proxy import media_path
-from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 
 from users._consents import ConsentType
 from users.models import User
@@ -38,11 +38,11 @@ def _empty_str_to_none(v: str | None) -> str | None:
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
-def _require_real_day(month: int | None, day: int, code: str) -> None:
+def _require_real_day(month: int | None, day: int, code: str, year: int | None = None) -> None:
     if month is None:
         return
     try:
-        date(2000, month, day)  # leap year: Feb 29 allowed when year is unknown
+        date(year if year is not None else 2000, month, day)
     except ValueError:
         raise_validation(code, field="day")
 
@@ -66,11 +66,10 @@ class BirthdayIn(BaseModel):
     day: int = Field(ge=1, le=31)
     year: int | None = Field(default=None, ge=1900, le=date.today().year)
 
-    @field_validator("day")
-    @classmethod
-    def _validate_day(cls, day: int, info) -> int:
-        _require_real_day(info.data.get("month"), day, Code.User.INVALID_BIRTHDAY)
-        return day
+    @model_validator(mode="after")
+    def _validate_day(self) -> "BirthdayIn":
+        _require_real_day(self.month, self.day, Code.User.INVALID_BIRTHDAY, self.year)
+        return self
 
 
 class VeganniversaryOut(BaseModel):
@@ -94,13 +93,11 @@ class VeganniversaryIn(BaseModel):
     day: int | None = Field(default=None, ge=1, le=31)
     year: int = Field(ge=1900, le=date.today().year)
 
-    @field_validator("day")
-    @classmethod
-    def _validate_day(cls, day: int | None, info) -> int | None:
-        if day is None:
-            return None
-        _require_real_day(info.data.get("month"), day, Code.User.INVALID_VEGANNIVERSARY)
-        return day
+    @model_validator(mode="after")
+    def _validate_day(self) -> "VeganniversaryIn":
+        if self.day is not None:
+            _require_real_day(self.month, self.day, Code.User.INVALID_VEGANNIVERSARY, self.year)
+        return self
 
 
 class LoginIn(BaseModel):

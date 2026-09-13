@@ -68,4 +68,19 @@ describe('VeganniversaryPrompt', () => {
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('saves a filled veganniversary when done is clicked without save', async () => {
+    const user = userEvent.setup();
+    renderPrompt();
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
+    await user.click(screen.getByRole('button', { name: /^done$/i }));
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        veganniversary: { month: 6, day: null, year: 2020 },
+        hasSeenVeganniversary: true,
+      });
+    });
+  });
 });

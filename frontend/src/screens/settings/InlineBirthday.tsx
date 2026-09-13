@@ -4,6 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import type { Veganniversary } from '@/models/user';
 import { formatBirthday, formatVeganniversary } from '@/utils/datetime';
 
 export interface DateParts {
@@ -11,6 +12,15 @@ export interface DateParts {
   day: number | null;
   year: number | null;
 }
+
+export interface DateDraft {
+  month: number | null;
+  day: number | null;
+  year: number | null;
+}
+
+const VEGANNIVERSARY_HINT =
+  "the exact date isn't required, but please let us know at least the month and year!";
 
 const MONTH_OPTIONS = [
   'january',
@@ -35,9 +45,16 @@ const YEARS = Array.from({ length: 120 }, (_, i) => {
 });
 const OPTIONAL_YEAR_OPTIONS = [{ value: NO_YEAR, label: 'prefer not to say' }, ...YEARS];
 
-function dayOptions(month: number | null) {
-  const count = month ? getDaysInMonth(new Date(2000, month - 1)) : 31;
-  return Array.from({ length: count }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+function daysInMonth(month: number | null, year: number | null) {
+  if (!month) return 31;
+  return getDaysInMonth(new Date(year ?? 2000, month - 1));
+}
+
+function dayOptions(month: number | null, year: number | null) {
+  return Array.from({ length: daysInMonth(month, year) }, (_, i) => ({
+    value: String(i + 1),
+    label: String(i + 1),
+  }));
 }
 
 function displayValue(value: DateParts, requireDay: boolean, requireYear: boolean): string {
@@ -58,6 +75,7 @@ export function InlineBirthday({
   hint,
   requireDay = true,
   requireYear = false,
+  onDraftChange,
 }: {
   label: string;
   value: DateParts | null;
@@ -66,6 +84,7 @@ export function InlineBirthday({
   hint?: ReactNode;
   requireDay?: boolean;
   requireYear?: boolean;
+  onDraftChange?: (draft: DateDraft | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [month, setMonth] = useState(value?.month ?? null);
@@ -75,11 +94,15 @@ export function InlineBirthday({
   const [error, setError] = useState<string | null>(null);
 
   function startEditing() {
-    setMonth(value?.month ?? null);
-    setDay(value?.day ?? null);
-    setYear(value?.year ?? null);
+    const nextMonth = value?.month ?? null;
+    const nextDay = value?.day ?? null;
+    const nextYear = value?.year ?? null;
+    setMonth(nextMonth);
+    setDay(nextDay);
+    setYear(nextYear);
     setError(null);
     setEditing(true);
+    onDraftChange?.({ month: nextMonth, day: nextDay, year: nextYear });
   }
 
   async function save(next: DateParts | null) {
@@ -88,6 +111,7 @@ export function InlineBirthday({
     try {
       await onSave(next);
       setEditing(false);
+      onDraftChange?.(null);
     } catch (err) {
       setError(extractApiErrorOr(err, "couldn't save — try again"));
     } finally {
@@ -127,21 +151,23 @@ export function InlineBirthday({
           placeholder="month"
           onChange={(e) => {
             const nextMonth = e.target.value ? Number(e.target.value) : null;
+            const nextDay = nextMonth && day && day > daysInMonth(nextMonth, year) ? null : day;
             setMonth(nextMonth);
-            if (nextMonth && day && day > getDaysInMonth(new Date(2000, nextMonth - 1))) {
-              setDay(null);
-            }
+            if (nextDay !== day) setDay(nextDay);
             if (error) setError(null);
+            onDraftChange?.({ month: nextMonth, day: nextDay, year });
           }}
         />
         <Select
           label="day"
-          options={dayOptions(month)}
+          options={dayOptions(month, year)}
           value={day ? String(day) : ''}
           placeholder="day"
           onChange={(e) => {
-            setDay(e.target.value ? Number(e.target.value) : null);
+            const nextDay = e.target.value ? Number(e.target.value) : null;
+            setDay(nextDay);
             if (error) setError(null);
+            onDraftChange?.({ month, day: nextDay, year });
           }}
         />
         <Select
@@ -150,8 +176,12 @@ export function InlineBirthday({
           value={year ? String(year) : ''}
           placeholder="year"
           onChange={(e) => {
-            setYear(e.target.value ? Number(e.target.value) : null);
+            const nextYear = e.target.value ? Number(e.target.value) : null;
+            const nextDay = month && day && day > daysInMonth(month, nextYear) ? null : day;
+            setYear(nextYear);
+            if (nextDay !== day) setDay(nextDay);
             if (error) setError(null);
+            onDraftChange?.({ month, day: nextDay, year: nextYear });
           }}
         />
       </div>
@@ -168,6 +198,7 @@ export function InlineBirthday({
           onClick={() => {
             setError(null);
             setEditing(false);
+            onDraftChange?.(null);
           }}
           disabled={saving}
         >
@@ -184,5 +215,28 @@ export function InlineBirthday({
         </Button>
       </div>
     </div>
+  );
+}
+
+export function InlineVeganniversary({
+  value,
+  onSave,
+  onDraftChange,
+}: {
+  value: DateParts | null;
+  onSave: (v: Veganniversary | null) => Promise<void>;
+  onDraftChange?: (draft: DateDraft | null) => void;
+}) {
+  return (
+    <InlineBirthday
+      label="veganniversary"
+      value={value}
+      onSave={(v) => onSave(v?.year != null ? { month: v.month, day: v.day, year: v.year } : null)}
+      placeholder="add your veganniversary"
+      requireDay={false}
+      requireYear
+      hint={VEGANNIVERSARY_HINT}
+      {...(onDraftChange ? { onDraftChange } : {})}
+    />
   );
 }
