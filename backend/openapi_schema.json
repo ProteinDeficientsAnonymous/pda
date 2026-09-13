@@ -4272,6 +4272,11 @@
             "title": "Upcoming Official Count",
             "type": "integer"
           },
+          "user_has_joined_whatsapp": {
+            "default": false,
+            "title": "User Has Joined Whatsapp",
+            "type": "boolean"
+          },
           "user_id": {
             "anyOf": [
               {

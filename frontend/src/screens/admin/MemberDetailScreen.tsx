@@ -90,6 +90,8 @@ function MemberDetailView({ member }: { member: Member }) {
         member={member}
       />
 
+      <MemberWhatsappSection member={member} />
+
       <MemberMagicLinkSection member={member} />
 
       {member.bio ? (
@@ -198,6 +200,31 @@ function MemberRolesSection({ member }: { member: Member }) {
   );
 }
 
+function MemberWhatsappSection({ member }: { member: Member }) {
+  const update = useUpdateUser(member.id);
+
+  async function onChange(checked: boolean) {
+    try {
+      await update.mutateAsync({ hasJoinedWhatsapp: checked });
+      toast.success(checked ? 'marked as joined whatsapp ✓' : 'marked as not on whatsapp ✓');
+    } catch (e) {
+      toast.error(extractError(e));
+    }
+  }
+
+  return (
+    <section className="mb-4">
+      <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">whatsapp</h2>
+      <Toggle
+        label="joined whatsapp"
+        checked={member.hasJoinedWhatsapp}
+        onChange={(v) => void onChange(v)}
+        disabled={update.isPending}
+      />
+    </section>
+  );
+}
+
 function MemberMagicLinkSection({ member }: { member: Member }) {
   const magic = useSendMemberMagicLink(member.id);
   const [url, setUrl] = useState<string | null>(null);
@@ -294,7 +321,6 @@ function MemberEditForm({
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [isPaused, setIsPaused] = useState(member.isPaused);
-  const [hasJoinedWhatsapp, setHasJoinedWhatsapp] = useState(member.hasJoinedWhatsapp);
   const [error, setError] = useState<string | null>(null);
   const targetIsAdmin = member.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
 
@@ -312,7 +338,6 @@ function MemberEditForm({
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (isPaused !== member.isPaused) patch.isPaused = isPaused;
-    if (hasJoinedWhatsapp !== member.hasJoinedWhatsapp) patch.hasJoinedWhatsapp = hasJoinedWhatsapp;
 
     if (Object.keys(patch).length === 0) {
       onSaved();
@@ -369,7 +394,6 @@ function MemberEditForm({
           setEmail(e.target.value);
         }}
       />
-      <Toggle label="joined whatsapp" checked={hasJoinedWhatsapp} onChange={setHasJoinedWhatsapp} />
       <Toggle
         label="pause account"
         checked={isPaused}

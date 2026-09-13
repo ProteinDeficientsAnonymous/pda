@@ -126,11 +126,9 @@ describe('MemberDetailScreen edit form', () => {
     });
   });
 
-  it('submits the joined whatsapp toggle when changed', async () => {
+  it('toggles joined whatsapp directly from the detail page', async () => {
     renderScreen();
-    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
     await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
-    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(updateMutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
   });
 

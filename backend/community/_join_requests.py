@@ -79,6 +79,7 @@ class JoinRequestOut(BaseModel):
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     onboarded_at: datetime | None = None
+    user_has_joined_whatsapp: bool = False
     # Prior engagement of the linked (non-member) user, so admins can gauge
     # involvement before approving. "attended" = host-marked ATTENDED;
     # "upcoming" = ATTENDING on a future event. All 0 when no user is attached.
@@ -227,6 +228,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         onboarded_at=user.onboarded_at if user else None,
+        user_has_joined_whatsapp=user.has_joined_whatsapp if user else False,
         attended_official_count=breakdown.attended_official,
         attended_club_count=breakdown.attended_club,
         upcoming_official_count=breakdown.upcoming_official,

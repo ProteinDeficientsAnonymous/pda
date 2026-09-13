@@ -11,6 +11,7 @@ import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { TentativeActions } from './JoinRequestTentativeSection';
+import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 
 export type Decision =
   | typeof JoinRequestStatus.APPROVED
@@ -124,6 +125,12 @@ export function JoinRequestCard({
                 re-send welcome
               </Button>
             </div>
+          ) : null}
+          {request.status === JoinRequestStatus.APPROVED && request.userId ? (
+            <JoinRequestWhatsappToggle
+              userId={request.userId}
+              checked={request.userHasJoinedWhatsapp}
+            />
           ) : null}
         </>
       )}

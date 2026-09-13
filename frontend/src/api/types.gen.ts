@@ -4121,6 +4121,11 @@ export interface components {
              * @default 0
              */
             upcoming_official_count: number;
+            /**
+             * User Has Joined Whatsapp
+             * @default false
+             */
+            user_has_joined_whatsapp: boolean;
             /** User Id */
             user_id?: string | null;
         };
