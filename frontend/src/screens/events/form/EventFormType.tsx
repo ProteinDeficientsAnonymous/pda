@@ -1,5 +1,6 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { Toggle } from '@/components/ui/Toggle';
+import { OFFICIAL_EVENT_CASHAPP_TAG } from '@/config/organization';
 import { EventType, EventVisibility } from '@/models/event';
 
 interface Props {
@@ -15,9 +16,11 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
 
   const setType = (type: EventFormValues['eventType']) => {
     const isPublicOnly = type === EventType.Official || type === EventType.Club;
+    const prefillCashapp = type === EventType.Official && !values.cashappLink.trim();
     onChange({
       eventType: type,
       ...(isPublicOnly ? { visibility: EventVisibility.Public } : {}),
+      ...(prefillCashapp ? { cashappLink: OFFICIAL_EVENT_CASHAPP_TAG } : {}),
     });
   };
 
