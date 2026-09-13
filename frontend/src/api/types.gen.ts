@@ -4188,6 +4188,8 @@ export interface components {
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
             weekly_digest_opt_out?: boolean | null;
+            /** Whatsapp Reminder Opt Out */
+            whatsapp_reminder_opt_out?: boolean | null;
         };
         /** MemberAttendanceAnalyticsOut */
         MemberAttendanceAnalyticsOut: {
@@ -5187,6 +5189,11 @@ export interface components {
              * @default false
              */
             weekly_digest_opt_out: boolean;
+            /**
+             * Whatsapp Reminder Opt Out
+             * @default false
+             */
+            whatsapp_reminder_opt_out: boolean;
         };
         /** UserPatchIn */
         UserPatchIn: {

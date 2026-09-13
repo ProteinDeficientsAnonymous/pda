@@ -346,3 +346,31 @@ def send_event_blast_email(
         html=html,
         text=text,
     )
+
+
+def send_whatsapp_join_reminder_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    whatsapp_url: str,
+    settings_url: str,
+) -> SendResult:
+    """Render and send the "you haven't joined the group chat yet" nudge.
+
+    ``settings_url`` points at the email preferences where they can opt out,
+    so the email always offers a way to stop receiving it.
+    """
+    context = {
+        "display_name": display_name or "",
+        "whatsapp_url": whatsapp_url,
+        "settings_url": settings_url,
+    }
+    html = render_to_string("emails/whatsapp_join_reminder.html", context)
+    text = render_to_string("emails/whatsapp_join_reminder.txt", context)
+    return sender.send(
+        to=to,
+        subject="don't forget to join the pda whatsapp",
+        html=html,
+        text=text,
+    )

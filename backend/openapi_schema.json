@@ -4573,6 +4573,17 @@
               }
             ],
             "title": "Weekly Digest Opt Out"
+          },
+          "whatsapp_reminder_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp Reminder Opt Out"
           }
         },
         "title": "MePatchIn",
@@ -6655,6 +6666,11 @@
           "weekly_digest_opt_out": {
             "default": false,
             "title": "Weekly Digest Opt Out",
+            "type": "boolean"
+          },
+          "whatsapp_reminder_opt_out": {
+            "default": false,
+            "title": "Whatsapp Reminder Opt Out",
             "type": "boolean"
           }
         },
