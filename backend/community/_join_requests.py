@@ -40,7 +40,7 @@ router = Router()
 
 # Approved members stay visible in the join requests list for this many days
 # after they complete onboarding, so admins can confirm someone logged in.
-APPROVED_GRACE_DAYS = 3
+APPROVED_GRACE_DAYS = 7
 
 
 class JoinRequestAnswerOut(BaseModel):

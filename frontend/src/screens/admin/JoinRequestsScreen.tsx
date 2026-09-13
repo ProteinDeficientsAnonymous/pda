@@ -262,7 +262,7 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
   if (filter === Filter.APPROVED) {
     return (
       <p className="text-muted mb-3 text-xs">
-        sorted newest first — approved members show here until 3 days after their first login, then
+        sorted newest first — approved members show here until 7 days after their first login, then
         this tab clears them out automatically
       </p>
     );
