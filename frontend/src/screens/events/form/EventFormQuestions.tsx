@@ -45,10 +45,10 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
             <li key={q.id}>
               <article className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {q.label}
+                  <p className="flex items-baseline text-sm font-medium">
+                    <span className="min-w-0 truncate">{q.label}</span>
                     {q.required ? (
-                      <span className="text-muted ms-1 text-xs">· required</span>
+                      <span className="text-muted ms-1 shrink-0 text-xs">· required</span>
                     ) : null}
                   </p>
                   <p className="text-muted text-xs">
