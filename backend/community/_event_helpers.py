@@ -18,13 +18,7 @@ from community._event_rsvp_answers import (
     find_my_questionnaire_responses,
 )
 from community._event_rsvp_serialize import event_rsvp_question_out, with_guest_photos
-from community._event_schemas import (
-    CancellationOut,
-    EventOut,
-    EventSurveyOut,
-    RSVPGuestOut,
-    TagOut,
-)
+from community._event_schemas import CancellationOut, EventOut, EventSurveyOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
     _attending_headcount_db,
@@ -284,13 +278,6 @@ def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     event.tags.set(tags)
 
 
-def _linked_surveys_out(event: Event) -> list[EventSurveyOut]:
-    return [
-        EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
-        for s in event.surveys.filter(is_active=True)
-    ]
-
-
 def _get_datetime_poll_slug(event: Event) -> str | None:
     poll_survey = (
         event.surveys.filter(
@@ -437,7 +424,10 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         visibility=event.visibility,
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
-        linked_surveys=_linked_surveys_out(event),
+        linked_surveys=[
+            EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
+            for s in event.surveys.filter(is_active=True)
+        ],
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
