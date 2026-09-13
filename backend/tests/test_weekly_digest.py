@@ -235,7 +235,9 @@ class TestSendWeeklyDigestCommand:
         utc_clock = start.astimezone(UTC).strftime("%I:%M %p").lstrip("0").lower()
         assert utc_clock not in text
 
-    def test_includes_veganversaries_in_first_week_grouped_by_years(self, fake_sender, monkeypatch):
+    def test_includes_veganniversaries_in_first_week_grouped_by_years(
+        self, fake_sender, monkeypatch
+    ):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
         _make_member("+12025550219")
         ada = _make_member(
@@ -285,21 +287,37 @@ class TestSendWeeklyDigestCommand:
             veganniversary_month=7,
             veganniversary_day=15,
             veganniversary_year=2018,
+            veganniversary_shoutout_opt_in=True,
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
         assert "veganniversary" not in text
 
-    def test_omits_veganversaries_after_first_week(self, fake_sender, monkeypatch):
+    def test_includes_veganniversaries_on_the_7th(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 7, 12, 0, 0))
         _make_member("+12025550225")
         _make_member(
             "+12025550226",
             first_name="Eve",
             veganniversary_month=6,
-            veganniversary_day=8,
             veganniversary_year=2023,
+            veganniversary_shoutout_opt_in=True,
+        )
+        call_command("send_weekly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        assert "eve" in text
+        assert "3 years" in text
+
+    def test_omits_veganniversaries_after_the_7th(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 6, 8, 12, 0, 0))
+        _make_member("+12025550229")
+        _make_member(
+            "+12025550230",
+            first_name="Eve",
+            veganniversary_month=6,
+            veganniversary_year=2023,
+            veganniversary_shoutout_opt_in=True,
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
@@ -317,7 +335,7 @@ class TestSendWeeklyDigestCommand:
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
-    def test_sends_digest_when_only_veganversaries_this_month(self, fake_sender, monkeypatch):
+    def test_sends_digest_when_only_veganniversaries_this_month(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
         _make_member(
             "+12025550228",

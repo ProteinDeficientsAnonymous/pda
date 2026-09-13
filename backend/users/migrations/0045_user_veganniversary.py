@@ -9,17 +9,32 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="user",
-            name="veganversary_day",
+            name="veganniversary_day",
             field=models.PositiveSmallIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name="user",
-            name="veganversary_month",
+            name="veganniversary_month",
             field=models.PositiveSmallIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name="user",
-            name="veganversary_year",
+            name="veganniversary_year",
             field=models.PositiveSmallIntegerField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name="user",
+            name="show_veganniversary",
+            field=models.BooleanField(default=True),
+        ),
+        migrations.AddField(
+            model_name="user",
+            name="veganniversary_shoutout_opt_in",
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name="user",
+            name="has_seen_veganniversary",
+            field=models.BooleanField(default=False),
         ),
     ]

@@ -22,7 +22,7 @@ def _format_event_when(event: Event) -> str:
 
 def veganniversary_groups(*, now, users) -> list[dict]:
     today = timezone.localtime(now).date()
-    if today.day >= 7:
+    if today.day > 7:
         return []
     grouped: dict[int, list[dict]] = defaultdict(list)
     for user in users:
@@ -38,13 +38,13 @@ def veganniversary_groups(*, now, users) -> list[dict]:
             }
         )
     return [
-        {"years": y, "label": "1 year" if y == 1 else f"{y} years", "people": people}
+        {"label": "1 year" if y == 1 else f"{y} years", "people": people}
         for y, people in sorted(grouped.items(), reverse=True)
     ]
 
 
 class Command(BaseCommand):
-    help = "Email active members a digest of events starting in the next 7 days."
+    help = "Email active members a digest of upcoming events and this month's veganniversaries."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -52,15 +52,14 @@ class Command(BaseCommand):
             help="send one digest to this address instead of the membership (provider smoke test)",
         )
 
-    def _send_test(self, sender, to: str, events: list[dict], urls: dict[str, object]) -> None:
+    def _send_test(self, sender, to: str, payload: dict) -> None:
         """Send one real digest to an explicit address so a provider swap can be verified live."""
         user = User.objects.filter(email__iexact=to).first()
         result = send_weekly_digest_email(
             sender=sender,
             to=to,
             display_name=user.first_name if user else "",
-            events=events,
-            urls=urls,
+            **payload,
         )
         if not result.success:
             raise CommandError(f"test digest failed: {result.error}")
@@ -99,18 +98,21 @@ class Command(BaseCommand):
             .exclude(first_name=""),
         )
         if not events and not groups:
-            logger.info("send_weekly_digest: no upcoming events, skipped")
-            self.stdout.write(self.style.SUCCESS("No upcoming events; sent 0 digest(s)."))
+            logger.info("send_weekly_digest: no upcoming events or veganniversaries, skipped")
+            self.stdout.write(self.style.SUCCESS("Nothing to send; sent 0 digest(s)."))
             return
 
-        urls = {
-            "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
-            "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
+        payload = {
+            "events": events,
+            "urls": {
+                "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
+                "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
+            },
             "veganniversaries": groups,
         }
         sender = get_email_sender(EmailStream.BULK)
         if options["to"]:
-            self._send_test(sender, options["to"], events, urls)
+            self._send_test(sender, options["to"], payload)
             return
 
         sent_count = 0
@@ -126,8 +128,7 @@ class Command(BaseCommand):
                 sender=sender,
                 to=user.email,
                 display_name=user.first_name,
-                events=events,
-                urls=urls,
+                **payload,
             )
             if result.success:
                 sent_count += 1

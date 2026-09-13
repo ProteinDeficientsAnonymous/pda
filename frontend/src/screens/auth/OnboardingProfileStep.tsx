@@ -5,11 +5,20 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
-import { InlineBirthday } from '@/screens/settings/InlineBirthday';
+import {
+  type DateDraft,
+  InlineBirthday,
+  InlineVeganniversary,
+} from '@/screens/settings/InlineBirthday';
 import { PrivacyToggles } from '@/screens/settings/PrivacyToggles';
 import { extractApiError } from '@/utils/errors';
 
 const MAX_BIO = 500;
+
+function completeDraft(draft: DateDraft | null) {
+  if (draft?.month == null || draft.year == null) return undefined;
+  return { month: draft.month, day: draft.day, year: draft.year };
+}
 
 interface Props {
   onDone: () => void;
@@ -20,6 +29,7 @@ export function OnboardingProfileStep({ onDone }: Props) {
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const [bio, setBio] = useState('');
   const [pronouns, setPronouns] = useState('');
+  const [draft, setDraft] = useState<DateDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +39,12 @@ export function OnboardingProfileStep({ onDone }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await updateProfile({ ...extra, hasSeenVeganniversary: true });
+      const veganniversary = completeDraft(draft);
+      await updateProfile({
+        ...extra,
+        hasSeenVeganniversary: true,
+        ...(veganniversary ? { veganniversary } : {}),
+      });
       onDone();
     } catch (err) {
       setError(extractApiError(err, "couldn't save your profile — try again"));
@@ -86,18 +101,10 @@ export function OnboardingProfileStep({ onDone }: Props) {
         }
         placeholder="add your birthday"
       />
-      <InlineBirthday
-        label="veganniversary"
+      <InlineVeganniversary
         value={user.veganniversary}
-        onSave={(v) =>
-          updateProfile({
-            veganniversary: v?.year != null ? { month: v.month, day: v.day, year: v.year } : null,
-          })
-        }
-        placeholder="add your veganniversary"
-        requireDay={false}
-        requireYear
-        hint="the exact date isn't required, but please let us know at least the month and year!"
+        onSave={(veganniversary) => updateProfile({ veganniversary })}
+        onDraftChange={setDraft}
       />
       <div>
         <p className="text-foreground-tertiary mb-2 text-sm">privacy</p>

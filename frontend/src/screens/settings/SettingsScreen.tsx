@@ -18,7 +18,7 @@ import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { EmailPreferences } from './EmailPreferences';
-import { InlineBirthday } from './InlineBirthday';
+import { InlineBirthday, InlineVeganniversary } from './InlineBirthday';
 import { PrivacyToggles } from './PrivacyToggles';
 
 export default function SettingsScreen() {
@@ -83,18 +83,9 @@ export default function SettingsScreen() {
           }
           placeholder="add your birthday"
         />
-        <InlineBirthday
-          label="veganniversary"
+        <InlineVeganniversary
           value={user.veganniversary}
-          onSave={(v) =>
-            updateProfile({
-              veganniversary: v?.year != null ? { month: v.month, day: v.day, year: v.year } : null,
-            })
-          }
-          placeholder="add your veganniversary"
-          requireDay={false}
-          requireYear
-          hint="the exact date isn't required, but please let us know at least the month and year!"
+          onSave={(veganniversary) => updateProfile({ veganniversary })}
         />
       </Section>
 

@@ -36,10 +36,7 @@ export function formatBirthday(birthday: Birthday): string {
 }
 
 export function formatVeganniversary(v: Veganniversary): string {
+  if (v.day) return formatBirthday({ month: v.month, day: v.day, year: v.year });
   const month = format(new Date(2000, v.month - 1, 1), 'MMMM').toLowerCase();
-  if (v.day) {
-    const monthDay = format(new Date(2000, v.month - 1, v.day), 'MMMM d').toLowerCase();
-    return `${monthDay}, ${String(v.year)}`;
-  }
   return `${month} ${String(v.year)}`;
 }
