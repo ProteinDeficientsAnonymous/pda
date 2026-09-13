@@ -25,13 +25,12 @@ export function JoinRequestWhatsappToggle({
   }
 
   return (
-    <div className="mt-3 max-w-xs">
-      <Toggle
-        label="joined whatsapp"
-        checked={checked}
-        onChange={(v) => void onChange(v)}
-        disabled={update.isPending}
-      />
-    </div>
+    <Toggle
+      className="mt-3 w-fit flex-row-reverse justify-end"
+      label="joined whatsapp"
+      checked={checked}
+      onChange={(v) => void onChange(v)}
+      disabled={update.isPending}
+    />
   );
 }
