@@ -74,11 +74,15 @@ AUTH_USER_MODEL = "users.User"
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
+# Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.
 CACHES = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
     "ratelimit": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
+        # Django default is 300. ~80 B2 objects today + short-lived rl: keys;
+        # 2k is ~10× photos plus rate-limit room before a cull.
+        "OPTIONS": {"MAX_ENTRIES": 2_000},
     },
 }
 

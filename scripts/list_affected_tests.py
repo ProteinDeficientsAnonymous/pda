@@ -81,6 +81,9 @@ COMMUNITY_TESTS: frozenset[str] = frozenset(
         "tests/test_feedback.py",
         "tests/test_docs.py",
         "tests/test_photos.py",
+        "tests/test_giphy.py",
+        "tests/test_image_compress.py",
+        "tests/test_compress_existing_photos.py",
         "tests/test_prosemirror_html.py",
         "tests/test_delta_html.py",
         "tests/test_cohost_notifications.py",
@@ -94,6 +97,7 @@ CONFIG_TESTS: frozenset[str] = frozenset(
         "tests/test_logging.py",
         "tests/test_api.py",
         "tests/test_sse.py",
+        "tests/test_media_path.py",
     }
 )
 

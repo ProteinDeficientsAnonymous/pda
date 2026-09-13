@@ -1,4 +1,6 @@
 import io
+import os
+from unittest.mock import patch
 
 import pytest
 from community.models import Event
@@ -23,6 +25,26 @@ def _make_test_image(fmt="JPEG", size=(20, 20)):
     return SimpleUploadedFile(
         f"test.{fmt.lower()}", buf.read(), content_type=ct.get(fmt, "image/jpeg")
     )
+
+
+def _noisy_png_file(name="photo.png"):
+    buf = io.BytesIO()
+    Image.frombytes("RGB", (240, 240), os.urandom(240 * 240 * 3)).save(buf, format="PNG")
+    return SimpleUploadedFile(name, buf.getvalue(), content_type="image/png")
+
+
+def _animated_gif_file(name="dance.gif", content_type="image/gif"):
+    frames = [Image.new("RGB", (96, 96), (i * 20, 40, 180)) for i in range(12)]
+    buf = io.BytesIO()
+    frames[0].save(
+        buf,
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=80,
+        loop=0,
+    )
+    return SimpleUploadedFile(name, buf.getvalue(), content_type=content_type)
 
 
 def _auth(user):
@@ -78,6 +100,13 @@ class TestProfilePhoto:
         assert member.profile_photo
         assert member.photo_updated_at is not None
 
+    def test_upload_transcodes_png_avatar_to_jpeg(self, api_client, member):
+        photo = _noisy_png_file(name="avatar.png")
+        response = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        assert response.status_code == 200
+        member.refresh_from_db()
+        assert member.profile_photo.name.endswith(".jpg")
+
     def test_upload_replaces_existing(self, api_client, member):
         photo1 = _make_test_image()
         api_client.post("/api/auth/me/photo/", {"photo": photo1}, **_auth(member))
@@ -131,6 +160,56 @@ class TestEventPhoto:
         assert data["photo_updated_at"] is not None
         event.refresh_from_db()
         assert event.photo_updated_at is not None
+
+    def test_upload_transcodes_animated_gif_to_webp(self, api_client, member, event):
+        photo = _animated_gif_file()
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": photo},
+            **_auth(member),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.photo.name.endswith(".webp")
+        with Image.open(event.photo) as im:
+            assert im.format == "WEBP"
+            assert im.n_frames == 12
+
+    def test_upload_rejects_pixel_bomb_gif(self, api_client, member, event, monkeypatch):
+        monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 96 * 96 * 3)
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": _animated_gif_file()},
+            **_auth(member),
+        )
+        assert response.status_code == 400
+        event.refresh_from_db()
+        assert not event.photo
+
+    @pytest.mark.parametrize("fail", ["compress", "store"])
+    def test_failed_write_keeps_existing_photo(self, api_client, member, event, fail):
+        api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": _make_test_image()},
+            **_auth(member),
+        )
+        event.refresh_from_db()
+        old_name = event.photo.name
+        if fail == "compress":
+            ctx = patch("community._event_actions.stored_photo", side_effect=RuntimeError("boom"))
+            expected: type[Exception] = RuntimeError
+        else:
+            ctx = patch.object(default_storage, "save", side_effect=OSError("b2 down"))
+            expected = OSError
+        with ctx, pytest.raises(expected):
+            api_client.post(
+                f"/api/community/events/{event.id}/photo/",
+                {"photo": _make_test_image()},
+                **_auth(member),
+            )
+        event.refresh_from_db()
+        assert event.photo.name == old_name
+        assert default_storage.exists(old_name)
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()

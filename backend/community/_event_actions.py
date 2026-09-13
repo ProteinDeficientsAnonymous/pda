@@ -5,7 +5,6 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
-from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
@@ -17,6 +16,7 @@ from community._event_schemas import (
     _MAX_EVENT_PHOTO_SIZE,
     EventOut,
 )
+from community._image_compress import EVENT_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event
@@ -66,14 +66,11 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         raise_validation(Code.Perm.DENIED, status_code=403, action="upload_event_photo")
     if event.is_cancelled:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
-    if event.photo:
-        event.photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    ts = int(time.time())
-    event.photo.save(f"{event_id}_{ts}.{ext}", photo, save=False)
-    event.photo_updated_at = timezone.now()
-    event.save(update_fields=["photo", "photo_updated_at"])
+    try:
+        body, ext = stored_photo(photo.read(), photo.name or "", EVENT_MAX_EDGE)
+    except UnsafeImageError:
+        raise_validation(Code.Photo.UNSAFE, field="photo", status_code=400)
+    commit_photo(event, "photo", f"{event_id}_{int(time.time())}.{ext}", body)
     audit_log(
         logging.INFO,
         "event_photo_uploaded",

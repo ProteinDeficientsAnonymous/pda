@@ -788,6 +788,11 @@
         "params": [
           "max_mb"
         ]
+      },
+      {
+        "name": "UNSAFE",
+        "value": "photo.unsafe",
+        "params": []
       }
     ],
     "AttendanceImport": [

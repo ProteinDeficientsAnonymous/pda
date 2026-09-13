@@ -1,7 +1,9 @@
 """Authentication endpoints (login, token refresh, me)."""
 
 import logging
+import time
 
+from community._image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
@@ -206,7 +208,8 @@ def update_me(request, payload: MePatchIn):
     return Status(200, UserOut.from_user(user))
 
 
-@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=gated_jwt)
+@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut, 429: ErrorOut}, auth=gated_jwt)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
     if photo.content_type not in _ALLOWED_IMAGE_TYPES:
         raise_validation(
@@ -223,13 +226,11 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
             max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
         )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    if user.profile_photo:
-        user.profile_photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
-    user.photo_updated_at = timezone.now()
-    user.save(update_fields=["profile_photo", "photo_updated_at"])
+    try:
+        body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
+    except UnsafeImageError:
+        raise_validation(Code.Photo.UNSAFE, field="photo", status_code=400)
+    commit_photo(user, "profile_photo", f"{user.pk}_{int(time.time())}.{ext}", body)
     audit_log(
         logging.INFO,
         "profile_photo_uploaded",

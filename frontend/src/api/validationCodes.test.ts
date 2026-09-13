@@ -29,6 +29,16 @@ describe('messageForCode', () => {
     expect(out).toContain('must contain a number');
   });
 
+  it('explains an unsafe photo', () => {
+    expect(
+      messageForCode({
+        code: Code.Photo.Unsafe,
+        field: 'photo',
+        params: {},
+      }),
+    ).toMatch(/smaller image/i);
+  });
+
   it('interpolates photo max size', () => {
     const out = messageForCode({
       code: Code.Photo.TooLarge,

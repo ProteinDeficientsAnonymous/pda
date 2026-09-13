@@ -56,7 +56,7 @@ export function AvatarUpload({ size = 'md' }: Props) {
   async function onCrop(blob: Blob) {
     setError(null);
     try {
-      const cropped = new File([blob], 'avatar.png', { type: 'image/png' });
+      const cropped = new File([blob], 'avatar.jpg', { type: blob.type || 'image/jpeg' });
       await upload(cropped);
       setFile(null);
     } catch (err) {

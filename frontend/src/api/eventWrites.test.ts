@@ -224,6 +224,22 @@ describe('useUploadEventPhoto', () => {
       expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
     );
   });
+
+  it.each([
+    ['image/jpeg', 'event.jpg'],
+    ['image/webp', 'event.webp'],
+    ['image/gif', 'event.gif'],
+  ])('names the upload %s as %s', async (type, name) => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
+    const { Wrapper } = buildWrapper();
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type }) });
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    const formData = vi.mocked(apiClient.post).mock.calls[0]![1] as FormData;
+    expect((formData.get('photo') as File).name).toBe(name);
+  });
 });
 
 describe('useUpdateEvent cache patching', () => {

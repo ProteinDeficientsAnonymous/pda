@@ -4,6 +4,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { PhotoLibraryDialog } from '@/components/PhotoLibraryDialog';
 import { cn } from '@/utils/cn';
+import { EVENT_MAX_EDGE } from '@/utils/cropImage';
 import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 interface Props {
@@ -108,7 +109,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         <ImageCropDialog
           file={cropFile}
           shape="rect"
-          outputSize={1200}
+          outputSize={EVENT_MAX_EDGE}
           onCancel={() => {
             setCropFile(null);
           }}

@@ -180,6 +180,7 @@ export const Code = {
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
     TooLarge: 'photo.too_large',
+    Unsafe: 'photo.unsafe',
   },
   AttendanceImport: {
     CsvEmpty: 'attendance_import.csv_empty',
@@ -384,6 +385,7 @@ export type ValidationCode =
   | 'join_request.guidelines_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
+  | 'photo.unsafe'
   | 'attendance_import.csv_empty'
   | 'attendance_import.csv_malformed'
   | 'attendance_import.event_or_title_required'
@@ -558,6 +560,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.guidelines_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
+  'photo.unsafe': [],
   'attendance_import.csv_empty': [],
   'attendance_import.csv_malformed': [],
   'attendance_import.event_or_title_required': [],
