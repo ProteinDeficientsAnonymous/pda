@@ -39,6 +39,11 @@ describe('buildSmsHref', () => {
     const href = buildSmsHref('+15551234567', 'hi 🌱\nlink: https://x/y?z=1');
     expect(href).toContain('body=hi%20%F0%9F%8C%B1%0Alink%3A%20https%3A%2F%2Fx%2Fy%3Fz%3D1');
   });
+
+  it('omits the body param entirely when no body is given', () => {
+    setUserAgent(IPHONE_UA);
+    expect(buildSmsHref('+15551234567')).toBe('sms:+15551234567');
+  });
 });
 
 describe('buildWelcomeMessage', () => {
@@ -130,5 +135,9 @@ describe('buildWhatsAppHref', () => {
   it('handles digits-only input', () => {
     const href = buildWhatsAppHref('12025551234', 'hi');
     expect(href).toBe('https://wa.me/12025551234?text=hi');
+  });
+
+  it('omits the text param entirely when no body is given', () => {
+    expect(buildWhatsAppHref('+1 (202) 555-1234')).toBe('https://wa.me/12025551234');
   });
 });

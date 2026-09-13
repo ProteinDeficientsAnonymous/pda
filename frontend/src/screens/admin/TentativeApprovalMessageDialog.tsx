@@ -4,6 +4,7 @@ import { useTentativeApprovalMessage, useWhatsAppLink } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { SendLink } from '@/components/ui/SendLink';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
 import {
@@ -91,22 +92,5 @@ export function TentativeApprovalMessageDialog({
         template={templateQ.data ?? null}
       />
     </>
-  );
-}
-
-function SendLink({ href, label, disabled }: { href: string; label: string; disabled: boolean }) {
-  const className =
-    'focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none';
-  if (disabled) {
-    return (
-      <span aria-disabled="true" className={`${className} cursor-not-allowed opacity-50`}>
-        {label}
-      </span>
-    );
-  }
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-      {label}
-    </a>
   );
 }

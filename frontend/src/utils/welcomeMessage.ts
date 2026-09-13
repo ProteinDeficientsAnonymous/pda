@@ -32,7 +32,8 @@ export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars)
     .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink);
 }
 
-export function buildSmsHref(phoneNumber: string, body: string): string {
+export function buildSmsHref(phoneNumber: string, body?: string): string {
+  if (!body) return `sms:${phoneNumber}`;
   // iOS expects `&body=` after the number; Android/others use `?body=`.
   // Using the wrong separator on iOS causes Messages to show the raw URL
   // instead of opening a draft.
@@ -43,7 +44,8 @@ export function buildSmsHref(phoneNumber: string, body: string): string {
 
 // wa.me deeplink — works with personal WhatsApp; no business API needed.
 // Phone must be digits-only (E.164 minus the `+`).
-export function buildWhatsAppHref(phoneNumber: string, body: string): string {
+export function buildWhatsAppHref(phoneNumber: string, body?: string): string {
   const digits = phoneNumber.replace(/\D/g, '');
+  if (!body) return `https://wa.me/${digits}`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(body)}`;
 }
