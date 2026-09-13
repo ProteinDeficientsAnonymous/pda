@@ -1,3 +1,10 @@
+# [0.103.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.102.0...v0.103.0) (2026-09-13)
+
+
+### Features
+
+* **events:** 1436 - auto-fill the cashapp tag for official events ([#1452](https://github.com/ProteinDeficientsAnonymous/pda/issues/1452)) ([e946f51](https://github.com/ProteinDeficientsAnonymous/pda/commit/e946f510478c0365949241fbff3976a7894718a3))
+
 # [0.102.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.101.1...v0.102.0) (2026-09-13)
 
 
