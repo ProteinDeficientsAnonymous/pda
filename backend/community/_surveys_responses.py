@@ -18,6 +18,18 @@ from community.models import Survey, SurveyResponse
 router = Router()
 
 
+def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyResponseOut:
+    """attribute=False masks the responder, for anonymous surveys."""
+    show = attribute and r.user is not None
+    return SurveyResponseOut(
+        id=str(r.id),
+        user_id=str(r.user_id) if show else None,
+        user_name=visible_display_name(r.user, viewer) if show else None,
+        answers=r.answers,
+        submitted_at=r.submitted_at,
+    )
+
+
 @router.get(
     "/surveys/{survey_id}/responses/",
     response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
@@ -45,19 +57,10 @@ def list_survey_responses(request, survey_id: UUID):
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     responses = survey.responses.select_related("user").all()
-    return Status(
-        200,
-        [
-            SurveyResponseOut(
-                id=str(r.id),
-                user_id=str(r.user_id) if r.user_id else None,
-                user_name=visible_display_name(r.user, request.auth) if r.user else None,
-                answers=r.answers,
-                submitted_at=r.submitted_at,
-            )
-            for r in responses
-        ],
-    )
+    # A survey flipped to anonymous still holds the user FK on responses collected
+    # before the flip — never hand those identities back out.
+    attribute = not survey.anonymous
+    return Status(200, [_admin_response_out(r, request.auth, attribute) for r in responses])
 
 
 @router.delete(

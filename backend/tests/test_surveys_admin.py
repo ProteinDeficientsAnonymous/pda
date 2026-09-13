@@ -86,3 +86,37 @@ class TestDeleteSurveyResponse:
         )
         assert resp.status_code == 404
         assert_error_code(resp, Code.Survey.RESPONSE_NOT_FOUND)
+
+
+# ---------------------------------------------------------------------------
+# Response listing must not attribute an anonymous survey (Issue 1466)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestListSurveyResponsesAnonymity:
+    def _url(self, survey_id):
+        return f"/api/community/surveys/{survey_id}/responses/"
+
+    def test_lists_responder_on_a_normal_survey(self, api_client, surveys_admin_headers, test_user):
+        survey = Survey.objects.create(title="Named", slug="named-1466")
+        SurveyResponse.objects.create(survey=survey, user=test_user, answers={})
+        resp = api_client.get(self._url(survey.id), **surveys_admin_headers)
+        assert resp.status_code == 200
+        row = resp.json()[0]
+        assert row["user_id"] == str(test_user.pk)
+        assert row["user_name"]
+
+    def test_masks_identities_collected_before_the_anonymous_flip(
+        self, api_client, surveys_admin_headers, test_user
+    ):
+        survey = Survey.objects.create(title="Was named", slug="flipped-1466")
+        SurveyResponse.objects.create(survey=survey, user=test_user, answers={})
+        survey.anonymous = True
+        survey.save(update_fields=["anonymous"])
+
+        resp = api_client.get(self._url(survey.id), **surveys_admin_headers)
+        assert resp.status_code == 200
+        row = resp.json()[0]
+        assert row["user_id"] is None
+        assert row["user_name"] is None

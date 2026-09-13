@@ -174,6 +174,9 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.isActive !== undefined) body.is_active = patch.isActive;
       if (patch.oneResponsePerUser !== undefined)
         body.one_response_per_user = patch.oneResponsePerUser;
+      if (patch.anonymous !== undefined) body.anonymous = patch.anonymous;
+      if (patch.confirmationMessage !== undefined)
+        body.confirmation_message = patch.confirmationMessage;
       if (patch.linkedEventId !== undefined) body.linked_event_id = patch.linkedEventId;
       const { data } = await apiClient.patch<WireSurveyFull>(
         `/api/community/surveys/${surveyId}/`,

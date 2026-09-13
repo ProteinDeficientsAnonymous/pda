@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
@@ -169,6 +170,45 @@ class TestAnonymousSurveySubmit:
         assert response.json()["user_id"] is None
         stored = SurveyResponse.objects.get(survey=anonymous_survey)
         assert stored.user_id is None
+
+    def test_submit_leaves_no_attributed_audit_row(
+        self, api_client, auth_headers, anonymous_survey, django_capture_on_commit_callbacks
+    ):
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        with django_capture_on_commit_callbacks(execute=True):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        entry = AuditLogEntry.objects.get(action="survey_response_submitted")
+        assert entry.actor_id is None
+        assert entry.actor_label == "anonymous"
+        assert entry.ip_address is None
+
+    def test_non_anonymous_submit_still_records_the_actor(
+        self,
+        api_client,
+        auth_headers,
+        test_user,
+        public_text_survey,
+        django_capture_on_commit_callbacks,
+    ):
+        question = public_text_survey.questions.first()
+        url = f"/api/community/surveys/view/{public_text_survey.slug}/respond/"
+        with django_capture_on_commit_callbacks(execute=True):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        entry = AuditLogEntry.objects.get(action="survey_response_submitted")
+        assert entry.actor_id == test_user.pk
 
     def test_one_response_per_user_does_not_dedupe_anonymous(
         self, api_client, auth_headers, anonymous_survey

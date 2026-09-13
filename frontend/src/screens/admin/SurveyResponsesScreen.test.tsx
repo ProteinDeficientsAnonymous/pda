@@ -125,7 +125,8 @@ describe('SurveyResponsesScreen delete action', () => {
     const dialog = screen.getByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'delete' }));
 
-    expect(deleteMutate).toHaveBeenCalledWith('r1');
+    expect(deleteMutate).toHaveBeenCalledTimes(1);
+    expect(deleteMutate.mock.calls[0]?.[0]).toBe('r1');
   });
 
   it('does not delete a response when cancelled', async () => {

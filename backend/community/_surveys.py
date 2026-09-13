@@ -1,4 +1,4 @@
-"""Survey CRUD, questions, and response endpoints."""
+"""Survey CRUD and question endpoints."""
 
 import logging
 from uuid import UUID

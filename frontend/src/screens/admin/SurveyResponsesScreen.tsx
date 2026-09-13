@@ -43,7 +43,11 @@ export default function SurveyResponsesScreen() {
       destructive: true,
     });
     if (!ok) return;
-    deleteResponse.mutate(response.id);
+    deleteResponse.mutate(response.id, {
+      onError: (err) => {
+        toast.error(extractApiErrorOr(err, "couldn't delete that response — try again"));
+      },
+    });
   }
 
   if (survey.isPending || responses.isPending) return <ContentLoading />;
@@ -104,7 +108,9 @@ export default function SurveyResponsesScreen() {
                     {q.label}
                   </th>
                 ))}
-                <th className="px-3 py-2" />
+                <th className="px-3 py-2">
+                  <span className="sr-only">actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -146,7 +146,7 @@ def _tally_str_answer(
 
 
 def _tally_question(
-    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None
+    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None, include_voters: bool = True
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
@@ -158,7 +158,7 @@ def _tally_question(
         if not answer_data:
             continue
         answer = answer_data.get("answer")
-        voter = _voter_out(r.user, viewer) if r.user else None
+        voter = _voter_out(r.user, viewer) if r.user and include_voters else None
         if isinstance(answer, dict):
             _tally_dict_answer(answer, counts, voters, voter)
         elif isinstance(answer, str):
