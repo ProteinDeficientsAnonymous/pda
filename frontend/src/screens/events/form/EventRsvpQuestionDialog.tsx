@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
 
 import {
   newQuestionId,
@@ -112,16 +113,7 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
             maxLength={MAX_OPTION_LENGTH}
           />
         ) : null}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={required}
-            onChange={(e) => {
-              setRequired(e.target.checked);
-            }}
-          />
-          <span>required</span>
-        </label>
+        <Toggle checked={required} onChange={setRequired} label="required" />
         {error ? (
           <p role="alert" className="text-destructive text-sm">
             {error}
