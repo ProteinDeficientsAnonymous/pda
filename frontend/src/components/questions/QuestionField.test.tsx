@@ -12,6 +12,7 @@ const base: SurveyQuestion = {
   options: [],
   required: true,
   displayOrder: 0,
+  showIf: null,
 };
 
 describe('QuestionField', () => {

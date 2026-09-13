@@ -121,6 +121,7 @@ export default function SurveyBuilderScreen() {
                   <p className="text-muted text-xs">
                     {q.fieldType}
                     {q.options.length > 0 ? ` · ${String(q.options.length)} options` : ''}
+                    {q.showIf ? ' · conditional' : ''}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -153,6 +154,7 @@ export default function SurveyBuilderScreen() {
         onClose={() => {
           setCreating(false);
         }}
+        questions={currentSurvey.questions}
       />
       <SurveyQuestionDialog
         surveyId={surveyId}
@@ -160,6 +162,7 @@ export default function SurveyBuilderScreen() {
         onClose={() => {
           setEditing(null);
         }}
+        questions={currentSurvey.questions}
         existing={editing ?? undefined}
       />
 
