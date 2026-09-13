@@ -6,9 +6,9 @@ here's what's coming up this week:
 {{ event.when|lower }}{% endif %}{% if event.location %}
 {{ event.location|lower }}{% endif %}
 {{ event.url }}
-{% endfor %}{% endif %}{% if veganversaries %}
-if you see these people, tell them happy veganversary!
-{% for group in veganversaries %}
+{% endfor %}{% endif %}{% if veganniversaries %}
+Happy veganniversary!
+{% for group in veganniversaries %}
 {{ group.label }}
 {% for person in group.people %}{{ person.name|lower }}
 {{ person.url }}

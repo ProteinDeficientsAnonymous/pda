@@ -4,7 +4,7 @@ import {
   formatBirthday,
   formatDayHeader,
   formatEventDateTime,
-  formatVeganversary,
+  formatVeganniversary,
   parseIsoDate,
 } from './datetime';
 
@@ -31,13 +31,13 @@ describe('formatBirthday', () => {
   });
 });
 
-describe('formatVeganversary', () => {
+describe('formatVeganniversary', () => {
   it('formats month day, year when a day is set', () => {
-    expect(formatVeganversary({ month: 6, day: 15, year: 2019 })).toBe('june 15, 2019');
+    expect(formatVeganniversary({ month: 6, day: 15, year: 2019 })).toBe('june 15, 2019');
   });
 
   it('formats month year when day is omitted', () => {
-    expect(formatVeganversary({ month: 3, day: null, year: 2020 })).toBe('march 2020');
+    expect(formatVeganniversary({ month: 3, day: null, year: 2020 })).toBe('march 2020');
   });
 });
 

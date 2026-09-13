@@ -238,35 +238,70 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('saves a veganversary with month and year only via updateProfile', async () => {
+  it('saves a veganniversary with month and year only via updateProfile', async () => {
     const user = userEvent.setup();
     renderSettings();
 
-    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
     await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
     await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({
-        veganversary: { month: 6, day: null, year: 2020 },
+        veganniversary: { month: 6, day: null, year: 2020 },
       });
     });
   });
 
-  it('saves veganversary privacy toggles from the editor', async () => {
+  it('keeps the field label visible while editing a date', async () => {
     const user = userEvent.setup();
     renderSettings();
 
-    await user.click(screen.getByRole('button', { name: /edit veganversary/i }));
-    await user.click(screen.getByRole('switch', { name: /display on my profile/i }));
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    expect(screen.getByText(/^veganniversary$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^month$/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    expect(screen.getByText(/^birthday$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^month$/i)).toBeInTheDocument();
+  });
+
+  it('shows the veganniversary month/year hint only while editing', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    expect(
+      screen.queryByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    expect(
+      screen.getByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('saves veganniversary privacy toggles from the privacy section', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('switch', { name: /show veganniversary on my profile/i }));
     await waitFor(() => {
-      expect(authApi.updateProfile).toHaveBeenCalledWith({ showVeganversary: false });
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ showVeganniversary: false });
     });
 
-    await user.click(screen.getByRole('switch', { name: /don't celebrate me by name/i }));
+    const shoutout = screen.getByRole('switch', {
+      name: /show my name in veganniversary shout out emails/i,
+    });
+    expect(shoutout).not.toBeChecked();
+    await user.click(shoutout);
     await waitFor(() => {
-      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganversaryShoutoutOptOut: true });
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganniversaryShoutoutOptIn: true });
     });
   });
 

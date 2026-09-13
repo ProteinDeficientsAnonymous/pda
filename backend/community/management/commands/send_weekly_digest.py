@@ -20,15 +20,15 @@ def _format_event_when(event: Event) -> str:
     return format_eastern_datetime(event.start_datetime)
 
 
-def veganversary_groups(*, now, users) -> list[dict]:
+def veganniversary_groups(*, now, users) -> list[dict]:
     today = timezone.localtime(now).date()
     if today.day >= 7:
         return []
     grouped: dict[int, list[dict]] = defaultdict(list)
     for user in users:
-        if user.veganversary_month != today.month:
+        if user.veganniversary_month != today.month:
             continue
-        years = today.year - user.veganversary_year
+        years = today.year - user.veganniversary_year
         if years < 1:
             continue
         grouped[years].append(
@@ -88,13 +88,13 @@ class Command(BaseCommand):
             }
             for event in upcoming
         ]
-        groups = veganversary_groups(
+        groups = veganniversary_groups(
             now=now,
             users=User.objects.active_members()
             .filter(
-                veganversary_month__isnull=False,
-                veganversary_year__isnull=False,
-                veganversary_shoutout_opt_out=False,
+                veganniversary_month__isnull=False,
+                veganniversary_year__isnull=False,
+                veganniversary_shoutout_opt_in=True,
             )
             .exclude(first_name=""),
         )
@@ -106,7 +106,7 @@ class Command(BaseCommand):
         urls = {
             "calendar_url": f"{settings.FRONTEND_BASE_URL}/calendar",
             "settings_url": f"{settings.FRONTEND_BASE_URL}/settings",
-            "veganversaries": groups,
+            "veganniversaries": groups,
         }
         sender = get_email_sender(EmailStream.BULK)
         if options["to"]:

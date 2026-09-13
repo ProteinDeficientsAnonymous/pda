@@ -4,8 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { Toggle } from '@/components/ui/Toggle';
-import { formatBirthday, formatVeganversary } from '@/utils/datetime';
+import { formatBirthday, formatVeganniversary } from '@/utils/datetime';
 
 export interface DateParts {
   month: number;
@@ -43,7 +42,7 @@ function dayOptions(month: number | null) {
 
 function displayValue(value: DateParts, requireDay: boolean, requireYear: boolean): string {
   if (requireYear && value.year != null) {
-    return formatVeganversary({ month: value.month, day: value.day, year: value.year });
+    return formatVeganniversary({ month: value.month, day: value.day, year: value.year });
   }
   if (requireDay && value.day != null) {
     return formatBirthday({ month: value.month, day: value.day, year: value.year });
@@ -59,7 +58,6 @@ export function InlineBirthday({
   hint,
   requireDay = true,
   requireYear = false,
-  privacy,
 }: {
   label: string;
   value: DateParts | null;
@@ -68,12 +66,6 @@ export function InlineBirthday({
   hint?: ReactNode;
   requireDay?: boolean;
   requireYear?: boolean;
-  privacy?: {
-    showOnProfile: boolean;
-    onShowOnProfileChange: (v: boolean) => void;
-    optOutShoutout: boolean;
-    onOptOutShoutoutChange: (v: boolean) => void;
-  };
 }) {
   const [editing, setEditing] = useState(false);
   const [month, setMonth] = useState(value?.month ?? null);
@@ -107,19 +99,16 @@ export function InlineBirthday({
 
   if (!editing) {
     return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-muted text-xs">{label}</div>
-            <div className="text-foreground text-sm">
-              {value ? displayValue(value, requireDay, requireYear) : placeholder}
-            </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-muted text-xs">{label}</div>
+          <div className="text-foreground text-sm">
+            {value ? displayValue(value, requireDay, requireYear) : placeholder}
           </div>
-          <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
-            edit
-          </Button>
         </div>
-        {hint ? <p className="text-foreground-tertiary text-xs">{hint}</p> : null}
+        <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
+          edit
+        </Button>
       </div>
     );
   }
@@ -129,6 +118,7 @@ export function InlineBirthday({
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="text-muted text-xs">{label}</div>
       <div className="grid grid-cols-3 gap-2">
         <Select
           label="month"
@@ -166,7 +156,6 @@ export function InlineBirthday({
         />
       </div>
       {hint ? <p className="text-foreground-tertiary text-xs">{hint}</p> : null}
-      {privacy ? <VeganversaryPrivacy privacy={privacy} /> : null}
       {error ? <p className="text-destructive text-xs">{error}</p> : null}
       <div className="flex items-center justify-end gap-2">
         {value ? (
@@ -194,32 +183,6 @@ export function InlineBirthday({
           save
         </Button>
       </div>
-    </div>
-  );
-}
-
-function VeganversaryPrivacy({
-  privacy,
-}: {
-  privacy: {
-    showOnProfile: boolean;
-    onShowOnProfileChange: (v: boolean) => void;
-    optOutShoutout: boolean;
-    onOptOutShoutoutChange: (v: boolean) => void;
-  };
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <Toggle
-        label="display on my profile"
-        checked={privacy.showOnProfile}
-        onChange={privacy.onShowOnProfileChange}
-      />
-      <Toggle
-        label="don't celebrate me by name"
-        checked={privacy.optOutShoutout}
-        onChange={privacy.onOptOutShoutoutChange}
-      />
     </div>
   );
 }

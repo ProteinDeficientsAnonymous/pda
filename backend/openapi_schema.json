@@ -4581,6 +4581,17 @@
             ],
             "title": "First Name"
           },
+          "has_seen_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Seen Veganniversary"
+          },
           "hide_last_name": {
             "anyOf": [
               {
@@ -4672,7 +4683,7 @@
             ],
             "title": "Show Phone"
           },
-          "show_veganversary": {
+          "show_veganniversary": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -4681,19 +4692,19 @@
                 "type": "null"
               }
             ],
-            "title": "Show Veganversary"
+            "title": "Show Veganniversary"
           },
-          "veganversary": {
+          "veganniversary": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/VeganversaryIn"
+                "$ref": "#/components/schemas/VeganniversaryIn"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "veganversary_shoutout_opt_out": {
+          "veganniversary_shoutout_opt_in": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -4702,7 +4713,7 @@
                 "type": "null"
               }
             ],
-            "title": "Veganversary Shoutout Opt Out"
+            "title": "Veganniversary Shoutout Opt In"
           },
           "week_start": {
             "anyOf": [
@@ -4938,10 +4949,10 @@
             "title": "Pronouns",
             "type": "string"
           },
-          "veganversary": {
+          "veganniversary": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/VeganversaryOut"
+                "$ref": "#/components/schemas/VeganniversaryOut"
               },
               {
                 "type": "null"
@@ -6726,6 +6737,11 @@
             "title": "Has Logged In",
             "type": "boolean"
           },
+          "has_seen_veganniversary": {
+            "default": false,
+            "title": "Has Seen Veganniversary",
+            "type": "boolean"
+          },
           "hide_last_name": {
             "default": false,
             "title": "Hide Last Name",
@@ -6849,24 +6865,24 @@
             "title": "Show Phone",
             "type": "boolean"
           },
-          "show_veganversary": {
+          "show_veganniversary": {
             "default": true,
-            "title": "Show Veganversary",
+            "title": "Show Veganniversary",
             "type": "boolean"
           },
-          "veganversary": {
+          "veganniversary": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/VeganversaryOut"
+                "$ref": "#/components/schemas/VeganniversaryOut"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "veganversary_shoutout_opt_out": {
+          "veganniversary_shoutout_opt_in": {
             "default": false,
-            "title": "Veganversary Shoutout Opt Out",
+            "title": "Veganniversary Shoutout Opt In",
             "type": "boolean"
           },
           "week_start": {
@@ -7014,7 +7030,7 @@
         "title": "UserSearchOut",
         "type": "object"
       },
-      "VeganversaryIn": {
+      "VeganniversaryIn": {
         "properties": {
           "day": {
             "anyOf": [
@@ -7046,10 +7062,10 @@
           "month",
           "year"
         ],
-        "title": "VeganversaryIn",
+        "title": "VeganniversaryIn",
         "type": "object"
       },
-      "VeganversaryOut": {
+      "VeganniversaryOut": {
         "properties": {
           "day": {
             "anyOf": [
@@ -7075,7 +7091,7 @@
           "month",
           "year"
         ],
-        "title": "VeganversaryOut",
+        "title": "VeganniversaryOut",
         "type": "object"
       },
       "VersionOut": {
