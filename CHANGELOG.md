@@ -1,3 +1,10 @@
+## [0.101.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.101.0...v0.101.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* **events:** 1440 - truncate only the question label in the rsvp list ([#1450](https://github.com/ProteinDeficientsAnonymous/pda/issues/1450)) ([b916084](https://github.com/ProteinDeficientsAnonymous/pda/commit/b91608475993dc385323f6e747c3c34f4c49535b))
+
 # [0.101.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.100.0...v0.101.0) (2026-09-13)
 
 
