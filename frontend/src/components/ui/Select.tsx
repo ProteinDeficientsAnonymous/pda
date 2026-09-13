@@ -1,5 +1,6 @@
 import { forwardRef, type SelectHTMLAttributes } from 'react';
 
+import { LabelSuffix } from '@/components/ui/LabelSuffix';
 import { cn } from '@/utils/cn';
 
 interface Option {
@@ -9,13 +10,14 @@ interface Option {
 
 interface Props extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
   label: string;
+  labelSuffix?: string | undefined;
   options: Option[];
   placeholder?: string;
   error?: string | undefined;
 }
 
 export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
-  { label, options, placeholder, error, className, id, ...rest },
+  { label, labelSuffix, options, placeholder, error, className, id, ...rest },
   ref,
 ) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
@@ -23,6 +25,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
     <div className="flex flex-col gap-1">
       <label htmlFor={inputId} className="text-foreground text-sm font-medium">
         {label}
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </label>
       <div className="relative">
         <select
