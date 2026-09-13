@@ -60,11 +60,7 @@ describe('EventFormType', () => {
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({
-      eventType: 'club',
-      visibility: 'public',
-      cashappLink: '$pdanyc',
-    });
+    expect(onChange).toHaveBeenCalledWith({ eventType: 'club', visibility: 'public' });
   });
 
   it('official toggle does not overwrite existing cashapp link', async () => {

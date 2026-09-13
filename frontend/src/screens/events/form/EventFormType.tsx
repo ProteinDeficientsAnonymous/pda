@@ -20,7 +20,7 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
       eventType: type,
       ...(isPublicOnly ? { visibility: EventVisibility.Public } : {}),
     };
-    if (isPublicOnly && !values.cashappLink.trim()) {
+    if (type === EventType.Official && !values.cashappLink.trim()) {
       patch.cashappLink = OFFICIAL_EVENT_CASHAPP_TAG;
     }
     onChange(patch);
