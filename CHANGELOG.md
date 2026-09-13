@@ -1,3 +1,10 @@
+# [0.98.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.97.0...v0.98.0) (2026-09-13)
+
+
+### Features
+
+* **media:** compress photos, cache signed urls, backfill keeps originals ([#1438](https://github.com/ProteinDeficientsAnonymous/pda/issues/1438)) ([c6d5c89](https://github.com/ProteinDeficientsAnonymous/pda/commit/c6d5c89af6d2d0d39b7e9c35cbb8ce96b63e1033))
+
 # [0.97.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.96.0...v0.97.0) (2026-08-28)
 
 
