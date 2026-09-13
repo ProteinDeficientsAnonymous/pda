@@ -47,11 +47,12 @@ describe('cropImage', () => {
 
   it('resolves with the blob when toBlob succeeds', async () => {
     stubImageThatLoads();
-    const out = new Blob(['png'], { type: 'image/png' });
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => {
+    const out = new Blob(['jpg'], { type: 'image/jpeg' });
+    const toBlob = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => {
       cb(out);
     });
 
     await expect(cropImage(new Blob(['x']), AREA)).resolves.toBe(out);
+    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.8);
   });
 });

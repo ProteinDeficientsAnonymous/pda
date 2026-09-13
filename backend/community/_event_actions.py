@@ -5,7 +5,6 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
-from django.core.files.base import ContentFile
 from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
@@ -18,22 +17,12 @@ from community._event_schemas import (
     _MAX_EVENT_PHOTO_SIZE,
     EventOut,
 )
-from community._image_compress import maybe_webp_from_animated_gif
+from community._image_compress import EVENT_MAX_EDGE, stored_photo
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event
 
 router = Router()
-
-
-def _stored_event_photo(photo: UploadedFile) -> tuple[ContentFile, str]:
-    raw = photo.read()
-    webp = maybe_webp_from_animated_gif(raw)
-    if webp is not None:
-        return ContentFile(webp), "webp"
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    return ContentFile(raw), ext
 
 
 @router.post(
@@ -80,7 +69,7 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if event.photo:
         event.photo.delete(save=False)
-    body, ext = _stored_event_photo(photo)
+    body, ext = stored_photo(photo.read(), photo.name or "", EVENT_MAX_EDGE)
     ts = int(time.time())
     event.photo.save(f"{event_id}_{ts}.{ext}", body, save=False)
     event.photo_updated_at = timezone.now()

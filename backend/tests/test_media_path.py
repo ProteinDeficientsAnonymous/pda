@@ -67,6 +67,15 @@ class TestMediaPath:
     def test_signed_url_cache_ttl_leaves_one_day_before_signature_expires(self):
         assert SIGNED_URL_CACHE_TTL == 60 * 60 * 24 * 6
 
+    def test_mints_fresh_signature_when_cache_entry_is_gone(self):
+        field = _CountingUrlField()
+        first = media_path(field)
+        caches["media"].clear()
+        second = media_path(field)
+        assert first != second
+        assert field.calls == 2
+        assert second.endswith("sig=2")
+
 
 class TestOgAbsolute:
     def test_prefixes_relative_media_path(self, settings):

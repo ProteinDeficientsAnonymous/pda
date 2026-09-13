@@ -62,10 +62,14 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return withTimeout(
     new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('canvas.toBlob returned null'));
-      }, 'image/png');
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('canvas.toBlob returned null'));
+        },
+        'image/jpeg',
+        0.8,
+      );
     }),
     'timed out processing image',
   );

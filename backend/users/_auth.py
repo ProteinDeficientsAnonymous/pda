@@ -2,6 +2,7 @@
 
 import logging
 
+from community._image_compress import AVATAR_MAX_EDGE, stored_photo
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
@@ -225,9 +226,8 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
         user.profile_photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
+    body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
+    user.profile_photo.save(f"{user.pk}.{ext}", body, save=False)
     user.photo_updated_at = timezone.now()
     user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(

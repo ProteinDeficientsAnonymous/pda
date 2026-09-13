@@ -83,6 +83,7 @@ COMMUNITY_TESTS: frozenset[str] = frozenset(
         "tests/test_photos.py",
         "tests/test_giphy.py",
         "tests/test_image_compress.py",
+        "tests/test_compress_existing_photos.py",
         "tests/test_prosemirror_html.py",
         "tests/test_delta_html.py",
         "tests/test_cohost_notifications.py",

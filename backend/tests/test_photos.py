@@ -1,4 +1,5 @@
 import io
+import os
 
 import pytest
 from community.models import Event
@@ -23,6 +24,12 @@ def _make_test_image(fmt="JPEG", size=(20, 20)):
     return SimpleUploadedFile(
         f"test.{fmt.lower()}", buf.read(), content_type=ct.get(fmt, "image/jpeg")
     )
+
+
+def _noisy_png_file(name="photo.png"):
+    buf = io.BytesIO()
+    Image.frombytes("RGB", (240, 240), os.urandom(240 * 240 * 3)).save(buf, format="PNG")
+    return SimpleUploadedFile(name, buf.getvalue(), content_type="image/png")
 
 
 def _animated_gif_file(name="dance.gif", content_type="image/gif"):
@@ -91,6 +98,13 @@ class TestProfilePhoto:
         member.refresh_from_db()
         assert member.profile_photo
         assert member.photo_updated_at is not None
+
+    def test_upload_transcodes_png_avatar_to_jpeg(self, api_client, member):
+        photo = _noisy_png_file(name="avatar.png")
+        response = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        assert response.status_code == 200
+        member.refresh_from_db()
+        assert member.profile_photo.name.endswith(".jpg")
 
     def test_upload_replaces_existing(self, api_client, member):
         photo1 = _make_test_image()
@@ -170,6 +184,17 @@ class TestEventPhoto:
         assert response.status_code == 200
         event.refresh_from_db()
         assert event.photo.name.endswith(".webp")
+
+    def test_upload_transcodes_png_to_jpeg(self, api_client, member, event):
+        photo = _noisy_png_file()
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": photo},
+            **_auth(member),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.photo.name.endswith(".jpg")
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()
