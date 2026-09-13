@@ -43,10 +43,21 @@ def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
     )
 
 
+def _find_my_response(
+    survey: Survey, requesting_user, response_token: str
+) -> SurveyResponse | None:
+    if requesting_user is not None:
+        return survey.responses.filter(user=requesting_user).first()
+    if response_token:
+        return survey.responses.filter(user__isnull=True, anonymous_token=response_token).first()
+    return None
+
+
 def _survey_out(
     survey: Survey,
     include_questions: bool = False,
     requesting_user=None,
+    response_token: str = "",
 ) -> SurveyOut:
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
@@ -56,13 +67,9 @@ def _survey_out(
         poll_result = _poll_result_out(survey.poll_result)
     except DatetimePollResult.DoesNotExist:
         pass
-    my_response_id = None
-    my_answers = None
-    if requesting_user is not None:
-        existing = survey.responses.filter(user=requesting_user).first()
-        if existing:
-            my_response_id = str(existing.id)
-            my_answers = existing.answers
+    existing = _find_my_response(survey, requesting_user, response_token)
+    my_response_id = str(existing.id) if existing else None
+    my_answers = existing.answers if existing else None
     return SurveyOut(
         id=str(survey.id),
         title=survey.title,
@@ -105,6 +112,7 @@ def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResp
         user_name=user_name,
         answers=response.answers,
         submitted_at=response.submitted_at,
+        response_token=response.anonymous_token if response.user_id is None else None,
     )
 
 

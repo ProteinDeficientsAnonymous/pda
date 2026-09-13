@@ -6201,6 +6201,17 @@
             "title": "Id",
             "type": "string"
           },
+          "response_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Token"
+          },
           "submitted_at": {
             "format": "date-time",
             "title": "Submitted At",
@@ -14507,6 +14518,16 @@
               "title": "Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -14552,6 +14573,16 @@
             "required": true,
             "schema": {
               "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
               "type": "string"
             }
           }

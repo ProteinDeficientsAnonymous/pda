@@ -107,6 +107,7 @@ class SurveyResponseOut(BaseModel):
     user_name: str | None = None
     answers: dict
     submitted_at: datetime
+    response_token: str | None = None
 
 
 # str for standard question types (text, select, number, etc.)

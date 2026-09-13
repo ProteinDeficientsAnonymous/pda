@@ -4911,6 +4911,8 @@ export interface components {
             };
             /** Id */
             id: string;
+            /** Response Token */
+            response_token?: string | null;
             /**
              * Submitted At
              * Format: date-time
@@ -10626,7 +10628,9 @@ export interface operations {
     };
     community__surveys_public_get_survey_public: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -10657,7 +10661,9 @@ export interface operations {
     };
     community__surveys_public_submit_survey_response: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;

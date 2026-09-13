@@ -131,3 +131,145 @@ class TestSurveySubmitRateLimit:
                 break
 
         assert last_status == 429, "expected the public survey submit to hit the rate limit"
+
+
+# ---------------------------------------------------------------------------
+# Anonymous response token (Issue 1461)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def one_per_user_survey(db):
+    survey = Survey.objects.create(title="One each", slug="one-each", one_response_per_user=True)
+    SurveyQuestion.objects.create(
+        survey=survey, label="Thoughts?", field_type=SurveyQuestionType.TEXT
+    )
+    return survey
+
+
+def _respond_url(survey):
+    return f"/api/community/surveys/view/{survey.slug}/respond/"
+
+
+def _view_url(survey):
+    return f"/api/community/surveys/view/{survey.slug}/"
+
+
+def _answers(survey, text):
+    question = survey.questions.first()
+    return json.dumps({"answers": {str(question.id): text}})
+
+
+@pytest.mark.django_db
+class TestAnonymousResponseToken:
+    def test_first_anonymous_submit_issues_token(self, api_client, one_per_user_survey):
+        resp = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "first"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        token = resp.json()["response_token"]
+        assert isinstance(token, str) and len(token) > 20
+        assert SurveyResponse.objects.get(id=resp.json()["id"]).anonymous_token == token
+
+    def test_resubmit_with_token_updates_in_place(self, api_client, one_per_user_survey):
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "first"),
+            content_type="application/json",
+        )
+        token = first.json()["response_token"]
+        second = api_client.post(
+            _respond_url(one_per_user_survey) + f"?response_token={token}",
+            data=_answers(one_per_user_survey, "second"),
+            content_type="application/json",
+        )
+        assert second.status_code == 200
+        assert second.json()["id"] == first.json()["id"]
+        assert second.json()["response_token"] == token
+        assert one_per_user_survey.responses.count() == 1
+        question_id = str(one_per_user_survey.questions.first().id)
+        assert one_per_user_survey.responses.get().answers[question_id]["answer"] == "second"
+
+    def test_resubmit_without_token_creates_new_row(self, api_client, one_per_user_survey):
+        for _ in range(2):
+            resp = api_client.post(
+                _respond_url(one_per_user_survey),
+                data=_answers(one_per_user_survey, "again"),
+                content_type="application/json",
+            )
+            assert resp.status_code == 201
+        assert one_per_user_survey.responses.count() == 2
+
+    def test_unknown_token_creates_new_row_with_fresh_token(self, api_client, one_per_user_survey):
+        resp = api_client.post(
+            _respond_url(one_per_user_survey) + "?response_token=not-a-real-token",
+            data=_answers(one_per_user_survey, "hi"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.json()["response_token"] not in ("", None, "not-a-real-token")
+
+    def test_get_with_token_returns_my_response(self, api_client, one_per_user_survey):
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "mine"),
+            content_type="application/json",
+        )
+        token = first.json()["response_token"]
+        with_token = api_client.get(_view_url(one_per_user_survey), {"response_token": token})
+        assert with_token.status_code == 200
+        assert with_token.json()["my_response_id"] == first.json()["id"]
+        question_id = str(one_per_user_survey.questions.first().id)
+        assert with_token.json()["my_answers"][question_id]["answer"] == "mine"
+
+        without = api_client.get(_view_url(one_per_user_survey))
+        assert without.json()["my_response_id"] is None
+        assert without.json()["my_answers"] is None
+
+    def test_no_token_when_multiple_responses_allowed(self, api_client, public_text_survey):
+        resp = api_client.post(
+            _respond_url(public_text_survey),
+            data=_answers(public_text_survey, "free"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.json()["response_token"] is None
+        assert SurveyResponse.objects.get(id=resp.json()["id"]).anonymous_token is None
+
+    def test_authenticated_path_unchanged(self, api_client, auth_headers, one_per_user_survey):
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "first"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert first.status_code == 201
+        assert first.json()["response_token"] is None
+        second = api_client.post(
+            _respond_url(one_per_user_survey) + "?response_token=ignored",
+            data=_answers(one_per_user_survey, "second"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert second.status_code == 200
+        assert second.json()["id"] == first.json()["id"]
+        assert one_per_user_survey.responses.count() == 1
+        assert one_per_user_survey.responses.get().anonymous_token is None
+
+    def test_token_does_not_match_authenticated_rows(
+        self, api_client, auth_headers, one_per_user_survey
+    ):
+        # A token-holding anonymous caller must never read or overwrite a member's row.
+        api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "member"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        member_row = one_per_user_survey.responses.get()
+        member_row.anonymous_token = "leaked"
+        member_row.save(update_fields=["anonymous_token"])
+        resp = api_client.get(_view_url(one_per_user_survey), {"response_token": "leaked"})
+        assert resp.json()["my_response_id"] is None

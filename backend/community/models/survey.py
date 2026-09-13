@@ -88,6 +88,7 @@ class SurveyResponse(models.Model):
         related_name="survey_responses",
     )
     answers = models.JSONField(default=dict, blank=True)
+    anonymous_token = models.CharField(max_length=64, null=True, blank=True, db_index=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
