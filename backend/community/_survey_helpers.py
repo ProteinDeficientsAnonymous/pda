@@ -43,14 +43,24 @@ def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
     )
 
 
+_MAX_ANONYMOUS_TOKEN_LENGTH = 64
+
+
 def _find_my_response(
     survey: Survey, requesting_user, response_token: str
 ) -> SurveyResponse | None:
     if requesting_user is not None:
         return survey.responses.filter(user=requesting_user).first()
-    if response_token:
-        return survey.responses.filter(user__isnull=True, anonymous_token=response_token).first()
-    return None
+    # Only dedupe surveys mint tokens, and only their submit path reuses a row —
+    # honouring a stale token elsewhere prefills a form whose submit still creates
+    # a second row, orphaning the first.
+    if not survey.one_response_per_user:
+        return None
+    # A minted token is 43 chars; anything longer can never match, so drop it
+    # before an unbounded caller-supplied string reaches the index.
+    if not response_token or len(response_token) > _MAX_ANONYMOUS_TOKEN_LENGTH:
+        return None
+    return survey.responses.filter(user__isnull=True, anonymous_token=response_token).first()
 
 
 def _survey_out(
@@ -105,14 +115,19 @@ def _apply_linked_event_update(updates: dict) -> dict:
     return updates
 
 
-def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResponseOut:
+def _response_out(
+    response: SurveyResponse, user_name: str | None, include_token: bool = False
+) -> SurveyResponseOut:
+    # The token is a bearer credential, so emitting it is opt-in: it can only
+    # reach the anonymous caller that owns the row, never a listing.
+    token = response.anonymous_token if include_token and response.user_id is None else None
     return SurveyResponseOut(
         id=str(response.id),
         user_id=str(response.user_id) if response.user_id else None,
         user_name=user_name,
         answers=response.answers,
         submitted_at=response.submitted_at,
-        response_token=response.anonymous_token if response.user_id is None else None,
+        response_token=token,
     )
 
 

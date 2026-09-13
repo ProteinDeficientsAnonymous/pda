@@ -97,7 +97,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
         existing.answers = answers
         existing.save(update_fields=["answers"])
         audit_log(logging.INFO, "survey_response_updated", request, target=target)
-        return Status(200, _response_out(existing, user_name))
+        return Status(200, _response_out(existing, user_name, include_token=auth_user is None))
     # Anonymous responders get a server-issued token so a resubmit updates in place.
     anonymous_token = None
     if auth_user is None and survey.one_response_per_user:
@@ -106,7 +106,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
         survey=survey, user=auth_user, answers=answers, anonymous_token=anonymous_token
     )
     audit_log(logging.INFO, "survey_response_submitted", request, target=target)
-    return Status(201, _response_out(response, user_name))
+    return Status(201, _response_out(response, user_name, include_token=auth_user is None))
 
 
 @router.get(

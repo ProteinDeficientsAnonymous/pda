@@ -273,3 +273,96 @@ class TestAnonymousResponseToken:
         member_row.save(update_fields=["anonymous_token"])
         resp = api_client.get(_view_url(one_per_user_survey), {"response_token": "leaked"})
         assert resp.json()["my_response_id"] is None
+
+    def test_token_cannot_overwrite_a_members_row(
+        self, api_client, auth_headers, one_per_user_survey
+    ):
+        # The write path must be scoped the same way the read path is.
+        api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "member"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        member_row = one_per_user_survey.responses.get()
+        member_row.anonymous_token = "leaked"
+        member_row.save(update_fields=["anonymous_token"])
+        resp = api_client.post(
+            _respond_url(one_per_user_survey) + "?response_token=leaked",
+            data=_answers(one_per_user_survey, "hijacked"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.json()["id"] != str(member_row.id)
+        member_row.refresh_from_db()
+        question_id = str(one_per_user_survey.questions.first().id)
+        assert member_row.answers[question_id]["answer"] == "member"
+
+    def test_token_from_another_survey_does_not_match(self, api_client, one_per_user_survey):
+        other = Survey.objects.create(
+            title="Other", slug="other-one-each", one_response_per_user=True
+        )
+        SurveyQuestion.objects.create(survey=other, label="Q?", field_type=SurveyQuestionType.TEXT)
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "mine"),
+            content_type="application/json",
+        )
+        token = first.json()["response_token"]
+        view = api_client.get(_view_url(other), {"response_token": token})
+        assert view.json()["my_response_id"] is None
+        resp = api_client.post(
+            _respond_url(other) + f"?response_token={token}",
+            data=_answers(other, "elsewhere"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.json()["response_token"] != token
+        assert one_per_user_survey.responses.count() == 1
+
+    def test_token_ignored_when_dedupe_is_disabled(self, api_client, one_per_user_survey):
+        # Flipping one_response_per_user off must not leave a stale token able to
+        # prefill a form whose submit path no longer reuses the row.
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "mine"),
+            content_type="application/json",
+        )
+        token = first.json()["response_token"]
+        one_per_user_survey.one_response_per_user = False
+        one_per_user_survey.save(update_fields=["one_response_per_user"])
+        view = api_client.get(_view_url(one_per_user_survey), {"response_token": token})
+        assert view.json()["my_response_id"] is None
+        assert view.json()["my_answers"] is None
+
+    def test_oversized_token_is_not_queried(self, api_client, one_per_user_survey):
+        oversized = "a" * 5000
+        view = api_client.get(_view_url(one_per_user_survey), {"response_token": oversized})
+        assert view.status_code == 200
+        assert view.json()["my_response_id"] is None
+        resp = api_client.post(
+            _respond_url(one_per_user_survey) + f"?response_token={oversized}",
+            data=_answers(one_per_user_survey, "hi"),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+
+    def test_admin_listing_never_exposes_tokens(self, api_client, db, one_per_user_survey):
+        admin = User.objects.create_user(
+            phone_number="+12025557011", password="x", first_name="Surveys", last_name="Admin"
+        )
+        role = Role.objects.create(name="surveys_mgr2", permissions=[PermissionKey.MANAGE_SURVEYS])
+        admin.roles.add(role)
+        admin_headers = {
+            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
+        }
+        api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "anon"),
+            content_type="application/json",
+        )
+        url = f"/api/community/surveys/{one_per_user_survey.id}/responses/"
+        listing = api_client.get(url, **admin_headers)
+        assert listing.status_code == 200
+        assert one_per_user_survey.responses.get().anonymous_token
+        assert all(r["response_token"] is None for r in listing.json())
