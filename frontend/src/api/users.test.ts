@@ -234,12 +234,18 @@ describe('useUpdateUser', () => {
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: makeWrapper(qc) });
 
-    await result.current.mutateAsync({ firstName: 'Ada', lastName: 'Lovelace', isPaused: false });
+    await result.current.mutateAsync({
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      isPaused: false,
+      hasJoinedWhatsapp: true,
+    });
 
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u1/', {
       first_name: 'Ada',
       last_name: 'Lovelace',
       is_paused: false,
+      has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
   });

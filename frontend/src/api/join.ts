@@ -152,6 +152,7 @@ export interface JoinRequestSummary {
   rejectedAt: string | null;
   rejectedByName: string | null;
   onboardedAt: string | null;
+  userHasJoinedWhatsapp: boolean;
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
   attendedEvents: JoinRequestAttendedEvent[];
@@ -191,6 +192,7 @@ interface WireJoinRequest {
   rejected_at?: string | null;
   rejected_by_name?: string | null;
   onboarded_at?: string | null;
+  user_has_joined_whatsapp?: boolean;
   attended_official_count?: number;
   attended_club_count?: number;
   upcoming_official_count?: number;
@@ -219,6 +221,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
     onboardedAt: w.onboarded_at ?? null,
+    userHasJoinedWhatsapp: w.user_has_joined_whatsapp ?? false,
     rsvpBreakdown: {
       attendedOfficial: w.attended_official_count ?? 0,
       attendedClub: w.attended_club_count ?? 0,

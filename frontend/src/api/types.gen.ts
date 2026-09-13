@@ -4121,6 +4121,11 @@ export interface components {
              * @default 0
              */
             upcoming_official_count: number;
+            /**
+             * User Has Joined Whatsapp
+             * @default false
+             */
+            user_has_joined_whatsapp: boolean;
             /** User Id */
             user_id?: string | null;
         };
@@ -5068,6 +5073,11 @@ export interface components {
              */
             full_name: string;
             /**
+             * Has Joined Whatsapp
+             * @default false
+             */
+            has_joined_whatsapp: boolean;
+            /**
              * Has Logged In
              * @default true
              */
@@ -5184,6 +5194,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Has Joined Whatsapp */
+            has_joined_whatsapp?: boolean | null;
             /** Is Paused */
             is_paused?: boolean | null;
             /** Last Name */

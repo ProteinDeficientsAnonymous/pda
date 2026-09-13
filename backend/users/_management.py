@@ -337,7 +337,7 @@ def _audit_user_update(
 
     changed = [
         f
-        for f in ("phone_number", "first_name", "last_name", "email")
+        for f in ("phone_number", "first_name", "last_name", "email", "has_joined_whatsapp")
         if getattr(payload, f, None) is not None
     ]
     if changed:
@@ -377,6 +377,8 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     _validate_pause_change(user, payload.is_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
+    if payload.has_joined_whatsapp is not None:
+        user.has_joined_whatsapp = payload.has_joined_whatsapp
 
 
 @router.patch(

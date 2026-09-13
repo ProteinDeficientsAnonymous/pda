@@ -90,6 +90,8 @@ function MemberDetailView({ member }: { member: Member }) {
         member={member}
       />
 
+      <MemberWhatsappSection member={member} />
+
       <MemberMagicLinkSection member={member} />
 
       {member.bio ? (
@@ -194,6 +196,31 @@ function MemberRolesSection({ member }: { member: Member }) {
       >
         {updateRoles.isPending ? 'saving…' : 'save roles'}
       </Button>
+    </section>
+  );
+}
+
+function MemberWhatsappSection({ member }: { member: Member }) {
+  const update = useUpdateUser(member.id);
+
+  async function onChange(checked: boolean) {
+    try {
+      await update.mutateAsync({ hasJoinedWhatsapp: checked });
+      toast.success(checked ? 'marked as joined whatsapp ✓' : 'marked as not on whatsapp ✓');
+    } catch (e) {
+      toast.error(extractError(e));
+    }
+  }
+
+  return (
+    <section className="mb-4">
+      <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">whatsapp</h2>
+      <Toggle
+        label="joined whatsapp"
+        checked={member.hasJoinedWhatsapp}
+        onChange={(v) => void onChange(v)}
+        disabled={update.isPending}
+      />
     </section>
   );
 }

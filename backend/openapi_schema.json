@@ -4272,6 +4272,11 @@
             "title": "Upcoming Official Count",
             "type": "integer"
           },
+          "user_has_joined_whatsapp": {
+            "default": false,
+            "title": "User Has Joined Whatsapp",
+            "type": "boolean"
+          },
           "user_id": {
             "anyOf": [
               {
@@ -6509,6 +6514,11 @@
             "title": "Full Name",
             "type": "string"
           },
+          "has_joined_whatsapp": {
+            "default": false,
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
           "has_logged_in": {
             "default": true,
             "title": "Has Logged In",
@@ -6682,6 +6692,17 @@
               }
             ],
             "title": "First Name"
+          },
+          "has_joined_whatsapp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Joined Whatsapp"
           },
           "is_paused": {
             "anyOf": [

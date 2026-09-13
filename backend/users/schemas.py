@@ -140,6 +140,7 @@ class UserOut(BaseModel):
     hide_last_name: bool = False
     weekly_digest_opt_out: bool = False
     is_paused: bool = False
+    has_joined_whatsapp: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
     has_logged_in: bool = True
@@ -180,6 +181,7 @@ class UserOut(BaseModel):
             hide_last_name=user.hide_last_name,
             weekly_digest_opt_out=user.weekly_digest_opt_out,
             is_paused=user.is_paused,
+            has_joined_whatsapp=user.has_joined_whatsapp,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
@@ -269,6 +271,7 @@ class UserPatchIn(BaseModel):
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
+    has_joined_whatsapp: bool | None = None
 
 
 class MePatchIn(BaseModel):

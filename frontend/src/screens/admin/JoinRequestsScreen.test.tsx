@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
 import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
+import { useUpdateUser } from '@/api/users';
 import { makeRequest } from '@/test/fixtures';
 
 import JoinRequestsScreen from './JoinRequestsScreen';
@@ -21,6 +22,10 @@ vi.mock('@/api/join', async (importOriginal) => {
     useResendMagicLink: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   };
 });
+
+vi.mock('@/api/users', () => ({
+  useUpdateUser: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+}));
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
@@ -52,6 +57,36 @@ function mockResult(data: JoinRequestSummary[]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('JoinRequestsScreen whatsapp toggle', () => {
+  it('flips joined whatsapp for an approved request with a linked user', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useUpdateUser).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateUser>);
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.APPROVED,
+        approvedAt: '2026-01-10T00:00:00Z',
+        userId: 'u1',
+      }),
+    ]);
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
+
+    await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
+
+    expect(useUpdateUser).toHaveBeenCalledWith('u1');
+    expect(mutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
+  });
+
+  it('does not show the toggle for pending requests', () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING })]);
+    renderScreen();
+    expect(screen.queryByRole('switch', { name: /joined whatsapp/i })).not.toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestsScreen sort', () => {
