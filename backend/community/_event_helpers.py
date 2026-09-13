@@ -434,6 +434,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         is_past=event.is_past,
         status=event.status,
         is_partiful_import=event.is_partiful_import,
+        is_legacy=event.is_legacy,
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),

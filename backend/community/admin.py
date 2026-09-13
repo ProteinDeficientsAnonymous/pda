@@ -34,7 +34,7 @@ class JoinRequestAdmin(admin.ModelAdmin):
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ("title", "start_datetime", "end_datetime", "location")
-    list_filter = ("start_datetime", "tags", "is_partiful_import")
+    list_filter = ("start_datetime", "tags", "is_partiful_import", "is_legacy")
     search_fields = ("title", "description", "location")
     ordering = ("start_datetime",)
     readonly_fields = ("id", "created_at")

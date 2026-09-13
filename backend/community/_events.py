@@ -194,6 +194,7 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         is_past=e.is_past,
         status=e.status,
         is_partiful_import=e.is_partiful_import,
+        is_legacy=e.is_legacy,
         tags=_tags_out(e),
     )
 

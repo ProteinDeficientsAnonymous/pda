@@ -244,6 +244,98 @@
         "title": "AttendanceIn",
         "type": "object"
       },
+      "AttendanceMarkIn": {
+        "properties": {
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "user_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceMarkIn",
+        "type": "object"
+      },
+      "AttendanceMarkOut": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "updated_count": {
+            "title": "Updated Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_title",
+          "created_count",
+          "updated_count",
+          "skipped_count"
+        ],
+        "title": "AttendanceMarkOut",
+        "type": "object"
+      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -1982,6 +2074,11 @@
             "title": "Invited Count",
             "type": "integer"
           },
+          "is_legacy": {
+            "default": false,
+            "title": "Is Legacy",
+            "type": "boolean"
+          },
           "is_partiful_import": {
             "default": false,
             "title": "Is Partiful Import",
@@ -2335,6 +2432,11 @@
             },
             "title": "Invited User Photo Urls",
             "type": "array"
+          },
+          "is_legacy": {
+            "default": false,
+            "title": "Is Legacy",
+            "type": "boolean"
           },
           "is_partiful_import": {
             "default": false,
@@ -9723,6 +9825,83 @@
           }
         ],
         "summary": "Preview Attendance Import",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-mark/": {
+      "post": {
+        "operationId": "community__attendance_mark_mark_attendance",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceMarkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceMarkOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Mark Attendance",
         "tags": [
           "community"
         ]

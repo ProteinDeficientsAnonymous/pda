@@ -8,7 +8,6 @@ from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
 from users.models import User
-from users.permissions import PermissionKey
 
 from community._attendance_import_matching import match_rows, parse_partiful_csv
 from community._attendance_import_schemas import (
@@ -17,6 +16,7 @@ from community._attendance_import_schemas import (
     AttendanceImportPreviewOut,
     EventOptionOut,
 )
+from community._attendance_shared import require_manage_events
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
@@ -34,25 +34,13 @@ _MAX_CSV_SIZE = 2 * 1024 * 1024
 _ALLOWED_CSV_TYPES = {"text/csv", "application/vnd.ms-excel", "text/plain"}
 
 
-def _require_manage_events(request, action: str) -> None:
-    if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(type=AuditTargetType.EVENT, id="", details={"action": action}),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action=action)
-
-
 @router.get(
     "/events/attendance-import/events/",
     response={200: list[EventOptionOut], 403: ErrorOut},
     auth=gated_jwt,
 )
 def list_attendance_import_event_options(request, q: str = ""):
-    _require_manage_events(request, "list_attendance_import_event_options")
+    require_manage_events(request, "list_attendance_import_event_options")
     events = Event.objects.exclude(status=EventStatus.DELETED).order_by("-start_datetime")
     if q.strip():
         events = events.filter(title__icontains=q.strip())
@@ -76,7 +64,7 @@ def preview_attendance_import(
     csv_file: UploadedFile = File(...),  # ty: ignore[call-non-callable]
     event_id: str | None = None,
 ):
-    _require_manage_events(request, "preview_attendance_import")
+    require_manage_events(request, "preview_attendance_import")
     if csv_file.content_type not in _ALLOWED_CSV_TYPES:
         raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
     if csv_file.size and csv_file.size > _MAX_CSV_SIZE:
@@ -169,7 +157,7 @@ def _apply_row(event: Event, row, user: User) -> bool:
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def commit_attendance_import(request, payload: AttendanceImportCommitIn):
-    _require_manage_events(request, "commit_attendance_import")
+    require_manage_events(request, "commit_attendance_import")
     _require_all_rows_resolved(payload)
 
     event = _resolve_event(payload, request)

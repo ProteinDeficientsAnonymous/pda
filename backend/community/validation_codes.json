@@ -824,6 +824,23 @@
         ]
       }
     ],
+    "AttendanceMark": [
+      {
+        "name": "EVENT_OR_TITLE_REQUIRED",
+        "value": "attendance_mark.event_or_title_required",
+        "params": []
+      },
+      {
+        "name": "INVALID_EVENT_TYPE",
+        "value": "attendance_mark.invalid_event_type",
+        "params": []
+      },
+      {
+        "name": "NO_MEMBERS_SELECTED",
+        "value": "attendance_mark.no_members_selected",
+        "params": []
+      }
+    ],
     "Perm": [
       {
         "name": "DENIED",

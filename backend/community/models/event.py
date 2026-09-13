@@ -57,6 +57,11 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
     )
 
 
+def off_calendar_q(prefix: str = "") -> Q:
+    """Events that exist for record-keeping only and must never reach a calendar surface."""
+    return Q(**{f"{prefix}is_partiful_import": True}) | Q(**{f"{prefix}is_legacy": True})
+
+
 @dataclass(frozen=True)
 class EventRef:
     """A parsed {event_id} path segment: exactly one of event_id or slug is set."""
@@ -128,6 +133,8 @@ class Event(models.Model):
     zelle_info = models.CharField(max_length=200, blank=True)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
+    # Backfilled historical event: exists only to hang attendance records on, never on the calendar.
+    is_legacy = models.BooleanField(default=False)
     datetime_tbd = models.BooleanField(default=False)
     allow_plus_ones = models.BooleanField(default=False)
     max_attendees = models.PositiveIntegerField(null=True, blank=True)

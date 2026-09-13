@@ -19,6 +19,7 @@ from community._events import _enforce_event_read_visibility
 from community._shared import _authenticated_user, _gated, _optional_jwt
 from community._validation import ValidationException
 from community.models import Event, EventStatus, PageVisibility, RSVPStatus
+from community.models.event import off_calendar_q
 
 router = Router()
 
@@ -76,8 +77,8 @@ def _feed_events(user: UserModel):
             start_datetime__gte=cutoff,
             datetime_tbd=False,
             status=EventStatus.ACTIVE,
-            is_partiful_import=False,
         )
+        .exclude(off_calendar_q())
         .select_related("created_by")
         .prefetch_related("co_hosts", "invited_users")
         .order_by("start_datetime")
