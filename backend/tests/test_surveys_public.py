@@ -131,3 +131,59 @@ class TestSurveySubmitRateLimit:
                 break
 
         assert last_status == 429, "expected the public survey submit to hit the rate limit"
+
+
+# ---------------------------------------------------------------------------
+# One-response-per-user upsert
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def upsert_survey(db):
+    survey = Survey.objects.create(title="Checkin", slug="checkin", one_response_per_user=True)
+    SurveyQuestion.objects.create(survey=survey, label="Mood", field_type=SurveyQuestionType.TEXT)
+    return survey
+
+
+@pytest.mark.django_db
+class TestSurveySubmitUpsert:
+    def _submit(self, api_client, survey, text, headers=None):
+        question = survey.questions.first()
+        url = f"/api/community/surveys/view/{survey.slug}/respond/"
+        payload = json.dumps({"answers": {str(question.id): text}})
+        kwargs = {**headers} if headers else {}
+        return api_client.post(url, data=payload, content_type="application/json", **kwargs)
+
+    def test_first_submit_creates_response(self, api_client, auth_headers, upsert_survey):
+        response = self._submit(api_client, upsert_survey, "great", auth_headers)
+        assert response.status_code == 201
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 1
+
+    def test_second_submit_updates_in_place(self, api_client, auth_headers, upsert_survey):
+        first = self._submit(api_client, upsert_survey, "great", auth_headers)
+        second = self._submit(api_client, upsert_survey, "even better", auth_headers)
+        assert second.status_code == 200
+        assert second.json()["id"] == first.json()["id"]
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 1
+        row = SurveyResponse.objects.get(survey=upsert_survey)
+        question = upsert_survey.questions.first()
+        assert row.answers[str(question.id)]["answer"] == "even better"
+
+    def test_off_creates_a_second_row_per_user(self, api_client, auth_headers, test_user):
+        survey = Survey.objects.create(title="Repeat", slug="repeat", one_response_per_user=False)
+        SurveyQuestion.objects.create(
+            survey=survey, label="Mood", field_type=SurveyQuestionType.TEXT
+        )
+        first = self._submit(api_client, survey, "great", auth_headers)
+        second = self._submit(api_client, survey, "still great", auth_headers)
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert first.json()["id"] != second.json()["id"]
+        assert SurveyResponse.objects.filter(survey=survey).count() == 2
+
+    def test_anonymous_submits_are_never_upserted(self, api_client, upsert_survey):
+        first = self._submit(api_client, upsert_survey, "great")
+        second = self._submit(api_client, upsert_survey, "also great")
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 2
