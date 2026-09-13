@@ -294,6 +294,7 @@ function MemberEditForm({
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [isPaused, setIsPaused] = useState(member.isPaused);
+  const [hasJoinedWhatsapp, setHasJoinedWhatsapp] = useState(member.hasJoinedWhatsapp);
   const [error, setError] = useState<string | null>(null);
   const targetIsAdmin = member.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
 
@@ -311,6 +312,7 @@ function MemberEditForm({
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (isPaused !== member.isPaused) patch.isPaused = isPaused;
+    if (hasJoinedWhatsapp !== member.hasJoinedWhatsapp) patch.hasJoinedWhatsapp = hasJoinedWhatsapp;
 
     if (Object.keys(patch).length === 0) {
       onSaved();
@@ -367,6 +369,7 @@ function MemberEditForm({
           setEmail(e.target.value);
         }}
       />
+      <Toggle label="joined whatsapp" checked={hasJoinedWhatsapp} onChange={setHasJoinedWhatsapp} />
       <Toggle
         label="pause account"
         checked={isPaused}

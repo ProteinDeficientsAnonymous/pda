@@ -5068,6 +5068,11 @@ export interface components {
              */
             full_name: string;
             /**
+             * Has Joined Whatsapp
+             * @default false
+             */
+            has_joined_whatsapp: boolean;
+            /**
              * Has Logged In
              * @default true
              */
@@ -5184,6 +5189,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Has Joined Whatsapp */
+            has_joined_whatsapp?: boolean | null;
             /** Is Paused */
             is_paused?: boolean | null;
             /** Last Name */

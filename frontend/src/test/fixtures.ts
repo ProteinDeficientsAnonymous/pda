@@ -157,6 +157,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     isMember: true,
     isSuperuser: false,
     isPaused: false,
+    hasJoinedWhatsapp: false,
     needsOnboarding: false,
     loginLinkRequested: false,
     lastAttendedAt: null,

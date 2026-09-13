@@ -42,6 +42,7 @@ const member: Member = {
   isMember: true,
   isSuperuser: false,
   isPaused: false,
+  hasJoinedWhatsapp: false,
   needsOnboarding: false,
   loginLinkRequested: false,
   lastAttendedAt: null,
@@ -123,6 +124,14 @@ describe('MemberDetailScreen edit form', () => {
       firstName: 'grace',
       lastName: 'hopper',
     });
+  });
+
+  it('submits the joined whatsapp toggle when changed', async () => {
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(updateMutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
   });
 
   it('does not patch name fields when unchanged', async () => {
