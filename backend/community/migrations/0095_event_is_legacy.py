@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0094_event_is_partiful_import'),
+        ("community", "0094_event_is_partiful_import"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='event',
-            name='is_legacy',
+            model_name="event",
+            name="is_legacy",
             field=models.BooleanField(default=False),
         ),
     ]
