@@ -14,7 +14,7 @@ export function SendMessageDialog({ open, onClose, fullName, phoneNumber }: Prop
   return (
     <Dialog open={open} onClose={onClose} title={`message ${fullName.toLowerCase()}`}>
       <p className="text-foreground-secondary text-sm">
-        opens an empty draft to {formatPhone(phoneNumber)} — nothing is pre-written.
+        opens an empty draft to {formatPhone(phoneNumber)} — nothing is pre-written
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <SendLink href={buildSmsHref(phoneNumber)} label="send via sms" onClick={onClose} />
