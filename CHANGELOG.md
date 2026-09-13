@@ -1,3 +1,10 @@
+# [0.104.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.103.0...v0.104.0) (2026-09-13)
+
+
+### Features
+
+* **events:** 1439 - use a toggle for the required question flag ([#1449](https://github.com/ProteinDeficientsAnonymous/pda/issues/1449)) ([3be225d](https://github.com/ProteinDeficientsAnonymous/pda/commit/3be225d15f80a9c27b4f173ff63407ed204693db))
+
 # [0.103.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.102.0...v0.103.0) (2026-09-13)
 
 
