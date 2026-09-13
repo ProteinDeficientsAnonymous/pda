@@ -42,15 +42,13 @@ def survey(db):
     return Survey.objects.create(title="Conditions", slug="conditions")
 
 
-def make_question(survey, label, field_type, options=None, order=0, required=False, show_if=None):
+def make_question(survey, label, field_type, order=0, **fields):
     return SurveyQuestion.objects.create(
         survey=survey,
         label=label,
         field_type=field_type,
-        options=options or [],
-        required=required,
         display_order=order,
-        show_if=show_if,
+        **fields,
     )
 
 
@@ -77,9 +75,7 @@ class TestShowIfSaveValidation:
             **admin_headers,
         )
 
-    def test_accepts_condition_on_earlier_choice_question(
-        self, api_client, admin_headers, survey
-    ):
+    def test_accepts_condition_on_earlier_choice_question(self, api_client, admin_headers, survey):
         source = make_question(
             survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
         )
@@ -104,15 +100,18 @@ class TestShowIfSaveValidation:
 
     def test_rejects_question_from_another_survey(self, api_client, admin_headers, survey, db):
         other = Survey.objects.create(title="Other", slug="other")
-        foreign = make_question(
-            other, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        foreign = make_question(other, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         response = self._create(
             api_client,
             admin_headers,
             survey,
-            {"label": "Dependent", "field_type": SurveyQuestionType.TEXT, "options": [],
-             "required": False, "show_if": equals(foreign, "vegan")},
+            {
+                "label": "Dependent",
+                "field_type": SurveyQuestionType.TEXT,
+                "options": [],
+                "required": False,
+                "show_if": equals(foreign, "vegan"),
+            },
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.CONDITION_QUESTION_NOT_FOUND, "show_if")
@@ -127,8 +126,13 @@ class TestShowIfSaveValidation:
         response = api_client.patch(
             f"/api/community/surveys/{survey.id}/questions/{first.id}/",
             data=json.dumps(
-                {"label": "First", "field_type": SurveyQuestionType.RADIO,
-                 "options": ["a", "b"], "required": False, "show_if": equals(later, "a")}
+                {
+                    "label": "First",
+                    "field_type": SurveyQuestionType.RADIO,
+                    "options": ["a", "b"],
+                    "required": False,
+                    "show_if": equals(later, "a"),
+                }
             ),
             content_type="application/json",
             **admin_headers,
@@ -142,8 +146,13 @@ class TestShowIfSaveValidation:
             api_client,
             admin_headers,
             survey,
-            {"label": "Dependent", "field_type": SurveyQuestionType.TEXT, "options": [],
-             "required": False, "show_if": equals(source, "anything")},
+            {
+                "label": "Dependent",
+                "field_type": SurveyQuestionType.TEXT,
+                "options": [],
+                "required": False,
+                "show_if": equals(source, "anything"),
+            },
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.CONDITION_TYPE_NOT_SUPPORTED, "show_if")
@@ -156,8 +165,13 @@ class TestShowIfSaveValidation:
             api_client,
             admin_headers,
             survey,
-            {"label": "Dependent", "field_type": SurveyQuestionType.TEXT, "options": [],
-             "required": False, "show_if": equals(source, "carnivore")},
+            {
+                "label": "Dependent",
+                "field_type": SurveyQuestionType.TEXT,
+                "options": [],
+                "required": False,
+                "show_if": equals(source, "carnivore"),
+            },
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.CONDITION_VALUE_INVALID, "show_if")
@@ -168,15 +182,18 @@ class TestShowIfSaveValidation:
             api_client,
             admin_headers,
             survey,
-            {"label": "Dependent", "field_type": SurveyQuestionType.TEXT, "options": [],
-             "required": False, "show_if": equals(source, "yes")},
+            {
+                "label": "Dependent",
+                "field_type": SurveyQuestionType.TEXT,
+                "options": [],
+                "required": False,
+                "show_if": equals(source, "yes"),
+            },
         )
         assert response.status_code == 201
 
     def test_contains_requires_checkbox_source(self, api_client, admin_headers, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         response = self._create(
             api_client,
             admin_headers,
@@ -197,17 +214,20 @@ class TestShowIfSaveValidation:
         assert_error_code(response, Code.Survey.CONDITION_OPERATOR_NOT_SUPPORTED, "show_if")
 
     def test_clearing_condition_persists_null(self, api_client, admin_headers, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(
             survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
         )
         response = api_client.patch(
             f"/api/community/surveys/{survey.id}/questions/{dependent.id}/",
             data=json.dumps(
-                {"label": "Dependent", "field_type": SurveyQuestionType.TEXT,
-                 "options": [], "required": False, "show_if": None}
+                {
+                    "label": "Dependent",
+                    "field_type": SurveyQuestionType.TEXT,
+                    "options": [],
+                    "required": False,
+                    "show_if": None,
+                }
             ),
             content_type="application/json",
             **admin_headers,
@@ -228,9 +248,7 @@ class TestConditionOrdering:
     def test_reorder_rejects_moving_question_above_dependency(
         self, api_client, admin_headers, survey
     ):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(
             survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
         )
@@ -248,18 +266,14 @@ class TestConditionOrdering:
     def test_reorder_allows_order_that_keeps_dependency_first(
         self, api_client, admin_headers, survey
     ):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(
             survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
         )
         spare = make_question(survey, "Spare", SurveyQuestionType.TEXT, order=2)
         response = api_client.put(
             f"/api/community/surveys/{survey.id}/questions/order/",
-            data=json.dumps(
-                {"question_ids": [str(spare.id), str(source.id), str(dependent.id)]}
-            ),
+            data=json.dumps({"question_ids": [str(spare.id), str(source.id), str(dependent.id)]}),
             content_type="application/json",
             **admin_headers,
         )
@@ -268,9 +282,7 @@ class TestConditionOrdering:
         assert dependent.display_order == 2
 
     def test_deleting_source_clears_dependent_condition(self, api_client, admin_headers, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
-        )
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(
             survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
         )
