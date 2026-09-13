@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { SendLink } from '@/components/ui/SendLink';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildSmsHref, buildWhatsAppHref } from '@/utils/welcomeMessage';
 
@@ -30,19 +31,5 @@ export function SendMessageDialog({ open, onClose, fullName, phoneNumber }: Prop
         </Button>
       </div>
     </Dialog>
-  );
-}
-
-function SendLink({ href, label, onClick }: { href: string; label: string; onClick: () => void }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onClick}
-      className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-    >
-      {label}
-    </a>
   );
 }
