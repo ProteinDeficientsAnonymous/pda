@@ -333,7 +333,9 @@ class TestListSurveyResponses:
         assert by_id[str(anon_row.id)]["user_name"] is None
 
     def test_missing_survey_404(self, api_client, admin_headers):
-        response = api_client.get(f"/api/community/surveys/{MISSING_ID}/responses/", **admin_headers)
+        response = api_client.get(
+            f"/api/community/surveys/{MISSING_ID}/responses/", **admin_headers
+        )
         assert response.status_code == 404
 
 
@@ -377,9 +379,7 @@ class TestManageSurveysPermission:
         assert details["required_permission"] == PermissionKey.MANAGE_SURVEYS
 
     def test_denied_member_makes_no_changes(self, api_client, auth_headers, survey):
-        _post(
-            api_client, "/api/community/surveys/", {"title": "x", "slug": "sneaky"}, auth_headers
-        )
+        _post(api_client, "/api/community/surveys/", {"title": "x", "slug": "sneaky"}, auth_headers)
         api_client.delete(f"/api/community/surveys/{survey.id}/", **auth_headers)
         assert not Survey.objects.filter(slug="sneaky").exists()
         assert Survey.objects.filter(id=survey.id).exists()

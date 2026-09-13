@@ -104,7 +104,9 @@ class TestDatetimePollAnswer:
         _validate_datetime_poll_answer({SLOT_A: "yes", SLOT_B: "maybe"}, q)
 
     def test_accepts_empty_dict(self):
-        _validate_datetime_poll_answer({}, make_question(SurveyQuestionType.DATETIME_POLL, [SLOT_A]))
+        _validate_datetime_poll_answer(
+            {}, make_question(SurveyQuestionType.DATETIME_POLL, [SLOT_A])
+        )
 
     def test_rejects_unknown_option(self):
         q = make_question(SurveyQuestionType.DATETIME_POLL, [SLOT_A])
@@ -153,7 +155,9 @@ class TestOneAnswer:
 class TestSurveyAnswers:
     def test_required_question_missing_raises(self):
         q = make_question(SurveyQuestionType.TEXT, required=True, label="Name")
-        exc = assert_raises(Code.Survey.ANSWER_REQUIRED, _validate_survey_answers, {}, {str(q.id): q})
+        exc = assert_raises(
+            Code.Survey.ANSWER_REQUIRED, _validate_survey_answers, {}, {str(q.id): q}
+        )
         assert exc.field == f"answers.{q.id}"
         assert exc.params == {"label": "Name"}
 
@@ -161,7 +165,10 @@ class TestSurveyAnswers:
     def test_required_question_blank_raises(self, empty):
         q = make_question(SurveyQuestionType.TEXT, required=True)
         assert_raises(
-            Code.Survey.ANSWER_REQUIRED, _validate_survey_answers, {str(q.id): empty}, {str(q.id): q}
+            Code.Survey.ANSWER_REQUIRED,
+            _validate_survey_answers,
+            {str(q.id): empty},
+            {str(q.id): q},
         )
 
     def test_required_poll_empty_dict_raises(self):
