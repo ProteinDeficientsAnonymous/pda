@@ -136,6 +136,7 @@ class User(AbstractUser):
     show_birthday = models.BooleanField(default=True)
     hide_last_name = models.BooleanField(default=False)
     weekly_digest_opt_out = models.BooleanField(default=False)
+    whatsapp_reminder_opt_out = models.BooleanField(default=False)
     is_paused = models.BooleanField(default=False)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
