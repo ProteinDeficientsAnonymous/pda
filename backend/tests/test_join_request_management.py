@@ -268,7 +268,7 @@ class TestJoinRequestManagement:
         )
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.needs_onboarding = False
-        user.onboarded_at = timezone.now() - timedelta(days=4)
+        user.onboarded_at = timezone.now() - timedelta(days=8)
         user.save(update_fields=["needs_onboarding", "onboarded_at"])
 
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
@@ -287,7 +287,7 @@ class TestJoinRequestManagement:
         )
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.needs_onboarding = False
-        user.onboarded_at = timezone.now() - timedelta(days=1)
+        user.onboarded_at = timezone.now() - timedelta(days=6)
         user.save(update_fields=["needs_onboarding", "onboarded_at"])
 
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
