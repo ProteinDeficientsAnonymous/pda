@@ -237,7 +237,7 @@ describe('useUploadEventPhoto', () => {
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
-    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
+    const formData = vi.mocked(apiClient.post).mock.calls[0]![1] as FormData;
     expect((formData.get('photo') as File).name).toBe(name);
   });
 });

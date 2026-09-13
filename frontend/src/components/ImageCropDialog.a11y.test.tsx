@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
+import type * as CropImage from '@/utils/cropImage';
+
 import { ImageCropDialog } from './ImageCropDialog';
 
 vi.mock('react-image-crop', () => ({
@@ -16,7 +18,7 @@ vi.mock('react-image-crop', () => ({
 }));
 
 vi.mock('@/utils/cropImage', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/cropImage')>();
+  const actual = await importOriginal<typeof CropImage>();
   return {
     ...actual,
     cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),

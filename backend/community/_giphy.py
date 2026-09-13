@@ -39,16 +39,18 @@ class GiphySearchOut(BaseModel):
     results: list[GiphyResult]
 
 
+def _prefer_webp(webp_url: str, webp_size: int, gif_size: int) -> bool:
+    if not webp_url or webp_size <= 0 or webp_size > _MAX_EVENT_PHOTO_SIZE:
+        return False
+    return not gif_size or webp_size <= gif_size
+
+
 def _full_gif_url(images: dict) -> str:
     gif = images.get("downsized_large") or images.get("original") or {}
     original = images.get("original") or {}
     gif_url, gif_size = gif.get("url") or "", int(gif.get("size") or 0)
     webp_url, webp_size = original.get("webp") or "", int(original.get("webp_size") or 0)
-    if (
-        webp_url
-        and 0 < webp_size <= _MAX_EVENT_PHOTO_SIZE
-        and (not gif_size or webp_size <= gif_size)
-    ):
+    if _prefer_webp(webp_url, webp_size, gif_size):
         return webp_url
     if gif_url and (not gif_size or gif_size <= _MAX_EVENT_PHOTO_SIZE):
         return gif_url
