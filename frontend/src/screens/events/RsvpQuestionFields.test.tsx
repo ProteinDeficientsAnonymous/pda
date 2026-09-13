@@ -41,7 +41,7 @@ describe('RsvpQuestionFields', () => {
     render(
       <RsvpQuestionFields questions={questions} answers={{}} onChange={onChange} errors={{}} />,
     );
-    const select = screen.getByRole('combobox', { name: 'transport' });
+    const select = screen.getByRole('combobox', { name: 'transport (required)' });
     fireEvent.change(select, { target: { value: 'car' } });
     expect(onChange).toHaveBeenCalledWith('q-one', 'car');
   });
