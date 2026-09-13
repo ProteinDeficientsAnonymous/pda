@@ -1944,6 +1944,23 @@ export interface paths {
         patch: operations["community__surveys_update_survey_question"];
         trace?: never;
     };
+    "/api/community/surveys/{survey_id}/responses.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Responses Csv */
+        get: operations["community__surveys_get_survey_responses_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/surveys/{survey_id}/responses/": {
         parameters: {
             query?: never;
@@ -1953,6 +1970,23 @@ export interface paths {
         };
         /** List Survey Responses */
         get: operations["community__surveys_list_survey_responses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/surveys/{survey_id}/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Summary */
+        get: operations["community__surveys_public_get_survey_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4564,6 +4598,20 @@ export interface components {
             has_plus_one: boolean;
             /** Status */
             status: string;
+        };
+        /** QuestionSummaryOut */
+        QuestionSummaryOut: {
+            /** Answered */
+            answered: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            field_type: components["schemas"]["QuestionType"];
+            /** Mean */
+            mean?: number | null;
+            /** Question Id */
+            question_id: string;
         };
         /**
          * QuestionType
@@ -11073,6 +11121,37 @@ export interface operations {
             };
         };
     };
+    community__surveys_get_survey_responses_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__surveys_list_survey_responses: {
         parameters: {
             query?: never;
@@ -11091,6 +11170,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyResponseOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__surveys_public_get_survey_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSummaryOut"][];
                 };
             };
             /** @description Forbidden */

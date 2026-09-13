@@ -191,26 +191,36 @@ def _answer_values(q: SurveyQuestion, answer: str) -> list[str]:
     return [answer.strip()]
 
 
+def _answered_values(q: SurveyQuestion, responses: list[SurveyResponse]) -> list[list[str]]:
+    """Per response that answered q, the values it contributes to the tally.
+
+    responses(list): every response on the survey, answered or not.
+    return(list): one entry per answered response; checkbox entries hold many.
+    """
+    answers = ((r.answers.get(str(q.id)) or {}).get("answer") for r in responses)
+    return [_answer_values(q, a) for a in answers if isinstance(a, str) and a.strip()]
+
+
+def _rating_mean(counts: dict[str, int]) -> float | None:
+    total = sum(counts.values())
+    if not total:
+        return None
+    return round(sum(int(star) * n for star, n in counts.items()) / total, 2)
+
+
 def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> QuestionSummaryOut:
     counts = dict.fromkeys(_summary_buckets(q), 0)
-    answered = 0
-    for r in responses:
-        answer = (r.answers.get(str(q.id)) or {}).get("answer")
-        if not isinstance(answer, str) or not answer.strip():
-            continue
-        answered += 1
-        for val in _answer_values(q, answer):
+    answered_values = _answered_values(q, responses)
+    for values in answered_values:
+        for val in values:
             if val in counts:
                 counts[val] += 1
-    mean = None
-    if q.field_type == SurveyQuestionType.RATING:
-        total = sum(counts.values())
-        mean = round(sum(int(k) * n for k, n in counts.items()) / total, 2) if total else None
+    mean = _rating_mean(counts) if q.field_type == SurveyQuestionType.RATING else None
     return QuestionSummaryOut(
         question_id=str(q.id),
         field_type=q.field_type,
         counts=counts,
-        answered=answered,
+        answered=len(answered_values),
         mean=mean,
     )
 
