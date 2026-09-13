@@ -1,5 +1,6 @@
 import { QuestionType } from '@/api/questionTypes';
 import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
+import { LabelSuffix } from '@/components/ui/LabelSuffix';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
@@ -15,8 +16,9 @@ interface Props {
 
 /** Shared answer field for surveys and join form questions. */
 export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
-  const label = question.required ? question.label : `${question.label} (optional)`;
-  const common = { label, error, disabled: readOnly };
+  const { label } = question;
+  const labelSuffix = question.required ? 'required' : 'optional';
+  const common = { label, labelSuffix, error, disabled: readOnly };
 
   switch (question.fieldType) {
     case QuestionType.Textarea:
@@ -87,6 +89,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
       return (
         <StarRating
           label={label}
+          labelSuffix={labelSuffix}
           error={error}
           value={Number(asString(value)) || 0}
           labels={question.options}
@@ -142,6 +145,7 @@ function FieldError({ error }: { error?: string | undefined }) {
 
 function RadioGroup({
   label,
+  labelSuffix,
   options,
   value,
   onChange,
@@ -149,6 +153,7 @@ function RadioGroup({
   disabled,
 }: {
   label: string;
+  labelSuffix: string;
   options: string[];
   value: string;
   onChange: (v: string) => void;
@@ -157,7 +162,10 @@ function RadioGroup({
 }) {
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">{label}</legend>
+      <legend className="text-foreground text-sm font-medium">
+        {label}
+        <LabelSuffix>{labelSuffix}</LabelSuffix>
+      </legend>
       {options.map((o) => (
         <label key={o} className="flex items-center gap-2 text-sm">
           <input
@@ -180,6 +188,7 @@ function RadioGroup({
 
 function CheckboxGroup({
   label,
+  labelSuffix,
   options,
   value,
   onChange,
@@ -187,6 +196,7 @@ function CheckboxGroup({
   disabled,
 }: {
   label: string;
+  labelSuffix: string;
   options: string[];
   value: string[];
   onChange: (v: string[]) => void;
@@ -199,7 +209,10 @@ function CheckboxGroup({
   }
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">{label}</legend>
+      <legend className="text-foreground text-sm font-medium">
+        {label}
+        <LabelSuffix>{labelSuffix}</LabelSuffix>
+      </legend>
       {options.map((o) => (
         <label key={o} className="flex items-center gap-2 text-sm">
           <input
@@ -220,6 +233,7 @@ function CheckboxGroup({
 
 function StarRating({
   label,
+  labelSuffix,
   value,
   labels,
   onChange,
@@ -227,6 +241,7 @@ function StarRating({
   readOnly,
 }: {
   label: string;
+  labelSuffix: string;
   value: number;
   labels: string[];
   onChange: (n: number) => void;
@@ -235,7 +250,10 @@ function StarRating({
 }) {
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">{label}</legend>
+      <legend className="text-foreground text-sm font-medium">
+        {label}
+        <LabelSuffix>{labelSuffix}</LabelSuffix>
+      </legend>
       <div role="radiogroup" aria-label={label} className="flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => {
           const filled = n <= value;
@@ -267,6 +285,7 @@ function StarRating({
 
 function DatetimePoll({
   label,
+  labelSuffix,
   options,
   value,
   onChange,
@@ -274,6 +293,7 @@ function DatetimePoll({
   disabled,
 }: {
   label: string;
+  labelSuffix: string;
   options: string[];
   value: Record<string, string>;
   onChange: (v: Record<string, string>) => void;
@@ -290,7 +310,10 @@ function DatetimePoll({
   }
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="text-foreground text-sm font-medium">{label}</legend>
+      <legend className="text-foreground text-sm font-medium">
+        {label}
+        <LabelSuffix>{labelSuffix}</LabelSuffix>
+      </legend>
       {options.map((option) => {
         const current = value[option];
         return (

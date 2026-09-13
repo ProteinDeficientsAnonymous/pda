@@ -92,7 +92,7 @@ describe('PublicRsvpCard', () => {
       },
     });
 
-    expect(screen.getByLabelText('travel details')).toHaveValue('taking transit');
+    expect(screen.getByLabelText('travel details required')).toHaveValue('taking transit');
   });
 
   it('hides questions when status is maybe and allows status change without answers', () => {
@@ -139,8 +139,8 @@ describe('PublicRsvpCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /i'm going/i }));
     expect(updateMutate).not.toHaveBeenCalled();
-    expect(screen.getByLabelText('travel details')).toBeInTheDocument();
-    expect(screen.getByText(/required/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('travel details required')).toBeInTheDocument();
+    expect(screen.getByText('required', { selector: 'p' })).toBeInTheDocument();
   });
 
   it('renders the comment field', () => {
