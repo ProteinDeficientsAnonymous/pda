@@ -435,6 +435,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
 
+    // Attendance mark
+    case Code.AttendanceMark.EventOrTitleRequired:
+      return 'pick an existing event or give the new event a name and date';
+    case Code.AttendanceMark.InvalidEventType:
+      return 'pick official, club, or community for the new event';
+    case Code.AttendanceMark.NoMembersSelected:
+      return 'pick at least one member to mark attended';
+
     // Permission / rate
     case Code.Perm.Denied:
       return "you don't have permission to do that";
