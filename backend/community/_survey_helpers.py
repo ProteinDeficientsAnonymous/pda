@@ -7,6 +7,7 @@ from users.permissions import PermissionKey
 from community._survey_schemas import (
     PollResultOut,
     PollResultsOut,
+    QuestionSummaryOut,
     SurveyOut,
     SurveyQuestionOut,
     SurveyResponseOut,
@@ -19,8 +20,15 @@ from community.models import (
     PollAvailability,
     Survey,
     SurveyQuestion,
+    SurveyQuestionType,
     SurveyResponse,
 )
+
+RATING_SCALE = tuple(str(n) for n in range(1, 6))
+CHOICE_TYPES = frozenset(
+    {SurveyQuestionType.RADIO, SurveyQuestionType.SELECT, SurveyQuestionType.CHECKBOX}
+)
+SUMMARIZED_TYPES = CHOICE_TYPES | {SurveyQuestionType.BOOLEAN, SurveyQuestionType.RATING}
 
 
 def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
@@ -167,6 +175,54 @@ def _tally_question(
         voters=voters,
         total_responses=len(responses),
     )
+
+
+def _summary_buckets(q: SurveyQuestion) -> list[str]:
+    if q.field_type == SurveyQuestionType.BOOLEAN:
+        return ["yes", "no"]
+    if q.field_type == SurveyQuestionType.RATING:
+        return list(RATING_SCALE)
+    return list(q.options or [])
+
+
+def _answer_values(q: SurveyQuestion, answer: str) -> list[str]:
+    if q.field_type == SurveyQuestionType.CHECKBOX:
+        return [v.strip() for v in answer.split(",") if v.strip()]
+    return [answer.strip()]
+
+
+def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> QuestionSummaryOut:
+    counts = dict.fromkeys(_summary_buckets(q), 0)
+    answered = 0
+    for r in responses:
+        answer = (r.answers.get(str(q.id)) or {}).get("answer")
+        if not isinstance(answer, str) or not answer.strip():
+            continue
+        answered += 1
+        for val in _answer_values(q, answer):
+            if val in counts:
+                counts[val] += 1
+    mean = None
+    if q.field_type == SurveyQuestionType.RATING:
+        total = sum(counts.values())
+        mean = round(sum(int(k) * n for k, n in counts.items()) / total, 2) if total else None
+    return QuestionSummaryOut(
+        question_id=str(q.id),
+        field_type=q.field_type,
+        counts=counts,
+        answered=answered,
+        mean=mean,
+    )
+
+
+def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
+    if isinstance(answer, dict):
+        ordered = [opt for opt in (q.options or []) if opt in answer]
+        ordered += [opt for opt in answer if opt not in ordered]
+        return ";".join(f"{opt}={answer[opt]}" for opt in ordered)
+    if answer is None:
+        return ""
+    return str(answer)
 
 
 def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:

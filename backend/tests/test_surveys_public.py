@@ -101,6 +101,135 @@ class TestSurveyTalliesAuthz:
 
 
 # ---------------------------------------------------------------------------
+# Per-question summaries (Issue 1462)
+# ---------------------------------------------------------------------------
+
+POLL_A = "2030-01-01T10:00:00+00:00"
+POLL_B = "2030-01-02T10:00:00+00:00"
+
+
+def _question(survey, label, field_type, options=None, order=0):
+    return SurveyQuestion.objects.create(
+        survey=survey,
+        label=label,
+        field_type=field_type,
+        options=options or [],
+        display_order=order,
+    )
+
+
+def _answers(pairs: dict) -> dict:
+    return {str(q.id): {"label": q.label, "answer": value} for q, value in pairs.items()}
+
+
+@pytest.fixture
+def mixed_survey(db, survey_owner):
+    survey = Survey.objects.create(title="Mixed", slug="mixed", created_by=survey_owner)
+    radio = _question(survey, "Colour", SurveyQuestionType.RADIO, ["red", "blue"], 0)
+    checkbox = _question(
+        survey, "Toppings", SurveyQuestionType.CHECKBOX, ["tofu", "kale", "salsa"], 1
+    )
+    boolean = _question(survey, "Coming?", SurveyQuestionType.BOOLEAN, order=2)
+    rating = _question(survey, "Vibes", SurveyQuestionType.RATING, order=3)
+    text = _question(survey, "Notes", SurveyQuestionType.TEXT, order=4)
+    poll = _question(survey, "When", SurveyQuestionType.DATETIME_POLL, [POLL_A, POLL_B], 5)
+    SurveyResponse.objects.create(
+        survey=survey,
+        user=survey_owner,
+        answers=_answers(
+            {
+                radio: "red",
+                checkbox: "tofu,kale",
+                boolean: "yes",
+                rating: "5",
+                text: "=SUM(A1)",
+                poll: {POLL_B: "maybe", POLL_A: "yes"},
+            }
+        ),
+    )
+    SurveyResponse.objects.create(
+        survey=survey,
+        user=None,
+        answers=_answers({radio: "blue", checkbox: "kale", boolean: "no", rating: "2"}),
+    )
+    SurveyResponse.objects.create(
+        survey=survey,
+        user=None,
+        answers=_answers({radio: "red", checkbox: "", rating: ""}),
+    )
+    return survey
+
+
+@pytest.mark.django_db
+class TestSurveySummary:
+    def _url(self, survey):
+        return f"/api/community/surveys/{survey.id}/summary/"
+
+    def _by_label(self, survey, body):
+        label_by_id = {str(q.id): q.label for q in survey.questions.all()}
+        return {label_by_id[row["question_id"]]: row for row in body}
+
+    def test_counts_choice_boolean_and_rating(self, api_client, survey_owner_headers, mixed_survey):
+        response = api_client.get(self._url(mixed_survey), **survey_owner_headers)
+        assert response.status_code == 200
+        rows = self._by_label(mixed_survey, response.json())
+        assert set(rows) == {"Colour", "Toppings", "Coming?", "Vibes"}
+
+        assert rows["Colour"]["counts"] == {"red": 2, "blue": 1}
+        assert rows["Colour"]["answered"] == 3
+        assert rows["Colour"]["mean"] is None
+
+        assert rows["Toppings"]["counts"] == {"tofu": 1, "kale": 2, "salsa": 0}
+        assert rows["Toppings"]["answered"] == 2
+
+        assert rows["Coming?"]["counts"] == {"yes": 1, "no": 1}
+        assert rows["Coming?"]["answered"] == 2
+
+        assert rows["Vibes"]["counts"] == {"1": 0, "2": 1, "3": 0, "4": 0, "5": 1}
+        assert rows["Vibes"]["answered"] == 2
+        assert rows["Vibes"]["mean"] == 3.5
+
+    def test_rating_mean_is_none_without_answers(
+        self, api_client, survey_owner, survey_owner_headers
+    ):
+        survey = Survey.objects.create(title="Empty", slug="empty", created_by=survey_owner)
+        _question(survey, "Vibes", SurveyQuestionType.RATING)
+        response = api_client.get(self._url(survey), **survey_owner_headers)
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "question_id": str(survey.questions.get().id),
+                "field_type": "rating",
+                "counts": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0},
+                "answered": 0,
+                "mean": None,
+            }
+        ]
+
+    def test_other_member_cannot_read_summary(self, api_client, auth_headers, mixed_survey):
+        response = api_client.get(self._url(mixed_survey), **auth_headers)
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+
+    def test_unauthenticated_cannot_read_summary(self, api_client, mixed_survey):
+        assert api_client.get(self._url(mixed_survey)).status_code == 401
+
+    def test_tallies_still_only_cover_datetime_polls(
+        self, api_client, survey_owner_headers, mixed_survey
+    ):
+        response = api_client.get(
+            f"/api/community/surveys/{mixed_survey.id}/tallies/", **survey_owner_headers
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["tallies"] == {
+            POLL_A: {"yes": 1, "maybe": 0},
+            POLL_B: {"yes": 0, "maybe": 1},
+        }
+
+
+# ---------------------------------------------------------------------------
 # Public survey submit rate limit (Issue 457)
 # ---------------------------------------------------------------------------
 

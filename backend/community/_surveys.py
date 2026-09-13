@@ -1,18 +1,22 @@
 """Survey CRUD, questions, and response endpoints."""
 
+import csv
+import io
 import logging
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.http import HttpResponse
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
-from community._shared import ErrorOut
+from community._shared import ErrorOut, csv_safe
 from community._survey_helpers import (
     _apply_linked_event_update,
+    _csv_answer_cell,
     _survey_out,
     _survey_question_out,
 )
@@ -421,12 +425,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
 # -- Survey responses (admin) --
 
 
-@router.get(
-    "/surveys/{survey_id}/responses/",
-    response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def list_survey_responses(request, survey_id: UUID):
+def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
         audit_log(
             logging.WARNING,
@@ -437,16 +436,25 @@ def list_survey_responses(request, survey_id: UUID):
                 type=AuditTargetType.SURVEY,
                 id=str(survey_id),
                 details={
-                    "endpoint": "list_survey_responses",
+                    "endpoint": endpoint,
                     "required_permission": PermissionKey.MANAGE_SURVEYS,
                 },
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
-        survey = Survey.objects.get(id=survey_id)
+        return Survey.objects.prefetch_related("questions").get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+
+
+@router.get(
+    "/surveys/{survey_id}/responses/",
+    response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def list_survey_responses(request, survey_id: UUID):
+    survey = _load_survey_for_responses(request, survey_id, "list_survey_responses")
     responses = survey.responses.select_related("user").all()
     return Status(
         200,
@@ -461,3 +469,26 @@ def list_survey_responses(request, survey_id: UUID):
             for r in responses
         ],
     )
+
+
+@router.get(
+    "/surveys/{survey_id}/responses.csv",
+    response={403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def get_survey_responses_csv(request, survey_id: UUID):
+    survey = _load_survey_for_responses(request, survey_id, "get_survey_responses_csv")
+    questions = list(survey.questions.all())
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["submitted_by", "submitted_at", *(csv_safe(q.label) for q in questions)])
+    for r in survey.responses.select_related("user").all():
+        name = visible_display_name(r.user, request.auth) if r.user else ""
+        cells = [
+            csv_safe(_csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")))
+            for q in questions
+        ]
+        writer.writerow([csv_safe(name), r.submitted_at.isoformat(), *cells])
+    response = HttpResponse(buf.getvalue(), content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="survey-responses-{survey.id}.csv"'
+    return response
