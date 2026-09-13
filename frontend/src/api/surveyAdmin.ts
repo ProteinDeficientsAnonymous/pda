@@ -60,6 +60,7 @@ interface WireSurveyFull {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  linked_event_id?: string | null;
   questions?: {
     id: string;
     label: string;
@@ -87,6 +88,7 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    linkedEventId: w.linked_event_id ?? null,
     questions: (w.questions ?? [])
       .map((q) => ({
         id: q.id,
