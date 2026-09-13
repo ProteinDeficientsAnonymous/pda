@@ -334,6 +334,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'a survey with that slug already exists';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
+    case Code.Survey.ResponseNotFound:
+      return 'response not found';
     case Code.Survey.NoDatetimePollQuestion:
       return 'survey has no datetime poll question';
     case Code.Survey.WinningDatetimeNotInOptions:

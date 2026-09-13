@@ -131,3 +131,69 @@ class TestSurveySubmitRateLimit:
                 break
 
         assert last_status == 429, "expected the public survey submit to hit the rate limit"
+
+
+# ---------------------------------------------------------------------------
+# Anonymous surveys (Issue 1466)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def anonymous_survey(db):
+    survey = Survey.objects.create(
+        title="Anonymous feedback",
+        slug="anon-feedback",
+        anonymous=True,
+        one_response_per_user=True,
+    )
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="Thoughts?",
+        field_type=SurveyQuestionType.TEXT,
+    )
+    return survey
+
+
+@pytest.mark.django_db
+class TestAnonymousSurveySubmit:
+    def test_authenticated_submit_stores_no_user(self, api_client, auth_headers, anonymous_survey):
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        response = api_client.post(
+            url,
+            data=json.dumps({"answers": {str(question.id): "great"}}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["user_id"] is None
+        stored = SurveyResponse.objects.get(survey=anonymous_survey)
+        assert stored.user_id is None
+
+    def test_one_response_per_user_does_not_dedupe_anonymous(
+        self, api_client, auth_headers, anonymous_survey
+    ):
+        # anonymous=True disables the one-per-user upsert since there's no
+        # user to key it on — every submit creates a new response.
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        for _ in range(2):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+            assert response.status_code == 201
+        assert SurveyResponse.objects.filter(survey=anonymous_survey).count() == 2
+
+    def test_get_survey_public_omits_my_response_for_anonymous(
+        self, api_client, auth_headers, anonymous_survey
+    ):
+        SurveyResponse.objects.create(survey=anonymous_survey, user=None, answers={})
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/"
+        response = api_client.get(url, **auth_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["my_response_id"] is None
+        assert body["my_answers"] is None

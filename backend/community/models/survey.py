@@ -23,6 +23,8 @@ class Survey(models.Model):
     )
     is_active = models.BooleanField(default=True)
     one_response_per_user = models.BooleanField(default=False)
+    anonymous = models.BooleanField(default=False)
+    confirmation_message = models.TextField(blank=True, default="", max_length=1000)
     linked_event = models.ForeignKey(
         "community.Event",
         null=True,

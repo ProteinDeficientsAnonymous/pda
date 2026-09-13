@@ -45,6 +45,8 @@ class SurveyOut(BaseModel):
     visibility: str
     is_active: bool
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = ""
     linked_event_id: str | None = None
     created_by_id: str | None = None
     created_at: datetime
@@ -73,6 +75,8 @@ class SurveyIn(BaseModel):
     visibility: str = Field(default=SurveyVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     is_active: bool = True
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = Field(default="", max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE)
     linked_event_id: str | None = None
 
 
@@ -83,6 +87,10 @@ class SurveyPatchIn(BaseModel):
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     is_active: bool | None = None
     one_response_per_user: bool | None = None
+    anonymous: bool | None = None
+    confirmation_message: str | None = Field(
+        default=None, max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE
+    )
     linked_event_id: str | None = None
 
 

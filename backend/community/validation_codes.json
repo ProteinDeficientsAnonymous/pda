@@ -621,6 +621,11 @@
         "params": []
       },
       {
+        "name": "RESPONSE_NOT_FOUND",
+        "value": "survey.response_not_found",
+        "params": []
+      },
+      {
         "name": "NO_DATETIME_POLL_QUESTION",
         "value": "survey.no_datetime_poll_question",
         "params": []

@@ -1952,10 +1952,27 @@ export interface paths {
             cookie?: never;
         };
         /** List Survey Responses */
-        get: operations["community__surveys_list_survey_responses"];
+        get: operations["community__surveys_responses_list_survey_responses"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/surveys/{survey_id}/responses/{response_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Survey Response */
+        delete: operations["community__surveys_responses_delete_survey_response"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4750,6 +4767,16 @@ export interface components {
         /** SurveyIn */
         SurveyIn: {
             /**
+             * Anonymous
+             * @default false
+             */
+            anonymous: boolean;
+            /**
+             * Confirmation Message
+             * @default
+             */
+            confirmation_message: string;
+            /**
              * Description
              * @default
              */
@@ -4804,6 +4831,16 @@ export interface components {
         /** SurveyOut */
         SurveyOut: {
             /**
+             * Anonymous
+             * @default false
+             */
+            anonymous: boolean;
+            /**
+             * Confirmation Message
+             * @default
+             */
+            confirmation_message: string;
+            /**
              * Created At
              * Format: date-time
              */
@@ -4849,6 +4886,10 @@ export interface components {
         };
         /** SurveyPatchIn */
         SurveyPatchIn: {
+            /** Anonymous */
+            anonymous?: boolean | null;
+            /** Confirmation Message */
+            confirmation_message?: string | null;
             /** Description */
             description?: string | null;
             /** Is Active */
@@ -11073,7 +11114,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_list_survey_responses: {
+    community__surveys_responses_list_survey_responses: {
         parameters: {
             query?: never;
             header?: never;
@@ -11092,6 +11133,45 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SurveyResponseOut"][];
                 };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__surveys_responses_delete_survey_response: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+                response_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {

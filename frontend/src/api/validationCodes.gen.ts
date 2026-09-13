@@ -149,6 +149,7 @@ export const Code = {
     NotFound: 'survey.not_found',
     SlugAlreadyExists: 'survey.slug_already_exists',
     QuestionNotFound: 'survey.question_not_found',
+    ResponseNotFound: 'survey.response_not_found',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
     PollAlreadyFinalized: 'survey.poll_already_finalized',
@@ -358,6 +359,7 @@ export type ValidationCode =
   | 'survey.not_found'
   | 'survey.slug_already_exists'
   | 'survey.question_not_found'
+  | 'survey.response_not_found'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
   | 'survey.poll_already_finalized'
@@ -533,6 +535,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.not_found': [],
   'survey.slug_already_exists': [],
   'survey.question_not_found': [],
+  'survey.response_not_found': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],
   'survey.poll_already_finalized': [],

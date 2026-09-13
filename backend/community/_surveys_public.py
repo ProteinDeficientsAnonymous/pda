@@ -76,9 +76,12 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     questions = {str(q.id): q for q in survey.questions.all()}
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
-    user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    if survey.one_response_per_user and auth_user is not None:
-        existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
+    # Anonymous surveys never attach a responder, so the one-per-user upsert
+    # has nothing to key on and every submit creates a new response.
+    response_user = None if survey.anonymous else auth_user
+    user_name = visible_display_name(auth_user, auth_user) if response_user else None
+    if survey.one_response_per_user and response_user is not None:
+        existing = SurveyResponse.objects.filter(survey=survey, user=response_user).first()
         if existing:
             existing.answers = answers
             existing.save(update_fields=["answers"])
@@ -91,7 +94,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
                 ),
             )
             return Status(200, _response_out(existing, user_name))
-    response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
+    response = SurveyResponse.objects.create(survey=survey, user=response_user, answers=answers)
     audit_log(
         logging.INFO,
         "survey_response_submitted",
