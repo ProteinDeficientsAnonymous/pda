@@ -130,6 +130,64 @@ class TestImageSearch:
         assert response.status_code == 200
         assert response.json()["results"][0]["original_url"] == "https://example.com/big-large.gif"
 
+    def test_gif_prefers_original_webp_when_smaller(self, api_client, auth_headers, settings):
+        settings.GIPHY_API_KEY = "giphy-key"
+        settings.PEXELS_API_KEY = ""
+        payload = {
+            "data": [
+                {
+                    "id": "big",
+                    "title": "party",
+                    "images": {
+                        "fixed_width": {"url": "https://example.com/big-small.gif"},
+                        "downsized_large": {
+                            "url": "https://example.com/big-large.gif",
+                            "size": "8000000",
+                        },
+                        "original": {
+                            "url": "https://example.com/big.gif",
+                            "webp": "https://example.com/big.webp",
+                            "webp_size": "1200000",
+                        },
+                    },
+                }
+            ]
+        }
+        with patch("community._giphy.httpx.get", side_effect=_by_url(gif_payload=payload)):
+            response = api_client.get(f"{_URL}?q=party", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["results"][0]["original_url"] == "https://example.com/big.webp"
+
+    def test_gif_keeps_downsized_large_when_webp_is_heavier(
+        self, api_client, auth_headers, settings
+    ):
+        settings.GIPHY_API_KEY = "giphy-key"
+        settings.PEXELS_API_KEY = ""
+        payload = {
+            "data": [
+                {
+                    "id": "big",
+                    "title": "party",
+                    "images": {
+                        "fixed_width": {"url": "https://example.com/big-small.gif"},
+                        "downsized_large": {
+                            "url": "https://example.com/big-large.gif",
+                            "size": "1500000",
+                        },
+                        "original": {
+                            "url": "https://example.com/big.gif",
+                            "webp": "https://example.com/big.webp",
+                            "webp_size": "4000000",
+                        },
+                    },
+                }
+            ]
+        }
+        with patch("community._giphy.httpx.get", side_effect=_by_url(gif_payload=payload)):
+            response = api_client.get(f"{_URL}?q=party", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["results"][0]["original_url"] == "https://example.com/big-large.gif"
+
     def test_works_with_only_pexels_key(self, api_client, auth_headers, settings):
         settings.GIPHY_API_KEY = ""
         settings.PEXELS_API_KEY = "pexels-key"

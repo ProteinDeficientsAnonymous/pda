@@ -10,6 +10,7 @@ from ninja import Query, Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
+from community._event_schemas import _MAX_EVENT_PHOTO_SIZE
 from community._shared import ErrorOut
 
 logger = logging.getLogger("pda")
@@ -38,19 +39,37 @@ class GiphySearchOut(BaseModel):
     results: list[GiphyResult]
 
 
+def _byte_size(value: object) -> int:
+    if not value:
+        return 0
+    return int(value)
+
+
+def _full_gif_url(images: dict) -> str:
+    gif = images.get("downsized_large") or images.get("original") or {}
+    gif_url = gif.get("url") or ""
+    gif_size = _byte_size(gif.get("size"))
+    original = images.get("original") or {}
+    webp_url = original.get("webp") or ""
+    webp_size = _byte_size(original.get("webp_size"))
+    under_cap = 0 < webp_size <= _MAX_EVENT_PHOTO_SIZE
+    smaller_or_only = not gif_size or webp_size <= gif_size
+    if webp_url and under_cap and smaller_or_only:
+        return webp_url
+    return gif_url
+
+
 def _parse_gif(gif: dict) -> GiphyResult | None:
     images = gif.get("images", {})
     preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
-    # downsized_large caps at ~8 MB (still animated) so we stay under the 10 MB
-    # event-photo limit; fall back to the uncapped original if it's missing.
-    full = images.get("downsized_large") or images.get("original") or {}
-    if not preview.get("url") or not full.get("url"):
+    full_url = _full_gif_url(images)
+    if not preview.get("url") or not full_url:
         return None
     return GiphyResult(
         id=gif.get("id", ""),
         title=gif.get("title", ""),
         preview_url=preview["url"],
-        original_url=full["url"],
+        original_url=full_url,
         source="gif",
     )
 

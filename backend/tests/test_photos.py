@@ -25,6 +25,20 @@ def _make_test_image(fmt="JPEG", size=(20, 20)):
     )
 
 
+def _animated_gif_file(name="dance.gif", content_type="image/gif"):
+    frames = [Image.new("RGB", (96, 96), (i * 20, 40, 180)) for i in range(12)]
+    buf = io.BytesIO()
+    frames[0].save(
+        buf,
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=80,
+        loop=0,
+    )
+    return SimpleUploadedFile(name, buf.getvalue(), content_type=content_type)
+
+
 def _auth(user):
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
@@ -131,6 +145,31 @@ class TestEventPhoto:
         assert data["photo_updated_at"] is not None
         event.refresh_from_db()
         assert event.photo_updated_at is not None
+
+    def test_upload_transcodes_animated_gif_to_webp(self, api_client, member, event):
+        photo = _animated_gif_file()
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": photo},
+            **_auth(member),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.photo.name.endswith(".webp")
+        with Image.open(event.photo) as im:
+            assert im.format == "WEBP"
+            assert im.n_frames == 12
+
+    def test_upload_transcodes_gif_bytes_even_when_named_png(self, api_client, member, event):
+        photo = _animated_gif_file(name="dance.png", content_type="image/png")
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": photo},
+            **_auth(member),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.photo.name.endswith(".webp")
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()
