@@ -1,3 +1,10 @@
+# [0.102.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.101.1...v0.102.0) (2026-09-13)
+
+
+### Features
+
+* **join-requests:** extend approved grace period to 7 days (Issue 1446) ([#1454](https://github.com/ProteinDeficientsAnonymous/pda/issues/1454)) ([0aa79e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/0aa79e2f33b41895e55d5ab27ae360514094da9b))
+
 ## [0.101.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.101.0...v0.101.1) (2026-09-13)
 
 
