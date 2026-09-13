@@ -62,6 +62,23 @@ describe('RsvpQuestionFields', () => {
     expect(onChange).toHaveBeenCalledWith('q-multi', '');
   });
 
+  it('should render questions in array order and keep answers keyed by id', () => {
+    const { container } = render(
+      <RsvpQuestionFields
+        questions={[questions[1]!, questions[0]!]}
+        answers={{ 'q-text': 'hello', 'q-one': 'bus' }}
+        onChange={vi.fn()}
+        errors={{}}
+      />,
+    );
+
+    const labels = [...container.querySelectorAll('label')].map((label) => label.textContent);
+    expect(labels[0]).toBe('transport');
+    expect(labels[1]).toBe('notes (optional)');
+    expect(screen.getByRole('combobox', { name: 'transport' })).toHaveValue('bus');
+    expect(screen.getByLabelText('notes (optional)')).toHaveValue('hello');
+  });
+
   it('shows per-question errors', () => {
     render(
       <RsvpQuestionFields

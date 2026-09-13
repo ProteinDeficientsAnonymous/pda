@@ -112,6 +112,69 @@ describe('syncEventRsvpQuestions', () => {
     expect(result.map((question) => question.id)).toEqual(['keep', 'new']);
   });
 
+  it('should send the new order while keeping original ids on expected', async () => {
+    const first = q({ id: 'travel', label: 'how are you getting there?' });
+    const second = q({ id: 'notes', label: 'anything we should know?' });
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: [
+        {
+          id: 'notes',
+          label: 'anything we should know?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+          display_order: 0,
+        },
+        {
+          id: 'travel',
+          label: 'how are you getting there?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+          display_order: 1,
+        },
+      ],
+    });
+
+    const result = await syncEventRsvpQuestions('evt', [second, first], [first, second]);
+
+    expect(apiClient.put).toHaveBeenCalledWith('/api/community/events/evt/rsvp-questions/', {
+      expected: [
+        {
+          id: 'travel',
+          label: 'how are you getting there?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+        {
+          id: 'notes',
+          label: 'anything we should know?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+      ],
+      questions: [
+        {
+          id: 'notes',
+          label: 'anything we should know?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+        {
+          id: 'travel',
+          label: 'how are you getting there?',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+      ],
+    });
+    expect(result.map((question) => question.id)).toEqual(['notes', 'travel']);
+  });
+
   it('should patch cached event detail so the RSVP dialog sees synced questions', async () => {
     const eventId = 'evt-sync-cache';
     const slug = 'sync-cache-event';

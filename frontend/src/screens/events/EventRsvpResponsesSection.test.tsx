@@ -156,6 +156,51 @@ describe('EventRsvpResponsesSection', () => {
     expect(screen.getByText('old answer')).toBeInTheDocument();
   });
 
+  it('should keep answers under the matching question when questions are reordered', () => {
+    render(
+      <EventRsvpResponsesSection
+        event={makeEvent({
+          rsvpQuestions: [
+            {
+              id: 'q2',
+              label: 'notes',
+              fieldType: QuestionType.Textarea,
+              options: [],
+              required: false,
+            },
+            {
+              id: 'q1',
+              label: 'how are you getting there?',
+              fieldType: QuestionType.Select,
+              options: ['driving', 'transit'],
+              required: true,
+            },
+          ],
+          guests: [
+            makeGuest({
+              userId: 'a',
+              name: 'alice',
+              questionnaireResponses: {
+                q1: { label: 'how are you getting there?', answer: 'driving' },
+                q2: { label: 'notes', answer: 'bringing chips' },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+
+    const headers = screen.getAllByRole('columnheader').map((header) => header.textContent);
+    expect(headers).toEqual(['guest', 'status', 'notes', 'how are you getting there?']);
+    const aliceCells = screen.getAllByRole('row')[1]!.querySelectorAll('td');
+    expect([...aliceCells].map((cell) => cell.textContent)).toEqual([
+      'alice',
+      'going',
+      'bringing chips',
+      'driving',
+    ]);
+  });
+
   it('tallies choice answers even when the snapshot label was renamed', () => {
     render(
       <EventRsvpResponsesSection

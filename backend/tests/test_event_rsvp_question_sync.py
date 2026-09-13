@@ -2,7 +2,9 @@ from unittest.mock import patch
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRsvpQuestion
+from community.models import Event, EventRSVP, EventRsvpQuestion, RSVPStatus
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -33,6 +35,32 @@ def _create_question(event, **overrides):
         "id": str(question.id),
         **data,
     }
+
+
+def _sync_fields(question):
+    return {
+        "id": question["id"],
+        "label": question["label"],
+        "field_type": question["field_type"],
+        "options": question["options"],
+        "required": question["required"],
+    }
+
+
+@pytest.fixture
+def other_user(db):
+    return User.objects.create_user(
+        phone_number="+12025550999",
+        password="otherpass",
+        first_name="Other",
+        last_name="Guest",
+    )
+
+
+@pytest.fixture
+def other_headers(other_user):
+    refresh = RefreshToken.for_user(other_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.mark.django_db
@@ -184,3 +212,104 @@ class TestEventRsvpQuestionSync:
 
         assert response.status_code == 201
         assert response.json()["rsvp_questions"][0]["label"] == "dietary?"
+
+    def test_reorder_keeps_question_ids_and_existing_answers(
+        self, api_client, auth_headers, other_headers, other_user, rsvp_event
+    ):
+        travel = _create_question(rsvp_event)
+        notes = _create_question(
+            rsvp_event,
+            label="anything we should know?",
+            field_type="textarea",
+            options=[],
+            required=False,
+        )
+        assert (
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {
+                    "status": RSVPStatus.ATTENDING,
+                    "has_plus_one": False,
+                    "questionnaire_responses": {
+                        travel["id"]: "transit",
+                        notes["id"]: "nut allergy",
+                    },
+                },
+                content_type="application/json",
+                **other_headers,
+            ).status_code
+            == 200
+        )
+
+        response = api_client.put(
+            f"/api/community/events/{rsvp_event.id}/rsvp-questions/",
+            {
+                "expected": [_sync_fields(travel), _sync_fields(notes)],
+                "questions": [_sync_fields(notes), _sync_fields(travel)],
+            },
+            content_type="application/json",
+            **auth_headers,
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert [q["id"] for q in body] == [notes["id"], travel["id"]]
+        assert [q["label"] for q in body] == ["anything we should know?", travel["label"]]
+        assert [q["display_order"] for q in body] == [0, 1]
+        assert EventRsvpQuestion.objects.get(id=notes["id"]).display_order == 0
+        assert EventRsvpQuestion.objects.get(id=travel["id"]).display_order == 1
+
+        saved = EventRSVP.objects.get(event=rsvp_event, user=other_user)
+        assert saved.questionnaire_responses[travel["id"]]["answer"] == "transit"
+        assert saved.questionnaire_responses[notes["id"]]["answer"] == "nut allergy"
+
+        host_view = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
+        assert [q["id"] for q in host_view["rsvp_questions"]] == [notes["id"], travel["id"]]
+        host_guest = next(g for g in host_view["guests"] if g["user_id"] == str(other_user.pk))
+        assert host_guest["questionnaire_responses"][travel["id"]]["answer"] == "transit"
+        assert host_guest["questionnaire_responses"][notes["id"]]["answer"] == "nut allergy"
+
+        guest_view = api_client.get(
+            f"/api/community/events/{rsvp_event.id}/", **other_headers
+        ).json()
+        assert [q["id"] for q in guest_view["rsvp_questions"]] == [notes["id"], travel["id"]]
+        assert guest_view["my_questionnaire_responses"][travel["id"]]["answer"] == "transit"
+        assert guest_view["my_questionnaire_responses"][notes["id"]]["answer"] == "nut allergy"
+
+        new_guest = User.objects.create_user(
+            phone_number="+12025550888",
+            password="newpass",
+            first_name="New",
+            last_name="Guest",
+        )
+        new_headers = {
+            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(new_guest).access_token}"  # type: ignore
+        }
+        assert (
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {
+                    "status": RSVPStatus.ATTENDING,
+                    "has_plus_one": False,
+                    "questionnaire_responses": {
+                        notes["id"]: "gluten free",
+                        travel["id"]: "driving",
+                    },
+                },
+                content_type="application/json",
+                **new_headers,
+            ).status_code
+            == 200
+        )
+
+        after = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
+        assert [q["label"] for q in after["rsvp_questions"]] == [
+            "anything we should know?",
+            travel["label"],
+        ]
+        old_guest = next(g for g in after["guests"] if g["user_id"] == str(other_user.pk))
+        fresh_guest = next(g for g in after["guests"] if g["user_id"] == str(new_guest.pk))
+        assert old_guest["questionnaire_responses"][travel["id"]]["answer"] == "transit"
+        assert old_guest["questionnaire_responses"][notes["id"]]["answer"] == "nut allergy"
+        assert fresh_guest["questionnaire_responses"][travel["id"]]["answer"] == "driving"
+        assert fresh_guest["questionnaire_responses"][notes["id"]]["answer"] == "gluten free"
