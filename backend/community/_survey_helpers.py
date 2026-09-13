@@ -31,6 +31,7 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
         options=q.options or [],
         required=q.required,
         display_order=q.display_order,
+        show_if=q.show_if,
     )
 
 

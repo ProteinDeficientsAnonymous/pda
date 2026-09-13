@@ -11,6 +11,11 @@ from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
+from community._survey_conditions import (
+    assert_order_keeps_dependencies,
+    clear_dependent_conditions,
+    validate_show_if,
+)
 from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
@@ -250,7 +255,7 @@ def delete_survey(request, survey_id: UUID):
 
 @router.post(
     "/surveys/{survey_id}/questions/",
-    response={201: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={201: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
@@ -275,6 +280,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     max_order = survey.questions.count()
+    show_if = validate_show_if(payload.show_if, survey_id=survey_id, display_order=max_order)
     q = SurveyQuestion.objects.create(
         survey=survey,
         label=payload.label,
@@ -282,6 +288,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         options=payload.options,
         required=payload.required,
         display_order=max_order,
+        show_if=show_if,
     )
     audit_log(
         logging.INFO,
@@ -298,7 +305,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
 
 @router.patch(
     "/surveys/{survey_id}/questions/{question_id}/",
-    response={200: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
@@ -326,6 +333,9 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.field_type = payload.field_type
     q.options = payload.options
     q.required = payload.required
+    q.show_if = validate_show_if(
+        payload.show_if, survey_id=survey_id, display_order=q.display_order
+    )
     q.save()
     audit_log(
         logging.INFO,
@@ -366,6 +376,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
         raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
+    clear_dependent_conditions(survey_id, question_id)
     q.delete()
     audit_log(
         logging.INFO,
@@ -382,7 +393,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
 
 @router.put(
     "/surveys/{survey_id}/questions/order/",
-    response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
+    response={200: list[SurveyQuestionOut], 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
@@ -406,6 +417,8 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
+    assert_order_keeps_dependencies(existing, payload.question_ids)
     for idx, qid in enumerate(payload.question_ids):
         SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
     audit_log(

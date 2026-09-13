@@ -66,6 +66,17 @@ class QuestionType(models.TextChoices):
 # Survey authors the full catalog; keep the historical name as an alias.
 SurveyQuestionType = QuestionType
 
+# Question types whose answers a survey `show_if` condition can compare against.
+CONDITION_SOURCE_TYPES = frozenset(
+    {QuestionType.RADIO, QuestionType.SELECT, QuestionType.CHECKBOX, QuestionType.BOOLEAN}
+)
+
+
+class ShowIfOperator(models.TextChoices):
+    EQUALS = "equals", "Equals"
+    NOT_EQUALS = "not_equals", "Not equals"
+    CONTAINS = "contains", "Contains"
+
 
 class JoinFormQuestionType(models.TextChoices):
     """Question types supported by join forms."""

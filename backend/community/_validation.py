@@ -164,6 +164,14 @@ class Code:
         ANSWER_INVALID_AVAILABILITY = (
             "survey.answer_invalid_availability"  # params: { label, value }
         )
+        CONDITION_QUESTION_NOT_FOUND = "survey.condition_question_not_found"
+        CONDITION_QUESTION_NOT_EARLIER = "survey.condition_question_not_earlier"
+        CONDITION_TYPE_NOT_SUPPORTED = "survey.condition_type_not_supported"  # params: { label }
+        CONDITION_OPERATOR_NOT_SUPPORTED = (
+            "survey.condition_operator_not_supported"  # params: { operator }
+        )
+        CONDITION_VALUE_INVALID = "survey.condition_value_invalid"  # params: { label }
+        CONDITION_ORDER_CONFLICT = "survey.condition_order_conflict"  # params: { label }
 
     class JoinRequest:
         NOT_FOUND = "join_request.not_found"

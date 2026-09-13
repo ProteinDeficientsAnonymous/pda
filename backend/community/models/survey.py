@@ -66,6 +66,8 @@ class SurveyQuestion(models.Model):
     options = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
+    # {question_id, operator, value}; None means always shown.
+    show_if = models.JSONField(null=True, blank=True, default=None)
 
     class Meta:
         app_label = "community"

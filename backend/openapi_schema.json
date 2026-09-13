@@ -5748,6 +5748,66 @@
         "title": "RolePatchIn",
         "type": "object"
       },
+      "ShowIfIn": {
+        "properties": {
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfOperator"
+              }
+            ],
+            "default": "equals"
+          },
+          "question_id": {
+            "format": "uuid",
+            "title": "Question Id",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 300,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "value"
+        ],
+        "title": "ShowIfIn",
+        "type": "object"
+      },
+      "ShowIfOperator": {
+        "enum": [
+          "equals",
+          "not_equals",
+          "contains"
+        ],
+        "title": "ShowIfOperator",
+        "type": "string"
+      },
+      "ShowIfOut": {
+        "properties": {
+          "operator": {
+            "title": "Operator",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "operator",
+          "value"
+        ],
+        "title": "ShowIfOut",
+        "type": "object"
+      },
       "SseTicketOut": {
         "properties": {
           "ticket": {
@@ -6126,6 +6186,16 @@
             "default": false,
             "title": "Required",
             "type": "boolean"
+          },
+          "show_if": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6178,6 +6248,16 @@
           "required": {
             "title": "Required",
             "type": "boolean"
+          },
+          "show_if": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -14928,6 +15008,16 @@
             },
             "description": "Created"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -14999,6 +15089,16 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "403": {
             "content": {
@@ -15136,6 +15236,16 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "403": {
             "content": {
