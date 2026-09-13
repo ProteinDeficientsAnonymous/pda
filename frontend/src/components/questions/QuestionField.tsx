@@ -15,7 +15,7 @@ interface Props {
 
 /** Shared answer field for surveys and join form questions. */
 export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
-  const label = question.required ? question.label : `${question.label} (optional)`;
+  const label = `${question.label} (${question.required ? 'required' : 'optional'})`;
   const common = { label, error, disabled: readOnly };
 
   switch (question.fieldType) {
