@@ -10,13 +10,15 @@ from ninja.responses import Status
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
-from community._shared import ErrorOut
+from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
     _survey_question_out,
+    _visible_survey_list,
 )
 from community._survey_schemas import (
+    PublicSurveyListOut,
     SurveyIn,
     SurveyListOut,
     SurveyOut,
@@ -76,6 +78,18 @@ def list_surveys_admin(request):
             for s in surveys
         ],
     )
+
+
+# Member-facing discovery list. It lives on this router, not the public one, because
+# ninja binds a path to a single router — a GET on another router for "/surveys/"
+# never resolves past the POST below.
+@router.get(
+    "/surveys/",
+    response={200: list[PublicSurveyListOut]},
+    auth=_optional_jwt,
+)
+def list_surveys_public(request):
+    return Status(200, _visible_survey_list(_authenticated_user(request.auth)))
 
 
 @router.post(

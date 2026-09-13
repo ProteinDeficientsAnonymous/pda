@@ -2357,6 +2357,14 @@
             ],
             "title": "Latitude"
           },
+          "linked_surveys": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventSurveyOut"
+            },
+            "title": "Linked Surveys",
+            "type": "array"
+          },
           "location": {
             "title": "Location",
             "type": "string"
@@ -2489,14 +2497,6 @@
             "default": "active",
             "title": "Status",
             "type": "string"
-          },
-          "survey_slugs": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Survey Slugs",
-            "type": "array"
           },
           "tags": {
             "default": [],
@@ -3318,6 +3318,29 @@
           }
         },
         "title": "EventStatsOut",
+        "type": "object"
+      },
+      "EventSurveyOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "slug"
+        ],
+        "title": "EventSurveyOut",
         "type": "object"
       },
       "FeatureFlagPatchIn": {
@@ -5340,6 +5363,50 @@
           "has_plus_one"
         ],
         "title": "PublicRsvpStateOut",
+        "type": "object"
+      },
+      "PublicSurveyListOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "linked_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Event Id"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "slug",
+          "description",
+          "visibility"
+        ],
+        "title": "PublicSurveyListOut",
         "type": "object"
       },
       "QuestionType": {
@@ -14398,6 +14465,35 @@
       }
     },
     "/api/community/surveys/": {
+      "get": {
+        "operationId": "community__surveys_list_surveys_public",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicSurveyListOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
+        "summary": "List Surveys Public",
+        "tags": [
+          "community"
+        ]
+      },
       "post": {
         "operationId": "community__surveys_create_survey",
         "parameters": [],

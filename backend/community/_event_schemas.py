@@ -88,6 +88,12 @@ class TagOut(BaseModel):
     slug: str
 
 
+class EventSurveyOut(BaseModel):
+    id: str
+    title: str
+    slug: str
+
+
 class TagIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
 
@@ -199,7 +205,7 @@ class EventOut(BaseModel):
     waitlisted_count: int = 0
     invited_count: int = 0
     comment_count: int = 0
-    survey_slugs: list[str] = []
+    linked_surveys: list[EventSurveyOut] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False
     invited_user_ids: list[str] = []

@@ -7,6 +7,7 @@ from users.permissions import PermissionKey
 from community._survey_schemas import (
     PollResultOut,
     PollResultsOut,
+    PublicSurveyListOut,
     SurveyOut,
     SurveyQuestionOut,
     SurveyResponseOut,
@@ -20,6 +21,7 @@ from community.models import (
     Survey,
     SurveyQuestion,
     SurveyResponse,
+    SurveyVisibility,
 )
 
 
@@ -32,6 +34,24 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
         required=q.required,
         display_order=q.display_order,
     )
+
+
+def _visible_survey_list(auth_user) -> list[PublicSurveyListOut]:
+    """Active surveys the caller may see: public for anon, public + members-only for members."""
+    surveys = Survey.objects.filter(is_active=True)
+    if auth_user is None:
+        surveys = surveys.filter(visibility=SurveyVisibility.PUBLIC)
+    return [
+        PublicSurveyListOut(
+            id=str(s.id),
+            title=s.title,
+            slug=s.slug,
+            description=s.description,
+            visibility=s.visibility,
+            linked_event_id=str(s.linked_event_id) if s.linked_event_id else None,
+        )
+        for s in surveys
+    ]
 
 
 def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
