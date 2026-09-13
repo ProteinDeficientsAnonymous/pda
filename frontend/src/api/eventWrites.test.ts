@@ -225,48 +225,20 @@ describe('useUploadEventPhoto', () => {
     );
   });
 
-  it('names the upload from the blob type', async () => {
+  it.each([
+    ['image/jpeg', 'event.jpg'],
+    ['image/webp', 'event.webp'],
+    ['image/gif', 'event.gif'],
+  ])('names the upload %s as %s', async (type, name) => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
     const { Wrapper } = buildWrapper();
-
     const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
-    result.current.mutate({
-      eventId: EVENT_ID,
-      blob: new Blob(['x'], { type: 'image/jpeg' }),
-    });
-
+    result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type }) });
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
     const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
-    const file = formData.get('photo') as File;
-    expect(file.name).toBe('event.jpg');
-  });
-
-  it('keeps webp and gif extensions for library picks', async () => {
-    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
-    const { Wrapper } = buildWrapper();
-    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
-
-    result.current.mutate({
-      eventId: EVENT_ID,
-      blob: new Blob(['x'], { type: 'image/webp' }),
-    });
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    const webp = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
-    expect((webp.get('photo') as File).name).toBe('event.webp');
-
-    result.current.mutate({
-      eventId: EVENT_ID,
-      blob: new Blob(['x'], { type: 'image/gif' }),
-    });
-    await waitFor(() => {
-      expect(vi.mocked(apiClient.post).mock.calls).toHaveLength(2);
-    });
-    const gif = vi.mocked(apiClient.post).mock.calls[1][1] as FormData;
-    expect((gif.get('photo') as File).name).toBe('event.gif');
+    expect((formData.get('photo') as File).name).toBe(name);
   });
 });
 
