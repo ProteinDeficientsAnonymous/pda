@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
@@ -96,7 +97,7 @@ export default function SurveyResponsesScreen() {
           ) : summaries.isError ? (
             <p className="text-muted text-sm">couldn't load summaries</p>
           ) : (
-            <QuestionSummaries questions={summarizedQuestions} rows={summaries.data} />
+            <QuestionSummaries questions={survey.data.questions} rows={summaries.data} />
           )}
         </section>
       ) : null}
@@ -139,7 +140,13 @@ export default function SurveyResponsesScreen() {
   );
 }
 
-const SUMMARIZED_TYPES = new Set<string>(['radio', 'select', 'checkbox', 'boolean', 'rating']);
+const SUMMARIZED_TYPES = new Set<string>([
+  QuestionType.Radio,
+  QuestionType.Select,
+  QuestionType.Checkbox,
+  QuestionType.Boolean,
+  QuestionType.Rating,
+]);
 
 function DownloadCsvButton({ surveyId, disabled }: { surveyId: string; disabled: boolean }) {
   const [busy, setBusy] = useState(false);
@@ -167,22 +174,30 @@ function DownloadCsvButton({ surveyId, disabled }: { surveyId: string; disabled:
   );
 }
 
+function orderedCounts(counts: Record<string, number>, options: string[]): [string, number][] {
+  // js enumerates integer-like object keys numerically, which silently reorders
+  // options like "2024"/"2023" away from the order the api sent them in.
+  const known = options.filter((o) => o in counts);
+  const rest = Object.keys(counts).filter((o) => !known.includes(o));
+  return [...known, ...rest].map((o): [string, number] => [o, counts[o] ?? 0]);
+}
+
 function QuestionSummaries({
   questions,
   rows,
 }: {
-  questions: { id: string; label: string }[];
+  questions: { id: string; label: string; options: string[] }[];
   rows: SurveyQuestionSummary[];
 }) {
-  const labelById = new Map(questions.map((q) => [q.id, q.label]));
+  const byId = new Map(questions.map((q) => [q.id, q]));
   return (
     <div className="flex flex-col gap-4">
       {rows.map((row) => {
-        const total = Object.values(row.counts).reduce((sum, n) => sum + n, 0);
+        const question = byId.get(row.questionId);
         return (
           <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
             <p className="text-foreground mb-1 text-sm font-medium">
-              {(labelById.get(row.questionId) ?? row.questionId).toLowerCase()}
+              {(question?.label ?? row.questionId).toLowerCase()}
             </p>
             <p className="text-muted mb-2 text-xs">
               {String(row.answered)} answered
@@ -197,12 +212,14 @@ function QuestionSummaries({
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(row.counts).map(([option, count]) => (
+                {orderedCounts(row.counts, question?.options ?? []).map(([option, count]) => (
                   <tr key={option} className="border-border border-t">
                     <td className="text-foreground py-1 pe-2">{option.toLowerCase()}</td>
                     <td className="px-2 py-1">{String(count)}</td>
                     <td className="text-muted px-2 py-1">
-                      {total === 0 ? '—' : `${String(Math.round((count / total) * 100))}%`}
+                      {row.answered === 0
+                        ? '—'
+                        : `${String(Math.round((count / row.answered) * 100))}%`}
                     </td>
                   </tr>
                 ))}

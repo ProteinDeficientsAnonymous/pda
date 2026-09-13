@@ -4,6 +4,7 @@ import csv
 import io
 
 import pytest
+from community._shared import csv_safe
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
@@ -124,3 +125,68 @@ class TestSurveyResponsesCsv:
             **admin_headers,
         )
         assert response.status_code == 404
+
+
+@pytest.fixture
+def responder(db):
+    return User.objects.create_user(
+        phone_number="+12025557021",
+        password="x",
+        first_name="=Ada",
+        last_name="Lovelace",
+    )
+
+
+@pytest.mark.django_db
+class TestSurveyResponsesCsvIdentityAndInjection:
+    def _survey_with_answer(self, surveys_admin, responder, *, label, answer):
+        survey = Survey.objects.create(title="Nasty", slug="nasty", created_by=surveys_admin)
+        question = SurveyQuestion.objects.create(
+            survey=survey, label=label, field_type=SurveyQuestionType.TEXT, display_order=0
+        )
+        SurveyResponse.objects.create(
+            survey=survey,
+            user=responder,
+            answers={str(question.id): {"label": label, "answer": answer}},
+        )
+        return survey
+
+    def test_labels_names_and_answers_are_all_neutralized(
+        self, api_client, admin_headers, surveys_admin, responder
+    ):
+        survey = self._survey_with_answer(
+            surveys_admin, responder, label='=HYPERLINK("http://evil")', answer="@SUM(1)"
+        )
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[0][2] == "'=HYPERLINK(\"http://evil\")"
+        assert rows[1][0] == "'=Ada Lovelace"
+        assert rows[1][2] == "'@SUM(1)"
+
+    @pytest.mark.parametrize("prefix", ["=", "+", "-", "@"])
+    def test_formula_prefixes_are_neutralized_in_answers(
+        self, api_client, admin_headers, surveys_admin, responder, prefix
+    ):
+        survey = self._survey_with_answer(
+            surveys_admin, responder, label="Notes", answer=f"{prefix}cmd"
+        )
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[1][2] == f"'{prefix}cmd"
+
+    def test_hidden_last_name_is_not_exported(
+        self, api_client, admin_headers, surveys_admin, responder
+    ):
+        responder.hide_last_name = True
+        responder.save(update_fields=["hide_last_name"])
+        survey = self._survey_with_answer(surveys_admin, responder, label="Notes", answer="hi")
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[1][0] == "'=Ada"
+
+
+@pytest.mark.parametrize("prefix", ["=", "+", "-", "@", "\t", "\r"])
+def test_csv_safe_neutralizes_every_dangerous_prefix(prefix):
+    assert csv_safe(f"{prefix}cmd") == f"'{prefix}cmd"
+
+
+@pytest.mark.parametrize("value", ["", "plain", "a=b", " =cmd"])
+def test_csv_safe_leaves_other_values_alone(value):
+    assert csv_safe(value) == value

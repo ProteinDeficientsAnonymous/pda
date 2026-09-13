@@ -29,13 +29,28 @@ const mockTallies = vi.mocked(useSurveyPollTallies);
 const mockSummaries = vi.mocked(useSurveyQuestionSummaries);
 const mockDownload = vi.mocked(downloadSurveyResponsesCsv);
 
-const QUESTIONS = [
+interface Question {
+  id: string;
+  label: string;
+  fieldType: string;
+  options: string[];
+}
+
+interface SummaryRow {
+  questionId: string;
+  fieldType: string;
+  counts: Record<string, number>;
+  answered: number;
+  mean: number | null;
+}
+
+const QUESTIONS: Question[] = [
   { id: 'q-colour', label: 'Colour', fieldType: 'radio', options: ['red', 'blue'] },
   { id: 'q-vibes', label: 'Vibes', fieldType: 'rating', options: [] },
   { id: 'q-notes', label: 'Notes', fieldType: 'text', options: [] },
 ];
 
-const SUMMARY_ROWS = [
+const SUMMARY_ROWS: SummaryRow[] = [
   {
     questionId: 'q-colour',
     fieldType: 'radio',
@@ -57,16 +72,18 @@ function mockQuery(data: unknown, overrides: Record<string, unknown> = {}) {
 }
 
 function setup({
+  questions = QUESTIONS,
   summaries = SUMMARY_ROWS,
   summaryState = {},
   responseCount = 1,
 }: {
+  questions?: typeof QUESTIONS;
   summaries?: typeof SUMMARY_ROWS;
   summaryState?: Record<string, unknown>;
   responseCount?: number;
 } = {}) {
   mockSurvey.mockReturnValue(
-    mockQuery({ id: 'srv-1', title: 'feedback', questions: QUESTIONS, pollResult: null }),
+    mockQuery({ id: 'srv-1', title: 'feedback', questions, pollResult: null }),
   );
   mockResponses.mockReturnValue(
     mockQuery(
@@ -116,6 +133,61 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(vibes).getByText('2 answered · average 3.50')).toBeInTheDocument();
     const five = within(vibes).getByText('5').closest('tr')!;
     expect(within(five).getByText('1')).toBeInTheDocument();
+  });
+
+  it('should share checkbox options across respondents, not across selections', () => {
+    setup({
+      questions: [
+        {
+          id: 'q-food',
+          label: 'Food',
+          fieldType: 'checkbox',
+          options: ['kale', 'tofu'],
+        },
+      ],
+      summaries: [
+        {
+          questionId: 'q-food',
+          fieldType: 'checkbox',
+          counts: { kale: 2, tofu: 1 },
+          answered: 2,
+          mean: null,
+        },
+      ],
+    });
+    const food = screen.getByText('food').closest('div')!;
+    const kale = within(food).getByText('kale').closest('tr')!;
+    const tofu = within(food).getByText('tofu').closest('tr')!;
+    expect(within(kale).getByText('100%')).toBeInTheDocument();
+    expect(within(tofu).getByText('50%')).toBeInTheDocument();
+  });
+
+  it('should keep the question option order for integer-like options', () => {
+    setup({
+      questions: [
+        {
+          id: 'q-year',
+          label: 'Year',
+          fieldType: 'select',
+          options: ['2024', '2023', '2022'],
+        },
+      ],
+      summaries: [
+        {
+          questionId: 'q-year',
+          fieldType: 'select',
+          counts: { '2024': 1, '2023': 2, '2022': 3 },
+          answered: 6,
+          mean: null,
+        },
+      ],
+    });
+    const year = screen.getByText('year').closest('div')!;
+    const options = within(year)
+      .getAllByRole('row')
+      .slice(1)
+      .map((tr) => tr.firstElementChild?.textContent);
+    expect(options).toEqual(['2024', '2023', '2022']);
   });
 
   it('should not render the summaries section when no question is summarizable', () => {
