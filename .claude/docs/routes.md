@@ -13,6 +13,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/events/:id` | Event detail (member details gated inline) |
 | `/events/:id/edit` | Event edit (form handles auth; backend may 401) |
 | `/events/add` | Create event |
+| `/surveys` | Survey list (members also see members-only) |
 | `/surveys/:slug` | Public / members survey |
 | `/donate` | Donate |
 | `/install` | Install / PWA |

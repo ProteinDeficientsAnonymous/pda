@@ -81,6 +81,12 @@ export interface EventTag {
   slug: string;
 }
 
+export interface EventLinkedSurvey {
+  id: string;
+  title: string;
+  slug: string;
+}
+
 export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 
 export interface EventRsvpQuestion {
@@ -175,7 +181,7 @@ export interface Event {
   myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
-  surveySlugs: string[];
+  linkedSurveys: EventLinkedSurvey[];
   invitedUserIds: string[];
   invitedUserNames: string[];
   invitedUserPhotoUrls: string[];

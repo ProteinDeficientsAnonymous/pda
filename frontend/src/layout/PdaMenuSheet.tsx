@@ -19,6 +19,7 @@ interface MenuItem {
 const ALWAYS_ITEMS: MenuItem[] = [
   { to: '/', label: 'home' },
   { to: '/faq', label: 'faq' },
+  { to: '/surveys', label: 'surveys' },
   { to: '/install', label: 'install app' },
   { to: '/donate', label: 'donate' },
 ];
