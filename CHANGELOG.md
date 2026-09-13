@@ -1,3 +1,10 @@
+# [0.101.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.100.0...v0.101.0) (2026-09-13)
+
+
+### Features
+
+* add joined-whatsapp flag to admin member settings ([#1444](https://github.com/ProteinDeficientsAnonymous/pda/issues/1444)) ([6e0cf74](https://github.com/ProteinDeficientsAnonymous/pda/commit/6e0cf747730648b6a1c0745f420e365864ae5194))
+
 # [0.100.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.99.1...v0.100.0) (2026-09-13)
 
 
