@@ -68,8 +68,26 @@ class TestCompressExistingPhotos:
     def test_commit_keeps_original_avatar(self, member):
         member.profile_photo.save("avatar.png", ContentFile(_noisy_png()), save=True)
         old = member.profile_photo.name
-        _run("--commit", "--avatars-only")
+        _run("--commit")
         member.refresh_from_db()
         assert member.profile_photo.name != old
         assert default_storage.exists(old)
         assert default_storage.exists(member.profile_photo.name)
+        assert member.photo_updated_at is not None
+
+    def test_skips_unreadable_photo_and_continues(self, event, member):
+        event.photo.name = "missing.png"
+        event.save(update_fields=["photo"])
+        member.profile_photo.save("avatar.png", ContentFile(_noisy_png()), save=True)
+        out = StringIO()
+        err = StringIO()
+        call_command("compress_existing_photos", "--commit", stdout=out, stderr=err)
+        member.refresh_from_db()
+        assert member.profile_photo.name.endswith(".jpg")
+        combined = out.getvalue() + err.getvalue()
+        assert "skip" in combined
+
+    def test_help_says_originals_stay_in_storage(self):
+        from community.management.commands.compress_existing_photos import Command
+
+        assert "originals stay" in Command.help

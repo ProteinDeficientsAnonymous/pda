@@ -1,8 +1,9 @@
 """Authentication endpoints (login, token refresh, me)."""
 
 import logging
+import time
 
-from community._image_compress import AVATAR_MAX_EDGE, stored_photo
+from community._image_compress import AVATAR_MAX_EDGE, commit_photo, stored_photo
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
@@ -224,12 +225,8 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
             max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
         )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    if user.profile_photo:
-        user.profile_photo.delete(save=False)
     body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
-    user.profile_photo.save(f"{user.pk}.{ext}", body, save=False)
-    user.photo_updated_at = timezone.now()
-    user.save(update_fields=["profile_photo", "photo_updated_at"])
+    commit_photo(user, "profile_photo", f"{user.pk}_{int(time.time())}.{ext}", body)
     audit_log(
         logging.INFO,
         "profile_photo_uploaded",

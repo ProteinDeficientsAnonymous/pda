@@ -224,6 +224,40 @@ describe('useUploadEventPhoto', () => {
       expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
     );
   });
+
+  it('names the upload from the blob type', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
+    const { Wrapper } = buildWrapper();
+
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    result.current.mutate({
+      eventId: EVENT_ID,
+      blob: new Blob(['x'], { type: 'image/jpeg' }),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
+    const file = formData.get('photo') as File;
+    expect(file.name).toBe('event.jpg');
+  });
+
+  it('keeps webp and gif extensions for library picks', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
+    const { Wrapper } = buildWrapper();
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+
+    result.current.mutate({
+      eventId: EVENT_ID,
+      blob: new Blob(['x'], { type: 'image/webp' }),
+    });
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    const webp = vi.mocked(apiClient.post).mock.calls[0][1] as FormData;
+    expect((webp.get('photo') as File).name).toBe('event.webp');
+  });
 });
 
 describe('useUpdateEvent cache patching', () => {

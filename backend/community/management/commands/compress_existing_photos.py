@@ -10,59 +10,52 @@ from community.models import Event
 
 
 class Command(BaseCommand):
-    help = "Recompress stored event and profile photos. Dry-run unless --commit."
+    help = (
+        "Recompress stored event and profile photos into new objects; "
+        "originals stay in storage. Dry-run unless --commit."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("--commit", action="store_true", help="write compressed files")
-        parser.add_argument("--events-only", action="store_true")
-        parser.add_argument("--avatars-only", action="store_true")
 
     def handle(self, *args, **options):
         commit = options["commit"]
         changed = skipped = 0
-        if not options["avatars_only"]:
-            c, s = self._walk_events(commit)
-            changed += c
-            skipped += s
-        if not options["events_only"]:
-            c, s = self._walk_avatars(commit)
-            changed += c
-            skipped += s
+        for event in Event.objects.exclude(photo="").iterator():
+            if self._recompress(
+                event, "photo", EVENT_MAX_EDGE, f"{event.id}_{int(time.time())}", commit
+            ):
+                changed += 1
+            else:
+                skipped += 1
+        for user in User.objects.exclude(profile_photo="").iterator():
+            if self._recompress(
+                user,
+                "profile_photo",
+                AVATAR_MAX_EDGE,
+                f"{user.pk}_{int(time.time())}",
+                commit,
+            ):
+                changed += 1
+            else:
+                skipped += 1
         mode = "wrote" if commit else "would write"
         self.stdout.write(f"{mode} {changed}; skipped {skipped}")
-
-    def _walk_events(self, commit: bool) -> tuple[int, int]:
-        changed = skipped = 0
-        for event in Event.objects.exclude(photo="").iterator():
-            stem = f"{event.id}_{int(time.time())}"
-            if self._recompress(event, "photo", EVENT_MAX_EDGE, stem, commit):
-                changed += 1
-            else:
-                skipped += 1
-        return changed, skipped
-
-    def _walk_avatars(self, commit: bool) -> tuple[int, int]:
-        changed = skipped = 0
-        for user in User.objects.exclude(profile_photo="").iterator():
-            stem = f"{user.pk}_{int(time.time())}"
-            if self._recompress(user, "profile_photo", AVATAR_MAX_EDGE, stem, commit):
-                changed += 1
-            else:
-                skipped += 1
-        return changed, skipped
 
     def _recompress(
         self, instance, field_name: str, max_edge: int, stem: str, commit: bool
     ) -> bool:
         field = getattr(instance, field_name)
-        if not field:
-            return False
-        field.open("rb")
         try:
-            raw = field.read()
-        finally:
-            field.close()
-        result = compress_photo(raw, max_edge)
+            field.open("rb")
+            try:
+                raw = field.read()
+            finally:
+                field.close()
+            result = compress_photo(raw, max_edge)
+        except OSError:
+            self.stdout.write(f"skip {field.name}: cannot read")
+            return False
         if result is None:
             return False
         data, ext = result

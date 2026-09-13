@@ -259,7 +259,8 @@ export function useUploadEventPhoto() {
   return useMutation({
     mutationFn: async ({ eventId, blob }: { eventId: string; blob: Blob }) => {
       const formData = new FormData();
-      formData.append('photo', blob, 'event.png');
+      const ext = (blob.type.split('/')[1] ?? 'jpg').replace('jpeg', 'jpg');
+      formData.append('photo', blob, `event.${ext}`);
       const { data } = await apiClient.post<WireEvent>(
         `/api/community/events/${eventId}/photo/`,
         formData,

@@ -74,26 +74,14 @@ AUTH_USER_MODEL = "users.User"
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
-# "media" caches B2 signed URLs. LocMem locally (single process); DB in production so
-# gunicorn workers reuse the same signature and browsers can HTTP-cache the object.
+# Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.
 CACHES = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
     "ratelimit": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
     },
-    "media": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "media-urls",
-    },
 }
-
-if IS_PRODUCTION:
-    CACHES["media"] = {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "django_cache",
-        "KEY_PREFIX": "media",
-    }
 
 NINJA_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),

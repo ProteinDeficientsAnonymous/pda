@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
-from config.media_proxy import SIGNED_URL_CACHE_TTL, media_path
+from config.media_proxy import media_path
 from config.og_preview import _absolute
 from django.core.cache import caches
 from django.core.files.base import ContentFile
@@ -20,12 +20,7 @@ class _CountingUrlField:
         return f"https://s3.example/{self.name}?sig={self.calls}"
 
 
-@pytest.fixture(autouse=True)
-def _clear_media_url_cache():
-    caches["media"].clear()
-
-
-@pytest.mark.unit
+@pytest.mark.django_db
 class TestMediaPath:
     def test_empty_field_returns_empty_string(self):
         assert media_path(None) == ""
@@ -64,13 +59,20 @@ class TestMediaPath:
         field = SimpleNamespace(name="profile_photos/a.jpg", url="/media/profile_photos/a.jpg")
         assert media_path(field) == "/media/profile_photos/a.jpg"
 
-    def test_signed_url_cache_ttl_leaves_one_day_before_signature_expires(self):
-        assert SIGNED_URL_CACHE_TTL == 60 * 60 * 24 * 6
+    def test_signed_url_cache_does_not_reuse_across_object_names(self):
+        stamp = "2026-01-01T00:00:00Z"
+        a = _CountingUrlField(name="profile_photos/a.jpg", updated_at=stamp)
+        b = _CountingUrlField(name="profile_photos/b.jpg", updated_at=stamp)
+        first = media_path(a)
+        second = media_path(b)
+        assert first != second
+        assert a.calls == 1
+        assert b.calls == 1
 
     def test_mints_fresh_signature_when_cache_entry_is_gone(self):
         field = _CountingUrlField()
         first = media_path(field)
-        caches["media"].clear()
+        caches["ratelimit"].clear()
         second = media_path(field)
         assert first != second
         assert field.calls == 2

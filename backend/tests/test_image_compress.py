@@ -2,11 +2,7 @@ import io
 import os
 
 import pytest
-from community._image_compress import (
-    EVENT_MAX_EDGE,
-    compress_photo,
-    maybe_webp_from_animated_gif,
-)
+from community._image_compress import EVENT_MAX_EDGE, compress_photo
 from PIL import Image
 
 
@@ -36,21 +32,18 @@ def _noisy_png(size: tuple[int, int] = (240, 240)) -> bytes:
     return buf.getvalue()
 
 
-@pytest.mark.unit
-class TestMaybeWebpFromAnimatedGif:
-    def test_animated_gif_returns_webp_with_same_frame_count(self):
-        raw = _gif_bytes(frames=12)
-        webp = maybe_webp_from_animated_gif(raw)
-        assert webp is not None
-        with Image.open(io.BytesIO(webp)) as im:
-            assert im.format == "WEBP"
-            assert im.n_frames == 12
-
-    def test_still_png_returns_none(self):
-        assert maybe_webp_from_animated_gif(_png_bytes()) is None
-
-    def test_single_frame_gif_returns_none(self):
-        assert maybe_webp_from_animated_gif(_gif_bytes(frames=1)) is None
+def _animated_webp(*, frames: int = 4) -> bytes:
+    images = [Image.new("RGBA", (32, 32), (i * 40, 10, 200, 255)) for i in range(frames)]
+    buf = io.BytesIO()
+    images[0].save(
+        buf,
+        format="WEBP",
+        save_all=True,
+        append_images=images[1:],
+        duration=80,
+        loop=0,
+    )
+    return buf.getvalue()
 
 
 @pytest.mark.unit
@@ -72,10 +65,29 @@ class TestCompressPhoto:
         data, ext = result
         assert ext == "jpg"
         with Image.open(io.BytesIO(data)) as im:
-            assert max(im.size) == 1200
+            assert im.size == (1200, 675)
 
     def test_tiny_png_returns_none_when_jpeg_is_not_smaller(self):
         assert compress_photo(_png_bytes(), EVENT_MAX_EDGE) is None
+
+    def test_animated_webp_is_left_alone(self):
+        assert compress_photo(_animated_webp(), EVENT_MAX_EDGE) is None
+
+    def test_garbage_bytes_return_none(self):
+        assert compress_photo(b"not-an-image", EVENT_MAX_EDGE) is None
+
+    def test_animated_gif_returns_none_when_webp_is_not_smaller(self, monkeypatch):
+        raw = _gif_bytes(frames=2, size=(4, 4))
+        orig_save = Image.Image.save
+
+        def fat_webp_save(self, fp, format=None, **kwargs):
+            if format == "WEBP":
+                fp.write(b"\x00" * (len(raw) + 1))
+                return
+            return orig_save(self, fp, format=format, **kwargs)
+
+        monkeypatch.setattr(Image.Image, "save", fat_webp_save)
+        assert compress_photo(raw, EVENT_MAX_EDGE) is None
 
     def test_animated_gif_returns_webp(self):
         result = compress_photo(_gif_bytes(frames=12), EVENT_MAX_EDGE)

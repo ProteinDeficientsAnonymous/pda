@@ -39,19 +39,13 @@ class GiphySearchOut(BaseModel):
     results: list[GiphyResult]
 
 
-def _byte_size(value: object) -> int:
-    if not value:
-        return 0
-    return int(value)
-
-
 def _full_gif_url(images: dict) -> str:
     gif = images.get("downsized_large") or images.get("original") or {}
     gif_url = gif.get("url") or ""
-    gif_size = _byte_size(gif.get("size"))
+    gif_size = int(gif.get("size") or 0)
     original = images.get("original") or {}
     webp_url = original.get("webp") or ""
-    webp_size = _byte_size(original.get("webp_size"))
+    webp_size = int(original.get("webp_size") or 0)
     under_cap = 0 < webp_size <= _MAX_EVENT_PHOTO_SIZE
     smaller_or_only = not gif_size or webp_size <= gif_size
     if webp_url and under_cap and smaller_or_only:
@@ -60,9 +54,12 @@ def _full_gif_url(images: dict) -> str:
 
 
 def _parse_gif(gif: dict) -> GiphyResult | None:
-    images = gif.get("images", {})
-    preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
-    full_url = _full_gif_url(images)
+    try:
+        images = gif.get("images", {})
+        preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
+        full_url = _full_gif_url(images)
+    except (TypeError, ValueError):
+        return None
     if not preview.get("url") or not full_url:
         return None
     return GiphyResult(

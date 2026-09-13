@@ -50,12 +50,12 @@ def media_path(field) -> str:
         return ""
     cache_key = _signed_url_cache_key(field)
     if cache_key:
-        cached = caches["media"].get(cache_key)
+        cached = caches["ratelimit"].get(cache_key)
         if cached is not None:
             return cached
     url = field.url
     if cache_key and url.startswith(("http://", "https://")):
-        caches["media"].set(cache_key, url, SIGNED_URL_CACHE_TTL)
+        caches["ratelimit"].set(cache_key, url, SIGNED_URL_CACHE_TTL)
     return url
 
 

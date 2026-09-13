@@ -97,6 +97,7 @@ CONFIG_TESTS: frozenset[str] = frozenset(
         "tests/test_logging.py",
         "tests/test_api.py",
         "tests/test_sse.py",
+        "tests/test_media_path.py",
     }
 )
 

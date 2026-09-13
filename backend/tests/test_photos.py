@@ -1,5 +1,6 @@
 import io
 import os
+from unittest.mock import patch
 
 import pytest
 from community.models import Event
@@ -115,6 +116,40 @@ class TestProfilePhoto:
         member.refresh_from_db()
         assert ".png" in member.profile_photo.name
 
+    def test_failed_compress_keeps_existing_avatar(self, api_client, member):
+        api_client.post("/api/auth/me/photo/", {"photo": _make_test_image()}, **_auth(member))
+        member.refresh_from_db()
+        old_name = member.profile_photo.name
+        with (
+            patch("users._auth.stored_photo", side_effect=RuntimeError("boom")),
+            pytest.raises(RuntimeError, match="boom"),
+        ):
+            api_client.post(
+                "/api/auth/me/photo/",
+                {"photo": _make_test_image()},
+                **_auth(member),
+            )
+        member.refresh_from_db()
+        assert member.profile_photo.name == old_name
+        assert default_storage.exists(old_name)
+
+    def test_failed_store_keeps_existing_avatar(self, api_client, member):
+        api_client.post("/api/auth/me/photo/", {"photo": _make_test_image()}, **_auth(member))
+        member.refresh_from_db()
+        old_name = member.profile_photo.name
+        with (
+            patch.object(default_storage, "save", side_effect=OSError("b2 down")),
+            pytest.raises(OSError, match="b2 down"),
+        ):
+            api_client.post(
+                "/api/auth/me/photo/",
+                {"photo": _make_test_image()},
+                **_auth(member),
+            )
+        member.refresh_from_db()
+        assert member.profile_photo.name == old_name
+        assert default_storage.exists(old_name)
+
     def test_upload_rejects_non_image(self, api_client, member):
         fake = SimpleUploadedFile("test.txt", b"not an image", content_type="text/plain")
         response = api_client.post("/api/auth/me/photo/", {"photo": fake}, **_auth(member))
@@ -195,6 +230,49 @@ class TestEventPhoto:
         assert response.status_code == 200
         event.refresh_from_db()
         assert event.photo.name.endswith(".jpg")
+
+    def test_failed_compress_keeps_existing_photo(self, api_client, member, event):
+        first = _make_test_image()
+        api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": first},
+            **_auth(member),
+        )
+        event.refresh_from_db()
+        old_name = event.photo.name
+        with (
+            patch("community._event_actions.stored_photo", side_effect=RuntimeError("boom")),
+            pytest.raises(RuntimeError, match="boom"),
+        ):
+            api_client.post(
+                f"/api/community/events/{event.id}/photo/",
+                {"photo": _make_test_image()},
+                **_auth(member),
+            )
+        event.refresh_from_db()
+        assert event.photo.name == old_name
+        assert default_storage.exists(old_name)
+
+    def test_failed_store_keeps_existing_photo(self, api_client, member, event):
+        api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": _make_test_image()},
+            **_auth(member),
+        )
+        event.refresh_from_db()
+        old_name = event.photo.name
+        with (
+            patch.object(default_storage, "save", side_effect=OSError("b2 down")),
+            pytest.raises(OSError, match="b2 down"),
+        ):
+            api_client.post(
+                f"/api/community/events/{event.id}/photo/",
+                {"photo": _make_test_image()},
+                **_auth(member),
+            )
+        event.refresh_from_db()
+        assert event.photo.name == old_name
+        assert default_storage.exists(old_name)
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()
