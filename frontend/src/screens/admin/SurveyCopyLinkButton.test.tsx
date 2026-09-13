@@ -51,4 +51,16 @@ describe('SurveyCopyLinkButton', () => {
     });
     expect(toastSuccess).not.toHaveBeenCalled();
   });
+
+  it('toasts an error when the clipboard api is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+
+    render(<SurveyCopyLinkButton slug="spring-potluck" />);
+    fireEvent.click(screen.getByRole('button', { name: 'copy link' }));
+
+    await vi.waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith("couldn't copy — try again");
+    });
+    expect(toastSuccess).not.toHaveBeenCalled();
+  });
 });
