@@ -16,6 +16,7 @@ from community._survey_helpers import (
     _response_out,
     _survey_out,
     _tally_question,
+    survey_is_open,
 )
 from community._survey_schemas import (
     FinalizePollIn,
@@ -48,6 +49,12 @@ def _visible_survey_or_404(slug: str, auth_user) -> Survey:
     return survey
 
 
+def _existing_response(survey: Survey, auth_user) -> SurveyResponse | None:
+    if not survey.one_response_per_user or auth_user is None:
+        return None
+    return SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
+
+
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
@@ -74,26 +81,25 @@ def get_survey_public(request, slug: str):
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     auth_user = _authenticated_user(request.auth)
     survey = _visible_survey_or_404(slug, auth_user)
-    if not survey.is_active:
+    existing = _existing_response(survey, auth_user)
+    if not survey_is_open(survey, check_cap=existing is None):
         raise_validation(Code.Survey.CLOSED, status_code=400)
     questions = {str(q.id): q for q in survey.questions.all()}
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
     user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    if survey.one_response_per_user and auth_user is not None:
-        existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
-        if existing:
-            existing.answers = answers
-            existing.save(update_fields=["answers"])
-            audit_log(
-                logging.INFO,
-                "survey_response_updated",
-                request,
-                target=AuditTarget(
-                    type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
-                ),
-            )
-            return Status(200, _response_out(existing, user_name))
+    if existing:
+        existing.answers = answers
+        existing.save(update_fields=["answers"])
+        audit_log(
+            logging.INFO,
+            "survey_response_updated",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
+            ),
+        )
+        return Status(200, _response_out(existing, user_name))
     response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
     audit_log(
         logging.INFO,
