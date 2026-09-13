@@ -1,6 +1,7 @@
 """Helper functions for survey output serialization and tally logic."""
 
 from config.media_proxy import media_path
+from django.db.models import Q
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -17,6 +18,8 @@ from community._validation import Code, raise_validation
 from community.models import (
     DatetimePollResult,
     Event,
+    EventStatus,
+    PageVisibility,
     PollAvailability,
     Survey,
     SurveyQuestion,
@@ -36,9 +39,27 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
     )
 
 
+_LISTABLE_EVENT_STATUSES = [EventStatus.ACTIVE, EventStatus.CANCELLED]
+
+
+def _listable_linked_event_q(auth_user) -> Q:
+    """Discovery must not out an event the caller can't open — a survey's title names it."""
+    visibilities = [PageVisibility.PUBLIC]
+    if auth_user is not None:
+        visibilities.append(PageVisibility.MEMBERS_ONLY)
+    return Q(linked_event__isnull=True) | (
+        Q(linked_event__visibility__in=visibilities)
+        & Q(linked_event__status__in=_LISTABLE_EVENT_STATUSES)
+    )
+
+
 def _visible_survey_list(auth_user) -> list[PublicSurveyListOut]:
-    """Active surveys the caller may see: public for anon, public + members-only for members."""
-    surveys = Survey.objects.filter(is_active=True)
+    """Active surveys the caller may see: public for anon, public + members-only for members.
+
+    Surveys tied to an event the caller cannot open are excluded regardless of their own
+    visibility.
+    """
+    surveys = Survey.objects.filter(is_active=True).filter(_listable_linked_event_q(auth_user))
     if auth_user is None:
         surveys = surveys.filter(visibility=SurveyVisibility.PUBLIC)
     return [

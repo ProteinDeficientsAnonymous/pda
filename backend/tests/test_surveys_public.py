@@ -7,6 +7,8 @@ import pytest
 from community._validation import Code
 from community.models import (
     Event,
+    EventStatus,
+    PageVisibility,
     Survey,
     SurveyQuestion,
     SurveyQuestionType,
@@ -196,3 +198,65 @@ class TestSurveyListPublic:
 
         assert body[0]["linked_event_id"] == str(event.id)
         assert body[0]["title"] == "Potluck poll"
+
+    def test_serializes_only_whitelisted_fields(self, api_client, discoverable_surveys):
+        body = api_client.get(self.url).json()
+        assert set(body[0]) == {
+            "id",
+            "title",
+            "slug",
+            "description",
+            "visibility",
+            "linked_event_id",
+        }
+
+
+def _survey_for_event(slug: str, **event_kwargs) -> Event:
+    event = Event.objects.create(
+        title="Hidden event",
+        start_datetime=timezone.now() + timedelta(days=7),
+        **event_kwargs,
+    )
+    Survey.objects.create(title=f"Survey {slug}", slug=slug, linked_event=event)
+    return event
+
+
+@pytest.mark.django_db
+class TestSurveyListLinkedEventVisibility:
+    """A public survey on a hidden event must not out that event in discovery."""
+
+    url = "/api/community/surveys/"
+
+    def _slugs(self, api_client, headers=None):
+        return {s["slug"] for s in api_client.get(self.url, **(headers or {})).json()}
+
+    def test_anonymous_excludes_members_only_event_survey(self, api_client, db):
+        _survey_for_event("members-event-survey", visibility=PageVisibility.MEMBERS_ONLY)
+        assert "members-event-survey" not in self._slugs(api_client)
+
+    def test_anonymous_excludes_draft_event_survey(self, api_client, db):
+        _survey_for_event("draft-event-survey", status=EventStatus.DRAFT)
+        assert "draft-event-survey" not in self._slugs(api_client)
+
+    def test_anonymous_excludes_invite_only_event_survey(self, api_client, db):
+        _survey_for_event("invite-event-survey", visibility=PageVisibility.INVITE_ONLY)
+        assert "invite-event-survey" not in self._slugs(api_client)
+
+    def test_anonymous_includes_public_event_survey(self, api_client, db):
+        _survey_for_event("public-event-survey")
+        assert "public-event-survey" in self._slugs(api_client)
+
+    def test_member_includes_members_only_event_survey(self, api_client, auth_headers, db):
+        _survey_for_event("members-event-survey", visibility=PageVisibility.MEMBERS_ONLY)
+        assert "members-event-survey" in self._slugs(api_client, auth_headers)
+
+    def test_member_excludes_invite_only_event_survey(self, api_client, auth_headers, db):
+        _survey_for_event("invite-event-survey", visibility=PageVisibility.INVITE_ONLY)
+        assert "invite-event-survey" not in self._slugs(api_client, auth_headers)
+
+    def test_member_excludes_deleted_event_survey(self, api_client, auth_headers, db):
+        _survey_for_event("deleted-event-survey", status=EventStatus.DELETED)
+        assert "deleted-event-survey" not in self._slugs(api_client, auth_headers)
+
+    def test_unlinked_surveys_still_listed(self, api_client, discoverable_surveys):
+        assert "public-survey" in self._slugs(api_client)
