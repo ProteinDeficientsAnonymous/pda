@@ -41,6 +41,22 @@ describe('EventFormQuestions', () => {
     expect(screen.getByText(/required/)).toBeInTheDocument();
   });
 
+  it('truncates only the label so the required marker stays visible', () => {
+    const longLabel = 'do you have any dietary restrictions we should know about'.repeat(4);
+    render(
+      <EventFormQuestions
+        rsvpEnabled
+        questions={[{ ...sample, label: longLabel }]}
+        onQuestionsChange={vi.fn()}
+      />,
+    );
+    const label = screen.getByText(longLabel);
+    const marker = screen.getByText(/required/);
+    expect(label).toHaveClass('truncate');
+    expect(label).not.toContainElement(marker);
+    expect(marker).toHaveClass('shrink-0');
+  });
+
   it('removes a question when delete is clicked', () => {
     const onQuestionsChange = vi.fn();
     render(
