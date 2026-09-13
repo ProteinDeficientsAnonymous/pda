@@ -16,14 +16,12 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
 
   const setType = (type: EventFormValues['eventType']) => {
     const isPublicOnly = type === EventType.Official || type === EventType.Club;
-    const patch: Partial<EventFormValues> = {
+    const prefillCashapp = type === EventType.Official && !values.cashappLink.trim();
+    onChange({
       eventType: type,
       ...(isPublicOnly ? { visibility: EventVisibility.Public } : {}),
-    };
-    if (type === EventType.Official && !values.cashappLink.trim()) {
-      patch.cashappLink = OFFICIAL_EVENT_CASHAPP_TAG;
-    }
-    onChange(patch);
+      ...(prefillCashapp ? { cashappLink: OFFICIAL_EVENT_CASHAPP_TAG } : {}),
+    });
   };
 
   return (
