@@ -1,17 +1,21 @@
 import { useMemo, useState } from 'react';
 
 import { useRoles } from '@/api/roles';
-import { type Member, useUsers } from '@/api/users';
+import { useUsers } from '@/api/users';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import { hasPermission, Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { BulkCreateDialog } from './BulkCreateDialog';
+import { MarkAttendedDialog } from './MarkAttendedDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
-import { MemberRow } from './MemberRow';
 import { filterAndSort, formatCountText, SORT_OPTIONS, type SortKey } from './membersFilterSort';
+import { MembersList } from './MembersList';
 import { MembersRoleFilter } from './MembersRoleFilter';
+import { MembersSelectionBar } from './MembersSelectionBar';
 
 export type MembersMode = 'members' | 'non-members';
 
@@ -30,6 +34,12 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(() => new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [markOpen, setMarkOpen] = useState(false);
+  const canMarkAttendance = hasPermission(
+    useAuthStore((s) => s.user),
+    Permission.ManageEvents,
+  );
 
   const roleNames = useMemo(() => [...allRoles.map((r) => r.name)].sort(), [allRoles]);
 
@@ -40,6 +50,23 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
 
   const hasFilters = query.trim() !== '' || selectedRoles.size > 0;
   const countText = formatCountText(visible.length, data.length, hasFilters);
+  const selectedMembers = useMemo(
+    () => data.filter((m) => selectedIds.has(m.id)),
+    [data, selectedIds],
+  );
+
+  function toggleSelected(id: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
 
   if (isPending) return <ContentLoading />;
   if (isError)
@@ -112,11 +139,22 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
         <p className="text-foreground-tertiary mb-3 text-sm">{countText}</p>
       ) : null}
 
+      {canMarkAttendance ? (
+        <MembersSelectionBar
+          count={selectedMembers.length}
+          onMark={() => {
+            setMarkOpen(true);
+          }}
+          onClear={clearSelection}
+        />
+      ) : null}
+
       <MembersList
         members={visible}
         selectedRoles={selectedRoles}
         hasAnyMembers={data.length > 0}
         mode={mode}
+        selection={canMarkAttendance ? { selectedIds, onToggle: toggleSelected } : undefined}
       />
 
       {createOpen ? (
@@ -136,64 +174,20 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
           }}
         />
       ) : null}
+
+      {markOpen ? (
+        <MarkAttendedDialog
+          open
+          members={selectedMembers}
+          onClose={() => {
+            setMarkOpen(false);
+          }}
+          onMarked={() => {
+            setMarkOpen(false);
+            clearSelection();
+          }}
+        />
+      ) : null}
     </>
-  );
-}
-
-function MembersList({
-  members,
-  selectedRoles,
-  hasAnyMembers,
-  mode,
-}: {
-  members: Member[];
-  selectedRoles: Set<string>;
-  hasAnyMembers: boolean;
-  mode: MembersMode;
-}) {
-  if (members.length === 0) {
-    const emptyLabel = mode === 'non-members' ? 'no non-members yet 🌿' : 'no members yet 🌿';
-    return (
-      <p className="text-sm text-neutral-500">
-        {!hasAnyMembers ? emptyLabel : 'nothing matches — try clearing filters'}
-      </p>
-    );
-  }
-
-  if (selectedRoles.size === 0) {
-    return (
-      <ul className="flex flex-col gap-2">
-        {members.map((m) => (
-          <li key={m.id}>
-            <MemberRow member={m} />
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  const groups = [...selectedRoles]
-    .sort()
-    .map((roleName) => ({
-      roleName,
-      members: members.filter((m) => m.roles.some((r) => r.name === roleName)),
-    }))
-    .filter((g) => g.members.length > 0);
-
-  return (
-    <div className="flex flex-col gap-6">
-      {groups.map((g) => (
-        <section key={g.roleName}>
-          <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">{g.roleName}</h2>
-          <ul className="flex flex-col gap-2">
-            {g.members.map((m) => (
-              <li key={m.id}>
-                <MemberRow member={m} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
   );
 }
