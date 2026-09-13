@@ -36,8 +36,7 @@ def _signed_url_cache_key(field) -> str | None:
     name = getattr(field, "name", None)
     if not name:
         return None
-    instance = getattr(field, "instance", None)
-    updated = getattr(instance, "photo_updated_at", None) if instance is not None else None
+    updated = getattr(getattr(field, "instance", None), "photo_updated_at", None)
     stamp = updated.isoformat() if hasattr(updated, "isoformat") else updated
     return f"media_url:{name}:{stamp}"
 
@@ -49,10 +48,8 @@ def media_path(field) -> str:
     if not field:
         return ""
     cache_key = _signed_url_cache_key(field)
-    if cache_key:
-        cached = caches["ratelimit"].get(cache_key)
-        if cached is not None:
-            return cached
+    if cache_key and (cached := caches["ratelimit"].get(cache_key)) is not None:
+        return cached
     url = field.url
     if cache_key and url.startswith(("http://", "https://")):
         caches["ratelimit"].set(cache_key, url, SIGNED_URL_CACHE_TTL)

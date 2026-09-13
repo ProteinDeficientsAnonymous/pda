@@ -39,8 +39,7 @@ class Command(BaseCommand):
                 changed += 1
             else:
                 skipped += 1
-        mode = "wrote" if commit else "would write"
-        self.stdout.write(f"{mode} {changed}; skipped {skipped}")
+        self.stdout.write(f"{'wrote' if commit else 'would write'} {changed}; skipped {skipped}")
 
     def _recompress(
         self, instance, field_name: str, max_edge: int, stem: str, commit: bool
