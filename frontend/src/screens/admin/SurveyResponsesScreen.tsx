@@ -5,10 +5,13 @@ import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
+  downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
+  type SurveyQuestionSummary,
   useAdminSurvey,
   useFinalizeSurveyPoll,
   useSurveyPollTallies,
+  useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
@@ -26,8 +29,16 @@ export default function SurveyResponsesScreen() {
     return survey.data.questions.filter((q) => q.fieldType === 'datetime_poll');
   }, [survey.data]);
 
+  const summarizedQuestions = useMemo(() => {
+    if (!survey.data) return [];
+    return survey.data.questions.filter((q) => SUMMARIZED_TYPES.has(q.fieldType));
+  }, [survey.data]);
+
   const tallies = useSurveyPollTallies(
     datetimeQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
+  );
+  const summaries = useSurveyQuestionSummaries(
+    summarizedQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
   );
 
   if (survey.isPending || responses.isPending) return <ContentLoading />;
@@ -50,12 +61,15 @@ export default function SurveyResponsesScreen() {
             {String(responses.data.length)} response{responses.data.length === 1 ? '' : 's'}
           </p>
         </div>
-        <Link
-          to={`/admin/surveys/${surveyId}`}
-          className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
-        >
-          ← back to editor
-        </Link>
+        <div className="flex items-center gap-2">
+          <DownloadCsvButton surveyId={surveyId} disabled={responses.data.length === 0} />
+          <Link
+            to={`/admin/surveys/${surveyId}`}
+            className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
+          >
+            ← back to editor
+          </Link>
+        </div>
       </header>
 
       {datetimeQuestions.length > 0 ? (
@@ -71,6 +85,19 @@ export default function SurveyResponsesScreen() {
           {finalizeOptions ? (
             <SurveyFinalizeControls surveyId={surveyId} options={finalizeOptions} />
           ) : null}
+        </section>
+      ) : null}
+
+      {summarizedQuestions.length > 0 ? (
+        <section className="mb-8">
+          <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">question summaries</h2>
+          {summaries.isPending ? (
+            <p className="text-muted text-sm">loading summaries…</p>
+          ) : summaries.isError ? (
+            <p className="text-muted text-sm">couldn't load summaries</p>
+          ) : (
+            <QuestionSummaries questions={summarizedQuestions} rows={summaries.data} />
+          )}
         </section>
       ) : null}
 
@@ -109,6 +136,82 @@ export default function SurveyResponsesScreen() {
         </div>
       )}
     </ContentContainer>
+  );
+}
+
+const SUMMARIZED_TYPES = new Set<string>(['radio', 'select', 'checkbox', 'boolean', 'rating']);
+
+function DownloadCsvButton({ surveyId, disabled }: { surveyId: string; disabled: boolean }) {
+  const [busy, setBusy] = useState(false);
+
+  async function onClick() {
+    setBusy(true);
+    try {
+      await downloadSurveyResponsesCsv(surveyId);
+    } catch {
+      toast.error("couldn't download csv");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      disabled={disabled || busy}
+      onClick={() => void onClick()}
+    >
+      {busy ? 'preparing…' : 'download csv'}
+    </Button>
+  );
+}
+
+function QuestionSummaries({
+  questions,
+  rows,
+}: {
+  questions: { id: string; label: string }[];
+  rows: SurveyQuestionSummary[];
+}) {
+  const labelById = new Map(questions.map((q) => [q.id, q.label]));
+  return (
+    <div className="flex flex-col gap-4">
+      {rows.map((row) => {
+        const total = Object.values(row.counts).reduce((sum, n) => sum + n, 0);
+        return (
+          <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
+            <p className="text-foreground mb-1 text-sm font-medium">
+              {(labelById.get(row.questionId) ?? row.questionId).toLowerCase()}
+            </p>
+            <p className="text-muted mb-2 text-xs">
+              {String(row.answered)} answered
+              {row.mean === null ? '' : ` · average ${row.mean.toFixed(2)}`}
+            </p>
+            <table className="w-full text-left text-xs">
+              <thead className="text-muted">
+                <tr>
+                  <th className="py-1 pe-2">option</th>
+                  <th className="px-2 py-1">count</th>
+                  <th className="px-2 py-1">share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(row.counts).map(([option, count]) => (
+                  <tr key={option} className="border-border border-t">
+                    <td className="text-foreground py-1 pe-2">{option.toLowerCase()}</td>
+                    <td className="px-2 py-1">{String(count)}</td>
+                    <td className="text-muted px-2 py-1">
+                      {total === 0 ? '—' : `${String(Math.round((count / total) * 100))}%`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
