@@ -18,7 +18,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
-import { SurveyFields } from './SurveyFields';
+import { SurveyFields, useSurveyFieldErrors } from './SurveyFields';
 
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
@@ -134,7 +134,18 @@ function SurveyRow({
   );
 }
 
-function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface CreateSurveyDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+// Remount on open so the form starts empty — the parent keeps this mounted while closed.
+function CreateSurveyDialog(props: CreateSurveyDialogProps) {
+  if (!props.open) return null;
+  return <CreateSurveyDialogBody {...props} />;
+}
+
+function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
   const create = useCreateSurvey();
   const navigate = useNavigate();
   const [values, setValues] = useState<SurveyInput>({
@@ -147,10 +158,12 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
     linkedEventId: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const fieldErrors = useSurveyFieldErrors();
 
   async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
+    fieldErrors.reset();
     if (!values.title.trim() || !values.slug.trim()) {
       setError('title and slug are required');
       return;
@@ -160,7 +173,7 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
       onClose();
       void navigate(`/admin/surveys/${created.id}`);
     } catch (err) {
-      setError(extractError(err));
+      if (!fieldErrors.capture(err)) setError(extractError(err));
     }
   }
 
@@ -171,7 +184,10 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
           values={values}
           onChange={(patch) => {
             setValues((v) => ({ ...v, ...patch }));
+            fieldErrors.clearFor(patch);
           }}
+          slugError={fieldErrors.slugError ?? undefined}
+          linkedEventError={fieldErrors.linkedEventError ?? undefined}
         />
         {error ? (
           <p role="alert" className="text-destructive text-sm">

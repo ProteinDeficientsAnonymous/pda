@@ -1,5 +1,7 @@
 import { format } from 'date-fns';
+import { useState } from 'react';
 
+import { getFieldError } from '@/api/apiErrors';
 import { useEvents } from '@/api/events';
 import type { SurveyInput } from '@/api/surveyAdmin';
 import { Select } from '@/components/ui/Select';
@@ -13,6 +15,34 @@ interface Props {
   values: SurveyFormValues;
   onChange: (patch: Partial<SurveyFormValues>) => void;
   slugError?: string | undefined;
+  linkedEventError?: string | undefined;
+}
+
+// Field errors clear as soon as their field changes, so a red field can't outlive the fix.
+export function useSurveyFieldErrors() {
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [linkedEventError, setLinkedEventError] = useState<string | null>(null);
+
+  return {
+    slugError,
+    linkedEventError,
+    reset() {
+      setSlugError(null);
+      setLinkedEventError(null);
+    },
+    clearFor(patch: Partial<SurveyFormValues>) {
+      if ('slug' in patch) setSlugError(null);
+      if ('linkedEventId' in patch) setLinkedEventError(null);
+    },
+    // return(boolean): true when the error was field-scoped — no generic banner needed
+    capture(err: unknown): boolean {
+      const slug = getFieldError(err, 'slug');
+      const linkedEvent = getFieldError(err, 'linked_event_id');
+      if (slug) setSlugError(slug);
+      if (linkedEvent) setLinkedEventError(linkedEvent);
+      return Boolean(slug ?? linkedEvent);
+    },
+  };
 }
 
 const VISIBILITY_OPTIONS = [
@@ -20,7 +50,7 @@ const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'public' },
 ];
 
-export function SurveyFields({ values, onChange, slugError }: Props) {
+export function SurveyFields({ values, onChange, slugError, linkedEventError }: Props) {
   return (
     <>
       <TextField
@@ -63,6 +93,7 @@ export function SurveyFields({ values, onChange, slugError }: Props) {
         onChange={(linkedEventId) => {
           onChange({ linkedEventId });
         }}
+        error={linkedEventError}
       />
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -86,9 +117,11 @@ function eventLabel(e: Event): string {
 function LinkedEventSelect({
   value,
   onChange,
+  error,
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
+  error?: string | undefined;
 }) {
   const { data: events = [] } = useEvents();
   const options = events.map((e) => ({ value: e.id, label: eventLabel(e) }));
@@ -104,6 +137,7 @@ function LinkedEventSelect({
         onChange(e.target.value || null);
       }}
       options={[{ value: '', label: 'none' }, ...options]}
+      error={error}
     />
   );
 }

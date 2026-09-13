@@ -5,6 +5,7 @@ import {
   extractApiErrorOr,
   getApiStatus,
   getErrorParams,
+  getFieldError,
   hasErrorCode,
 } from './apiErrors';
 import { Code } from './validationCodes';
@@ -150,5 +151,63 @@ describe('getErrorParams', () => {
   it('returns null when the code is not present', () => {
     const err = axiosError(409, { detail: [{ code: 'something.else', field: null }] });
     expect(getErrorParams(err, Code.Event.WouldRemoveNonMembers)).toBeNull();
+  });
+});
+
+describe('getFieldError', () => {
+  it('returns the message for the entry scoped to the field', () => {
+    const err = axiosError(400, {
+      detail: [{ code: Code.Survey.SlugAlreadyExists, field: 'slug' }],
+    });
+    expect(getFieldError(err, 'slug')).toBe('a survey with that slug already exists');
+  });
+
+  it('picks the entry matching the requested field out of several', () => {
+    const err = axiosError(400, {
+      detail: [
+        { code: Code.Survey.SlugAlreadyExists, field: 'slug' },
+        { code: Code.Event.NotFound, field: 'linked_event_id' },
+      ],
+    });
+    expect(getFieldError(err, 'linked_event_id')).toBe('event not found');
+  });
+
+  it('returns null when no entry carries that field', () => {
+    const err = axiosError(400, {
+      detail: [{ code: Code.Survey.SlugAlreadyExists, field: 'slug' }],
+    });
+    expect(getFieldError(err, 'title')).toBeNull();
+  });
+
+  it('returns null for legacy string-detail responses', () => {
+    expect(getFieldError(axiosError(400, { detail: 'free text' }), 'slug')).toBeNull();
+  });
+
+  it('returns null for axios errors with no response (e.g. network)', () => {
+    const networkErr = Object.assign(new Error('network'), { isAxiosError: true });
+    expect(getFieldError(networkErr, 'slug')).toBeNull();
+  });
+
+  it('returns null for non-axios errors', () => {
+    expect(getFieldError(new Error('boom'), 'slug')).toBeNull();
+    expect(getFieldError('string', 'slug')).toBeNull();
+    expect(getFieldError(undefined, 'slug')).toBeNull();
+  });
+
+  it('falls back to a safe message for an unknown code on the field', () => {
+    const err = axiosError(400, { detail: [{ code: 'survey.brand_new', field: 'slug' }] });
+    expect(getFieldError(err, 'slug')).toMatch(/double-check/i);
+  });
+
+  it('skips malformed detail entries that carry no code', () => {
+    const err = axiosError(400, {
+      detail: [
+        { field: 'slug' },
+        null,
+        'oops',
+        { code: Code.Survey.SlugAlreadyExists, field: 'slug' },
+      ],
+    });
+    expect(getFieldError(err, 'slug')).toBe('a survey with that slug already exists');
   });
 });

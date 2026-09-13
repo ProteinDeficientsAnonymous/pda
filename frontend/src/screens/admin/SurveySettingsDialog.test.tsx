@@ -34,6 +34,13 @@ const survey: Survey = {
   pollResult: null,
 };
 
+function fieldError(code: string, field: string) {
+  return new AxiosError('Request failed', 'ERR', undefined, undefined, {
+    status: 400,
+    data: { detail: [{ code, field }] },
+  } as AxiosResponse);
+}
+
 function renderDialog(overrides: Partial<Survey> = {}) {
   const onClose = vi.fn();
   render(<SurveySettingsDialog open onClose={onClose} survey={{ ...survey, ...overrides }} />);
@@ -73,24 +80,67 @@ describe('SurveySettingsDialog', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('keeps a linked event that is not in the active list selectable', () => {
+  it('keeps a linked event that is not in the active list selectable', async () => {
     renderDialog({ linkedEventId: 'evt-past' });
     expect(screen.getByLabelText('linked event')).toHaveValue('evt-past');
+
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ linkedEventId: 'evt-past' }),
+      );
+    });
   });
 
   it('shows a slug collision as a field error', async () => {
-    mutateAsync.mockRejectedValue(
-      new AxiosError('Request failed', 'ERR', undefined, undefined, {
-        status: 400,
-        data: { detail: [{ code: 'survey.slug_already_exists', field: 'slug' }] },
-      } as AxiosResponse),
-    );
+    mutateAsync.mockRejectedValue(fieldError('survey.slug_already_exists', 'slug'));
     const { onClose } = renderDialog();
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     expect(await screen.findByText('a survey with that slug already exists')).toBeInTheDocument();
     expect(screen.getByLabelText('slug')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('clears the slug field error once the slug changes', async () => {
+    mutateAsync.mockRejectedValue(fieldError('survey.slug_already_exists', 'slug'));
+    renderDialog();
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    const slug = await screen.findByLabelText('slug');
+    expect(slug).toHaveAttribute('aria-invalid', 'true');
+
+    await userEvent.type(slug, '-2');
+
+    expect(slug).not.toHaveAttribute('aria-invalid');
+    expect(screen.queryByText('a survey with that slug already exists')).not.toBeInTheDocument();
+  });
+
+  it('shows a linked event error on the dropdown, not the generic banner', async () => {
+    mutateAsync.mockRejectedValue(fieldError('event.not_found', 'linked_event_id'));
+    renderDialog({ linkedEventId: 'evt-1' });
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(await screen.findByText('event not found')).toBeInTheDocument();
+    const select = screen.getByLabelText('linked event');
+    expect(select).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(select, '');
+    expect(select).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('falls back to a generic message when the failure carries no field error', async () => {
+    mutateAsync.mockRejectedValue(new Error('network down'));
+    const { onClose } = renderDialog();
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "couldn't save settings — try again",
+    );
+    expect(screen.getByLabelText('slug')).not.toHaveAttribute('aria-invalid');
     expect(onClose).not.toHaveBeenCalled();
   });
 

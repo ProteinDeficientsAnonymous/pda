@@ -1,12 +1,12 @@
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
-import { extractApiErrorOr, getFieldError } from '@/api/apiErrors';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { type Survey, useUpdateSurvey } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 
-import { SurveyFields, type SurveyFormValues } from './SurveyFields';
+import { SurveyFields, type SurveyFormValues, useSurveyFieldErrors } from './SurveyFields';
 
 interface Props {
   survey: Survey;
@@ -30,12 +30,12 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
     linkedEventId: survey.linkedEventId,
   });
   const [error, setError] = useState<string | null>(null);
-  const [slugError, setSlugError] = useState<string | null>(null);
+  const fieldErrors = useSurveyFieldErrors();
 
   async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
-    setSlugError(null);
+    fieldErrors.reset();
     if (!values.title.trim() || !values.slug.trim()) {
       setError('title and slug are required');
       return;
@@ -44,9 +44,9 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
       await update.mutateAsync(values);
       onClose();
     } catch (err) {
-      const slugMessage = getFieldError(err, 'slug');
-      if (slugMessage) setSlugError(slugMessage);
-      else setError(extractApiErrorOr(err, "couldn't save settings — try again"));
+      if (!fieldErrors.capture(err)) {
+        setError(extractApiErrorOr(err, "couldn't save settings — try again"));
+      }
     }
   }
 
@@ -57,8 +57,10 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
           values={values}
           onChange={(patch) => {
             setValues((v) => ({ ...v, ...patch }));
+            fieldErrors.clearFor(patch);
           }}
-          slugError={slugError ?? undefined}
+          slugError={fieldErrors.slugError ?? undefined}
+          linkedEventError={fieldErrors.linkedEventError ?? undefined}
         />
         {error ? (
           <p role="alert" className="text-destructive text-sm">
