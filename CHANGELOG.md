@@ -1,3 +1,10 @@
+# [0.99.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.98.0...v0.99.0) (2026-09-13)
+
+
+### Features
+
+* **media:** convert HEIC uploads to JPEG ([#1442](https://github.com/ProteinDeficientsAnonymous/pda/issues/1442)) ([1074740](https://github.com/ProteinDeficientsAnonymous/pda/commit/1074740e3135b310abc859d51ab2f299ec4ecb77))
+
 # [0.98.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.97.0...v0.98.0) (2026-09-13)
 
 
