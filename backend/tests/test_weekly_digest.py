@@ -241,28 +241,31 @@ class TestSendWeeklyDigestCommand:
         ada = _make_member(
             "+12025550220",
             first_name="Ada",
-            veganversary_month=6,
-            veganversary_day=20,
-            veganversary_year=2021,
+            veganniversary_month=6,
+            veganniversary_day=20,
+            veganniversary_year=2021,
+            veganniversary_shoutout_opt_in=True,
         )
         bo = _make_member(
             "+12025550221",
             first_name="Bo",
-            veganversary_month=6,
-            veganversary_day=1,
-            veganversary_year=2021,
+            veganniversary_month=6,
+            veganniversary_day=1,
+            veganniversary_year=2021,
+            veganniversary_shoutout_opt_in=True,
         )
         _make_member(
             "+12025550222",
             first_name="Cam",
-            veganversary_month=6,
-            veganversary_day=None,
-            veganversary_year=2025,
+            veganniversary_month=6,
+            veganniversary_day=None,
+            veganniversary_year=2025,
+            veganniversary_shoutout_opt_in=True,
         )
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
         html = fake_sender.send.call_args.kwargs["html"]
-        assert "if you see these people, tell them happy veganversary!" in text
+        assert "Happy veganniversary!" in text
         assert "5 years" in text
         assert "1 year" in text
         assert "ada" in text
@@ -273,20 +276,20 @@ class TestSendWeeklyDigestCommand:
         assert f'href="http://localhost:3000/members/{ada.pk}"' in html
         assert f'href="http://localhost:3000/members/{bo.pk}"' in html
 
-    def test_omits_veganversary_in_other_month(self, fake_sender, monkeypatch):
+    def test_omits_veganniversary_in_other_month(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
         _make_member("+12025550223")
         _make_member(
             "+12025550224",
             first_name="Dana",
-            veganversary_month=7,
-            veganversary_day=15,
-            veganversary_year=2018,
+            veganniversary_month=7,
+            veganniversary_day=15,
+            veganniversary_year=2018,
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
-        assert "happy veganversary" not in text
+        assert "veganniversary" not in text
 
     def test_omits_veganversaries_after_first_week(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 7, 12, 0, 0))
@@ -294,23 +297,22 @@ class TestSendWeeklyDigestCommand:
         _make_member(
             "+12025550226",
             first_name="Eve",
-            veganversary_month=6,
-            veganversary_day=8,
-            veganversary_year=2023,
+            veganniversary_month=6,
+            veganniversary_day=8,
+            veganniversary_year=2023,
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
-        assert "happy veganversary" not in text
+        assert "veganniversary" not in text
 
-    def test_omits_shoutout_opt_out(self, fake_sender, monkeypatch):
+    def test_omits_without_shoutout_opt_in(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
         _make_member(
             "+12025550227",
             first_name="Fay",
-            veganversary_month=6,
-            veganversary_year=2024,
-            veganversary_shoutout_opt_out=True,
+            veganniversary_month=6,
+            veganniversary_year=2024,
         )
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
@@ -320,9 +322,10 @@ class TestSendWeeklyDigestCommand:
         _make_member(
             "+12025550228",
             first_name="Gus",
-            veganversary_month=6,
-            veganversary_day=20,
-            veganversary_year=2024,
+            veganniversary_month=6,
+            veganniversary_day=20,
+            veganniversary_year=2024,
+            veganniversary_shoutout_opt_in=True,
         )
         call_command("send_weekly_digest")
         fake_sender.send.assert_called_once()

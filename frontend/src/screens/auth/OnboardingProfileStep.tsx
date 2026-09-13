@@ -25,26 +25,26 @@ export function OnboardingProfileStep({ onDone }: Props) {
 
   const hasPhoto = Boolean(user?.profilePhotoUrl);
 
-  async function onFinish() {
-    const trimmedBio = bio.trim();
-    const trimmedPronouns = pronouns.trim();
-    if (!trimmedBio && !trimmedPronouns) {
-      onDone();
-      return;
-    }
+  async function finish(extra: { bio?: string; pronouns?: string } = {}) {
     setError(null);
     setSaving(true);
     try {
-      await updateProfile({
-        ...(trimmedBio ? { bio: trimmedBio } : {}),
-        ...(trimmedPronouns ? { pronouns: trimmedPronouns } : {}),
-      });
+      await updateProfile({ ...extra, hasSeenVeganniversary: true });
       onDone();
     } catch (err) {
       setError(extractApiError(err, "couldn't save your profile — try again"));
     } finally {
       setSaving(false);
     }
+  }
+
+  async function onFinish() {
+    const trimmedBio = bio.trim();
+    const trimmedPronouns = pronouns.trim();
+    await finish({
+      ...(trimmedBio ? { bio: trimmedBio } : {}),
+      ...(trimmedPronouns ? { pronouns: trimmedPronouns } : {}),
+    });
   }
 
   if (!user) return null;
@@ -87,30 +87,17 @@ export function OnboardingProfileStep({ onDone }: Props) {
         placeholder="add your birthday"
       />
       <InlineBirthday
-        label="veganversary"
-        value={user.veganversary}
+        label="veganniversary"
+        value={user.veganniversary}
         onSave={(v) =>
           updateProfile({
-            veganversary: v?.year != null ? { month: v.month, day: v.day, year: v.year } : null,
+            veganniversary: v?.year != null ? { month: v.month, day: v.day, year: v.year } : null,
           })
         }
-        placeholder="add your veganversary"
+        placeholder="add your veganniversary"
         requireDay={false}
         requireYear
-        hint={
-          <>
-            the exact date isn't required, but please let us know at least the month and year!
-            <br />
-            if you enter your veganversary, we'll celebrate you by name when your veganversary comes
-            up!
-          </>
-        }
-        privacy={{
-          showOnProfile: user.showVeganversary,
-          onShowOnProfileChange: (v) => void updateProfile({ showVeganversary: v }),
-          optOutShoutout: user.veganversaryShoutoutOptOut,
-          onOptOutShoutoutChange: (v) => void updateProfile({ veganversaryShoutoutOptOut: v }),
-        }}
+        hint="the exact date isn't required, but please let us know at least the month and year!"
       />
       <div>
         <p className="text-foreground-tertiary mb-2 text-sm">privacy</p>
@@ -126,7 +113,7 @@ export function OnboardingProfileStep({ onDone }: Props) {
       </Button>
       <button
         type="button"
-        onClick={onDone}
+        onClick={() => void finish()}
         disabled={saving}
         className="text-foreground-tertiary hover:text-foreground focus-visible:ring-brand-200 text-sm underline transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
