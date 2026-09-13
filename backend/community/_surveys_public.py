@@ -37,19 +37,25 @@ from community.models import (
 router = Router()
 
 
+def _visible_survey_or_404(slug: str, auth_user) -> Survey:
+    # Closed surveys still resolve so the UI can render a closed state.
+    try:
+        survey = Survey.objects.prefetch_related("questions").get(slug=slug)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    return survey
+
+
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
 def get_survey_public(request, slug: str):
-    try:
-        survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
-    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    survey = _visible_survey_or_404(slug, auth_user)
     return Status(200, _survey_out(survey, include_questions=True, requesting_user=auth_user))
 
 
@@ -66,13 +72,10 @@ def get_survey_public(request, slug: str):
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
-    try:
-        survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
-    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    survey = _visible_survey_or_404(slug, auth_user)
+    if not survey.is_active:
+        raise_validation(Code.Survey.CLOSED, status_code=400)
     questions = {str(q.id): q for q in survey.questions.all()}
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)

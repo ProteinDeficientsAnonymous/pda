@@ -98,4 +98,42 @@ describe('SurveyScreen', () => {
     expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
     expect(screen.getByLabelText('thoughts')).toHaveValue('previous answer');
   });
+
+  it('renders a closed state instead of the form for an inactive survey', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...baseWireSurvey, is_active: false } });
+    renderScreen();
+
+    expect(await screen.findByRole('status')).toHaveTextContent('this survey is closed');
+    expect(screen.getByRole('heading', { name: 'feedback survey' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('thoughts')).not.toBeInTheDocument();
+  });
+
+  it('renders the form with a submit button for an active survey', async () => {
+    mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
+    renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'submit' })).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('keeps the finalized-poll view for an inactive survey with a poll result', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: {
+        ...baseWireSurvey,
+        is_active: false,
+        poll_result: {
+          id: 'r1',
+          winning_datetime: '2030-01-01T10:00:00Z',
+          finalized_by_id: null,
+          finalized_at: '2029-12-01T10:00:00Z',
+        },
+      },
+    });
+    renderScreen();
+
+    expect(await screen.findByText(/this poll has been finalized/)).toBeInTheDocument();
+    expect(screen.queryByText(/this survey is closed/)).not.toBeInTheDocument();
+  });
 });

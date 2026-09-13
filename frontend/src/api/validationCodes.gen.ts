@@ -147,6 +147,7 @@ export const Code = {
   },
   Survey: {
     NotFound: 'survey.not_found',
+    Closed: 'survey.closed',
     SlugAlreadyExists: 'survey.slug_already_exists',
     QuestionNotFound: 'survey.question_not_found',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
@@ -361,6 +362,7 @@ export type ValidationCode =
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'survey.not_found'
+  | 'survey.closed'
   | 'survey.slug_already_exists'
   | 'survey.question_not_found'
   | 'survey.no_datetime_poll_question'
@@ -539,6 +541,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'survey.not_found': [],
+  'survey.closed': [],
   'survey.slug_already_exists': [],
   'survey.question_not_found': [],
   'survey.no_datetime_poll_question': [],

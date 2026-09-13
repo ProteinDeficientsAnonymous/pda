@@ -4,7 +4,13 @@ import json
 
 import pytest
 from community._validation import Code
-from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import (
+    Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
+    SurveyResponse,
+    SurveyVisibility,
+)
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -187,3 +193,80 @@ class TestSurveySubmitUpsert:
         assert first.status_code == 201
         assert second.status_code == 201
         assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 2
+
+
+# ---------------------------------------------------------------------------
+# Closed surveys (Issue 1460)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def closed_survey(db):
+    survey = Survey.objects.create(title="Closed feedback", slug="closed-feedback", is_active=False)
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="Thoughts?",
+        field_type=SurveyQuestionType.TEXT,
+    )
+    return survey
+
+
+@pytest.fixture
+def closed_members_survey(db):
+    return Survey.objects.create(
+        title="Closed members",
+        slug="closed-members",
+        is_active=False,
+        visibility=SurveyVisibility.MEMBERS_ONLY,
+    )
+
+
+@pytest.mark.django_db
+class TestClosedSurvey:
+    def _view_url(self, survey):
+        return f"/api/community/surveys/view/{survey.slug}/"
+
+    def _respond_url(self, survey):
+        return f"/api/community/surveys/view/{survey.slug}/respond/"
+
+    def test_get_closed_survey_returns_inactive(self, api_client, closed_survey):
+        resp = api_client.get(self._view_url(closed_survey))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["is_active"] is False
+        assert data["slug"] == closed_survey.slug
+
+    def test_get_closed_members_survey_hidden_from_anonymous(
+        self, api_client, closed_members_survey
+    ):
+        resp = api_client.get(self._view_url(closed_members_survey))
+        assert resp.status_code == 404
+        assert_error_code(resp, Code.Survey.NOT_FOUND)
+
+    def test_get_closed_members_survey_visible_to_member(
+        self, api_client, auth_headers, closed_members_survey
+    ):
+        resp = api_client.get(self._view_url(closed_members_survey), **auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["is_active"] is False
+
+    def test_submit_to_closed_survey_rejected(self, api_client, closed_survey):
+        question = closed_survey.questions.first()
+        payload = json.dumps({"answers": {str(question.id): "too late"}})
+        resp = api_client.post(
+            self._respond_url(closed_survey), data=payload, content_type="application/json"
+        )
+        assert resp.status_code == 400
+        assert_error_code(resp, Code.Survey.CLOSED)
+        assert not SurveyResponse.objects.filter(survey=closed_survey).exists()
+
+    def test_submit_to_closed_members_survey_hidden_from_anonymous(
+        self, api_client, closed_members_survey
+    ):
+        resp = api_client.post(
+            self._respond_url(closed_members_survey),
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 404
+        assert_error_code(resp, Code.Survey.NOT_FOUND)

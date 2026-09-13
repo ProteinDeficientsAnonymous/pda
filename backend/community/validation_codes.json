@@ -611,6 +611,11 @@
         "params": []
       },
       {
+        "name": "CLOSED",
+        "value": "survey.closed",
+        "params": []
+      },
+      {
         "name": "SLUG_ALREADY_EXISTS",
         "value": "survey.slug_already_exists",
         "params": []
