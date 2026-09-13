@@ -19,6 +19,7 @@ import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyFields } from './SurveyFields';
+import { type SurveyStatus, surveyStatus } from './surveyStatus';
 import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {
@@ -83,6 +84,20 @@ export default function SurveyAdminListScreen() {
   );
 }
 
+const STATUS_LABEL: Record<SurveyStatus, string> = {
+  active: 'active',
+  scheduled: 'scheduled',
+  capped: 'at capacity',
+  closed: 'closed',
+};
+
+const STATUS_CLASS: Record<SurveyStatus, string> = {
+  active: 'bg-success-subtle text-success',
+  scheduled: 'bg-warning-subtle text-warning',
+  capped: 'bg-warning-subtle text-warning',
+  closed: 'bg-surface-raised text-foreground-secondary',
+};
+
 function SurveyRow({
   survey,
   onDelete,
@@ -106,14 +121,9 @@ function SurveyRow({
       </div>
       <div className="flex gap-1">
         <span
-          className={cn(
-            'rounded-full px-2 py-0.5 text-xs',
-            survey.isActive
-              ? 'bg-success-subtle text-success'
-              : 'bg-surface-raised text-foreground-secondary',
-          )}
+          className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_CLASS[surveyStatus(survey)])}
         >
-          {survey.isActive ? 'active' : 'closed'}
+          {STATUS_LABEL[surveyStatus(survey)]}
         </span>
         <SurveyCopyLinkButton slug={survey.slug} className="h-9 px-3" />
         <Link
@@ -156,6 +166,9 @@ function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
     visibility: 'members_only',
     isActive: true,
     oneResponsePerUser: false,
+    opensAt: null,
+    closesAt: null,
+    maxResponses: null,
     linkedEventId: null,
   });
   const [error, setError] = useState<string | null>(null);

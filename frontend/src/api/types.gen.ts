@@ -4817,6 +4817,8 @@ export interface components {
         };
         /** SurveyIn */
         SurveyIn: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Description
              * @default
@@ -4829,11 +4831,15 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /**
              * One Response Per User
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug: string;
             /** Title */
@@ -4846,6 +4852,8 @@ export interface components {
         };
         /** SurveyListOut */
         SurveyListOut: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4857,6 +4865,10 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
+            /** Opens At */
+            opens_at?: string | null;
             /**
              * Response Count
              * @default 0
@@ -4871,6 +4883,8 @@ export interface components {
         };
         /** SurveyOut */
         SurveyOut: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4886,6 +4900,8 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** My Answers */
             my_answers?: {
                 [key: string]: unknown;
@@ -4897,6 +4913,8 @@ export interface components {
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
@@ -4917,14 +4935,20 @@ export interface components {
         };
         /** SurveyPatchIn */
         SurveyPatchIn: {
+            /** Closes At */
+            closes_at?: string | null;
             /** Description */
             description?: string | null;
             /** Is Active */
             is_active?: boolean | null;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** One Response Per User */
             one_response_per_user?: boolean | null;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug?: string | null;
             /** Title */
