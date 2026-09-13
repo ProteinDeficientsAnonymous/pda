@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow } from 'date-fns';
+import { useState } from 'react';
 
 import {
   type JoinRequestAttendedEvent,
@@ -12,6 +13,7 @@ import { formatPhone } from '@/utils/formatPhone';
 
 import { TentativeActions } from './JoinRequestTentativeSection';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
+import { SendMessageDialog } from './SendMessageDialog';
 
 export type Decision =
   | typeof JoinRequestStatus.APPROVED
@@ -36,6 +38,7 @@ export function JoinRequestCard({
   const isTentative = request.status === JoinRequestStatus.TENTATIVE;
   const isRejected = request.status === JoinRequestStatus.REJECTED;
   const canResend = request.status === JoinRequestStatus.APPROVED && request.onboardedAt === null;
+  const [messageOpen, setMessageOpen] = useState(false);
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -48,7 +51,16 @@ export function JoinRequestCard({
           <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
           <AttendedEventsNote events={request.attendedEvents} />
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            className="h-8 px-3 text-xs"
+            onClick={() => {
+              setMessageOpen(true);
+            }}
+          >
+            send message
+          </Button>
           {request.previouslyArchived ? (
             <span
               className="bg-warning-subtle text-warning rounded-full px-2 py-0.5 text-xs"
@@ -134,6 +146,15 @@ export function JoinRequestCard({
           ) : null}
         </>
       )}
+
+      <SendMessageDialog
+        open={messageOpen}
+        onClose={() => {
+          setMessageOpen(false);
+        }}
+        fullName={request.fullName}
+        phoneNumber={request.phoneNumber}
+      />
     </article>
   );
 }
