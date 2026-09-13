@@ -3,6 +3,9 @@ import io
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from PIL import Image, ImageOps, ImageSequence
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 EVENT_MAX_EDGE = 1200
 AVATAR_MAX_EDGE = 512
@@ -15,6 +18,7 @@ _GIF_FRAME_MS = 100
 _GIF_LOOP_FOREVER = 0
 _JPEG_BACKGROUND = (255, 255, 255)
 _ANIM_FORMATS = frozenset({"GIF", "WEBP"})
+_HEIF_FORMATS = frozenset({"HEIF", "HEIC"})
 
 
 class UnsafeImageError(Exception):
@@ -63,9 +67,11 @@ def _anim_to_webp(data: bytes) -> bytes | None:
 
 
 def _still_to_jpeg(data: bytes, max_edge: int) -> bytes | None:
+    fmt = None
     try:
         with Image.open(io.BytesIO(data)) as im:
-            if getattr(im, "n_frames", 1) > 1:
+            fmt = im.format
+            if getattr(im, "n_frames", 1) > 1 and fmt not in _HEIF_FORMATS:
                 return None
             if _too_many_pixels(im):
                 raise UnsafeImageError
@@ -78,7 +84,8 @@ def _still_to_jpeg(data: bytes, max_edge: int) -> bytes | None:
         raise UnsafeImageError from None
     except OSError:
         return None
-    if len(jpeg) >= len(data):
+    # Browsers can't display HEIC; convert even when the JPEG is larger.
+    if fmt not in _HEIF_FORMATS and len(jpeg) >= len(data):
         return None
     return jpeg
 
