@@ -76,6 +76,25 @@ def validate_show_if(
     }
 
 
+def resolve_question_order(
+    questions: Iterable[SurveyQuestion], ordered_ids: list[str]
+) -> list[str]:
+    """Full ordering for a reorder payload: listed questions first, then the rest.
+
+    questions(Iterable[SurveyQuestion]): every question in the survey
+    ordered_ids(list[str]): ids in the order the caller asked for
+    return(list[str]): every id in the survey, in its new order
+    """
+    # Renumbering everything keeps ids the payload omitted from tying with a
+    # listed one, and a tie lets a dependent sort above its own source.
+    current = [str(q.id) for q in sorted(questions, key=lambda q: q.display_order)]
+    known = set(current)
+    resolved = [qid for qid in dict.fromkeys(ordered_ids) if qid in known]
+    listed = set(resolved)
+    resolved.extend(qid for qid in current if qid not in listed)
+    return resolved
+
+
 def assert_order_keeps_dependencies(
     questions: Iterable[SurveyQuestion], ordered_ids: list[str]
 ) -> None:
@@ -94,6 +113,34 @@ def assert_order_keeps_dependencies(
             status_code=400,
             label=q.label,
         )
+
+
+def _condition_still_valid(condition: Mapping[str, object], source: SurveyQuestion) -> bool:
+    if source.field_type not in CONDITION_SOURCE_TYPES:
+        return False
+    if (
+        condition.get("operator") == ShowIfOperator.CONTAINS
+        and source.field_type != QuestionType.CHECKBOX
+    ):
+        return False
+    return condition.get("value") in condition_values(source)
+
+
+def clear_invalidated_conditions(survey_id: UUID, source: SurveyQuestion) -> None:
+    """Drop `show_if` from dependents the edited source question can no longer satisfy."""
+    # Retyping a source, or renaming an option it is compared against, would
+    # otherwise leave the dependent permanently hidden with nothing to show why.
+    stale = [
+        q
+        for q in SurveyQuestion.objects.filter(survey_id=survey_id).exclude(id=source.id)
+        if q.show_if
+        and str(q.show_if.get("question_id")) == str(source.id)
+        and not _condition_still_valid(q.show_if, source)
+    ]
+    for q in stale:
+        q.show_if = None
+    if stale:
+        SurveyQuestion.objects.bulk_update(stale, ["show_if"])
 
 
 def clear_dependent_conditions(survey_id: UUID, question_id: UUID) -> None:

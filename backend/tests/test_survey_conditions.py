@@ -281,6 +281,108 @@ class TestConditionOrdering:
         dependent.refresh_from_db()
         assert dependent.display_order == 2
 
+    def test_partial_reorder_payload_cannot_bypass_the_dependency_check(
+        self, api_client, admin_headers, survey
+    ):
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
+        spare = make_question(survey, "Spare", SurveyQuestionType.TEXT, order=1)
+        dependent = make_question(
+            survey, "Dependent", SurveyQuestionType.TEXT, order=2, show_if=equals(source, "vegan")
+        )
+        response = api_client.put(
+            f"/api/community/surveys/{survey.id}/questions/order/",
+            data=json.dumps({"question_ids": [str(dependent.id), str(spare.id)]}),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CONDITION_ORDER_CONFLICT, "question_ids")
+        source.refresh_from_db()
+        dependent.refresh_from_db()
+        assert source.display_order == 0
+        assert dependent.display_order == 2
+
+    def test_question_created_after_a_delete_gets_a_free_display_order(
+        self, api_client, admin_headers, survey
+    ):
+        make_question(survey, "First", SurveyQuestionType.TEXT, order=0)
+        middle = make_question(survey, "Middle", SurveyQuestionType.TEXT, order=1)
+        last = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=2)
+        api_client.delete(
+            f"/api/community/surveys/{survey.id}/questions/{middle.id}/", **admin_headers
+        )
+        response = api_client.post(
+            f"/api/community/surveys/{survey.id}/questions/",
+            data=json.dumps(
+                {
+                    "label": "How long?",
+                    "field_type": SurveyQuestionType.TEXT,
+                    "options": [],
+                    "required": False,
+                    "show_if": equals(last, "vegan"),
+                }
+            ),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["display_order"] == 3
+
+    def test_retyping_a_source_clears_its_dependents(self, api_client, admin_headers, survey):
+        source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
+        dependent = make_question(
+            survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
+        )
+        response = api_client.patch(
+            f"/api/community/surveys/{survey.id}/questions/{source.id}/",
+            data=json.dumps(
+                {
+                    "label": "Diet",
+                    "field_type": SurveyQuestionType.TEXT,
+                    "options": [],
+                    "required": False,
+                    "show_if": None,
+                }
+            ),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 200
+        dependent.refresh_from_db()
+        assert dependent.show_if is None
+
+    def test_renaming_a_source_option_clears_dependents_that_referenced_it(
+        self, api_client, admin_headers, survey
+    ):
+        source = make_question(
+            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
+        )
+        stale = make_question(
+            survey, "Stale", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
+        )
+        kept = make_question(
+            survey, "Kept", SurveyQuestionType.TEXT, order=2, show_if=equals(source, "veg")
+        )
+        response = api_client.patch(
+            f"/api/community/surveys/{survey.id}/questions/{source.id}/",
+            data=json.dumps(
+                {
+                    "label": "Diet",
+                    "field_type": SurveyQuestionType.RADIO,
+                    "options": ["plant-based", "veg"],
+                    "required": False,
+                    "show_if": None,
+                }
+            ),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 200
+        stale.refresh_from_db()
+        kept.refresh_from_db()
+        assert stale.show_if is None
+        assert kept.show_if is not None
+
     def test_deleting_source_clears_dependent_condition(self, api_client, admin_headers, survey):
         source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(

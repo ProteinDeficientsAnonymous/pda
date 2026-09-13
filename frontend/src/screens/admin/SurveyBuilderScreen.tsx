@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   type SurveyQuestion,
   useAdminSurvey,
@@ -101,6 +102,12 @@ export default function SurveyBuilderScreen() {
             add question
           </Button>
         </div>
+
+        {reorder.isError ? (
+          <p role="alert" className="text-destructive mb-2 text-sm">
+            {extractApiErrorOr(reorder.error, "couldn't reorder questions — try again")}
+          </p>
+        ) : null}
 
         {currentSurvey.questions.length === 0 ? (
           <p className="text-muted text-sm">no questions yet</p>

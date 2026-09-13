@@ -46,6 +46,18 @@ describe('SurveyConditionPicker', () => {
     expect(screen.getByText(/add a choice or yes\/no question above/)).toBeInTheDocument();
   });
 
+  it('explains a stored condition whose source is no longer eligible', () => {
+    const stale = {
+      questionId: 'gone',
+      operator: ShowIfOperator.Equals,
+      value: 'vegan',
+    };
+    render(<SurveyConditionPicker questions={[diet]} value={stale} onChange={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: 'only show when' })).toBeChecked();
+    expect(screen.getByText(/can no longer be a source/)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'question' })).not.toBeInTheDocument();
+  });
+
   it('creates a default condition when toggled on', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

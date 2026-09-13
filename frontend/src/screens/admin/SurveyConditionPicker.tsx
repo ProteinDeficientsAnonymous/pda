@@ -54,6 +54,12 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
         <span>only show when</span>
       </label>
 
+      {value !== null && !source ? (
+        <p className="text-muted text-xs">
+          this condition points at a question that can no longer be a source — untick to clear it
+        </p>
+      ) : null}
+
       {value !== null && source ? (
         <div className="border-border flex flex-col gap-2 rounded-md border p-3">
           <Select
