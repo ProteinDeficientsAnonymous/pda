@@ -54,6 +54,12 @@ def _animated_webp(
     return buf.getvalue()
 
 
+def _heic_bytes(size: tuple[int, int] = (32, 32)) -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", size, (10, 20, 30)).save(buf, format="HEIF")
+    return buf.getvalue()
+
+
 def _force_fat_webp(monkeypatch, raw: bytes) -> None:
     orig_save = Image.Image.save
 
@@ -93,6 +99,25 @@ class TestCompressPhoto:
         assert ext == "jpg"
         with Image.open(io.BytesIO(data)) as im:
             assert im.size == expected
+
+    def test_heic_becomes_jpeg_even_when_larger(self):
+        raw = _heic_bytes()
+        result = compress_photo(raw, EVENT_MAX_EDGE)
+        assert result is not None
+        data, ext = result
+        assert ext == "jpg"
+        with Image.open(io.BytesIO(data)) as im:
+            assert im.format == "JPEG"
+
+    def test_oversized_heic_is_resized_to_max_edge(self):
+        raw = _heic_bytes((1600, 900))
+        result = compress_photo(raw, EVENT_MAX_EDGE)
+        assert result is not None
+        data, ext = result
+        assert ext == "jpg"
+        with Image.open(io.BytesIO(data)) as im:
+            assert im.format == "JPEG"
+            assert im.size == (EVENT_MAX_EDGE, EVENT_MAX_EDGE * 900 // 1600)
 
     def test_exif_orientation_is_baked_in_before_resize(self):
         # Stored 1600×900 + Orientation=6 (90° CW) displays as 900×1600.

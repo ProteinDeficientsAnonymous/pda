@@ -25,6 +25,7 @@ dependencies = [
     "resend>=2.0.0,<3",
     "nh3>=0.3,<1.0",
     "memray>=1.17,<2",
+    "pillow-heif>=0.18,<1.0",
 ]
 
 [dependency-groups]
