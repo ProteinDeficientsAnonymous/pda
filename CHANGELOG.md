@@ -1,3 +1,10 @@
+## [0.99.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.99.0...v0.99.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* **events:** remove RSVP responders from invited list (Issue 1426) ([#1427](https://github.com/ProteinDeficientsAnonymous/pda/issues/1427)) ([6d77f9d](https://github.com/ProteinDeficientsAnonymous/pda/commit/6d77f9d67e44f9be81f6f0fb424ef2009925da82))
+
 # [0.99.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.98.0...v0.99.0) (2026-09-13)
 
 
