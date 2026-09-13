@@ -291,6 +291,25 @@ class TestUpdateVeganniversary:
         )
         assert response.status_code == 422
 
+    def test_feb_29_non_leap_year_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 2, "day": 29, "year": 2023}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_feb_29_leap_year_accepted(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 2, "day": 29, "year": 2020}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganniversary"] == {"month": 2, "day": 29, "year": 2020}
+
 
 @pytest.mark.django_db
 class TestPatchMeEmail:

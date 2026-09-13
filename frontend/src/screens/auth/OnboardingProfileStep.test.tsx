@@ -61,6 +61,20 @@ describe('OnboardingProfileStep', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('saves a filled veganniversary when done is clicked without save', async () => {
+    const user = userEvent.setup();
+    render(<OnboardingProfileStep onDone={onDone} />);
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
+    await user.click(screen.getByRole('button', { name: /^done$/i }));
+    expect(updateProfile).toHaveBeenCalledWith({
+      veganniversary: { month: 6, day: null, year: 2020 },
+      hasSeenVeganniversary: true,
+    });
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
   it('marks veganniversary seen when bio and pronouns are left empty', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
