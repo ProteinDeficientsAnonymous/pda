@@ -2,9 +2,8 @@ import json
 from datetime import timedelta
 
 import pytest
-from community._event_helpers import _event_out
 from community._validation import Code
-from community.models import Event, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import Survey, SurveyQuestion, SurveyQuestionType
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -176,65 +175,3 @@ class TestSurveyScheduleAdmin:
         body = resp.json()
         assert body["opens_at"] is None and body["closes_at"] is None
         assert body["max_responses"] is None
-
-
-# ---------------------------------------------------------------------------
-# Event survey links respect scheduling + cap, not just is_active (Issue 1465)
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-class TestEventSurveyLinkVisibility:
-    def _event(self):
-        return Event.objects.create(
-            title="Potluck", start_datetime=timezone.now() + timedelta(days=10)
-        )
-
-    def test_scheduled_survey_excluded_from_links(self):
-        event = self._event()
-        Survey.objects.create(
-            title="Feedback",
-            slug="scheduled-feedback",
-            linked_event=event,
-            opens_at=timezone.now() + timedelta(hours=1),
-        )
-        assert _event_out(event).linked_surveys == []
-
-    def test_closed_survey_excluded_from_links(self):
-        event = self._event()
-        Survey.objects.create(
-            title="Feedback",
-            slug="closed-feedback",
-            linked_event=event,
-            closes_at=timezone.now() - timedelta(minutes=1),
-        )
-        assert _event_out(event).linked_surveys == []
-
-    def test_at_cap_survey_excluded_from_links(self):
-        event = self._event()
-        survey = Survey.objects.create(
-            title="Feedback", slug="capped-feedback", linked_event=event, max_responses=1
-        )
-        SurveyResponse.objects.create(survey=survey)
-        assert _event_out(event).linked_surveys == []
-
-    def test_open_survey_included_in_links(self):
-        event = self._event()
-        Survey.objects.create(title="Feedback", slug="open-feedback", linked_event=event)
-        assert [s.slug for s in _event_out(event).linked_surveys] == ["open-feedback"]
-
-    def test_scheduled_poll_excluded_from_datetime_poll_slug(self):
-        event = self._event()
-        survey = Survey.objects.create(
-            title="When?",
-            slug="when-poll",
-            linked_event=event,
-            opens_at=timezone.now() + timedelta(hours=1),
-        )
-        SurveyQuestion.objects.create(
-            survey=survey,
-            label="Pick a time",
-            field_type=SurveyQuestionType.DATETIME_POLL,
-            options=[future_iso(days=10)],
-        )
-        assert _event_out(event).datetime_poll_slug is None

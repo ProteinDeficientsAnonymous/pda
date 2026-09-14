@@ -26,7 +26,6 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
 from community._shared import _authenticated_user, _gated
-from community._survey_helpers import survey_is_open
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
@@ -36,7 +35,6 @@ from community.models import (
     FeatureFlag,
     PageVisibility,
     RSVPStatus,
-    Survey,
     SurveyQuestionType,
     flag_enabled,
 )
@@ -280,16 +278,16 @@ def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     event.tags.set(tags)
 
 
-def _open_event_surveys(event: Event) -> list[Survey]:
-    """Surveys linked to this event that are currently accepting responses."""
-    return [s for s in event.surveys.prefetch_related("questions").all() if survey_is_open(s)]
-
-
-def _get_datetime_poll_slug(event: Event, open_surveys: list[Survey]) -> str | None:
-    for survey in open_surveys:
-        if any(q.field_type == SurveyQuestionType.DATETIME_POLL for q in survey.questions.all()):
-            return survey.slug
-    return None
+def _get_datetime_poll_slug(event: Event) -> str | None:
+    poll_survey = (
+        event.surveys.filter(
+            is_active=True,
+            questions__field_type=SurveyQuestionType.DATETIME_POLL,
+        )
+        .values_list("slug", flat=True)
+        .first()
+    )
+    return poll_survey
 
 
 def _annotated_or(event: Event, attr: str, fallback):
@@ -370,7 +368,6 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
-    open_surveys = _open_event_surveys(event)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -428,9 +425,10 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
         linked_surveys=[
-            EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug) for s in open_surveys
+            EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
+            for s in event.surveys.filter(is_active=True)
         ],
-        datetime_poll_slug=_get_datetime_poll_slug(event, open_surveys),
+        datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
         invited_user_names=[visible_display_name(u, auth_user) for u in invited],
