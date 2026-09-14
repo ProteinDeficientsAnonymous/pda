@@ -334,6 +334,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this survey is closed — responses are no longer accepted';
     case Code.Survey.SlugAlreadyExists:
       return 'a survey with that slug already exists';
+    case Code.Survey.ClosesBeforeOpens:
+      return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
     case Code.Survey.NoDatetimePollQuestion:

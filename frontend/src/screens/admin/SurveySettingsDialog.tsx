@@ -28,6 +28,9 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
     slug: survey.slug,
     visibility: survey.visibility,
     oneResponsePerUser: survey.oneResponsePerUser,
+    opensAt: survey.opensAt,
+    closesAt: survey.closesAt,
+    maxResponses: survey.maxResponses,
     linkedEventId: survey.linkedEventId,
   });
   const [error, setError] = useState<string | null>(null);
