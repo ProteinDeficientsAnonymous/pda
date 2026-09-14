@@ -1,3 +1,10 @@
+# [0.105.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.2...v0.105.0) (2026-09-14)
+
+
+### Features
+
+* **surveys:** add copyable participant link (Issue 1458) ([#1469](https://github.com/ProteinDeficientsAnonymous/pda/issues/1469)) ([a26e846](https://github.com/ProteinDeficientsAnonymous/pda/commit/a26e84646d4473e00027c44efc02085b8dcb5c9a))
+
 ## [0.104.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.1...v0.104.2) (2026-09-14)
 
 
