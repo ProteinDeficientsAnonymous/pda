@@ -1,5 +1,3 @@
-"""Tests for linked_surveys on the event detail payload (Issue 1463)."""
-
 from datetime import timedelta
 
 import pytest
