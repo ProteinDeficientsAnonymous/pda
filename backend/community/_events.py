@@ -58,6 +58,11 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
+from community._non_member_access import (
+    event_viewer_for,
+    is_non_member,
+    non_member_event_q,
+)
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import (
     attending_count_annotation,
@@ -132,6 +137,8 @@ def _build_events_queryset(status: str, auth_user, is_authed):
     )
     if not is_authed:
         qs = qs.filter(visibility=PageVisibility.PUBLIC)
+    elif is_non_member(auth_user):
+        qs = qs.filter(non_member_event_q())
     return qs
 
 
@@ -150,6 +157,8 @@ def _filter_invite_only(events, auth_user, status: str):
 
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
+    auth_user = event_viewer_for(auth_user, e)
+    is_authed = is_authed and auth_user is not None
     show_payment_details = can_see_payment_details(e, is_authed)
     my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(_viewer_rsvp_rows(e, auth_user), auth_user)
     co_hosts = list(e.co_hosts.all())
@@ -262,7 +271,7 @@ def _get_visible_event(request, event_id: str):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = resolve_event_viewer(request, event.id)
+    viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
     _enforce_event_read_visibility(event, viewer)
     return event, viewer
 
@@ -343,6 +352,8 @@ def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
+    if is_non_member(request.auth):
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="create_event")
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 

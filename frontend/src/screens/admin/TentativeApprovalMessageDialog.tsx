@@ -8,6 +8,7 @@ import { SendLink } from '@/components/ui/SendLink';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
 import {
+  buildMagicLinkUrl,
   buildRsvpLinkUrl,
   buildSmsHref,
   buildWhatsAppHref,
@@ -23,10 +24,11 @@ interface Props {
   firstName: string;
   phoneNumber: string;
   rsvpLinkToken: string | null;
+  magicLinkToken: string | null;
 }
 
 const DEFAULT_TENTATIVE_MESSAGE =
-  "hi ${FIRST_NAME} 🌱 you're tentatively in! come to an event in person and we'll get you fully approved.";
+  "hi ${FIRST_NAME} 🌱 you're tentatively in! sign in here: ${MAGIC_LINK} — come to an event in person and we'll get you fully approved.";
 
 export function TentativeApprovalMessageDialog({
   open,
@@ -35,6 +37,7 @@ export function TentativeApprovalMessageDialog({
   firstName,
   phoneNumber,
   rsvpLinkToken,
+  magicLinkToken,
 }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
@@ -46,6 +49,7 @@ export function TentativeApprovalMessageDialog({
   const message = renderWelcomeMessage(body, {
     name: firstName,
     senderName,
+    magicLink: magicLinkToken ? buildMagicLinkUrl(magicLinkToken) : '',
     rsvpLink: rsvpLinkToken ? buildRsvpLinkUrl(rsvpLinkToken) : '',
     whatsappLink: whatsappLinkQ.data?.link ?? '',
   });

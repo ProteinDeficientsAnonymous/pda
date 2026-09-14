@@ -17,13 +17,20 @@ from users.schemas import (
 router = Router()
 
 
+def _require_member(request) -> None:
+    """The roster is behind full membership — a tentative applicant hasn't been vetted."""
+    if not request.auth.is_member:
+        raise_validation(Code.Perm.DENIED, status_code=403, action="view_member_directory")
+
+
 @router.get(
     "/users/directory/",
-    response={200: list[MemberDirectoryOut]},
+    response={200: list[MemberDirectoryOut], 403: ErrorOut},
     auth=gated_jwt,
 )
 def list_member_directory(request):
-    """Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags."""
+    """Members-only directory. Respects each user's show_phone/show_email/show_birthday flags."""
+    _require_member(request)
     users = (
         User.objects.active_members()
         .filter(needs_onboarding=False)
@@ -48,10 +55,11 @@ def list_member_directory(request):
 
 @router.get(
     "/users/{user_id}/profile/",
-    response={200: MemberProfileOut, 404: ErrorOut},
+    response={200: MemberProfileOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def get_member_profile(request, user_id: str):
+    _require_member(request)
     try:
         user = User.objects.active_members().filter(needs_onboarding=False).get(pk=user_id)
     except User.DoesNotExist:

@@ -31,6 +31,9 @@ export interface User {
   bio: string;
   pronouns: string;
   birthday: Birthday | null;
+  // False for a tentatively-approved applicant: signed in, but limited to
+  // official/club events until an in-person check-in promotes them.
+  isMember: boolean;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

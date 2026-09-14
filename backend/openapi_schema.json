@@ -4324,6 +4324,11 @@
             "title": "Previously Archived",
             "type": "boolean"
           },
+          "previously_rejected": {
+            "default": false,
+            "title": "Previously Rejected",
+            "type": "boolean"
+          },
           "rejected_at": {
             "anyOf": [
               {
@@ -7956,7 +7961,7 @@
     },
     "/api/auth/users/directory/": {
       "get": {
-        "description": "Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.",
+        "description": "Members-only directory. Respects each user's show_phone/show_email/show_birthday flags.",
         "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {
@@ -7973,6 +7978,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           }
         },
         "security": [
@@ -8315,6 +8330,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {

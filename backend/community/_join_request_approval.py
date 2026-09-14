@@ -103,13 +103,15 @@ def send_join_approval(*, to: str, display_name: str, first_name: str, magic_tok
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
-def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
+def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
-    Reuses a non-member already linked or matched by phone; else creates one. A
-    scoped RSVP token is minted (or reused, if still valid) so they can RSVP
-    without being a member. No member role, no login email — those wait for
-    full approval. Returns the user and the RSVP manage-link token string.
+    Reuses a non-member already linked or matched by phone; else creates one.
+    They get the same way in as a fully-approved member — onboarding plus a
+    magic token — but keep ``is_member=False`` and no member role, which is what
+    limits them to official/club events (see ``community/_non_member_access``).
+    A scoped RSVP token is also minted (or reused, if still valid) so the older
+    token-link flow keeps working. Returns ``(user, rsvp_token, magic_token)``.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
     if user is None:
@@ -127,8 +129,21 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]
         join_request.user = user
         join_request.save(update_fields=["user"])
 
+    # Carry the form's consents forward, same as _promote_non_member — they
+    # consented when they applied, so the consent gate must not ask again.
+    changed = ["needs_onboarding"] if not user.needs_onboarding else []
+    user.needs_onboarding = True
+    if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
+        user.guidelines_consent_at = join_request.guidelines_consent_at
+        changed.append("guidelines_consent_at")
+    if join_request.sms_consent_at is not None and user.sms_consent_at is None:
+        user.sms_consent_at = join_request.sms_consent_at
+        changed.append("sms_consent_at")
+    if changed:
+        user.save(update_fields=changed)
+
     rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
-    return user, rsvp_token.token
+    return user, rsvp_token.token, _create_magic_token(user)
 
 
 def _maybe_promote_tentative(user, event, actor) -> str | None:

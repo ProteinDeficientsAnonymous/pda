@@ -75,16 +75,15 @@ class TestTentativeApprove:
         )
         fake_email_sender.send.assert_not_called()
 
-    def test_tentative_no_magic_token_in_response(
-        self, api_client, vettor_headers, sample_join_request
-    ):
+    def test_tentative_returns_a_magic_token(self, api_client, vettor_headers, sample_join_request):
+        """Tentative applicants log in like members — access, not the door, is what differs."""
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
-        assert response.json()["magic_link_token"] is None
+        assert response.json()["magic_link_token"]
 
     def test_tentative_response_rsvp_link_token_resolves_to_linked_user(
         self, api_client, vettor_headers, sample_join_request
