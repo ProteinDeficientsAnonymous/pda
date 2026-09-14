@@ -1,3 +1,11 @@
+## [0.104.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.0...v0.104.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **members:** keep notifications above search ([#1435](https://github.com/ProteinDeficientsAnonymous/pda/issues/1435)) ([b2fb46c](https://github.com/ProteinDeficientsAnonymous/pda/commit/b2fb46c9d42099691e462133b063d959dd60f8ea))
+* **notifications:** link payment revocations to events ([#1434](https://github.com/ProteinDeficientsAnonymous/pda/issues/1434)) ([cc4f019](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc4f0197d84d0af0375f48dc34da27d13f80af4d))
+
 # [0.104.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.103.0...v0.104.0) (2026-09-13)
 
 
