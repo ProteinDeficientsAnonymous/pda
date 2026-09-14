@@ -1,3 +1,10 @@
+## [0.108.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.108.0...v0.108.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **join-requests:** drop the rsvp manage-link from tentative approval ([#1488](https://github.com/ProteinDeficientsAnonymous/pda/issues/1488)) ([0c93dc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c93dc5a20dfe4d184792411a4878a90abc1958d))
+
 # [0.108.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.107.1...v0.108.0) (2026-09-14)
 
 
