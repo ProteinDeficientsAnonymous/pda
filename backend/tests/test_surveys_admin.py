@@ -1,5 +1,3 @@
-"""Tests for admin survey endpoints: CRUD, questions, reorder, responses, permissions."""
-
 import json
 import logging
 from unittest.mock import MagicMock

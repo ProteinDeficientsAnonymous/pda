@@ -1,5 +1,3 @@
-"""Unit tests for survey answer validators (no DB)."""
-
 from uuid import uuid4
 
 import pytest
