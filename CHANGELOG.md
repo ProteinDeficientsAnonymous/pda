@@ -1,3 +1,10 @@
+## [0.107.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.107.0...v0.107.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **join-requests:** block duplicate submissions and let tentative users sign in ([#1485](https://github.com/ProteinDeficientsAnonymous/pda/issues/1485)) ([0f709b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/0f709b2f59d647683c71671c86dfe2640fd97b11))
+
 # [0.107.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.106.0...v0.107.0) (2026-09-14)
 
 
