@@ -74,6 +74,9 @@ class JoinRequestOut(BaseModel):
     status: str
     user_id: str | None = None
     previously_archived: bool = False
+    # A prior request from this number was rejected — rejected applicants may
+    # re-apply, so vettors need the history on the fresh request.
+    previously_rejected: bool = False
     approved_at: datetime | None = None
     approved_by_name: str | None = None
     rejected_at: datetime | None = None
@@ -210,6 +213,11 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     phone_user = User.objects.filter(phone_number=jr.phone_number).first()
     user = jr.user or phone_user
     previously_archived = phone_user is not None and phone_user.archived_at is not None
+    previously_rejected = (
+        JoinRequest.objects.filter(phone_number=jr.phone_number, status=JoinRequestStatus.REJECTED)
+        .exclude(pk=jr.pk)
+        .exists()
+    )
     breakdown = _rsvp_breakdown(user)
     return JoinRequestOut(
         id=str(jr.id),
@@ -223,6 +231,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         status=jr.status,
         user_id=str(user.id) if user else None,
         previously_archived=previously_archived,
+        previously_rejected=previously_rejected,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
@@ -321,8 +330,8 @@ def _apply_status_transition(
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         _stamp_decision(join_request, status, actor)
         if status == JoinRequestStatus.TENTATIVE:
-            _, rsvp_link_token = _provision_tentative_user(join_request, actor)
-            return join_request, None, rsvp_link_token, False, False
+            _, rsvp_link_token, magic_token = _provision_tentative_user(join_request, actor)
+            return join_request, magic_token, rsvp_link_token, False, False
         if status == JoinRequestStatus.APPROVED:
             magic_token, user_created = _provision_approved_user(join_request, actor)
             return join_request, magic_token, None, user_created, was_tentative

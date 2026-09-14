@@ -168,6 +168,7 @@ export const Code = {
     AlreadyMember: 'join_request.already_member',
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
     PhoneAlreadyPending: 'join_request.phone_already_pending',
+    PhoneAlreadyTentative: 'join_request.phone_already_tentative',
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
@@ -375,6 +376,7 @@ export type ValidationCode =
   | 'join_request.already_member'
   | 'join_request.phone_already_invited'
   | 'join_request.phone_already_pending'
+  | 'join_request.phone_already_tentative'
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
@@ -550,6 +552,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.already_member': [],
   'join_request.phone_already_invited': [],
   'join_request.phone_already_pending': [],
+  'join_request.phone_already_tentative': [],
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],

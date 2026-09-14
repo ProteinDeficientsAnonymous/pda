@@ -147,6 +147,7 @@ export interface JoinRequestSummary {
   status: JoinRequestStatus;
   userId: string | null;
   previouslyArchived: boolean;
+  previouslyRejected: boolean;
   approvedAt: string | null;
   approvedByName: string | null;
   rejectedAt: string | null;
@@ -187,6 +188,7 @@ interface WireJoinRequest {
   status: JoinRequestStatus;
   user_id: string | null;
   previously_archived?: boolean;
+  previously_rejected?: boolean;
   approved_at?: string | null;
   approved_by_name?: string | null;
   rejected_at?: string | null;
@@ -216,6 +218,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     status: w.status,
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
+    previouslyRejected: w.previously_rejected ?? false,
     approvedAt: w.approved_at ?? null,
     approvedByName: w.approved_by_name ?? null,
     rejectedAt: w.rejected_at ?? null,

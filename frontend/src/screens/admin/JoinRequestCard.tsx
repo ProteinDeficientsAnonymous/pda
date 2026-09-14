@@ -69,6 +69,14 @@ export function JoinRequestCard({
               previously archived
             </span>
           ) : null}
+          {request.previouslyRejected ? (
+            <span
+              className="bg-warning-subtle text-warning rounded-full px-2 py-0.5 text-xs"
+              title="an earlier request from this number was rejected"
+            >
+              previously rejected
+            </span>
+          ) : null}
           <StatusBadge status={request.status} />
         </div>
       </header>

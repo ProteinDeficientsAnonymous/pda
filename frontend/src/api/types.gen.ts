@@ -261,7 +261,7 @@ export interface paths {
         };
         /**
          * List Member Directory
-         * @description Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.
+         * @description Members-only directory. Respects each user's show_phone/show_email/show_birthday flags.
          */
         get: operations["users__members_list_member_directory"];
         put?: never;
@@ -4095,6 +4095,11 @@ export interface components {
              * @default false
              */
             previously_archived: boolean;
+            /**
+             * Previously Rejected
+             * @default false
+             */
+            previously_rejected: boolean;
             /** Rejected At */
             rejected_at?: string | null;
             /** Rejected By Name */
@@ -5996,6 +6001,15 @@ export interface operations {
                     "application/json": components["schemas"]["MemberDirectoryOut"][];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     users__management_search_users: {
@@ -6234,6 +6248,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberProfileOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Not Found */

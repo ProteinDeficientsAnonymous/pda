@@ -178,6 +178,7 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
     status: JoinRequestStatus.PENDING,
     userId: null,
     previouslyArchived: false,
+    previouslyRejected: false,
     approvedAt: null,
     approvedByName: null,
     rejectedAt: null,

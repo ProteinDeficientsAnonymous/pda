@@ -172,6 +172,7 @@ class Code:
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
         PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
+        PHONE_ALREADY_TENTATIVE = "join_request.phone_already_tentative"
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
         ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
         ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }

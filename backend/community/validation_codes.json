@@ -725,6 +725,11 @@
         "params": []
       },
       {
+        "name": "PHONE_ALREADY_TENTATIVE",
+        "value": "join_request.phone_already_tentative",
+        "params": []
+      },
+      {
         "name": "ANSWER_REQUIRED",
         "value": "join_request.answer_required",
         "params": [
