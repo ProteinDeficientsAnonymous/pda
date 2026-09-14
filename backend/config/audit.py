@@ -45,6 +45,7 @@ def audit_log(
     target: AuditTarget | None = None,
     *,
     persist: bool = True,
+    anonymize_actor: bool = False,
 ) -> None:
     """Emit a structured audit log entry.
 
@@ -54,9 +55,10 @@ def audit_log(
         request: the Django/Ninja HttpRequest (used for actor and IP)
         target: AuditTarget(type, id, details) for the affected object
         persist: write a row to the audit table; False for console-only noise
+        anonymize_actor: drop actor and IP, for actions that must stay unattributable
     """
     target_type, target_id, details = target or AuditTarget()
-    user = getattr(request, "auth", None)
+    user = None if anonymize_actor else getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
         actor_id = str(user.pk)
         actor_name = getattr(user, "full_name", None) or str(user)
@@ -65,7 +67,8 @@ def audit_log(
         actor_name = "anonymous"
 
     # Spoof-resistant client IP (rightmost-untrusted hop); see config/ratelimit.py.
-    ip_address = client_ip(request)
+    # "anon" fails _valid_ip, so an anonymized entry persists no IP either.
+    ip_address = "anon" if anonymize_actor else client_ip(request)
 
     _audit_logger.log(
         level,

@@ -143,6 +143,8 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
     visibility: 'members_only',
     isActive: true,
     oneResponsePerUser: false,
+    anonymous: false,
+    confirmationMessage: '',
     linkedEventId: null,
   });
   const [error, setError] = useState<string | null>(null);
@@ -213,6 +215,26 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
           />
           <span>one response per user</span>
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={values.anonymous}
+            onChange={(e) => {
+              setValues((v) => ({ ...v, anonymous: e.target.checked }));
+            }}
+          />
+          <span>anonymous responses</span>
+        </label>
+        <Textarea
+          label="confirmation message (optional)"
+          value={values.confirmationMessage}
+          onChange={(e) => {
+            setValues((v) => ({ ...v, confirmationMessage: e.target.value }));
+          }}
+          hint="shown to the participant after they submit"
+          rows={2}
+          maxLength={1000}
+        />
         {error ? (
           <p role="alert" className="text-destructive text-sm">
             {error}

@@ -6,13 +6,16 @@ import { toast } from 'sonner';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   type SurveyPollTallyRow,
+  type SurveyResponseAdmin,
   useAdminSurvey,
+  useDeleteSurveyResponse,
   useFinalizeSurveyPoll,
   useSurveyPollTallies,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyResponsesScreen() {
@@ -29,6 +32,23 @@ export default function SurveyResponsesScreen() {
   const tallies = useSurveyPollTallies(
     datetimeQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
   );
+  const deleteResponse = useDeleteSurveyResponse(surveyId);
+  const { confirm, element: confirmElement } = useConfirm();
+
+  async function askDeleteResponse(response: SurveyResponseAdmin) {
+    const ok = await confirm({
+      title: 'delete response',
+      message: "delete this response? this can't be undone.",
+      confirmLabel: 'delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    deleteResponse.mutate(response.id, {
+      onError: (err) => {
+        toast.error(extractApiErrorOr(err, "couldn't delete that response — try again"));
+      },
+    });
+  }
 
   if (survey.isPending || responses.isPending) return <ContentLoading />;
   if (survey.isError || responses.isError) {
@@ -88,6 +108,9 @@ export default function SurveyResponsesScreen() {
                     {q.label}
                   </th>
                 ))}
+                <th className="px-3 py-2">
+                  <span className="sr-only">actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -102,12 +125,24 @@ export default function SurveyResponsesScreen() {
                       {renderAnswer(r.answers[q.id])}
                     </td>
                   ))}
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        void askDeleteResponse(r);
+                      }}
+                    >
+                      delete
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {confirmElement}
     </ContentContainer>
   );
 }

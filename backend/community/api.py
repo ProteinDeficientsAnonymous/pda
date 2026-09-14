@@ -49,6 +49,7 @@ from community._public_rsvp_resend import router as public_rsvp_resend_router
 from community._public_rsvp_submit import router as public_rsvp_submit_router
 from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
+from community._surveys_responses import router as surveys_responses_router
 from community._tentative_approval_message import (
     router as tentative_approval_message_router,
 )
@@ -96,6 +97,7 @@ router.add_router("", poll_options_router)
 router.add_router("", event_comments_router)
 router.add_router("", surveys_router)
 router.add_router("", surveys_public_router)
+router.add_router("", surveys_responses_router)
 router.add_router("", docs_router)
 router.add_router("", docs_documents_router)
 router.add_router("", geocode_router)

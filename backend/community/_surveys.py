@@ -1,4 +1,4 @@
-"""Survey CRUD, questions, and response endpoints."""
+"""Survey CRUD and question endpoints."""
 
 import logging
 from uuid import UUID
@@ -7,7 +7,6 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -24,7 +23,6 @@ from community._survey_schemas import (
     SurveyQuestionIn,
     SurveyQuestionOrderIn,
     SurveyQuestionOut,
-    SurveyResponseOut,
 )
 from community._validation import Code, raise_validation
 from community.models import (
@@ -113,6 +111,8 @@ def create_survey(request, payload: SurveyIn):
         visibility=payload.visibility,
         is_active=payload.is_active,
         one_response_per_user=payload.one_response_per_user,
+        anonymous=payload.anonymous,
+        confirmation_message=payload.confirmation_message,
         linked_event=linked_event,
         created_by=request.auth,
     )
@@ -416,48 +416,3 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
     )
     questions = SurveyQuestion.objects.filter(survey_id=survey_id)
     return Status(200, [_survey_question_out(q) for q in questions])
-
-
-# -- Survey responses (admin) --
-
-
-@router.get(
-    "/surveys/{survey_id}/responses/",
-    response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def list_survey_responses(request, survey_id: UUID):
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": "list_survey_responses",
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        survey = Survey.objects.get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    responses = survey.responses.select_related("user").all()
-    return Status(
-        200,
-        [
-            SurveyResponseOut(
-                id=str(r.id),
-                user_id=str(r.user_id) if r.user_id else None,
-                user_name=visible_display_name(r.user, request.auth) if r.user else None,
-                answers=r.answers,
-                submitted_at=r.submitted_at,
-            )
-            for r in responses
-        ],
-    )

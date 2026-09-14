@@ -58,7 +58,7 @@ def _survey_out(
         pass
     my_response_id = None
     my_answers = None
-    if requesting_user is not None:
+    if requesting_user is not None and not survey.anonymous:
         existing = survey.responses.filter(user=requesting_user).first()
         if existing:
             my_response_id = str(existing.id)
@@ -71,6 +71,8 @@ def _survey_out(
         visibility=survey.visibility,
         is_active=survey.is_active,
         one_response_per_user=survey.one_response_per_user,
+        anonymous=survey.anonymous,
+        confirmation_message=survey.confirmation_message,
         linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
@@ -144,7 +146,7 @@ def _tally_str_answer(
 
 
 def _tally_question(
-    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None
+    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None, include_voters: bool = True
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
@@ -156,7 +158,7 @@ def _tally_question(
         if not answer_data:
             continue
         answer = answer_data.get("answer")
-        voter = _voter_out(r.user, viewer) if r.user else None
+        voter = _voter_out(r.user, viewer) if r.user and include_voters else None
         if isinstance(answer, dict):
             _tally_dict_answer(answer, counts, voters, voter)
         elif isinstance(answer, str):

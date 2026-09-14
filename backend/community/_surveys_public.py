@@ -76,9 +76,11 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     questions = {str(q.id): q for q in survey.questions.all()}
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
-    user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    if survey.one_response_per_user and auth_user is not None:
-        existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
+    # No responder on an anonymous survey, so the one-per-user upsert can't key on one.
+    response_user = None if survey.anonymous else auth_user
+    user_name = visible_display_name(auth_user, auth_user) if response_user else None
+    if survey.one_response_per_user and response_user is not None:
+        existing = SurveyResponse.objects.filter(survey=survey, user=response_user).first()
         if existing:
             existing.answers = answers
             existing.save(update_fields=["answers"])
@@ -91,12 +93,14 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
                 ),
             )
             return Status(200, _response_out(existing, user_name))
-    response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
+    response = SurveyResponse.objects.create(survey=survey, user=response_user, answers=answers)
+    # An attributed audit row would re-link the submitter to the response by timestamp.
     audit_log(
         logging.INFO,
         "survey_response_submitted",
         request,
         target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}),
+        anonymize_actor=survey.anonymous,
     )
     return Status(201, _response_out(response, user_name))
 
@@ -140,7 +144,10 @@ def get_survey_tallies(request, survey_id: UUID):
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     responses = list(survey.responses.select_related("user").all())
-    tallies = [_tally_question(q, responses, request.auth) for q in poll_questions]
+    tallies = [
+        _tally_question(q, responses, request.auth, include_voters=not survey.anonymous)
+        for q in poll_questions
+    ]
     return Status(200, tallies)
 
 

@@ -60,6 +60,8 @@ interface WireSurveyFull {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   questions?: {
     id: string;
     label: string;
@@ -87,6 +89,8 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     questions: (w.questions ?? [])
       .map((q) => ({
         id: q.id,
@@ -130,6 +134,8 @@ export interface SurveyInput {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   linkedEventId: string | null;
 }
 
@@ -144,6 +150,8 @@ export function useCreateSurvey() {
         visibility: input.visibility,
         is_active: input.isActive,
         one_response_per_user: input.oneResponsePerUser,
+        anonymous: input.anonymous,
+        confirmation_message: input.confirmationMessage,
         linked_event_id: input.linkedEventId,
       });
       return mapSurveyFull(data);
@@ -166,6 +174,9 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.isActive !== undefined) body.is_active = patch.isActive;
       if (patch.oneResponsePerUser !== undefined)
         body.one_response_per_user = patch.oneResponsePerUser;
+      if (patch.anonymous !== undefined) body.anonymous = patch.anonymous;
+      if (patch.confirmationMessage !== undefined)
+        body.confirmation_message = patch.confirmationMessage;
       if (patch.linkedEventId !== undefined) body.linked_event_id = patch.linkedEventId;
       const { data } = await apiClient.patch<WireSurveyFull>(
         `/api/community/surveys/${surveyId}/`,
@@ -302,6 +313,18 @@ export function useSurveyResponses(surveyId: string | undefined) {
       }));
     },
     enabled: Boolean(surveyId),
+  });
+}
+
+export function useDeleteSurveyResponse(surveyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (responseId: string) => {
+      await apiClient.delete(`/api/community/surveys/${surveyId}/responses/${responseId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['surveys', 'admin', surveyId, 'responses'] });
+    },
   });
 }
 
