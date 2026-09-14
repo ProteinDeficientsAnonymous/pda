@@ -50,12 +50,27 @@ def _reactivate_archived_user(existing_user, join_request):
     return _create_magic_token(existing_user)
 
 
-def _promote_non_member(user, join_request) -> None:
-    """Promote a linked non-member User to a member in place.
+def _grant_membership(user) -> None:
+    """Add the default member role and revoke any scoped rsvp tokens."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if member_role:
+        user.roles.add(member_role)
+
+    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+        revoked_at=timezone.now()
+    )
+
+
+def _promote_public_non_member(user, join_request) -> str:
+    """Promote a publicly-RSVP'd non-member to a member in place.
 
     Their prior RSVPs already point at this row, so flipping is_member keeps the
-    full history instead of orphaning it under a fresh account. Outstanding
-    scoped RSVP tokens are revoked — the member flow replaces them.
+    full history instead of orphaning it under a fresh account.
+
+    They have never onboarded — no password, and the scoped rsvp tokens that
+    were their only way in are revoked here — so they are sent through
+    onboarding and the magic token returned is what replaces those tokens.
+    Dropping it would lock them out of the account they were just promoted into.
     """
     user.is_member = True
     user.needs_onboarding = True
@@ -74,14 +89,30 @@ def _promote_non_member(user, join_request) -> None:
             "sms_consent_at",
         ]
     )
+    _grant_membership(user)
+    return _create_magic_token(user)
 
-    member_role = Role.objects.filter(name="member", is_default=True).first()
-    if member_role:
-        user.roles.add(member_role)
 
-    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
-        revoked_at=timezone.now()
-    )
+def _promote_tentative_member(user, join_request) -> None:
+    """Promote a tentatively-approved applicant to a full member in place.
+
+    They onboarded on first login, so they already have a password, a name they
+    chose themselves, and cleared onboarding. Only membership changes here: no
+    token to mint (they sign in normally), no onboarding to re-flag — doing so
+    would lock them out, since the auth gate blocks every endpoint until it is
+    cleared — and no name to overwrite with the one from their application.
+
+    Their own first_name is still checked, so this path cannot produce a
+    nameless member either (Issue 733).
+    """
+    validate_display_name(user.first_name, field="first_name")
+    user.is_member = True
+    if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
+        user.guidelines_consent_at = join_request.guidelines_consent_at
+    if join_request.sms_consent_at is not None and user.sms_consent_at is None:
+        user.sms_consent_at = join_request.sms_consent_at
+    user.save(update_fields=["is_member", "guidelines_consent_at", "sms_consent_at"])
+    _grant_membership(user)
 
 
 _DEFAULT_MEMBER_PROMOTION_EMAIL = "you now have full member access."
@@ -163,7 +194,7 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     if join_request is None:
         return False
 
-    _promote_non_member(user, join_request)
+    _promote_tentative_member(user, join_request)
     join_request.status = JoinRequestStatus.APPROVED
     join_request.approved_at = timezone.now()
     join_request.approved_by = actor
@@ -171,19 +202,22 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     return True
 
 
-def _provision_approved_user(join_request, requesting_user) -> tuple[str | None, bool]:
+def _provision_approved_user(
+    join_request, requesting_user, *, was_tentative: bool
+) -> tuple[str | None, bool]:
     """Create, reactivate, or promote the user for an approved join request.
 
     Returns ``(magic_token, user_created)``: the one-time login token and whether
-    a brand-new User row was created. A promoted non-member or reactivated
-    archived user returns a token with ``user_created`` reflecting whether the
-    row is new. When the phone already maps to an active member, nothing is
-    provisioned and ``(None, False)`` is returned.
+    a brand-new User row was created. A tentative applicant already has a login,
+    so their promotion returns no token. When the phone already maps to an active
+    member, nothing is provisioned and ``(None, False)`` is returned.
     """
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:
-        _promote_non_member(join_request.user, join_request)
-        return _create_magic_token(join_request.user), False
+        if was_tentative:
+            _promote_tentative_member(join_request.user, join_request)
+            return None, False
+        return _promote_public_non_member(join_request.user, join_request), False
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:

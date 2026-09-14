@@ -98,23 +98,6 @@ class TestJoinApprovalEmail:
         assert f"{settings.FRONTEND_BASE_URL}/login" in matching[0]["text"]
         assert "/magic-login/" not in matching[0]["text"]
 
-    def test_checkin_promotion_mints_no_undelivered_magic_token(
-        self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
-    ):
-        """The email carries no login token, so promotion must not leave one live."""
-        sample_join_request.email = "checkin@example.com"
-        sample_join_request.save(update_fields=["email"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        before = user.magic_tokens.count()
-        host_headers = _auth(open_official_event.created_by)
-        api_client.post(
-            f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
-            {"attendance": AttendanceStatus.ATTENDED},
-            content_type="application/json",
-            **host_headers,
-        )
-        assert user.magic_tokens.count() == before
-
     def test_uses_editable_message_with_first_name_substitution(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):

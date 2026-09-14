@@ -250,7 +250,6 @@ export default function JoinRequestsScreen() {
           fullName={memberPromotionMessageFor.fullName}
           firstName={memberPromotionMessageFor.firstName}
           phoneNumber={memberPromotionMessageFor.phoneNumber}
-          magicLinkToken={memberPromotionMessageFor.magicLinkToken}
         />
       ) : null}
       {confirmElement}

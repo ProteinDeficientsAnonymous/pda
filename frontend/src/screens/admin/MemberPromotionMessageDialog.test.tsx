@@ -14,9 +14,15 @@ vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
 
+const { templateState } = vi.hoisted(() => ({
+  templateState: {
+    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
+  } as { data: { body: string; updatedAt: string } | undefined },
+}));
+
 vi.mock('@/api/content', () => ({
   useMemberPromotionMessage: () => ({
-    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
+    data: templateState.data,
     isPending: false,
     isError: false,
   }),
@@ -42,9 +48,13 @@ function makeUser(overrides?: Partial<User>): User {
 
 beforeEach(() => {
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
+  templateState.data = {
+    body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}',
+    updatedAt: '2026-01-01',
+  };
 });
 
-function renderDialog(user: User | null, magicLinkToken: string | null = 'abc123') {
+function renderDialog(user: User | null, firstName = 'Sam', phoneNumber = '+12025551234') {
   useAuthStore.setState({
     status: user ? 'authed' : 'idle',
     user,
@@ -57,19 +67,25 @@ function renderDialog(user: User | null, magicLinkToken: string | null = 'abc123
         open
         onClose={() => {}}
         fullName="Sam Vetterson"
-        firstName="Sam"
-        phoneNumber="+12025551234"
-        magicLinkToken={magicLinkToken}
+        firstName={firstName}
+        phoneNumber={phoneNumber}
       />
     </QueryClientProvider>,
   );
 }
 
 describe('MemberPromotionMessageDialog', () => {
-  it('renders the magic link box and copy button', () => {
+  it('offers no login link — a promoted member already has one', () => {
     renderDialog(makeUser());
-    expect(screen.getByText(/magic-login\/abc123/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /copy link/i })).toBeInTheDocument();
+    expect(screen.queryByText(/magic-login/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /copy link/i })).toBeNull();
+  });
+
+  it('swallows a retired MAGIC_LINK placeholder left in the template', () => {
+    renderDialog(makeUser());
+    const sms = screen.getByText('send via sms').closest('a');
+    expect(sms?.getAttribute('href')).not.toContain('MAGIC_LINK');
+    expect(sms?.getAttribute('href')).not.toContain('magic-login');
   });
 
   it('renders sms and whatsapp buttons with substituted hrefs', () => {
@@ -81,9 +97,24 @@ describe('MemberPromotionMessageDialog', () => {
     expect(wa?.getAttribute('href')).toContain('https://wa.me/12025551234?text=');
   });
 
-  it('renders nothing without a magic link token', () => {
-    const { container } = renderDialog(makeUser(), null);
-    expect(container).toBeEmptyDOMElement();
+  it('falls back to a plain body when the template is unavailable', () => {
+    templateState.data = undefined;
+    renderDialog(makeUser());
+    expect(screen.getByText(/you're a full member now/)).toBeInTheDocument();
+  });
+
+  it('renders the fallback without a first name', () => {
+    templateState.data = undefined;
+    // null, not undefined — a default parameter would swallow undefined.
+    renderDialog(makeUser(), null as unknown as string);
+    expect(screen.getByText(/you're a full member now/)).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/)).toBeNull();
+  });
+
+  it('renders without a phone number on the row', () => {
+    renderDialog(makeUser(), 'Sam', null as unknown as string);
+    expect(screen.getByText('send via sms')).toBeInTheDocument();
+    expect(screen.getByText('send via whatsapp')).toBeInTheDocument();
   });
 
   it('hides edit-template trigger without permission', () => {
