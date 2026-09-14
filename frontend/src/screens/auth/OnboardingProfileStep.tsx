@@ -5,11 +5,20 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
-import { InlineBirthday } from '@/screens/settings/InlineBirthday';
+import {
+  type DateDraft,
+  InlineBirthday,
+  InlineVeganniversary,
+} from '@/screens/settings/InlineBirthday';
 import { PrivacyToggles } from '@/screens/settings/PrivacyToggles';
 import { extractApiError } from '@/utils/errors';
 
 const MAX_BIO = 500;
+
+function completeDraft(draft: DateDraft | null) {
+  if (draft?.month == null || draft.year == null) return undefined;
+  return { month: draft.month, day: draft.day, year: draft.year };
+}
 
 interface Props {
   onDone: () => void;
@@ -20,24 +29,21 @@ export function OnboardingProfileStep({ onDone }: Props) {
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const [bio, setBio] = useState('');
   const [pronouns, setPronouns] = useState('');
+  const [draft, setDraft] = useState<DateDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hasPhoto = Boolean(user?.profilePhotoUrl);
 
-  async function onFinish() {
-    const trimmedBio = bio.trim();
-    const trimmedPronouns = pronouns.trim();
-    if (!trimmedBio && !trimmedPronouns) {
-      onDone();
-      return;
-    }
+  async function finish(extra: { bio?: string; pronouns?: string } = {}) {
     setError(null);
     setSaving(true);
     try {
+      const veganniversary = completeDraft(draft);
       await updateProfile({
-        ...(trimmedBio ? { bio: trimmedBio } : {}),
-        ...(trimmedPronouns ? { pronouns: trimmedPronouns } : {}),
+        ...extra,
+        hasSeenVeganniversary: true,
+        ...(veganniversary ? { veganniversary } : {}),
       });
       onDone();
     } catch (err) {
@@ -45,6 +51,15 @@ export function OnboardingProfileStep({ onDone }: Props) {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function onFinish() {
+    const trimmedBio = bio.trim();
+    const trimmedPronouns = pronouns.trim();
+    await finish({
+      ...(trimmedBio ? { bio: trimmedBio } : {}),
+      ...(trimmedPronouns ? { pronouns: trimmedPronouns } : {}),
+    });
   }
 
   if (!user) return null;
@@ -79,8 +94,17 @@ export function OnboardingProfileStep({ onDone }: Props) {
       <InlineBirthday
         label="birthday"
         value={user.birthday}
-        onSave={(v) => updateProfile({ birthday: v })}
+        onSave={(v) =>
+          updateProfile({
+            birthday: v?.day != null ? { month: v.month, day: v.day, year: v.year } : null,
+          })
+        }
         placeholder="add your birthday"
+      />
+      <InlineVeganniversary
+        value={user.veganniversary}
+        onSave={(veganniversary) => updateProfile({ veganniversary })}
+        onDraftChange={setDraft}
       />
       <div>
         <p className="text-foreground-tertiary mb-2 text-sm">privacy</p>
@@ -96,7 +120,7 @@ export function OnboardingProfileStep({ onDone }: Props) {
       </Button>
       <button
         type="button"
-        onClick={onDone}
+        onClick={() => void finish()}
         disabled={saving}
         className="text-foreground-tertiary hover:text-foreground focus-visible:ring-brand-200 text-sm underline transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >

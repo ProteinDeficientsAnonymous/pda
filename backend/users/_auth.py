@@ -42,6 +42,7 @@ from users.schemas import (
     OnboardingIn,
     TokenOut,
     UserOut,
+    VeganniversaryIn,
 )
 
 logger = logging.getLogger("pda.auth")
@@ -145,6 +146,9 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "show_phone",
     "show_email",
     "show_birthday",
+    "show_veganniversary",
+    "veganniversary_shoutout_opt_in",
+    "has_seen_veganniversary",
     "hide_last_name",
     "weekly_digest_opt_out",
     "week_start",
@@ -159,6 +163,12 @@ def _apply_birthday(user, birthday: BirthdayIn | None) -> None:
     user.birthday_month = birthday.month if birthday else None
     user.birthday_day = birthday.day if birthday else None
     user.birthday_year = birthday.year if birthday else None
+
+
+def _apply_veganniversary(user, veganniversary: VeganniversaryIn | None) -> None:
+    user.veganniversary_month = veganniversary.month if veganniversary else None
+    user.veganniversary_day = veganniversary.day if veganniversary else None
+    user.veganniversary_year = veganniversary.year if veganniversary else None
 
 
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
@@ -188,6 +198,9 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if "birthday" in payload.model_fields_set:
         _apply_birthday(user, payload.birthday)
         changed.append("birthday")
+    if "veganniversary" in payload.model_fields_set:
+        _apply_veganniversary(user, payload.veganniversary)
+        changed.append("veganniversary")
     return changed
 
 

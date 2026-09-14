@@ -186,6 +186,132 @@ class TestUpdateBirthday:
 
 
 @pytest.mark.django_db
+class TestUpdateVeganniversary:
+    def test_set_veganniversary_with_day_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 3, "day": 12, "year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganniversary"] == {"month": 3, "day": 12, "year": 2019}
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
+        ) == (3, 12, 2019)
+
+    def test_set_veganniversary_without_day_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 6, "year": 2020}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganniversary"] == {"month": 6, "day": None, "year": 2020}
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
+        ) == (6, None, 2020)
+
+    def test_month_only_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 6}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_year_only_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_veganniversary_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.veganniversary_month = 3
+        test_user.veganniversary_day = 12
+        test_user.veganniversary_year = 2019
+        test_user.save(
+            update_fields=["veganniversary_month", "veganniversary_day", "veganniversary_year"]
+        )
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": None},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganniversary"] is None
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
+        ) == (None, None, None)
+
+    def test_veganniversary_omitted_leaves_value_untouched(
+        self, api_client, auth_headers, test_user
+    ):
+        test_user.veganniversary_month = 3
+        test_user.veganniversary_day = 12
+        test_user.veganniversary_year = 2019
+        test_user.save(
+            update_fields=["veganniversary_month", "veganniversary_day", "veganniversary_year"]
+        )
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "they/them"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert (
+            test_user.veganniversary_month,
+            test_user.veganniversary_day,
+            test_user.veganniversary_year,
+        ) == (3, 12, 2019)
+
+    def test_invalid_day_for_month_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 4, "day": 31, "year": 2019}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_feb_29_non_leap_year_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 2, "day": 29, "year": 2023}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_feb_29_leap_year_accepted(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"veganniversary": {"month": 2, "day": 29, "year": 2020}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["veganniversary"] == {"month": 2, "day": 29, "year": 2020}
+
+
+@pytest.mark.django_db
 class TestPatchMeEmail:
     def test_update_email_lowercases(self, api_client, auth_headers, test_user):
         resp = api_client.patch(

@@ -4457,6 +4457,17 @@
             ],
             "title": "First Name"
           },
+          "has_seen_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Seen Veganniversary"
+          },
           "hide_last_name": {
             "anyOf": [
               {
@@ -4547,6 +4558,38 @@
               }
             ],
             "title": "Show Phone"
+          },
+          "show_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Veganniversary"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Veganniversary Shoutout Opt In"
           },
           "week_start": {
             "anyOf": [
@@ -4781,6 +4824,16 @@
             "default": "",
             "title": "Pronouns",
             "type": "string"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6524,6 +6577,11 @@
             "title": "Has Logged In",
             "type": "boolean"
           },
+          "has_seen_veganniversary": {
+            "default": false,
+            "title": "Has Seen Veganniversary",
+            "type": "boolean"
+          },
           "hide_last_name": {
             "default": false,
             "title": "Hide Last Name",
@@ -6645,6 +6703,26 @@
           "show_phone": {
             "default": true,
             "title": "Show Phone",
+            "type": "boolean"
+          },
+          "show_veganniversary": {
+            "default": true,
+            "title": "Show Veganniversary",
+            "type": "boolean"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "default": false,
+            "title": "Veganniversary Shoutout Opt In",
             "type": "boolean"
           },
           "week_start": {
@@ -6790,6 +6868,70 @@
           "phone_number"
         ],
         "title": "UserSearchOut",
+        "type": "object"
+      },
+      "VeganniversaryIn": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "maximum": 2026,
+            "minimum": 1900,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryIn",
+        "type": "object"
+      },
+      "VeganniversaryOut": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryOut",
         "type": "object"
       },
       "VersionOut": {

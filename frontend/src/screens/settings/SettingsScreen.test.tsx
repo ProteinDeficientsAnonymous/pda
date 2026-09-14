@@ -238,6 +238,73 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('saves a veganniversary with month and year only via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        veganniversary: { month: 6, day: null, year: 2020 },
+      });
+    });
+  });
+
+  it('keeps the field label visible while editing a date', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    expect(screen.getByText(/^veganniversary$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^month$/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    expect(screen.getByText(/^birthday$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^month$/i)).toBeInTheDocument();
+  });
+
+  it('shows the veganniversary month/year hint only while editing', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    expect(
+      screen.queryByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    expect(
+      screen.getByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('saves veganniversary privacy toggles from the privacy section', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('switch', { name: /show veganniversary on my profile/i }));
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ showVeganniversary: false });
+    });
+
+    const shoutout = screen.getByRole('switch', {
+      name: /show my name in veganniversary shout out emails/i,
+    });
+    expect(shoutout).not.toBeChecked();
+    await user.click(shoutout);
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganniversaryShoutoutOptIn: true });
+    });
+  });
+
   it('saves an edited first name via updateProfile', async () => {
     const authApi = await import('@/api/auth');
     const user = userEvent.setup();

@@ -8,6 +8,7 @@ import { FeedbackButton } from '@/components/FeedbackButton';
 import { BottomNav } from './BottomNav';
 import { NotificationBell } from './NotificationBell';
 import { PdaMenuSheet } from './PdaMenuSheet';
+import { VeganniversaryPrompt } from './VeganniversaryPrompt';
 
 export function AppShell() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
@@ -53,6 +54,7 @@ export function AppShell() {
       </div>
       <FeedbackButton />
       <DevTestEventsButton />
+      <VeganniversaryPrompt />
       <BottomNav />
     </div>
   );
