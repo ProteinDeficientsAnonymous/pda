@@ -5,12 +5,20 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.db.models import Max
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
+from community._survey_conditions import (
+    assert_order_keeps_dependencies,
+    clear_dependent_conditions,
+    clear_invalidated_conditions,
+    resolve_question_order,
+    validate_show_if,
+)
 from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
@@ -250,7 +258,7 @@ def delete_survey(request, survey_id: UUID):
 
 @router.post(
     "/surveys/{survey_id}/questions/",
-    response={201: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={201: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
@@ -274,7 +282,10 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    max_order = survey.questions.count()
+    # count() ties with an existing order whenever a delete left a gap.
+    top_order = survey.questions.aggregate(top=Max("display_order"))["top"]
+    max_order = 0 if top_order is None else top_order + 1
+    show_if = validate_show_if(payload.show_if, survey_id=survey_id, display_order=max_order)
     q = SurveyQuestion.objects.create(
         survey=survey,
         label=payload.label,
@@ -282,6 +293,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         options=payload.options,
         required=payload.required,
         display_order=max_order,
+        show_if=show_if,
     )
     audit_log(
         logging.INFO,
@@ -296,9 +308,50 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
     return Status(201, _survey_question_out(q))
 
 
+@router.put(
+    "/surveys/{survey_id}/questions/order/",
+    response={200: list[SurveyQuestionOut], 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "reorder_survey_questions",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
+    ordered_ids = resolve_question_order(existing, payload.question_ids)
+    assert_order_keeps_dependencies(existing, ordered_ids)
+    for idx, qid in enumerate(ordered_ids):
+        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    audit_log(
+        logging.INFO,
+        "survey_questions_reordered",
+        request,
+        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
+    )
+    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
+    return Status(200, [_survey_question_out(q) for q in questions])
+
+
 @router.patch(
     "/surveys/{survey_id}/questions/{question_id}/",
-    response={200: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
@@ -326,7 +379,11 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.field_type = payload.field_type
     q.options = payload.options
     q.required = payload.required
+    q.show_if = validate_show_if(
+        payload.show_if, survey_id=survey_id, display_order=q.display_order
+    )
     q.save()
+    clear_invalidated_conditions(survey_id, q)
     audit_log(
         logging.INFO,
         "survey_question_updated",
@@ -366,6 +423,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
         raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
+    clear_dependent_conditions(survey_id, question_id)
     q.delete()
     audit_log(
         logging.INFO,
@@ -378,44 +436,6 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         ),
     )
     return Status(204, None)
-
-
-@router.put(
-    "/surveys/{survey_id}/questions/order/",
-    response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": "reorder_survey_questions",
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        Survey.objects.get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    for idx, qid in enumerate(payload.question_ids):
-        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
-    audit_log(
-        logging.INFO,
-        "survey_questions_reordered",
-        request,
-        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
-    )
-    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
-    return Status(200, [_survey_question_out(q) for q in questions])
 
 
 # -- Survey responses (admin) --

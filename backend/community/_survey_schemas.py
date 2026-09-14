@@ -1,11 +1,24 @@
 """Pydantic schemas for survey endpoints."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from community._field_limits import FieldLimit
-from community.models import SurveyQuestionType, SurveyVisibility
+from community.models import ShowIfOperator, SurveyQuestionType, SurveyVisibility
+
+
+class ShowIfIn(BaseModel):
+    question_id: UUID
+    operator: ShowIfOperator = ShowIfOperator.EQUALS
+    value: str = Field(max_length=FieldLimit.SHORT_TEXT)
+
+
+class ShowIfOut(BaseModel):
+    question_id: str
+    operator: str
+    value: str
 
 
 class SurveyQuestionOut(BaseModel):
@@ -15,6 +28,7 @@ class SurveyQuestionOut(BaseModel):
     options: list[str] = []
     required: bool
     display_order: int
+    show_if: ShowIfOut | None = None
 
 
 class PollResultOut(BaseModel):
@@ -95,6 +109,7 @@ class SurveyQuestionIn(BaseModel):
     field_type: SurveyQuestionType = SurveyQuestionType.TEXT
     options: list[str] = []
     required: bool = False
+    show_if: ShowIfIn | None = None
 
 
 class SurveyQuestionOrderIn(BaseModel):

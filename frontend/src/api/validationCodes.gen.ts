@@ -160,6 +160,12 @@ export const Code = {
     AnswerRatingOutOfRange: 'survey.answer_rating_out_of_range',
     AnswerInvalidDatetimeOption: 'survey.answer_invalid_datetime_option',
     AnswerInvalidAvailability: 'survey.answer_invalid_availability',
+    ConditionQuestionNotFound: 'survey.condition_question_not_found',
+    ConditionQuestionNotEarlier: 'survey.condition_question_not_earlier',
+    ConditionTypeNotSupported: 'survey.condition_type_not_supported',
+    ConditionOperatorNotSupported: 'survey.condition_operator_not_supported',
+    ConditionValueInvalid: 'survey.condition_value_invalid',
+    ConditionOrderConflict: 'survey.condition_order_conflict',
   },
   JoinRequest: {
     NotFound: 'join_request.not_found',
@@ -369,6 +375,12 @@ export type ValidationCode =
   | 'survey.answer_rating_out_of_range'
   | 'survey.answer_invalid_datetime_option'
   | 'survey.answer_invalid_availability'
+  | 'survey.condition_question_not_found'
+  | 'survey.condition_question_not_earlier'
+  | 'survey.condition_type_not_supported'
+  | 'survey.condition_operator_not_supported'
+  | 'survey.condition_value_invalid'
+  | 'survey.condition_order_conflict'
   | 'join_request.not_found'
   | 'join_request.already_decided'
   | 'join_request.only_rejected_can_be_un_rejected'
@@ -544,6 +556,12 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.answer_rating_out_of_range': ['label'],
   'survey.answer_invalid_datetime_option': ['label'],
   'survey.answer_invalid_availability': ['label', 'value'],
+  'survey.condition_question_not_found': [],
+  'survey.condition_question_not_earlier': [],
+  'survey.condition_type_not_supported': ['label'],
+  'survey.condition_operator_not_supported': ['operator'],
+  'survey.condition_value_invalid': ['label'],
+  'survey.condition_order_conflict': ['label'],
   'join_request.not_found': [],
   'join_request.already_decided': [],
   'join_request.only_rejected_can_be_un_rejected': [],

@@ -1,5 +1,6 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
+    CONDITION_SOURCE_TYPES,
     RSVP_CHOICE_TYPES,
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
@@ -17,6 +18,7 @@ from community.models.choices import (
     QuestionType,
     RsvpQuestionType,
     RSVPStatus,
+    ShowIfOperator,
     SurveyQuestionType,
     SurveyVisibility,
 )
@@ -57,6 +59,7 @@ from community.models.tag import EventTag
 
 __all__ = [
     "AttendanceMilestone",
+    "CONDITION_SOURCE_TYPES",
     "AttendanceReminder",
     "AttendanceStatus",
     "CoHostInviteStatus",
@@ -76,6 +79,7 @@ __all__ = [
     "RsvpQuestionType",
     "EventRsvpQuestion",
     "RSVPStatus",
+    "ShowIfOperator",
     "SurveyQuestionType",
     "SurveyVisibility",
     "EventCoHostInvite",

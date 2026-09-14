@@ -691,6 +691,44 @@
           "label",
           "value"
         ]
+      },
+      {
+        "name": "CONDITION_QUESTION_NOT_FOUND",
+        "value": "survey.condition_question_not_found",
+        "params": []
+      },
+      {
+        "name": "CONDITION_QUESTION_NOT_EARLIER",
+        "value": "survey.condition_question_not_earlier",
+        "params": []
+      },
+      {
+        "name": "CONDITION_TYPE_NOT_SUPPORTED",
+        "value": "survey.condition_type_not_supported",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "CONDITION_OPERATOR_NOT_SUPPORTED",
+        "value": "survey.condition_operator_not_supported",
+        "params": [
+          "operator"
+        ]
+      },
+      {
+        "name": "CONDITION_VALUE_INVALID",
+        "value": "survey.condition_value_invalid",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "CONDITION_ORDER_CONFLICT",
+        "value": "survey.condition_order_conflict",
+        "params": [
+          "label"
+        ]
       }
     ],
     "JoinRequest": [

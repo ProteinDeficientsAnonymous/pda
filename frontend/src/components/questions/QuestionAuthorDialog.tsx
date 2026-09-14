@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from 'react';
+import type { ReactNode, SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -37,6 +37,8 @@ interface Props<T extends string> {
   busy: boolean;
   onSave: (values: QuestionAuthorValues<T>) => Promise<void>;
   errorFallback?: string;
+  /** Extra controls rendered under the options editor; state lives in the caller. */
+  extraFields?: ReactNode;
 }
 
 export function QuestionAuthorDialog<T extends string>(props: Props<T>) {
@@ -54,6 +56,7 @@ function QuestionAuthorDialogBody<T extends string>({
   busy,
   onSave,
   errorFallback = "couldn't save — try again",
+  extraFields,
 }: Props<T>) {
   const [label, setLabel] = useState(() => initial.label);
   const [fieldType, setFieldType] = useState<T>(() => initial.fieldType);
@@ -118,6 +121,7 @@ function QuestionAuthorDialogBody<T extends string>({
         {wantsOptions ? (
           <QuestionOptionsEditor options={options} onChange={setOptions} hint={hint} />
         ) : null}
+        {extraFields}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
