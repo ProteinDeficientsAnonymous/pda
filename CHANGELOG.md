@@ -1,3 +1,10 @@
+# [0.107.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.106.0...v0.107.0) (2026-09-14)
+
+
+### Features
+
+* **surveys:** edit survey settings after creation (Issue 1459) ([#1473](https://github.com/ProteinDeficientsAnonymous/pda/issues/1473)) ([dc5b1b7](https://github.com/ProteinDeficientsAnonymous/pda/commit/dc5b1b709de9eb9b6ce9c91b9af63666ef033b0c))
+
 # [0.106.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.105.0...v0.106.0) (2026-09-14)
 
 
