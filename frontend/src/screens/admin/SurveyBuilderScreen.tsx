@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyQuestionDialog } from './SurveyQuestionDialog';
 
 export default function SurveyBuilderScreen() {
@@ -61,6 +62,7 @@ export default function SurveyBuilderScreen() {
           </p>
         </div>
         <div className="flex gap-2">
+          <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
             to={`/surveys/${currentSurvey.slug}`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"

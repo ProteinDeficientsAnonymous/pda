@@ -20,6 +20,8 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
+import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
+
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
   const del = useDeleteSurvey();
@@ -114,6 +116,7 @@ function SurveyRow({
         >
           {survey.isActive ? 'active' : 'closed'}
         </span>
+        <SurveyCopyLinkButton slug={survey.slug} className="h-9 px-3" />
         <Link
           to={`/admin/surveys/${survey.id}/responses`}
           className="text-foreground-secondary hover:bg-surface-dim inline-flex h-9 items-center rounded-md px-3 text-sm"
