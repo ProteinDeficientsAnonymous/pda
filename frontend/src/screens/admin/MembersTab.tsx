@@ -38,7 +38,7 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
   const [markOpen, setMarkOpen] = useState(false);
   const canMarkAttendance = hasPermission(
     useAuthStore((s) => s.user),
-    Permission.ManageEvents,
+    Permission.ManageUsers,
   );
 
   const roleNames = useMemo(() => [...allRoles.map((r) => r.name)].sort(), [allRoles]);

@@ -79,16 +79,16 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useUsers>);
   useAuthStore.setState({
     status: 'authed',
-    user: staffUser([Permission.ManageUsers, Permission.ManageEvents]),
+    user: staffUser([Permission.ManageUsers]),
     accessToken: 'tok',
   });
 });
 
 describe('marking members attended from the members screen', () => {
-  it('hides the selection checkboxes without the manage events permission', () => {
+  it('hides the selection checkboxes without the manage users permission', () => {
     useAuthStore.setState({
       status: 'authed',
-      user: staffUser([Permission.ManageUsers]),
+      user: staffUser([Permission.ManageEvents]),
       accessToken: 'tok',
     });
 

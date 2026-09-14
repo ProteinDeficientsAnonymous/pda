@@ -21,11 +21,21 @@ def _auth(user):
 
 
 @pytest.fixture
-def events_admin(db):
+def members_admin(db):
     admin = User.objects.create_user(
         phone_number="+12025553000", password="x", first_name="Admin", is_member=True
     )
-    role = Role.objects.create(name="mark_admin", permissions=[PermissionKey.MANAGE_EVENTS])
+    role = Role.objects.create(name="mark_admin", permissions=[PermissionKey.MANAGE_USERS])
+    admin.roles.add(role)
+    return admin
+
+
+@pytest.fixture
+def events_only_admin(db):
+    admin = User.objects.create_user(
+        phone_number="+12025553004", password="x", first_name="Eventy", is_member=True
+    )
+    role = Role.objects.create(name="events_only", permissions=[PermissionKey.MANAGE_EVENTS])
     admin.roles.add(role)
     return admin
 
@@ -52,12 +62,12 @@ def bob(db):
 
 
 @pytest.fixture
-def past_event(db, events_admin):
+def past_event(db, members_admin):
     return Event.objects.create(
         title="Past Potluck",
         start_datetime=timezone.now() - timezone.timedelta(days=30),
         event_type=EventType.CLUB,
-        created_by=events_admin,
+        created_by=members_admin,
     )
 
 
@@ -67,7 +77,7 @@ def _post(api_client, user, payload):
 
 @pytest.mark.django_db
 class TestPermissions:
-    def test_forbidden_without_manage_events(self, api_client, plain_member, alice, past_event):
+    def test_forbidden_without_manage_users(self, api_client, plain_member, alice, past_event):
         resp = _post(
             api_client,
             plain_member,
@@ -75,15 +85,34 @@ class TestPermissions:
         )
         assert resp.status_code == 403
 
+    def test_manage_events_alone_is_not_enough(
+        self, api_client, events_only_admin, alice, past_event
+    ):
+        resp = _post(
+            api_client,
+            events_only_admin,
+            {"event_id": str(past_event.id), "user_ids": [str(alice.id)]},
+        )
+        assert resp.status_code == 403
+
+    def test_event_picker_is_open_to_both_permissions(
+        self, api_client, members_admin, events_only_admin, past_event
+    ):
+        url = "/api/community/events/attendance-import/events/"
+        for user in (members_admin, events_only_admin):
+            resp = api_client.get(url, **_auth(user))
+            assert resp.status_code == 200
+            assert any(e["id"] == str(past_event.id) for e in resp.json())
+
 
 @pytest.mark.django_db
 class TestExistingEvent:
     def test_marks_every_selected_member_attended(
-        self, api_client, events_admin, alice, bob, past_event
+        self, api_client, members_admin, alice, bob, past_event
     ):
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {"event_id": str(past_event.id), "user_ids": [str(alice.id), str(bob.id)]},
         )
 
@@ -95,7 +124,7 @@ class TestExistingEvent:
             assert rsvp.status == RSVPStatus.ATTENDING
 
     def test_remarking_updates_instead_of_duplicating(
-        self, api_client, events_admin, alice, past_event
+        self, api_client, members_admin, alice, past_event
     ):
         EventRSVP.objects.create(
             event=past_event,
@@ -106,7 +135,7 @@ class TestExistingEvent:
 
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {"event_id": str(past_event.id), "user_ids": [str(alice.id)]},
         )
 
@@ -118,10 +147,10 @@ class TestExistingEvent:
             == AttendanceStatus.ATTENDED
         )
 
-    def test_unknown_event_404s(self, api_client, events_admin, alice):
+    def test_unknown_event_404s(self, api_client, members_admin, alice):
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {
                 "event_id": "00000000-0000-0000-0000-000000000000",
                 "user_ids": [str(alice.id)],
@@ -132,10 +161,10 @@ class TestExistingEvent:
 
 @pytest.mark.django_db
 class TestLegacyEventCreation:
-    def test_creates_a_legacy_event_kept_off_the_calendar(self, api_client, events_admin, alice):
+    def test_creates_a_legacy_event_kept_off_the_calendar(self, api_client, members_admin, alice):
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {
                 "event_title": "Summer Potluck 2023",
                 "event_date": "2023-07-04",
@@ -154,13 +183,13 @@ class TestLegacyEventCreation:
         assert event.start_datetime.date().isoformat() == "2023-07-04"
 
     def test_legacy_attendance_counts_toward_the_attendance_clock(
-        self, api_client, events_admin, alice
+        self, api_client, members_admin, alice
     ):
         from community._attendance_clock import last_qualifying_attendance_date
 
         _post(
             api_client,
-            events_admin,
+            members_admin,
             {
                 "event_title": "Summer Potluck 2023",
                 "event_date": "2023-07-04",
@@ -171,14 +200,14 @@ class TestLegacyEventCreation:
 
         assert last_qualifying_attendance_date(alice).isoformat() == "2023-07-04"
 
-    def test_title_and_date_required_without_event_id(self, api_client, events_admin, alice):
-        resp = _post(api_client, events_admin, {"user_ids": [str(alice.id)]})
+    def test_title_and_date_required_without_event_id(self, api_client, members_admin, alice):
+        resp = _post(api_client, members_admin, {"user_ids": [str(alice.id)]})
         assert resp.status_code == 400
 
-    def test_rejects_unsupported_event_type(self, api_client, events_admin, alice):
+    def test_rejects_unsupported_event_type(self, api_client, members_admin, alice):
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {
                 "event_title": "Summer Potluck 2023",
                 "event_date": "2023-07-04",
@@ -191,14 +220,14 @@ class TestLegacyEventCreation:
 
 @pytest.mark.django_db
 class TestSelection:
-    def test_rejects_an_empty_selection(self, api_client, events_admin, past_event):
-        resp = _post(api_client, events_admin, {"event_id": str(past_event.id), "user_ids": []})
+    def test_rejects_an_empty_selection(self, api_client, members_admin, past_event):
+        resp = _post(api_client, members_admin, {"event_id": str(past_event.id), "user_ids": []})
         assert resp.status_code == 400
 
-    def test_skips_ids_that_are_not_users(self, api_client, events_admin, alice, past_event):
+    def test_skips_ids_that_are_not_users(self, api_client, members_admin, alice, past_event):
         resp = _post(
             api_client,
-            events_admin,
+            members_admin,
             {
                 "event_id": str(past_event.id),
                 "user_ids": [str(alice.id), "00000000-0000-0000-0000-000000000000"],
@@ -213,15 +242,15 @@ class TestSelection:
 
 @pytest.mark.django_db
 class TestLegacyEventInEventList:
-    def test_event_list_flags_legacy_events(self, api_client, events_admin):
+    def test_event_list_flags_legacy_events(self, api_client, members_admin):
         event = Event.objects.create(
             title="Legacy Potluck",
             start_datetime=timezone.now() - timezone.timedelta(days=400),
-            created_by=events_admin,
+            created_by=members_admin,
             is_legacy=True,
         )
 
-        resp = api_client.get("/api/community/events/", **_auth(events_admin))
+        resp = api_client.get("/api/community/events/", **_auth(members_admin))
 
         assert resp.status_code == 200
         row = next(e for e in resp.json() if e["id"] == str(event.id))

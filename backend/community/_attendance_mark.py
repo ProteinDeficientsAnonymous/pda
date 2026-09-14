@@ -8,9 +8,10 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users.models import User
+from users.permissions import PermissionKey
 
 from community._attendance_mark_schemas import AttendanceMarkIn, AttendanceMarkOut
-from community._attendance_shared import require_manage_events
+from community._attendance_shared import require_permission
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
@@ -71,7 +72,7 @@ def _resolve_event(payload: AttendanceMarkIn, request) -> Event:
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def mark_attendance(request, payload: AttendanceMarkIn):
-    require_manage_events(request, "mark_attendance")
+    require_permission(request, "mark_attendance", PermissionKey.MANAGE_USERS)
 
     user_ids = list(dict.fromkeys(payload.user_ids))
     if not user_ids:
