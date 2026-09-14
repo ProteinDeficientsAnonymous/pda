@@ -1,3 +1,11 @@
+## [0.109.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.109.0...v0.109.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **devtools:** let any authed user create test events off production ([#1489](https://github.com/ProteinDeficientsAnonymous/pda/issues/1489)) ([82095f7](https://github.com/ProteinDeficientsAnonymous/pda/commit/82095f7045769253cd93d458e62ba993d36edfd4))
+* **surveys:** show a closed state instead of a generic error (Issue 1460) ([#1471](https://github.com/ProteinDeficientsAnonymous/pda/issues/1471)) ([3a111cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a111cf0d6996cbe5b1982991497f3bf1fc7c7e8))
+
 # [0.109.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.108.1...v0.109.0) (2026-09-14)
 
 
