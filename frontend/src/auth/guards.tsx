@@ -2,6 +2,7 @@ import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useFeatureFlags } from '@/api/featureFlags';
+import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import type { FeatureFlagKey } from '@/models/featureFlags';
@@ -126,6 +127,27 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
   }
   if (!hasPermission(user, perm)) {
     return <Navigate to="/calendar" replace />;
+  }
+  return <Outlet />;
+}
+
+// ----------------------------------------------------------------------------
+// RequireMember — authed + full membership. A tentatively-approved user is
+// signed in but not vetted, so these screens 403 server-side. Explain the gate
+// rather than redirecting: they get in by showing up to an event in person.
+// ----------------------------------------------------------------------------
+
+export function RequireMember({ what }: { what: string }) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  const location = useLocation();
+
+  if (!isAuthed) {
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
+  if (user?.isMember === false) {
+    return <MembersOnlyNotice what={what} />;
   }
   return <Outlet />;
 }

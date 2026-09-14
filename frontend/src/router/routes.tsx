@@ -6,6 +6,7 @@ import {
   OnboardingGate,
   RequireAuth,
   RequireFlag,
+  RequireMember,
   RequirePermission,
 } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
@@ -110,10 +111,20 @@ export const router = createBrowserRouter([
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },
                   { path: '/events/mine', element: el(<MyEvents />) },
-                  { path: '/events/add', element: el(<EventCreate />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
                   { path: '/events/:id/check-in', element: el(<EventAttendance />) },
                   { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
+                ],
+              },
+
+              {
+                element: <RequireMember what="adding events" />,
+                children: [{ path: '/events/add', element: el(<EventCreate />) }],
+              },
+
+              {
+                element: <RequireMember what="the member directory" />,
+                children: [
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
                 ],
