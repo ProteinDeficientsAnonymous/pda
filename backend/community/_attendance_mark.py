@@ -49,8 +49,6 @@ def _resolve_event(payload: AttendanceMarkIn, request) -> Event:
         title=payload.event_title,
         start_datetime=start,
         event_type=event_type,
-        # A record-only backfill: members-only and rsvp-disabled so nobody can
-        # land on it or respond to it, and is_legacy keeps it off the calendar.
         visibility=PageVisibility.MEMBERS_ONLY,
         status=EventStatus.ACTIVE,
         rsvp_enabled=False,

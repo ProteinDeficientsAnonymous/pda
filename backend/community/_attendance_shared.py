@@ -6,7 +6,6 @@ from community._validation import Code, raise_validation
 
 
 def require_permission(request, action: str, *keys: str) -> None:
-    """Allow the request through if the caller holds any one of `keys`."""
     if any(request.auth.has_permission(key) for key in keys):
         return
     audit_log(

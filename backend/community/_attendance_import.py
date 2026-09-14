@@ -44,7 +44,6 @@ def list_attendance_import_event_options(request, q: str = ""):
     require_permission(
         request,
         "list_attendance_import_event_options",
-        # Shared picker: the csv import and the members-screen mark flow both use it.
         PermissionKey.MANAGE_EVENTS,
         PermissionKey.MANAGE_USERS,
     )

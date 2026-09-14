@@ -35,8 +35,7 @@ const mockUseUsers = vi.mocked(useUsers);
 const mockUseMarkAttendance = vi.mocked(useMarkAttendance);
 const mutate = vi.fn();
 
-// Not the built-in "admin" role — that one grants every permission and would
-// make the manage-events gate untestable.
+// The built-in "admin" role grants every permission, which would hide the gate.
 function staffUser(permissions: string[]): User {
   return {
     ...makeUser({ id: 'me', fullName: 'Staff User' }),
