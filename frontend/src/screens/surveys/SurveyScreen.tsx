@@ -1,9 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
+import { Code } from '@/api/validationCodes';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -13,7 +15,25 @@ export default function SurveyScreen() {
   const { data: survey, isPending, isError } = useSurvey(slug);
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
+  if (!survey.isActive && survey.pollResult === null) return <SurveyClosed survey={survey} />;
   return <SurveyForm survey={survey} />;
+}
+
+function SurveyClosed({ survey }: { survey: Survey }) {
+  return (
+    <ContentContainer>
+      <h1 className="mb-2 text-2xl font-medium tracking-tight">{survey.title}</h1>
+      {survey.description ? (
+        <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
+      ) : null}
+      <p
+        role="status"
+        className="bg-surface-dim text-foreground-secondary rounded-md px-3 py-2 text-sm"
+      >
+        this survey is closed — responses are no longer accepted
+      </p>
+    </ContentContainer>
+  );
 }
 
 function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
@@ -26,6 +46,7 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
 }
 
 function SurveyForm({ survey }: { survey: Survey }) {
+  const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
   // Lazy init so the user's prior response loads exactly once when the form
   // mounts. Subsequent server updates (e.g. poll finalized) re-render the
@@ -69,6 +90,10 @@ function SurveyForm({ survey }: { survey: Survey }) {
       await submit.mutateAsync(payload);
     } catch (err) {
       setServerError(extractError(err));
+      // Survey closed between load and submit — refetch so the closed state renders.
+      if (hasErrorCode(err, Code.Survey.Closed)) {
+        void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
+      }
     }
   }
 

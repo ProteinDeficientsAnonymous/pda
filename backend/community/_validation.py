@@ -147,6 +147,7 @@ class Code:
 
     class Survey:
         NOT_FOUND = "survey.not_found"
+        CLOSED = "survey.closed"
         SLUG_ALREADY_EXISTS = "survey.slug_already_exists"
         QUESTION_NOT_FOUND = "survey.question_not_found"
         NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
