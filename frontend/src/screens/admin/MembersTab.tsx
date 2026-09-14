@@ -110,8 +110,6 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
         </div>
       )}
 
-      {/* Pinned below the AppShell h-10 header so filters and the mark-attended
-          action stay reachable while scrolling a long list. */}
       <div className="bg-background sticky top-10 z-0 -mx-4 px-4 pt-2">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="flex-1 sm:min-w-56">
