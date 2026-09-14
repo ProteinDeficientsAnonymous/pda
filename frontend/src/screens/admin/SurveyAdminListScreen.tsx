@@ -14,12 +14,12 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
+import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyFields } from './SurveyFields';
-import { type SurveyStatus, surveyStatus } from './surveyStatus';
 import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {

@@ -57,5 +57,5 @@ class TestSurveyCapacityRace:
             t.join()
 
         assert results.count(201) == 1, results
-        assert results.count(404) == thread_count - 1, results
+        assert results.count(400) == thread_count - 1, results
         assert SurveyResponse.objects.filter(survey=survey).count() == 1

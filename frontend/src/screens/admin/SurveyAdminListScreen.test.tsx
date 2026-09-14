@@ -6,9 +6,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SurveySummary } from '@/api/surveyAdmin';
+import { surveyStatus } from '@/models/survey';
 
 import SurveyAdminListScreen from './SurveyAdminListScreen';
-import { surveyStatus } from './surveyStatus';
 
 const toastSuccess = vi.fn();
 const createMutateAsync = vi.fn();
@@ -110,22 +110,22 @@ describe('surveyStatus', () => {
   const now = new Date('2026-06-01T12:00:00.000Z');
 
   it('is closed when inactive, regardless of window', () => {
-    expect(surveyStatus(makeSurvey({ isActive: false }), now)).toBe('closed');
+    expect(surveyStatus(makeSurvey({ isActive: false }), { now })).toBe('closed');
   });
 
   it('is scheduled when opens_at is in the future', () => {
     const survey = makeSurvey({ opensAt: '2026-06-02T00:00:00.000Z' });
-    expect(surveyStatus(survey, now)).toBe('scheduled');
+    expect(surveyStatus(survey, { now })).toBe('scheduled');
   });
 
   it('is closed once closes_at has passed', () => {
     const survey = makeSurvey({ closesAt: '2026-05-31T00:00:00.000Z' });
-    expect(surveyStatus(survey, now)).toBe('closed');
+    expect(surveyStatus(survey, { now })).toBe('closed');
   });
 
   it('is capped once the response cap is reached', () => {
     const survey = makeSurvey({ maxResponses: 5, responseCount: 5 });
-    expect(surveyStatus(survey, now)).toBe('capped');
+    expect(surveyStatus(survey, { now })).toBe('capped');
   });
 
   // A survey that is both scheduled and already at cap reads as scheduled —
@@ -136,7 +136,7 @@ describe('surveyStatus', () => {
       maxResponses: 1,
       responseCount: 1,
     });
-    expect(surveyStatus(survey, now)).toBe('scheduled');
+    expect(surveyStatus(survey, { now })).toBe('scheduled');
   });
 
   it('is active inside the window and under the cap', () => {
@@ -146,7 +146,7 @@ describe('surveyStatus', () => {
       maxResponses: 10,
       responseCount: 3,
     });
-    expect(surveyStatus(survey, now)).toBe('active');
+    expect(surveyStatus(survey, { now })).toBe('active');
   });
 });
 

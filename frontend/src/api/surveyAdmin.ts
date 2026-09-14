@@ -69,6 +69,10 @@ interface WireSurveyFull {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  max_responses?: number | null;
+  response_count?: number;
   linked_event_id?: string | null;
   questions?: {
     id: string;
@@ -97,6 +101,10 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    opensAt: w.opens_at ?? null,
+    closesAt: w.closes_at ?? null,
+    maxResponses: w.max_responses ?? null,
+    responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
     questions: (w.questions ?? [])
       .map((q) => ({

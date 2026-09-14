@@ -113,6 +113,42 @@ describe('SurveyScreen', () => {
     expect(screen.queryByLabelText('thoughts')).not.toBeInTheDocument();
   });
 
+  it('renders a scheduled state for a survey that has not opened yet', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: { ...baseWireSurvey, opens_at: '2999-01-01T00:00:00Z' },
+    });
+    renderScreen();
+
+    expect(await screen.findByRole('status')).toHaveTextContent("this survey isn't open yet");
+    expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
+  });
+
+  it('renders a capped state for a survey at its response limit', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: { ...baseWireSurvey, max_responses: 2, response_count: 2 },
+    });
+    renderScreen();
+
+    expect(await screen.findByRole('status')).toHaveTextContent('reached its response limit');
+    expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
+  });
+
+  it('still lets a user past the cap edit their own response', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: {
+        ...baseWireSurvey,
+        max_responses: 2,
+        response_count: 2,
+        my_response_id: 'resp-1',
+        my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+      },
+    });
+    renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
   it('renders the form with a submit button for an active survey', async () => {
     mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
     renderScreen();
