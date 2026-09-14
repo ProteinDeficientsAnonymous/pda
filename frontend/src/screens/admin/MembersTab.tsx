@@ -12,10 +12,17 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MarkAttendedDialog } from './MarkAttendedDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
-import { filterAndSort, formatCountText, SORT_OPTIONS, type SortKey } from './membersFilterSort';
+import {
+  filterAndSort,
+  formatCountText,
+  SORT_OPTIONS,
+  type SortKey,
+  type StatusFilter,
+} from './membersFilterSort';
 import { MembersList } from './MembersList';
 import { MembersRoleFilter } from './MembersRoleFilter';
 import { MembersSelectionBar } from './MembersSelectionBar';
+import { MembersStatusFilter } from './MembersStatusFilter';
 
 export type MembersMode = 'members' | 'non-members';
 
@@ -32,6 +39,7 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('name');
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(() => new Set());
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<StatusFilter>>(() => new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -44,11 +52,11 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
   const roleNames = useMemo(() => [...allRoles.map((r) => r.name)].sort(), [allRoles]);
 
   const visible = useMemo(
-    () => filterAndSort(data, query, sort, selectedRoles),
-    [data, query, sort, selectedRoles],
+    () => filterAndSort(data, query, sort, selectedRoles, selectedStatuses),
+    [data, query, sort, selectedRoles, selectedStatuses],
   );
 
-  const hasFilters = query.trim() !== '' || selectedRoles.size > 0;
+  const hasFilters = query.trim() !== '' || selectedRoles.size > 0 || selectedStatuses.size > 0;
   const countText = formatCountText(visible.length, data.length, hasFilters);
   const selectedMembers = useMemo(
     () => data.filter((m) => selectedIds.has(m.id)),
@@ -102,8 +110,8 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
         </div>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="flex-1 sm:min-w-56">
           <TextField
             label="search"
             placeholder="name, phone, email, or user id"
@@ -133,6 +141,9 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
             />
           </div>
         ) : null}
+        <div className="sm:w-56">
+          <MembersStatusFilter selected={selectedStatuses} onChange={setSelectedStatuses} />
+        </div>
       </div>
 
       {data.length > 0 ? (
