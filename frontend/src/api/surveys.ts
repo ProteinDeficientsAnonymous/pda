@@ -103,41 +103,6 @@ function mapSurvey(w: WireSurvey): Survey {
   };
 }
 
-export interface SurveyListItem {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  visibility: string;
-  linkedEventId: string | null;
-}
-
-interface WireSurveySummary {
-  id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  visibility: string;
-  linked_event_id?: string | null;
-}
-
-export function useSurveys() {
-  return useQuery({
-    queryKey: ['surveys'],
-    queryFn: async () => {
-      const { data } = await apiClient.get<WireSurveySummary[]>('/api/community/surveys/');
-      return data.map((s) => ({
-        id: s.id,
-        title: s.title,
-        slug: s.slug,
-        description: s.description ?? '',
-        visibility: s.visibility,
-        linkedEventId: s.linked_event_id ?? null,
-      }));
-    },
-  });
-}
-
 export function useSurvey(slug: string | undefined) {
   return useQuery({
     queryKey: ['survey', slug ?? ''],

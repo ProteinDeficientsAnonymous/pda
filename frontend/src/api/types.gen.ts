@@ -1779,8 +1779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Surveys Public */
-        get: operations["community__surveys_list_surveys_public"];
+        get?: never;
         put?: never;
         /** Create Survey */
         post: operations["community__surveys_create_survey"];
@@ -4574,21 +4573,6 @@ export interface components {
             has_plus_one: boolean;
             /** Status */
             status: string;
-        };
-        /** PublicSurveyListOut */
-        PublicSurveyListOut: {
-            /** Description */
-            description: string;
-            /** Id */
-            id: string;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
-            /** Slug */
-            slug: string;
-            /** Title */
-            title: string;
-            /** Visibility */
-            visibility: string;
         };
         /**
          * QuestionType
@@ -10574,26 +10558,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__surveys_list_surveys_public: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicSurveyListOut"][];
                 };
             };
         };

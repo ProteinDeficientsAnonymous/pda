@@ -43,7 +43,6 @@ const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
 const DocDetail = lazyWithRetry(() => import('@/screens/docs/DocDetailScreen'));
-const Surveys = lazyWithRetry(() => import('@/screens/surveys/SurveysScreen'));
 const Survey = lazyWithRetry(() => import('@/screens/surveys/SurveyScreen'));
 
 // Admin screens
@@ -94,7 +93,6 @@ export const router = createBrowserRouter([
               { path: '/calendar', element: el(<Calendar />) },
               { path: '/events/:id', element: el(<EventDetail />) },
               { path: '/my-rsvps', element: el(<PublicRsvps />) },
-              { path: '/surveys', element: el(<Surveys />) },
               { path: '/surveys/:slug', element: el(<Survey />) },
               { path: '/donate', element: el(<Donate />) },
               { path: '/install', element: el(<Install />) },

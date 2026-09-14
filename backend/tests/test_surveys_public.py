@@ -1,21 +1,10 @@
-"""Tests for public survey endpoints: list visibility, tally authorization, submit rate limit."""
+"""Tests for public survey endpoints: tally authorization + submit rate limit."""
 
 import json
-from datetime import timedelta
 
 import pytest
 from community._validation import Code
-from community.models import (
-    Event,
-    EventStatus,
-    PageVisibility,
-    Survey,
-    SurveyQuestion,
-    SurveyQuestionType,
-    SurveyResponse,
-    SurveyVisibility,
-)
-from django.utils import timezone
+from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -142,121 +131,3 @@ class TestSurveySubmitRateLimit:
                 break
 
         assert last_status == 429, "expected the public survey submit to hit the rate limit"
-
-
-# ---------------------------------------------------------------------------
-# Public survey list visibility (Issue 1463)
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture
-def discoverable_surveys(db):
-    public = Survey.objects.create(title="Public survey", slug="public-survey")
-    members_only = Survey.objects.create(
-        title="Members survey",
-        slug="members-survey",
-        visibility=SurveyVisibility.MEMBERS_ONLY,
-    )
-    Survey.objects.create(title="Closed survey", slug="closed-survey", is_active=False)
-    Survey.objects.create(
-        title="Closed members survey",
-        slug="closed-members-survey",
-        visibility=SurveyVisibility.MEMBERS_ONLY,
-        is_active=False,
-    )
-    return public, members_only
-
-
-@pytest.mark.django_db
-class TestSurveyListPublic:
-    url = "/api/community/surveys/"
-
-    def test_anonymous_sees_only_public_active(self, api_client, discoverable_surveys):
-        response = api_client.get(self.url)
-        assert response.status_code == 200
-        assert [s["slug"] for s in response.json()] == ["public-survey"]
-
-    def test_member_sees_members_only(self, api_client, auth_headers, discoverable_surveys):
-        response = api_client.get(self.url, **auth_headers)
-        assert response.status_code == 200
-        assert sorted(s["slug"] for s in response.json()) == ["members-survey", "public-survey"]
-
-    def test_inactive_surveys_excluded_for_members(
-        self, api_client, auth_headers, discoverable_surveys
-    ):
-        slugs = {s["slug"] for s in api_client.get(self.url, **auth_headers).json()}
-        assert "closed-survey" not in slugs
-        assert "closed-members-survey" not in slugs
-
-    def test_includes_linked_event_id(self, api_client, db):
-        event = Event.objects.create(
-            title="Potluck", start_datetime=timezone.now() + timedelta(days=7)
-        )
-        Survey.objects.create(title="Potluck poll", slug="potluck-poll", linked_event=event)
-
-        body = api_client.get(self.url).json()
-
-        assert body[0]["linked_event_id"] == str(event.id)
-        assert body[0]["title"] == "Potluck poll"
-
-    def test_serializes_only_whitelisted_fields(self, api_client, discoverable_surveys):
-        body = api_client.get(self.url).json()
-        assert set(body[0]) == {
-            "id",
-            "title",
-            "slug",
-            "description",
-            "visibility",
-            "linked_event_id",
-        }
-
-
-def _survey_for_event(slug: str, **event_kwargs) -> Event:
-    event = Event.objects.create(
-        title="Hidden event",
-        start_datetime=timezone.now() + timedelta(days=7),
-        **event_kwargs,
-    )
-    Survey.objects.create(title=f"Survey {slug}", slug=slug, linked_event=event)
-    return event
-
-
-@pytest.mark.django_db
-class TestSurveyListLinkedEventVisibility:
-    """A public survey on a hidden event must not out that event in discovery."""
-
-    url = "/api/community/surveys/"
-
-    def _slugs(self, api_client, headers=None):
-        return {s["slug"] for s in api_client.get(self.url, **(headers or {})).json()}
-
-    def test_anonymous_excludes_members_only_event_survey(self, api_client, db):
-        _survey_for_event("members-event-survey", visibility=PageVisibility.MEMBERS_ONLY)
-        assert "members-event-survey" not in self._slugs(api_client)
-
-    def test_anonymous_excludes_draft_event_survey(self, api_client, db):
-        _survey_for_event("draft-event-survey", status=EventStatus.DRAFT)
-        assert "draft-event-survey" not in self._slugs(api_client)
-
-    def test_anonymous_excludes_invite_only_event_survey(self, api_client, db):
-        _survey_for_event("invite-event-survey", visibility=PageVisibility.INVITE_ONLY)
-        assert "invite-event-survey" not in self._slugs(api_client)
-
-    def test_anonymous_includes_public_event_survey(self, api_client, db):
-        _survey_for_event("public-event-survey")
-        assert "public-event-survey" in self._slugs(api_client)
-
-    def test_member_includes_members_only_event_survey(self, api_client, auth_headers, db):
-        _survey_for_event("members-event-survey", visibility=PageVisibility.MEMBERS_ONLY)
-        assert "members-event-survey" in self._slugs(api_client, auth_headers)
-
-    def test_member_excludes_invite_only_event_survey(self, api_client, auth_headers, db):
-        _survey_for_event("invite-event-survey", visibility=PageVisibility.INVITE_ONLY)
-        assert "invite-event-survey" not in self._slugs(api_client, auth_headers)
-
-    def test_member_excludes_deleted_event_survey(self, api_client, auth_headers, db):
-        _survey_for_event("deleted-event-survey", status=EventStatus.DELETED)
-        assert "deleted-event-survey" not in self._slugs(api_client, auth_headers)
-
-    def test_unlinked_surveys_still_listed(self, api_client, discoverable_surveys):
-        assert "public-survey" in self._slugs(api_client)

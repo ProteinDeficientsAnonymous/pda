@@ -5365,50 +5365,6 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
-      "PublicSurveyListOut": {
-        "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
-          },
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "visibility": {
-            "title": "Visibility",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug",
-          "description",
-          "visibility"
-        ],
-        "title": "PublicSurveyListOut",
-        "type": "object"
-      },
       "QuestionType": {
         "description": "HTML-aligned question type catalog (wire values).",
         "enum": [
@@ -14465,35 +14421,6 @@
       }
     },
     "/api/community/surveys/": {
-      "get": {
-        "operationId": "community__surveys_list_surveys_public",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PublicSurveyListOut"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "OptionalJWTAuth": []
-          }
-        ],
-        "summary": "List Surveys Public",
-        "tags": [
-          "community"
-        ]
-      },
       "post": {
         "operationId": "community__surveys_create_survey",
         "parameters": [],

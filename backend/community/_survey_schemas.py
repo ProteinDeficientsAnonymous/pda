@@ -55,15 +55,6 @@ class SurveyOut(BaseModel):
     my_answers: dict | None = None
 
 
-class PublicSurveyListOut(BaseModel):
-    id: str
-    title: str
-    slug: str
-    description: str
-    visibility: str
-    linked_event_id: str | None = None
-
-
 class SurveyListOut(BaseModel):
     id: str
     title: str
