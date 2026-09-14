@@ -103,15 +103,14 @@ def send_join_approval(*, to: str, display_name: str, first_name: str, magic_tok
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
-def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str, str]:
+def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
     Reuses a non-member already linked or matched by phone; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but keep ``is_member=False`` and no member role, which is what
     limits them to official/club events (see ``community/_non_member_access``).
-    A scoped RSVP token is also minted (or reused, if still valid) so the older
-    token-link flow keeps working. Returns ``(user, rsvp_token, magic_token)``.
+    Returns ``(user, magic_token)``.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
     if user is None:
@@ -142,8 +141,7 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str,
     if changed:
         user.save(update_fields=changed)
 
-    rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
-    return user, rsvp_token.token, _create_magic_token(user)
+    return user, _create_magic_token(user)
 
 
 def _maybe_promote_tentative(user, event, actor) -> str | None:

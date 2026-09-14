@@ -60,8 +60,7 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
         name), <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
         <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code> (their one-time sign
-        in link), <code className="bg-surface-dim rounded px-1">{'${RSVP_LINK}'}</code> (their rsvp
-        manage link), <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
+        in link), <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
       </p>
       <textarea
         value={body}

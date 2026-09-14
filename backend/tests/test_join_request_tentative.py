@@ -52,7 +52,8 @@ class TestTentativeApprove:
         assert user.is_member is False
         assert not user.roles.filter(name="member").exists()
 
-    def test_tentative_issues_rsvp_token(self, api_client, vettor_headers, sample_join_request):
+    def test_tentative_issues_no_rsvp_token(self, api_client, vettor_headers, sample_join_request):
+        """The magic login link replaced the scoped rsvp manage-link."""
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.TENTATIVE},
@@ -60,9 +61,7 @@ class TestTentativeApprove:
             **vettor_headers,
         )
         sample_join_request.refresh_from_db()
-        assert NonMemberRsvpToken.objects.filter(
-            user=sample_join_request.user, revoked_at__isnull=True
-        ).exists()
+        assert not NonMemberRsvpToken.objects.filter(user=sample_join_request.user).exists()
 
     def test_tentative_sends_no_email(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
@@ -84,33 +83,6 @@ class TestTentativeApprove:
             **vettor_headers,
         )
         assert response.json()["magic_link_token"]
-
-    def test_tentative_response_rsvp_link_token_resolves_to_linked_user(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        token = response.json()["rsvp_link_token"]
-        assert token
-        sample_join_request.refresh_from_db()
-        resolved = NonMemberRsvpToken.resolve_user(token)
-        assert resolved is not None
-        assert resolved.id == sample_join_request.user_id
-
-    def test_approved_response_has_no_rsvp_link_token(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.json()["rsvp_link_token"] is None
 
     def test_tentative_requires_permission(self, api_client, auth_headers, sample_join_request):
         response = api_client.patch(

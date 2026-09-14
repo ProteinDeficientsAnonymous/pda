@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  buildRsvpLinkUrl,
   buildSmsHref,
   buildWelcomeMessage,
   buildWhatsAppHref,
@@ -64,19 +63,18 @@ describe('buildWelcomeMessage', () => {
 });
 
 describe('renderWelcomeMessage', () => {
-  it('substitutes all five placeholders', () => {
+  it('substitutes all four placeholders', () => {
     const out = renderWelcomeMessage(
-      'hi ${FIRST_NAME}, this is ${SENDER_NAME}, sign in: ${MAGIC_LINK}, rsvp: ${RSVP_LINK}, chat: ${WHATSAPP_LINK}',
+      'hi ${FIRST_NAME}, this is ${SENDER_NAME}, sign in: ${MAGIC_LINK}, chat: ${WHATSAPP_LINK}',
       {
         name: 'Sam',
         senderName: 'Vetter',
         magicLink: 'https://pda.test/m/abc',
-        rsvpLink: 'https://pda.test/my-rsvps?token=xyz',
         whatsappLink: 'https://chat.whatsapp.com/xyz',
       },
     );
     expect(out).toBe(
-      'hi Sam, this is Vetter, sign in: https://pda.test/m/abc, rsvp: https://pda.test/my-rsvps?token=xyz, chat: https://chat.whatsapp.com/xyz',
+      'hi Sam, this is Vetter, sign in: https://pda.test/m/abc, chat: https://chat.whatsapp.com/xyz',
     );
   });
 
@@ -110,19 +108,13 @@ describe('renderWelcomeMessage', () => {
     expect(out).toBe('hi ada!');
   });
 
-  it('leaves ${RSVP_LINK} empty when no rsvpLink is supplied', () => {
-    const out = renderWelcomeMessage('x${RSVP_LINK}y', {
+  it('swallows the retired ${RSVP_LINK} placeholder in an old saved template', () => {
+    const out = renderWelcomeMessage('rsvp: ${RSVP_LINK}', {
       name: 'ada',
       senderName: 'sender',
       whatsappLink: '',
     });
-    expect(out).toBe('xy');
-  });
-});
-
-describe('buildRsvpLinkUrl', () => {
-  it('builds a /my-rsvps manage url from a token', () => {
-    expect(buildRsvpLinkUrl('abc123')).toBe(`${window.location.origin}/my-rsvps?token=abc123`);
+    expect(out).toBe('rsvp: ');
   });
 });
 

@@ -39,11 +39,11 @@ def test_tentative_user_needs_onboarding(api_client, vettor_headers, sample_join
     assert sample_join_request.user.is_member is False
 
 
-def test_tentative_still_returns_the_rsvp_link_token(
+def test_tentative_response_drops_the_rsvp_link_token(
     api_client, vettor_headers, sample_join_request
 ):
     response = _tentatively_approve(api_client, vettor_headers, sample_join_request)
-    assert response.json()["rsvp_link_token"]
+    assert "rsvp_link_token" not in response.json()
 
 
 def test_tentative_still_sends_no_email(
