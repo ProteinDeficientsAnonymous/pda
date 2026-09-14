@@ -15,13 +15,11 @@ function* walk(dir: string): Generator<string> {
   }
 }
 
-// Vite only statically replaces direct `import.meta.env.KEY` member accesses.
-// Aliasing or destructuring the object instead inlines EVERY VITE_* var present
-// at build time into the shipped bundle — including credential-shaped ones like
-// VITE_DEV_LOGIN_PASSWORD. Matches any `import.meta.env` NOT followed by `.key`.
+// Aliasing the object instead of a direct .KEY access inlines every VITE_* var
+// into the bundle, secrets included.
 const WHOLE_ENV_ACCESS = /import\.meta\.env(?!\s*\.\s*[A-Za-z_$])/g;
 
-// Comments legitimately mention `import.meta.env` when explaining this very rule.
+// Prose about this rule would otherwise trip it.
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }

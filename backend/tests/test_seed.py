@@ -128,8 +128,7 @@ def test_seed_rsvps_include_partial_and_complete_questionnaire_responses():
 def test_seed_users_clear_every_consent_gate():
     call_command("seed")
 
-    # Members only — SEED_NON_MEMBERS are join-request applicants with unusable
-    # passwords, never logged in as, and deliberately left unconsented.
+    # Members only — SEED_NON_MEMBERS are unconsented join-request applicants.
     for user in User.objects.filter(phone_number__startswith="+1702555", is_member=True):
         assert user.guidelines_consent_at is not None, user.phone_number
         assert user.sms_consent_at is not None, user.phone_number

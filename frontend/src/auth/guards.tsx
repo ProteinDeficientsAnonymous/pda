@@ -33,8 +33,7 @@ export function AuthBoot({ children }: { children: ReactNode }) {
   // loading UX and re-mounting them mid-request would re-fire their effects
   // and burn single-use tokens.
   const booted = useAuthStore((s) => s.booted);
-  // Always false in a production build (the dev-login module compiles away),
-  // so the spinner logic below is unchanged outside local dev.
+  // Always false in production.
   const [devLoginPending, setDevLoginPending] = useState(devAutoLoginConfigured);
 
   useEffect(() => {
@@ -50,8 +49,7 @@ export function AuthBoot({ children }: { children: ReactNode }) {
   if (!booted && (status === 'idle' || status === 'loading')) {
     return <BootSpinner />;
   }
-  // Hold the spinner through dev auto-login too, so local dev doesn't flash
-  // the login screen on every refresh before the credentials land.
+  // Otherwise local dev flashes the login screen before the credentials land.
   if (devLoginPending) {
     return <BootSpinner />;
   }
