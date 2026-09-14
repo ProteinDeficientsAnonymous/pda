@@ -1,3 +1,10 @@
+## [0.104.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.1...v0.104.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* allow reordering rsvp questions (issue 1403) ([#1428](https://github.com/ProteinDeficientsAnonymous/pda/issues/1428)) ([c44ffd3](https://github.com/ProteinDeficientsAnonymous/pda/commit/c44ffd38c8d1c50053a902bf4b101b56542b143d))
+
 ## [0.104.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.0...v0.104.1) (2026-09-14)
 
 
