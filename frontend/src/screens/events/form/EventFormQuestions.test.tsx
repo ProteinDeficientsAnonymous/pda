@@ -64,6 +64,9 @@ describe('EventFormQuestions', () => {
     expect(label).toHaveClass('truncate');
     expect(label).not.toContainElement(marker);
     expect(marker).toHaveClass('shrink-0');
+    expect(label.closest('article')).toHaveClass('min-w-0');
+    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
 
   it('reorders loaded questions with the keyboard drag control', async () => {

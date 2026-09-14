@@ -56,8 +56,8 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
           onReorder={reorderQuestions}
           ariaLabel="rsvp questions"
           renderItem={(q) => (
-            <article className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
-              <div className="min-w-0">
+            <article className="border-border bg-surface flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3">
+              <div className="min-w-0 flex-1">
                 <p className="flex items-baseline text-sm font-medium">
                   <span className="min-w-0 truncate">{q.label}</span>
                   {q.required ? (

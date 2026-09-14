@@ -69,7 +69,7 @@ function SortableRow({ id, children }: { id: string; children: ReactNode }) {
     opacity: isDragging ? 0.6 : 1,
   };
   return (
-    <li ref={setNodeRef} style={style} className="flex items-stretch gap-2">
+    <li ref={setNodeRef} style={style} className="flex min-w-0 items-stretch gap-2">
       <button
         type="button"
         aria-label="drag to reorder"
@@ -79,7 +79,7 @@ function SortableRow({ id, children }: { id: string; children: ReactNode }) {
       >
         <span aria-hidden="true">⋮⋮</span>
       </button>
-      <div className="flex-1">{children}</div>
+      <div className="min-w-0 flex-1">{children}</div>
     </li>
   );
 }
