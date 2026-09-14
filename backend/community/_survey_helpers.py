@@ -1,5 +1,9 @@
 """Helper functions for survey output serialization and tally logic."""
 
+import logging
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
@@ -233,6 +237,36 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
     if answer is None:
         return ""
     return str(answer)
+
+
+def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
+    """Load a survey for an endpoint that exposes response data, gated on MANAGE_SURVEYS.
+
+    request(HttpRequest): the authenticated request.
+    survey_id(UUID): survey to load.
+    endpoint(str): operation name recorded in the permission-denied audit entry.
+    return(Survey): the survey, with questions prefetched.
+    """
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": endpoint,
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        return Survey.objects.prefetch_related("questions").get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
 
 def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:

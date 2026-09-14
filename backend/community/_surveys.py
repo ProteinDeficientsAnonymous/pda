@@ -17,6 +17,7 @@ from community._shared import ErrorOut, csv_safe
 from community._survey_helpers import (
     _apply_linked_event_update,
     _csv_answer_cell,
+    _load_survey_for_responses,
     _survey_out,
     _survey_question_out,
 )
@@ -423,29 +424,6 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
 
 
 # -- Survey responses (admin) --
-
-
-def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": endpoint,
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        return Survey.objects.prefetch_related("questions").get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
 
 @router.get(

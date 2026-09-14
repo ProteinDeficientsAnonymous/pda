@@ -14,6 +14,7 @@ from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
     SUMMARIZED_TYPES,
     _has_finalize_permission,
+    _load_survey_for_responses,
     _response_out,
     _summarize_question,
     _survey_out,
@@ -157,7 +158,8 @@ def get_survey_tallies(request, survey_id: UUID):
     auth=gated_jwt,
 )
 def get_survey_summary(request, survey_id: UUID):
-    survey = _load_survey_for_results(request, survey_id, "get_survey_summary")
+    # Answer distributions are response data: gated like the responses endpoints, not like polls.
+    survey = _load_survey_for_responses(request, survey_id, "get_survey_summary")
     questions = [q for q in survey.questions.all() if q.field_type in SUMMARIZED_TYPES]
     responses = list(survey.responses.all())
     return Status(200, [_summarize_question(q, responses) for q in questions])
