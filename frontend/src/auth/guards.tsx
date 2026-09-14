@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useFeatureFlags } from '@/api/featureFlags';
@@ -8,6 +8,7 @@ import type { FeatureFlagKey } from '@/models/featureFlags';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
+import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
 import { useAuthStore } from './store';
 
 // Policy pages the consent screen links to must stay reachable while the consent
@@ -32,14 +33,26 @@ export function AuthBoot({ children }: { children: ReactNode }) {
   // loading UX and re-mounting them mid-request would re-fire their effects
   // and burn single-use tokens.
   const booted = useAuthStore((s) => s.booted);
+  // Always false in a production build (the dev-login module compiles away),
+  // so the spinner logic below is unchanged outside local dev.
+  const [devLoginPending, setDevLoginPending] = useState(devAutoLoginConfigured);
 
   useEffect(() => {
     if (status === 'idle') {
-      void restore();
+      void restore()
+        .then(attemptDevAutoLogin)
+        .finally(() => {
+          setDevLoginPending(false);
+        });
     }
   }, [status, restore]);
 
   if (!booted && (status === 'idle' || status === 'loading')) {
+    return <BootSpinner />;
+  }
+  // Hold the spinner through dev auto-login too, so local dev doesn't flash
+  // the login screen on every refresh before the credentials land.
+  if (devLoginPending) {
     return <BootSpinner />;
   }
   return <>{children}</>;
