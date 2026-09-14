@@ -91,8 +91,6 @@ class Command(BaseCommand):
             "is_member": True,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
-            # All three consents are stamped so local dev lands straight on the app
-            # instead of /consent. Keep in sync with User.needs_*_consent.
             "contact_privacy_consent_at": now,
         }
         if data.is_superuser:
