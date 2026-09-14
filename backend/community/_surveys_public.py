@@ -6,6 +6,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -38,10 +39,13 @@ from community.models import (
 router = Router()
 
 
-def _visible_survey_or_404(slug: str, auth_user) -> Survey:
+def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) -> Survey:
     # Closed surveys still resolve so the UI can render a closed state.
+    qs = Survey.objects.prefetch_related("questions")
+    if for_update:
+        qs = qs.select_for_update()
     try:
-        survey = Survey.objects.prefetch_related("questions").get(slug=slug)
+        survey = qs.get(slug=slug)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
@@ -80,34 +84,39 @@ def get_survey_public(request, slug: str):
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     auth_user = _authenticated_user(request.auth)
-    survey = _visible_survey_or_404(slug, auth_user)
-    existing = _existing_response(survey, auth_user)
-    if not survey_is_open(survey, check_cap=existing is None):
-        raise_validation(Code.Survey.CLOSED, status_code=400)
-    questions = {str(q.id): q for q in survey.questions.all()}
-    _validate_survey_answers(payload.answers, questions)
-    answers = _build_survey_answers(payload.answers, questions)
-    user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    if existing:
-        existing.answers = answers
-        existing.save(update_fields=["answers"])
+    # select_for_update() serializes concurrent submits against the same survey row,
+    # so the max_responses check-then-create can't race past the cap (issue #1465).
+    with transaction.atomic():
+        survey = _visible_survey_or_404(slug, auth_user, for_update=True)
+        existing = _existing_response(survey, auth_user)
+        if not survey_is_open(survey, check_cap=existing is None):
+            raise_validation(Code.Survey.CLOSED, status_code=400)
+        questions = {str(q.id): q for q in survey.questions.all()}
+        _validate_survey_answers(payload.answers, questions)
+        answers = _build_survey_answers(payload.answers, questions)
+        user_name = visible_display_name(auth_user, auth_user) if auth_user else None
+        if existing:
+            existing.answers = answers
+            existing.save(update_fields=["answers"])
+            audit_log(
+                logging.INFO,
+                "survey_response_updated",
+                request,
+                target=AuditTarget(
+                    type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
+                ),
+            )
+            return Status(200, _response_out(existing, user_name))
+        response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
         audit_log(
             logging.INFO,
-            "survey_response_updated",
+            "survey_response_submitted",
             request,
             target=AuditTarget(
                 type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
             ),
         )
-        return Status(200, _response_out(existing, user_name))
-    response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
-    audit_log(
-        logging.INFO,
-        "survey_response_submitted",
-        request,
-        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}),
-    )
-    return Status(201, _response_out(response, user_name))
+        return Status(201, _response_out(response, user_name))
 
 
 @router.get(
