@@ -26,6 +26,7 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
 from community._shared import _authenticated_user, _gated
+from community._survey_helpers import survey_is_open
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
@@ -426,7 +427,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         photo_updated_at=_iso_or_none(event.photo_updated_at),
         linked_surveys=[
             EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
-            for s in event.surveys.filter(is_active=True)
+            for s in event.surveys.all()
+            if survey_is_open(s)
         ],
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
