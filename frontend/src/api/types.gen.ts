@@ -3348,6 +3348,11 @@ export interface components {
             is_past: boolean;
             /** Latitude */
             latitude?: number | null;
+            /**
+             * Linked Surveys
+             * @default []
+             */
+            linked_surveys: components["schemas"]["EventSurveyOut"][];
             /** Location */
             location: string;
             /** Longitude */
@@ -3419,11 +3424,6 @@ export interface components {
              * @default active
              */
             status: string;
-            /**
-             * Survey Slugs
-             * @default []
-             */
-            survey_slugs: string[];
             /**
              * Tags
              * @default []
@@ -3738,6 +3738,15 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
+        };
+        /** EventSurveyOut */
+        EventSurveyOut: {
+            /** Id */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
         };
         /** FeatureFlagPatchIn */
         FeatureFlagPatchIn: {

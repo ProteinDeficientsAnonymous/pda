@@ -123,7 +123,7 @@ describe('mapEvent', () => {
   it('defaults array fields to empty arrays', () => {
     const result = mapEvent(wireEvent());
     expect(result.guests).toEqual([]);
-    expect(result.surveySlugs).toEqual([]);
+    expect(result.linkedSurveys).toEqual([]);
     expect(result.coHostIds).toEqual([]);
     expect(result.invitedUserIds).toEqual([]);
     expect(result.invitedUserNames).toEqual([]);

@@ -2448,6 +2448,14 @@
             ],
             "title": "Latitude"
           },
+          "linked_surveys": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventSurveyOut"
+            },
+            "title": "Linked Surveys",
+            "type": "array"
+          },
           "location": {
             "title": "Location",
             "type": "string"
@@ -2580,14 +2588,6 @@
             "default": "active",
             "title": "Status",
             "type": "string"
-          },
-          "survey_slugs": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Survey Slugs",
-            "type": "array"
           },
           "tags": {
             "default": [],
@@ -3409,6 +3409,29 @@
           }
         },
         "title": "EventStatsOut",
+        "type": "object"
+      },
+      "EventSurveyOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "slug"
+        ],
+        "title": "EventSurveyOut",
         "type": "object"
       },
       "FeatureFlagPatchIn": {
