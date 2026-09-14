@@ -1,3 +1,10 @@
+# [0.108.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.107.1...v0.108.0) (2026-09-14)
+
+
+### Features
+
+* **members:** filter admin members by never attended / not in whatsapp ([#1486](https://github.com/ProteinDeficientsAnonymous/pda/issues/1486)) ([859c8dd](https://github.com/ProteinDeficientsAnonymous/pda/commit/859c8dd32a92eb88830951656de8c311677112dc))
+
 ## [0.107.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.107.0...v0.107.1) (2026-09-14)
 
 
