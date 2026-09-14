@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-import { type FieldError, messagesFromFieldErrors } from './validationCodes';
+import { type FieldError, messageForCode, messagesFromFieldErrors } from './validationCodes';
 
 /**
  * Extract a user-facing message from any API error.
@@ -33,6 +33,24 @@ export function extractApiError(err: unknown): string | null {
  */
 export function extractApiErrorOr(err: unknown, fallback: string): string {
   return extractApiError(err) ?? fallback;
+}
+
+/**
+ * Lets forms attach a backend error to the offending input instead of the
+ * generic alert. Null when the error carries nothing for that field.
+ */
+export function getFieldError(err: unknown, field: string): string | null {
+  if (!isAxiosError(err)) return null;
+  const data = err.response?.data as Record<string, unknown> | undefined;
+  if (!data || !Array.isArray(data.detail)) return null;
+  const match = data.detail.find(
+    (e): e is FieldError =>
+      typeof e === 'object' &&
+      e !== null &&
+      typeof (e as FieldError).code === 'string' &&
+      (e as FieldError).field === field,
+  );
+  return match ? messageForCode(match) : null;
 }
 
 /**

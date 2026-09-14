@@ -13,14 +13,13 @@ import {
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
+import { SurveyFields } from './SurveyFields';
+import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
@@ -136,7 +135,18 @@ function SurveyRow({
   );
 }
 
-function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface CreateSurveyDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+// Remount on open so the form starts empty — the parent keeps this mounted while closed.
+function CreateSurveyDialog(props: CreateSurveyDialogProps) {
+  if (!props.open) return null;
+  return <CreateSurveyDialogBody {...props} />;
+}
+
+function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
   const create = useCreateSurvey();
   const navigate = useNavigate();
   const [values, setValues] = useState<SurveyInput>({
@@ -149,10 +159,12 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
     linkedEventId: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const fieldErrors = useSurveyFieldErrors();
 
   async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
+    fieldErrors.reset();
     if (!values.title.trim() || !values.slug.trim()) {
       setError('title and slug are required');
       return;
@@ -162,60 +174,22 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
       onClose();
       void navigate(`/admin/surveys/${created.id}`);
     } catch (err) {
-      setError(extractError(err));
+      if (!fieldErrors.capture(err)) setError(extractError(err));
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} title="new survey">
       <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-        <TextField
-          label="title"
-          value={values.title}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, title: e.target.value }));
+        <SurveyFields
+          values={values}
+          onChange={(patch) => {
+            setValues((v) => ({ ...v, ...patch }));
+            fieldErrors.clearFor(patch);
           }}
-          maxLength={200}
+          slugError={fieldErrors.slugError ?? undefined}
+          linkedEventError={fieldErrors.linkedEventError ?? undefined}
         />
-        <TextField
-          label="slug"
-          value={values.slug}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, slug: e.target.value }));
-          }}
-          hint="short url segment — /surveys/:slug"
-          maxLength={100}
-        />
-        <Textarea
-          label="description (optional)"
-          value={values.description}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, description: e.target.value }));
-          }}
-          rows={3}
-          maxLength={2000}
-        />
-        <Select
-          label="visibility"
-          value={values.visibility}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, visibility: e.target.value }));
-          }}
-          options={[
-            { value: 'members_only', label: 'members only' },
-            { value: 'public', label: 'public' },
-          ]}
-        />
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={values.oneResponsePerUser}
-            onChange={(e) => {
-              setValues((v) => ({ ...v, oneResponsePerUser: e.target.checked }));
-            }}
-          />
-          <span>one response per user</span>
-        </label>
         {error ? (
           <p role="alert" className="text-destructive text-sm">
             {error}

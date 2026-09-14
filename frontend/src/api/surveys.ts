@@ -24,6 +24,7 @@ export interface Survey {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  linkedEventId: string | null;
   questions: SurveyQuestion[];
   myResponseId: string | null;
   myAnswers: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -52,6 +53,7 @@ interface WireSurvey {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  linked_event_id?: string | null;
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -80,6 +82,7 @@ function mapSurvey(w: WireSurvey): Survey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    linkedEventId: w.linked_event_id ?? null,
     questions: (w.questions ?? [])
       .map((q) => ({
         id: q.id,
