@@ -1,3 +1,10 @@
+# [0.109.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.108.1...v0.109.0) (2026-09-14)
+
+
+### Features
+
+* **events:** link an event to its surveys (Issue 1463) ([#1474](https://github.com/ProteinDeficientsAnonymous/pda/issues/1474)) ([bec18ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/bec18ef2f601917894a49656a5dad959c45d04d6))
+
 ## [0.108.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.108.0...v0.108.1) (2026-09-14)
 
 
