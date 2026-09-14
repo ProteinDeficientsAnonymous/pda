@@ -70,6 +70,8 @@ class Command(BaseCommand):
             updates["guidelines_consent_at"] = timezone.now()
         if user.sms_consent_at is None:
             updates["sms_consent_at"] = timezone.now()
+        if user.contact_privacy_consent_at is None:
+            updates["contact_privacy_consent_at"] = timezone.now()
         if not updates:
             self.stdout.write(f"  Already exists: {user.full_name}")
             return
@@ -89,6 +91,9 @@ class Command(BaseCommand):
             "is_member": True,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
+            # All three consents are stamped so local dev lands straight on the app
+            # instead of /consent. Keep in sync with User.needs_*_consent.
+            "contact_privacy_consent_at": now,
         }
         if data.is_superuser:
             defaults["is_superuser"] = True
