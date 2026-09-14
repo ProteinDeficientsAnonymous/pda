@@ -79,8 +79,20 @@ class TestCreateDevTestEvent:
         )
         assert response.status_code == 401
 
-    def test_404s_without_manage_events_permission(self, api_client, auth_headers, monkeypatch):
+    def test_any_authed_user_can_create_without_permissions(
+        self, api_client, auth_headers, monkeypatch
+    ):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
+
+    def test_404s_on_production_without_permissions(self, api_client, auth_headers, monkeypatch):
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
         response = api_client.post(
             "/api/community/dev/test-events/",
             data={},
