@@ -9,7 +9,6 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
-from users.permissions import PermissionKey
 
 from community._dev_tools_content import generate_placeholder_photo, random_event_title
 from community._dev_tools_populate import (
@@ -60,9 +59,9 @@ def _dev_tools_allowed() -> bool:
 
 
 def _require_dev_tools(request) -> None:
+    # No permission gate: any authed user on a non-production env may create
+    # test events. The env check is what keeps this off production.
     if not _dev_tools_allowed():
-        raise_validation(Code.DevTools.NOT_FOUND, status_code=404)
-    if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.DevTools.NOT_FOUND, status_code=404)
 
 
