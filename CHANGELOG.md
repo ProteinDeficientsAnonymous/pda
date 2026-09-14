@@ -1,3 +1,10 @@
+# [0.106.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.105.0...v0.106.0) (2026-09-14)
+
+
+### Features
+
+* **attendance:** manually mark members attended at legacy or existing events ([#1482](https://github.com/ProteinDeficientsAnonymous/pda/issues/1482)) ([1e5312a](https://github.com/ProteinDeficientsAnonymous/pda/commit/1e5312a8f643cc4d2502ad78b53ccf155f4d14c0))
+
 # [0.105.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.104.2...v0.105.0) (2026-09-14)
 
 
