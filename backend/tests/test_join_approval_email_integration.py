@@ -188,3 +188,83 @@ class TestJoinApprovalEmail:
         assert len(matching) == 1
         assert "you're fully in now" in matching[0]["text"]
         assert "tentatively in" not in matching[0]["text"]
+
+
+@pytest.mark.django_db
+class TestJoinApprovalEmailWhatsAppLink:
+    def _approve_from_tentative(self, api_client, vettor_headers, join_request, email):
+        join_request.email = email
+        join_request.save(update_fields=["email"])
+        api_client.patch(
+            f"/api/community/join-requests/{join_request.id}/",
+            {"status": JoinRequestStatus.TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        api_client.patch(
+            f"/api/community/join-requests/{join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+
+    def test_whatsapp_link_placeholder_is_substituted(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import MemberPromotionEmailTemplate, WhatsAppLinkConfig
+
+        link_config = WhatsAppLinkConfig.get()
+        link_config.link = "https://chat.whatsapp.com/abc123"
+        link_config.save()
+        template = MemberPromotionEmailTemplate.get()
+        template.body = "join the group: ${WHATSAPP_LINK}"
+        template.save()
+
+        self._approve_from_tentative(
+            api_client, vettor_headers, sample_join_request, "wa@example.com"
+        )
+
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "wa@example.com"]
+        assert len(matching) == 1
+        assert "https://chat.whatsapp.com/abc123" in matching[0]["text"]
+        assert "${WHATSAPP_LINK}" not in matching[0]["text"]
+
+    def test_whatsapp_link_renders_as_an_anchor_in_html(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import MemberPromotionEmailTemplate, WhatsAppLinkConfig
+
+        link_config = WhatsAppLinkConfig.get()
+        link_config.link = "https://chat.whatsapp.com/abc123"
+        link_config.save()
+        template = MemberPromotionEmailTemplate.get()
+        template.body = "join the group: ${WHATSAPP_LINK}"
+        template.save()
+
+        self._approve_from_tentative(
+            api_client, vettor_headers, sample_join_request, "wa-html@example.com"
+        )
+
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "wa-html@example.com"]
+        assert len(matching) == 1
+        assert 'href="https://chat.whatsapp.com/abc123"' in matching[0]["html"]
+
+    def test_unset_whatsapp_link_substitutes_empty(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import MemberPromotionEmailTemplate
+
+        template = MemberPromotionEmailTemplate.get()
+        template.body = "join the group: ${WHATSAPP_LINK}"
+        template.save()
+
+        self._approve_from_tentative(
+            api_client, vettor_headers, sample_join_request, "no-link@example.com"
+        )
+
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "no-link@example.com"]
+        assert len(matching) == 1
+        assert "${WHATSAPP_LINK}" not in matching[0]["text"]

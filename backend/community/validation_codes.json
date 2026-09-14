@@ -1016,6 +1016,20 @@
           "max_length"
         ]
       }
+    ],
+    "MemberPromotionEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "member_promotion_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "member_promotion_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
     ]
   }
 }

@@ -10,7 +10,12 @@ from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
 from community._shared import render_template_placeholders, validate_display_name
-from community.models import EventType, JoinRequestStatus, MemberPromotionEmailTemplate
+from community.models import (
+    EventType,
+    JoinRequestStatus,
+    MemberPromotionEmailTemplate,
+    WhatsAppLinkConfig,
+)
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -89,7 +94,10 @@ def send_join_approval(*, to: str, display_name: str, first_name: str, magic_tok
         return
     template = MemberPromotionEmailTemplate.get()
     body = template.body.strip() or _DEFAULT_MEMBER_PROMOTION_EMAIL
-    message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
+    message_body = render_template_placeholders(
+        body,
+        {"FIRST_NAME": first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
+    )
     magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
     try:
         send_join_approval_email(
