@@ -12,14 +12,18 @@ from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
+    SUMMARIZED_TYPES,
     _has_finalize_permission,
+    _load_survey_for_responses,
     _response_out,
+    _summarize_question,
     _survey_out,
     _tally_question,
 )
 from community._survey_schemas import (
     FinalizePollIn,
     PollResultsOut,
+    QuestionSummaryOut,
     SurveyAnswersIn,
     SurveyOut,
     SurveyResponseOut,
@@ -101,12 +105,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     return Status(201, _response_out(response, user_name))
 
 
-@router.get(
-    "/surveys/{survey_id}/tallies/",
-    response={200: list[PollResultsOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def get_survey_tallies(request, survey_id: UUID):
+def _load_survey_for_results(request, survey_id: UUID, endpoint: str) -> Survey:
     try:
         # select_related linked_event: _has_finalize_permission dereferences the
         # event object (its created_by_id / co_hosts). created_by is NOT joined —
@@ -119,7 +118,7 @@ def get_survey_tallies(request, survey_id: UUID):
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
-    # Tallies expose voter names/photos — gate behind the same authority that
+    # Results expose voter names/photos — gate behind the same authority that
     # can finalize the poll (MANAGE_SURVEYS / MANAGE_EVENTS / survey owner /
     # event host). Without this any authed user could enumerate voters by UUID.
     if not _has_finalize_permission(request, survey, survey.linked_event):
@@ -131,17 +130,39 @@ def get_survey_tallies(request, survey_id: UUID):
             target=AuditTarget(
                 type=AuditTargetType.SURVEY,
                 id=str(survey_id),
-                details={"endpoint": "get_survey_tallies"},
+                details={"endpoint": endpoint},
             ),
         )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="get_survey_tallies")
+        raise_validation(Code.Perm.DENIED, status_code=403, action=endpoint)
+    return survey
 
+
+@router.get(
+    "/surveys/{survey_id}/tallies/",
+    response={200: list[PollResultsOut], 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def get_survey_tallies(request, survey_id: UUID):
+    survey = _load_survey_for_results(request, survey_id, "get_survey_tallies")
     poll_questions = [
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     responses = list(survey.responses.select_related("user").all())
     tallies = [_tally_question(q, responses, request.auth) for q in poll_questions]
     return Status(200, tallies)
+
+
+@router.get(
+    "/surveys/{survey_id}/summary/",
+    response={200: list[QuestionSummaryOut], 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def get_survey_summary(request, survey_id: UUID):
+    # Answer distributions are response data: gated like the responses endpoints, not like polls.
+    survey = _load_survey_for_responses(request, survey_id, "get_survey_summary")
+    questions = [q for q in survey.questions.all() if q.field_type in SUMMARIZED_TYPES]
+    responses = list(survey.responses.all())
+    return Status(200, [_summarize_question(q, responses) for q in questions])
 
 
 @router.post(

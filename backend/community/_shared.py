@@ -72,6 +72,14 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
 
 
+def csv_safe(value: str) -> str:
+    # Prefix a leading apostrophe so spreadsheet apps don't execute
+    # user-controlled text as formulas (CSV injection).
+    if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
 def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:
     """Substitute ``${NAME}``-style placeholders in an admin-editable template body."""
     for name, value in placeholders.items():

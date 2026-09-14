@@ -1,5 +1,9 @@
 """Helper functions for survey output serialization and tally logic."""
 
+import logging
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
@@ -7,6 +11,7 @@ from users.permissions import PermissionKey
 from community._survey_schemas import (
     PollResultOut,
     PollResultsOut,
+    QuestionSummaryOut,
     SurveyOut,
     SurveyQuestionOut,
     SurveyResponseOut,
@@ -19,8 +24,15 @@ from community.models import (
     PollAvailability,
     Survey,
     SurveyQuestion,
+    SurveyQuestionType,
     SurveyResponse,
 )
+
+RATING_SCALE = tuple(str(n) for n in range(1, 6))
+CHOICE_TYPES = frozenset(
+    {SurveyQuestionType.RADIO, SurveyQuestionType.SELECT, SurveyQuestionType.CHECKBOX}
+)
+SUMMARIZED_TYPES = CHOICE_TYPES | {SurveyQuestionType.BOOLEAN, SurveyQuestionType.RATING}
 
 
 def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
@@ -167,6 +179,94 @@ def _tally_question(
         voters=voters,
         total_responses=len(responses),
     )
+
+
+def _summary_buckets(q: SurveyQuestion) -> list[str]:
+    if q.field_type == SurveyQuestionType.BOOLEAN:
+        return ["yes", "no"]
+    if q.field_type == SurveyQuestionType.RATING:
+        return list(RATING_SCALE)
+    return list(q.options or [])
+
+
+def _answer_values(q: SurveyQuestion, answer: str) -> list[str]:
+    if q.field_type == SurveyQuestionType.CHECKBOX:
+        return [v.strip() for v in answer.split(",") if v.strip()]
+    return [answer.strip()]
+
+
+def _answered_values(q: SurveyQuestion, responses: list[SurveyResponse]) -> list[list[str]]:
+    """Per response that answered q, the values it contributes to the tally.
+
+    responses(list): every response on the survey, answered or not.
+    return(list): one entry per answered response; checkbox entries hold many.
+    """
+    answers = ((r.answers.get(str(q.id)) or {}).get("answer") for r in responses)
+    return [_answer_values(q, a) for a in answers if isinstance(a, str) and a.strip()]
+
+
+def _rating_mean(counts: dict[str, int]) -> float | None:
+    total = sum(counts.values())
+    if not total:
+        return None
+    return round(sum(int(star) * n for star, n in counts.items()) / total, 2)
+
+
+def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> QuestionSummaryOut:
+    counts = dict.fromkeys(_summary_buckets(q), 0)
+    answered_values = _answered_values(q, responses)
+    for values in answered_values:
+        for val in values:
+            if val in counts:
+                counts[val] += 1
+    mean = _rating_mean(counts) if q.field_type == SurveyQuestionType.RATING else None
+    return QuestionSummaryOut(
+        question_id=str(q.id),
+        field_type=q.field_type,
+        counts=counts,
+        answered=len(answered_values),
+        mean=mean,
+    )
+
+
+def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
+    if isinstance(answer, dict):
+        ordered = [opt for opt in (q.options or []) if opt in answer]
+        ordered += [opt for opt in answer if opt not in ordered]
+        return ";".join(f"{opt}={answer[opt]}" for opt in ordered)
+    if answer is None:
+        return ""
+    return str(answer)
+
+
+def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
+    """Load a survey for an endpoint that exposes response data, gated on MANAGE_SURVEYS.
+
+    request(HttpRequest): the authenticated request.
+    survey_id(UUID): survey to load.
+    endpoint(str): operation name recorded in the permission-denied audit entry.
+    return(Survey): the survey, with questions prefetched.
+    """
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": endpoint,
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        return Survey.objects.prefetch_related("questions").get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
 
 def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:

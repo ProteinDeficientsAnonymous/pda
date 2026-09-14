@@ -5342,6 +5342,47 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
+      "QuestionSummaryOut": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "field_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "field_type",
+          "counts",
+          "answered"
+        ],
+        "title": "QuestionSummaryOut",
+        "type": "object"
+      },
       "QuestionType": {
         "description": "HTML-aligned question type catalog (wire values).",
         "enum": [
@@ -15169,6 +15210,54 @@
         ]
       }
     },
+    "/api/community/surveys/{survey_id}/responses.csv": {
+      "get": {
+        "operationId": "community__surveys_get_survey_responses_csv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Survey Responses Csv",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/surveys/{survey_id}/responses/": {
       "get": {
         "operationId": "community__surveys_list_survey_responses",
@@ -15226,6 +15315,68 @@
           }
         ],
         "summary": "List Survey Responses",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/surveys/{survey_id}/summary/": {
+      "get": {
+        "operationId": "community__surveys_public_get_survey_summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionSummaryOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Survey Summary",
         "tags": [
           "community"
         ]

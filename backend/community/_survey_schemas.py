@@ -37,6 +37,14 @@ class PollResultsOut(BaseModel):
     total_responses: int
 
 
+class QuestionSummaryOut(BaseModel):
+    question_id: str
+    field_type: SurveyQuestionType
+    counts: dict[str, int]  # option (or "yes"/"no", or "1".."5") -> count
+    answered: int
+    mean: float | None = None
+
+
 class SurveyOut(BaseModel):
     id: str
     title: str

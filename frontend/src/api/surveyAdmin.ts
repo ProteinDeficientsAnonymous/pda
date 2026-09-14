@@ -364,6 +364,61 @@ export function useSurveyPollTallies(surveyId: string | undefined) {
   });
 }
 
+// --- per-question summaries (choice / boolean / rating) --------------------
+
+export interface SurveyQuestionSummary {
+  questionId: string;
+  fieldType: SurveyQuestionType;
+  counts: Record<string, number>;
+  answered: number;
+  mean: number | null;
+}
+
+interface WireQuestionSummary {
+  question_id: string;
+  field_type: SurveyQuestionType;
+  counts: Record<string, number>;
+  answered: number;
+  mean?: number | null;
+}
+
+function mapQuestionSummary(w: WireQuestionSummary): SurveyQuestionSummary {
+  return {
+    questionId: w.question_id,
+    fieldType: w.field_type,
+    counts: w.counts,
+    answered: w.answered,
+    mean: w.mean ?? null,
+  };
+}
+
+export function useSurveyQuestionSummaries(surveyId: string | undefined) {
+  return useQuery({
+    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireQuestionSummary[]>(
+        `/api/community/surveys/${surveyId ?? ''}/summary/`,
+      );
+      return data.map(mapQuestionSummary);
+    },
+    enabled: Boolean(surveyId),
+  });
+}
+
+export async function downloadSurveyResponsesCsv(surveyId: string): Promise<void> {
+  const { data } = await apiClient.get<Blob>(`/api/community/surveys/${surveyId}/responses.csv`, {
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `survey-responses-${surveyId}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function useFinalizeSurveyPoll(surveyId: string) {
   const qc = useQueryClient();
   return useMutation({
