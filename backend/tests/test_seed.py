@@ -122,3 +122,29 @@ def test_seed_rsvps_include_partial_and_complete_questionnaire_responses():
 
     unanswered = EventRSVP.objects.get(event=event, user__phone_number="+17025550004")
     assert unanswered.questionnaire_responses == {}
+
+
+@pytest.mark.django_db
+def test_seed_users_clear_every_consent_gate():
+    call_command("seed")
+
+    # Members only — SEED_NON_MEMBERS are unconsented join-request applicants.
+    for user in User.objects.filter(phone_number__startswith="+1702555", is_member=True):
+        assert user.guidelines_consent_at is not None, user.phone_number
+        assert user.sms_consent_at is not None, user.phone_number
+        assert not user.needs_contact_privacy_consent, user.phone_number
+
+
+@pytest.mark.django_db
+def test_seed_backfills_consents_on_a_pre_existing_user():
+    call_command("seed")
+    User.objects.filter(phone_number="+17025550001").update(
+        guidelines_consent_at=None, sms_consent_at=None, contact_privacy_consent_at=None
+    )
+
+    call_command("seed")
+
+    user = User.objects.get(phone_number="+17025550001")
+    assert user.guidelines_consent_at is not None
+    assert user.sms_consent_at is not None
+    assert user.contact_privacy_consent_at is not None
