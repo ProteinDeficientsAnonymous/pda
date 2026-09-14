@@ -1,6 +1,7 @@
 """Public survey response and poll tally endpoints."""
 
 import logging
+import secrets
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -12,6 +13,7 @@ from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
+    _find_my_response,
     _has_finalize_permission,
     _response_out,
     _survey_out,
@@ -42,7 +44,7 @@ router = Router()
     response={200: SurveyOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
-def get_survey_public(request, slug: str):
+def get_survey_public(request, slug: str, response_token: str = ""):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
     except Survey.DoesNotExist:
@@ -50,7 +52,15 @@ def get_survey_public(request, slug: str):
     auth_user = _authenticated_user(request.auth)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    return Status(200, _survey_out(survey, include_questions=True, requesting_user=auth_user))
+    return Status(
+        200,
+        _survey_out(
+            survey,
+            include_questions=True,
+            requesting_user=auth_user,
+            response_token=response_token,
+        ),
+    )
 
 
 @router.post(
@@ -65,7 +75,7 @@ def get_survey_public(request, slug: str):
     auth=_optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
-def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
+def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, response_token: str = ""):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
     except Survey.DoesNotExist:
@@ -77,28 +87,26 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
     user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    if survey.one_response_per_user and auth_user is not None:
-        existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
-        if existing:
-            existing.answers = answers
-            existing.save(update_fields=["answers"])
-            audit_log(
-                logging.INFO,
-                "survey_response_updated",
-                request,
-                target=AuditTarget(
-                    type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
-                ),
-            )
-            return Status(200, _response_out(existing, user_name))
-    response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
-    audit_log(
-        logging.INFO,
-        "survey_response_submitted",
-        request,
-        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}),
+    target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
+    existing = (
+        _find_my_response(survey, auth_user, response_token)
+        if survey.one_response_per_user
+        else None
     )
-    return Status(201, _response_out(response, user_name))
+    if existing:
+        existing.answers = answers
+        existing.save(update_fields=["answers"])
+        audit_log(logging.INFO, "survey_response_updated", request, target=target)
+        return Status(200, _response_out(existing, user_name, include_token=auth_user is None))
+    # Anonymous responders get a server-issued token so a resubmit updates in place.
+    anonymous_token = None
+    if auth_user is None and survey.one_response_per_user:
+        anonymous_token = secrets.token_urlsafe(32)
+    response = SurveyResponse.objects.create(
+        survey=survey, user=auth_user, answers=answers, anonymous_token=anonymous_token
+    )
+    audit_log(logging.INFO, "survey_response_submitted", request, target=target)
+    return Status(201, _response_out(response, user_name, include_token=auth_user is None))
 
 
 @router.get(
