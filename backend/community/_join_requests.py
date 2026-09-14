@@ -106,7 +106,6 @@ class ApproveJoinRequestOut(BaseModel):
     phone_number: str
     status: str
     magic_link_token: str | None = None
-    rsvp_link_token: str | None = None
     user_id: str | None = None
 
 
@@ -309,12 +308,11 @@ _DECISION_ACTIONS = {
 
 def _apply_status_transition(
     id: UUID, status: str, actor
-) -> tuple[JoinRequest, str | None, str | None, bool, bool]:
+) -> tuple[JoinRequest, str | None, bool, bool]:
     """Stamp + provision inside one locked transaction.
 
-    Returns ``(join_request, magic_token, rsvp_link_token, user_created,
-    promoted_from_tentative)``. select_for_update() serializes concurrent
-    approvals so only one provisions.
+    Returns ``(join_request, magic_token, user_created, promoted_from_tentative)``.
+    select_for_update() serializes concurrent approvals so only one provisions.
     """
     with transaction.atomic():
         try:
@@ -330,12 +328,12 @@ def _apply_status_transition(
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         _stamp_decision(join_request, status, actor)
         if status == JoinRequestStatus.TENTATIVE:
-            _, rsvp_link_token, magic_token = _provision_tentative_user(join_request, actor)
-            return join_request, magic_token, rsvp_link_token, False, False
+            _, magic_token = _provision_tentative_user(join_request, actor)
+            return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
             magic_token, user_created = _provision_approved_user(join_request, actor)
-            return join_request, magic_token, None, user_created, was_tentative
-    return join_request, None, None, False, False
+            return join_request, magic_token, user_created, was_tentative
+    return join_request, None, False, False
 
 
 @router.patch(
@@ -380,7 +378,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
-    join_request, magic_token, rsvp_link_token, user_created, promoted = _apply_status_transition(
+    join_request, magic_token, user_created, promoted = _apply_status_transition(
         id, payload.status, request.auth
     )
 
@@ -419,7 +417,6 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             phone_number=join_request.phone_number,
             status=join_request.status,
             magic_link_token=magic_token,
-            rsvp_link_token=rsvp_link_token,
             user_id=str(approved_user.id) if approved_user else None,
         ),
     )

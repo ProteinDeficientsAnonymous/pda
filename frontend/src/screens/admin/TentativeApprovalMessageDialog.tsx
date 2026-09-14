@@ -9,7 +9,6 @@ import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
 import {
   buildMagicLinkUrl,
-  buildRsvpLinkUrl,
   buildSmsHref,
   buildWhatsAppHref,
   renderWelcomeMessage,
@@ -23,7 +22,6 @@ interface Props {
   fullName: string;
   firstName: string;
   phoneNumber: string;
-  rsvpLinkToken: string | null;
   magicLinkToken: string | null;
 }
 
@@ -36,7 +34,6 @@ export function TentativeApprovalMessageDialog({
   fullName,
   firstName,
   phoneNumber,
-  rsvpLinkToken,
   magicLinkToken,
 }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
@@ -50,7 +47,6 @@ export function TentativeApprovalMessageDialog({
     name: firstName,
     senderName,
     magicLink: magicLinkToken ? buildMagicLinkUrl(magicLinkToken) : '',
-    rsvpLink: rsvpLinkToken ? buildRsvpLinkUrl(rsvpLinkToken) : '',
     whatsappLink: whatsappLinkQ.data?.link ?? '',
   });
   const smsHref = buildSmsHref(phoneNumber, message);

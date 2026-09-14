@@ -17,7 +17,7 @@ vi.mock('@/api/client', () => ({
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
     data: {
-      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK} rsvp: ${RSVP_LINK}',
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK}',
       updatedAt: '2026-01-01',
     },
     isPending: false,
@@ -46,11 +46,7 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
 });
 
-function renderDialog(
-  user: User | null,
-  rsvpLinkToken: string | null = null,
-  magicLinkToken: string | null = null,
-) {
+function renderDialog(user: User | null, magicLinkToken: string | null = null) {
   useAuthStore.setState({
     status: user ? 'authed' : 'idle',
     user,
@@ -65,7 +61,6 @@ function renderDialog(
         fullName="Sam Vetterson"
         firstName="Sam"
         phoneNumber="+12025551234"
-        rsvpLinkToken={rsvpLinkToken}
         magicLinkToken={magicLinkToken}
       />
     </QueryClientProvider>,
@@ -86,26 +81,12 @@ describe('TentativeApprovalMessageDialog', () => {
     expect(screen.queryByRole('button', { name: /copy link/i })).toBeNull();
   });
 
-  it('substitutes ${RSVP_LINK} into the sms body when a token is present', () => {
-    renderDialog(makeUser(), 'tok123');
-    const sms = screen.getByText('send via sms').closest('a');
-    expect(sms?.getAttribute('href')).toContain(
-      encodeURIComponent(`${window.location.origin}/my-rsvps?token=tok123`),
-    );
-  });
-
   it('substitutes ${MAGIC_LINK} into the sms body when a token is present', () => {
-    renderDialog(makeUser(), null, 'magic123');
+    renderDialog(makeUser(), 'magic123');
     const sms = screen.getByText('send via sms').closest('a');
     expect(sms?.getAttribute('href')).toContain(
       encodeURIComponent(`${window.location.origin}/magic-login/magic123`),
     );
-  });
-
-  it('renders an empty rsvp link when no token is present', () => {
-    renderDialog(makeUser(), null);
-    const sms = screen.getByText('send via sms').closest('a');
-    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('rsvp: '));
   });
 
   it('hides edit-template trigger without permission', () => {

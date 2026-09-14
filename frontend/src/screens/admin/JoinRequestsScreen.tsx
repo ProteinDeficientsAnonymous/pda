@@ -55,7 +55,6 @@ export default function JoinRequestsScreen() {
     fullName: string;
     firstName: string;
     phoneNumber: string;
-    rsvpLinkToken: string | null;
     magicLinkToken: string | null;
   } | null>(null);
   const [memberPromotionMessageFor, setMemberPromotionMessageFor] = useState<{
@@ -105,7 +104,6 @@ export default function JoinRequestsScreen() {
           fullName: result.fullName,
           firstName: result.firstName,
           phoneNumber: result.phoneNumber,
-          rsvpLinkToken: result.rsvpLinkToken,
           magicLinkToken: result.magicLinkToken,
         });
       }
@@ -240,7 +238,6 @@ export default function JoinRequestsScreen() {
           fullName={tentativeMessageFor.fullName}
           firstName={tentativeMessageFor.firstName}
           phoneNumber={tentativeMessageFor.phoneNumber}
-          rsvpLinkToken={tentativeMessageFor.rsvpLinkToken}
           magicLinkToken={tentativeMessageFor.magicLinkToken}
         />
       ) : null}
