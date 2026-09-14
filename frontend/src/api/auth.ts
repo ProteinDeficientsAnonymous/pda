@@ -35,6 +35,7 @@ interface WireUser {
   bio?: string;
   pronouns?: string;
   birthday?: WireBirthday | null;
+  is_member?: boolean;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -92,6 +93,7 @@ function mapUser(u: WireUser): User {
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
     birthday: mapBirthday(u.birthday),
+    isMember: u.is_member ?? true,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,

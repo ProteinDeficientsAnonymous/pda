@@ -120,6 +120,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     bio: '',
     pronouns: '',
     birthday: null,
+    isMember: true,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,

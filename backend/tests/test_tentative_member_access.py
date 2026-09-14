@@ -162,6 +162,51 @@ class TestTentativeEventAccess:
         )
         assert response.status_code == 403
 
+    def test_cannot_create_an_event(self, api_client, tentative_user):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "Sprout's Potluck",
+                "start_datetime": (timezone.now() + timedelta(days=5)).isoformat(),
+                "event_type": EventType.COMMUNITY,
+                "visibility": PageVisibility.PUBLIC,
+                "status": EventStatus.ACTIVE,
+            },
+            content_type="application/json",
+            **_auth(tentative_user),
+        )
+        assert response.status_code == 403
+        assert not Event.objects.filter(title="Sprout's Potluck").exists()
+
+    def test_cannot_create_a_draft_event(self, api_client, tentative_user):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "Sprout's Draft",
+                "event_type": EventType.COMMUNITY,
+                "visibility": PageVisibility.PUBLIC,
+                "status": EventStatus.DRAFT,
+            },
+            content_type="application/json",
+            **_auth(tentative_user),
+        )
+        assert response.status_code == 403
+
+    def test_member_can_still_create_an_event(self, api_client, test_user):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "Member Potluck",
+                "start_datetime": (timezone.now() + timedelta(days=5)).isoformat(),
+                "event_type": EventType.COMMUNITY,
+                "visibility": PageVisibility.PUBLIC,
+                "status": EventStatus.ACTIVE,
+            },
+            content_type="application/json",
+            **_auth(test_user),
+        )
+        assert response.status_code == 201
+
     def test_member_still_sees_everything(self, api_client, test_user, host):
         _event("Official", EventType.OFFICIAL, host=host)
         _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)

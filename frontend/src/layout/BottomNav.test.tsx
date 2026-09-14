@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser } from '@/test/fixtures';
 
 import { BottomNav } from './BottomNav';
 
@@ -44,6 +45,32 @@ describe('BottomNav', () => {
     expect(screen.getByRole('button', { name: /^add event$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^members$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+  });
+
+  it('hides add event and members from a signed-in non-member', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ isMember: false }),
+      accessToken: 'token',
+    });
+    renderNav('/');
+
+    expect(screen.queryByRole('button', { name: /^add event$/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^members$/i })).toBeNull();
+    expect(screen.getByRole('link', { name: /^calendar$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+  });
+
+  it('keeps add event and members for a signed-in member', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ isMember: true }),
+      accessToken: 'token',
+    });
+    renderNav('/');
+
+    expect(screen.getByRole('button', { name: /^add event$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^members$/i })).toBeInTheDocument();
   });
 
   it('authed users get a my rsvps link pointing at /events/mine', () => {

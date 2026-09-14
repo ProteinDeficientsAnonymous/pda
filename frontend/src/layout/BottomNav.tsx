@@ -12,6 +12,9 @@ export function BottomNav() {
   const onEventsAdd = location.pathname === '/events/add';
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
+  // A signed-in non-member (tentatively approved) can't create events or see
+  // the roster — both 403 server-side, so don't offer them.
+  const isNonMember = isAuthed && user?.isMember === false;
   const photoUrl = user?.profilePhotoUrl
     ? cacheBustMediaUrl(user.profilePhotoUrl, user.photoUpdatedAt)
     : '';
@@ -32,24 +35,30 @@ export function BottomNav() {
         </NavItem>
 
         <div className="flex items-center justify-center">
-          <button
-            type="button"
-            aria-label="add event"
-            title="add event"
-            aria-current={onEventsAdd ? 'page' : undefined}
-            onClick={() => void navigate('/events/add')}
-            className={cn(
-              'text-brand-on inline-flex h-11 w-11 items-center justify-center rounded-full shadow transition-colors',
-              onEventsAdd ? 'bg-brand-700' : 'bg-brand-600 hover:bg-brand-700',
-            )}
-          >
-            <PlusIcon />
-          </button>
+          {isNonMember ? null : (
+            <button
+              type="button"
+              aria-label="add event"
+              title="add event"
+              aria-current={onEventsAdd ? 'page' : undefined}
+              onClick={() => void navigate('/events/add')}
+              className={cn(
+                'text-brand-on inline-flex h-11 w-11 items-center justify-center rounded-full shadow transition-colors',
+                onEventsAdd ? 'bg-brand-700' : 'bg-brand-600 hover:bg-brand-700',
+              )}
+            >
+              <PlusIcon />
+            </button>
+          )}
         </div>
 
-        <NavItem to="/members" label="members">
-          {({ active }) => <MembersIcon filled={active} />}
-        </NavItem>
+        {isNonMember ? (
+          <div />
+        ) : (
+          <NavItem to="/members" label="members">
+            {({ active }) => <MembersIcon filled={active} />}
+          </NavItem>
+        )}
 
         <NavItem to="/profile" label="profile">
           {({ active }) =>
