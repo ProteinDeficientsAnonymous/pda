@@ -4,11 +4,9 @@ you're fully approved — welcome to pda!
 
 {% autoescape off %}{{ message_body }}{% endautoescape %}
 
-here's your one-time login link to set up your account:
+log in here:
 
-{{ magic_link_url }}
-
-this link expires in 7 days.
+{{ login_url }}
 
 — pda
 

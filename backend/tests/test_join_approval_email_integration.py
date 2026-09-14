@@ -1,5 +1,6 @@
 import pytest
 from community.models import AttendanceStatus, JoinRequestStatus
+from django.conf import settings
 from ninja_jwt.tokens import RefreshToken
 
 from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
@@ -37,7 +38,7 @@ class TestJoinApprovalEmail:
         assert "applicant@example.com" in recipients
         assert any("welcome to pda" in s for s in subjects)
 
-    def test_manual_full_approve_includes_magic_link(
+    def test_manual_full_approve_links_to_the_login_page_not_a_magic_link(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
         sample_join_request.email = "applicant@example.com"
@@ -48,18 +49,19 @@ class TestJoinApprovalEmail:
             content_type="application/json",
             **vettor_headers,
         )
-        response = api_client.patch(
+        api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.APPROVED},
             content_type="application/json",
             **vettor_headers,
         )
-        magic_link_token = response.json()["magic_link_token"]
         sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
         matching = [c for c in sends if c["to"] == "applicant@example.com"]
         assert len(matching) == 1
-        assert f"/magic-login/{magic_link_token}" in matching[0]["text"]
-        assert f"/magic-login/{magic_link_token}" in matching[0]["html"]
+        assert f"{settings.FRONTEND_BASE_URL}/login" in matching[0]["text"]
+        assert f"{settings.FRONTEND_BASE_URL}/login" in matching[0]["html"]
+        assert "/magic-login/" not in matching[0]["text"]
+        assert "/magic-login/" not in matching[0]["html"]
 
     def test_checkin_promotion_sends_to_applicant(
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
@@ -77,7 +79,7 @@ class TestJoinApprovalEmail:
         recipients = [c.kwargs["to"] for c in fake_email_sender.send.call_args_list]
         assert "checkin@example.com" in recipients
 
-    def test_checkin_promotion_includes_magic_link(
+    def test_checkin_promotion_links_to_the_login_page(
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
         sample_join_request.email = "checkin@example.com"
@@ -90,11 +92,28 @@ class TestJoinApprovalEmail:
             content_type="application/json",
             **host_headers,
         )
-        token = user.magic_tokens.latest("created_at")
         sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
         matching = [c for c in sends if c["to"] == "checkin@example.com"]
         assert len(matching) == 1
-        assert f"/magic-login/{token.token}" in matching[0]["text"]
+        assert f"{settings.FRONTEND_BASE_URL}/login" in matching[0]["text"]
+        assert "/magic-login/" not in matching[0]["text"]
+
+    def test_checkin_promotion_mints_no_undelivered_magic_token(
+        self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
+    ):
+        """The email carries no login token, so promotion must not leave one live."""
+        sample_join_request.email = "checkin@example.com"
+        sample_join_request.save(update_fields=["email"])
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        before = user.magic_tokens.count()
+        host_headers = _auth(open_official_event.created_by)
+        api_client.post(
+            f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **host_headers,
+        )
+        assert user.magic_tokens.count() == before
 
     def test_uses_editable_message_with_first_name_substitution(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
