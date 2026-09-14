@@ -4,18 +4,18 @@ import { ContentContainer } from '@/screens/public/ContentContainer';
 
 /**
  * Shown in place of a members-only screen for a tentatively-approved user.
- * `what` names the thing they're waiting on, e.g. "the member directory".
+ * `unlocks` names what they get after their first in-person event, e.g.
+ * "see the member list".
  */
-export function MembersOnlyNotice({ what }: { what: string }) {
+export function MembersOnlyNotice({ unlocks }: { unlocks: string }) {
   return (
     <ContentContainer>
-      <h1 className="mb-3 text-2xl font-medium tracking-tight">not just yet 🌱</h1>
+      <h1 className="mb-3 text-2xl font-medium tracking-tight">
+        you don&rsquo;t have access to this page yet
+      </h1>
       <p className="text-foreground-secondary text-sm">
-        you&rsquo;re tentatively approved — come to an official or club event in person and
-        we&rsquo;ll open up {what} along with the rest of the app.
-      </p>
-      <p className="text-foreground-secondary mt-3 text-sm">
-        until then you can browse and rsvp to anything official or club on the calendar.
+        you&rsquo;re approved but you have to come in person before we make you a full member! once
+        you come to an event you&rsquo;ll be able to {unlocks}.
       </p>
       <Link
         to="/calendar"

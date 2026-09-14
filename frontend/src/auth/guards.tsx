@@ -137,7 +137,7 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 // rather than redirecting: they get in by showing up to an event in person.
 // ----------------------------------------------------------------------------
 
-export function RequireMember({ what }: { what: string }) {
+export function RequireMember({ unlocks }: { unlocks: string }) {
   const user = useAuthStore((s) => s.user);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const location = useLocation();
@@ -147,7 +147,7 @@ export function RequireMember({ what }: { what: string }) {
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
   if (user?.isMember === false) {
-    return <MembersOnlyNotice what={what} />;
+    return <MembersOnlyNotice unlocks={unlocks} />;
   }
   return <Outlet />;
 }

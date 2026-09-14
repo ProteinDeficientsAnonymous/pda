@@ -118,12 +118,12 @@ export const router = createBrowserRouter([
               },
 
               {
-                element: <RequireMember what="adding events" />,
+                element: <RequireMember unlocks="add events" />,
                 children: [{ path: '/events/add', element: el(<EventCreate />) }],
               },
 
               {
-                element: <RequireMember what="the member directory" />,
+                element: <RequireMember unlocks="see the member list" />,
                 children: [
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },

@@ -11,7 +11,7 @@ function renderGuard() {
   return render(
     <MemoryRouter initialEntries={['/members']}>
       <Routes>
-        <Route element={<RequireMember what="the member directory" />}>
+        <Route element={<RequireMember unlocks="see the member list" />}>
           <Route path="/members" element={<p>directory contents</p>} />
         </Route>
         <Route path="/login" element={<p>login screen</p>} />
@@ -45,9 +45,11 @@ describe('RequireMember', () => {
     renderGuard();
 
     expect(screen.queryByText('directory contents')).toBeNull();
-    expect(screen.getByText(/not just yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/in person/i)).toBeInTheDocument();
-    expect(screen.getByText(/the member directory/i)).toBeInTheDocument();
+    expect(screen.getByText(/you don.t have access to this page yet/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/come in person before we make you a full member/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/see the member list/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
   });
 
