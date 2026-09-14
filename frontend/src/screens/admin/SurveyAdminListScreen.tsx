@@ -18,7 +18,8 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
-import { SurveyFields, useSurveyFieldErrors } from './SurveyFields';
+import { SurveyFields } from './SurveyFields';
+import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();

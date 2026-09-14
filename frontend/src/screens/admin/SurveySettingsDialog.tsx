@@ -6,7 +6,8 @@ import { type Survey, useUpdateSurvey } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 
-import { SurveyFields, type SurveyFormValues, useSurveyFieldErrors } from './SurveyFields';
+import { SurveyFields, type SurveyFormValues } from './SurveyFields';
+import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 interface Props {
   survey: Survey;

@@ -1,7 +1,5 @@
 import { format } from 'date-fns';
-import { useState } from 'react';
 
-import { getFieldError } from '@/api/apiErrors';
 import { useEvents } from '@/api/events';
 import type { SurveyInput } from '@/api/surveyAdmin';
 import { Select } from '@/components/ui/Select';
@@ -16,33 +14,6 @@ interface Props {
   onChange: (patch: Partial<SurveyFormValues>) => void;
   slugError?: string | undefined;
   linkedEventError?: string | undefined;
-}
-
-// Field errors clear as soon as their field changes, so a red field can't outlive the fix.
-export function useSurveyFieldErrors() {
-  const [slugError, setSlugError] = useState<string | null>(null);
-  const [linkedEventError, setLinkedEventError] = useState<string | null>(null);
-
-  return {
-    slugError,
-    linkedEventError,
-    reset() {
-      setSlugError(null);
-      setLinkedEventError(null);
-    },
-    clearFor(patch: Partial<SurveyFormValues>) {
-      if ('slug' in patch) setSlugError(null);
-      if ('linkedEventId' in patch) setLinkedEventError(null);
-    },
-    // return(boolean): true when the error was field-scoped — no generic banner needed
-    capture(err: unknown): boolean {
-      const slug = getFieldError(err, 'slug');
-      const linkedEvent = getFieldError(err, 'linked_event_id');
-      if (slug) setSlugError(slug);
-      if (linkedEvent) setLinkedEventError(linkedEvent);
-      return Boolean(slug ?? linkedEvent);
-    },
-  };
 }
 
 const VISIBILITY_OPTIONS = [

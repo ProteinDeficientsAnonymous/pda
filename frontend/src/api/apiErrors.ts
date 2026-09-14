@@ -36,9 +36,8 @@ export function extractApiErrorOr(err: unknown, fallback: string): string {
 }
 
 /**
- * User-facing message for the structured-detail entry scoped to `field`, or
- * null when the error carries no error for that field. Lets forms attach a
- * backend error to the offending input instead of the generic alert.
+ * Lets forms attach a backend error to the offending input instead of the
+ * generic alert. Null when the error carries nothing for that field.
  */
 export function getFieldError(err: unknown, field: string): string | null {
   if (!isAxiosError(err)) return null;
