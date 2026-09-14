@@ -735,6 +735,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-mark/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Attendance */
+        post: operations["community__attendance_mark_mark_attendance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/attendance-report/": {
         parameters: {
             query?: never;
@@ -2232,6 +2249,35 @@ export interface components {
              */
             for_plus_one: boolean;
         };
+        /** AttendanceMarkIn */
+        AttendanceMarkIn: {
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Title */
+            event_title?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /**
+             * User Ids
+             * @default []
+             */
+            user_ids: string[];
+        };
+        /** AttendanceMarkOut */
+        AttendanceMarkOut: {
+            /** Created Count */
+            created_count: number;
+            /** Event Id */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Updated Count */
+            updated_count: number;
+        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -3083,6 +3129,11 @@ export interface components {
              */
             invited_count: number;
             /**
+             * Is Legacy
+             * @default false
+             */
+            is_legacy: boolean;
+            /**
              * Is Partiful Import
              * @default false
              */
@@ -3282,6 +3333,11 @@ export interface components {
              * @default []
              */
             invited_user_photo_urls: string[];
+            /**
+             * Is Legacy
+             * @default false
+             */
+            is_legacy: boolean;
             /**
              * Is Partiful Import
              * @default false
@@ -7281,6 +7337,66 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_mark_mark_attendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceMarkIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceMarkOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

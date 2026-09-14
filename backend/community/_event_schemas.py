@@ -156,6 +156,7 @@ class EventListOut(BaseModel):
     is_past: bool = False
     status: str = "active"
     is_partiful_import: bool = False
+    is_legacy: bool = False
     tags: list[TagOut] = []
 
 
@@ -209,6 +210,7 @@ class EventOut(BaseModel):
     is_past: bool = False
     status: str = "active"
     is_partiful_import: bool = False
+    is_legacy: bool = False
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []

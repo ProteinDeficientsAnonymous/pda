@@ -128,6 +128,7 @@ class Event(models.Model):
     zelle_info = models.CharField(max_length=200, blank=True)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
+    is_legacy = models.BooleanField(default=False)
     datetime_tbd = models.BooleanField(default=False)
     allow_plus_ones = models.BooleanField(default=False)
     max_attendees = models.PositiveIntegerField(null=True, blank=True)

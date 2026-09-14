@@ -1,6 +1,7 @@
 from ninja import Router
 
 from community._attendance_import import router as attendance_import_router
+from community._attendance_mark import router as attendance_mark_router
 from community._attendance_report import router as attendance_report_router
 from community._calendar import router as calendar_router
 from community._dev_tools import router as dev_tools_router
@@ -69,6 +70,7 @@ router.add_router("", feedback_router)
 # Mount before events_router so literal /events/attendance-* routes resolve before its /events/{event_id}/ param route.
 router.add_router("", attendance_report_router)
 router.add_router("", attendance_import_router)
+router.add_router("", attendance_mark_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)

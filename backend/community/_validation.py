@@ -193,6 +193,11 @@ class Code:
         INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
         AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
 
+    class AttendanceMark:
+        EVENT_OR_TITLE_REQUIRED = "attendance_mark.event_or_title_required"
+        INVALID_EVENT_TYPE = "attendance_mark.invalid_event_type"
+        NO_MEMBERS_SELECTED = "attendance_mark.no_members_selected"
+
     class Perm:
         DENIED = "perm.denied"  # params: { action?: str }
 

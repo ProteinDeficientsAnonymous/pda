@@ -83,7 +83,10 @@ export default function CalendarScreen() {
   const isWide = useIsWideScreen(720);
 
   const { data: allEvents = [], isPending, isError, refetch } = useEvents();
-  const events = useMemo(() => allEvents.filter((e) => !e.isPartifulImport), [allEvents]);
+  const events = useMemo(
+    () => allEvents.filter((e) => !e.isPartifulImport && !e.isLegacy),
+    [allEvents],
+  );
   const bigCalEvents = useMemo<BigCalEvent[]>(
     () =>
       events

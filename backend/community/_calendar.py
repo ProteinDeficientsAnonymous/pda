@@ -77,6 +77,7 @@ def _feed_events(user: UserModel):
             datetime_tbd=False,
             status=EventStatus.ACTIVE,
             is_partiful_import=False,
+            is_legacy=False,
         )
         .select_related("created_by")
         .prefetch_related("co_hosts", "invited_users")

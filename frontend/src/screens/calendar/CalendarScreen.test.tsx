@@ -188,6 +188,12 @@ describe('CalendarScreen', () => {
           startDatetime: new Date(),
           isPartifulImport: true,
         }),
+        makeEvent({
+          id: 'e3',
+          title: 'legacy potluck',
+          startDatetime: new Date(),
+          isLegacy: true,
+        }),
       ],
       isPending: false,
       isError: false,
@@ -201,6 +207,7 @@ describe('CalendarScreen', () => {
       expect(screen.getByText('community potluck')).toBeInTheDocument();
     });
     expect(screen.queryByText('imported backfill')).not.toBeInTheDocument();
+    expect(screen.queryByText('legacy potluck')).not.toBeInTheDocument();
   });
 
   it('scrolls the list inside the view box so the toggles stay put', async () => {

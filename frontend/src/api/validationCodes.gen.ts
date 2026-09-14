@@ -189,6 +189,11 @@ export const Code = {
     InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
   },
+  AttendanceMark: {
+    EventOrTitleRequired: 'attendance_mark.event_or_title_required',
+    InvalidEventType: 'attendance_mark.invalid_event_type',
+    NoMembersSelected: 'attendance_mark.no_members_selected',
+  },
   Perm: {
     Denied: 'perm.denied',
   },
@@ -391,6 +396,9 @@ export type ValidationCode =
   | 'attendance_import.event_or_title_required'
   | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
+  | 'attendance_mark.event_or_title_required'
+  | 'attendance_mark.invalid_event_type'
+  | 'attendance_mark.no_members_selected'
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
@@ -566,6 +574,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'attendance_import.event_or_title_required': [],
   'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
+  'attendance_mark.event_or_title_required': [],
+  'attendance_mark.invalid_event_type': [],
+  'attendance_mark.no_members_selected': [],
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],
