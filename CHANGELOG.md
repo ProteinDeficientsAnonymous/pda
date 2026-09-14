@@ -1,3 +1,15 @@
+# [0.110.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.109.1...v0.110.0) (2026-09-14)
+
+
+### Bug Fixes
+
+* **dev:** unblock local dev login — seed consent + optional auto-login ([#1487](https://github.com/ProteinDeficientsAnonymous/pda/issues/1487)) ([77a032e](https://github.com/ProteinDeficientsAnonymous/pda/commit/77a032e0b80145e22054d1bc51e3628f6e64aa3d))
+
+
+### Features
+
+* **admin:** pin members filters and mark-attended bar while scrolling ([#1491](https://github.com/ProteinDeficientsAnonymous/pda/issues/1491)) ([081fd4d](https://github.com/ProteinDeficientsAnonymous/pda/commit/081fd4d38c75161c6f65cf316e46af00622e1cbf))
+
 ## [0.109.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.109.0...v0.109.1) (2026-09-14)
 
 
