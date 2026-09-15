@@ -331,7 +331,9 @@ def _apply_status_transition(
             _, magic_token = _provision_tentative_user(join_request, actor)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = _provision_approved_user(join_request, actor)
+            magic_token, user_created = _provision_approved_user(
+                join_request, actor, was_tentative=was_tentative
+            )
             return join_request, magic_token, user_created, was_tentative
     return join_request, None, False, False
 
@@ -387,7 +389,6 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             to=join_request.email,
             display_name=join_request.full_name,
             first_name=join_request.first_name,
-            magic_token=magic_token,
         )
 
     action = _DECISION_ACTIONS[payload.status]

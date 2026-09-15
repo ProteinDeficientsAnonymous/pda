@@ -155,7 +155,7 @@ class TestApprovalCopiesNames:
         jr = JoinRequest.objects.create(
             first_name="Grace", last_name="Hopper", phone_number="+12025551212"
         )
-        token, created = _provision_approved_user(jr, manage_users_user)
+        token, created = _provision_approved_user(jr, manage_users_user, was_tentative=False)
         assert created is True
         u = User.objects.get(phone_number="+12025551212")
         assert (u.first_name, u.last_name) == ("Grace", "Hopper")
@@ -168,7 +168,7 @@ class TestApprovalCopiesNames:
 
         jr = JoinRequest.objects.create(phone_number="+12025551214")
         with pytest.raises(ValidationException):
-            _provision_approved_user(jr, manage_users_user)
+            _provision_approved_user(jr, manage_users_user, was_tentative=False)
 
     def test_nameless_request_rejected_on_promote(self, manage_users_user):
         from community._join_request_approval import _provision_approved_user
@@ -182,7 +182,7 @@ class TestApprovalCopiesNames:
         non_member.save(update_fields=["first_name"])
         jr = JoinRequest.objects.create(phone_number="+12025551215", user=non_member)
         with pytest.raises(ValidationException):
-            _provision_approved_user(jr, manage_users_user)
+            _provision_approved_user(jr, manage_users_user, was_tentative=False)
 
     def test_nameless_request_rejected_on_reactivate(self, manage_users_user):
         from community._join_request_approval import _provision_approved_user
@@ -196,7 +196,7 @@ class TestApprovalCopiesNames:
         archived.save(update_fields=["archived_at", "first_name"])
         jr = JoinRequest.objects.create(phone_number="+12025551216")
         with pytest.raises(ValidationException):
-            _provision_approved_user(jr, manage_users_user)
+            _provision_approved_user(jr, manage_users_user, was_tentative=False)
 
 
 @pytest.mark.django_db

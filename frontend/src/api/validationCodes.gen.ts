@@ -248,6 +248,10 @@ export const Code = {
     BodyRequired: 'member_promotion_message.body_required',
     BodyTooLong: 'member_promotion_message.body_too_long',
   },
+  MemberPromotionEmail: {
+    BodyRequired: 'member_promotion_email.body_required',
+    BodyTooLong: 'member_promotion_email.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -428,7 +432,9 @@ export type ValidationCode =
   | 'tentative_approval_message.body_required'
   | 'tentative_approval_message.body_too_long'
   | 'member_promotion_message.body_required'
-  | 'member_promotion_message.body_too_long';
+  | 'member_promotion_message.body_too_long'
+  | 'member_promotion_email.body_required'
+  | 'member_promotion_email.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -609,4 +615,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tentative_approval_message.body_too_long': ['max_length'],
   'member_promotion_message.body_required': [],
   'member_promotion_message.body_too_long': ['max_length'],
+  'member_promotion_email.body_required': [],
+  'member_promotion_email.body_too_long': ['max_length'],
 };

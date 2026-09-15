@@ -28,6 +28,8 @@ vi.mock('@/api/content', () => ({
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({
     data: { link: 'https://chat.whatsapp.com/abc123', updatedAt: '2026-01-01' },
     isPending: false,
@@ -87,7 +89,22 @@ describe('JoinRequestMessageEditors', () => {
     expect(
       screen.getByRole('button', { name: /edit member promotion message/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /edit member promotion email/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
+  });
+
+  it('opens the member promotion email editor dialog when clicked', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = makeUser({
+      roles: [
+        { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
+      ],
+    });
+    renderEditors(user);
+    await userEvent.click(screen.getByRole('button', { name: /edit member promotion email/i }));
+    expect(screen.getByLabelText('member promotion email body')).toBeInTheDocument();
   });
 
   it('opens the whatsapp link editor dialog when clicked', async () => {

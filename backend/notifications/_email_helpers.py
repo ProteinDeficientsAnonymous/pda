@@ -164,17 +164,19 @@ def send_join_approval_email(
     to: str,
     display_name: str,
     message_body: str,
-    magic_link_url: str,
+    login_url: str,
 ) -> SendResult:
     """Render and send the "you're a full member now" join-approval email.
 
-    ``message_body`` is the UI-editable confirmation text (tentative-approval
-    message template) with ``${FIRST_NAME}`` substituted by the caller.
+    ``message_body`` is the UI-editable confirmation text (member promotion
+    email template) with its placeholders substituted by the caller. The
+    recipient already has an account by this point, so this links to the
+    normal login page rather than carrying a one-time token.
     """
     context = {
         "display_name": display_name or "",
         "message_body": message_body,
-        "magic_link_url": magic_link_url,
+        "login_url": login_url,
     }
     html = render_to_string("emails/join_approval.html", context)
     text = render_to_string("emails/join_approval.txt", context)

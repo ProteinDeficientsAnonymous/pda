@@ -521,6 +521,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'member promotion message is too long';
     }
 
+    // Member promotion email
+    case Code.MemberPromotionEmail.BodyRequired:
+      return 'member promotion email body is required';
+    case Code.MemberPromotionEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `member promotion email must be at most ${String(max)} characters`
+        : 'member promotion email is too long';
+    }
+
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
       return err.field ? `${err.field.replace(/_/g, ' ')} is required` : 'this field is required';

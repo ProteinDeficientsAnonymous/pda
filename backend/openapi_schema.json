@@ -4909,6 +4909,42 @@
         "title": "MemberProfileOut",
         "type": "object"
       },
+      "MemberPromotionEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberPromotionEmailOut",
+        "type": "object"
+      },
+      "MemberPromotionEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberPromotionEmailPatchIn",
+        "type": "object"
+      },
       "MemberPromotionMessageOut": {
         "properties": {
           "body": {
@@ -13965,6 +14001,88 @@
           }
         ],
         "summary": "Unreject Join Request",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-promotion-email/": {
+      "get": {
+        "operationId": "community__member_promotion_email_get_member_promotion_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Promotion Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__member_promotion_email_update_member_promotion_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPromotionEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Promotion Email",
         "tags": [
           "community"
         ]
