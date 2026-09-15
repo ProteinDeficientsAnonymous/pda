@@ -1,3 +1,10 @@
+# [0.111.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.110.0...v0.111.0) (2026-09-15)
+
+
+### Features
+
+* **join-requests:** edit the promotion email in-app with a whatsapp link ([#1490](https://github.com/ProteinDeficientsAnonymous/pda/issues/1490)) ([9c3a462](https://github.com/ProteinDeficientsAnonymous/pda/commit/9c3a4620bcc697b33b2bfeaf6f033eff2868c4f2))
+
 # [0.110.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.109.1...v0.110.0) (2026-09-14)
 
 
