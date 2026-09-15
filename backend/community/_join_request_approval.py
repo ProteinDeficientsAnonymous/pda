@@ -62,17 +62,13 @@ def _grant_membership(user) -> None:
 
 
 def _promote_public_non_member(user, join_request) -> str:
-    """Promote a publicly-RSVP'd non-member to a member in place.
+    """Promote a publicly-RSVP'd non-member in place; returns their replacement login token.
 
-    Their prior RSVPs already point at this row, so flipping is_member keeps the
-    full history instead of orphaning it under a fresh account.
-
-    They have never onboarded — no password, and the scoped rsvp tokens that
-    were their only way in are revoked here — so they are sent through
-    onboarding and the magic token returned is what replaces those tokens.
-    Dropping it would lock them out of the account they were just promoted into.
+    param(user): the non-member User to promote, linked to join_request.
+    return(str): magic token replacing the rsvp tokens this revokes.
     """
     user.is_member = True
+    # Never onboarded and no password — dropping the token below strands them.
     user.needs_onboarding = True
     user.first_name, user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
@@ -94,17 +90,12 @@ def _promote_public_non_member(user, join_request) -> str:
 
 
 def _promote_tentative_member(user, join_request) -> None:
-    """Promote a tentatively-approved applicant to a full member in place.
+    """Promote a tentatively-approved applicant in place; they onboarded already.
 
-    They onboarded on first login, so they already have a password, a name they
-    chose themselves, and cleared onboarding. Only membership changes here: no
-    token to mint (they sign in normally), no onboarding to re-flag — doing so
-    would lock them out, since the auth gate blocks every endpoint until it is
-    cleared — and no name to overwrite with the one from their application.
-
-    Their own first_name is still checked, so this path cannot produce a
-    nameless member either (Issue 733).
+    Only membership changes: no token to mint, no needs_onboarding re-flag
+    (that would lock them out of every endpoint), no name to overwrite.
     """
+    # Their own name, not the application's — this path copies none (Issue 733).
     validate_display_name(user.first_name, field="first_name")
     user.is_member = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:

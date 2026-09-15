@@ -23,11 +23,7 @@ class TestEmailBodyFilter:
         assert "&amp; welcome" in html
 
     def test_raw_markup_cannot_inject_live_attributes(self):
-        """Escaping runs before styling, so a vetter's tag becomes text.
-
-        The bare url inside it is still auto-linked — that is the point of
-        urlize — but the tag they typed carries none of its own attributes.
-        """
+        """Their tag becomes text; the bare url inside it is still auto-linked."""
         html = email_body('<a href="https://x.example.com" onclick="steal()">click</a>')
         assert "&lt;a href=" in html
         assert 'onclick="steal()"' not in html

@@ -1,10 +1,4 @@
-"""The two promotion paths differ in what credential the promoted user needs.
-
-A publicly-RSVP'd non-member has never onboarded and has no password, so
-promotion mints the magic token that replaces their revoked rsvp tokens. A
-tentatively-approved applicant onboarded on first login, so promotion must
-leave their password, name and onboarding state alone.
-"""
+"""The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
@@ -12,6 +6,7 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 
+from tests.conftest import future_iso
 from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
 
 __all__ = ["open_official_event"]
@@ -113,8 +108,7 @@ class TestPromoteTentativeMember:
     def test_promotion_leaves_onboarding_done(
         self, api_client, onboarded_tentative, fake_email_sender
     ):
-        """Re-flagging onboarding would lock them out — the auth gate blocks
-        every endpoint until it is cleared."""
+        """Re-flagging onboarding would lock them out of every endpoint."""
         user, event = onboarded_tentative
         api_client.post(
             f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
@@ -168,10 +162,7 @@ class TestPromoteTentativeMember:
 
 @pytest.mark.django_db
 class TestTentativeWhoNeverOnboarded:
-    """The tentative path is chosen by join-request status, not by whether the
-    applicant actually onboarded. Someone who never used their tentative link
-    still has an unusable password, so this pins what promotion leaves behind.
-    """
+    """Status picks the tentative path, not whether they actually onboarded."""
 
     def test_promotion_leaves_them_able_to_recover(
         self, api_client, sample_join_request, vettor_user, open_official_event, fake_email_sender
@@ -213,3 +204,69 @@ class TestTentativeWhoNeverOnboarded:
         )
         assert resp.status_code == 200
         assert resp.json()["delivery"] == "email"
+
+
+@pytest.mark.django_db
+class TestTentativeMemberRsvpsViaPublicForm:
+    """A tentative applicant can use the public rsvp form instead of logging in."""
+
+    def test_public_rsvp_resolves_to_the_existing_tentative_user(
+        self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
+    ):
+        from tests._public_rsvp_helpers import make_official_event, payload, url
+
+        tentative_user = _tentative_user_with_rsvp(
+            sample_join_request, open_official_event, vettor_user
+        )
+        second_event = make_official_event(title="Second Potluck")
+        before_count = User.objects.count()
+
+        resp = api_client.post(
+            url(second_event),
+            payload(
+                first_name="Whatever",
+                last_name="TheyTypeHere",
+                email="typed-fresh@example.com",
+                phone_number=tentative_user.phone_number,
+            ),
+            content_type="application/json",
+        )
+
+        assert resp.status_code == 200, resp.json()
+        assert User.objects.count() == before_count  # no forked account
+        assert resp.json()["event"]["id"] == str(second_event.id)
+        tentative_user.refresh_from_db()
+        assert tentative_user.event_rsvps.filter(event=second_event).exists()
+
+    def test_checkin_on_the_publicly_rsvpd_event_still_takes_the_tentative_path(
+        self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
+    ):
+        from tests._public_rsvp_helpers import make_official_event, payload, url
+
+        tentative_user = _tentative_user_with_rsvp(
+            sample_join_request, open_official_event, vettor_user
+        )
+        second_event = make_official_event(
+            title="Second Potluck",
+            created_by=open_official_event.created_by,
+            start_datetime=future_iso(days=0, minutes=30),
+        )
+        api_client.post(
+            url(second_event),
+            payload(email="typed-fresh@example.com", phone_number=tentative_user.phone_number),
+            content_type="application/json",
+        )
+        before = tentative_user.magic_tokens.count()
+
+        api_client.post(
+            f"/api/community/events/{second_event.id}/rsvps/{tentative_user.pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(second_event.created_by),
+        )
+
+        tentative_user.refresh_from_db()
+        assert tentative_user.is_member is True
+        # Tentative path: mints nothing, even though this RSVP came in through
+        # the public (non-member) form rather than an authenticated session.
+        assert tentative_user.magic_tokens.count() == before
