@@ -164,3 +164,52 @@ class TestPromoteTentativeMember:
         user.save(update_fields=["first_name"])
         with pytest.raises(ValidationException):
             _promote_tentative_member(user, sample_join_request)
+
+
+@pytest.mark.django_db
+class TestTentativeWhoNeverOnboarded:
+    """The tentative path is chosen by join-request status, not by whether the
+    applicant actually onboarded. Someone who never used their tentative link
+    still has an unusable password, so this pins what promotion leaves behind.
+    """
+
+    def test_promotion_leaves_them_able_to_recover(
+        self, api_client, sample_join_request, vettor_user, open_official_event, fake_email_sender
+    ):
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        assert user.has_usable_password() is False
+        assert user.needs_onboarding is True
+
+        api_client.post(
+            f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(open_official_event.created_by),
+        )
+
+        user.refresh_from_db()
+        assert user.is_member is True
+        # Still flagged for onboarding — they never did it — and no fresh token
+        # was minted, so /login + request-a-link is their way back in.
+        assert user.needs_onboarding is True
+        assert user.has_usable_password() is False
+
+    def test_they_can_self_serve_a_login_link_after_promotion(
+        self, api_client, sample_join_request, vettor_user, open_official_event, fake_email_sender
+    ):
+        sample_join_request.email = "never-onboarded@example.com"
+        sample_join_request.save(update_fields=["email"])
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        api_client.post(
+            f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(open_official_event.created_by),
+        )
+        resp = api_client.post(
+            "/api/community/request-login-link/",
+            {"phone_number": user.phone_number},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.json()["delivery"] == "email"
