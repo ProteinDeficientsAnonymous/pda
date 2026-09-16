@@ -10,14 +10,9 @@ _PARAGRAPH_STYLE = "margin: 0 0 16px;"
 
 @register.filter
 def email_body(value: str) -> str:
-    """Render an admin-editable plain-text email body as styled HTML.
-
-    Mail clients like Outlook drop <style> blocks, so the anchors and
-    paragraphs urlize/linebreaks generate get their styling inlined here.
-    Both filters escape first, so the only tags these replacements can touch
-    are the ones we just generated — a vetter's literal ``<a>`` is already
-    entity-escaped by then.
-    """
+    """Render an admin-editable plain-text email body as styled HTML."""
+    # Styles are inlined because Outlook drops <style> blocks. Both filters
+    # escape first, so these replacements only hit tags we just generated.
     html = str(linebreaks_filter(urlize(value)))
     html = html.replace("<a ", f'<a style="{_LINK_STYLE}" ')
     html = html.replace("<p>", f'<p style="{_PARAGRAPH_STYLE}">')
