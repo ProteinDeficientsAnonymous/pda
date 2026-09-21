@@ -36,8 +36,8 @@ struct EventListView: View {
                     Text("calendar").font(.headline)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    if let name = session.user?.fullName, !name.isEmpty {
-                        Text(name.lowercased()).font(.subheadline)
+                    if session.user != nil {
+                        Button("log out") { Task { await session.logout() } }
                     } else {
                         Button("sign in") { showLogin = true }
                     }

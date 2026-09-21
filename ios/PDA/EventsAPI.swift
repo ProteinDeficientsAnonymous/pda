@@ -224,3 +224,33 @@ struct EventsClient {
 enum APIError: Error {
     case http(Int)
 }
+
+struct SessionError: Error, Equatable {
+    let status: Int
+    let code: String?
+
+    var message: String {
+        switch code {
+        case "auth.invalid_credentials":
+            return "that phone number and password don't match — try again"
+        case "auth.account_archived":
+            return "this account is no longer active"
+        case "auth.account_paused":
+            return "your membership is currently paused"
+        case "auth.refresh_token_invalid", "auth.refresh_failed":
+            return "your session expired — please sign in again"
+        default:
+            return status == 401
+                ? "your session expired — please sign in again"
+                : "couldn't sign in — try again"
+        }
+    }
+}
+
+func apiErrorCode(from data: Data) -> String? {
+    struct Envelope: Decodable {
+        struct Item: Decodable { let code: String? }
+        let detail: [Item]?
+    }
+    return try? JSONDecoder().decode(Envelope.self, from: data).detail?.first?.code
+}

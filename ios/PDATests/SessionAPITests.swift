@@ -145,6 +145,100 @@ final class SessionAPITests: XCTestCase {
         XCTAssertFalse(unknown.unknownBody.contains("join"))
     }
 
+    func test_login_mapsArchivedAndPausedCodes() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "auth.account_archived", "field": NSNull()]]])
+        }
+        do {
+            try await makeClient().login(phone: "+15555550100", password: "x")
+            XCTFail("archived login should throw")
+        } catch let error as SessionError {
+            XCTAssertEqual(error.code, "auth.account_archived")
+            XCTAssertEqual(error.message, "this account is no longer active")
+        } catch {
+            XCTFail("wrong error \(error)")
+        }
+
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "auth.account_paused"]]])
+        }
+        do {
+            try await makeClient().login(phone: "+15555550100", password: "x")
+            XCTFail("paused login should throw")
+        } catch let error as SessionError {
+            XCTAssertEqual(error.code, "auth.account_paused")
+            XCTAssertEqual(error.message, "your membership is currently paused")
+        } catch {
+            XCTFail("wrong error \(error)")
+        }
+    }
+
+    func test_me_mapsPausedWithoutRefreshing() async throws {
+        try tokens.save("access-v1")
+        var paths: [String] = []
+        MockHTTP.handler = { request in
+            paths.append(routePath(request.url))
+            return MockHTTP.json(403, ["detail": [["code": "auth.account_paused"]]])
+        }
+        do {
+            _ = try await makeClient().me()
+            XCTFail("paused me should throw")
+        } catch let error as SessionError {
+            XCTAssertEqual(error.code, "auth.account_paused")
+            XCTAssertEqual(error.message, "your membership is currently paused")
+        } catch {
+            XCTFail("wrong error \(error)")
+        }
+        XCTAssertEqual(paths, ["/api/auth/me/"])
+        XCTAssertEqual(try tokens.load(), "access-v1")
+    }
+
+    func test_loginModel_surfacesArchivedCopy() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "auth.account_archived"]]])
+        }
+        let model = LoginModel(client: makeClient())
+        model.phone = "+15555550100"
+        model.password = "secret"
+        await model.signIn()
+        XCTAssertEqual(model.error, "this account is no longer active")
+        XCTAssertNil(try tokens.load())
+    }
+
+    func test_logout_postsLogoutAndClearsAccessToken() async throws {
+        try tokens.save("access-jwt")
+        var method: String?
+        MockHTTP.handler = { request in
+            XCTAssertEqual(routePath(request.url), "/api/auth/logout/")
+            method = request.httpMethod
+            XCTAssertNil(request.json?["refresh"])
+            return MockHTTP.json(
+                200,
+                ["detail": "logged out"],
+                headers: ["Set-Cookie": "refresh_token=; Path=/; Max-Age=0"]
+            )
+        }
+        try await makeClient().logout()
+        XCTAssertEqual(method, "POST")
+        XCTAssertNil(try tokens.load())
+    }
+
+    func test_authSession_logoutClearsUser() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { _ in MockHTTP.json(200, ["detail": "logged out"]) }
+        let session = AuthSession(client: makeClient())
+        session.signedIn(
+            try JSONDecoder().decode(
+                SessionUser.self,
+                from: try JSONSerialization.data(withJSONObject: Self.mePayload)
+            )
+        )
+        XCTAssertNotNil(session.user)
+        await session.logout()
+        XCTAssertNil(session.user)
+        XCTAssertNil(try tokens.load())
+    }
+
     func test_keychainTokenStore_savesAndClearsAccessJWT() throws {
         let store = KeychainTokenStore(service: "anonymous.pda.ios.tests", account: "access")
         try store.clear()

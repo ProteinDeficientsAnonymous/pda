@@ -144,6 +144,14 @@ struct SessionClient {
         try await authorizedGet("/api/auth/me/")
     }
 
+    func logout() async throws {
+        let req = makeRequest("/api/auth/logout/", method: "POST")
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        try throwIfFailed(data, status)
+        try tokens.clear()
+    }
+
     private func authorizedGet<T: Decodable>(_ path: String, retrying: Bool = false) async throws -> T {
         var req = makeRequest(path, method: "GET")
         if let token = try tokens.load() {
@@ -155,7 +163,7 @@ struct SessionClient {
             try await refreshAccess()
             return try await authorizedGet(path, retrying: true)
         }
-        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        try throwIfFailed(data, status)
         return try Event.decoder.decode(T.self, from: data)
     }
 
@@ -166,7 +174,7 @@ struct SessionClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        try throwIfFailed(data, status)
         try tokens.save(try Event.decoder.decode(Out.self, from: data).access)
     }
 
@@ -176,8 +184,14 @@ struct SessionClient {
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        try throwIfFailed(data, status)
         return data
+    }
+
+    private func throwIfFailed(_ data: Data, _ status: Int) throws {
+        guard (200 ..< 300).contains(status) else {
+            throw SessionError(status: status, code: apiErrorCode(from: data))
+        }
     }
 
     private func makeRequest(_ path: String, method: String) -> URLRequest {
@@ -226,6 +240,8 @@ final class LoginModel {
         defer { busy = false }
         do {
             try await client.login(phone: phone, password: password)
+        } catch let error as SessionError {
+            self.error = error.message
         } catch {
             self.error = "couldn't sign in — try again"
         }
@@ -251,5 +267,11 @@ final class AuthSession {
 
     func signedIn(_ user: SessionUser) {
         self.user = user
+    }
+
+    func logout() async {
+        try? await client.logout()
+        try? client.tokens.clear()
+        user = nil
     }
 }

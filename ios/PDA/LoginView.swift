@@ -102,6 +102,8 @@ struct LoginView: View {
         do {
             session.signedIn(try await model.client.me())
             dismiss()
+        } catch let error as SessionError {
+            model.error = error.message
         } catch {
             model.error = "couldn't sign in — try again"
         }
