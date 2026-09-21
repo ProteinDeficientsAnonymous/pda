@@ -16,6 +16,7 @@
 		A10000000000000000000081 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* NotificationsView.swift */; };
 		A10000000000000000000091 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000090 /* HomeView.swift */; };
 		A10000000000000000000093 /* FaqView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* FaqView.swift */; };
+		A10000000000000000000095 /* GuidelinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* GuidelinesView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -50,6 +51,7 @@
 		A10000000000000000000080 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		A10000000000000000000090 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		A10000000000000000000092 /* FaqView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaqView.swift; sourceTree = "<group>"; };
+		A10000000000000000000094 /* GuidelinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidelinesView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 				A10000000000000000000080 /* NotificationsView.swift */,
 				A10000000000000000000090 /* HomeView.swift */,
 				A10000000000000000000092 /* FaqView.swift */,
+				A10000000000000000000094 /* GuidelinesView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -264,6 +267,7 @@
 				A10000000000000000000081 /* NotificationsView.swift in Sources */,
 				A10000000000000000000091 /* HomeView.swift in Sources */,
 				A10000000000000000000093 /* FaqView.swift in Sources */,
+				A10000000000000000000095 /* GuidelinesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
