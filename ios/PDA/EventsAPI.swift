@@ -60,6 +60,7 @@ struct Event: Decodable, Hashable, Identifiable {
     let rsvpEnabled: Bool
     let isPast: Bool
     let coHostIds: [String]
+    let hasPoll: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -83,6 +84,7 @@ struct Event: Decodable, Hashable, Identifiable {
         case rsvpEnabled = "rsvp_enabled"
         case isPast = "is_past"
         case coHostIds = "co_host_ids"
+        case hasPoll = "has_poll"
     }
 
     init(from decoder: Decoder) throws {
@@ -117,6 +119,7 @@ struct Event: Decodable, Hashable, Identifiable {
         rsvpEnabled = try c.decodeIfPresent(Bool.self, forKey: .rsvpEnabled) ?? false
         isPast = try c.decodeIfPresent(Bool.self, forKey: .isPast) ?? false
         coHostIds = try c.decodeIfPresent([String].self, forKey: .coHostIds) ?? []
+        hasPoll = try c.decodeIfPresent(Bool.self, forKey: .hasPoll) ?? false
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -297,6 +300,99 @@ func canEditEvent(_ event: Event, user: SessionUser?) -> Bool {
 
 func canShowEventComments(_ event: Event, signedIn: Bool, hasGuestToken: Bool) -> Bool {
     event.rsvpEnabled && (signedIn || hasGuestToken)
+}
+
+func canShowEventPoll(_ event: Event, winningDatetime: Date?) -> Bool {
+    event.hasPoll && winningDatetime == nil
+}
+
+enum PollVoteChrome: Equatable {
+    case login
+    case vote
+}
+
+func pollVoteChrome(signedIn: Bool) -> PollVoteChrome {
+    signedIn ? .vote : .login
+}
+
+func mergedPollVotes(current: [String: String], optionId: String, choice: String) -> [String: String] {
+    var next = current
+    if next[optionId] == choice {
+        next.removeValue(forKey: optionId)
+    } else {
+        next[optionId] = choice
+    }
+    return next
+}
+
+func sortPollOptionsByVotes(_ options: [EventPollOption]) -> [EventPollOption] {
+    options.sorted {
+        if $0.yesCount != $1.yesCount { return $0.yesCount > $1.yesCount }
+        if $0.maybeCount != $1.maybeCount { return $0.maybeCount > $1.maybeCount }
+        return ($0.datetime ?? .distantFuture) < ($1.datetime ?? .distantFuture)
+    }
+}
+
+struct EventPollOption: Decodable, Hashable, Identifiable {
+    let id: String
+    let datetime: Date?
+    let displayOrder: Int
+    let yesCount: Int
+    let maybeCount: Int
+    let noCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, datetime
+        case displayOrder = "display_order"
+        case yesCount = "yes_count"
+        case maybeCount = "maybe_count"
+        case noCount = "no_count"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        datetime = Event.parseISODate(try c.decodeIfPresent(String.self, forKey: .datetime) ?? "")
+        displayOrder = try c.decodeIfPresent(Int.self, forKey: .displayOrder) ?? 0
+        yesCount = try c.decodeIfPresent(Int.self, forKey: .yesCount) ?? 0
+        maybeCount = try c.decodeIfPresent(Int.self, forKey: .maybeCount) ?? 0
+        noCount = try c.decodeIfPresent(Int.self, forKey: .noCount) ?? 0
+    }
+}
+
+struct EventPoll: Decodable {
+    let id: String
+    let eventId: String
+    let isActive: Bool
+    let options: [EventPollOption]
+    let winningDatetime: Date?
+    let myVotes: [String: String]
+
+    enum CodingKeys: String, CodingKey {
+        case id, options
+        case eventId = "event_id"
+        case isActive = "is_active"
+        case winningDatetime = "winning_datetime"
+        case myVotes = "my_votes"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        eventId = try c.decodeIfPresent(String.self, forKey: .eventId) ?? ""
+        isActive = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
+        options = try c.decodeIfPresent([EventPollOption].self, forKey: .options) ?? []
+        winningDatetime = Event.parseISODate(try c.decodeIfPresent(String.self, forKey: .winningDatetime) ?? "")
+        myVotes = try c.decodeIfPresent([String: String].self, forKey: .myVotes) ?? [:]
+    }
+
+    static func decodeJSON(_ raw: String) throws -> EventPoll {
+        try Event.decoder.decode(EventPoll.self, from: Data(raw.utf8))
+    }
+}
+
+func eventPollURL(base: URL, eventId: String, suffix: String = "") -> URL {
+    URL(string: "/api/community/events/\(eventId)/poll/\(suffix)", relativeTo: base)!.absoluteURL
 }
 
 func commentComposerPrompt(canPost: Bool, reason: String?) -> String? {
@@ -634,6 +730,18 @@ struct EventsClient {
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(Event.self, from: data)
+    }
+
+    func poll(eventId: String) async throws -> EventPoll {
+        try await sendJSON("GET", url: eventPollURL(base: baseURL, eventId: eventId))
+    }
+
+    func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {
+        try await sendJSON(
+            "POST",
+            url: eventPollURL(base: baseURL, eventId: eventId, suffix: "vote/"),
+            body: ["votes": votes]
+        )
     }
 
     func comments(eventId: String, guestToken: String? = nil) async throws -> EventCommentList {

@@ -581,6 +581,115 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(updated.reactions.first?.count, 1)
     }
 
+    func test_canShowEventPoll_hasPollAndNotWon() throws {
+        let none = try Event.decodeJSON(#"{ "id": "e", "title": "e" }"#)
+        let open = try Event.decodeJSON(#"{ "id": "e", "title": "e", "has_poll": true }"#)
+        XCTAssertFalse(canShowEventPoll(none, winningDatetime: nil))
+        XCTAssertTrue(canShowEventPoll(open, winningDatetime: nil))
+        XCTAssertFalse(canShowEventPoll(open, winningDatetime: Date()))
+    }
+
+    func test_pollVoteChrome_guestSignsInToVote() {
+        XCTAssertEqual(pollVoteChrome(signedIn: false), .login)
+        XCTAssertEqual(pollVoteChrome(signedIn: true), .vote)
+    }
+
+    func test_mergedPollVotes_setsChangesAndRetracts() {
+        XCTAssertEqual(mergedPollVotes(current: [:], optionId: "a", choice: "yes"), ["a": "yes"])
+        XCTAssertEqual(
+            mergedPollVotes(current: ["a": "yes"], optionId: "a", choice: "maybe"),
+            ["a": "maybe"]
+        )
+        XCTAssertEqual(mergedPollVotes(current: ["a": "yes"], optionId: "a", choice: "yes"), [:])
+    }
+
+    func test_sortPollOptionsByVotes_yesThenMaybeThenEarliest() throws {
+        let poll = try EventPoll.decodeJSON("""
+        {
+          "id": "p1",
+          "event_id": "evt-1",
+          "is_active": true,
+          "options": [
+            {"id": "late", "datetime": "2026-05-02T18:00:00Z", "display_order": 0, "yes_count": 2, "maybe_count": 0, "no_count": 0},
+            {"id": "more-maybe", "datetime": "2026-05-01T18:00:00Z", "display_order": 1, "yes_count": 2, "maybe_count": 3, "no_count": 0},
+            {"id": "most-yes", "datetime": "2026-05-03T18:00:00Z", "display_order": 2, "yes_count": 5, "maybe_count": 0, "no_count": 0}
+          ]
+        }
+        """)
+        XCTAssertEqual(sortPollOptionsByVotes(poll.options).map(\.id), ["most-yes", "more-maybe", "late"])
+    }
+
+    func test_eventPollCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            EventPollCopy.title,
+            EventPollCopy.respond,
+            EventPollCopy.signIn,
+            EventPollCopy.yes,
+            EventPollCopy.maybe,
+            EventPollCopy.no,
+            EventPollCopy.loadError,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_getPoll_getsWithBearerAndDecodesOptions() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/poll/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "id": "p1",
+                "event_id": "evt-1",
+                "is_active": true,
+                "options": [[
+                    "id": "opt-a",
+                    "datetime": "2026-05-01T18:00:00Z",
+                    "yes_count": 2,
+                    "maybe_count": 1,
+                    "no_count": 0,
+                ]],
+                "my_votes": ["opt-a": "yes"],
+            ])
+        }
+        let poll = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).poll(eventId: "evt-1")
+        XCTAssertEqual(poll.id, "p1")
+        XCTAssertEqual(poll.options.first?.yesCount, 2)
+        XCTAssertEqual(poll.myVotes["opt-a"], "yes")
+    }
+
+    func test_votePoll_postsVotesMapWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/poll/vote/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            let votes = try XCTUnwrap(body["votes"] as? [String: Any])
+            XCTAssertEqual(votes["opt-a"] as? String, "yes")
+            return MockHTTP.json(200, [
+                "id": "p1",
+                "event_id": "evt-1",
+                "is_active": true,
+                "options": [],
+                "my_votes": ["opt-a": "yes"],
+            ])
+        }
+        let poll = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).votePoll(eventId: "evt-1", votes: ["opt-a": "yes"])
+        XCTAssertEqual(poll.myVotes["opt-a"], "yes")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

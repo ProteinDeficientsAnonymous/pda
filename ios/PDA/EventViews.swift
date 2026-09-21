@@ -186,6 +186,7 @@ struct EventDetailView: View {
     @State private var detail: Event
     @State private var loadError: String?
     @State private var showEdit = false
+    @State private var showLogin = false
 
     init(event: Event) {
         self.event = event
@@ -222,6 +223,15 @@ struct EventDetailView: View {
                 Text(copy.when)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                if canShowEventPoll(detail, winningDatetime: nil) {
+                    EventPollView(
+                        eventId: detail.id,
+                        signedIn: session.user != nil,
+                        client: EventsClient(tokens: session.client.tokens),
+                        onSignIn: { showLogin = true }
+                    )
+                }
 
                 if let location = copy.location {
                     Text(location.lowercased())
@@ -352,6 +362,10 @@ struct EventDetailView: View {
                 Task { await refresh() }
             }
             .environment(session)
+        }
+        .sheet(isPresented: $showLogin) {
+            LoginView(client: session.client)
+                .environment(session)
         }
         .task { await refresh() }
     }
@@ -833,6 +847,91 @@ struct EventCommentsView: View {
             await load()
         } catch {
             self.error = "couldn't save that reaction"
+        }
+    }
+}
+
+struct EventPollView: View {
+    let eventId: String
+    let signedIn: Bool
+    var client: EventsClient
+    var onSignIn: () -> Void
+
+    @State private var poll: EventPoll?
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        if poll?.winningDatetime != nil {
+            EmptyView()
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(EventPollCopy.title)
+                .font(.headline)
+            if let poll {
+                ForEach(sortPollOptionsByVotes(poll.options)) { option in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(
+                            formatEventDateTime(
+                                start: option.datetime,
+                                end: nil,
+                                datetimeTbd: option.datetime == nil
+                            )
+                        )
+                        .font(.subheadline)
+                        Text("\(EventPollCopy.yes) \(option.yesCount) · \(EventPollCopy.maybe) \(option.maybeCount) · \(EventPollCopy.no) \(option.noCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if pollVoteChrome(signedIn: signedIn) == .vote {
+                            HStack {
+                                ForEach([EventPollCopy.yes, EventPollCopy.maybe, EventPollCopy.no], id: \.self) { choice in
+                                    Button(choice) { Task { await vote(option.id, choice) } }
+                                        .disabled(busy)
+                                        .fontWeight(poll.myVotes[option.id] == choice ? .bold : .regular)
+                                }
+                            }
+                        }
+                    }
+                }
+                if pollVoteChrome(signedIn: signedIn) == .login {
+                    Button(EventPollCopy.signIn, action: onSignIn)
+                }
+            } else if let error {
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView("loading poll…")
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            poll = try await client.poll(eventId: eventId)
+            error = nil
+        } catch {
+            self.error = EventPollCopy.loadError
+        }
+    }
+
+    private func vote(_ optionId: String, _ choice: String) async {
+        guard let poll else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            self.poll = try await client.votePoll(
+                eventId: eventId,
+                votes: mergedPollVotes(current: poll.myVotes, optionId: optionId, choice: choice)
+            )
+        } catch {
+            self.error = "couldn't update the poll — try again"
         }
     }
 }

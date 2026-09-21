@@ -127,6 +127,16 @@ enum EventCommentCopy {
     static let loadError = "couldn't load comments — try refreshing."
 }
 
+enum EventPollCopy {
+    static let title = "find a time"
+    static let respond = "respond to poll"
+    static let signIn = "sign in to vote"
+    static let yes = "yes"
+    static let maybe = "maybe"
+    static let no = "no"
+    static let loadError = "couldn't load the poll — try refreshing"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)
