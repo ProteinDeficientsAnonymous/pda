@@ -8,6 +8,7 @@ struct EventListView: View {
     @State private var lockBody = ""
     @State private var showLock = false
     @State private var showMyRsvps = false
+    @State private var showMyEvents = false
 
     var body: some View {
         NavigationStack {
@@ -47,7 +48,7 @@ struct EventListView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button(PublicRsvpCopy.myRsvpsTitle) { showMyRsvps = true }
+                    Button(PublicRsvpCopy.myRsvpsTitle) { openMyRsvps() }
                     Spacer()
                     Button("directory") { open(directoryChrome(for: session.user)) }
                     Spacer()
@@ -63,6 +64,10 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showMyRsvps) {
                 MyRsvpsView()
+            }
+            .sheet(isPresented: $showMyEvents) {
+                MyEventsView()
+                    .environment(session)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -92,6 +97,17 @@ struct EventListView: View {
             showLock = true
         case .open:
             break
+        }
+    }
+
+    private func openMyRsvps() {
+        switch myRsvpsDestination(user: session.user, hasGuestToken: RsvpTokenStore().load() != nil) {
+        case .login:
+            showLogin = true
+        case .guestRsvps:
+            showMyRsvps = true
+        case .myEvents:
+            showMyEvents = true
         }
     }
 }
@@ -487,6 +503,101 @@ struct MyRsvpsView: View {
         } catch {
             items = []
             message = "couldn't load rsvps — try again"
+        }
+    }
+}
+
+struct MyEventsView: View {
+    @Environment(AuthSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var filter: MyEventsFilter = .upcoming
+    @State private var active: [Event] = []
+    @State private var drafts: [Event] = []
+    @State private var cancelled: [Event] = []
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let error {
+                    ContentUnavailableView(error, systemImage: "exclamationmark.triangle")
+                } else {
+                    let userId = session.user?.id ?? ""
+                    let pool = filter == .drafts ? drafts : filter == .cancelled ? cancelled : active
+                    let items = myEvents(pool, userId: userId, filter: filter)
+                    let filters = MyEventsFilter.allCases.filter {
+                        !myEvents($0 == .drafts ? drafts : $0 == .cancelled ? cancelled : active, userId: userId, filter: $0).isEmpty
+                    }
+                    VStack {
+                        if filters.count > 1 {
+                            Picker("filter", selection: $filter) {
+                                ForEach(filters, id: \.self) { item in
+                                    Text(label(item)).tag(item)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.horizontal)
+                        }
+                        if items.isEmpty {
+                            ContentUnavailableView(empty(filter), systemImage: "leaf")
+                        } else {
+                            List(items) { event in
+                                NavigationLink(value: event) {
+                                    EventRow(event: event)
+                                }
+                            }
+                            .listStyle(.plain)
+                        }
+                    }
+                    .navigationDestination(for: Event.self) { event in
+                        EventDetailView(event: event)
+                    }
+                }
+            }
+            .navigationTitle(MyEventsCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+            .task { await load() }
+        }
+    }
+
+    private func label(_ filter: MyEventsFilter) -> String {
+        switch filter {
+        case .upcoming: MyEventsCopy.upcoming
+        case .hosting: MyEventsCopy.hosting
+        case .past: MyEventsCopy.past
+        case .drafts: MyEventsCopy.drafts
+        case .cancelled: MyEventsCopy.cancelled
+        }
+    }
+
+    private func empty(_ filter: MyEventsFilter) -> String {
+        switch filter {
+        case .upcoming: MyEventsCopy.emptyUpcoming
+        case .hosting: MyEventsCopy.emptyHosting
+        case .past: MyEventsCopy.emptyPast
+        case .drafts: MyEventsCopy.emptyDrafts
+        case .cancelled: MyEventsCopy.emptyCancelled
+        }
+    }
+
+    private func load() async {
+        var client = EventsClient()
+        client.tokens = session.client.tokens
+        do {
+            async let a = client.events()
+            async let d = client.events(status: "draft")
+            async let c = client.events(status: "cancelled")
+            active = try await a
+            drafts = try await d
+            cancelled = try await c
+            error = nil
+        } catch {
+            self.error = "couldn't load events — try refreshing"
         }
     }
 }

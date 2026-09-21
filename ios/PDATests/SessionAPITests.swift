@@ -370,6 +370,13 @@ final class SessionAPITests: XCTestCase {
         XCTAssertTrue(canSeeMemberEventDetails(member, event: official))
     }
 
+    func test_myRsvpsDestination_authedGoesToMyEvents() throws {
+        XCTAssertEqual(myRsvpsDestination(user: nil, hasGuestToken: false), .login)
+        XCTAssertEqual(myRsvpsDestination(user: nil, hasGuestToken: true), .guestRsvps)
+        XCTAssertEqual(myRsvpsDestination(user: try user(), hasGuestToken: true), .myEvents)
+        XCTAssertEqual(myRsvpsDestination(user: try user(), hasGuestToken: false), .myEvents)
+    }
+
     func test_publicRsvpCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             PublicRsvpCopy.title,

@@ -59,6 +59,7 @@ struct Event: Decodable, Hashable, Identifiable {
     let myRsvp: String
     let rsvpEnabled: Bool
     let isPast: Bool
+    let coHostIds: [String]
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -81,6 +82,7 @@ struct Event: Decodable, Hashable, Identifiable {
         case myRsvp = "my_rsvp"
         case rsvpEnabled = "rsvp_enabled"
         case isPast = "is_past"
+        case coHostIds = "co_host_ids"
     }
 
     init(from decoder: Decoder) throws {
@@ -114,6 +116,7 @@ struct Event: Decodable, Hashable, Identifiable {
         myRsvp = try c.decodeIfPresent(String.self, forKey: .myRsvp) ?? ""
         rsvpEnabled = try c.decodeIfPresent(Bool.self, forKey: .rsvpEnabled) ?? false
         isPast = try c.decodeIfPresent(Bool.self, forKey: .isPast) ?? false
+        coHostIds = try c.decodeIfPresent([String].self, forKey: .coHostIds) ?? []
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -283,6 +286,61 @@ func canPublicRsvp(_ event: Event) -> Bool {
         && !event.isPast
 }
 
+func isHosting(_ event: Event, userId: String) -> Bool {
+    event.coHostIds.contains(userId)
+}
+
+func isMyEvent(_ event: Event, userId: String) -> Bool {
+    isHosting(event, userId: userId) || event.myRsvp == "attending" || event.myRsvp == "maybe"
+}
+
+enum MyEventsFilter: String, CaseIterable {
+    case upcoming, hosting, past, drafts, cancelled
+}
+
+func myEvents(_ events: [Event], userId: String, filter: MyEventsFilter) -> [Event] {
+    switch filter {
+    case .upcoming:
+        return events.filter { isMyEvent($0, userId: userId) && !$0.isPast && $0.status == "active" }
+            .sorted { ($0.startDatetime ?? .distantFuture) < ($1.startDatetime ?? .distantFuture) }
+    case .hosting:
+        return myEvents(events, userId: userId, filter: .upcoming).filter { isHosting($0, userId: userId) }
+    case .past:
+        return events.filter { isMyEvent($0, userId: userId) && $0.isPast && $0.status == "active" }
+            .sorted { ($0.startDatetime ?? .distantPast) > ($1.startDatetime ?? .distantPast) }
+    case .drafts:
+        return events.filter { $0.status == "draft" }
+            .sorted { ($0.startDatetime ?? .distantPast) > ($1.startDatetime ?? .distantPast) }
+    case .cancelled:
+        return events.filter { $0.status == "cancelled" }
+            .sorted { ($0.startDatetime ?? .distantPast) > ($1.startDatetime ?? .distantPast) }
+    }
+}
+
+enum MyEventsCopy {
+    static let title = "my events"
+    static let upcoming = "upcoming"
+    static let hosting = "hosting"
+    static let past = "past"
+    static let drafts = "drafts"
+    static let cancelled = "cancelled"
+    static let emptyUpcoming = "nothing coming up — events you're hosting or going to will show up here"
+    static let emptyHosting = "nothing you're hosting right now"
+    static let emptyPast = "no past events yet"
+    static let emptyDrafts = "no drafts saved — start one and we'll keep it here until you publish"
+    static let emptyCancelled = "no cancelled events"
+}
+
+enum MyRsvpsDestination: Equatable {
+    case login, guestRsvps, myEvents
+}
+
+func myRsvpsDestination(user: SessionUser?, hasGuestToken: Bool) -> MyRsvpsDestination {
+    if user != nil { return .myEvents }
+    if hasGuestToken { return .guestRsvps }
+    return .login
+}
+
 enum PublicRsvpPhoneStatus: String, Decodable, Equatable {
     case member
     case nonMember = "non_member"
@@ -408,8 +466,12 @@ private func uniqueNonEmpty(_ names: [String]) -> [String] {
     }
 }
 
-func eventsListURL(base: URL) -> URL {
-    URL(string: "/api/community/events/", relativeTo: base)!.absoluteURL
+func eventsListURL(base: URL, status: String? = nil) -> URL {
+    let url = URL(string: "/api/community/events/", relativeTo: base)!.absoluteURL
+    guard let status else { return url }
+    var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    comps.queryItems = [URLQueryItem(name: "status", value: status)]
+    return comps.url!
 }
 
 func eventDetailURL(base: URL, id: String) -> URL {
@@ -437,8 +499,8 @@ struct EventsClient {
     var session: URLSession = .shared
     var tokens: (any TokenStore)?
 
-    func events() async throws -> [Event] {
-        try await fetch(eventsListURL(base: baseURL))
+    func events(status: String? = nil) async throws -> [Event] {
+        try await fetch(eventsListURL(base: baseURL, status: status))
     }
 
     func event(id: String) async throws -> Event {

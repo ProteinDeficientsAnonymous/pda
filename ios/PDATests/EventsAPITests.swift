@@ -196,6 +196,59 @@ final class EventsAPITests: XCTestCase {
         """)))
     }
 
+    func test_isMyEvent_hostingOrAttendingOrMaybe() throws {
+        let host = try Event.decodeJSON(#"{ "id": "h", "title": "h", "co_host_ids": ["user-1"] }"#)
+        let going = try Event.decodeJSON(#"{ "id": "g", "title": "g", "my_rsvp": "attending" }"#)
+        let maybe = try Event.decodeJSON(#"{ "id": "m", "title": "m", "my_rsvp": "maybe" }"#)
+        let other = try Event.decodeJSON(#"{ "id": "o", "title": "o", "my_rsvp": "cant_go" }"#)
+        XCTAssertTrue(isHosting(host, userId: "user-1"))
+        XCTAssertFalse(isHosting(going, userId: "user-1"))
+        XCTAssertTrue(isMyEvent(host, userId: "user-1"))
+        XCTAssertTrue(isMyEvent(going, userId: "user-1"))
+        XCTAssertTrue(isMyEvent(maybe, userId: "user-1"))
+        XCTAssertFalse(isMyEvent(other, userId: "user-1"))
+        XCTAssertFalse(isMyEvent(host, userId: "user-2"))
+    }
+
+    func test_myEvents_filtersUpcomingHostingPastDraftsCancelled() throws {
+        let upcomingHost = try Event.decodeJSON("""
+        {"id":"uh","title":"uh","co_host_ids":["me"],"is_past":false,"status":"active","start_datetime":"2026-10-01T12:00:00Z"}
+        """)
+        let upcomingGoing = try Event.decodeJSON("""
+        {"id":"ug","title":"ug","my_rsvp":"attending","is_past":false,"status":"active","start_datetime":"2026-09-01T12:00:00Z"}
+        """)
+        let pastGoing = try Event.decodeJSON("""
+        {"id":"pg","title":"pg","my_rsvp":"attending","is_past":true,"status":"active","start_datetime":"2026-01-01T12:00:00Z"}
+        """)
+        let stranger = try Event.decodeJSON("""
+        {"id":"xx","title":"xx","is_past":false,"status":"active"}
+        """)
+        let draft = try Event.decodeJSON(#"{ "id": "d", "title": "d", "status": "draft" }"#)
+        let cancelled = try Event.decodeJSON(#"{ "id": "c", "title": "c", "status": "cancelled" }"#)
+        let all = [upcomingHost, upcomingGoing, pastGoing, stranger, draft, cancelled]
+        XCTAssertEqual(myEvents(all, userId: "me", filter: .upcoming).map(\.id), ["ug", "uh"])
+        XCTAssertEqual(myEvents(all, userId: "me", filter: .hosting).map(\.id), ["uh"])
+        XCTAssertEqual(myEvents(all, userId: "me", filter: .past).map(\.id), ["pg"])
+        XCTAssertEqual(myEvents([draft], userId: "me", filter: .drafts).map(\.id), ["d"])
+        XCTAssertEqual(myEvents([cancelled], userId: "me", filter: .cancelled).map(\.id), ["c"])
+    }
+
+    func test_myEventsCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            MyEventsCopy.title,
+            MyEventsCopy.upcoming,
+            MyEventsCopy.hosting,
+            MyEventsCopy.past,
+            MyEventsCopy.drafts,
+            MyEventsCopy.cancelled,
+            MyEventsCopy.emptyUpcoming,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
     func test_eventURLs_keepTrailingSlash() {
         let base = URL(string: "https://staging-pda.up.railway.app")!
         XCTAssertEqual(
@@ -205,6 +258,10 @@ final class EventsAPITests: XCTestCase {
         XCTAssertEqual(
             eventDetailURL(base: base, id: "monthly-meetup").absoluteString,
             "https://staging-pda.up.railway.app/api/community/events/monthly-meetup/"
+        )
+        XCTAssertEqual(
+            eventsListURL(base: base, status: "draft").absoluteString,
+            "https://staging-pda.up.railway.app/api/community/events/?status=draft"
         )
     }
 
