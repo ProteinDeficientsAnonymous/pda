@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 struct EventListView: View {
@@ -11,6 +12,7 @@ struct EventListView: View {
     @State private var showMyEvents = false
     @State private var showAddEvent = false
     @State private var showProfile = false
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +47,9 @@ struct EventListView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
                         Button(ProfileCopy.title) { showProfile = true }
+                        if canShowSettings(user: session.user) {
+                            Button(SettingsCopy.title) { showSettings = true }
+                        }
                         Button("log out") { Task { await session.logout() } }
                     } else {
                         Button("sign in") { showLogin = true }
@@ -82,6 +87,10 @@ struct EventListView: View {
                 if let user = session.user {
                     ProfileView(userId: user.id, client: EventsClient(tokens: session.client.tokens))
                 }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+                    .environment(session)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -218,6 +227,164 @@ struct ProfileView: View {
             error = nil
         } catch {
             self.error = "couldn't load your profile — try refreshing"
+        }
+    }
+}
+
+struct SettingsView: View {
+    @Environment(AuthSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var photoItem: PhotosPickerItem?
+    @State private var error: String?
+    @State private var editingBirthday = false
+    @State private var month = 1
+    @State private var day = 1
+    @State private var year: Int?
+
+    private static let months = [
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+    ]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("profile") {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Text(
+                            session.user?.profilePhotoUrl.isEmpty == false
+                                ? SettingsCopy.changePhoto
+                                : SettingsCopy.uploadPhoto
+                        )
+                    }
+                    birthdaySection
+                }
+                Section(SettingsCopy.privacy) {
+                    Toggle(SettingsCopy.showPhone, isOn: boolPatch("show_phone") { $0.showPhone })
+                    Toggle(SettingsCopy.showEmail, isOn: boolPatch("show_email") { $0.showEmail })
+                    Toggle(SettingsCopy.showBirthday, isOn: boolPatch("show_birthday") { $0.showBirthday })
+                    Toggle(SettingsCopy.showLastName, isOn: Binding(
+                        get: { !(session.user?.hideLastName ?? false) },
+                        set: { showing in Task { await patch(["hide_last_name": !showing]) } }
+                    ))
+                }
+            }
+            .navigationTitle(SettingsCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+            .onChange(of: photoItem) { _, item in
+                guard let item else { return }
+                Task { await upload(item) }
+            }
+            .alert("couldn't save", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("ok", role: .cancel) { error = nil }
+            } message: {
+                Text(error ?? "")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var birthdaySection: some View {
+        if editingBirthday {
+            Picker("month", selection: $month) {
+                ForEach(1 ... 12, id: \.self) { i in
+                    Text(Self.months[i - 1]).tag(i)
+                }
+            }
+            Picker("day", selection: $day) {
+                ForEach(1 ... daysInMonth, id: \.self) { i in
+                    Text("\(i)").tag(i)
+                }
+            }
+            .onChange(of: month) { _, _ in day = min(day, daysInMonth) }
+            Picker("year", selection: Binding(
+                get: { year ?? 0 },
+                set: { year = $0 == 0 ? nil : $0 }
+            )) {
+                Text(SettingsCopy.preferNotToSay).tag(0)
+                ForEach((Calendar.current.component(.year, from: Date()) - 119)...Calendar.current.component(.year, from: Date()), id: \.self) { y in
+                    Text("\(y)").tag(y)
+                }
+            }
+            HStack {
+                if session.user?.birthday != nil {
+                    Button(SettingsCopy.clear) { Task { await saveBirthday(nil) } }
+                }
+                Spacer()
+                Button("cancel") { editingBirthday = false }
+                Button(SettingsCopy.save) { Task { await saveBirthday(Birthday(month: month, day: day, year: year)) } }
+            }
+        } else {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(SettingsCopy.birthday).font(.caption).foregroundStyle(.secondary)
+                    Text(session.user?.birthday.map(formatBirthday) ?? SettingsCopy.addBirthday)
+                }
+                Spacer()
+                Button("edit") { startBirthday() }
+            }
+        }
+    }
+
+    private var daysInMonth: Int {
+        Calendar(identifier: .gregorian).range(of: .day, in: .month, for:
+            Calendar(identifier: .gregorian).date(from: DateComponents(year: 2000, month: month, day: 1))!
+        )?.count ?? 31
+    }
+
+    private func boolPatch(_ key: String, _ read: @escaping (SessionUser) -> Bool) -> Binding<Bool> {
+        Binding(
+            get: { session.user.map(read) ?? false },
+            set: { value in Task { await patch([key: value]) } }
+        )
+    }
+
+    private func startBirthday() {
+        month = session.user?.birthday?.month ?? 1
+        day = session.user?.birthday?.day ?? 1
+        year = session.user?.birthday?.year
+        editingBirthday = true
+    }
+
+    private func saveBirthday(_ birthday: Birthday?) async {
+        if let birthday {
+            var body: [String: Any] = ["month": birthday.month, "day": birthday.day]
+            body["year"] = birthday.year ?? NSNull()
+            await patch(["birthday": body])
+        } else {
+            await patch(["birthday": NSNull()])
+        }
+        editingBirthday = false
+    }
+
+    private func patch(_ body: [String: Any]) async {
+        do {
+            session.signedIn(try await session.client.updateProfile(body))
+            error = nil
+        } catch {
+            self.error = "couldn't save — try again"
+        }
+    }
+
+    private func upload(_ item: PhotosPickerItem) async {
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else { return }
+            if data.count > 5 * 1024 * 1024 {
+                error = "photo must be under 5 mb"
+                return
+            }
+            session.signedIn(try await session.client.uploadPhoto(data, mimeType: "image/jpeg", filename: "avatar.jpg"))
+            error = nil
+        } catch {
+            self.error = "couldn't upload photo — try again"
         }
     }
 }

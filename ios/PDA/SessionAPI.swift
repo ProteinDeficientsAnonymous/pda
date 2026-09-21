@@ -5,6 +5,24 @@ enum PhoneStatus: String, Decodable, Equatable {
     case member, pending, unknown
 }
 
+struct Birthday: Decodable, Equatable {
+    let month: Int
+    let day: Int
+    let year: Int?
+}
+
+func formatBirthday(_ birthday: Birthday) -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.locale = Locale(identifier: "en_US_POSIX")
+    let date = calendar.date(from: DateComponents(year: 2000, month: birthday.month, day: birthday.day))!
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "MMMM d"
+    let monthDay = formatter.string(from: date).lowercased()
+    guard let year = birthday.year else { return monthDay }
+    return "\(monthDay), \(year)"
+}
+
 struct SessionUser: Decodable, Equatable {
     let id: String
     let phoneNumber: String
@@ -19,6 +37,12 @@ struct SessionUser: Decodable, Equatable {
     let needsSmsConsent: Bool
     let needsContactPrivacyConsent: Bool
     let permissions: [String]
+    let birthday: Birthday?
+    let showPhone: Bool
+    let showEmail: Bool
+    let showBirthday: Bool
+    let hideLastName: Bool
+    let profilePhotoUrl: String
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -34,6 +58,12 @@ struct SessionUser: Decodable, Equatable {
         case needsSmsConsent = "needs_sms_consent"
         case needsContactPrivacyConsent = "needs_contact_privacy_consent"
         case permissions
+        case birthday
+        case showPhone = "show_phone"
+        case showEmail = "show_email"
+        case showBirthday = "show_birthday"
+        case hideLastName = "hide_last_name"
+        case profilePhotoUrl = "profile_photo_url"
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +81,12 @@ struct SessionUser: Decodable, Equatable {
         needsSmsConsent = try c.decodeIfPresent(Bool.self, forKey: .needsSmsConsent) ?? false
         needsContactPrivacyConsent = try c.decodeIfPresent(Bool.self, forKey: .needsContactPrivacyConsent) ?? false
         permissions = try c.decodeIfPresent([String].self, forKey: .permissions) ?? []
+        birthday = try c.decodeIfPresent(Birthday.self, forKey: .birthday)
+        showPhone = try c.decodeIfPresent(Bool.self, forKey: .showPhone) ?? false
+        showEmail = try c.decodeIfPresent(Bool.self, forKey: .showEmail) ?? false
+        showBirthday = try c.decodeIfPresent(Bool.self, forKey: .showBirthday) ?? false
+        hideLastName = try c.decodeIfPresent(Bool.self, forKey: .hideLastName) ?? false
+        profilePhotoUrl = try c.decodeIfPresent(String.self, forKey: .profilePhotoUrl) ?? ""
     }
 }
 
@@ -197,6 +233,22 @@ enum FlagEventCopy {
 enum ProfileCopy {
     static let title = "profile"
     static let bio = "bio"
+}
+
+enum SettingsCopy {
+    static let title = "settings"
+    static let privacy = "privacy"
+    static let showPhone = "show phone on my profile"
+    static let showEmail = "show email on my profile"
+    static let showBirthday = "show birthday on my profile"
+    static let showLastName = "show my last name to other members"
+    static let birthday = "birthday"
+    static let uploadPhoto = "upload photo"
+    static let changePhoto = "change photo"
+    static let addBirthday = "add your birthday"
+    static let save = "save"
+    static let clear = "clear"
+    static let preferNotToSay = "prefer not to say"
 }
 
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
@@ -356,7 +408,15 @@ struct SessionClient {
     }
 
     func setEmail(_ email: String) async throws -> SessionUser {
-        try await authorizedJSON("/api/auth/me/", method: "PATCH", body: ["email": email])
+        try await updateProfile(["email": email])
+    }
+
+    func updateProfile(_ body: [String: Any]) async throws -> SessionUser {
+        try await authorizedJSON("/api/auth/me/", method: "PATCH", body: body)
+    }
+
+    func uploadPhoto(_ data: Data, mimeType: String, filename: String) async throws -> SessionUser {
+        try await authorizedMultipart("/api/auth/me/photo/", data: data, mimeType: mimeType, filename: filename)
     }
 
     func logout() async throws {
@@ -402,6 +462,43 @@ struct SessionClient {
         }
         try throwIfFailed(data, status)
         return try Event.decoder.decode(SessionUser.self, from: data)
+    }
+
+    private func authorizedMultipart(
+        _ path: String,
+        data: Data,
+        mimeType: String,
+        filename: String,
+        retrying: Bool = false
+    ) async throws -> SessionUser {
+        let boundary = "pda-\(UUID().uuidString)"
+        var req = makeRequest(path, method: "POST")
+        if let token = try tokens.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        var body = Data()
+        func ascii(_ s: String) { body.append(Data(s.utf8)) }
+        ascii("--\(boundary)\r\n")
+        ascii("Content-Disposition: form-data; name=\"photo\"; filename=\"\(filename)\"\r\n")
+        ascii("Content-Type: \(mimeType)\r\n\r\n")
+        body.append(data)
+        ascii("\r\n--\(boundary)--\r\n")
+        req.httpBody = body
+        let (responseData, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401, !retrying {
+            try await refreshAccess()
+            return try await authorizedMultipart(
+                path,
+                data: data,
+                mimeType: mimeType,
+                filename: filename,
+                retrying: true
+            )
+        }
+        try throwIfFailed(responseData, status)
+        return try Event.decoder.decode(SessionUser.self, from: responseData)
     }
 
     // ponytail: cookie-only refresh; SPA never puts refresh in JSON.

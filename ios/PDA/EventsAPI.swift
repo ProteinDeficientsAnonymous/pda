@@ -413,6 +413,10 @@ func canShowProfile(user: SessionUser?) -> Bool {
     user != nil
 }
 
+func canShowSettings(user: SessionUser?) -> Bool {
+    user != nil
+}
+
 func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
 }

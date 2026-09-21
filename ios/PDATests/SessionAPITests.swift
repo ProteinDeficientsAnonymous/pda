@@ -1170,6 +1170,129 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(profile.pronouns, "she")
     }
 
+    func test_canShowSettings_signedIn() throws {
+        XCTAssertTrue(canShowSettings(user: try user()))
+        XCTAssertTrue(canShowSettings(user: try user(isMember: false)))
+        XCTAssertFalse(canShowSettings(user: nil))
+    }
+
+    func test_settingsCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            SettingsCopy.title,
+            SettingsCopy.privacy,
+            SettingsCopy.showPhone,
+            SettingsCopy.showEmail,
+            SettingsCopy.showBirthday,
+            SettingsCopy.showLastName,
+            SettingsCopy.birthday,
+            SettingsCopy.uploadPhoto,
+            SettingsCopy.changePhoto,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_me_mapsBirthdayPrivacyAndPhoto() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { _ in
+            MockHTTP.json(200, [
+                "id": "user-1",
+                "phone_number": "+15555550100",
+                "full_name": "ada lovelace",
+                "birthday": ["month": 6, "day": 15, "year": 1990],
+                "show_phone": true,
+                "show_email": false,
+                "show_birthday": true,
+                "hide_last_name": true,
+                "profile_photo_url": "https://pda.test/a.jpg",
+            ])
+        }
+        let mapped = try await makeClient().me()
+        XCTAssertEqual(mapped.birthday, Birthday(month: 6, day: 15, year: 1990))
+        XCTAssertTrue(mapped.showPhone)
+        XCTAssertFalse(mapped.showEmail)
+        XCTAssertTrue(mapped.showBirthday)
+        XCTAssertTrue(mapped.hideLastName)
+        XCTAssertEqual(mapped.profilePhotoUrl, "https://pda.test/a.jpg")
+    }
+
+    func test_formatBirthday_isLowercase() {
+        XCTAssertEqual(formatBirthday(Birthday(month: 6, day: 15, year: 1990)), "june 15, 1990")
+        XCTAssertEqual(formatBirthday(Birthday(month: 6, day: 15, year: nil)), "june 15")
+    }
+
+    func test_updateProfile_patchesPrivacyTogglesWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/auth/me/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["show_phone"] as? Bool, false)
+            XCTAssertEqual(body["show_email"] as? Bool, true)
+            XCTAssertEqual(body["show_birthday"] as? Bool, false)
+            XCTAssertEqual(body["hide_last_name"] as? Bool, true)
+            return MockHTTP.json(200, Self.mePayload)
+        }
+        _ = try await makeClient().updateProfile([
+            "show_phone": false,
+            "show_email": true,
+            "show_birthday": false,
+            "hide_last_name": true,
+        ])
+    }
+
+    func test_updateProfile_patchesBirthdayWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/auth/me/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            let birthday = try XCTUnwrap(body["birthday"] as? [String: Any])
+            XCTAssertEqual(birthday["month"] as? Int, 6)
+            XCTAssertEqual(birthday["day"] as? Int, 15)
+            XCTAssertEqual(birthday["year"] as? Int, 1990)
+            return MockHTTP.json(200, Self.mePayload)
+        }
+        _ = try await makeClient().updateProfile([
+            "birthday": ["month": 6, "day": 15, "year": 1990],
+        ])
+    }
+
+    func test_updateProfile_clearsBirthdayWithNull() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/auth/me/")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertTrue(body["birthday"] is NSNull)
+            return MockHTTP.json(200, Self.mePayload)
+        }
+        _ = try await makeClient().updateProfile(["birthday": NSNull()])
+    }
+
+    func test_uploadPhoto_postsMultipartWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/auth/me/photo/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let type = request.value(forHTTPHeaderField: "Content-Type") ?? ""
+            XCTAssertTrue(type.contains("multipart/form-data"), type)
+            let raw = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? ""
+            XCTAssertTrue(raw.contains("name=\"photo\""), raw)
+            return MockHTTP.json(200, Self.mePayload)
+        }
+        _ = try await makeClient().uploadPhoto(
+            Data("jpeg".utf8),
+            mimeType: "image/jpeg",
+            filename: "avatar.jpg"
+        )
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
