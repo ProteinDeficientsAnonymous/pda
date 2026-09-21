@@ -154,10 +154,12 @@ struct GuestEventCopy: Equatable {
 
     static func make(
         _ event: Event,
+        user: SessionUser? = nil,
         timeZone: TimeZone = .current,
         locale: Locale = .current
     ) -> GuestEventCopy {
-        GuestEventCopy(
+        let memberDetails = canSeeMemberEventDetails(user, event: event)
+        return GuestEventCopy(
             title: event.title,
             when: formatEventDateTime(
                 start: event.startDatetime,
@@ -171,10 +173,16 @@ struct GuestEventCopy: Equatable {
             badge: eventBadgeLabel(status: event.status, eventType: event.eventType, visibility: event.visibility),
             photoURL: event.photoURL,
             attending: event.attendingCount > 0 ? "\(event.attendingCount) going" : nil,
-            moreHintTitle: "want to see more?",
-            moreHintBody: "location, rsvp, and organizer details are shown once you sign in"
+            moreHintTitle: memberDetails ? "" : "want to see more?",
+            moreHintBody: memberDetails ? "" : "location, rsvp, and organizer details are shown once you sign in"
         )
     }
+}
+
+func canSeeMemberEventDetails(_ user: SessionUser?, event: Event) -> Bool {
+    guard let user else { return false }
+    if user.isMember { return true }
+    return event.eventType == "official" || event.eventType == "club"
 }
 
 func eventsListURL(base: URL) -> URL {

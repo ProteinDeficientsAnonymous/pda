@@ -4,6 +4,9 @@ struct EventListView: View {
     @Environment(AuthSession.self) private var session
     @State private var model = EventListModel()
     @State private var showLogin = false
+    @State private var lockTitle = ""
+    @State private var lockBody = ""
+    @State private var showLock = false
 
     var body: some View {
         NavigationStack {
@@ -42,10 +45,18 @@ struct EventListView: View {
                         Button("sign in") { showLogin = true }
                     }
                 }
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button("directory") { open(directoryChrome(for: session.user)) }
+                    Spacer()
+                    Button("add event") { open(addEventChrome(for: session.user)) }
+                }
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
                     .environment(session)
+            }
+            .sheet(isPresented: $showLock) {
+                MemberLockSheet(title: lockTitle, message: lockBody)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -60,6 +71,44 @@ struct EventListView: View {
             }
             .task { await model.load() }
         }
+    }
+
+    private func open(_ chrome: MemberChrome) {
+        switch chrome {
+        case .login:
+            showLogin = true
+        case let .locked(title, body):
+            lockTitle = title
+            lockBody = body
+            showLock = true
+        case .open:
+            break
+        }
+    }
+}
+
+struct MemberLockSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    let message: String
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title).font(.title2)
+                Text(message).font(.body).foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 
@@ -87,6 +136,7 @@ struct EventRow: View {
 }
 
 struct EventDetailView: View {
+    @Environment(AuthSession.self) private var session
     let event: Event
     @State private var detail: Event
     @State private var loadError: String?
@@ -97,7 +147,7 @@ struct EventDetailView: View {
     }
 
     var body: some View {
-        let copy = GuestEventCopy.make(detail)
+        let copy = GuestEventCopy.make(detail, user: session.user)
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if let url = copy.photoURL {
@@ -160,16 +210,18 @@ struct EventDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(copy.moreHintTitle)
-                        .font(.headline)
-                    Text(copy.moreHintBody)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                if !copy.moreHintTitle.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(copy.moreHintTitle)
+                            .font(.headline)
+                        Text(copy.moreHintBody)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)

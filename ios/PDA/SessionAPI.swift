@@ -70,6 +70,32 @@ func authGate(for user: SessionUser?) -> AuthGate? {
     return nil
 }
 
+enum MemberChrome: Equatable {
+    case login
+    case locked(title: String, body: String)
+    case open
+}
+
+enum MemberLockCopy {
+    static let directoryTitle = "members only"
+    static let directoryBody = "the directory is for vetted members. you'll see everyone here once you're in."
+    static let addEventTitle = "members only"
+    static let addEventBody = "adding events is for vetted members. official and club events stay open to you."
+}
+
+func directoryChrome(for user: SessionUser?) -> MemberChrome {
+    memberChrome(for: user, title: MemberLockCopy.directoryTitle, body: MemberLockCopy.directoryBody)
+}
+
+func addEventChrome(for user: SessionUser?) -> MemberChrome {
+    memberChrome(for: user, title: MemberLockCopy.addEventTitle, body: MemberLockCopy.addEventBody)
+}
+
+func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
+    guard let user else { return .login }
+    return user.isMember ? .open : .locked(title: title, body: body)
+}
+
 enum GateCopy {
     static let newPasswordTitle = "set a new password"
     static let onboardingTitle = "welcome"

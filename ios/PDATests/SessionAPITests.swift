@@ -315,9 +315,85 @@ final class SessionAPITests: XCTestCase {
         }
     }
 
+    func test_directoryChrome_tentativeExplainsWithoutLoginBounce() throws {
+        XCTAssertEqual(directoryChrome(for: nil), .login)
+        XCTAssertEqual(directoryChrome(for: try user()), .open)
+        let tentative = try user(isMember: false)
+        XCTAssertEqual(
+            directoryChrome(for: tentative),
+            .locked(title: MemberLockCopy.directoryTitle, body: MemberLockCopy.directoryBody)
+        )
+        if case .login = directoryChrome(for: tentative) {
+            XCTFail("tentative directory must explain, not bounce to login")
+        }
+    }
+
+    func test_addEventChrome_tentativeExplainsWithoutLoginBounce() throws {
+        XCTAssertEqual(addEventChrome(for: nil), .login)
+        XCTAssertEqual(addEventChrome(for: try user()), .open)
+        let tentative = try user(isMember: false)
+        XCTAssertEqual(
+            addEventChrome(for: tentative),
+            .locked(title: MemberLockCopy.addEventTitle, body: MemberLockCopy.addEventBody)
+        )
+        if case .login = addEventChrome(for: tentative) {
+            XCTFail("tentative add-event must explain, not bounce to login")
+        }
+    }
+
+    func test_memberLockCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            MemberLockCopy.directoryTitle,
+            MemberLockCopy.directoryBody,
+            MemberLockCopy.addEventTitle,
+            MemberLockCopy.addEventBody,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+            XCTAssertFalse(text.contains("sign in"), text)
+        }
+    }
+
+    func test_canSeeMemberEventDetails_tentativeOnlyOfficialAndClub() throws {
+        let tentative = try user(isMember: false)
+        let member = try user()
+        let official = try Event.decodeJSON(#"{ "id": "o", "title": "o", "event_type": "official" }"#)
+        let club = try Event.decodeJSON(#"{ "id": "c", "title": "c", "event_type": "club" }"#)
+        let community = try Event.decodeJSON(#"{ "id": "m", "title": "m", "event_type": "community" }"#)
+
+        XCTAssertFalse(canSeeMemberEventDetails(nil, event: official))
+        XCTAssertFalse(canSeeMemberEventDetails(tentative, event: community))
+        XCTAssertTrue(canSeeMemberEventDetails(tentative, event: official))
+        XCTAssertTrue(canSeeMemberEventDetails(tentative, event: club))
+        XCTAssertTrue(canSeeMemberEventDetails(member, event: community))
+        XCTAssertTrue(canSeeMemberEventDetails(member, event: official))
+    }
+
+    func test_eventCopy_tentativeCommunityLooksLoggedOut_officialDoesNot() throws {
+        let tentative = try user(isMember: false)
+        let member = try user()
+        let community = try Event.decodeJSON(#"{ "id": "m", "title": "potluck", "event_type": "community" }"#)
+        let official = try Event.decodeJSON(#"{ "id": "o", "title": "meetup", "event_type": "official" }"#)
+
+        let guestCommunity = GuestEventCopy.make(community)
+        let tentativeCommunity = GuestEventCopy.make(community, user: tentative)
+        XCTAssertEqual(tentativeCommunity.moreHintTitle, guestCommunity.moreHintTitle)
+        XCTAssertEqual(tentativeCommunity.moreHintBody, guestCommunity.moreHintBody)
+
+        let tentativeOfficial = GuestEventCopy.make(official, user: tentative)
+        XCTAssertEqual(tentativeOfficial.moreHintTitle, "")
+        XCTAssertEqual(tentativeOfficial.moreHintBody, "")
+
+        let memberCommunity = GuestEventCopy.make(community, user: member)
+        XCTAssertEqual(memberCommunity.moreHintTitle, "")
+        XCTAssertEqual(memberCommunity.moreHintBody, "")
+    }
+
     private func user(
         firstName: String = "ada",
         email: String = "ada@pda.test",
+        isMember: Bool = true,
         needsOnboarding: Bool = false,
         needsPasswordReset: Bool = false,
         needsGuidelinesConsent: Bool = false,
@@ -327,6 +403,7 @@ final class SessionAPITests: XCTestCase {
         var payload = Self.mePayload
         payload["first_name"] = firstName
         payload["email"] = email
+        payload["is_member"] = isMember
         payload["needs_onboarding"] = needsOnboarding
         payload["needs_password_reset"] = needsPasswordReset
         payload["needs_guidelines_consent"] = needsGuidelinesConsent
