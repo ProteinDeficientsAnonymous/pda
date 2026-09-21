@@ -1028,6 +1028,76 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(event.guests.first?.status, "maybe")
     }
 
+    func test_canShowCheckInReport_hostWhenPastAndFlagOn() throws {
+        let pastHosted = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "is_past": true, "co_host_ids": ["user-1"] }"#
+        )
+        let upcoming = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "co_host_ids": ["user-1"] }"#
+        )
+        let other = try Event.decodeJSON(
+            #"{ "id": "o", "title": "o", "is_past": true, "co_host_ids": ["user-2"] }"#
+        )
+        let member = try user()
+        XCTAssertTrue(canShowCheckInReport(pastHosted, user: member, flagOn: true))
+        XCTAssertFalse(canShowCheckInReport(pastHosted, user: member, flagOn: false))
+        XCTAssertFalse(canShowCheckInReport(pastHosted, user: nil, flagOn: true))
+        XCTAssertFalse(canShowCheckInReport(upcoming, user: member, flagOn: true))
+        XCTAssertFalse(canShowCheckInReport(other, user: member, flagOn: true))
+    }
+
+    func test_checkInReportCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [CheckInReportCopy.title, CheckInReportCopy.attended]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_featureFlags_mapsHostAttendanceReport() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/feature-flags/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, ["flags": ["host_attendance_report": true]])
+        }
+        let flags = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).featureFlags()
+        XCTAssertEqual(flags["host_attendance_report"], true)
+    }
+
+    func test_getCheckInReport_getsCountsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/report/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "attended_count": 1,
+                "no_show_count": 0,
+                "didnt_go_count": 0,
+                "canceled_count": 0,
+                "unmarked_count": 0,
+                "attended": [["user_id": "u-2", "name": "ada"]],
+                "no_shows": [],
+                "didnt_go": [],
+                "canceled": [],
+                "unmarked": [],
+            ])
+        }
+        let report = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).checkInReport(eventId: "evt-1")
+        XCTAssertEqual(report.attendedCount, 1)
+        XCTAssertEqual(report.attended.first?.name, "ada")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

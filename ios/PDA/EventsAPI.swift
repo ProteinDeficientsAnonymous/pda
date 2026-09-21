@@ -400,12 +400,67 @@ func canShowManageRsvps(_ event: Event, user: SessionUser?) -> Bool {
     return isHosting(event, userId: user.id)
 }
 
+func canShowCheckInReport(_ event: Event, user: SessionUser?, flagOn: Bool) -> Bool {
+    guard flagOn, let user, event.isPast else { return false }
+    return isHosting(event, userId: user.id)
+}
+
 func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
 }
 
 func eventGuestRsvpURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/rsvp/", relativeTo: base)!.absoluteURL
+}
+
+func featureFlagsURL(base: URL) -> URL {
+    URL(string: "/api/community/feature-flags/", relativeTo: base)!.absoluteURL
+}
+
+func eventCheckInReportURL(base: URL, eventId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/report/", relativeTo: base)!.absoluteURL
+}
+
+struct CheckInReportPerson: Decodable, Hashable {
+    let name: String
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+    }
+
+    enum CodingKeys: String, CodingKey { case name }
+}
+
+struct CheckInReport: Decodable {
+    let attendedCount: Int
+    let attended: [CheckInReportPerson]
+    let noShows: [CheckInReportPerson]
+    let didntGo: [CheckInReportPerson]
+    let canceled: [CheckInReportPerson]
+    let unmarked: [CheckInReportPerson]
+
+    enum CodingKeys: String, CodingKey {
+        case attendedCount = "attended_count"
+        case attended
+        case noShows = "no_shows"
+        case didntGo = "didnt_go"
+        case canceled, unmarked
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        attendedCount = try c.decodeIfPresent(Int.self, forKey: .attendedCount) ?? 0
+        attended = try c.decodeIfPresent([CheckInReportPerson].self, forKey: .attended) ?? []
+        noShows = try c.decodeIfPresent([CheckInReportPerson].self, forKey: .noShows) ?? []
+        didntGo = try c.decodeIfPresent([CheckInReportPerson].self, forKey: .didntGo) ?? []
+        canceled = try c.decodeIfPresent([CheckInReportPerson].self, forKey: .canceled) ?? []
+        unmarked = try c.decodeIfPresent([CheckInReportPerson].self, forKey: .unmarked) ?? []
+    }
+}
+
+struct FeatureFlagsOut: Decodable {
+    let flags: [String: Bool]
 }
 
 struct MemberHit: Decodable, Hashable, Identifiable {
@@ -915,6 +970,15 @@ struct EventsClient {
             url: eventGuestRsvpURL(base: baseURL, eventId: eventId, userId: userId),
             body: ["status": status]
         )
+    }
+
+    func featureFlags() async throws -> [String: Bool] {
+        let out: FeatureFlagsOut = try await sendJSON("GET", url: featureFlagsURL(base: baseURL))
+        return out.flags
+    }
+
+    func checkInReport(eventId: String) async throws -> CheckInReport {
+        try await sendJSON("GET", url: eventCheckInReportURL(base: baseURL, eventId: eventId))
     }
 
     func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {

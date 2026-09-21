@@ -190,6 +190,8 @@ struct EventDetailView: View {
     @State private var showInvite = false
     @State private var showCheckIn = false
     @State private var showManageRsvps = false
+    @State private var showCheckInReport = false
+    @State private var hostAttendanceReport = false
 
     init(event: Event) {
         self.event = event
@@ -244,6 +246,10 @@ struct EventDetailView: View {
 
                 if canShowManageRsvps(detail, user: session.user) {
                     Button(ManageRsvpsCopy.title) { showManageRsvps = true }
+                }
+
+                if canShowCheckInReport(detail, user: session.user, flagOn: hostAttendanceReport) {
+                    Button(CheckInReportCopy.title) { showCheckInReport = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -413,13 +419,19 @@ struct EventDetailView: View {
                 client: EventsClient(tokens: session.client.tokens)
             ) { detail = $0 }
         }
+        .sheet(isPresented: $showCheckInReport) {
+            CheckInReportView(
+                eventId: detail.id,
+                client: EventsClient(tokens: session.client.tokens)
+            )
+        }
         .task { await refresh() }
     }
 
     private func refresh() async {
+        let client = EventsClient(tokens: session.client.tokens)
         do {
-            detail = try await EventsClient(tokens: session.client.tokens)
-                .event(id: event.slug.isEmpty ? event.id : event.slug)
+            detail = try await client.event(id: event.slug.isEmpty ? event.id : event.slug)
             loadError = nil
         } catch APIError.http(404) {
             loadError = "this event isn't public or no longer exists"
@@ -428,6 +440,7 @@ struct EventDetailView: View {
         } catch {
             loadError = "couldn't load this event — try refreshing"
         }
+        hostAttendanceReport = (try? await client.featureFlags())?["host_attendance_report"] ?? false
     }
 }
 
@@ -1192,6 +1205,61 @@ struct CheckInView: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't save check-in — try again"
+        }
+    }
+}
+
+struct CheckInReportView: View {
+    let eventId: String
+    var client: EventsClient
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var report: CheckInReport?
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let report {
+                    section(CheckInReportCopy.attended, report.attended)
+                    section(CheckInReportCopy.noShows, report.noShows)
+                    section(CheckInReportCopy.didntGo, report.didntGo)
+                    section(CheckInReportCopy.canceled, report.canceled)
+                    section(CheckInReportCopy.unmarked, report.unmarked)
+                } else if let error {
+                    Text(error).foregroundStyle(.secondary)
+                } else {
+                    ProgressView()
+                }
+            }
+            .navigationTitle(CheckInReportCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+            .task { await load() }
+        }
+    }
+
+    @ViewBuilder
+    private func section(_ title: String, _ people: [CheckInReportPerson]) -> some View {
+        if !people.isEmpty {
+            Section(title) {
+                ForEach(people, id: \.name) { person in
+                    Text(person.name.lowercased())
+                }
+            }
+        }
+    }
+
+    private func load() async {
+        do {
+            report = try await client.checkInReport(eventId: eventId)
+            error = nil
+        } catch {
+            self.error = "couldn't load the check-in report — try refreshing"
         }
     }
 }
