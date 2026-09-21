@@ -132,6 +132,22 @@ final class EventsAPITests: XCTestCase {
         XCTAssertEqual(copy.moreHintTitle, "")
     }
 
+    func test_memberCopy_dedupesCreatedByAndCohostsCaseInsensitive() throws {
+        let copy = GuestEventCopy.make(
+            try Event.decodeJSON("""
+            {
+              "id": "d",
+              "title": "dup",
+              "event_type": "official",
+              "created_by_name": "Duncan",
+              "co_host_names": ["duncan", "Ada"]
+            }
+            """),
+            user: try sessionUser(isMember: true)
+        )
+        XCTAssertEqual(copy.hosts, ["Duncan", "Ada"])
+    }
+
     func test_tentativeCopy_showsMemberFieldsOnlyOnOfficial() throws {
         let tentative = try sessionUser(isMember: false)
         let official = GuestEventCopy.make(

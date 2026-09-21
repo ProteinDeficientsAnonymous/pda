@@ -253,7 +253,7 @@ struct GuestEventCopy: Equatable {
             moreHintTitle: memberDetails ? "" : "want to see more?",
             moreHintBody: memberDetails ? "" : "location, rsvp, and organizer details are shown once you sign in",
             location: memberDetails && !event.location.isEmpty ? event.location : nil,
-            hosts: memberDetails ? ([event.createdByName] + event.coHostNames).filter { !$0.isEmpty } : [],
+            hosts: memberDetails ? uniqueNonEmpty([event.createdByName] + event.coHostNames) : [],
             price: memberDetails && !event.price.isEmpty ? event.price : nil,
             links: memberDetails ? event.memberLinks : [],
             rsvp: memberDetails ? event.guests.map(\.name).filter { !$0.isEmpty } : [],
@@ -267,6 +267,16 @@ func canSeeMemberEventDetails(_ user: SessionUser?, event: Event) -> Bool {
     guard let user else { return false }
     if user.isMember { return true }
     return event.eventType == "official" || event.eventType == "club"
+}
+
+private func uniqueNonEmpty(_ names: [String]) -> [String] {
+    var seen = Set<String>()
+    return names.filter { name in
+        let key = name.lowercased()
+        guard !name.isEmpty, !seen.contains(key) else { return false }
+        seen.insert(key)
+        return true
+    }
 }
 
 func eventsListURL(base: URL) -> URL {
