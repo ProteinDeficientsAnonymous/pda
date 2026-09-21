@@ -137,6 +137,11 @@ enum EventPollCopy {
     static let loadError = "couldn't load the poll — try refreshing"
 }
 
+enum CohostInviteCopy {
+    static let accept = "accept"
+    static let decline = "decline"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

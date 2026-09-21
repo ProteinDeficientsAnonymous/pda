@@ -690,6 +690,73 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(poll.myVotes["opt-a"], "yes")
     }
 
+    func test_canShowCohostInvite_pendingAndNotPast() throws {
+        let none = try Event.decodeJSON(#"{ "id": "e", "title": "e" }"#)
+        let pending = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "my_pending_cohost_invite_id": "inv1" }"#
+        )
+        let past = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "my_pending_cohost_invite_id": "inv1", "is_past": true }"#
+        )
+        XCTAssertFalse(canShowCohostInvite(none))
+        XCTAssertTrue(canShowCohostInvite(pending))
+        XCTAssertFalse(canShowCohostInvite(past))
+    }
+
+    func test_cohostInviteMessage_usesCreatorNameOrSomeone() {
+        XCTAssertEqual(cohostInviteMessage(createdByName: "Alice"), "alice invited you to co-host")
+        XCTAssertEqual(cohostInviteMessage(createdByName: ""), "someone invited you to co-host")
+    }
+
+    func test_cohostInviteCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [CohostInviteCopy.accept, CohostInviteCopy.decline]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_acceptCohostInvite_postsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(
+                routePath(request.url),
+                "/api/community/events/evt-1/cohost-invites/inv1/accept/"
+            )
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, ["id": "evt-1", "title": "potluck", "co_host_ids": ["user-1"]])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).acceptCohostInvite(eventId: "evt-1", inviteId: "inv1")
+        XCTAssertEqual(event.id, "evt-1")
+        XCTAssertTrue(event.coHostIds.contains("user-1"))
+        XCTAssertNil(event.myPendingCohostInviteId)
+    }
+
+    func test_declineCohostInvite_postsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(
+                routePath(request.url),
+                "/api/community/events/evt-1/cohost-invites/inv1/decline/"
+            )
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, ["id": "evt-1", "title": "potluck"])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).declineCohostInvite(eventId: "evt-1", inviteId: "inv1")
+        XCTAssertEqual(event.id, "evt-1")
+        XCTAssertNil(event.myPendingCohostInviteId)
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

@@ -224,6 +224,13 @@ struct EventDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
+                if canShowCohostInvite(detail) {
+                    CohostInviteBanner(
+                        event: detail,
+                        client: EventsClient(tokens: session.client.tokens)
+                    ) { detail = $0 }
+                }
+
                 if canShowEventPoll(detail, winningDatetime: nil) {
                     EventPollView(
                         eventId: detail.id,
@@ -932,6 +939,51 @@ struct EventPollView: View {
             )
         } catch {
             self.error = "couldn't update the poll — try again"
+        }
+    }
+}
+
+struct CohostInviteBanner: View {
+    let event: Event
+    var client: EventsClient
+    var onUpdated: (Event) -> Void
+
+    @State private var busy = false
+    @State private var error: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(cohostInviteMessage(createdByName: event.createdByName))
+            HStack {
+                Button(CohostInviteCopy.accept) { Task { await respond(accept: true) } }
+                    .disabled(busy)
+                Button(CohostInviteCopy.decline) { Task { await respond(accept: false) } }
+                    .disabled(busy)
+            }
+            if let error {
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func respond(accept: Bool) async {
+        guard let inviteId = event.myPendingCohostInviteId else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            let updated = if accept {
+                try await client.acceptCohostInvite(eventId: event.id, inviteId: inviteId)
+            } else {
+                try await client.declineCohostInvite(eventId: event.id, inviteId: inviteId)
+            }
+            onUpdated(updated)
+        } catch {
+            self.error = "couldn't update that invite — try again"
         }
     }
 }

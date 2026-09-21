@@ -61,6 +61,7 @@ struct Event: Decodable, Hashable, Identifiable {
     let isPast: Bool
     let coHostIds: [String]
     let hasPoll: Bool
+    let myPendingCohostInviteId: String?
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -85,6 +86,7 @@ struct Event: Decodable, Hashable, Identifiable {
         case isPast = "is_past"
         case coHostIds = "co_host_ids"
         case hasPoll = "has_poll"
+        case myPendingCohostInviteId = "my_pending_cohost_invite_id"
     }
 
     init(from decoder: Decoder) throws {
@@ -120,6 +122,8 @@ struct Event: Decodable, Hashable, Identifiable {
         isPast = try c.decodeIfPresent(Bool.self, forKey: .isPast) ?? false
         coHostIds = try c.decodeIfPresent([String].self, forKey: .coHostIds) ?? []
         hasPoll = try c.decodeIfPresent(Bool.self, forKey: .hasPoll) ?? false
+        let inviteId = try c.decodeIfPresent(String.self, forKey: .myPendingCohostInviteId) ?? ""
+        myPendingCohostInviteId = inviteId.isEmpty ? nil : inviteId
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -304,6 +308,22 @@ func canShowEventComments(_ event: Event, signedIn: Bool, hasGuestToken: Bool) -
 
 func canShowEventPoll(_ event: Event, winningDatetime: Date?) -> Bool {
     event.hasPoll && winningDatetime == nil
+}
+
+func canShowCohostInvite(_ event: Event) -> Bool {
+    event.myPendingCohostInviteId != nil && !event.isPast
+}
+
+func cohostInviteMessage(createdByName: String) -> String {
+    let who = createdByName.trimmingCharacters(in: .whitespacesAndNewlines)
+    return "\((who.isEmpty ? "someone" : who).lowercased()) invited you to co-host"
+}
+
+func eventCohostInviteURL(base: URL, eventId: String, inviteId: String, action: String) -> URL {
+    URL(
+        string: "/api/community/events/\(eventId)/cohost-invites/\(inviteId)/\(action)/",
+        relativeTo: base
+    )!.absoluteURL
 }
 
 enum PollVoteChrome: Equatable {
@@ -734,6 +754,20 @@ struct EventsClient {
 
     func poll(eventId: String) async throws -> EventPoll {
         try await sendJSON("GET", url: eventPollURL(base: baseURL, eventId: eventId))
+    }
+
+    func acceptCohostInvite(eventId: String, inviteId: String) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventCohostInviteURL(base: baseURL, eventId: eventId, inviteId: inviteId, action: "accept")
+        )
+    }
+
+    func declineCohostInvite(eventId: String, inviteId: String) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventCohostInviteURL(base: baseURL, eventId: eventId, inviteId: inviteId, action: "decline")
+        )
     }
 
     func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {
