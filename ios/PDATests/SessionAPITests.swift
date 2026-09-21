@@ -757,6 +757,86 @@ final class SessionAPITests: XCTestCase {
         XCTAssertNil(event.myPendingCohostInviteId)
     }
 
+    func test_canInviteGuests_hostManagerOrRsvpdWhenAllMembers() throws {
+        let host = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "co_host_ids": ["user-1"] }"#
+        )
+        let rsvpd = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "invite_permission": "all_members", "my_rsvp": "attending" }"#
+        )
+        let maybe = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "invite_permission": "all_members", "my_rsvp": "maybe" }"#
+        )
+        let closed = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "invite_permission": "co_hosts_only", "my_rsvp": "attending" }"#
+        )
+        let noRsvp = try Event.decodeJSON(#"{ "id": "e", "title": "e", "rsvp_enabled": true, "invite_permission": "all_members" }"#)
+        let past = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "co_host_ids": ["user-1"], "is_past": true }"#
+        )
+        let cancelled = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "co_host_ids": ["user-1"], "status": "cancelled" }"#
+        )
+        let rsvpOff = try Event.decodeJSON(#"{ "id": "e", "title": "e", "co_host_ids": ["user-1"] }"#)
+        let member = try user()
+        let manager = try user(permissions: ["manage_events"])
+        XCTAssertTrue(canInviteGuests(host, user: member))
+        XCTAssertTrue(canInviteGuests(rsvpd, user: member))
+        XCTAssertTrue(canInviteGuests(maybe, user: member))
+        XCTAssertTrue(canInviteGuests(noRsvp, user: manager))
+        XCTAssertFalse(canInviteGuests(closed, user: member))
+        XCTAssertFalse(canInviteGuests(noRsvp, user: member))
+        XCTAssertFalse(canInviteGuests(past, user: member))
+        XCTAssertFalse(canInviteGuests(cancelled, user: member))
+        XCTAssertFalse(canInviteGuests(rsvpOff, user: member))
+        XCTAssertFalse(canInviteGuests(host, user: nil))
+    }
+
+    func test_inviteCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [InviteCopy.title, InviteCopy.search, InviteCopy.send, InviteCopy.cancel]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_searchMembers_getsQueryWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/auth/users/search/")
+            XCTAssertEqual(request.url?.query, "q=ada")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [["id": "u-2", "full_name": "Ada Lovelace", "phone_number": "+1555"]])
+        }
+        let found = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).searchMembers(query: "ada")
+        XCTAssertEqual(found.first?.id, "u-2")
+        XCTAssertEqual(found.first?.name, "Ada Lovelace")
+    }
+
+    func test_inviteGuests_postsUserIdsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/invitations/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["user_ids"] as? [String], ["u-2"])
+            return MockHTTP.json(200, ["id": "evt-1", "title": "potluck", "invited_user_ids": ["u-2"]])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).inviteGuests(eventId: "evt-1", userIds: ["u-2"])
+        XCTAssertEqual(event.id, "evt-1")
+        XCTAssertEqual(event.invitedUserIds, ["u-2"])
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
@@ -982,7 +1062,7 @@ enum MockHTTP {
         return URLSession(configuration: config)
     }
 
-    static func json(_ status: Int, _ body: [String: Any], headers: [String: String] = [:]) -> (Int, Data, [String: String]) {
+    static func json(_ status: Int, _ body: Any, headers: [String: String] = [:]) -> (Int, Data, [String: String]) {
         var next = headers
         next["Content-Type"] = "application/json"
         return (status, try! JSONSerialization.data(withJSONObject: body), next)

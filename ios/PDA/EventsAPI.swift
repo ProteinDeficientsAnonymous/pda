@@ -62,6 +62,8 @@ struct Event: Decodable, Hashable, Identifiable {
     let coHostIds: [String]
     let hasPoll: Bool
     let myPendingCohostInviteId: String?
+    let invitePermission: String
+    let invitedUserIds: [String]
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -87,6 +89,8 @@ struct Event: Decodable, Hashable, Identifiable {
         case coHostIds = "co_host_ids"
         case hasPoll = "has_poll"
         case myPendingCohostInviteId = "my_pending_cohost_invite_id"
+        case invitePermission = "invite_permission"
+        case invitedUserIds = "invited_user_ids"
     }
 
     init(from decoder: Decoder) throws {
@@ -124,6 +128,8 @@ struct Event: Decodable, Hashable, Identifiable {
         hasPoll = try c.decodeIfPresent(Bool.self, forKey: .hasPoll) ?? false
         let inviteId = try c.decodeIfPresent(String.self, forKey: .myPendingCohostInviteId) ?? ""
         myPendingCohostInviteId = inviteId.isEmpty ? nil : inviteId
+        invitePermission = try c.decodeIfPresent(String.self, forKey: .invitePermission) ?? ""
+        invitedUserIds = try c.decodeIfPresent([String].self, forKey: .invitedUserIds) ?? []
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -324,6 +330,43 @@ func eventCohostInviteURL(base: URL, eventId: String, inviteId: String, action: 
         string: "/api/community/events/\(eventId)/cohost-invites/\(inviteId)/\(action)/",
         relativeTo: base
     )!.absoluteURL
+}
+
+func canInviteGuests(_ event: Event, user: SessionUser?) -> Bool {
+    guard let user else { return false }
+    guard event.rsvpEnabled, !event.isPast, event.status != "cancelled" else { return false }
+    if event.coHostIds.contains(user.id) || user.permissions.contains("manage_events") { return true }
+    return event.invitePermission == "all_members"
+        && (event.myRsvp == "attending" || event.myRsvp == "maybe")
+}
+
+struct MemberHit: Decodable, Hashable, Identifiable {
+    let id: String
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name = "full_name"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+    }
+}
+
+func userSearchURL(base: URL, query: String) -> URL {
+    var comps = URLComponents(
+        url: URL(string: "/api/auth/users/search/", relativeTo: base)!.absoluteURL,
+        resolvingAgainstBaseURL: false
+    )!
+    comps.queryItems = [URLQueryItem(name: "q", value: query)]
+    return comps.url!
+}
+
+func eventInvitationsURL(base: URL, eventId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/invitations/", relativeTo: base)!.absoluteURL
 }
 
 enum PollVoteChrome: Equatable {
@@ -767,6 +810,18 @@ struct EventsClient {
         try await sendJSON(
             "POST",
             url: eventCohostInviteURL(base: baseURL, eventId: eventId, inviteId: inviteId, action: "decline")
+        )
+    }
+
+    func searchMembers(query: String) async throws -> [MemberHit] {
+        try await sendJSON("GET", url: userSearchURL(base: baseURL, query: query))
+    }
+
+    func inviteGuests(eventId: String, userIds: [String]) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventInvitationsURL(base: baseURL, eventId: eventId),
+            body: ["user_ids": userIds]
         )
     }
 

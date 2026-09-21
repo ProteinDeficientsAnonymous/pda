@@ -187,6 +187,7 @@ struct EventDetailView: View {
     @State private var loadError: String?
     @State private var showEdit = false
     @State private var showLogin = false
+    @State private var showInvite = false
 
     init(event: Event) {
         self.event = event
@@ -229,6 +230,10 @@ struct EventDetailView: View {
                         event: detail,
                         client: EventsClient(tokens: session.client.tokens)
                     ) { detail = $0 }
+                }
+
+                if canInviteGuests(detail, user: session.user) {
+                    Button(InviteCopy.send) { showInvite = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -373,6 +378,13 @@ struct EventDetailView: View {
         .sheet(isPresented: $showLogin) {
             LoginView(client: session.client)
                 .environment(session)
+        }
+        .sheet(isPresented: $showInvite) {
+            InviteMembersView(
+                event: detail,
+                client: EventsClient(tokens: session.client.tokens)
+            ) { detail = $0 }
+            .environment(session)
         }
         .task { await refresh() }
     }
@@ -984,6 +996,90 @@ struct CohostInviteBanner: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't update that invite — try again"
+        }
+    }
+}
+
+struct InviteMembersView: View {
+    let event: Event
+    var client: EventsClient
+    var onUpdated: (Event) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @State private var hits: [MemberHit] = []
+    @State private var selected: [MemberHit] = []
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField(InviteCopy.search, text: $query)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .onChange(of: query) { _, value in
+                            Task { await search(value) }
+                        }
+                }
+                Section {
+                    ForEach(hits.filter { hit in
+                        !event.invitedUserIds.contains(hit.id)
+                            && !event.coHostIds.contains(hit.id)
+                            && !selected.contains(where: { $0.id == hit.id })
+                    }) { hit in
+                        Button(hit.name.lowercased()) { selected.append(hit) }
+                    }
+                }
+                if !selected.isEmpty {
+                    Section {
+                        ForEach(selected) { hit in
+                            Text(hit.name.lowercased())
+                        }
+                    }
+                }
+                if let error {
+                    Text(error).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(InviteCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(InviteCopy.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("\(InviteCopy.send) \(selected.count)") { Task { await send() } }
+                        .disabled(busy || selected.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func search(_ value: String) async {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else {
+            hits = []
+            return
+        }
+        do {
+            hits = try await client.searchMembers(query: trimmed)
+            error = nil
+        } catch {
+            self.error = "couldn't search members — try again"
+        }
+    }
+
+    private func send() async {
+        busy = true
+        defer { busy = false }
+        do {
+            let updated = try await client.inviteGuests(eventId: event.id, userIds: selected.map(\.id))
+            onUpdated(updated)
+            dismiss()
+        } catch {
+            self.error = "couldn't send invites — try again"
         }
     }
 }

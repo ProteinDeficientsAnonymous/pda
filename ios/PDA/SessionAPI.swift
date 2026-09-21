@@ -142,6 +142,13 @@ enum CohostInviteCopy {
     static let decline = "decline"
 }
 
+enum InviteCopy {
+    static let title = "invite members"
+    static let search = "search members"
+    static let send = "invite"
+    static let cancel = "cancel"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)
