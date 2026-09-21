@@ -295,6 +295,93 @@ func canEditEvent(_ event: Event, user: SessionUser?) -> Bool {
     return isHosting(event, userId: user.id)
 }
 
+func canShowEventComments(_ event: Event, signedIn: Bool, hasGuestToken: Bool) -> Bool {
+    event.rsvpEnabled && (signedIn || hasGuestToken)
+}
+
+func commentComposerPrompt(canPost: Bool, reason: String?) -> String? {
+    if canPost { return nil }
+    return reason == "rsvp_required" ? EventCommentCopy.rsvpRequired : EventCommentCopy.loginRequired
+}
+
+func visibleComments(_ list: EventCommentList) -> [EventComment] {
+    list.canPost ? list.items : []
+}
+
+let reactionEmojis = ["❤️", "😂", "🌱", "🔥", "👍", "😭"]
+
+struct CommentReaction: Decodable, Hashable {
+    let emoji: String
+    let count: Int
+    let reactedByMe: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case emoji, count
+        case reactedByMe = "reacted_by_me"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        emoji = try c.decodeIfPresent(String.self, forKey: .emoji) ?? ""
+        count = try c.decodeIfPresent(Int.self, forKey: .count) ?? 0
+        reactedByMe = try c.decodeIfPresent(Bool.self, forKey: .reactedByMe) ?? false
+    }
+}
+
+struct EventComment: Decodable, Hashable, Identifiable {
+    let id: String
+    let authorDisplayName: String
+    let body: String
+    let isDeleted: Bool
+    let reactions: [CommentReaction]
+
+    enum CodingKeys: String, CodingKey {
+        case id, body, reactions
+        case authorDisplayName = "author_display_name"
+        case isDeleted = "is_deleted"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        authorDisplayName = try c.decodeIfPresent(String.self, forKey: .authorDisplayName) ?? ""
+        body = try c.decodeIfPresent(String.self, forKey: .body) ?? ""
+        isDeleted = try c.decodeIfPresent(Bool.self, forKey: .isDeleted) ?? false
+        reactions = try c.decodeIfPresent([CommentReaction].self, forKey: .reactions) ?? []
+    }
+}
+
+struct EventCommentList: Decodable {
+    let canPost: Bool
+    let cannotPostReason: String?
+    let items: [EventComment]
+
+    enum CodingKeys: String, CodingKey {
+        case items
+        case canPost = "can_post"
+        case cannotPostReason = "cannot_post_reason"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        canPost = try c.decodeIfPresent(Bool.self, forKey: .canPost) ?? false
+        cannotPostReason = try c.decodeIfPresent(String.self, forKey: .cannotPostReason)
+        items = try c.decodeIfPresent([EventComment].self, forKey: .items) ?? []
+    }
+
+    static func decodeJSON(_ raw: String) throws -> EventCommentList {
+        try Event.decoder.decode(EventCommentList.self, from: Data(raw.utf8))
+    }
+}
+
+func eventCommentsURL(base: URL, eventId: String, suffix: String = "", guestToken: String? = nil) -> URL {
+    let url = URL(string: "/api/community/events/\(eventId)/comments/\(suffix)", relativeTo: base)!.absoluteURL
+    guard let guestToken, !guestToken.isEmpty else { return url }
+    var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    comps.queryItems = [URLQueryItem(name: "token", value: guestToken)]
+    return comps.url!
+}
+
 func isMyEvent(_ event: Event, userId: String) -> Bool {
     isHosting(event, userId: userId) || event.myRsvp == "attending" || event.myRsvp == "maybe"
 }
@@ -547,6 +634,55 @@ struct EventsClient {
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(Event.self, from: data)
+    }
+
+    func comments(eventId: String, guestToken: String? = nil) async throws -> EventCommentList {
+        try await sendJSON(
+            "GET",
+            url: eventCommentsURL(base: baseURL, eventId: eventId, guestToken: guestToken)
+        )
+    }
+
+    func postComment(eventId: String, body: String, guestToken: String? = nil) async throws -> EventComment {
+        try await sendJSON(
+            "POST",
+            url: eventCommentsURL(base: baseURL, eventId: eventId, guestToken: guestToken),
+            body: ["body": body]
+        )
+    }
+
+    func toggleReaction(
+        eventId: String,
+        commentId: String,
+        emoji: String,
+        guestToken: String? = nil
+    ) async throws -> EventComment {
+        try await sendJSON(
+            "POST",
+            url: eventCommentsURL(
+                base: baseURL,
+                eventId: eventId,
+                suffix: "\(commentId)/reactions/",
+                guestToken: guestToken
+            ),
+            body: ["emoji": emoji]
+        )
+    }
+
+    private func sendJSON<T: Decodable>(_ method: String, url: URL, body: [String: Any]? = nil) async throws -> T {
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        if let body {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(T.self, from: data)
     }
 
     private func fetch<T: Decodable>(_ url: URL) async throws -> T {

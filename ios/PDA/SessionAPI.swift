@@ -118,6 +118,15 @@ enum EditEventCopy {
     static let save = "save event"
 }
 
+enum EventCommentCopy {
+    static let title = "comments"
+    static let post = "post"
+    static let placeholder = "say something…"
+    static let rsvpRequired = "rsvp to join the conversation."
+    static let loginRequired = "log in to comment."
+    static let loadError = "couldn't load comments — try refreshing."
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

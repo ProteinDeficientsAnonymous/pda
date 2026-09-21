@@ -320,6 +320,18 @@ struct EventDetailView: View {
                 if session.user == nil, canPublicRsvp(detail) {
                     PublicRsvpFormView(event: detail)
                 }
+
+                if canShowEventComments(
+                    detail,
+                    signedIn: session.user != nil,
+                    hasGuestToken: RsvpTokenStore().load() != nil
+                ) {
+                    EventCommentsView(
+                        eventId: detail.id,
+                        guestToken: session.user == nil ? RsvpTokenStore().load() : nil,
+                        client: EventsClient(tokens: session.client.tokens)
+                    )
+                }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -725,6 +737,102 @@ struct AddEventView: View {
             dismiss()
         } catch {
             self.error = "couldn't save this event — try again"
+        }
+    }
+}
+
+struct EventCommentsView: View {
+    let eventId: String
+    var guestToken: String?
+    var client: EventsClient
+
+    @State private var list: EventCommentList?
+    @State private var error: String?
+    @State private var draft = ""
+    @State private var busy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(EventCommentCopy.title)
+                .font(.headline)
+            if let list {
+                if let prompt = commentComposerPrompt(canPost: list.canPost, reason: list.cannotPostReason) {
+                    Text(prompt)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    TextField(EventCommentCopy.placeholder, text: $draft, axis: .vertical)
+                        .lineLimit(2 ... 5)
+                    Button(EventCommentCopy.post) { Task { await post() } }
+                        .disabled(busy || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                ForEach(visibleComments(list)) { comment in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(comment.authorDisplayName.lowercased())
+                            .font(.subheadline)
+                        Text(comment.isDeleted ? "[deleted]" : comment.body)
+                        HStack {
+                            ForEach(comment.reactions, id: \.emoji) { reaction in
+                                Button("\(reaction.emoji) \(reaction.count)") {
+                                    Task { await react(comment.id, reaction.emoji) }
+                                }
+                            }
+                            Menu {
+                                ForEach(reactionEmojis, id: \.self) { emoji in
+                                    Button(emoji) { Task { await react(comment.id, emoji) } }
+                                }
+                            } label: {
+                                Text("＋")
+                            }
+                            .accessibilityLabel("add reaction")
+                        }
+                    }
+                }
+            } else if let error {
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView("loading…")
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            list = try await client.comments(eventId: eventId, guestToken: guestToken)
+            error = nil
+        } catch {
+            self.error = EventCommentCopy.loadError
+        }
+    }
+
+    private func post() async {
+        let body = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await client.postComment(eventId: eventId, body: body, guestToken: guestToken)
+            draft = ""
+            await load()
+        } catch {
+            self.error = "couldn't post your comment"
+        }
+    }
+
+    private func react(_ commentId: String, _ emoji: String) async {
+        do {
+            _ = try await client.toggleReaction(
+                eventId: eventId,
+                commentId: commentId,
+                emoji: emoji,
+                guestToken: guestToken
+            )
+            await load()
+        } catch {
+            self.error = "couldn't save that reaction"
         }
     }
 }

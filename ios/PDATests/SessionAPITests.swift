@@ -439,6 +439,148 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(updated.title, "potluck v2")
     }
 
+    func test_canShowEventComments_signedInOrGuestTokenWhenRsvpEnabled() throws {
+        let open = try Event.decodeJSON(#"{ "id": "e", "title": "e", "rsvp_enabled": true }"#)
+        let closed = try Event.decodeJSON(#"{ "id": "c", "title": "c", "rsvp_enabled": false }"#)
+        XCTAssertTrue(canShowEventComments(open, signedIn: true, hasGuestToken: false))
+        XCTAssertTrue(canShowEventComments(open, signedIn: false, hasGuestToken: true))
+        XCTAssertFalse(canShowEventComments(open, signedIn: false, hasGuestToken: false))
+        XCTAssertFalse(canShowEventComments(closed, signedIn: true, hasGuestToken: true))
+    }
+
+    func test_commentPrompt_rsvpRequiredVsLoginRequired() {
+        XCTAssertNil(commentComposerPrompt(canPost: true, reason: nil))
+        XCTAssertEqual(
+            commentComposerPrompt(canPost: false, reason: "rsvp_required"),
+            EventCommentCopy.rsvpRequired
+        )
+        XCTAssertEqual(
+            commentComposerPrompt(canPost: false, reason: "login_required"),
+            EventCommentCopy.loginRequired
+        )
+        XCTAssertEqual(
+            commentComposerPrompt(canPost: false, reason: nil),
+            EventCommentCopy.loginRequired
+        )
+    }
+
+    func test_visibleComments_hiddenWhenCannotPost() throws {
+        let hidden = try EventCommentList.decodeJSON("""
+        {"can_post":false,"cannot_post_reason":"rsvp_required","items":[{"id":"c1","author_display_name":"ada","body":"leaked"}]}
+        """)
+        let shown = try EventCommentList.decodeJSON("""
+        {"can_post":true,"items":[{"id":"c1","author_display_name":"ada","body":"visible"}]}
+        """)
+        XCTAssertEqual(visibleComments(hidden).map(\.body), [])
+        XCTAssertEqual(visibleComments(shown).map(\.body), ["visible"])
+    }
+
+    func test_eventCommentCopy_isLowercase() {
+        let blobs = [
+            EventCommentCopy.title,
+            EventCommentCopy.post,
+            EventCommentCopy.placeholder,
+            EventCommentCopy.rsvpRequired,
+            EventCommentCopy.loginRequired,
+            EventCommentCopy.loadError,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    func test_listComments_getsWithBearerAndDecodesCanPost() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/comments/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            XCTAssertNil(request.url?.query)
+            return MockHTTP.json(200, [
+                "can_post": true,
+                "cannot_post_reason": NSNull(),
+                "items": [[
+                    "id": "c1",
+                    "author_display_name": "ada",
+                    "body": "bringing snacks",
+                    "is_deleted": false,
+                    "reactions": [["emoji": "❤️", "count": 2, "reacted_by_me": true]],
+                ]],
+            ])
+        }
+        let list = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).comments(eventId: "evt-1")
+        XCTAssertTrue(list.canPost)
+        XCTAssertEqual(list.items.first?.body, "bringing snacks")
+        XCTAssertEqual(list.items.first?.reactions.first?.emoji, "❤️")
+        XCTAssertEqual(list.items.first?.reactions.first?.count, 2)
+        XCTAssertEqual(list.items.first?.reactions.first?.reactedByMe, true)
+    }
+
+    func test_listComments_includesGuestTokenQueryWithoutBearer() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/comments/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            XCTAssertEqual(request.url?.query, "token=rsvp-token")
+            return MockHTTP.json(200, ["can_post": true, "items": []])
+        }
+        let list = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session()
+        ).comments(eventId: "evt-1", guestToken: "rsvp-token")
+        XCTAssertTrue(list.canPost)
+    }
+
+    func test_postComment_postsBodyWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/comments/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["body"] as? String, "bringing snacks")
+            return MockHTTP.json(201, ["id": "c-new", "author_display_name": "ada", "body": "bringing snacks"])
+        }
+        let posted = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).postComment(eventId: "evt-1", body: "bringing snacks")
+        XCTAssertEqual(posted.id, "c-new")
+        XCTAssertEqual(posted.body, "bringing snacks")
+    }
+
+    func test_toggleReaction_postsEmojiWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(
+                routePath(request.url),
+                "/api/community/events/evt-1/comments/c1/reactions/"
+            )
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["emoji"] as? String, "❤️")
+            return MockHTTP.json(200, [
+                "id": "c1",
+                "author_display_name": "ada",
+                "body": "bringing snacks",
+                "reactions": [["emoji": "❤️", "count": 1, "reacted_by_me": true]],
+            ])
+        }
+        let updated = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).toggleReaction(eventId: "evt-1", commentId: "c1", emoji: "❤️")
+        XCTAssertEqual(updated.reactions.first?.reactedByMe, true)
+        XCTAssertEqual(updated.reactions.first?.count, 1)
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
