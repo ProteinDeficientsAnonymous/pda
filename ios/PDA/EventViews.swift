@@ -69,7 +69,10 @@ struct EventListView: View {
             .navigationDestination(for: Event.self) { event in
                 EventDetailView(event: event)
             }
-            .task { await model.load() }
+            .task {
+                model.client.tokens = session.client.tokens
+                await model.load()
+            }
         }
     }
 
@@ -177,6 +180,23 @@ struct EventDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
+                if let location = copy.location {
+                    Text(location.lowercased())
+                        .font(.subheadline)
+                }
+
+                if !copy.hosts.isEmpty {
+                    Text("hosted by \(copy.hosts.joined(separator: ", ").lowercased())")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let price = copy.price {
+                    Text(price.lowercased())
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
                 if !copy.tags.isEmpty {
                     HStack {
                         ForEach(copy.tags, id: \.self) { tag in
@@ -195,12 +215,43 @@ struct EventDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                if let myRsvp = copy.myRsvp {
+                    Text("your rsvp: \(myRsvp.lowercased())")
+                        .font(.subheadline)
+                }
+
                 if !copy.description.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("about")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         Text(copy.description.lowercased())
+                    }
+                }
+
+                if !copy.links.isEmpty || copy.zelle != nil {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("links")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        ForEach(copy.links, id: \.url) { link in
+                            Link(link.label, destination: link.url)
+                        }
+                        if let zelle = copy.zelle {
+                            Text("zelle: \(zelle.lowercased())")
+                                .font(.subheadline)
+                        }
+                    }
+                }
+
+                if !copy.rsvp.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("who's going")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        ForEach(Array(copy.rsvp.enumerated()), id: \.offset) { _, name in
+                            Text(name.lowercased())
+                        }
                     }
                 }
 
@@ -237,7 +288,8 @@ struct EventDetailView: View {
 
     private func refresh() async {
         do {
-            detail = try await EventsClient().event(id: event.slug.isEmpty ? event.id : event.slug)
+            detail = try await EventsClient(tokens: session.client.tokens)
+                .event(id: event.slug.isEmpty ? event.id : event.slug)
             loadError = nil
         } catch APIError.http(404) {
             loadError = "this event isn't public or no longer exists"

@@ -105,6 +105,58 @@ final class EventsAPITests: XCTestCase {
         XCTAssertFalse(blob.contains("whatsapp"))
         XCTAssertFalse(blob.contains("venmo"))
         XCTAssertFalse(blob.contains("going: alice"))
+        XCTAssertNil(copy.location)
+        XCTAssertEqual(copy.hosts, [])
+        XCTAssertEqual(copy.links, [])
+        XCTAssertEqual(copy.rsvp, [])
+    }
+
+    func test_memberCopy_showsLocationHostsLinksAndRsvp() throws {
+        let copy = GuestEventCopy.make(
+            try Event.decodeJSON(Self.guestPayload),
+            user: try sessionUser(isMember: true),
+            timeZone: utc,
+            locale: posix
+        )
+        let blob = copy.searchableText
+        XCTAssertEqual(copy.location, "123 Main St, Brooklyn, NY")
+        XCTAssertEqual(copy.hosts, ["Alice Host", "Bob Host"])
+        XCTAssertEqual(copy.price, "sliding scale")
+        XCTAssertEqual(copy.links.map(\.label), ["whatsapp", "venmo"])
+        XCTAssertEqual(copy.rsvp, ["going: alice"])
+        XCTAssertTrue(blob.contains("123 main st"))
+        XCTAssertTrue(blob.contains("alice host"))
+        XCTAssertTrue(blob.contains("whatsapp"))
+        XCTAssertTrue(blob.contains("venmo"))
+        XCTAssertTrue(blob.contains("going: alice"))
+        XCTAssertEqual(copy.moreHintTitle, "")
+    }
+
+    func test_tentativeCopy_showsMemberFieldsOnlyOnOfficial() throws {
+        let tentative = try sessionUser(isMember: false)
+        let official = GuestEventCopy.make(
+            try Event.decodeJSON(Self.guestPayload),
+            user: tentative,
+            timeZone: utc,
+            locale: posix
+        )
+        XCTAssertEqual(official.location, "123 Main St, Brooklyn, NY")
+        XCTAssertEqual(official.hosts, ["Alice Host", "Bob Host"])
+
+        let community = GuestEventCopy.make(
+            try Event.decodeJSON(
+                Self.guestPayload.replacingOccurrences(of: "\"official\"", with: "\"community\"")
+            ),
+            user: tentative,
+            timeZone: utc,
+            locale: posix
+        )
+        XCTAssertNil(community.location)
+        XCTAssertEqual(community.hosts, [])
+        XCTAssertEqual(community.links, [])
+        XCTAssertEqual(community.rsvp, [])
+        XCTAssertTrue(community.searchableText.contains("want to see more?"))
+        XCTAssertFalse(community.searchableText.contains("123 main st"))
     }
 
     func test_eventURLs_keepTrailingSlash() {
@@ -145,6 +197,18 @@ final class EventsAPITests: XCTestCase {
 
     private func iso(_ raw: String) -> Date {
         Event.parseISODate(raw)!
+    }
+
+    private func sessionUser(isMember: Bool) throws -> SessionUser {
+        try JSONDecoder().decode(
+            SessionUser.self,
+            from: try JSONSerialization.data(withJSONObject: [
+                "id": "user-1",
+                "is_member": isMember,
+                "first_name": "ada",
+                "email": "ada@pda.test",
+            ])
+        )
     }
 }
 

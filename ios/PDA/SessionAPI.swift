@@ -387,6 +387,12 @@ final class AuthSession {
         if ProcessInfo.processInfo.arguments.contains("--reset-session") {
             try? client.tokens.clear()
         }
+        if ProcessInfo.processInfo.arguments.contains("--demo-member") {
+            user = try? JSONDecoder().decode(
+                SessionUser.self,
+                from: Data(#"{"id":"demo","is_member":true,"first_name":"ada","email":"ada@pda.test"}"#.utf8)
+            )
+        }
     }
 
     func restore() async {

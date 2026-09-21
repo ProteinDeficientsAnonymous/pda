@@ -31,4 +31,33 @@ final class GuestCalendarUITests: XCTestCase {
         )
         try XCUIScreen.main.screenshot().pngRepresentation.write(to: dest)
     }
+
+    func test_memberDetail_showsLocationHostsAndRsvp() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--reset-session", "--demo-member"]
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["calendar"].waitForExistence(timeout: 20))
+
+        let baked = app.staticTexts["free baked goods"]
+        for _ in 0 ..< 12 where !baked.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(baked.waitForExistence(timeout: 5), "expected free baked goods in the list")
+        baked.tap()
+
+        XCTAssertTrue(app.staticTexts["free baked goods"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["want to see more?"].exists)
+        XCTAssertTrue(
+            app.staticTexts["675 union street"].waitForExistence(timeout: 10)
+                || app.staticTexts["675 Union street"].exists
+        )
+        XCTAssertTrue(app.staticTexts["duncan"].exists || app.staticTexts["hosted by duncan"].exists)
+
+        let dest = URL(
+            fileURLWithPath: ProcessInfo.processInfo.environment["PDA_DEMO_SCREENSHOT"]
+                ?? "/tmp/pda-slice-3-member-event-detail.png"
+        )
+        try XCUIScreen.main.screenshot().pngRepresentation.write(to: dest)
+    }
 }

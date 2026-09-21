@@ -6,8 +6,30 @@ struct EventTag: Decodable, Hashable, Identifiable {
     let slug: String
 }
 
+struct EventGuest: Decodable, Hashable {
+    let userId: String
+    let name: String
+    let status: String
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case name, status
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try c.decodeIfPresent(String.self, forKey: .userId) ?? ""
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        status = try c.decodeIfPresent(String.self, forKey: .status) ?? ""
+    }
+}
+
+struct EventLinkCopy: Equatable, Hashable {
+    let label: String
+    let url: URL
+}
+
 struct Event: Decodable, Hashable, Identifiable {
-    // Guest UI never reads location/price/hosts/RSVP even when JSON includes them.
     let id: String
     let slug: String
     let title: String
@@ -23,9 +45,21 @@ struct Event: Decodable, Hashable, Identifiable {
     let isPartifulImport: Bool
     let isLegacy: Bool
     let tags: [EventTag]
+    let location: String
+    let price: String
+    let createdByName: String
+    let coHostNames: [String]
+    let guests: [EventGuest]
+    let whatsappLink: String
+    let partifulLink: String
+    let otherLink: String
+    let venmoLink: String
+    let cashappLink: String
+    let zelleInfo: String
+    let myRsvp: String
 
     enum CodingKeys: String, CodingKey {
-        case id, slug, title, description, tags, status, visibility
+        case id, slug, title, description, tags, status, visibility, location, price, guests
         case startDatetime = "start_datetime"
         case endDatetime = "end_datetime"
         case datetimeTbd = "datetime_tbd"
@@ -34,6 +68,15 @@ struct Event: Decodable, Hashable, Identifiable {
         case eventType = "event_type"
         case isPartifulImport = "is_partiful_import"
         case isLegacy = "is_legacy"
+        case createdByName = "created_by_name"
+        case coHostNames = "co_host_names"
+        case whatsappLink = "whatsapp_link"
+        case partifulLink = "partiful_link"
+        case otherLink = "other_link"
+        case venmoLink = "venmo_link"
+        case cashappLink = "cashapp_link"
+        case zelleInfo = "zelle_info"
+        case myRsvp = "my_rsvp"
     }
 
     init(from decoder: Decoder) throws {
@@ -53,6 +96,31 @@ struct Event: Decodable, Hashable, Identifiable {
         isPartifulImport = try c.decodeIfPresent(Bool.self, forKey: .isPartifulImport) ?? false
         isLegacy = try c.decodeIfPresent(Bool.self, forKey: .isLegacy) ?? false
         tags = try c.decodeIfPresent([EventTag].self, forKey: .tags) ?? []
+        location = try c.decodeIfPresent(String.self, forKey: .location) ?? ""
+        price = try c.decodeIfPresent(String.self, forKey: .price) ?? ""
+        createdByName = try c.decodeIfPresent(String.self, forKey: .createdByName) ?? ""
+        coHostNames = try c.decodeIfPresent([String].self, forKey: .coHostNames) ?? []
+        guests = try c.decodeIfPresent([EventGuest].self, forKey: .guests) ?? []
+        whatsappLink = try c.decodeIfPresent(String.self, forKey: .whatsappLink) ?? ""
+        partifulLink = try c.decodeIfPresent(String.self, forKey: .partifulLink) ?? ""
+        otherLink = try c.decodeIfPresent(String.self, forKey: .otherLink) ?? ""
+        venmoLink = try c.decodeIfPresent(String.self, forKey: .venmoLink) ?? ""
+        cashappLink = try c.decodeIfPresent(String.self, forKey: .cashappLink) ?? ""
+        zelleInfo = try c.decodeIfPresent(String.self, forKey: .zelleInfo) ?? ""
+        myRsvp = try c.decodeIfPresent(String.self, forKey: .myRsvp) ?? ""
+    }
+
+    var memberLinks: [EventLinkCopy] {
+        [
+            ("whatsapp", whatsappLink),
+            ("partiful", partifulLink),
+            ("link", otherLink),
+            ("venmo", venmoLink),
+            ("cash app", cashappLink),
+        ].compactMap { label, raw in
+            guard let url = Event.parseURL(raw) else { return nil }
+            return EventLinkCopy(label: label, url: url)
+        }
     }
 
     static func decodeJSON(_ raw: String) throws -> Event {
@@ -80,7 +148,7 @@ struct Event: Decodable, Hashable, Identifiable {
         return posix.date(from: raw)
     }
 
-    private static func parseURL(_ raw: String) -> URL? {
+    static func parseURL(_ raw: String) -> URL? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         return URL(string: trimmed)
@@ -145,9 +213,18 @@ struct GuestEventCopy: Equatable {
     let attending: String?
     let moreHintTitle: String
     let moreHintBody: String
+    let location: String?
+    let hosts: [String]
+    let price: String?
+    let links: [EventLinkCopy]
+    let rsvp: [String]
+    let zelle: String?
+    let myRsvp: String?
 
     var searchableText: String {
-        ([title, when, description] + tags + [badge, attending, moreHintTitle, moreHintBody].compactMap { $0 })
+        let extra = [location, price, zelle, myRsvp, moreHintTitle, moreHintBody].compactMap { $0 }
+            + hosts + rsvp + links.flatMap { [$0.label, $0.url.absoluteString] }
+        return ([title, when, description] + tags + [badge, attending].compactMap { $0 } + extra)
             .joined(separator: "\n")
             .lowercased()
     }
@@ -174,7 +251,14 @@ struct GuestEventCopy: Equatable {
             photoURL: event.photoURL,
             attending: event.attendingCount > 0 ? "\(event.attendingCount) going" : nil,
             moreHintTitle: memberDetails ? "" : "want to see more?",
-            moreHintBody: memberDetails ? "" : "location, rsvp, and organizer details are shown once you sign in"
+            moreHintBody: memberDetails ? "" : "location, rsvp, and organizer details are shown once you sign in",
+            location: memberDetails && !event.location.isEmpty ? event.location : nil,
+            hosts: memberDetails ? ([event.createdByName] + event.coHostNames).filter { !$0.isEmpty } : [],
+            price: memberDetails && !event.price.isEmpty ? event.price : nil,
+            links: memberDetails ? event.memberLinks : [],
+            rsvp: memberDetails ? event.guests.map(\.name).filter { !$0.isEmpty } : [],
+            zelle: memberDetails && !event.zelleInfo.isEmpty ? event.zelleInfo : nil,
+            myRsvp: memberDetails && !event.myRsvp.isEmpty ? event.myRsvp : nil
         )
     }
 }
@@ -212,6 +296,7 @@ enum APIConfig {
 struct EventsClient {
     var baseURL: URL = APIConfig.baseURL
     var session: URLSession = .shared
+    var tokens: (any TokenStore)?
 
     func events() async throws -> [Event] {
         try await fetch(eventsListURL(base: baseURL))
@@ -222,7 +307,11 @@ struct EventsClient {
     }
 
     private func fetch<T: Decodable>(_ url: URL) async throws -> T {
-        let (data, response) = try await session.data(from: url)
+        var req = URLRequest(url: url)
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(T.self, from: data)
