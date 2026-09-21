@@ -1132,6 +1132,44 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(flag.id, "flag-1")
     }
 
+    func test_canShowProfile_signedIn() throws {
+        XCTAssertTrue(canShowProfile(user: try user()))
+        XCTAssertTrue(canShowProfile(user: try user(isMember: false)))
+        XCTAssertFalse(canShowProfile(user: nil))
+    }
+
+    func test_profileCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [ProfileCopy.title, ProfileCopy.bio]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_getProfile_getsNameAndBioWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/auth/users/user-1/profile/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "id": "user-1",
+                "full_name": "ada lovelace",
+                "bio": "maths",
+                "pronouns": "she",
+                "nickname": "ada",
+            ])
+        }
+        let profile = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).profile(userId: "user-1")
+        XCTAssertEqual(profile.name, "ada lovelace")
+        XCTAssertEqual(profile.bio, "maths")
+        XCTAssertEqual(profile.pronouns, "she")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

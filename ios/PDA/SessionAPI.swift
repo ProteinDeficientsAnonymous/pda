@@ -194,6 +194,11 @@ enum FlagEventCopy {
     static let thanks = "thanks — we'll take a look"
 }
 
+enum ProfileCopy {
+    static let title = "profile"
+    static let bio = "bio"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

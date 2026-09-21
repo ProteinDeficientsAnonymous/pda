@@ -10,6 +10,7 @@ struct EventListView: View {
     @State private var showMyRsvps = false
     @State private var showMyEvents = false
     @State private var showAddEvent = false
+    @State private var showProfile = false
 
     var body: some View {
         NavigationStack {
@@ -41,8 +42,9 @@ struct EventListView: View {
                 ToolbarItem(placement: .principal) {
                     Text("calendar").font(.headline)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if session.user != nil {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if canShowProfile(user: session.user) {
+                        Button(ProfileCopy.title) { showProfile = true }
                         Button("log out") { Task { await session.logout() } }
                     } else {
                         Button("sign in") { showLogin = true }
@@ -75,6 +77,11 @@ struct EventListView: View {
                     Task { await model.load() }
                 }
                 .environment(session)
+            }
+            .sheet(isPresented: $showProfile) {
+                if let user = session.user {
+                    ProfileView(userId: user.id, client: EventsClient(tokens: session.client.tokens))
+                }
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -154,6 +161,64 @@ struct MemberLockSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+struct ProfileView: View {
+    let userId: String
+    var client: EventsClient
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var profile: MemberProfile?
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let profile {
+                    List {
+                        Text(profile.name.lowercased())
+                            .font(.headline)
+                        if !profile.nickname.isEmpty {
+                            Text(profile.nickname.lowercased())
+                                .foregroundStyle(.secondary)
+                        }
+                        if !profile.pronouns.isEmpty {
+                            Text(profile.pronouns.lowercased())
+                                .foregroundStyle(.secondary)
+                        }
+                        if !profile.bio.isEmpty {
+                            Section(ProfileCopy.bio) {
+                                Text(profile.bio.lowercased())
+                            }
+                        }
+                    }
+                } else if let error {
+                    ContentUnavailableView {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                    }
+                } else {
+                    ProgressView()
+                }
+            }
+            .navigationTitle(ProfileCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        do {
+            profile = try await client.profile(userId: userId)
+            error = nil
+        } catch {
+            self.error = "couldn't load your profile — try refreshing"
+        }
     }
 }
 

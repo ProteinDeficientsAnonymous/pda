@@ -409,6 +409,10 @@ func canShowFlagEvent(user: SessionUser?) -> Bool {
     user?.isMember == true
 }
 
+func canShowProfile(user: SessionUser?) -> Bool {
+    user != nil
+}
+
 func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
 }
@@ -427,6 +431,30 @@ func eventCheckInReportURL(base: URL, eventId: String) -> URL {
 
 func eventFlagURL(base: URL, eventId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/flag/", relativeTo: base)!.absoluteURL
+}
+
+func userProfileURL(base: URL, userId: String) -> URL {
+    URL(string: "/api/auth/users/\(userId)/profile/", relativeTo: base)!.absoluteURL
+}
+
+struct MemberProfile: Decodable {
+    let name: String
+    let bio: String
+    let pronouns: String
+    let nickname: String
+
+    enum CodingKeys: String, CodingKey {
+        case name = "full_name"
+        case bio, pronouns, nickname
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
+        pronouns = try c.decodeIfPresent(String.self, forKey: .pronouns) ?? ""
+        nickname = try c.decodeIfPresent(String.self, forKey: .nickname) ?? ""
+    }
 }
 
 struct EventFlag: Decodable {
@@ -1006,6 +1034,10 @@ struct EventsClient {
             url: eventFlagURL(base: baseURL, eventId: eventId),
             body: ["reason": reason]
         )
+    }
+
+    func profile(userId: String) async throws -> MemberProfile {
+        try await sendJSON("GET", url: userProfileURL(base: baseURL, userId: userId))
     }
 
     func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {
