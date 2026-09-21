@@ -7,6 +7,7 @@ struct EventListView: View {
     @State private var lockTitle = ""
     @State private var lockBody = ""
     @State private var showLock = false
+    @State private var showMyRsvps = false
 
     var body: some View {
         NavigationStack {
@@ -46,6 +47,8 @@ struct EventListView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
+                    Button(PublicRsvpCopy.myRsvpsTitle) { showMyRsvps = true }
+                    Spacer()
                     Button("directory") { open(directoryChrome(for: session.user)) }
                     Spacer()
                     Button("add event") { open(addEventChrome(for: session.user)) }
@@ -57,6 +60,9 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showLock) {
                 MemberLockSheet(title: lockTitle, message: lockBody)
+            }
+            .sheet(isPresented: $showMyRsvps) {
+                MyRsvpsView()
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -273,6 +279,10 @@ struct EventDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
+
+                if session.user == nil, canPublicRsvp(detail) {
+                    PublicRsvpFormView(event: detail)
+                }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -321,6 +331,162 @@ final class EventListModel {
             state = .loaded(events)
         } catch {
             state = .failed("couldn't load events — try again")
+        }
+    }
+}
+
+@Observable
+final class PublicRsvpModel {
+    enum Step: Equatable { case phone, form, member, saved }
+
+    var step: Step = .phone
+    var phone = ""
+    var firstName = ""
+    var email = ""
+    var status = "attending"
+    var error: String?
+    var busy = false
+    let eventId: String
+    var client: PublicRsvpClient
+
+    init(eventId: String, client: PublicRsvpClient = PublicRsvpClient()) {
+        self.eventId = eventId
+        self.client = client
+    }
+
+    func submitPhone() async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        do {
+            switch try await client.checkPhone(eventId: eventId, phone: phone) {
+            case .member: step = .member
+            case .new, .nonMember: step = .form
+            }
+        } catch {
+            self.error = "couldn't check your number — try again"
+        }
+    }
+
+    func submitRsvp() async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await client.submit(
+                eventId: eventId,
+                phone: phone,
+                firstName: firstName,
+                email: email,
+                status: status
+            )
+            step = .saved
+        } catch {
+            self.error = "couldn't save your rsvp — try again"
+        }
+    }
+}
+
+struct PublicRsvpFormView: View {
+    @Environment(AuthSession.self) private var session
+    @State private var model: PublicRsvpModel
+    @State private var showLogin = false
+
+    init(event: Event) {
+        _model = State(initialValue: PublicRsvpModel(eventId: event.id))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(PublicRsvpCopy.title).font(.headline)
+            if let error = model.error {
+                Text(error).font(.subheadline).foregroundStyle(.secondary)
+            }
+            switch model.step {
+            case .phone:
+                TextField(PublicRsvpCopy.phoneLabel, text: $model.phone)
+                    .textContentType(.telephoneNumber)
+                    .keyboardType(.phonePad)
+                Button(PublicRsvpCopy.continueButton) { Task { await model.submitPhone() } }
+                    .disabled(model.busy || model.phone.isEmpty)
+            case .form:
+                TextField(PublicRsvpCopy.firstNameLabel, text: $model.firstName)
+                    .textContentType(.givenName)
+                TextField(PublicRsvpCopy.emailLabel, text: $model.email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                Picker("status", selection: $model.status) {
+                    Text(PublicRsvpCopy.going).tag("attending")
+                    Text(PublicRsvpCopy.maybe).tag("maybe")
+                }
+                .pickerStyle(.segmented)
+                Button(PublicRsvpCopy.submit) { Task { await model.submitRsvp() } }
+                    .disabled(model.busy || model.firstName.isEmpty || model.email.isEmpty)
+            case .member:
+                Text(PublicRsvpCopy.memberBody)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button("sign in") { showLogin = true }
+            case .saved:
+                Text(PublicRsvpCopy.saved)
+                    .font(.subheadline)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .sheet(isPresented: $showLogin) {
+            LoginView(client: session.client)
+                .environment(session)
+        }
+    }
+}
+
+struct MyRsvpsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var items: [PublicRsvpItem] = []
+    @State private var message = PublicRsvpCopy.empty
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if items.isEmpty {
+                    ContentUnavailableView(message, systemImage: "leaf")
+                } else {
+                    List(items, id: \.title) { item in
+                        VStack(alignment: .leading) {
+                            Text(item.title.lowercased())
+                            Text(item.status.lowercased())
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(PublicRsvpCopy.myRsvpsTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        guard let token = RsvpTokenStore().load() else {
+            items = []
+            message = PublicRsvpCopy.empty
+            return
+        }
+        do {
+            items = try await PublicRsvpClient().myRsvps(token: token)
+            if items.isEmpty { message = PublicRsvpCopy.empty }
+        } catch {
+            items = []
+            message = "couldn't load rsvps — try again"
         }
     }
 }

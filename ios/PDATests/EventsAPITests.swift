@@ -175,6 +175,27 @@ final class EventsAPITests: XCTestCase {
         XCTAssertFalse(community.searchableText.contains("123 main st"))
     }
 
+    func test_canPublicRsvp_onlyOfficialPublicEnabledActiveFuture() throws {
+        XCTAssertTrue(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"official","visibility":"public","rsvp_enabled":true,"status":"active","is_past":false}
+        """)))
+        XCTAssertFalse(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"community","visibility":"public","rsvp_enabled":true}
+        """)))
+        XCTAssertFalse(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"official","visibility":"members_only","rsvp_enabled":true}
+        """)))
+        XCTAssertFalse(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"official","visibility":"public","rsvp_enabled":false}
+        """)))
+        XCTAssertFalse(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"official","visibility":"public","rsvp_enabled":true,"status":"cancelled"}
+        """)))
+        XCTAssertFalse(canPublicRsvp(try Event.decodeJSON("""
+        {"id":"e","title":"e","event_type":"official","visibility":"public","rsvp_enabled":true,"is_past":true}
+        """)))
+    }
+
     func test_eventURLs_keepTrailingSlash() {
         let base = URL(string: "https://staging-pda.up.railway.app")!
         XCTAssertEqual(

@@ -57,6 +57,8 @@ struct Event: Decodable, Hashable, Identifiable {
     let cashappLink: String
     let zelleInfo: String
     let myRsvp: String
+    let rsvpEnabled: Bool
+    let isPast: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -77,6 +79,8 @@ struct Event: Decodable, Hashable, Identifiable {
         case cashappLink = "cashapp_link"
         case zelleInfo = "zelle_info"
         case myRsvp = "my_rsvp"
+        case rsvpEnabled = "rsvp_enabled"
+        case isPast = "is_past"
     }
 
     init(from decoder: Decoder) throws {
@@ -108,6 +112,8 @@ struct Event: Decodable, Hashable, Identifiable {
         cashappLink = try c.decodeIfPresent(String.self, forKey: .cashappLink) ?? ""
         zelleInfo = try c.decodeIfPresent(String.self, forKey: .zelleInfo) ?? ""
         myRsvp = try c.decodeIfPresent(String.self, forKey: .myRsvp) ?? ""
+        rsvpEnabled = try c.decodeIfPresent(Bool.self, forKey: .rsvpEnabled) ?? false
+        isPast = try c.decodeIfPresent(Bool.self, forKey: .isPast) ?? false
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -267,6 +273,129 @@ func canSeeMemberEventDetails(_ user: SessionUser?, event: Event) -> Bool {
     guard let user else { return false }
     if user.isMember { return true }
     return event.eventType == "official" || event.eventType == "club"
+}
+
+func canPublicRsvp(_ event: Event) -> Bool {
+    event.eventType == "official"
+        && event.visibility == "public"
+        && event.rsvpEnabled
+        && event.status != "cancelled"
+        && !event.isPast
+}
+
+enum PublicRsvpPhoneStatus: String, Decodable, Equatable {
+    case member
+    case nonMember = "non_member"
+    case new
+}
+
+enum PublicRsvpCopy {
+    static let title = "rsvp"
+    static let phoneLabel = "phone number"
+    static let firstNameLabel = "first name"
+    static let emailLabel = "email"
+    static let going = "i'm going"
+    static let maybe = "maybe"
+    static let submit = "save rsvp"
+    static let memberBody = "that number has an account — sign in to rsvp"
+    static let myRsvpsTitle = "my rsvps"
+    static let empty = "no rsvps on this device yet"
+    static let continueButton = "continue"
+    static let saved = "you're on the list"
+}
+
+struct RsvpTokenStore {
+    var defaults: UserDefaults = .standard
+    static let key = "pda-rsvp-token"
+
+    func load() -> String? {
+        let value = defaults.string(forKey: Self.key) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
+    func save(_ token: String) {
+        defaults.set(token, forKey: Self.key)
+    }
+
+    func clear() {
+        defaults.removeObject(forKey: Self.key)
+    }
+}
+
+struct PublicRsvpItem: Equatable {
+    let title: String
+    let status: String
+}
+
+struct PublicRsvpClient {
+    var baseURL: URL = APIConfig.baseURL
+    var session: URLSession = .shared
+    var tokens: RsvpTokenStore = RsvpTokenStore()
+
+    func checkPhone(eventId: String, phone: String) async throws -> PublicRsvpPhoneStatus {
+        struct Out: Decodable { let status: PublicRsvpPhoneStatus }
+        let data = try await post("/api/community/public/events/\(eventId)/rsvp-phone-check/", [
+            "phone_number": phone,
+        ])
+        return try Event.decoder.decode(Out.self, from: data).status
+    }
+
+    func submit(
+        eventId: String,
+        phone: String,
+        firstName: String,
+        email: String,
+        status: String
+    ) async throws -> String {
+        struct Out: Decodable { let rsvpToken: String
+            enum CodingKeys: String, CodingKey { case rsvpToken = "rsvp_token" }
+        }
+        let data = try await post("/api/community/public/events/\(eventId)/rsvp/", [
+            "phone_number": phone,
+            "first_name": firstName,
+            "email": email,
+            "status": status,
+            "last_name": "",
+            "website": "",
+        ])
+        let token = try Event.decoder.decode(Out.self, from: data).rsvpToken
+        tokens.save(token)
+        return token
+    }
+
+    func myRsvps(token: String) async throws -> [PublicRsvpItem] {
+        struct Out: Decodable {
+            struct Row: Decodable {
+                let status: String
+                let event: Event
+            }
+            let rsvps: [Row]
+        }
+        var comps = URLComponents(
+            url: URL(string: "/api/community/public/my-rsvps/", relativeTo: baseURL)!.absoluteURL,
+            resolvingAgainstBaseURL: false
+        )!
+        comps.queryItems = [URLQueryItem(name: "token", value: token)]
+        var req = URLRequest(url: comps.url!)
+        req.httpMethod = "GET"
+        let (data, response) = try await session.data(for: req)
+        let http = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(http) else { throw APIError.http(http) }
+        return try Event.decoder.decode(Out.self, from: data).rsvps.map {
+            PublicRsvpItem(title: $0.event.title, status: $0.status)
+        }
+    }
+
+    private func post(_ path: String, _ body: [String: String]) async throws -> Data {
+        var req = URLRequest(url: URL(string: path, relativeTo: baseURL)!.absoluteURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return data
+    }
 }
 
 private func uniqueNonEmpty(_ names: [String]) -> [String] {

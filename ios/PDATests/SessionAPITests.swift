@@ -370,6 +370,97 @@ final class SessionAPITests: XCTestCase {
         XCTAssertTrue(canSeeMemberEventDetails(member, event: official))
     }
 
+    func test_publicRsvpCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            PublicRsvpCopy.title,
+            PublicRsvpCopy.phoneLabel,
+            PublicRsvpCopy.firstNameLabel,
+            PublicRsvpCopy.emailLabel,
+            PublicRsvpCopy.going,
+            PublicRsvpCopy.maybe,
+            PublicRsvpCopy.submit,
+            PublicRsvpCopy.memberBody,
+            PublicRsvpCopy.myRsvpsTitle,
+            PublicRsvpCopy.empty,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_publicRsvpCheckPhone_postsEventScopedPhone() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/public/events/evt-1/rsvp-phone-check/")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["phone_number"] as? String, "+15555550999")
+            return MockHTTP.json(200, ["status": "new"])
+        }
+        let status = try await PublicRsvpClient(baseURL: base, session: MockHTTP.session())
+            .checkPhone(eventId: "evt-1", phone: "+15555550999")
+        XCTAssertEqual(status, .new)
+    }
+
+    func test_publicRsvpSubmit_storesToken() async throws {
+        let tokens = RsvpTokenStore(defaults: UserDefaults(suiteName: "pda-rsvp-test-\(UUID().uuidString)")!)
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/public/events/evt-1/rsvp/")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["phone_number"] as? String, "+15555550999")
+            XCTAssertEqual(body["first_name"] as? String, "ada")
+            XCTAssertEqual(body["email"] as? String, "ada@pda.test")
+            XCTAssertEqual(body["status"] as? String, "attending")
+            XCTAssertEqual(body["website"] as? String, "")
+            return MockHTTP.json(200, [
+                "rsvp_token": "tok-abc",
+                "rsvp": ["status": "attending", "has_plus_one": false],
+                "event": ["id": "evt-1", "title": "meetup"],
+            ])
+        }
+        let token = try await PublicRsvpClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
+            .submit(
+                eventId: "evt-1",
+                phone: "+15555550999",
+                firstName: "ada",
+                email: "ada@pda.test",
+                status: "attending"
+            )
+        XCTAssertEqual(token, "tok-abc")
+        XCTAssertEqual(tokens.load(), "tok-abc")
+    }
+
+    func test_myRsvps_sendsTokenQuery() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/public/my-rsvps/")
+            XCTAssertEqual(request.url?.query, "token=tok-abc")
+            return MockHTTP.json(200, [
+                "user": ["display_name": "ada", "email": "ada@pda.test", "phone_number": "+15555550999"],
+                "rsvps": [
+                    [
+                        "status": "attending",
+                        "has_plus_one": false,
+                        "event": ["id": "evt-1", "title": "meetup", "event_type": "official"],
+                    ],
+                ],
+            ])
+        }
+        let items = try await PublicRsvpClient(baseURL: base, session: MockHTTP.session())
+            .myRsvps(token: "tok-abc")
+        XCTAssertEqual(items.map(\.title), ["meetup"])
+        XCTAssertEqual(items.map(\.status), ["attending"])
+    }
+
+    func test_publicRsvpCheckPhone_mapsMemberWithoutJoin() async throws {
+        MockHTTP.handler = { _ in MockHTTP.json(200, ["status": "member"]) }
+        let status = try await PublicRsvpClient(baseURL: base, session: MockHTTP.session())
+            .checkPhone(eventId: "evt-1", phone: "+15555550100")
+        XCTAssertEqual(status, .member)
+        XCTAssertFalse(PublicRsvpCopy.memberBody.contains("join"))
+    }
+
     func test_eventCopy_tentativeCommunityLooksLoggedOut_officialDoesNot() throws {
         let tentative = try user(isMember: false)
         let member = try user()
