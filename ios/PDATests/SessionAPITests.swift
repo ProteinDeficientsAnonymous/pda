@@ -398,6 +398,47 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(created.title, "potluck")
     }
 
+    func test_canEditEvent_memberHostOnly() throws {
+        let hosted = try Event.decodeJSON(#"{ "id": "e", "title": "e", "co_host_ids": ["user-1"] }"#)
+        let other = try Event.decodeJSON(#"{ "id": "o", "title": "o", "co_host_ids": ["user-2"] }"#)
+        let member = try user()
+        let tentative = try user(isMember: false)
+        XCTAssertTrue(canEditEvent(hosted, user: member))
+        XCTAssertFalse(canEditEvent(hosted, user: tentative))
+        XCTAssertFalse(canEditEvent(hosted, user: nil))
+        XCTAssertFalse(canEditEvent(other, user: member))
+    }
+
+    func test_editEventCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [EditEventCopy.title, EditEventCopy.save]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_updateEvent_patchesTitleTimeDescriptionWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["title"] as? String, "potluck v2")
+            XCTAssertEqual(body["description"] as? String, "bring two dishes")
+            XCTAssertEqual(body["start_datetime"] as? String, "2026-10-02T18:00:00Z")
+            XCTAssertNil(body["event_type"])
+            return MockHTTP.json(200, ["id": "evt-1", "title": "potluck v2"])
+        }
+        let updated = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).update(id: "evt-1", title: "potluck v2", start: "2026-10-02T18:00:00Z", description: "bring two dishes")
+        XCTAssertEqual(updated.id, "evt-1")
+        XCTAssertEqual(updated.title, "potluck v2")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

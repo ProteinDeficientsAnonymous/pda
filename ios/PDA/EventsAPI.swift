@@ -290,6 +290,11 @@ func isHosting(_ event: Event, userId: String) -> Bool {
     event.coHostIds.contains(userId)
 }
 
+func canEditEvent(_ event: Event, user: SessionUser?) -> Bool {
+    guard let user, user.isMember else { return false }
+    return isHosting(event, userId: user.id)
+}
+
 func isMyEvent(_ event: Event, userId: String) -> Bool {
     isHosting(event, userId: userId) || event.myRsvp == "attending" || event.myRsvp == "maybe"
 }
@@ -519,6 +524,24 @@ struct EventsClient {
             "description": description,
             "start_datetime": start,
             "event_type": eventType,
+        ])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(Event.self, from: data)
+    }
+
+    func update(id: String, title: String, start: String, description: String) async throws -> Event {
+        var req = URLRequest(url: eventDetailURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "title": title,
+            "description": description,
+            "start_datetime": start,
         ])
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0

@@ -185,6 +185,7 @@ struct EventDetailView: View {
     let event: Event
     @State private var detail: Event
     @State private var loadError: String?
+    @State private var showEdit = false
 
     init(event: Event) {
         self.event = event
@@ -328,6 +329,17 @@ struct EventDetailView: View {
             ToolbarItem(placement: .principal) {
                 Text("event").font(.headline)
             }
+            if canEditEvent(detail, user: session.user) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("edit") { showEdit = true }
+                }
+            }
+        }
+        .sheet(isPresented: $showEdit) {
+            AddEventView(event: detail) {
+                Task { await refresh() }
+            }
+            .environment(session)
         }
         .task { await refresh() }
     }
@@ -625,14 +637,23 @@ struct MyEventsView: View {
 struct AddEventView: View {
     @Environment(AuthSession.self) private var session
     @Environment(\.dismiss) private var dismiss
+    var event: Event?
     var onCreated: () -> Void
 
-    @State private var title = ""
-    @State private var start = Date()
-    @State private var description = ""
+    @State private var title: String
+    @State private var start: Date
+    @State private var description: String
     @State private var eventType = "community"
     @State private var error: String?
     @State private var busy = false
+
+    init(event: Event? = nil, onCreated: @escaping () -> Void) {
+        self.event = event
+        self.onCreated = onCreated
+        _title = State(initialValue: event?.title ?? "")
+        _start = State(initialValue: event?.startDatetime ?? Date())
+        _description = State(initialValue: event?.description ?? "")
+    }
 
     var body: some View {
         NavigationStack {
@@ -643,7 +664,7 @@ struct AddEventView: View {
                 TextField(AddEventCopy.descriptionLabel, text: $description, axis: .vertical)
                     .lineLimit(3 ... 8)
                 let types = session.user.map(allowedEventTypes) ?? ["community"]
-                if types.count > 1 {
+                if event == nil, types.count > 1 {
                     Picker("type", selection: $eventType) {
                         ForEach(types, id: \.self) { type in
                             Text(typeLabel(type)).tag(type)
@@ -654,14 +675,14 @@ struct AddEventView: View {
                     Text(error).foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(AddEventCopy.title)
+            .navigationTitle(event == nil ? AddEventCopy.title : EditEventCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(AddEventCopy.save) { Task { await save() } }
+                    Button(event == nil ? AddEventCopy.save : EditEventCopy.save) { Task { await save() } }
                         .disabled(busy || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -685,12 +706,21 @@ struct AddEventView: View {
         var client = EventsClient()
         client.tokens = session.client.tokens
         do {
-            _ = try await client.create(
-                title: title,
-                start: formatter.string(from: start),
-                description: description,
-                eventType: eventType
-            )
+            if let event {
+                _ = try await client.update(
+                    id: event.id,
+                    title: title,
+                    start: formatter.string(from: start),
+                    description: description
+                )
+            } else {
+                _ = try await client.create(
+                    title: title,
+                    start: formatter.string(from: start),
+                    description: description,
+                    eventType: eventType
+                )
+            }
             onCreated()
             dismiss()
         } catch {

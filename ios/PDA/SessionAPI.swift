@@ -113,6 +113,11 @@ enum AddEventCopy {
     static let typeClub = "pda club"
 }
 
+enum EditEventCopy {
+    static let title = "edit event"
+    static let save = "save event"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)
