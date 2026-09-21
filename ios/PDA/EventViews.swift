@@ -191,6 +191,7 @@ struct EventDetailView: View {
     @State private var showCheckIn = false
     @State private var showManageRsvps = false
     @State private var showCheckInReport = false
+    @State private var showFlag = false
     @State private var hostAttendanceReport = false
 
     init(event: Event) {
@@ -250,6 +251,10 @@ struct EventDetailView: View {
 
                 if canShowCheckInReport(detail, user: session.user, flagOn: hostAttendanceReport) {
                     Button(CheckInReportCopy.title) { showCheckInReport = true }
+                }
+
+                if canShowFlagEvent(user: session.user) {
+                    Button(FlagEventCopy.title) { showFlag = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -421,6 +426,12 @@ struct EventDetailView: View {
         }
         .sheet(isPresented: $showCheckInReport) {
             CheckInReportView(
+                eventId: detail.id,
+                client: EventsClient(tokens: session.client.tokens)
+            )
+        }
+        .sheet(isPresented: $showFlag) {
+            FlagEventView(
                 eventId: detail.id,
                 client: EventsClient(tokens: session.client.tokens)
             )
@@ -1205,6 +1216,67 @@ struct CheckInView: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't save check-in — try again"
+        }
+    }
+}
+
+struct FlagEventView: View {
+    let eventId: String
+    var client: EventsClient
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var reason = ""
+    @State private var error: String?
+    @State private var thanks = false
+    @State private var busy = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(FlagEventCopy.prompt)
+                    TextField(FlagEventCopy.reason, text: $reason, axis: .vertical)
+                        .textInputAutocapitalization(.never)
+                }
+                if thanks {
+                    Text(FlagEventCopy.thanks)
+                }
+                if let error {
+                    Text(error).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(FlagEventCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(FlagEventCopy.submit) { Task { await submit() } }
+                        .disabled(busy || reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func submit() async {
+        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await client.flagEvent(eventId: eventId, reason: trimmed)
+            error = nil
+            thanks = true
+        } catch APIError.http(409) {
+            self.error = "you've already flagged this event"
+            thanks = false
+        } catch APIError.http(429) {
+            self.error = "you've flagged too many events — try again later"
+            thanks = false
+        } catch {
+            self.error = "couldn't submit — try again"
+            thanks = false
         }
     }
 }

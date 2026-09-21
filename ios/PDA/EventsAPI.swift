@@ -405,6 +405,10 @@ func canShowCheckInReport(_ event: Event, user: SessionUser?, flagOn: Bool) -> B
     return isHosting(event, userId: user.id)
 }
 
+func canShowFlagEvent(user: SessionUser?) -> Bool {
+    user?.isMember == true
+}
+
 func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
 }
@@ -419,6 +423,21 @@ func featureFlagsURL(base: URL) -> URL {
 
 func eventCheckInReportURL(base: URL, eventId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/report/", relativeTo: base)!.absoluteURL
+}
+
+func eventFlagURL(base: URL, eventId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/flag/", relativeTo: base)!.absoluteURL
+}
+
+struct EventFlag: Decodable {
+    let id: String
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+    }
+
+    enum CodingKeys: String, CodingKey { case id }
 }
 
 struct CheckInReportPerson: Decodable, Hashable {
@@ -979,6 +998,14 @@ struct EventsClient {
 
     func checkInReport(eventId: String) async throws -> CheckInReport {
         try await sendJSON("GET", url: eventCheckInReportURL(base: baseURL, eventId: eventId))
+    }
+
+    func flagEvent(eventId: String, reason: String) async throws -> EventFlag {
+        try await sendJSON(
+            "POST",
+            url: eventFlagURL(base: baseURL, eventId: eventId),
+            body: ["reason": reason]
+        )
     }
 
     func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {

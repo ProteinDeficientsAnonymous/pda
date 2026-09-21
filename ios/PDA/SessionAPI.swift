@@ -186,6 +186,14 @@ enum CheckInReportCopy {
     static let unmarked = "unmarked"
 }
 
+enum FlagEventCopy {
+    static let title = "report event"
+    static let reason = "reason"
+    static let submit = "submit"
+    static let prompt = "what's wrong with this event?"
+    static let thanks = "thanks — we'll take a look"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

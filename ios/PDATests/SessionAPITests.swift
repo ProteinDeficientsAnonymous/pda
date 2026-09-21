@@ -1098,6 +1098,40 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(report.attended.first?.name, "ada")
     }
 
+    func test_canShowFlagEvent_signedInMember() throws {
+        let member = try user()
+        let tentative = try user(isMember: false)
+        XCTAssertTrue(canShowFlagEvent(user: member))
+        XCTAssertFalse(canShowFlagEvent(user: tentative))
+        XCTAssertFalse(canShowFlagEvent(user: nil))
+    }
+
+    func test_flagEventCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [FlagEventCopy.title, FlagEventCopy.reason, FlagEventCopy.submit]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_flagEvent_postsReasonWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/flag/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["reason"] as? String, "spam")
+            return MockHTTP.json(201, ["id": "flag-1", "reason": "spam"])
+        }
+        let flag = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).flagEvent(eventId: "evt-1", reason: "spam")
+        XCTAssertEqual(flag.id, "flag-1")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
