@@ -898,6 +898,85 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(event.myRsvp, "attending")
     }
 
+    func test_isCheckInOpen_hourBeforeStartAndStaysOpenAfter() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let stamp = ISO8601DateFormatter.string(
+            from: start,
+            timeZone: TimeZone(secondsFromGMT: 0)!,
+            formatOptions: [.withInternetDateTime]
+        )
+        let event = try Event.decodeJSON("""
+        { "id": "e", "title": "e", "start_datetime": "\(stamp)" }
+        """)
+        XCTAssertFalse(isCheckInOpen(event, now: start.addingTimeInterval(-3601)))
+        XCTAssertTrue(isCheckInOpen(event, now: start.addingTimeInterval(-3600)))
+        XCTAssertTrue(isCheckInOpen(event, now: start.addingTimeInterval(120)))
+        let past = try Event.decodeJSON(#"{ "id": "p", "title": "p", "is_past": true }"#)
+        XCTAssertTrue(isCheckInOpen(past, now: start))
+        let tbd = try Event.decodeJSON(#"{ "id": "t", "title": "t" }"#)
+        XCTAssertFalse(isCheckInOpen(tbd, now: start))
+    }
+
+    func test_canShowCheckIn_hostWhenRsvpEnabled() throws {
+        let hosted = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "co_host_ids": ["user-1"] }"#
+        )
+        let off = try Event.decodeJSON(#"{ "id": "e", "title": "e", "co_host_ids": ["user-1"] }"#)
+        let other = try Event.decodeJSON(
+            #"{ "id": "o", "title": "o", "rsvp_enabled": true, "co_host_ids": ["user-2"] }"#
+        )
+        let member = try user()
+        XCTAssertTrue(canShowCheckIn(hosted, user: member))
+        XCTAssertFalse(canShowCheckIn(hosted, user: nil))
+        XCTAssertFalse(canShowCheckIn(off, user: member))
+        XCTAssertFalse(canShowCheckIn(other, user: member))
+    }
+
+    func test_eventGuest_decodesAttendance() throws {
+        let event = try Event.decodeJSON("""
+        {
+          "id": "e",
+          "title": "e",
+          "guests": [
+            {"user_id": "u-2", "name": "ada", "status": "attending", "attendance": "attended"}
+          ]
+        }
+        """)
+        XCTAssertEqual(event.guests.first?.attendance, "attended")
+    }
+
+    func test_checkInCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [CheckInCopy.title, CheckInCopy.opensLater, CheckInCopy.attended]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_setAttendance_postsAttendedWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/rsvps/u-2/attendance/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["attendance"] as? String, "attended")
+            return MockHTTP.json(200, [
+                "id": "evt-1",
+                "title": "potluck",
+                "guests": [
+                    ["user_id": "u-2", "name": "ada", "status": "attending", "attendance": "attended"],
+                ],
+            ])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).setAttendance(eventId: "evt-1", userId: "u-2", attendance: "attended")
+        XCTAssertEqual(event.guests.first?.attendance, "attended")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

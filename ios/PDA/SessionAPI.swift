@@ -161,6 +161,14 @@ enum MemberRsvpCopy {
     static let required = "required"
 }
 
+enum CheckInCopy {
+    static let title = "check-in"
+    static let opensLater = "check-in opens an hour before the event"
+    static let attended = "attended"
+    static let didntAttend = "didn't attend"
+    static let empty = "no rsvps to check in"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

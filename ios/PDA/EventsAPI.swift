@@ -10,10 +10,11 @@ struct EventGuest: Decodable, Hashable {
     let userId: String
     let name: String
     let status: String
+    let attendance: String
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
-        case name, status
+        case name, status, attendance
     }
 
     init(from decoder: Decoder) throws {
@@ -21,6 +22,7 @@ struct EventGuest: Decodable, Hashable {
         userId = try c.decodeIfPresent(String.self, forKey: .userId) ?? ""
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
         status = try c.decodeIfPresent(String.self, forKey: .status) ?? ""
+        attendance = try c.decodeIfPresent(String.self, forKey: .attendance) ?? ""
     }
 }
 
@@ -380,6 +382,21 @@ func canShowMemberRsvp(_ event: Event, signedIn: Bool) -> Bool {
 
 func eventRsvpURL(base: URL, eventId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvp/", relativeTo: base)!.absoluteURL
+}
+
+func isCheckInOpen(_ event: Event, now: Date = .now) -> Bool {
+    if event.isPast { return true }
+    guard let start = event.startDatetime else { return false }
+    return start.timeIntervalSince(now) <= 3600
+}
+
+func canShowCheckIn(_ event: Event, user: SessionUser?) -> Bool {
+    guard let user, event.rsvpEnabled else { return false }
+    return isHosting(event, userId: user.id)
+}
+
+func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
 }
 
 struct MemberHit: Decodable, Hashable, Identifiable {
@@ -872,6 +889,14 @@ struct EventsClient {
             "POST",
             url: eventRsvpURL(base: baseURL, eventId: eventId),
             body: ["status": status, "questionnaire_responses": answers]
+        )
+    }
+
+    func setAttendance(eventId: String, userId: String, attendance: String) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventAttendanceURL(base: baseURL, eventId: eventId, userId: userId),
+            body: ["attendance": attendance]
         )
     }
 

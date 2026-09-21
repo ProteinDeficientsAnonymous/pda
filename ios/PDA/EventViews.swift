@@ -188,6 +188,7 @@ struct EventDetailView: View {
     @State private var showEdit = false
     @State private var showLogin = false
     @State private var showInvite = false
+    @State private var showCheckIn = false
 
     init(event: Event) {
         self.event = event
@@ -234,6 +235,10 @@ struct EventDetailView: View {
 
                 if canInviteGuests(detail, user: session.user) {
                     Button(InviteCopy.send) { showInvite = true }
+                }
+
+                if canShowCheckIn(detail, user: session.user) {
+                    Button(CheckInCopy.title) { showCheckIn = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -390,6 +395,12 @@ struct EventDetailView: View {
                 client: EventsClient(tokens: session.client.tokens)
             ) { detail = $0 }
             .environment(session)
+        }
+        .sheet(isPresented: $showCheckIn) {
+            CheckInView(
+                event: detail,
+                client: EventsClient(tokens: session.client.tokens)
+            ) { detail = $0 }
         }
         .task { await refresh() }
     }
@@ -1100,6 +1111,76 @@ struct MemberRsvpView: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't save your rsvp — try again"
+        }
+    }
+}
+
+struct CheckInView: View {
+    let event: Event
+    var client: EventsClient
+    var onUpdated: (Event) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var current: Event
+    @State private var error: String?
+    @State private var busy = false
+
+    init(event: Event, client: EventsClient, onUpdated: @escaping (Event) -> Void) {
+        self.event = event
+        self.client = client
+        self.onUpdated = onUpdated
+        _current = State(initialValue: event)
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !isCheckInOpen(current) {
+                    Text(CheckInCopy.opensLater)
+                } else if current.guests.isEmpty {
+                    Text(CheckInCopy.empty)
+                } else {
+                    ForEach(current.guests, id: \.userId) { guest in
+                        HStack {
+                            Text(guest.name.lowercased())
+                            Spacer()
+                            Button(CheckInCopy.attended) { Task { await mark(guest.userId, "attended") } }
+                                .fontWeight(guest.attendance == "attended" ? .bold : .regular)
+                                .disabled(busy)
+                            Button(CheckInCopy.didntAttend) { Task { await mark(guest.userId, "didnt_go") } }
+                                .fontWeight(guest.attendance == "didnt_go" ? .bold : .regular)
+                                .disabled(busy)
+                        }
+                    }
+                }
+                if let error {
+                    Text(error).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(CheckInCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func mark(_ userId: String, _ attendance: String) async {
+        busy = true
+        defer { busy = false }
+        do {
+            let updated = try await client.setAttendance(
+                eventId: current.id,
+                userId: userId,
+                attendance: attendance
+            )
+            current = updated
+            error = nil
+            onUpdated(updated)
+        } catch {
+            self.error = "couldn't save check-in — try again"
         }
     }
 }
