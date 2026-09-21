@@ -280,7 +280,12 @@ struct EventDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if let myRsvp = copy.myRsvp {
+                if canShowMemberRsvp(detail, signedIn: session.user != nil) {
+                    MemberRsvpView(
+                        event: detail,
+                        client: EventsClient(tokens: session.client.tokens)
+                    ) { detail = $0 }
+                } else if let myRsvp = copy.myRsvp {
                     Text("your rsvp: \(myRsvp.lowercased())")
                         .font(.subheadline)
                 }
@@ -996,6 +1001,105 @@ struct CohostInviteBanner: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't update that invite — try again"
+        }
+    }
+}
+
+struct MemberRsvpView: View {
+    let event: Event
+    var client: EventsClient
+    var onUpdated: (Event) -> Void
+
+    @State private var status: String
+    @State private var answers: [String: String]
+    @State private var error: String?
+    @State private var busy = false
+
+    init(event: Event, client: EventsClient, onUpdated: @escaping (Event) -> Void) {
+        self.event = event
+        self.client = client
+        self.onUpdated = onUpdated
+        _status = State(initialValue: event.myRsvp.isEmpty ? "attending" : event.myRsvp)
+        _answers = State(initialValue: Dictionary(uniqueKeysWithValues: event.rsvpQuestions.map { ($0.id, "") }))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(PublicRsvpCopy.title).font(.headline)
+            HStack {
+                statusButton(MemberRsvpCopy.going, "attending")
+                statusButton(MemberRsvpCopy.maybe, "maybe")
+                statusButton(MemberRsvpCopy.cantGo, "cant_go")
+            }
+            if rsvpQuestionsApplyToStatus(status), !event.rsvpQuestions.isEmpty {
+                Text(RsvpQuestionCopy.title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                ForEach(event.rsvpQuestions) { question in
+                    questionField(question)
+                }
+            }
+            if let error {
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Button(MemberRsvpCopy.save) { Task { await save() } }
+                .disabled(busy)
+        }
+    }
+
+    private func statusButton(_ label: String, _ value: String) -> some View {
+        Button(label) { status = value }
+            .fontWeight(status == value ? .bold : .regular)
+    }
+
+    @ViewBuilder
+    private func questionField(_ question: EventRsvpQuestion) -> some View {
+        let label = question.label.lowercased()
+        switch question.fieldType {
+        case "select":
+            Picker(label, selection: answerBinding(question.id)) {
+                Text("").tag("")
+                ForEach(question.options, id: \.self) { option in
+                    Text(option.lowercased()).tag(option)
+                }
+            }
+        case "checkbox":
+            Toggle(label, isOn: Binding(
+                get: { !(answers[question.id] ?? "").isEmpty },
+                set: { answers[question.id] = $0 ? "yes" : "" }
+            ))
+        default:
+            TextField(label, text: answerBinding(question.id), axis: .vertical)
+                .textInputAutocapitalization(.never)
+        }
+    }
+
+    private func answerBinding(_ id: String) -> Binding<String> {
+        Binding(get: { answers[id] ?? "" }, set: { answers[id] = $0 })
+    }
+
+    private func save() async {
+        let payload: [String: String]
+        if rsvpQuestionsApplyToStatus(status) {
+            let missing = missingRequiredQuestionIds(event.rsvpQuestions, answers: answers)
+            if !missing.isEmpty {
+                error = MemberRsvpCopy.required
+                return
+            }
+            payload = answers.filter { !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        } else {
+            payload = [:]
+        }
+        busy = true
+        defer { busy = false }
+        do {
+            let updated = try await client.setRsvp(eventId: event.id, status: status, answers: payload)
+            error = nil
+            onUpdated(updated)
+        } catch {
+            self.error = "couldn't save your rsvp — try again"
         }
     }
 }

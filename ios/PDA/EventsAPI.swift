@@ -24,6 +24,28 @@ struct EventGuest: Decodable, Hashable {
     }
 }
 
+struct EventRsvpQuestion: Decodable, Hashable, Identifiable {
+    let id: String
+    let label: String
+    let fieldType: String
+    let required: Bool
+    let options: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case id, label, required, options
+        case fieldType = "field_type"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
+        label = try c.decodeIfPresent(String.self, forKey: .label) ?? ""
+        fieldType = try c.decodeIfPresent(String.self, forKey: .fieldType) ?? "textarea"
+        required = try c.decodeIfPresent(Bool.self, forKey: .required) ?? false
+        options = try c.decodeIfPresent([String].self, forKey: .options) ?? []
+    }
+}
+
 struct EventLinkCopy: Equatable, Hashable {
     let label: String
     let url: URL
@@ -64,6 +86,7 @@ struct Event: Decodable, Hashable, Identifiable {
     let myPendingCohostInviteId: String?
     let invitePermission: String
     let invitedUserIds: [String]
+    let rsvpQuestions: [EventRsvpQuestion]
 
     enum CodingKeys: String, CodingKey {
         case id, slug, title, description, tags, status, visibility, location, price, guests
@@ -91,6 +114,7 @@ struct Event: Decodable, Hashable, Identifiable {
         case myPendingCohostInviteId = "my_pending_cohost_invite_id"
         case invitePermission = "invite_permission"
         case invitedUserIds = "invited_user_ids"
+        case rsvpQuestions = "rsvp_questions"
     }
 
     init(from decoder: Decoder) throws {
@@ -130,6 +154,7 @@ struct Event: Decodable, Hashable, Identifiable {
         myPendingCohostInviteId = inviteId.isEmpty ? nil : inviteId
         invitePermission = try c.decodeIfPresent(String.self, forKey: .invitePermission) ?? ""
         invitedUserIds = try c.decodeIfPresent([String].self, forKey: .invitedUserIds) ?? []
+        rsvpQuestions = try c.decodeIfPresent([EventRsvpQuestion].self, forKey: .rsvpQuestions) ?? []
     }
 
     var memberLinks: [EventLinkCopy] {
@@ -338,6 +363,23 @@ func canInviteGuests(_ event: Event, user: SessionUser?) -> Bool {
     if event.coHostIds.contains(user.id) || user.permissions.contains("manage_events") { return true }
     return event.invitePermission == "all_members"
         && (event.myRsvp == "attending" || event.myRsvp == "maybe")
+}
+
+func rsvpQuestionsApplyToStatus(_ status: String) -> Bool {
+    status == "attending" || status == "waitlisted"
+}
+
+func missingRequiredQuestionIds(_ questions: [EventRsvpQuestion], answers: [String: String]) -> [String] {
+    questions.filter { $0.required && answers[$0.id]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false }
+        .map(\.id)
+}
+
+func canShowMemberRsvp(_ event: Event, signedIn: Bool) -> Bool {
+    signedIn && event.rsvpEnabled && !event.isPast && event.status != "cancelled"
+}
+
+func eventRsvpURL(base: URL, eventId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/rsvp/", relativeTo: base)!.absoluteURL
 }
 
 struct MemberHit: Decodable, Hashable, Identifiable {
@@ -822,6 +864,14 @@ struct EventsClient {
             "POST",
             url: eventInvitationsURL(base: baseURL, eventId: eventId),
             body: ["user_ids": userIds]
+        )
+    }
+
+    func setRsvp(eventId: String, status: String, answers: [String: String]) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventRsvpURL(base: baseURL, eventId: eventId),
+            body: ["status": status, "questionnaire_responses": answers]
         )
     }
 

@@ -837,6 +837,67 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(event.invitedUserIds, ["u-2"])
     }
 
+    func test_rsvpQuestionsApplyToStatus_onlyGoingAndWaitlisted() {
+        XCTAssertTrue(rsvpQuestionsApplyToStatus("attending"))
+        XCTAssertTrue(rsvpQuestionsApplyToStatus("waitlisted"))
+        XCTAssertFalse(rsvpQuestionsApplyToStatus("maybe"))
+        XCTAssertFalse(rsvpQuestionsApplyToStatus("cant_go"))
+    }
+
+    func test_missingRequiredQuestionIds_skipsFilledAndOptional() throws {
+        let event = try Event.decodeJSON("""
+        {
+          "id": "e",
+          "title": "e",
+          "rsvp_questions": [
+            {"id": "a", "label": "diet", "field_type": "textarea", "required": true, "options": []},
+            {"id": "b", "label": "notes", "field_type": "textarea", "required": false, "options": []},
+            {"id": "c", "label": "ride", "field_type": "select", "required": true, "options": ["yes", "no"]}
+          ]
+        }
+        """)
+        XCTAssertEqual(missingRequiredQuestionIds(event.rsvpQuestions, answers: ["a": "ok", "c": ""]), ["c"])
+        XCTAssertEqual(missingRequiredQuestionIds(event.rsvpQuestions, answers: ["a": "ok", "c": "yes"]), [])
+    }
+
+    func test_canShowMemberRsvp_signedInOpenEnabled() throws {
+        let open = try Event.decodeJSON(#"{ "id": "e", "title": "e", "rsvp_enabled": true }"#)
+        let past = try Event.decodeJSON(#"{ "id": "e", "title": "e", "rsvp_enabled": true, "is_past": true }"#)
+        let off = try Event.decodeJSON(#"{ "id": "e", "title": "e" }"#)
+        XCTAssertTrue(canShowMemberRsvp(open, signedIn: true))
+        XCTAssertFalse(canShowMemberRsvp(open, signedIn: false))
+        XCTAssertFalse(canShowMemberRsvp(past, signedIn: true))
+        XCTAssertFalse(canShowMemberRsvp(off, signedIn: true))
+    }
+
+    func test_rsvpQuestionCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [RsvpQuestionCopy.title, MemberRsvpCopy.save, MemberRsvpCopy.cantGo]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_setRsvp_postsStatusAndAnswersWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/rsvp/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["status"] as? String, "attending")
+            let answers = try XCTUnwrap(body["questionnaire_responses"] as? [String: Any])
+            XCTAssertEqual(answers["q1"] as? String, "driving")
+            return MockHTTP.json(200, ["id": "evt-1", "title": "potluck", "my_rsvp": "attending"])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).setRsvp(eventId: "evt-1", status: "attending", answers: ["q1": "driving"])
+        XCTAssertEqual(event.myRsvp, "attending")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

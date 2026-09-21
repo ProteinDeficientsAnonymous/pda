@@ -149,6 +149,18 @@ enum InviteCopy {
     static let cancel = "cancel"
 }
 
+enum RsvpQuestionCopy {
+    static let title = "questions"
+}
+
+enum MemberRsvpCopy {
+    static let save = "save"
+    static let cantGo = "can't go"
+    static let going = "i'm going"
+    static let maybe = "maybe"
+    static let required = "required"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)
