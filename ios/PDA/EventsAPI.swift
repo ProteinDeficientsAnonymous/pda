@@ -938,6 +938,10 @@ struct EventsClient {
     var session: URLSession = .shared
     var tokens: (any TokenStore)?
 
+    func home() async throws -> HomePage {
+        try await fetch(homeURL(base: baseURL))
+    }
+
     func events(status: String? = nil) async throws -> [Event] {
         try await fetch(eventsListURL(base: baseURL, status: status))
     }

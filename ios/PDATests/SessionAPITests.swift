@@ -1579,6 +1579,55 @@ final class SessionAPITests: XCTestCase {
         try await makeClient().markNotificationRead("n-1")
     }
 
+    func test_home_getsContentHtmlWithoutAuth() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/home/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            return MockHTTP.json(200, [
+                "content": "delta",
+                "content_pm": "{\"type\":\"doc\"}",
+                "content_html": "<p>hello</p>",
+                "updated_at": "2024-01-01T00:00:00Z",
+            ])
+        }
+        let home = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session()
+        ).home()
+        XCTAssertEqual(home.contentHtml, "<p>hello</p>")
+        XCTAssertEqual(home.content, "delta")
+        XCTAssertEqual(home.contentPm, "{\"type\":\"doc\"}")
+        XCTAssertEqual(home.updatedAt, "2024-01-01T00:00:00Z")
+    }
+
+    func test_home_defaultsMissingStringFieldsToEmpty() async throws {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(200, [
+                "content_html": "<p>hi</p>",
+                "updated_at": "2024-01-01T00:00:00Z",
+            ])
+        }
+        let home = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session()
+        ).home()
+        XCTAssertEqual(home.content, "")
+        XCTAssertEqual(home.contentPm, "")
+        XCTAssertEqual(home.contentHtml, "<p>hi</p>")
+    }
+
+    func test_homeCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [HomeCopy.title, HomeCopy.loading, HomeCopy.error]
+        XCTAssertEqual(HomeCopy.title, "home")
+        XCTAssertEqual(HomeCopy.loading, "loading…")
+        XCTAssertEqual(HomeCopy.error, "couldn't load the home page — try refreshing")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
     func test_notificationsBellLabel_isLowercaseAndCapsAt99Plus() {
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 0), "notifications")
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 3), "notifications (3 unread)")

@@ -15,6 +15,7 @@ struct EventListView: View {
     @State private var showAddEvent = false
     @State private var showProfile = false
     @State private var showSettings = false
+    @State private var showHome = false
 
     var body: some View {
         NavigationStack {
@@ -46,6 +47,9 @@ struct EventListView: View {
                 ToolbarItem(placement: .principal) {
                     Text("calendar").font(.headline)
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(HomeCopy.title) { showHome = true }
+                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
                         NotificationsButton()
@@ -65,6 +69,9 @@ struct EventListView: View {
                     Spacer()
                     Button("add event") { openAddEvent() }
                 }
+            }
+            .sheet(isPresented: $showHome) {
+                HomeView()
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
