@@ -1409,6 +1409,97 @@ final class SessionAPITests: XCTestCase {
         try await makeClient().changePassword(current: "OldPass123!", new: "NewPassword123!")
     }
 
+    func test_accessibilityCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            AccessibilityCopy.title,
+            AccessibilityCopy.theme,
+            AccessibilityCopy.system,
+            AccessibilityCopy.light,
+            AccessibilityCopy.dark,
+            AccessibilityCopy.dyslexia,
+            AccessibilityCopy.on,
+            AccessibilityCopy.off,
+            AccessibilityCopy.textSize,
+            AccessibilityCopy.normal,
+            AccessibilityCopy.medium,
+            AccessibilityCopy.large,
+            EmailPrefsCopy.title,
+            EmailPrefsCopy.digest,
+            WeekStartCopy.label,
+            WeekStartCopy.sunday,
+            WeekStartCopy.monday,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_accessibilitySettings_defaultsThenPersistsThemeDyslexiaAndTextSize() {
+        let suite = "pda.a11y.test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = AccessibilityStore(defaults: defaults)
+        XCTAssertEqual(store.themeMode, .system)
+        XCTAssertFalse(store.dyslexiaFont)
+        XCTAssertEqual(store.textScale, .normal)
+        XCTAssertNil(store.preferredColorSchemeName)
+        store.themeMode = .light
+        XCTAssertEqual(store.preferredColorSchemeName, "light")
+        store.themeMode = .system
+        XCTAssertNil(store.preferredColorSchemeName)
+        store.themeMode = .dark
+        store.dyslexiaFont = true
+        store.textScale = .large
+        XCTAssertEqual(store.preferredColorSchemeName, "dark")
+        let reloaded = AccessibilityStore(defaults: defaults)
+        XCTAssertEqual(reloaded.themeMode, .dark)
+        XCTAssertTrue(reloaded.dyslexiaFont)
+        XCTAssertEqual(reloaded.textScale, .large)
+        XCTAssertEqual(TextScale.normal.factor, 1.0)
+        XCTAssertEqual(TextScale.medium.factor, 1.15)
+        XCTAssertEqual(TextScale.large.factor, 1.3)
+    }
+
+    func test_me_mapsWeekStartAndWeeklyDigestOptOut() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { _ in
+            MockHTTP.json(200, [
+                "id": "user-1",
+                "week_start": "monday",
+                "weekly_digest_opt_out": true,
+            ])
+        }
+        let mapped = try await makeClient().me()
+        XCTAssertEqual(mapped.weekStart, "monday")
+        XCTAssertTrue(mapped.weeklyDigestOptOut)
+    }
+
+    func test_me_defaultsWeekStartSundayAndDigestOptIn() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { _ in MockHTTP.json(200, Self.mePayload) }
+        let mapped = try await makeClient().me()
+        XCTAssertEqual(mapped.weekStart, "sunday")
+        XCTAssertFalse(mapped.weeklyDigestOptOut)
+    }
+
+    func test_updateProfile_patchesWeekStartAndDigestWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/auth/me/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["week_start"] as? String, "monday")
+            XCTAssertEqual(body["weekly_digest_opt_out"] as? Bool, true)
+            return MockHTTP.json(200, Self.mePayload)
+        }
+        _ = try await makeClient().updateProfile([
+            "week_start": "monday",
+            "weekly_digest_opt_out": true,
+        ])
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

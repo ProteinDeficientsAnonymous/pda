@@ -4,6 +4,7 @@ import UIKit
 
 struct EventListView: View {
     @Environment(AuthSession.self) private var session
+    @Environment(AccessibilityStore.self) private var a11y
     @State private var model = EventListModel()
     @State private var showLogin = false
     @State private var lockTitle = ""
@@ -92,6 +93,7 @@ struct EventListView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
                     .environment(session)
+                    .environment(a11y)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -234,6 +236,7 @@ struct ProfileView: View {
 
 struct SettingsView: View {
     @Environment(AuthSession.self) private var session
+    @Environment(AccessibilityStore.self) private var a11y
     @Environment(\.dismiss) private var dismiss
     @State private var photoItem: PhotosPickerItem?
     @State private var error: String?
@@ -252,6 +255,7 @@ struct SettingsView: View {
     ]
 
     var body: some View {
+        @Bindable var a11y = a11y
         NavigationStack {
             Form {
                 Section("profile") {
@@ -276,8 +280,38 @@ struct SettingsView: View {
                         set: { showing in Task { await patch(["hide_last_name": !showing]) } }
                     ))
                 }
+                Section(EmailPrefsCopy.title) {
+                    Toggle(EmailPrefsCopy.digest, isOn: Binding(
+                        get: { !(session.user?.weeklyDigestOptOut ?? false) },
+                        set: { on in Task { await patch(["weekly_digest_opt_out": !on]) } }
+                    ))
+                }
                 Section(CalendarFeedCopy.title) {
+                    Picker(WeekStartCopy.label, selection: weekStartBinding) {
+                        Text(WeekStartCopy.sunday).tag(WeekStartCopy.sunday)
+                        Text(WeekStartCopy.monday).tag(WeekStartCopy.monday)
+                    }
+                    .pickerStyle(.segmented)
                     calendarFeedSection
+                }
+                Section(AccessibilityCopy.title) {
+                    Picker(AccessibilityCopy.theme, selection: $a11y.themeMode) {
+                        Text(AccessibilityCopy.system).tag(ThemeMode.system)
+                        Text(AccessibilityCopy.light).tag(ThemeMode.light)
+                        Text(AccessibilityCopy.dark).tag(ThemeMode.dark)
+                    }
+                    .pickerStyle(.segmented)
+                    Picker(AccessibilityCopy.dyslexia, selection: $a11y.dyslexiaFont) {
+                        Text(AccessibilityCopy.off).tag(false)
+                        Text(AccessibilityCopy.on).tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    Picker(AccessibilityCopy.textSize, selection: $a11y.textScale) {
+                        Text(AccessibilityCopy.normal).tag(TextScale.normal)
+                        Text(AccessibilityCopy.medium).tag(TextScale.medium)
+                        Text(AccessibilityCopy.large).tag(TextScale.large)
+                    }
+                    .pickerStyle(.segmented)
                 }
             }
             .navigationTitle(SettingsCopy.title)
@@ -372,6 +406,13 @@ struct SettingsView: View {
         Binding(
             get: { session.user.map(read) ?? false },
             set: { value in Task { await patch([key: value]) } }
+        )
+    }
+
+    private var weekStartBinding: Binding<String> {
+        Binding(
+            get: { session.user?.weekStart ?? WeekStartCopy.sunday },
+            set: { value in Task { await patch(["week_start": value]) } }
         )
     }
 

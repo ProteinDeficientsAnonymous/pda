@@ -43,6 +43,8 @@ struct SessionUser: Decodable, Equatable {
     let showBirthday: Bool
     let hideLastName: Bool
     let profilePhotoUrl: String
+    let weekStart: String
+    let weeklyDigestOptOut: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -64,6 +66,8 @@ struct SessionUser: Decodable, Equatable {
         case showBirthday = "show_birthday"
         case hideLastName = "hide_last_name"
         case profilePhotoUrl = "profile_photo_url"
+        case weekStart = "week_start"
+        case weeklyDigestOptOut = "weekly_digest_opt_out"
     }
 
     init(from decoder: Decoder) throws {
@@ -87,6 +91,8 @@ struct SessionUser: Decodable, Equatable {
         showBirthday = try c.decodeIfPresent(Bool.self, forKey: .showBirthday) ?? false
         hideLastName = try c.decodeIfPresent(Bool.self, forKey: .hideLastName) ?? false
         profilePhotoUrl = try c.decodeIfPresent(String.self, forKey: .profilePhotoUrl) ?? ""
+        weekStart = try c.decodeIfPresent(String.self, forKey: .weekStart) ?? "sunday"
+        weeklyDigestOptOut = try c.decodeIfPresent(Bool.self, forKey: .weeklyDigestOptOut) ?? false
     }
 }
 
@@ -249,6 +255,78 @@ enum SettingsCopy {
     static let save = "save"
     static let clear = "clear"
     static let preferNotToSay = "prefer not to say"
+}
+
+enum EmailPrefsCopy {
+    static let title = "emails"
+    static let digest = "weekly digest of upcoming events"
+}
+
+enum WeekStartCopy {
+    static let label = "week starts on"
+    static let sunday = "sunday"
+    static let monday = "monday"
+}
+
+enum AccessibilityCopy {
+    static let title = "accessibility"
+    static let theme = "theme"
+    static let system = "system"
+    static let light = "light"
+    static let dark = "dark"
+    static let dyslexia = "dyslexia-friendly font"
+    static let on = "on"
+    static let off = "off"
+    static let textSize = "text size"
+    static let normal = "normal"
+    static let medium = "medium"
+    static let large = "large"
+}
+
+enum ThemeMode: String, CaseIterable {
+    case system, light, dark
+}
+
+enum TextScale: String, CaseIterable {
+    case normal, medium, large
+    var factor: Double {
+        switch self {
+        case .normal: 1.0
+        case .medium: 1.15
+        case .large: 1.3
+        }
+    }
+}
+
+@Observable
+final class AccessibilityStore {
+    var themeMode: ThemeMode {
+        didSet { defaults.set(themeMode.rawValue, forKey: Keys.theme) }
+    }
+    var dyslexiaFont: Bool {
+        didSet { defaults.set(dyslexiaFont, forKey: Keys.dyslexia) }
+    }
+    var textScale: TextScale {
+        didSet { defaults.set(textScale.rawValue, forKey: Keys.scale) }
+    }
+
+    var preferredColorSchemeName: String? {
+        themeMode == .system ? nil : themeMode.rawValue
+    }
+
+    private let defaults: UserDefaults
+    private enum Keys {
+        static let theme = "pda.themeMode"
+        static let dyslexia = "pda.dyslexiaFont"
+        static let scale = "pda.textScale"
+    }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        themeMode = ThemeMode(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .system
+        dyslexiaFont = defaults.bool(forKey: Keys.dyslexia)
+        textScale = TextScale(rawValue: defaults.string(forKey: Keys.scale) ?? "") ?? .normal
+    }
 }
 
 enum CalendarFeedCopy {
