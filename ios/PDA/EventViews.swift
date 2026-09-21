@@ -47,6 +47,14 @@ struct EventListView: View {
                 LoginView(client: session.client)
                     .environment(session)
             }
+            .fullScreenCover(isPresented: Binding(
+                get: { authGate(for: session.user) != nil },
+                set: { _ in }
+            )) {
+                GateView()
+                    .environment(session)
+                    .interactiveDismissDisabled()
+            }
             .navigationDestination(for: Event.self) { event in
                 EventDetailView(event: event)
             }

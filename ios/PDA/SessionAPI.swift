@@ -9,15 +9,29 @@ struct SessionUser: Decodable, Equatable {
     let id: String
     let phoneNumber: String
     let fullName: String
+    let firstName: String
+    let email: String
     let isMember: Bool
     let isPaused: Bool
+    let needsOnboarding: Bool
+    let needsPasswordReset: Bool
+    let needsGuidelinesConsent: Bool
+    let needsSmsConsent: Bool
+    let needsContactPrivacyConsent: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
         case phoneNumber = "phone_number"
         case fullName = "full_name"
+        case firstName = "first_name"
+        case email
         case isMember = "is_member"
         case isPaused = "is_paused"
+        case needsOnboarding = "needs_onboarding"
+        case needsPasswordReset = "needs_password_reset"
+        case needsGuidelinesConsent = "needs_guidelines_consent"
+        case needsSmsConsent = "needs_sms_consent"
+        case needsContactPrivacyConsent = "needs_contact_privacy_consent"
     }
 
     init(from decoder: Decoder) throws {
@@ -25,9 +39,54 @@ struct SessionUser: Decodable, Equatable {
         id = try c.decode(String.self, forKey: .id)
         phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber) ?? ""
         fullName = try c.decodeIfPresent(String.self, forKey: .fullName) ?? ""
+        firstName = try c.decodeIfPresent(String.self, forKey: .firstName) ?? ""
+        email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
         isMember = try c.decodeIfPresent(Bool.self, forKey: .isMember) ?? false
         isPaused = try c.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+        needsOnboarding = try c.decodeIfPresent(Bool.self, forKey: .needsOnboarding) ?? false
+        needsPasswordReset = try c.decodeIfPresent(Bool.self, forKey: .needsPasswordReset) ?? false
+        needsGuidelinesConsent = try c.decodeIfPresent(Bool.self, forKey: .needsGuidelinesConsent) ?? false
+        needsSmsConsent = try c.decodeIfPresent(Bool.self, forKey: .needsSmsConsent) ?? false
+        needsContactPrivacyConsent = try c.decodeIfPresent(Bool.self, forKey: .needsContactPrivacyConsent) ?? false
     }
+}
+
+enum AuthGate: Equatable {
+    case newPassword
+    case onboarding
+    case consent
+    case email
+}
+
+func authGate(for user: SessionUser?) -> AuthGate? {
+    guard let user else { return nil }
+    if user.needsOnboarding || user.needsPasswordReset {
+        return !user.firstName.isEmpty && !user.email.isEmpty ? .newPassword : .onboarding
+    }
+    if user.needsGuidelinesConsent || user.needsSmsConsent || user.needsContactPrivacyConsent {
+        return .consent
+    }
+    if user.email.isEmpty { return .email }
+    return nil
+}
+
+enum GateCopy {
+    static let newPasswordTitle = "set a new password"
+    static let onboardingTitle = "welcome"
+    static let consentTitle = "before you continue"
+    static let emailTitle = "add your email"
+    static let emailBody = "we use email for account recovery and event updates — add yours to stay logged in, or keep browsing logged out"
+    static let notNow = "not now"
+    static let savePassword = "save password"
+    static let firstNameLabel = "first name"
+    static let emailLabel = "email"
+    static let newPasswordLabel = "new password"
+    static let confirmPasswordLabel = "confirm new password"
+    static let agreeGuidelines = "i agree to the community guidelines"
+    static let agreeSms = "i agree to the sms policy"
+    static let agreePrivacy = "i understand how my contact info is shown"
+    static let save = "save"
+    static let continueButton = "continue"
 }
 
 enum LoginCopy {
@@ -144,6 +203,28 @@ struct SessionClient {
         try await authorizedGet("/api/auth/me/")
     }
 
+    func completeOnboarding(
+        newPassword: String,
+        firstName: String? = nil,
+        lastName: String? = nil,
+        email: String? = nil,
+        consentTypes: [String] = []
+    ) async throws -> SessionUser {
+        var body: [String: Any] = ["new_password": newPassword, "consent_types": consentTypes]
+        if let firstName { body["first_name"] = firstName }
+        if let lastName { body["last_name"] = lastName }
+        if let email { body["email"] = email }
+        return try await authorizedJSON("/api/auth/complete-onboarding/", method: "POST", body: body)
+    }
+
+    func acceptConsents(_ types: [String]) async throws -> SessionUser {
+        try await authorizedJSON("/api/auth/accept-consents/", method: "POST", body: ["consent_types": types])
+    }
+
+    func setEmail(_ email: String) async throws -> SessionUser {
+        try await authorizedJSON("/api/auth/me/", method: "PATCH", body: ["email": email])
+    }
+
     func logout() async throws {
         let req = makeRequest("/api/auth/logout/", method: "POST")
         let (data, response) = try await session.data(for: req)
@@ -165,6 +246,28 @@ struct SessionClient {
         }
         try throwIfFailed(data, status)
         return try Event.decoder.decode(T.self, from: data)
+    }
+
+    private func authorizedJSON(
+        _ path: String,
+        method: String,
+        body: [String: Any],
+        retrying: Bool = false
+    ) async throws -> SessionUser {
+        var req = makeRequest(path, method: method)
+        if let token = try tokens.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401, !retrying {
+            try await refreshAccess()
+            return try await authorizedJSON(path, method: method, body: body, retrying: true)
+        }
+        try throwIfFailed(data, status)
+        return try Event.decoder.decode(SessionUser.self, from: data)
     }
 
     // ponytail: cookie-only refresh; SPA never puts refresh in JSON.

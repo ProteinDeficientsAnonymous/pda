@@ -249,6 +249,95 @@ final class SessionAPITests: XCTestCase {
         XCTAssertNil(try store.load())
     }
 
+    func test_authGate_isNilWhenReadyOrLoggedOut() throws {
+        XCTAssertNil(authGate(for: nil))
+        XCTAssertNil(authGate(for: try user()))
+    }
+
+    func test_authGate_newPasswordWhenSetupPendingAndNameAndEmailOnFile() throws {
+        XCTAssertEqual(
+            authGate(for: try user(firstName: "ada", email: "a@b.c", needsPasswordReset: true)),
+            .newPassword
+        )
+        XCTAssertEqual(
+            authGate(for: try user(firstName: "ada", email: "a@b.c", needsOnboarding: true)),
+            .newPassword
+        )
+    }
+
+    func test_authGate_onboardingWhenNameOrEmailMissing() throws {
+        XCTAssertEqual(
+            authGate(for: try user(firstName: "", email: "a@b.c", needsOnboarding: true)),
+            .onboarding
+        )
+        XCTAssertEqual(
+            authGate(for: try user(firstName: "ada", email: "", needsOnboarding: true)),
+            .onboarding
+        )
+    }
+
+    func test_authGate_passwordSetupBeforeConsent() throws {
+        XCTAssertEqual(
+            authGate(for: try user(firstName: "", needsOnboarding: true, needsGuidelinesConsent: true)),
+            .onboarding
+        )
+        XCTAssertEqual(
+            authGate(for: try user(
+                firstName: "ada",
+                email: "a@b.c",
+                needsPasswordReset: true,
+                needsGuidelinesConsent: true
+            )),
+            .newPassword
+        )
+    }
+
+    func test_authGate_consentBeforeEmail() throws {
+        XCTAssertEqual(authGate(for: try user(needsGuidelinesConsent: true)), .consent)
+        XCTAssertEqual(authGate(for: try user(needsSmsConsent: true)), .consent)
+        XCTAssertEqual(authGate(for: try user(needsContactPrivacyConsent: true)), .consent)
+        XCTAssertEqual(authGate(for: try user(email: "")), .email)
+    }
+
+    func test_gateCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            GateCopy.newPasswordTitle,
+            GateCopy.onboardingTitle,
+            GateCopy.consentTitle,
+            GateCopy.emailTitle,
+            GateCopy.emailBody,
+            GateCopy.notNow,
+            GateCopy.savePassword,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    private func user(
+        firstName: String = "ada",
+        email: String = "ada@pda.test",
+        needsOnboarding: Bool = false,
+        needsPasswordReset: Bool = false,
+        needsGuidelinesConsent: Bool = false,
+        needsSmsConsent: Bool = false,
+        needsContactPrivacyConsent: Bool = false
+    ) throws -> SessionUser {
+        var payload = Self.mePayload
+        payload["first_name"] = firstName
+        payload["email"] = email
+        payload["needs_onboarding"] = needsOnboarding
+        payload["needs_password_reset"] = needsPasswordReset
+        payload["needs_guidelines_consent"] = needsGuidelinesConsent
+        payload["needs_sms_consent"] = needsSmsConsent
+        payload["needs_contact_privacy_consent"] = needsContactPrivacyConsent
+        return try JSONDecoder().decode(
+            SessionUser.self,
+            from: try JSONSerialization.data(withJSONObject: payload)
+        )
+    }
+
     private func makeClient() -> SessionClient {
         SessionClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
