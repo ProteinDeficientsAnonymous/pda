@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct EventListView: View {
+    @Environment(AuthSession.self) private var session
     @State private var model = EventListModel()
+    @State private var showLogin = false
 
     var body: some View {
         NavigationStack {
@@ -33,6 +35,17 @@ struct EventListView: View {
                 ToolbarItem(placement: .principal) {
                     Text("calendar").font(.headline)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let name = session.user?.fullName, !name.isEmpty {
+                        Text(name.lowercased()).font(.subheadline)
+                    } else {
+                        Button("sign in") { showLogin = true }
+                    }
+                }
+            }
+            .sheet(isPresented: $showLogin) {
+                LoginView(client: session.client)
+                    .environment(session)
             }
             .navigationDestination(for: Event.self) { event in
                 EventDetailView(event: event)

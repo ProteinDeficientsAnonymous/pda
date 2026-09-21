@@ -10,9 +10,13 @@
 		A10000000000000000000014 /* PDAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* PDAApp.swift */; };
 		A10000000000000000000016 /* EventsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* EventsAPI.swift */; };
 		A10000000000000000000018 /* EventViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* EventViews.swift */; };
+		A10000000000000000000063 /* SessionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000062 /* SessionAPI.swift */; };
+		A10000000000000000000065 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000064 /* LoginView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
+		A10000000000000000000067 /* LoginUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000066 /* LoginUITests.swift */; };
+		A10000000000000000000061 /* SessionAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000060 /* SessionAPITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,12 +40,16 @@
 		A10000000000000000000013 /* PDAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDAApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000015 /* EventsAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPI.swift; sourceTree = "<group>"; };
 		A10000000000000000000017 /* EventViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventViews.swift; sourceTree = "<group>"; };
+		A10000000000000000000062 /* SessionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPI.swift; sourceTree = "<group>"; };
+		A10000000000000000000064 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000060 /* SessionAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000066 /* LoginUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000042 /* PDAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -86,6 +94,8 @@
 				A10000000000000000000013 /* PDAApp.swift */,
 				A10000000000000000000015 /* EventsAPI.swift */,
 				A10000000000000000000017 /* EventViews.swift */,
+				A10000000000000000000062 /* SessionAPI.swift */,
+				A10000000000000000000064 /* LoginView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -96,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000022 /* EventsAPITests.swift */,
+				A10000000000000000000060 /* SessionAPITests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -104,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000040 /* GuestCalendarUITests.swift */,
+				A10000000000000000000066 /* LoginUITests.swift */,
 			);
 			path = PDAUITests;
 			sourceTree = "<group>";
@@ -234,6 +246,8 @@
 				A10000000000000000000014 /* PDAApp.swift in Sources */,
 				A10000000000000000000016 /* EventsAPI.swift in Sources */,
 				A10000000000000000000018 /* EventViews.swift in Sources */,
+				A10000000000000000000063 /* SessionAPI.swift in Sources */,
+				A10000000000000000000065 /* LoginView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,6 +256,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000023 /* EventsAPITests.swift in Sources */,
+				A10000000000000000000061 /* SessionAPITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +265,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */,
+				A10000000000000000000067 /* LoginUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

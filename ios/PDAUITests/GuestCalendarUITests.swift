@@ -3,6 +3,7 @@ import XCTest
 final class GuestCalendarUITests: XCTestCase {
     func test_listOpensDetailAndHidesLocation() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["--reset-session"]
         app.launch()
 
         XCTAssertTrue(app.staticTexts["calendar"].waitForExistence(timeout: 20))
