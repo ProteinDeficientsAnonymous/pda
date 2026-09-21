@@ -244,6 +244,7 @@ struct SettingsView: View {
     @State private var feed: CalendarToken?
     @State private var feedError = false
     @State private var confirmRevoke = false
+    @State private var showPassword = false
 
     private static let months = [
         "january", "february", "march", "april", "may", "june",
@@ -262,6 +263,9 @@ struct SettingsView: View {
                         )
                     }
                     birthdaySection
+                }
+                Section(ChangePasswordCopy.security) {
+                    Button(ChangePasswordCopy.title) { showPassword = true }
                 }
                 Section(SettingsCopy.privacy) {
                     Toggle(SettingsCopy.showPhone, isOn: boolPatch("show_phone") { $0.showPhone })
@@ -288,6 +292,10 @@ struct SettingsView: View {
                 Task { await upload(item) }
             }
             .task { await loadFeed() }
+            .sheet(isPresented: $showPassword) {
+                ChangePasswordView()
+                    .environment(session)
+            }
             .confirmationDialog(
                 CalendarFeedCopy.revokeConfirm,
                 isPresented: $confirmRevoke,
@@ -447,6 +455,58 @@ struct SettingsView: View {
             feedError = false
         } catch {
             self.error = CalendarFeedCopy.loadError
+        }
+    }
+}
+
+struct ChangePasswordView: View {
+    @Environment(AuthSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var current = ""
+    @State private var next = ""
+    @State private var confirm = ""
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                SecureField(ChangePasswordCopy.current, text: $current)
+                    .textContentType(.password)
+                SecureField(GateCopy.newPasswordLabel, text: $next)
+                    .textContentType(.newPassword)
+                SecureField(GateCopy.confirmPasswordLabel, text: $confirm)
+                    .textContentType(.newPassword)
+                if let error {
+                    Text(error).foregroundStyle(.red)
+                }
+            }
+            .navigationTitle(ChangePasswordCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(ChangePasswordCopy.update) { Task { await save() } }
+                        .disabled(busy)
+                }
+            }
+        }
+    }
+
+    private func save() async {
+        if let message = changePasswordError(current: current, next: next, confirm: confirm) {
+            error = message
+            return
+        }
+        busy = true
+        defer { busy = false }
+        do {
+            try await session.client.changePassword(current: current, new: next)
+            dismiss()
+        } catch {
+            self.error = ChangePasswordCopy.fail
         }
     }
 }

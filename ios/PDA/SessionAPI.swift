@@ -263,6 +263,16 @@ enum CalendarFeedCopy {
     static let blurb = "subscribe to the community calendar in apple calendar, google calendar, etc — paste the private url once and it'll stay in sync."
 }
 
+enum ChangePasswordCopy {
+    static let title = "change password"
+    static let current = "current password"
+    static let update = "update password"
+    static let mismatch = "passwords don't match"
+    static let sameAsCurrent = "new password must differ from current"
+    static let fail = "couldn't update password — try again"
+    static let security = "security"
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)
@@ -431,6 +441,14 @@ struct SessionClient {
         try await authorizedMultipart("/api/auth/me/photo/", data: data, mimeType: mimeType, filename: filename)
     }
 
+    func changePassword(current: String, new: String) async throws {
+        try await authorizedDiscard(
+            "/api/auth/change-password/",
+            method: "POST",
+            body: ["current_password": current, "new_password": new]
+        )
+    }
+
     func logout() async throws {
         let req = makeRequest("/api/auth/logout/", method: "POST")
         let (data, response) = try await session.data(for: req)
@@ -474,6 +492,28 @@ struct SessionClient {
         }
         try throwIfFailed(data, status)
         return try Event.decoder.decode(SessionUser.self, from: data)
+    }
+
+    private func authorizedDiscard(
+        _ path: String,
+        method: String,
+        body: [String: Any],
+        retrying: Bool = false
+    ) async throws {
+        var req = makeRequest(path, method: method)
+        if let token = try tokens.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401, !retrying {
+            try await refreshAccess()
+            try await authorizedDiscard(path, method: method, body: body, retrying: true)
+            return
+        }
+        try throwIfFailed(data, status)
     }
 
     private func authorizedMultipart(

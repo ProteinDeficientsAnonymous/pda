@@ -1350,6 +1350,65 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(token.token, "tok-new")
     }
 
+    func test_changePasswordCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            ChangePasswordCopy.title,
+            ChangePasswordCopy.current,
+            ChangePasswordCopy.update,
+            ChangePasswordCopy.mismatch,
+            ChangePasswordCopy.sameAsCurrent,
+            ChangePasswordCopy.fail,
+            ChangePasswordCopy.security,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_changePasswordError_rejectsInvalidMismatchAndReuse() {
+        XCTAssertEqual(changePasswordError(current: "OldPass123!", next: "short", confirm: "short"), "at least 12 characters")
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass123!", next: String(repeating: "a", count: 73), confirm: String(repeating: "a", count: 73)),
+            "too long"
+        )
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass123!", next: "newpassword123!", confirm: "newpassword123!"),
+            "must include an uppercase letter"
+        )
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass123!", next: "NewPassword!!!", confirm: "NewPassword!!!"),
+            "must include a number"
+        )
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass123!", next: "NewPassword123", confirm: "NewPassword123"),
+            "must include a special character"
+        )
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass123!", next: "NewPassword123!", confirm: "OtherPass123!"),
+            ChangePasswordCopy.mismatch
+        )
+        XCTAssertEqual(
+            changePasswordError(current: "OldPass1234!", next: "OldPass1234!", confirm: "OldPass1234!"),
+            ChangePasswordCopy.sameAsCurrent
+        )
+        XCTAssertNil(changePasswordError(current: "OldPass123!", next: "NewPassword123!", confirm: "NewPassword123!"))
+    }
+
+    func test_changePassword_postsCurrentAndNewWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/auth/change-password/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["current_password"] as? String, "OldPass123!")
+            XCTAssertEqual(body["new_password"] as? String, "NewPassword123!")
+            return MockHTTP.json(200, ["detail": "Password updated successfully."])
+        }
+        try await makeClient().changePassword(current: "OldPass123!", new: "NewPassword123!")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

@@ -180,3 +180,14 @@ func passwordIsValid(_ value: String) -> Bool {
         && value.contains(where: \.isNumber)
         && value.contains(where: { !$0.isLetter && !$0.isNumber })
 }
+
+func changePasswordError(current: String, next: String, confirm: String) -> String? {
+    if next.count < 12 { return "at least 12 characters" }
+    if next.count > 72 { return "too long" }
+    if !next.contains(where: \.isUppercase) { return "must include an uppercase letter" }
+    if !next.contains(where: \.isNumber) { return "must include a number" }
+    if !next.contains(where: { !$0.isLetter && !$0.isNumber }) { return "must include a special character" }
+    if next != confirm { return ChangePasswordCopy.mismatch }
+    if next == current { return ChangePasswordCopy.sameAsCurrent }
+    return nil
+}
