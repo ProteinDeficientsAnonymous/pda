@@ -43,7 +43,7 @@ struct HomeView: View {
         NavigationStack {
             Group {
                 if let html {
-                    HomeHTMLView(html: html, baseURL: client.baseURL)
+                    ContentHTMLView(html: html, baseURL: client.baseURL)
                 } else if let error {
                     ContentUnavailableView {
                         Label(error, systemImage: "exclamationmark.triangle")
@@ -76,7 +76,7 @@ struct HomeView: View {
     }
 }
 
-private struct HomeHTMLView: UIViewRepresentable {
+struct ContentHTMLView: UIViewRepresentable {
     let html: String
     let baseURL: URL
 

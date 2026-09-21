@@ -942,6 +942,10 @@ struct EventsClient {
         try await fetch(homeURL(base: baseURL))
     }
 
+    func faq() async throws -> HomePage {
+        try await fetch(faqURL(base: baseURL))
+    }
+
     func events(status: String? = nil) async throws -> [Event] {
         try await fetch(eventsListURL(base: baseURL, status: status))
     }

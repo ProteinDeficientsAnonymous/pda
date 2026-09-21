@@ -1628,6 +1628,39 @@ final class SessionAPITests: XCTestCase {
         }
     }
 
+    func test_faq_getsContentHtmlWithoutAuth() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/faq/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            return MockHTTP.json(200, [
+                "content": "delta",
+                "content_pm": "{\"type\":\"doc\"}",
+                "content_html": "<p>faq</p>",
+                "updated_at": "2024-01-01T00:00:00Z",
+            ])
+        }
+        let page = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session()
+        ).faq()
+        XCTAssertEqual(page.contentHtml, "<p>faq</p>")
+        XCTAssertEqual(page.content, "delta")
+        XCTAssertEqual(page.contentPm, "{\"type\":\"doc\"}")
+        XCTAssertEqual(page.updatedAt, "2024-01-01T00:00:00Z")
+    }
+
+    func test_faqCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [FaqCopy.title, FaqCopy.loading, FaqCopy.error]
+        XCTAssertEqual(FaqCopy.title, "faq")
+        XCTAssertEqual(FaqCopy.loading, "loading…")
+        XCTAssertEqual(FaqCopy.error, "couldn't load the faq — try refreshing")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
     func test_notificationsBellLabel_isLowercaseAndCapsAt99Plus() {
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 0), "notifications")
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 3), "notifications (3 unread)")
