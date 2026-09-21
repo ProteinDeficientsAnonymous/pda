@@ -336,6 +336,12 @@ enum NotificationsCopy {
     static let loadMore = "load more"
     static let pageSize = 30
     static let pollNanoseconds: UInt64 = 30_000_000_000
+
+    static func bellLabel(unread: Int) -> String {
+        if unread <= 0 { return title }
+        let display = unread > 99 ? "99+" : "\(unread)"
+        return "\(title) (\(display) unread)"
+    }
 }
 
 struct AppNotification: Decodable, Equatable, Identifiable {

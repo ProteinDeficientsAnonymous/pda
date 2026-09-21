@@ -1,14 +1,66 @@
 import SwiftUI
 
+enum NotificationDestination: Hashable {
+    case event(String)
+    case checkIn(String)
+    case joinRequests
+    case flagged
+    case member(String)
+    case members
+
+    var title: String {
+        switch self {
+        case .event: "event"
+        case .checkIn: CheckInCopy.title
+        case .joinRequests: "join requests"
+        case .flagged: "flagged events"
+        case .member, .members: "members"
+        }
+    }
+}
+
+func notificationTarget(_ n: AppNotification) -> NotificationDestination? {
+    switch n.notificationType {
+    case "event_invite", "cohost_added", "cohost_invite", "cohost_invite_accepted",
+         "cohost_invite_declined", "cohost_removed", "waitlist_promoted", "event_cancelled",
+         "comment_reply", "event_comment", "comment_reaction", "rsvp_declined_note",
+         "rsvp_status_changed", "payment_revoked":
+        return n.eventId.map(NotificationDestination.event)
+    case "checkin_nudge":
+        return n.eventId.map(NotificationDestination.checkIn)
+    case "event_flagged":
+        return .flagged
+    case "join_request":
+        return .joinRequests
+    case "magic_link_request":
+        return n.relatedUserId.map(NotificationDestination.member) ?? .members
+    default:
+        return nil
+    }
+}
+
 struct NotificationsButton: View {
     @Environment(AuthSession.self) private var session
     @State private var unread = 0
     @State private var show = false
 
     var body: some View {
-        Button(unread > 0 ? "\(NotificationsCopy.title) (\(unread) unread)" : NotificationsCopy.title) {
+        Button {
             show = true
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "bell")
+                if unread > 0 {
+                    Text(unread > 99 ? "99+" : "\(unread)")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .background(.red, in: Capsule())
+                        .offset(x: 8, y: -8)
+                }
+            }
         }
+        .accessibilityLabel(NotificationsCopy.bellLabel(unread: unread))
         .sheet(isPresented: $show) {
             NotificationsView()
                 .environment(session)
@@ -32,6 +84,7 @@ struct NotificationsView: View {
     @State private var loading = true
     @State private var loadingMore = false
     @State private var hasMore = false
+    @State private var target: NotificationDestination?
 
     var body: some View {
         NavigationStack {
@@ -50,7 +103,7 @@ struct NotificationsView: View {
                     List {
                         ForEach(rows) { n in
                             Button {
-                                Task { await markRead(n) }
+                                Task { await open(n) }
                             } label: {
                                 HStack(alignment: .top, spacing: 8) {
                                     Circle()
@@ -79,6 +132,9 @@ struct NotificationsView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close") { dismiss() }
                 }
+            }
+            .navigationDestination(item: $target) { dest in
+                NotificationTargetView(destination: dest)
             }
             .task { await poll() }
         }
@@ -111,6 +167,11 @@ struct NotificationsView: View {
         }
     }
 
+    private func open(_ n: AppNotification) async {
+        await markRead(n)
+        target = notificationTarget(n)
+    }
+
     private func markRead(_ n: AppNotification) async {
         guard !n.isRead else { return }
         do {
@@ -128,6 +189,54 @@ struct NotificationsView: View {
             }
         } catch {
             self.error = NotificationsCopy.error
+        }
+    }
+}
+
+private struct NotificationTargetView: View {
+    let destination: NotificationDestination
+    @Environment(AuthSession.self) private var session
+    @State private var event: Event?
+    @State private var error: String?
+
+    var body: some View {
+        switch destination {
+        case .event, .checkIn:
+            if let event {
+                if case .checkIn = destination {
+                    CheckInView(event: event, client: eventsClient, onUpdated: { _ in })
+                } else {
+                    EventDetailView(event: event)
+                }
+            } else if let error {
+                ContentUnavailableView(error, systemImage: "exclamationmark.triangle")
+            } else {
+                ProgressView().task { await loadEvent() }
+            }
+        case .joinRequests, .flagged, .members:
+            ContentUnavailableView(destination.title, systemImage: "leaf")
+        case let .member(id):
+            ProfileView(userId: id, client: eventsClient)
+        }
+    }
+
+    private var eventsClient: EventsClient {
+        EventsClient(tokens: session.client.tokens)
+    }
+
+    private func loadEvent() async {
+        guard let id else { return }
+        do {
+            event = try await eventsClient.event(id: id)
+        } catch {
+            self.error = NotificationsCopy.error
+        }
+    }
+
+    private var id: String? {
+        switch destination {
+        case let .event(id), let .checkIn(id): id
+        default: nil
         }
     }
 }

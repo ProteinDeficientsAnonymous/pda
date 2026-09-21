@@ -1579,6 +1579,45 @@ final class SessionAPITests: XCTestCase {
         try await makeClient().markNotificationRead("n-1")
     }
 
+    func test_notificationsBellLabel_isLowercaseAndCapsAt99Plus() {
+        XCTAssertEqual(NotificationsCopy.bellLabel(unread: 0), "notifications")
+        XCTAssertEqual(NotificationsCopy.bellLabel(unread: 3), "notifications (3 unread)")
+        XCTAssertEqual(NotificationsCopy.bellLabel(unread: 99), "notifications (99 unread)")
+        XCTAssertEqual(NotificationsCopy.bellLabel(unread: 100), "notifications (99+ unread)")
+        for unread in [0, 3, 99, 100] {
+            let label = NotificationsCopy.bellLabel(unread: unread)
+            XCTAssertEqual(label, label.lowercased(), label)
+            XCTAssertFalse(label.contains("join"), label)
+        }
+    }
+
+    func test_notificationTarget_routesEventJoinRequestsFlaggedAndMember() {
+        XCTAssertEqual(notificationTarget(Self.note(type: "event_invite", eventId: "evt-1")), .event("evt-1"))
+        XCTAssertEqual(notificationTarget(Self.note(type: "cohost_invite", eventId: "evt-1")), .event("evt-1"))
+        XCTAssertEqual(notificationTarget(Self.note(type: "comment_reply", eventId: "evt-1")), .event("evt-1"))
+        XCTAssertNil(notificationTarget(Self.note(type: "event_invite")))
+        XCTAssertEqual(notificationTarget(Self.note(type: "checkin_nudge", eventId: "evt-1")), .checkIn("evt-1"))
+        XCTAssertEqual(notificationTarget(Self.note(type: "join_request")), .joinRequests)
+        XCTAssertEqual(notificationTarget(Self.note(type: "event_flagged")), .flagged)
+        XCTAssertEqual(
+            notificationTarget(Self.note(type: "magic_link_request", relatedUserId: "u-2")),
+            .member("u-2")
+        )
+        XCTAssertEqual(notificationTarget(Self.note(type: "magic_link_request")), .members)
+        XCTAssertNil(notificationTarget(Self.note(type: "unknown")))
+    }
+
+    func test_notificationDestinationCopy_isLowercase() {
+        let blobs = [
+            NotificationDestination.joinRequests.title,
+            NotificationDestination.flagged.title,
+            NotificationDestination.members.title,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
@@ -1724,6 +1763,22 @@ final class SessionAPITests: XCTestCase {
         let memberCommunity = GuestEventCopy.make(community, user: member)
         XCTAssertEqual(memberCommunity.moreHintTitle, "")
         XCTAssertEqual(memberCommunity.moreHintBody, "")
+    }
+
+    private static func note(
+        type: String,
+        eventId: String? = nil,
+        relatedUserId: String? = nil
+    ) -> AppNotification {
+        AppNotification(
+            id: "n-1",
+            notificationType: type,
+            eventId: eventId,
+            relatedUserId: relatedUserId,
+            message: "msg",
+            isRead: false,
+            createdAt: "2026-09-21T12:00:00Z"
+        )
     }
 
     private func user(
