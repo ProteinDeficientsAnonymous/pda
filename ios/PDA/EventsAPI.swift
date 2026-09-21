@@ -395,8 +395,17 @@ func canShowCheckIn(_ event: Event, user: SessionUser?) -> Bool {
     return isHosting(event, userId: user.id)
 }
 
+func canShowManageRsvps(_ event: Event, user: SessionUser?) -> Bool {
+    guard let user, event.rsvpEnabled, !event.isPast else { return false }
+    return isHosting(event, userId: user.id)
+}
+
 func eventAttendanceURL(base: URL, eventId: String, userId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/attendance/", relativeTo: base)!.absoluteURL
+}
+
+func eventGuestRsvpURL(base: URL, eventId: String, userId: String) -> URL {
+    URL(string: "/api/community/events/\(eventId)/rsvps/\(userId)/rsvp/", relativeTo: base)!.absoluteURL
 }
 
 struct MemberHit: Decodable, Hashable, Identifiable {
@@ -897,6 +906,14 @@ struct EventsClient {
             "POST",
             url: eventAttendanceURL(base: baseURL, eventId: eventId, userId: userId),
             body: ["attendance": attendance]
+        )
+    }
+
+    func setGuestRsvp(eventId: String, userId: String, status: String) async throws -> Event {
+        try await sendJSON(
+            "POST",
+            url: eventGuestRsvpURL(base: baseURL, eventId: eventId, userId: userId),
+            body: ["status": status]
         )
     }
 

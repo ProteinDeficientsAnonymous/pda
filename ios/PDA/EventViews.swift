@@ -189,6 +189,7 @@ struct EventDetailView: View {
     @State private var showLogin = false
     @State private var showInvite = false
     @State private var showCheckIn = false
+    @State private var showManageRsvps = false
 
     init(event: Event) {
         self.event = event
@@ -239,6 +240,10 @@ struct EventDetailView: View {
 
                 if canShowCheckIn(detail, user: session.user) {
                     Button(CheckInCopy.title) { showCheckIn = true }
+                }
+
+                if canShowManageRsvps(detail, user: session.user) {
+                    Button(ManageRsvpsCopy.title) { showManageRsvps = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -398,6 +403,12 @@ struct EventDetailView: View {
         }
         .sheet(isPresented: $showCheckIn) {
             CheckInView(
+                event: detail,
+                client: EventsClient(tokens: session.client.tokens)
+            ) { detail = $0 }
+        }
+        .sheet(isPresented: $showManageRsvps) {
+            ManageRsvpsView(
                 event: detail,
                 client: EventsClient(tokens: session.client.tokens)
             ) { detail = $0 }
@@ -1181,6 +1192,78 @@ struct CheckInView: View {
             onUpdated(updated)
         } catch {
             self.error = "couldn't save check-in — try again"
+        }
+    }
+}
+
+struct ManageRsvpsView: View {
+    let event: Event
+    var client: EventsClient
+    var onUpdated: (Event) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var current: Event
+    @State private var error: String?
+    @State private var busy = false
+
+    init(event: Event, client: EventsClient, onUpdated: @escaping (Event) -> Void) {
+        self.event = event
+        self.client = client
+        self.onUpdated = onUpdated
+        _current = State(initialValue: event)
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if current.guests.isEmpty {
+                    Text(ManageRsvpsCopy.empty)
+                } else {
+                    ForEach(current.guests, id: \.userId) { guest in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(guest.name.lowercased())
+                            HStack {
+                                statusButton(guest, ManageRsvpsCopy.going, "attending")
+                                statusButton(guest, ManageRsvpsCopy.maybe, "maybe")
+                                statusButton(guest, ManageRsvpsCopy.cantGo, "cant_go")
+                            }
+                        }
+                    }
+                }
+                if let error {
+                    Text(error).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(ManageRsvpsCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func statusButton(_ guest: EventGuest, _ label: String, _ status: String) -> some View {
+        Button(label) { Task { await setStatus(guest.userId, status) } }
+            .fontWeight(guest.status == status ? .bold : .regular)
+            .disabled(busy)
+    }
+
+    private func setStatus(_ userId: String, _ status: String) async {
+        busy = true
+        defer { busy = false }
+        do {
+            let updated = try await client.setGuestRsvp(
+                eventId: current.id,
+                userId: userId,
+                status: status
+            )
+            current = updated
+            error = nil
+            onUpdated(updated)
+        } catch {
+            self.error = "couldn't save that rsvp — try again"
         }
     }
 }

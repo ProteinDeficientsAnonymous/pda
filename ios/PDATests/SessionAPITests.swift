@@ -977,6 +977,57 @@ final class SessionAPITests: XCTestCase {
         XCTAssertEqual(event.guests.first?.attendance, "attended")
     }
 
+    func test_canShowManageRsvps_hostWhenRsvpEnabledAndUpcoming() throws {
+        let hosted = try Event.decodeJSON(
+            #"{ "id": "e", "title": "e", "rsvp_enabled": true, "co_host_ids": ["user-1"] }"#
+        )
+        let off = try Event.decodeJSON(#"{ "id": "e", "title": "e", "co_host_ids": ["user-1"] }"#)
+        let other = try Event.decodeJSON(
+            #"{ "id": "o", "title": "o", "rsvp_enabled": true, "co_host_ids": ["user-2"] }"#
+        )
+        let past = try Event.decodeJSON(
+            #"{ "id": "p", "title": "p", "rsvp_enabled": true, "is_past": true, "co_host_ids": ["user-1"] }"#
+        )
+        let member = try user()
+        XCTAssertTrue(canShowManageRsvps(hosted, user: member))
+        XCTAssertFalse(canShowManageRsvps(hosted, user: nil))
+        XCTAssertFalse(canShowManageRsvps(off, user: member))
+        XCTAssertFalse(canShowManageRsvps(other, user: member))
+        XCTAssertFalse(canShowManageRsvps(past, user: member))
+    }
+
+    func test_manageRsvpsCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [ManageRsvpsCopy.title, ManageRsvpsCopy.going, ManageRsvpsCopy.cantGo]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_setGuestRsvp_postsStatusWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/evt-1/rsvps/u-2/rsvp/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["status"] as? String, "maybe")
+            return MockHTTP.json(200, [
+                "id": "evt-1",
+                "title": "potluck",
+                "guests": [
+                    ["user_id": "u-2", "name": "ada", "status": "maybe"],
+                ],
+            ])
+        }
+        let event = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).setGuestRsvp(eventId: "evt-1", userId: "u-2", status: "maybe")
+        XCTAssertEqual(event.guests.first?.status, "maybe")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
