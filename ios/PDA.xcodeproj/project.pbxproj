@@ -18,6 +18,7 @@
 		A10000000000000000000093 /* FaqView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* FaqView.swift */; };
 		A10000000000000000000095 /* GuidelinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* GuidelinesView.swift */; };
 		A10000000000000000000097 /* DonateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000096 /* DonateView.swift */; };
+		A10000000000000000000099 /* VolunteerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000098 /* VolunteerView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -54,6 +55,7 @@
 		A10000000000000000000092 /* FaqView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaqView.swift; sourceTree = "<group>"; };
 		A10000000000000000000094 /* GuidelinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidelinesView.swift; sourceTree = "<group>"; };
 		A10000000000000000000096 /* DonateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000098 /* VolunteerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -114,6 +116,7 @@
 				A10000000000000000000092 /* FaqView.swift */,
 				A10000000000000000000094 /* GuidelinesView.swift */,
 				A10000000000000000000096 /* DonateView.swift */,
+				A10000000000000000000098 /* VolunteerView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -272,6 +275,7 @@
 				A10000000000000000000093 /* FaqView.swift in Sources */,
 				A10000000000000000000095 /* GuidelinesView.swift in Sources */,
 				A10000000000000000000097 /* DonateView.swift in Sources */,
+				A10000000000000000000099 /* VolunteerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

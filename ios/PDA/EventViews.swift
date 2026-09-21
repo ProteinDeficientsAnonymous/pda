@@ -19,6 +19,7 @@ struct EventListView: View {
     @State private var showFaq = false
     @State private var showGuidelines = false
     @State private var showDonate = false
+    @State private var showVolunteer = false
 
     var body: some View {
         NavigationStack {
@@ -63,6 +64,9 @@ struct EventListView: View {
                         if canShowSettings(user: session.user) {
                             Button(SettingsCopy.title) { showSettings = true }
                         }
+                        if canShowVolunteer(user: session.user) {
+                            Button(VolunteerCopy.title) { showVolunteer = true }
+                        }
                         Button("log out") { Task { await session.logout() } }
                     } else {
                         Button("sign in") { showLogin = true }
@@ -87,6 +91,9 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showDonate) {
                 DonateView()
+            }
+            .sheet(isPresented: $showVolunteer) {
+                VolunteerView(client: EventsClient(tokens: session.client.tokens))
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)

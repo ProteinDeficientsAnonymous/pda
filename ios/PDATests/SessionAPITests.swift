@@ -1729,6 +1729,67 @@ final class SessionAPITests: XCTestCase {
         }
     }
 
+    func test_volunteer_getsContentHtmlWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/pages/volunteer/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "slug": "volunteer",
+                "content": "delta",
+                "content_pm": "{\"type\":\"doc\"}",
+                "content_html": "<p>help out</p>",
+                "visibility": "members_only",
+                "updated_at": "2024-01-01T00:00:00Z",
+            ])
+        }
+        let page = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).volunteer()
+        XCTAssertEqual(page.contentHtml, "<p>help out</p>")
+        XCTAssertEqual(page.content, "delta")
+        XCTAssertEqual(page.contentPm, "{\"type\":\"doc\"}")
+        XCTAssertEqual(page.updatedAt, "2024-01-01T00:00:00Z")
+    }
+
+    func test_volunteer_throws403WithoutAuth() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/pages/volunteer/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            return MockHTTP.json(403, ["code": "page.members_only"])
+        }
+        do {
+            _ = try await EventsClient(
+                baseURL: base,
+                session: MockHTTP.session()
+            ).volunteer()
+            XCTFail("expected 403")
+        } catch APIError.http(let status) {
+            XCTAssertEqual(status, 403)
+        }
+    }
+
+    func test_canShowVolunteer_authedOnly() throws {
+        XCTAssertFalse(canShowVolunteer(user: nil))
+        XCTAssertTrue(canShowVolunteer(user: try user()))
+        XCTAssertTrue(canShowVolunteer(user: try user(isMember: false)))
+    }
+
+    func test_volunteerCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [VolunteerCopy.title, VolunteerCopy.loading, VolunteerCopy.error]
+        XCTAssertEqual(VolunteerCopy.title, "volunteer")
+        XCTAssertEqual(VolunteerCopy.loading, "loading…")
+        XCTAssertEqual(VolunteerCopy.error, "couldn't load the volunteer page — try refreshing")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
     func test_notificationsBellLabel_isLowercaseAndCapsAt99Plus() {
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 0), "notifications")
         XCTAssertEqual(NotificationsCopy.bellLabel(unread: 3), "notifications (3 unread)")
