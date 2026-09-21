@@ -1500,6 +1500,85 @@ final class SessionAPITests: XCTestCase {
         ])
     }
 
+    func test_notificationsCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            NotificationsCopy.title,
+            NotificationsCopy.empty,
+            NotificationsCopy.error,
+            NotificationsCopy.loadMore,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+        XCTAssertEqual(NotificationsCopy.pageSize, 30)
+        XCTAssertEqual(NotificationsCopy.pollNanoseconds, 30_000_000_000)
+    }
+
+    func test_listNotifications_getsWithBearerAndMapsFields() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/notifications/")
+            XCTAssertEqual(request.url?.query, "limit=30&offset=0")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                [
+                    "id": "n-1",
+                    "notification_type": "event_invite",
+                    "event_id": "evt-1",
+                    "related_user_id": NSNull(),
+                    "message": "you're invited",
+                    "is_read": false,
+                    "created_at": "2026-09-21T12:00:00Z",
+                ],
+            ])
+        }
+        let rows = try await makeClient().listNotifications()
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertEqual(rows[0].id, "n-1")
+        XCTAssertEqual(rows[0].notificationType, "event_invite")
+        XCTAssertEqual(rows[0].eventId, "evt-1")
+        XCTAssertNil(rows[0].relatedUserId)
+        XCTAssertEqual(rows[0].message, "you're invited")
+        XCTAssertFalse(rows[0].isRead)
+        XCTAssertEqual(rows[0].createdAt, "2026-09-21T12:00:00Z")
+    }
+
+    func test_listNotifications_pagesWithLimitAndOffset() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.url?.query, "limit=30&offset=30")
+            return MockHTTP.json(200, [] as [Any])
+        }
+        let rows = try await makeClient().listNotifications(offset: 30)
+        XCTAssertEqual(rows, [])
+    }
+
+    func test_unreadNotificationCount_getsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/notifications/unread-count/")
+            XCTAssertNil(request.url?.query)
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, ["count": 3])
+        }
+        let count = try await makeClient().unreadNotificationCount()
+        XCTAssertEqual(count, 3)
+    }
+
+    func test_markNotificationRead_postsIdWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/notifications/n-1/read/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, ["detail": "ok"])
+        }
+        try await makeClient().markNotificationRead("n-1")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,

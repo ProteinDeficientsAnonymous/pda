@@ -329,6 +329,39 @@ final class AccessibilityStore {
     }
 }
 
+enum NotificationsCopy {
+    static let title = "notifications"
+    static let empty = "nothing here yet 🌿"
+    static let error = "couldn't load notifications — try refreshing"
+    static let loadMore = "load more"
+    static let pageSize = 30
+    static let pollNanoseconds: UInt64 = 30_000_000_000
+}
+
+struct AppNotification: Decodable, Equatable, Identifiable {
+    let id: String
+    let notificationType: String
+    let eventId: String?
+    let relatedUserId: String?
+    let message: String
+    let isRead: Bool
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case notificationType = "notification_type"
+        case eventId = "event_id"
+        case relatedUserId = "related_user_id"
+        case message
+        case isRead = "is_read"
+        case createdAt = "created_at"
+    }
+}
+
+private struct UnreadCountOut: Decodable {
+    let count: Int
+}
+
 enum CalendarFeedCopy {
     static let title = "calendar"
     static let feedUrl = "feed url"
@@ -525,6 +558,21 @@ struct SessionClient {
             method: "POST",
             body: ["current_password": current, "new_password": new]
         )
+    }
+
+    func listNotifications(offset: Int = 0) async throws -> [AppNotification] {
+        try await authorizedGet(
+            "/api/notifications/?limit=\(NotificationsCopy.pageSize)&offset=\(offset)"
+        )
+    }
+
+    func unreadNotificationCount() async throws -> Int {
+        let out: UnreadCountOut = try await authorizedGet("/api/notifications/unread-count/")
+        return out.count
+    }
+
+    func markNotificationRead(_ id: String) async throws {
+        try await authorizedDiscard("/api/notifications/\(id)/read/", method: "POST", body: [:])
     }
 
     func logout() async throws {

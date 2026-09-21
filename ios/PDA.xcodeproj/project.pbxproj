@@ -13,6 +13,7 @@
 		A10000000000000000000063 /* SessionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000062 /* SessionAPI.swift */; };
 		A10000000000000000000065 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000064 /* LoginView.swift */; };
 		A10000000000000000000071 /* GateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000070 /* GateView.swift */; };
+		A10000000000000000000081 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* NotificationsView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -44,6 +45,7 @@
 		A10000000000000000000062 /* SessionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPI.swift; sourceTree = "<group>"; };
 		A10000000000000000000064 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		A10000000000000000000070 /* GateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000080 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				A10000000000000000000062 /* SessionAPI.swift */,
 				A10000000000000000000064 /* LoginView.swift */,
 				A10000000000000000000070 /* GateView.swift */,
+				A10000000000000000000080 /* NotificationsView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -252,6 +255,7 @@
 				A10000000000000000000063 /* SessionAPI.swift in Sources */,
 				A10000000000000000000065 /* LoginView.swift in Sources */,
 				A10000000000000000000071 /* GateView.swift in Sources */,
+				A10000000000000000000081 /* NotificationsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

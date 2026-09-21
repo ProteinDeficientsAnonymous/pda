@@ -48,6 +48,7 @@ struct EventListView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
+                        NotificationsButton()
                         Button(ProfileCopy.title) { showProfile = true }
                         if canShowSettings(user: session.user) {
                             Button(SettingsCopy.title) { showSettings = true }
