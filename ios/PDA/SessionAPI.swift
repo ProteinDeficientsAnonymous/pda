@@ -18,6 +18,7 @@ struct SessionUser: Decodable, Equatable {
     let needsGuidelinesConsent: Bool
     let needsSmsConsent: Bool
     let needsContactPrivacyConsent: Bool
+    let permissions: [String]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -32,6 +33,7 @@ struct SessionUser: Decodable, Equatable {
         case needsGuidelinesConsent = "needs_guidelines_consent"
         case needsSmsConsent = "needs_sms_consent"
         case needsContactPrivacyConsent = "needs_contact_privacy_consent"
+        case permissions
     }
 
     init(from decoder: Decoder) throws {
@@ -48,6 +50,7 @@ struct SessionUser: Decodable, Equatable {
         needsGuidelinesConsent = try c.decodeIfPresent(Bool.self, forKey: .needsGuidelinesConsent) ?? false
         needsSmsConsent = try c.decodeIfPresent(Bool.self, forKey: .needsSmsConsent) ?? false
         needsContactPrivacyConsent = try c.decodeIfPresent(Bool.self, forKey: .needsContactPrivacyConsent) ?? false
+        permissions = try c.decodeIfPresent([String].self, forKey: .permissions) ?? []
     }
 }
 
@@ -89,6 +92,25 @@ func directoryChrome(for user: SessionUser?) -> MemberChrome {
 
 func addEventChrome(for user: SessionUser?) -> MemberChrome {
     memberChrome(for: user, title: MemberLockCopy.addEventTitle, body: MemberLockCopy.addEventBody)
+}
+
+func allowedEventTypes(for user: SessionUser) -> [String] {
+    guard user.isMember else { return [] }
+    var types = ["community"]
+    if user.permissions.contains("tag_official_event") { types.append("official") }
+    if user.permissions.contains("tag_club_event") { types.append("club") }
+    return types
+}
+
+enum AddEventCopy {
+    static let title = "add event"
+    static let titleLabel = "title"
+    static let whenLabel = "start"
+    static let descriptionLabel = "description"
+    static let save = "save event"
+    static let typeCommunity = "community"
+    static let typeOfficial = "official"
+    static let typeClub = "pda club"
 }
 
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {

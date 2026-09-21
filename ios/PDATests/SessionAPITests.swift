@@ -339,6 +339,63 @@ final class SessionAPITests: XCTestCase {
         if case .login = addEventChrome(for: tentative) {
             XCTFail("tentative add-event must explain, not bounce to login")
         }
+        XCTAssertNotEqual(addEventChrome(for: try user(isMember: false)), .open)
+    }
+
+    func test_allowedEventTypes_officialAndClubRequirePerms() throws {
+        XCTAssertEqual(allowedEventTypes(for: try user()), ["community"])
+        XCTAssertEqual(
+            allowedEventTypes(for: try user(permissions: ["tag_official_event"])),
+            ["community", "official"]
+        )
+        XCTAssertEqual(
+            allowedEventTypes(for: try user(permissions: ["tag_club_event"])),
+            ["community", "club"]
+        )
+        XCTAssertEqual(
+            allowedEventTypes(for: try user(permissions: ["tag_official_event", "tag_club_event"])),
+            ["community", "official", "club"]
+        )
+        XCTAssertEqual(allowedEventTypes(for: try user(isMember: false, permissions: ["tag_official_event"])), [])
+    }
+
+    func test_addEventCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            AddEventCopy.title,
+            AddEventCopy.titleLabel,
+            AddEventCopy.whenLabel,
+            AddEventCopy.descriptionLabel,
+            AddEventCopy.save,
+            AddEventCopy.typeCommunity,
+            AddEventCopy.typeOfficial,
+            AddEventCopy.typeClub,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_createEvent_postsTitleTimeDescriptionWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/events/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try XCTUnwrap(request.json)
+            XCTAssertEqual(body["title"] as? String, "potluck")
+            XCTAssertEqual(body["description"] as? String, "bring a dish")
+            XCTAssertEqual(body["start_datetime"] as? String, "2026-10-01T18:00:00Z")
+            XCTAssertEqual(body["event_type"] as? String, "community")
+            return MockHTTP.json(201, ["id": "evt-new", "title": "potluck", "event_type": "community"])
+        }
+        let created = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).create(title: "potluck", start: "2026-10-01T18:00:00Z", description: "bring a dish", eventType: "community")
+        XCTAssertEqual(created.id, "evt-new")
+        XCTAssertEqual(created.title, "potluck")
     }
 
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
@@ -492,6 +549,7 @@ final class SessionAPITests: XCTestCase {
         firstName: String = "ada",
         email: String = "ada@pda.test",
         isMember: Bool = true,
+        permissions: [String] = [],
         needsOnboarding: Bool = false,
         needsPasswordReset: Bool = false,
         needsGuidelinesConsent: Bool = false,
@@ -502,6 +560,7 @@ final class SessionAPITests: XCTestCase {
         payload["first_name"] = firstName
         payload["email"] = email
         payload["is_member"] = isMember
+        payload["permissions"] = permissions
         payload["needs_onboarding"] = needsOnboarding
         payload["needs_password_reset"] = needsPasswordReset
         payload["needs_guidelines_consent"] = needsGuidelinesConsent

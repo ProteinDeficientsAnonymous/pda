@@ -9,6 +9,7 @@ struct EventListView: View {
     @State private var showLock = false
     @State private var showMyRsvps = false
     @State private var showMyEvents = false
+    @State private var showAddEvent = false
 
     var body: some View {
         NavigationStack {
@@ -52,7 +53,7 @@ struct EventListView: View {
                     Spacer()
                     Button("directory") { open(directoryChrome(for: session.user)) }
                     Spacer()
-                    Button("add event") { open(addEventChrome(for: session.user)) }
+                    Button("add event") { openAddEvent() }
                 }
             }
             .sheet(isPresented: $showLogin) {
@@ -68,6 +69,12 @@ struct EventListView: View {
             .sheet(isPresented: $showMyEvents) {
                 MyEventsView()
                     .environment(session)
+            }
+            .sheet(isPresented: $showAddEvent) {
+                AddEventView {
+                    Task { await model.load() }
+                }
+                .environment(session)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { authGate(for: session.user) != nil },
@@ -97,6 +104,19 @@ struct EventListView: View {
             showLock = true
         case .open:
             break
+        }
+    }
+
+    private func openAddEvent() {
+        switch addEventChrome(for: session.user) {
+        case .login:
+            showLogin = true
+        case let .locked(title, body):
+            lockTitle = title
+            lockBody = body
+            showLock = true
+        case .open:
+            showAddEvent = true
         }
     }
 
@@ -598,6 +618,83 @@ struct MyEventsView: View {
             error = nil
         } catch {
             self.error = "couldn't load events — try refreshing"
+        }
+    }
+}
+
+struct AddEventView: View {
+    @Environment(AuthSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    var onCreated: () -> Void
+
+    @State private var title = ""
+    @State private var start = Date()
+    @State private var description = ""
+    @State private var eventType = "community"
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField(AddEventCopy.titleLabel, text: $title)
+                DatePicker(AddEventCopy.whenLabel, selection: $start)
+                    .datePickerStyle(.compact)
+                TextField(AddEventCopy.descriptionLabel, text: $description, axis: .vertical)
+                    .lineLimit(3 ... 8)
+                let types = session.user.map(allowedEventTypes) ?? ["community"]
+                if types.count > 1 {
+                    Picker("type", selection: $eventType) {
+                        ForEach(types, id: \.self) { type in
+                            Text(typeLabel(type)).tag(type)
+                        }
+                    }
+                }
+                if let error {
+                    Text(error).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(AddEventCopy.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("close") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(AddEventCopy.save) { Task { await save() } }
+                        .disabled(busy || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func typeLabel(_ type: String) -> String {
+        switch type {
+        case "official": AddEventCopy.typeOfficial
+        case "club": AddEventCopy.typeClub
+        default: AddEventCopy.typeCommunity
+        }
+    }
+
+    private func save() async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        var client = EventsClient()
+        client.tokens = session.client.tokens
+        do {
+            _ = try await client.create(
+                title: title,
+                start: formatter.string(from: start),
+                description: description,
+                eventType: eventType
+            )
+            onCreated()
+            dismiss()
+        } catch {
+            self.error = "couldn't save this event — try again"
         }
     }
 }
