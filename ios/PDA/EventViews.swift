@@ -18,6 +18,7 @@ struct EventListView: View {
     @State private var showHome = false
     @State private var showFaq = false
     @State private var showGuidelines = false
+    @State private var showDonate = false
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,7 @@ struct EventListView: View {
                     Button(HomeCopy.title) { showHome = true }
                     Button(FaqCopy.title) { showFaq = true }
                     Button(GuidelinesCopy.title) { showGuidelines = true }
+                    Button(DonateCopy.title) { showDonate = true }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
@@ -82,6 +84,9 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showGuidelines) {
                 GuidelinesView()
+            }
+            .sheet(isPresented: $showDonate) {
+                DonateView()
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
