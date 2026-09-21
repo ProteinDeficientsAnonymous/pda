@@ -141,8 +141,7 @@ final class SessionAPITests: XCTestCase {
         let unknown = LoginModel(client: client)
         unknown.phone = "+15555550999"
         await unknown.submitPhone()
-        XCTAssertEqual(unknown.step, .unknown)
-        XCTAssertFalse(unknown.unknownBody.contains("join"))
+        XCTAssertEqual(unknown.step, .join)
     }
 
     func test_login_mapsArchivedAndPausedCodes() async {

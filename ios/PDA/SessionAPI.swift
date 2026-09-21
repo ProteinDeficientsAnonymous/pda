@@ -722,7 +722,7 @@ struct SessionClient {
 @Observable
 final class LoginModel {
     enum Step: Equatable {
-        case phone, password, pending, unknown
+        case phone, password, pending, unknown, join
     }
 
     var step: Step = .phone
@@ -745,7 +745,7 @@ final class LoginModel {
             switch try await client.checkPhone(phone) {
             case .member: step = .password
             case .pending: step = .pending
-            case .unknown: step = .unknown
+            case .unknown: step = .join
             }
         } catch {
             self.error = "couldn't check your number — try again"

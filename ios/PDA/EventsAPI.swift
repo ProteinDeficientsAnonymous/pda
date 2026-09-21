@@ -958,6 +958,47 @@ struct EventsClient {
         try await fetch(volunteerURL(base: baseURL))
     }
 
+    func joinForm() async throws -> [JoinQuestion] {
+        var req = URLRequest(url: joinFormURL(base: baseURL))
+        req.httpMethod = "GET"
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode([JoinQuestion].self, from: data)
+            .sorted { $0.displayOrder < $1.displayOrder }
+    }
+
+    func submitJoinRequest(
+        firstName: String,
+        lastName: String,
+        phone: String,
+        email: String,
+        answers: [String: String],
+        smsConsent: Bool,
+        guidelinesConsent: Bool,
+        website: String = ""
+    ) async throws {
+        var req = URLRequest(url: joinRequestURL(base: baseURL))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "first_name": firstName,
+            "last_name": lastName,
+            "phone_number": phone,
+            "email": email,
+            "answers": answers,
+            "sms_consent": smsConsent,
+            "guidelines_consent": guidelinesConsent,
+            "website": website,
+        ])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 409, apiErrorCode(from: data) == "join_request.phone_already_invited" {
+            throw JoinError.alreadyInvited
+        }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+    }
+
     func events(status: String? = nil) async throws -> [Event] {
         try await fetch(eventsListURL(base: baseURL, status: status))
     }

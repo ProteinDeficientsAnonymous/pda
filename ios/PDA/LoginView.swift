@@ -10,28 +10,38 @@ struct LoginView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                switch model.step {
-                case .phone:
-                    phoneStep
-                case .password:
-                    passwordStep
-                case .pending:
-                    statusStep(title: LoginCopy.pendingTitle, body: LoginCopy.pendingBody)
-                case .unknown:
-                    statusStep(title: LoginCopy.unknownTitle, body: LoginCopy.unknownBody)
+        if model.step == .join {
+            JoinView(
+                client: EventsClient(baseURL: model.client.baseURL, session: model.client.session),
+                onSignIn: { model.step = .phone },
+                onHome: { dismiss() }
+            )
+        } else {
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 16) {
+                    switch model.step {
+                    case .phone:
+                        phoneStep
+                    case .password:
+                        passwordStep
+                    case .pending:
+                        statusStep(title: LoginCopy.pendingTitle, body: LoginCopy.pendingBody)
+                    case .unknown:
+                        statusStep(title: LoginCopy.unknownTitle, body: LoginCopy.unknownBody)
+                    case .join:
+                        EmptyView()
+                    }
                 }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(LoginCopy.welcomeTitle).font(.headline)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text(LoginCopy.welcomeTitle).font(.headline)
+                    }
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("close") { dismiss() }
+                    }
                 }
             }
         }
@@ -56,6 +66,10 @@ struct LoginView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(model.busy || model.phone.isEmpty)
+            Button(JoinCopy.requestToJoin) {
+                model.step = .join
+            }
+            .font(.subheadline)
         }
     }
 

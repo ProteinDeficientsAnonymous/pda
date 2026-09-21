@@ -20,6 +20,7 @@ struct EventListView: View {
     @State private var showGuidelines = false
     @State private var showDonate = false
     @State private var showVolunteer = false
+    @State private var showJoin = false
 
     var body: some View {
         NavigationStack {
@@ -56,6 +57,7 @@ struct EventListView: View {
                     Button(FaqCopy.title) { showFaq = true }
                     Button(GuidelinesCopy.title) { showGuidelines = true }
                     Button(DonateCopy.title) { showDonate = true }
+                    Button(JoinCopy.requestToJoin) { showJoin = true }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
@@ -94,6 +96,15 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showVolunteer) {
                 VolunteerView(client: EventsClient(tokens: session.client.tokens))
+            }
+            .sheet(isPresented: $showJoin) {
+                JoinView(
+                    onSignIn: {
+                        showJoin = false
+                        showLogin = true
+                    },
+                    onHome: { showJoin = false }
+                )
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
