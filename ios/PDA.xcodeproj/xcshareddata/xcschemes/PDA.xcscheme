@@ -39,6 +39,16 @@
                ReferencedContainer = "container:PDA.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A10000000000000000000043"
+               BuildableName = "PDAUITests.xctest"
+               BlueprintName = "PDAUITests"
+               ReferencedContainer = "container:PDA.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
