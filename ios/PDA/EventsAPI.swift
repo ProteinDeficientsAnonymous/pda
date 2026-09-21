@@ -441,6 +441,20 @@ func userProfileURL(base: URL, userId: String) -> URL {
     URL(string: "/api/auth/users/\(userId)/profile/", relativeTo: base)!.absoluteURL
 }
 
+func calendarTokenURL(base: URL) -> URL {
+    URL(string: "/api/community/calendar/token/", relativeTo: base)!.absoluteURL
+}
+
+struct CalendarToken: Decodable, Equatable {
+    let token: String
+    let feedUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case token
+        case feedUrl = "feed_url"
+    }
+}
+
 struct MemberProfile: Decodable {
     let name: String
     let bio: String
@@ -1042,6 +1056,14 @@ struct EventsClient {
 
     func profile(userId: String) async throws -> MemberProfile {
         try await sendJSON("GET", url: userProfileURL(base: baseURL, userId: userId))
+    }
+
+    func calendarToken() async throws -> CalendarToken {
+        try await sendJSON("GET", url: calendarTokenURL(base: baseURL))
+    }
+
+    func regenerateCalendarToken() async throws -> CalendarToken {
+        try await sendJSON("POST", url: calendarTokenURL(base: baseURL))
     }
 
     func votePoll(eventId: String, votes: [String: String]) async throws -> EventPoll {

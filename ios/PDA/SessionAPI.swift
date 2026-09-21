@@ -251,6 +251,18 @@ enum SettingsCopy {
     static let preferNotToSay = "prefer not to say"
 }
 
+enum CalendarFeedCopy {
+    static let title = "calendar"
+    static let feedUrl = "feed url"
+    static let copyLink = "copy link"
+    static let revoke = "revoke and create new link"
+    static let revokeConfirm = "revoke and create new link?"
+    static let revokeBody = "this will break any calendar already subscribed to your old link — you'll need to resubscribe everywhere. only do this if your link leaked or you want to revoke shared access."
+    static let loading = "loading feed link…"
+    static let loadError = "couldn't load calendar feed — try again later"
+    static let blurb = "subscribe to the community calendar in apple calendar, google calendar, etc — paste the private url once and it'll stay in sync."
+}
+
 func memberChrome(for user: SessionUser?, title: String, body: String) -> MemberChrome {
     guard let user else { return .login }
     return user.isMember ? .open : .locked(title: title, body: body)

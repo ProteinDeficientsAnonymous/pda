@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UIKit
 
 struct EventListView: View {
     @Environment(AuthSession.self) private var session
@@ -240,6 +241,9 @@ struct SettingsView: View {
     @State private var month = 1
     @State private var day = 1
     @State private var year: Int?
+    @State private var feed: CalendarToken?
+    @State private var feedError = false
+    @State private var confirmRevoke = false
 
     private static let months = [
         "january", "february", "march", "april", "may", "june",
@@ -268,6 +272,9 @@ struct SettingsView: View {
                         set: { showing in Task { await patch(["hide_last_name": !showing]) } }
                     ))
                 }
+                Section(CalendarFeedCopy.title) {
+                    calendarFeedSection
+                }
             }
             .navigationTitle(SettingsCopy.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -279,6 +286,19 @@ struct SettingsView: View {
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
                 Task { await upload(item) }
+            }
+            .task { await loadFeed() }
+            .confirmationDialog(
+                CalendarFeedCopy.revokeConfirm,
+                isPresented: $confirmRevoke,
+                titleVisibility: .visible
+            ) {
+                Button(CalendarFeedCopy.revoke, role: .destructive) {
+                    Task { await regenerateFeed() }
+                }
+                Button("cancel", role: .cancel) {}
+            } message: {
+                Text(CalendarFeedCopy.revokeBody)
             }
             .alert("couldn't save", isPresented: Binding(
                 get: { error != nil },
@@ -385,6 +405,48 @@ struct SettingsView: View {
             error = nil
         } catch {
             self.error = "couldn't upload photo — try again"
+        }
+    }
+
+    @ViewBuilder
+    private var calendarFeedSection: some View {
+        Text(CalendarFeedCopy.blurb)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        if let feed {
+            Text(CalendarFeedCopy.feedUrl).font(.caption).foregroundStyle(.secondary)
+            Text(feed.feedUrl).font(.footnote)
+            Button(CalendarFeedCopy.copyLink) {
+                UIPasteboard.general.string = feed.feedUrl
+            }
+            Button(CalendarFeedCopy.revoke) { confirmRevoke = true }
+        } else if feedError {
+            Text(CalendarFeedCopy.loadError).font(.caption).foregroundStyle(.secondary)
+            Button("try again") { Task { await loadFeed() } }
+        } else {
+            Text(CalendarFeedCopy.loading).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func eventsClient() -> EventsClient {
+        EventsClient(tokens: session.client.tokens)
+    }
+
+    private func loadFeed() async {
+        do {
+            feed = try await eventsClient().calendarToken()
+            feedError = false
+        } catch {
+            feedError = true
+        }
+    }
+
+    private func regenerateFeed() async {
+        do {
+            feed = try await eventsClient().regenerateCalendarToken()
+            feedError = false
+        } catch {
+            self.error = CalendarFeedCopy.loadError
         }
     }
 }

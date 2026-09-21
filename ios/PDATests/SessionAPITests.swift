@@ -1293,6 +1293,63 @@ final class SessionAPITests: XCTestCase {
         )
     }
 
+    func test_calendarFeedCopy_isLowercaseAndHasNoJoin() {
+        let blobs = [
+            CalendarFeedCopy.title,
+            CalendarFeedCopy.feedUrl,
+            CalendarFeedCopy.copyLink,
+            CalendarFeedCopy.revoke,
+            CalendarFeedCopy.revokeConfirm,
+            CalendarFeedCopy.revokeBody,
+            CalendarFeedCopy.loading,
+            CalendarFeedCopy.loadError,
+            CalendarFeedCopy.blurb,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+            XCTAssertFalse(text.contains("join"), text)
+        }
+    }
+
+    func test_calendarToken_getsFeedUrlWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/calendar/token/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "token": "tok-abc",
+                "feed_url": "https://pda.test/api/community/calendar/feed/?token=tok-abc",
+            ])
+        }
+        let token = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).calendarToken()
+        XCTAssertEqual(token.token, "tok-abc")
+        XCTAssertEqual(token.feedUrl, "https://pda.test/api/community/calendar/feed/?token=tok-abc")
+    }
+
+    func test_regenerateCalendarToken_postsWithBearer() async throws {
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/calendar/token/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "token": "tok-new",
+                "feed_url": "https://pda.test/api/community/calendar/feed/?token=tok-new",
+            ])
+        }
+        let token = try await EventsClient(
+            baseURL: base,
+            session: MockHTTP.session(),
+            tokens: tokens
+        ).regenerateCalendarToken()
+        XCTAssertEqual(token.token, "tok-new")
+    }
+
     func test_memberLockCopy_isLowercaseAndHasNoJoin() {
         let blobs = [
             MemberLockCopy.directoryTitle,
