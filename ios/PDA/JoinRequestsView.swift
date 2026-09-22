@@ -152,8 +152,10 @@ struct JoinRequestsView: View {
     @State private var filter = "pending"
     @State private var query = ""
     @State private var editingWelcome = false
+    @State private var editingTentative = false
     @State private var editingWhatsApp = false
     @State private var welcomeNotice: String?
+    @State private var tentativeNotice: String?
     @State private var whatsAppNotice: String?
 
     var body: some View {
@@ -175,14 +177,22 @@ struct JoinRequestsView: View {
             } else if let model, model.loaded {
                 let rows = visibleJoinRequests(model.rows, filter: filter, query: query)
                 VStack(spacing: 8) {
-                    HStack {
-                        Button(WelcomeTemplateCopy.button) { editingWelcome = true }
-                        Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
-                        Spacer()
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            Button(WelcomeTemplateCopy.button) { editingWelcome = true }
+                            Button(TentativeApprovalCopy.button) { editingTentative = true }
+                            Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
+                        }
                     }
                     .padding(.horizontal)
                     if let welcomeNotice {
                         Text(welcomeNotice)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+                    if let tentativeNotice {
+                        Text(tentativeNotice)
                             .font(.footnote)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
@@ -228,6 +238,13 @@ struct JoinRequestsView: View {
             NavigationStack {
                 WelcomeTemplateEditorView(client: client) {
                     welcomeNotice = WelcomeTemplateCopy.saved
+                }
+            }
+        }
+        .sheet(isPresented: $editingTentative) {
+            NavigationStack {
+                TentativeApprovalEditorView(client: client) {
+                    tentativeNotice = TentativeApprovalCopy.saved
                 }
             }
         }
