@@ -134,6 +134,7 @@ struct AdminMembersView: View {
     @State private var tab = "members"
     @State private var model: AdminMembersModel?
     @State private var addingMember = false
+    @State private var addingBulk = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -157,6 +158,11 @@ struct AdminMembersView: View {
         .sheet(isPresented: $addingMember) {
             NavigationStack {
                 MemberCreateView(client: client)
+            }
+        }
+        .sheet(isPresented: $addingBulk, onDismiss: { Task { await model?.load() } }) {
+            NavigationStack {
+                BulkCreateView(client: client)
             }
         }
         .task {
@@ -186,6 +192,7 @@ struct AdminMembersView: View {
                     if showsAddMemberButton(tab: tab) {
                         HStack {
                             Spacer()
+                            PDAButton(BulkCreateCopy.button, variant: .secondary) { addingBulk = true }
                             PDAButton(MemberCreateCopy.button) { addingMember = true }
                         }
                         .padding(.horizontal)
