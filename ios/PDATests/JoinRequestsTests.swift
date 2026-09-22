@@ -130,6 +130,107 @@ final class JoinRequestsTests: XCTestCase {
         XCTAssertNil(model.actionError)
     }
 
+    func test_rejectJoinRequest_patchesRejectedStatus() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTAssertEqual(routePath(request.url), "/api/community/join-requests/jr-1/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                let body = try JSONDecoder().decode(JoinDecisionBody.self, from: request.httpBody ?? Data())
+                XCTAssertEqual(body.status, "rejected")
+                return MockHTTP.json(200, [
+                    "id": "jr-1",
+                    "full_name": "Ada Lovelace",
+                    "first_name": "Ada",
+                    "phone_number": "+15555550100",
+                    "status": "rejected",
+                ])
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada Lovelace", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient(tokens))
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        model.askReject(row)
+        XCTAssertEqual(model.pendingReject?.id, "jr-1")
+        XCTAssertNil(model.pendingApprove)
+        XCTAssertEqual(
+            joinRequestRejectMessage(joinRequestApproveName(row)),
+            "reject Ada Lovelace? once you reject someone you can't un-reject them — are you sure?"
+        )
+        await model.confirmReject(row)
+        XCTAssertNil(model.pendingReject)
+        XCTAssertEqual(model.rows.first?.status, "rejected")
+        XCTAssertNil(model.actionError)
+    }
+
+    func test_rejectJoinRequest_403WithoutApprovePermission() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "update_join_request_status"]]])
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient())
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        await model.confirmReject(row)
+        XCTAssertEqual(model.rows.first?.status, "pending")
+        XCTAssertFalse(model.forbidden)
+        XCTAssertEqual(model.actionError, "couldn't complete that action — try again")
+    }
+
+    func test_rejectJoinRequest_cancelSkipsPatch() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("cancel should not patch")
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient())
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        model.askReject(row)
+        model.cancelReject()
+        XCTAssertNil(model.pendingReject)
+        XCTAssertEqual(model.rows.first?.status, "pending")
+        let decided = JoinRequestRow(
+            id: "jr-2",
+            fullName: "Cy",
+            phoneNumber: "",
+            email: "",
+            status: "approved",
+            submittedAt: "2026-03-01T00:00:00Z"
+        )
+        model.askReject(decided)
+        XCTAssertNil(model.pendingReject)
+    }
+
+    func test_joinRequestRejectCopy_isLowercase() {
+        let blobs = [
+            JoinRequestRejectCopy.button,
+            JoinRequestRejectCopy.title,
+            JoinRequestRejectCopy.confirm,
+            JoinRequestRejectCopy.cancel,
+            JoinRequestRejectCopy.error,
+        ]
+        XCTAssertEqual(JoinRequestRejectCopy.button, "reject")
+        XCTAssertEqual(JoinRequestRejectCopy.title, "reject request")
+        XCTAssertEqual(JoinRequestRejectCopy.confirm, "reject")
+        XCTAssertEqual(JoinRequestRejectCopy.cancel, "cancel")
+        XCTAssertEqual(JoinRequestRejectCopy.error, "couldn't complete that action — try again")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     func test_approveJoinRequest_403WithoutApprovePermission() async throws {
         MockHTTP.handler = { request in
             if request.httpMethod == "PATCH" {

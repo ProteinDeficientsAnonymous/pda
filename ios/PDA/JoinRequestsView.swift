@@ -20,6 +20,14 @@ enum JoinRequestApproveCopy {
     static let error = "couldn't complete that action — try again"
 }
 
+enum JoinRequestRejectCopy {
+    static let button = "reject"
+    static let title = "reject request"
+    static let confirm = "reject"
+    static let cancel = "cancel"
+    static let error = "couldn't complete that action — try again"
+}
+
 enum JoinRequestsError: Error, Equatable {
     case forbidden
 }
@@ -95,6 +103,10 @@ func joinRequestApproveMessage(_ name: String) -> String {
     "approve \(name)? once you approve someone you can't un-approve them — are you sure?"
 }
 
+func joinRequestRejectMessage(_ name: String) -> String {
+    "reject \(name)? once you reject someone you can't un-reject them — are you sure?"
+}
+
 struct JoinRequestDecision: Decodable, Equatable {
     let id: String
     let status: String
@@ -151,6 +163,20 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(JoinRequestDecision.self, from: data)
     }
+
+    func rejectJoinRequest(id: String) async throws -> JoinRequestDecision {
+        var req = URLRequest(url: joinRequestDecisionURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["status": "rejected"])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(JoinRequestDecision.self, from: data)
+    }
 }
 
 @Observable
@@ -161,6 +187,7 @@ final class JoinRequestsModel {
     var error: String?
     var actionError: String?
     var pendingApprove: JoinRequestRow?
+    var pendingReject: JoinRequestRow?
     var loaded = false
 
     var explanationTitle: String { JoinRequestsCopy.forbiddenTitle }
@@ -215,6 +242,37 @@ final class JoinRequestsModel {
             )
         } catch {
             actionError = JoinRequestApproveCopy.error
+        }
+    }
+
+    func askReject(_ row: JoinRequestRow) {
+        guard row.status == "pending" else { return }
+        pendingReject = row
+    }
+
+    func cancelReject() {
+        pendingReject = nil
+    }
+
+    func confirmReject(_ row: JoinRequestRow) async {
+        pendingReject = nil
+        actionError = nil
+        do {
+            let decision = try await client.rejectJoinRequest(id: row.id)
+            guard let index = rows.firstIndex(where: { $0.id == decision.id }) else { return }
+            let current = rows[index]
+            rows[index] = JoinRequestRow(
+                id: current.id,
+                fullName: current.fullName,
+                phoneNumber: current.phoneNumber,
+                email: current.email,
+                status: decision.status,
+                submittedAt: current.submittedAt,
+                approvedAt: current.approvedAt,
+                rejectedAt: current.rejectedAt
+            )
+        } catch {
+            actionError = JoinRequestRejectCopy.error
         }
     }
 }
@@ -316,6 +374,9 @@ struct JoinRequestsView: View {
                                 Text(row.status.lowercased()).font(.footnote).foregroundStyle(.secondary)
                                 if row.status == "pending" {
                                     PDAButton(JoinRequestApproveCopy.button) { model.askApprove(row) }
+                                    PDAButton(JoinRequestRejectCopy.button, variant: .secondary) {
+                                        model.askReject(row)
+                                    }
                                 }
                             }
                         }
@@ -388,6 +449,26 @@ struct JoinRequestsView: View {
         } message: {
             if let row = model?.pendingApprove {
                 Text(joinRequestApproveMessage(joinRequestApproveName(row)))
+            }
+        }
+        .confirmationDialog(
+            JoinRequestRejectCopy.title,
+            isPresented: Binding(
+                get: { model?.pendingReject != nil },
+                set: { if !$0 { model?.cancelReject() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(JoinRequestRejectCopy.confirm, role: .destructive) {
+                guard let row = model?.pendingReject else { return }
+                Task { await model?.confirmReject(row) }
+            }
+            Button(JoinRequestRejectCopy.cancel, role: .cancel) {
+                model?.cancelReject()
+            }
+        } message: {
+            if let row = model?.pendingReject {
+                Text(joinRequestRejectMessage(joinRequestApproveName(row)))
             }
         }
         .task {
