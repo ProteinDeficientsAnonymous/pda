@@ -120,7 +120,7 @@ struct EventListView: View {
                 DirectoryView(client: EventsClient(tokens: session.client.tokens))
             }
             .sheet(isPresented: $showAdmin) {
-                AdminHubView(user: session.user)
+                AdminHubView(user: session.user, client: EventsClient(tokens: session.client.tokens))
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)

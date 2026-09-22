@@ -40,16 +40,30 @@ func adminHubTiles(for user: SessionUser?) -> [AdminHubTile] {
     return adminHubCatalog.filter { user.isAdmin || user.permissions.contains($0.permission) }
 }
 
+enum AdminHubDestination: Equatable {
+    case members
+}
+
+func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
+    tile.id == "members" ? .members : nil
+}
+
 struct AdminHubView: View {
     let user: SessionUser?
+    var client = EventsClient()
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List(adminHubTiles(for: user)) { tile in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(tile.label)
-                    Text(tile.detail).font(.footnote).foregroundStyle(.secondary)
+                if adminHubDestination(for: tile) == .members {
+                    NavigationLink {
+                        AdminMembersView(client: client)
+                    } label: {
+                        hubTileLabel(tile)
+                    }
+                } else {
+                    hubTileLabel(tile)
                 }
             }
             .navigationTitle(AdminHubCopy.title)
@@ -59,6 +73,13 @@ struct AdminHubView: View {
                     Button("close") { dismiss() }
                 }
             }
+        }
+    }
+
+    private func hubTileLabel(_ tile: AdminHubTile) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(tile.label)
+            Text(tile.detail).font(.footnote).foregroundStyle(.secondary)
         }
     }
 }
