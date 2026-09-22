@@ -999,6 +999,10 @@ struct EventsClient {
         try await fetch(faqURL(base: baseURL))
     }
 
+    func updateFaq(contentPm: String) async throws -> HomePage {
+        try await sendJSON("PATCH", url: faqURL(base: baseURL), body: ["content_pm": contentPm])
+    }
+
     func guidelines() async throws -> HomePage {
         try await fetch(guidelinesURL(base: baseURL))
     }
