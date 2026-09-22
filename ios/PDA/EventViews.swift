@@ -37,7 +37,7 @@ struct EventListView: View {
                     } description: {
                         Text(message)
                     } actions: {
-                        Button("try again") { Task { await model.load() } }
+                        PDAButton("try again") { Task { await model.load() } }
                     }
                 case let .loaded(events) where events.isEmpty:
                     ContentUnavailableView("nothing on the horizon — pop back later", systemImage: "leaf")
@@ -53,40 +53,40 @@ struct EventListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("calendar").font(.headline)
+                    Text("calendar").font(PDAType.field).fontWeight(.medium)
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(HomeCopy.title) { showHome = true }
-                    Button(FaqCopy.title) { showFaq = true }
-                    Button(GuidelinesCopy.title) { showGuidelines = true }
-                    Button(DonateCopy.title) { showDonate = true }
-                    Button(JoinCopy.requestToJoin) { showJoin = true }
-                    Button(SmsPolicyCopy.title) { showSmsPolicy = true }
+                    PDAButton(HomeCopy.title, variant: .ghost) { showHome = true }
+                    PDAButton(FaqCopy.title, variant: .ghost) { showFaq = true }
+                    PDAButton(GuidelinesCopy.title, variant: .ghost) { showGuidelines = true }
+                    PDAButton(DonateCopy.title, variant: .ghost) { showDonate = true }
+                    PDAButton(JoinCopy.requestToJoin, variant: .ghost) { showJoin = true }
+                    PDAButton(SmsPolicyCopy.title, variant: .ghost) { showSmsPolicy = true }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if canShowProfile(user: session.user) {
                         NotificationsButton()
-                        Button(ProfileCopy.title) { showProfile = true }
+                        PDAButton(ProfileCopy.title, variant: .ghost) { showProfile = true }
                         if canShowSettings(user: session.user) {
-                            Button(SettingsCopy.title) { showSettings = true }
+                            PDAButton(SettingsCopy.title, variant: .ghost) { showSettings = true }
                         }
                         if canShowVolunteer(user: session.user) {
-                            Button(VolunteerCopy.title) { showVolunteer = true }
+                            PDAButton(VolunteerCopy.title, variant: .ghost) { showVolunteer = true }
                         }
                         if hasAnyAdminPermission(session.user) {
-                            Button(AdminHubCopy.title) { showAdmin = true }
+                            PDAButton(AdminHubCopy.title, variant: .ghost) { showAdmin = true }
                         }
-                        Button("log out") { Task { await session.logout() } }
+                        PDAButton("log out", variant: .ghost) { Task { await session.logout() } }
                     } else {
-                        Button("sign in") { showLogin = true }
+                        PDAButton("sign in") { showLogin = true }
                     }
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button(PublicRsvpCopy.myRsvpsTitle) { openMyRsvps() }
+                    PDAButton(PublicRsvpCopy.myRsvpsTitle, variant: .ghost) { openMyRsvps() }
                     Spacer()
-                    Button("directory") { open(directoryChrome(for: session.user)) }
+                    PDAButton("directory", variant: .ghost) { open(directoryChrome(for: session.user)) }
                     Spacer()
-                    Button("add event") { openAddEvent() }
+                    PDAButton("add event") { openAddEvent() }
                 }
             }
             .sheet(isPresented: $showHome) {
@@ -216,8 +216,8 @@ struct MemberLockSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 12) {
-                Text(title).font(.title2)
-                Text(message).font(.body).foregroundStyle(.secondary)
+                Text(title).font(PDAType.field)
+                Text(message).font(PDAType.field).foregroundStyle(PDAColor.foregroundSecondary)
                 Spacer()
             }
             .padding()
@@ -225,7 +225,7 @@ struct MemberLockSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
         }
@@ -247,14 +247,14 @@ struct ProfileView: View {
                 if let profile {
                     List {
                         Text(profile.name.lowercased())
-                            .font(.headline)
+                            .font(PDAType.field).fontWeight(.medium)
                         if !profile.nickname.isEmpty {
                             Text(profile.nickname.lowercased())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(PDAColor.foregroundSecondary)
                         }
                         if !profile.pronouns.isEmpty {
                             Text(profile.pronouns.lowercased())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(PDAColor.foregroundSecondary)
                         }
                         if !profile.bio.isEmpty {
                             Section(ProfileCopy.bio) {
@@ -274,7 +274,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await load() }
@@ -326,7 +326,7 @@ struct SettingsView: View {
                     birthdaySection
                 }
                 Section(ChangePasswordCopy.security) {
-                    Button(ChangePasswordCopy.title) { showPassword = true }
+                    PDAButton(ChangePasswordCopy.title) { showPassword = true }
                 }
                 Section(SettingsCopy.privacy) {
                     Toggle(SettingsCopy.showPhone, isOn: boolPatch("show_phone") { $0.showPhone })
@@ -375,7 +375,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .onChange(of: photoItem) { _, item in
@@ -435,20 +435,20 @@ struct SettingsView: View {
             }
             HStack {
                 if session.user?.birthday != nil {
-                    Button(SettingsCopy.clear) { Task { await saveBirthday(nil) } }
+                    PDAButton(SettingsCopy.clear, variant: .ghost) { Task { await saveBirthday(nil) } }
                 }
                 Spacer()
-                Button("cancel") { editingBirthday = false }
-                Button(SettingsCopy.save) { Task { await saveBirthday(Birthday(month: month, day: day, year: year)) } }
+                PDAButton("cancel", variant: .secondary) { editingBirthday = false }
+                PDAButton(SettingsCopy.save) { Task { await saveBirthday(Birthday(month: month, day: day, year: year)) } }
             }
         } else {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(SettingsCopy.birthday).font(.caption).foregroundStyle(.secondary)
+                    Text(SettingsCopy.birthday).font(PDAType.control).foregroundStyle(PDAColor.foregroundSecondary)
                     Text(session.user?.birthday.map(formatBirthday) ?? SettingsCopy.addBirthday)
                 }
                 Spacer()
-                Button("edit") { startBirthday() }
+                PDAButton("edit", variant: .ghost) { startBirthday() }
             }
         }
     }
@@ -517,20 +517,20 @@ struct SettingsView: View {
     @ViewBuilder
     private var calendarFeedSection: some View {
         Text(CalendarFeedCopy.blurb)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(PDAType.control)
+            .foregroundStyle(PDAColor.foregroundSecondary)
         if let feed {
-            Text(CalendarFeedCopy.feedUrl).font(.caption).foregroundStyle(.secondary)
-            Text(feed.feedUrl).font(.footnote)
-            Button(CalendarFeedCopy.copyLink) {
+            Text(CalendarFeedCopy.feedUrl).font(PDAType.control).foregroundStyle(PDAColor.foregroundSecondary)
+            Text(feed.feedUrl).font(PDAType.control)
+            PDAButton(CalendarFeedCopy.copyLink, variant: .secondary) {
                 UIPasteboard.general.string = feed.feedUrl
             }
-            Button(CalendarFeedCopy.revoke) { confirmRevoke = true }
+            PDAButton(CalendarFeedCopy.revoke, variant: .ghost) { confirmRevoke = true }
         } else if feedError {
-            Text(CalendarFeedCopy.loadError).font(.caption).foregroundStyle(.secondary)
-            Button("try again") { Task { await loadFeed() } }
+            Text(CalendarFeedCopy.loadError).font(PDAType.control).foregroundStyle(PDAColor.foregroundSecondary)
+            PDAButton("try again") { Task { await loadFeed() } }
         } else {
-            Text(CalendarFeedCopy.loading).font(.caption).foregroundStyle(.secondary)
+            Text(CalendarFeedCopy.loading).font(PDAType.control).foregroundStyle(PDAColor.foregroundSecondary)
         }
     }
 
@@ -576,17 +576,17 @@ struct ChangePasswordView: View {
                 SecureField(GateCopy.confirmPasswordLabel, text: $confirm)
                     .textContentType(.newPassword)
                 if let error {
-                    Text(error).foregroundStyle(.red)
+                    Text(error).foregroundStyle(PDAColor.destructive)
                 }
             }
             .navigationTitle(ChangePasswordCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel") { dismiss() }
+                    PDAButton("cancel", variant: .secondary) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(ChangePasswordCopy.update) { Task { await save() } }
+                    PDAButton(ChangePasswordCopy.update) { Task { await save() } }
                         .disabled(busy)
                 }
             }
@@ -616,16 +616,16 @@ struct EventRow: View {
         let copy = GuestEventCopy.make(event)
         VStack(alignment: .leading, spacing: 4) {
             Text(copy.title.lowercased())
-                .font(.headline)
+                .font(PDAType.field).fontWeight(.medium)
             if let badge = copy.badge {
                 Text(badge)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             }
             if !copy.when.isEmpty {
                 Text(copy.when)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             }
         }
         .padding(.vertical, 4)
@@ -662,25 +662,25 @@ struct EventDetailView: View {
                         ProgressView()
                     }
                     .frame(maxHeight: 280)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: PDARadius.md))
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(copy.title.lowercased())
-                        .font(.title2)
+                        .font(PDAType.field)
                         .fontWeight(.medium)
                     if let badge = copy.badge {
                         Text(badge)
-                            .font(.caption)
+                            .font(PDAType.control)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .background(.quaternary, in: Capsule())
+                            .background(PDAColor.surfaceDim, in: Capsule())
                     }
                 }
 
                 Text(copy.when)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
 
                 if canShowCohostInvite(detail) {
                     CohostInviteBanner(
@@ -690,23 +690,23 @@ struct EventDetailView: View {
                 }
 
                 if canInviteGuests(detail, user: session.user) {
-                    Button(InviteCopy.send) { showInvite = true }
+                    PDAButton(InviteCopy.send, variant: .secondary) { showInvite = true }
                 }
 
                 if canShowCheckIn(detail, user: session.user) {
-                    Button(CheckInCopy.title) { showCheckIn = true }
+                    PDAButton(CheckInCopy.title, variant: .secondary) { showCheckIn = true }
                 }
 
                 if canShowManageRsvps(detail, user: session.user) {
-                    Button(ManageRsvpsCopy.title) { showManageRsvps = true }
+                    PDAButton(ManageRsvpsCopy.title, variant: .secondary) { showManageRsvps = true }
                 }
 
                 if canShowCheckInReport(detail, user: session.user, flagOn: hostAttendanceReport) {
-                    Button(CheckInReportCopy.title) { showCheckInReport = true }
+                    PDAButton(CheckInReportCopy.title, variant: .secondary) { showCheckInReport = true }
                 }
 
                 if canShowFlagEvent(user: session.user) {
-                    Button(FlagEventCopy.title) { showFlag = true }
+                    PDAButton(FlagEventCopy.title, variant: .secondary) { showFlag = true }
                 }
 
                 if canShowEventPoll(detail, winningDatetime: nil) {
@@ -720,37 +720,37 @@ struct EventDetailView: View {
 
                 if let location = copy.location {
                     Text(location.lowercased())
-                        .font(.subheadline)
+                        .font(PDAType.field)
                 }
 
                 if !copy.hosts.isEmpty {
                     Text("hosted by \(copy.hosts.joined(separator: ", ").lowercased())")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
                 }
 
                 if let price = copy.price {
                     Text(price.lowercased())
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
                 }
 
                 if !copy.tags.isEmpty {
                     HStack {
                         ForEach(copy.tags, id: \.self) { tag in
                             Text(tag.lowercased())
-                                .font(.caption)
+                                .font(PDAType.control)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(.quaternary, in: Capsule())
+                                .background(PDAColor.surfaceDim, in: Capsule())
                         }
                     }
                 }
 
                 if let attending = copy.attending {
                     Text(attending)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
                 }
 
                 if canShowMemberRsvp(detail, signedIn: session.user != nil) {
@@ -760,14 +760,14 @@ struct EventDetailView: View {
                     ) { detail = $0 }
                 } else if let myRsvp = copy.myRsvp {
                     Text("your rsvp: \(myRsvp.lowercased())")
-                        .font(.subheadline)
+                        .font(PDAType.field)
                 }
 
                 if !copy.description.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("about")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(PDAType.field)
+                            .foregroundStyle(PDAColor.foregroundSecondary)
                         Text(copy.description.lowercased())
                     }
                 }
@@ -775,14 +775,14 @@ struct EventDetailView: View {
                 if !copy.links.isEmpty || copy.zelle != nil {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("links")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(PDAType.field)
+                            .foregroundStyle(PDAColor.foregroundSecondary)
                         ForEach(copy.links, id: \.url) { link in
                             Link(link.label, destination: link.url)
                         }
                         if let zelle = copy.zelle {
                             Text("zelle: \(zelle.lowercased())")
-                                .font(.subheadline)
+                                .font(PDAType.field)
                         }
                     }
                 }
@@ -790,8 +790,8 @@ struct EventDetailView: View {
                 if !copy.rsvp.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("who's going")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(PDAType.field)
+                            .foregroundStyle(PDAColor.foregroundSecondary)
                         ForEach(Array(copy.rsvp.enumerated()), id: \.offset) { _, name in
                             Text(name.lowercased())
                         }
@@ -800,21 +800,21 @@ struct EventDetailView: View {
 
                 if let loadError {
                     Text(loadError)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
                 }
 
                 if !copy.moreHintTitle.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(copy.moreHintTitle)
-                            .font(.headline)
+                            .font(PDAType.field).fontWeight(.medium)
                         Text(copy.moreHintBody)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(PDAType.field)
+                            .foregroundStyle(PDAColor.foregroundSecondary)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .background(PDAColor.surface, in: RoundedRectangle(cornerRadius: PDARadius.md))
                 }
 
                 if session.user == nil, canPublicRsvp(detail) {
@@ -839,11 +839,11 @@ struct EventDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("event").font(.headline)
+                Text("event").font(PDAType.field).fontWeight(.medium)
             }
             if canEditEvent(detail, user: session.user) {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("edit") { showEdit = true }
+                    PDAButton("edit", variant: .ghost) { showEdit = true }
                 }
             }
         }
@@ -994,44 +994,49 @@ struct PublicRsvpFormView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(PublicRsvpCopy.title).font(.headline)
+            Text(PublicRsvpCopy.title).font(PDAType.field).fontWeight(.medium)
             if let error = model.error {
-                Text(error).font(.subheadline).foregroundStyle(.secondary)
+                Text(error).font(PDAType.field).foregroundStyle(PDAColor.foregroundSecondary)
             }
             switch model.step {
             case .phone:
-                TextField(PublicRsvpCopy.phoneLabel, text: $model.phone)
-                    .textContentType(.telephoneNumber)
-                    .keyboardType(.phonePad)
-                Button(PublicRsvpCopy.continueButton) { Task { await model.submitPhone() } }
+                PDATextField(
+                    PublicRsvpCopy.phoneLabel,
+                    text: $model.phone,
+                    keyboard: .phonePad,
+                    contentType: .telephoneNumber
+                )
+                PDAButton(PublicRsvpCopy.continueButton) { Task { await model.submitPhone() } }
                     .disabled(model.busy || model.phone.isEmpty)
             case .form:
-                TextField(PublicRsvpCopy.firstNameLabel, text: $model.firstName)
-                    .textContentType(.givenName)
-                TextField(PublicRsvpCopy.emailLabel, text: $model.email)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
+                PDATextField(PublicRsvpCopy.firstNameLabel, text: $model.firstName, contentType: .givenName)
+                PDATextField(
+                    PublicRsvpCopy.emailLabel,
+                    text: $model.email,
+                    capitalization: .never,
+                    keyboard: .emailAddress,
+                    contentType: .emailAddress
+                )
                 Picker("status", selection: $model.status) {
                     Text(PublicRsvpCopy.going).tag("attending")
                     Text(PublicRsvpCopy.maybe).tag("maybe")
                 }
                 .pickerStyle(.segmented)
-                Button(PublicRsvpCopy.submit) { Task { await model.submitRsvp() } }
+                PDAButton(PublicRsvpCopy.submit) { Task { await model.submitRsvp() } }
                     .disabled(model.busy || model.firstName.isEmpty || model.email.isEmpty)
             case .member:
                 Text(PublicRsvpCopy.memberBody)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Button("sign in") { showLogin = true }
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
+                PDAButton("sign in") { showLogin = true }
             case .saved:
                 Text(PublicRsvpCopy.saved)
-                    .font(.subheadline)
+                    .font(PDAType.field)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(PDAColor.surface, in: RoundedRectangle(cornerRadius: PDARadius.md))
         .sheet(isPresented: $showLogin) {
             LoginView(client: session.client)
                 .environment(session)
@@ -1054,8 +1059,8 @@ struct MyRsvpsView: View {
                         VStack(alignment: .leading) {
                             Text(item.title.lowercased())
                             Text(item.status.lowercased())
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(PDAType.field)
+                                .foregroundStyle(PDAColor.foregroundSecondary)
                         }
                     }
                 }
@@ -1064,7 +1069,7 @@ struct MyRsvpsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await load() }
@@ -1138,7 +1143,7 @@ struct MyEventsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await load() }
@@ -1206,11 +1211,10 @@ struct AddEventView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField(AddEventCopy.titleLabel, text: $title)
+                PDATextField(AddEventCopy.titleLabel, text: $title)
                 DatePicker(AddEventCopy.whenLabel, selection: $start)
                     .datePickerStyle(.compact)
-                TextField(AddEventCopy.descriptionLabel, text: $description, axis: .vertical)
-                    .lineLimit(3 ... 8)
+                PDATextField(AddEventCopy.descriptionLabel, text: $description, axis: .vertical, lineLimit: 8)
                 let types = session.user.map(allowedEventTypes) ?? ["community"]
                 if event == nil, types.count > 1 {
                     Picker("type", selection: $eventType) {
@@ -1220,17 +1224,17 @@ struct AddEventView: View {
                     }
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 }
             }
             .navigationTitle(event == nil ? AddEventCopy.title : EditEventCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(event == nil ? AddEventCopy.save : EditEventCopy.save) { Task { await save() } }
+                    PDAButton(event == nil ? AddEventCopy.save : EditEventCopy.save) { Task { await save() } }
                         .disabled(busy || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -1290,26 +1294,25 @@ struct EventCommentsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(EventCommentCopy.title)
-                .font(.headline)
+                .font(PDAType.field).fontWeight(.medium)
             if let list {
                 if let prompt = commentComposerPrompt(canPost: list.canPost, reason: list.cannotPostReason) {
                     Text(prompt)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
                 } else {
-                    TextField(EventCommentCopy.placeholder, text: $draft, axis: .vertical)
-                        .lineLimit(2 ... 5)
-                    Button(EventCommentCopy.post) { Task { await post() } }
+                    PDATextField(EventCommentCopy.placeholder, text: $draft, axis: .vertical, lineLimit: 5)
+                    PDAButton(EventCommentCopy.post) { Task { await post() } }
                         .disabled(busy || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 ForEach(visibleComments(list)) { comment in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(comment.authorDisplayName.lowercased())
-                            .font(.subheadline)
+                            .font(PDAType.field)
                         Text(comment.isDeleted ? "[deleted]" : comment.body)
                         HStack {
                             ForEach(comment.reactions, id: \.emoji) { reaction in
-                                Button("\(reaction.emoji) \(reaction.count)") {
+                                PDAButton("\(reaction.emoji) \(reaction.count)", variant: .ghost) {
                                     Task { await react(comment.id, reaction.emoji) }
                                 }
                             }
@@ -1326,8 +1329,8 @@ struct EventCommentsView: View {
                 }
             } else if let error {
                 Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             } else {
                 ProgressView("loading…")
             }
@@ -1394,7 +1397,7 @@ struct EventPollView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(EventPollCopy.title)
-                .font(.headline)
+                .font(PDAType.field).fontWeight(.medium)
             if let poll {
                 ForEach(sortPollOptionsByVotes(poll.options)) { option in
                     VStack(alignment: .leading, spacing: 6) {
@@ -1405,28 +1408,29 @@ struct EventPollView: View {
                                 datetimeTbd: option.datetime == nil
                             )
                         )
-                        .font(.subheadline)
+                        .font(PDAType.field)
                         Text("\(EventPollCopy.yes) \(option.yesCount) · \(EventPollCopy.maybe) \(option.maybeCount) · \(EventPollCopy.no) \(option.noCount)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(PDAType.control)
+                            .foregroundStyle(PDAColor.foregroundSecondary)
                         if pollVoteChrome(signedIn: signedIn) == .vote {
                             HStack {
                                 ForEach([EventPollCopy.yes, EventPollCopy.maybe, EventPollCopy.no], id: \.self) { choice in
-                                    Button(choice) { Task { await vote(option.id, choice) } }
-                                        .disabled(busy)
-                                        .fontWeight(poll.myVotes[option.id] == choice ? .bold : .regular)
+                                    PDAButton(choice, variant: poll.myVotes[option.id] == choice ? .primary : .ghost) {
+                                        Task { await vote(option.id, choice) }
+                                    }
+                                    .disabled(busy)
                                 }
                             }
                         }
                     }
                 }
                 if pollVoteChrome(signedIn: signedIn) == .login {
-                    Button(EventPollCopy.signIn, action: onSignIn)
+                    PDAButton(EventPollCopy.signIn, action: onSignIn)
                 }
             } else if let error {
                 Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             } else {
                 ProgressView("loading poll…")
             }
@@ -1470,20 +1474,20 @@ struct CohostInviteBanner: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(cohostInviteMessage(createdByName: event.createdByName))
             HStack {
-                Button(CohostInviteCopy.accept) { Task { await respond(accept: true) } }
+                PDAButton(CohostInviteCopy.accept) { Task { await respond(accept: true) } }
                     .disabled(busy)
-                Button(CohostInviteCopy.decline) { Task { await respond(accept: false) } }
+                PDAButton(CohostInviteCopy.decline, variant: .ghost) { Task { await respond(accept: false) } }
                     .disabled(busy)
             }
             if let error {
                 Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(PDAColor.surface, in: RoundedRectangle(cornerRadius: PDARadius.md))
     }
 
     private func respond(accept: Bool) async {
@@ -1523,7 +1527,7 @@ struct MemberRsvpView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(PublicRsvpCopy.title).font(.headline)
+            Text(PublicRsvpCopy.title).font(PDAType.field).fontWeight(.medium)
             HStack {
                 statusButton(MemberRsvpCopy.going, "attending")
                 statusButton(MemberRsvpCopy.maybe, "maybe")
@@ -1531,25 +1535,24 @@ struct MemberRsvpView: View {
             }
             if rsvpQuestionsApplyToStatus(status), !event.rsvpQuestions.isEmpty {
                 Text(RsvpQuestionCopy.title)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
                 ForEach(event.rsvpQuestions) { question in
                     questionField(question)
                 }
             }
             if let error {
                 Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(PDAType.field)
+                    .foregroundStyle(PDAColor.foregroundSecondary)
             }
-            Button(MemberRsvpCopy.save) { Task { await save() } }
+            PDAButton(MemberRsvpCopy.save) { Task { await save() } }
                 .disabled(busy)
         }
     }
 
     private func statusButton(_ label: String, _ value: String) -> some View {
-        Button(label) { status = value }
-            .fontWeight(status == value ? .bold : .regular)
+        PDAButton(label, variant: status == value ? .primary : .ghost) { status = value }
     }
 
     @ViewBuilder
@@ -1569,8 +1572,7 @@ struct MemberRsvpView: View {
                 set: { answers[question.id] = $0 ? "yes" : "" }
             ))
         default:
-            TextField(label, text: answerBinding(question.id), axis: .vertical)
-                .textInputAutocapitalization(.never)
+            PDATextField(label, text: answerBinding(question.id), axis: .vertical, capitalization: .never)
         }
     }
 
@@ -1631,24 +1633,28 @@ struct CheckInView: View {
                         HStack {
                             Text(guest.name.lowercased())
                             Spacer()
-                            Button(CheckInCopy.attended) { Task { await mark(guest.userId, "attended") } }
-                                .fontWeight(guest.attendance == "attended" ? .bold : .regular)
+                            PDAButton(
+                                CheckInCopy.attended,
+                                variant: guest.attendance == "attended" ? .primary : .ghost
+                            ) { Task { await mark(guest.userId, "attended") } }
                                 .disabled(busy)
-                            Button(CheckInCopy.didntAttend) { Task { await mark(guest.userId, "didnt_go") } }
-                                .fontWeight(guest.attendance == "didnt_go" ? .bold : .regular)
+                            PDAButton(
+                                CheckInCopy.didntAttend,
+                                variant: guest.attendance == "didnt_go" ? .primary : .ghost
+                            ) { Task { await mark(guest.userId, "didnt_go") } }
                                 .disabled(busy)
                         }
                     }
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 }
             }
             .navigationTitle(CheckInCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
         }
@@ -1687,24 +1693,23 @@ struct FlagEventView: View {
             Form {
                 Section {
                     Text(FlagEventCopy.prompt)
-                    TextField(FlagEventCopy.reason, text: $reason, axis: .vertical)
-                        .textInputAutocapitalization(.never)
+                    PDATextField(FlagEventCopy.reason, text: $reason, axis: .vertical, capitalization: .never)
                 }
                 if thanks {
                     Text(FlagEventCopy.thanks)
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 }
             }
             .navigationTitle(FlagEventCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(FlagEventCopy.submit) { Task { await submit() } }
+                    PDAButton(FlagEventCopy.submit) { Task { await submit() } }
                         .disabled(busy || reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -1751,7 +1756,7 @@ struct CheckInReportView: View {
                     section(CheckInReportCopy.canceled, report.canceled)
                     section(CheckInReportCopy.unmarked, report.unmarked)
                 } else if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 } else {
                     ProgressView()
                 }
@@ -1760,7 +1765,7 @@ struct CheckInReportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await load() }
@@ -1823,23 +1828,24 @@ struct ManageRsvpsView: View {
                     }
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 }
             }
             .navigationTitle(ManageRsvpsCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
         }
     }
 
     private func statusButton(_ guest: EventGuest, _ label: String, _ status: String) -> some View {
-        Button(label) { Task { await setStatus(guest.userId, status) } }
-            .fontWeight(guest.status == status ? .bold : .regular)
-            .disabled(busy)
+        PDAButton(label, variant: guest.status == status ? .primary : .ghost) {
+            Task { await setStatus(guest.userId, status) }
+        }
+        .disabled(busy)
     }
 
     private func setStatus(_ userId: String, _ status: String) async {
@@ -1876,9 +1882,12 @@ struct InviteMembersView: View {
         NavigationStack {
             List {
                 Section {
-                    TextField(InviteCopy.search, text: $query)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                    PDATextField(
+                        InviteCopy.search,
+                        text: $query,
+                        capitalization: .never,
+                        disableAutocorrection: true
+                    )
                         .onChange(of: query) { _, value in
                             Task { await search(value) }
                         }
@@ -1889,7 +1898,7 @@ struct InviteMembersView: View {
                             && !event.coHostIds.contains(hit.id)
                             && !selected.contains(where: { $0.id == hit.id })
                     }) { hit in
-                        Button(hit.name.lowercased()) { selected.append(hit) }
+                        PDAButton(hit.name.lowercased(), variant: .ghost) { selected.append(hit) }
                     }
                 }
                 if !selected.isEmpty {
@@ -1900,17 +1909,17 @@ struct InviteMembersView: View {
                     }
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(error).foregroundStyle(PDAColor.foregroundSecondary)
                 }
             }
             .navigationTitle(InviteCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(InviteCopy.cancel) { dismiss() }
+                    PDAButton(InviteCopy.cancel, variant: .secondary) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("\(InviteCopy.send) \(selected.count)") { Task { await send() } }
+                    PDAButton("\(InviteCopy.send) \(selected.count)") { Task { await send() } }
                         .disabled(busy || selected.isEmpty)
                 }
             }
