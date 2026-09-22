@@ -101,6 +101,7 @@ struct AdminMembersView: View {
     var showRoles = false
     @State private var tab = "members"
     @State private var model: AdminMembersModel?
+    @State private var addingMember = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -121,6 +122,11 @@ struct AdminMembersView: View {
         }
         .navigationTitle(AdminMembersCopy.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $addingMember) {
+            NavigationStack {
+                MemberCreateView(client: client)
+            }
+        }
         .task {
             if model == nil { model = AdminMembersModel(client: client) }
             await model?.load()
@@ -144,18 +150,27 @@ struct AdminMembersView: View {
                     Button("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
-                if model.members.isEmpty {
-                    ContentUnavailableView(AdminMembersCopy.empty, systemImage: "person.2")
-                } else {
-                    List(model.members) { member in
-                        NavigationLink {
-                            AdminMemberDetailView(userId: member.id, client: client)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())
-                                let subtitle = adminMemberSubtitle(member)
-                                if !subtitle.isEmpty {
-                                    Text(subtitle.lowercased()).font(.footnote).foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    if showsAddMemberButton(tab: tab) {
+                        HStack {
+                            Spacer()
+                            Button(MemberCreateCopy.button) { addingMember = true }
+                        }
+                        .padding(.horizontal)
+                    }
+                    if model.members.isEmpty {
+                        ContentUnavailableView(AdminMembersCopy.empty, systemImage: "person.2")
+                    } else {
+                        List(model.members) { member in
+                            NavigationLink {
+                                AdminMemberDetailView(userId: member.id, client: client)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())
+                                    let subtitle = adminMemberSubtitle(member)
+                                    if !subtitle.isEmpty {
+                                        Text(subtitle.lowercased()).font(.footnote).foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }
