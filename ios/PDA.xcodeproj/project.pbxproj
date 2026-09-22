@@ -32,6 +32,7 @@
 		A100000000000000000000K1 /* DocsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K0 /* DocsLibraryView.swift */; };
 		A100000000000000000000L1 /* AdminJoinFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000L0 /* AdminJoinFormView.swift */; };
 		A100000000000000000000M1 /* DocDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000M0 /* DocDetailView.swift */; };
+		A100000000000000000000N1 /* AdminRolesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N0 /* AdminRolesView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -50,6 +51,7 @@
 		A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K2 /* DocsLibraryTests.swift */; };
 		A100000000000000000000L3 /* AdminJoinFormTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000L2 /* AdminJoinFormTests.swift */; };
 		A100000000000000000000M3 /* DocDetailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000M2 /* DocDetailTests.swift */; };
+		A100000000000000000000N3 /* AdminRolesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N2 /* AdminRolesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +97,7 @@
 		A100000000000000000000K0 /* DocsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryView.swift; sourceTree = "<group>"; };
 		A100000000000000000000L0 /* AdminJoinFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminJoinFormView.swift; sourceTree = "<group>"; };
 		A100000000000000000000M0 /* DocDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocDetailView.swift; sourceTree = "<group>"; };
+		A100000000000000000000N0 /* AdminRolesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -112,6 +115,7 @@
 		A100000000000000000000K2 /* DocsLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000L2 /* AdminJoinFormTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminJoinFormTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000M2 /* DocDetailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocDetailTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000N2 /* AdminRolesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -182,6 +186,7 @@
 				A100000000000000000000K0 /* DocsLibraryView.swift */,
 				A100000000000000000000L0 /* AdminJoinFormView.swift */,
 				A100000000000000000000M0 /* DocDetailView.swift */,
+				A100000000000000000000N0 /* AdminRolesView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -206,6 +211,7 @@
 				A100000000000000000000K2 /* DocsLibraryTests.swift */,
 				A100000000000000000000L2 /* AdminJoinFormTests.swift */,
 				A100000000000000000000M2 /* DocDetailTests.swift */,
+				A100000000000000000000N2 /* AdminRolesTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -367,6 +373,7 @@
 				A100000000000000000000K1 /* DocsLibraryView.swift in Sources */,
 				A100000000000000000000L1 /* AdminJoinFormView.swift in Sources */,
 				A100000000000000000000M1 /* DocDetailView.swift in Sources */,
+				A100000000000000000000N1 /* AdminRolesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +396,7 @@
 				A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */,
 				A100000000000000000000L3 /* AdminJoinFormTests.swift in Sources */,
 				A100000000000000000000M3 /* DocDetailTests.swift in Sources */,
+				A100000000000000000000N3 /* AdminRolesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

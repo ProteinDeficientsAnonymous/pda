@@ -98,9 +98,36 @@ final class AdminMembersModel {
 
 struct AdminMembersView: View {
     var client: EventsClient
+    var showRoles = false
+    @State private var tab = "members"
     @State private var model: AdminMembersModel?
 
     var body: some View {
+        VStack(spacing: 8) {
+            if showRoles {
+                Picker("tab", selection: $tab) {
+                    ForEach(adminMembersTabs(showRoles: true), id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+            }
+            if showRoles, tab == "roles" {
+                AdminRolesView(client: client)
+            } else {
+                membersBody
+            }
+        }
+        .navigationTitle(AdminMembersCopy.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            if model == nil { model = AdminMembersModel(client: client) }
+            await model?.load()
+        }
+    }
+
+    private var membersBody: some View {
         Group {
             if let model, model.forbidden {
                 VStack(alignment: .leading, spacing: 12) {
@@ -137,12 +164,6 @@ struct AdminMembersView: View {
             } else {
                 ProgressView(AdminMembersCopy.loading)
             }
-        }
-        .navigationTitle(AdminMembersCopy.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if model == nil { model = AdminMembersModel(client: client) }
-            await model?.load()
         }
     }
 }
