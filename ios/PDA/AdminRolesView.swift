@@ -118,6 +118,7 @@ final class AdminRolesModel {
 struct AdminRolesView: View {
     var client: EventsClient
     @State private var model: AdminRolesModel?
+    @State private var addingRole = false
 
     var body: some View {
         Group {
@@ -136,20 +137,34 @@ struct AdminRolesView: View {
                     Button("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
-                if model.roles.isEmpty {
-                    ContentUnavailableView(AdminRolesCopy.empty, systemImage: "person.2")
-                } else {
-                    List(model.roles) { role in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(adminRoleName(role))
-                            Text(adminRoleSubtitle(role))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    HStack {
+                        Spacer()
+                        Button(CreateRoleCopy.button) { addingRole = true }
+                    }
+                    .padding(.horizontal)
+                    if model.roles.isEmpty {
+                        ContentUnavailableView(AdminRolesCopy.empty, systemImage: "person.2")
+                    } else {
+                        List(model.roles) { role in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(adminRoleName(role))
+                                Text(adminRoleSubtitle(role))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
             } else {
                 ProgressView(AdminRolesCopy.loading)
+            }
+        }
+        .sheet(isPresented: $addingRole) {
+            NavigationStack {
+                CreateRoleView(client: client) {
+                    Task { await model?.load() }
+                }
             }
         }
         .task {

@@ -1,0 +1,198 @@
+import SwiftUI
+
+enum CreateRoleCopy {
+    static let button = "add role"
+    static let title = "create role"
+    static let name = "name"
+    static let placeholder = "e.g. greeter"
+    static let permissions = "permissions"
+    static let cancel = "cancel"
+    static let create = "create"
+    static let saving = "saving…"
+    static let nameRequired = "role name is required"
+    static let failure = "something went wrong — try again"
+    static let forbiddenTitle = "create role"
+    static let forbiddenBody = "you need permission to manage roles to create a role."
+}
+
+enum CreateRoleError: Error, Equatable {
+    case forbidden
+}
+
+struct RolePermissionChoice: Equatable {
+    let key: String
+    let label: String
+}
+
+let roleNameMaxLength = 40
+
+let rolePermissionChoices: [RolePermissionChoice] = [
+    RolePermissionChoice(key: "create_user", label: "create users"),
+    RolePermissionChoice(key: "manage_users", label: "manage users"),
+    RolePermissionChoice(key: "manage_roles", label: "manage roles"),
+    RolePermissionChoice(key: "approve_join_requests", label: "approve join requests"),
+    RolePermissionChoice(key: "manage_events", label: "manage events"),
+    RolePermissionChoice(key: "edit_guidelines", label: "edit guidelines"),
+    RolePermissionChoice(key: "edit_faq", label: "edit faq"),
+    RolePermissionChoice(key: "edit_homepage", label: "edit homepage"),
+    RolePermissionChoice(key: "edit_join_questions", label: "edit join questions"),
+    RolePermissionChoice(key: "manage_surveys", label: "manage surveys"),
+    RolePermissionChoice(key: "tag_official_event", label: "tag official events"),
+    RolePermissionChoice(key: "tag_club_event", label: "tag club events"),
+    RolePermissionChoice(key: "manage_documents", label: "manage documents"),
+    RolePermissionChoice(key: "manage_feature_flags", label: "manage feature flags"),
+]
+
+func clampedRoleName(_ name: String) -> String {
+    String(name.prefix(roleNameMaxLength))
+}
+
+extension EventsClient {
+    func createRole(name: String, permissions: [String]) async throws -> AdminRole {
+        var req = URLRequest(url: adminRolesURL(base: baseURL))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "name": name,
+            "permissions": permissions,
+        ])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw CreateRoleError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(AdminRole.self, from: data)
+    }
+}
+
+@Observable
+final class CreateRoleModel {
+    var client: EventsClient
+    var name = ""
+    var permissions: [String] = []
+    var formError: String?
+    var forbidden = false
+    var closed = false
+    var saving = false
+    var created: AdminRole?
+
+    var explanationTitle: String { CreateRoleCopy.forbiddenTitle }
+    var explanationBody: String { CreateRoleCopy.forbiddenBody }
+
+    init(client: EventsClient = EventsClient()) {
+        self.client = client
+    }
+
+    func togglePermission(_ key: String) {
+        if let index = permissions.firstIndex(of: key) {
+            permissions.remove(at: index)
+        } else {
+            permissions.append(key)
+        }
+    }
+
+    func submit() async -> Bool {
+        formError = nil
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            formError = CreateRoleCopy.nameRequired
+            return false
+        }
+        saving = true
+        defer { saving = false }
+        do {
+            created = try await client.createRole(name: clampedRoleName(trimmed), permissions: permissions)
+            closed = true
+            return true
+        } catch CreateRoleError.forbidden {
+            forbidden = true
+            return false
+        } catch {
+            formError = CreateRoleCopy.failure
+            return false
+        }
+    }
+
+    func cancel() {
+        closed = true
+    }
+}
+
+struct CreateRoleView: View {
+    var client: EventsClient
+    var onCreated: () -> Void = {}
+    @Environment(\.dismiss) private var dismiss
+    @State private var model: CreateRoleModel?
+
+    var body: some View {
+        Group {
+            if let model, model.forbidden {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(model.explanationTitle).font(.title2)
+                    Text(model.explanationBody).foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let model {
+                Form {
+                    Section {
+                        TextField(CreateRoleCopy.placeholder, text: nameBinding(model))
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    } header: {
+                        Text(CreateRoleCopy.name)
+                    }
+                    Section(CreateRoleCopy.permissions) {
+                        ForEach(rolePermissionChoices, id: \.key) { choice in
+                            Toggle(choice.label, isOn: permissionBinding(model, choice.key))
+                        }
+                    }
+                    if let formError = model.formError {
+                        Text(formError).foregroundStyle(.red)
+                    }
+                }
+            }
+        }
+        .navigationTitle(CreateRoleCopy.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(CreateRoleCopy.cancel) {
+                    model?.cancel()
+                    dismiss()
+                }
+            }
+            if model?.forbidden != true {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(model?.saving == true ? CreateRoleCopy.saving : CreateRoleCopy.create) {
+                        Task { await submit() }
+                    }
+                    .disabled(model?.saving == true)
+                }
+            }
+        }
+        .task {
+            if model == nil { model = CreateRoleModel(client: client) }
+        }
+    }
+
+    private func nameBinding(_ model: CreateRoleModel) -> Binding<String> {
+        Binding(get: { model.name }, set: { model.name = clampedRoleName($0) })
+    }
+
+    private func permissionBinding(_ model: CreateRoleModel, _ key: String) -> Binding<Bool> {
+        Binding(
+            get: { model.permissions.contains(key) },
+            set: { _ in model.togglePermission(key) }
+        )
+    }
+
+    private func submit() async {
+        guard let model, await model.submit() else { return }
+        onCreated()
+        dismiss()
+    }
+}

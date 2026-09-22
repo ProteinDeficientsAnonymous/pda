@@ -35,6 +35,7 @@
 		A100000000000000000000N1 /* AdminRolesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N0 /* AdminRolesView.swift */; };
 		A100000000000000000000O1 /* WhatsAppLinkEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000O0 /* WhatsAppLinkEditor.swift */; };
 		A100000000000000000000P1 /* MemberCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000P0 /* MemberCreateView.swift */; };
+		A100000000000000000000Q1 /* CreateRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q0 /* CreateRoleView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -56,6 +57,7 @@
 		A100000000000000000000N3 /* AdminRolesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N2 /* AdminRolesTests.swift */; };
 		A100000000000000000000O3 /* WhatsAppLinkEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */; };
 		A100000000000000000000P3 /* MemberCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000P2 /* MemberCreateTests.swift */; };
+		A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q2 /* CreateRoleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +106,7 @@
 		A100000000000000000000N0 /* AdminRolesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesView.swift; sourceTree = "<group>"; };
 		A100000000000000000000O0 /* WhatsAppLinkEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsAppLinkEditor.swift; sourceTree = "<group>"; };
 		A100000000000000000000P0 /* MemberCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberCreateView.swift; sourceTree = "<group>"; };
+		A100000000000000000000Q0 /* CreateRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 		A100000000000000000000N2 /* AdminRolesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsAppLinkEditorTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000P2 /* MemberCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberCreateTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000Q2 /* CreateRoleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 				A100000000000000000000N0 /* AdminRolesView.swift */,
 				A100000000000000000000O0 /* WhatsAppLinkEditor.swift */,
 				A100000000000000000000P0 /* MemberCreateView.swift */,
+				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -224,6 +229,7 @@
 				A100000000000000000000N2 /* AdminRolesTests.swift */,
 				A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */,
 				A100000000000000000000P2 /* MemberCreateTests.swift */,
+				A100000000000000000000Q2 /* CreateRoleTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -388,6 +394,7 @@
 				A100000000000000000000N1 /* AdminRolesView.swift in Sources */,
 				A100000000000000000000O1 /* WhatsAppLinkEditor.swift in Sources */,
 				A100000000000000000000P1 /* MemberCreateView.swift in Sources */,
+				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +420,7 @@
 				A100000000000000000000N3 /* AdminRolesTests.swift in Sources */,
 				A100000000000000000000O3 /* WhatsAppLinkEditorTests.swift in Sources */,
 				A100000000000000000000P3 /* MemberCreateTests.swift in Sources */,
+				A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
