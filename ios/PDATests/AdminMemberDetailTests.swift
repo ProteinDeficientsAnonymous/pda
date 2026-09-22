@@ -494,6 +494,160 @@ final class AdminMemberDetailTests: XCTestCase {
         return row
     }
 
+    func test_memberRoleLocked_onlyDefaultAdminForNonAdmin() {
+        let admin = AdminRole(id: "r-admin", name: "admin", permissions: [], userCount: 1, isDefault: true)
+        let member = AdminRole(id: "r-member", name: "member", permissions: [], userCount: 1, isDefault: true)
+        let vetter = AdminRole(id: "r-vetter", name: "vetter", permissions: [], userCount: 1)
+        let namedAdmin = AdminRole(id: "r-fake", name: "admin", permissions: [], userCount: 0)
+        XCTAssertTrue(memberRoleLocked(admin, viewerIsAdmin: false))
+        XCTAssertFalse(memberRoleLocked(admin, viewerIsAdmin: true))
+        XCTAssertFalse(memberRoleLocked(member, viewerIsAdmin: false))
+        XCTAssertFalse(memberRoleLocked(vetter, viewerIsAdmin: false))
+        XCTAssertFalse(memberRoleLocked(namedAdmin, viewerIsAdmin: false))
+    }
+
+    func test_saveMemberRoles_patchesRoleIDs() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            let path = routePath(request.url)
+            if request.httpMethod == "GET", path == "/api/auth/roles/" {
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                return MockHTTP.json(200, [
+                    roleJSON(id: "r-member", name: "member", isDefault: true),
+                    roleJSON(id: "r-vetter", name: "vetter", isDefault: false),
+                    roleJSON(id: "r-admin", name: "admin", isDefault: true),
+                ])
+            }
+            if request.httpMethod == "PATCH" {
+                XCTAssertEqual(path, "/api/auth/users/u-2/roles/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                let patch = try JSONDecoder().decode(MemberRolesPatchBody.self, from: request.httpBody ?? Data())
+                XCTAssertEqual(Set(patch.role_ids), Set(["r-member", "r-vetter"]))
+                return MockHTTP.json(200, self.roleMemberJSON(roleIDs: ["r-member", "r-vetter"]))
+            }
+            return MockHTTP.json(200, [self.roleMemberJSON(roleIDs: ["r-member"])])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        await model.loadRoles()
+        XCTAssertEqual(model.selectedRoleIDs, Set(["r-member"]))
+        XCTAssertEqual(model.roleCatalog.map(\.name), ["member", "vetter", "admin"])
+        model.toggleRole(
+            AdminRole(id: "r-vetter", name: "vetter", permissions: [], userCount: 1),
+            viewerIsAdmin: false
+        )
+        model.toggleRole(
+            AdminRole(id: "r-admin", name: "admin", permissions: [], userCount: 1, isDefault: true),
+            viewerIsAdmin: false
+        )
+        XCTAssertFalse(model.selectedRoleIDs.contains("r-admin"))
+        await model.saveRoles()
+        XCTAssertEqual(Set(model.member?.roles.map(\.id) ?? []), Set(["r-member", "r-vetter"]))
+        XCTAssertEqual(model.toast, MemberRolesCopy.saved)
+        XCTAssertNil(model.rolesError)
+    }
+
+    func test_saveMemberRoles_403WithoutManageUsers() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET", routePath(request.url) == "/api/auth/roles/" {
+                return MockHTTP.json(200, [
+                    roleJSON(id: "r-member", name: "member", isDefault: true),
+                    roleJSON(id: "r-vetter", name: "vetter", isDefault: false),
+                ])
+            }
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "update_user_roles"]]])
+            }
+            return MockHTTP.json(200, [self.roleMemberJSON(roleIDs: ["r-member"])])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        await model.loadRoles()
+        model.toggleRole(
+            AdminRole(id: "r-vetter", name: "vetter", permissions: [], userCount: 1),
+            viewerIsAdmin: false
+        )
+        await model.saveRoles()
+        XCTAssertEqual(Set(model.member?.roles.map(\.id) ?? []), Set(["r-member"]))
+        XCTAssertEqual(model.rolesError, "couldn't save changes — try again")
+        XCTAssertNil(model.toast)
+    }
+
+    func test_saveMemberRoles_skipsUnchanged() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("unchanged roles must not patch")
+                return MockHTTP.json(500, [:])
+            }
+            if request.httpMethod == "GET", routePath(request.url) == "/api/auth/roles/" {
+                return MockHTTP.json(200, [roleJSON(id: "r-member", name: "member", isDefault: true)])
+            }
+            return MockHTTP.json(200, [self.roleMemberJSON(roleIDs: ["r-member"])])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.loadRoles()
+        XCTAssertTrue(model.rolesUnchanged)
+        await model.saveRoles()
+        XCTAssertNil(model.toast)
+        XCTAssertNil(model.rolesError)
+    }
+
+    func test_loadMemberRoles_hidesCatalogOnFailure() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET", routePath(request.url) == "/api/auth/roles/" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+            }
+            return MockHTTP.json(200, [self.roleMemberJSON(roleIDs: ["r-member"])])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.loadRoles()
+        XCTAssertTrue(model.rolesUnavailable)
+        XCTAssertTrue(model.roleCatalog.isEmpty)
+        XCTAssertNil(model.rolesError)
+    }
+
+    func test_memberRolesCopy_isLowercase() {
+        let blobs = [
+            MemberRolesCopy.title,
+            MemberRolesCopy.loading,
+            MemberRolesCopy.save,
+            MemberRolesCopy.saving,
+            MemberRolesCopy.saved,
+            MemberRolesCopy.error,
+        ]
+        XCTAssertEqual(MemberRolesCopy.title, "roles")
+        XCTAssertEqual(MemberRolesCopy.loading, "loading roles…")
+        XCTAssertEqual(MemberRolesCopy.save, "save roles")
+        XCTAssertEqual(MemberRolesCopy.saving, "saving…")
+        XCTAssertEqual(MemberRolesCopy.saved, "roles updated ✓")
+        XCTAssertEqual(MemberRolesCopy.error, "couldn't save changes — try again")
+        XCTAssertEqual(
+            memberRolesURL(base: base, id: "u-2").absoluteString,
+            "https://pda.test/api/auth/users/u-2/roles/"
+        )
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    private func roleMemberJSON(roleIDs: [String]) -> [String: Any] {
+        var row = adminMemberJSON(id: "u-2", name: "Ada Lovelace", phone: "+15555550100", email: "ada@pda.test", bio: "")
+        row["roles"] = roleIDs.map { id -> [String: Any] in
+            [
+                "id": id,
+                "name": id == "r-admin" ? "admin" : (id == "r-vetter" ? "vetter" : "member"),
+                "is_default": id != "r-vetter",
+                "permissions": [] as [String],
+            ]
+        }
+        return row
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
@@ -546,6 +700,20 @@ private struct MemberProfilePatchBody: Decodable {
     let email: String?
     let is_paused: Bool?
     let has_joined_whatsapp: Bool?
+}
+
+private func roleJSON(id: String, name: String, isDefault: Bool) -> [String: Any] {
+    [
+        "id": id,
+        "name": name,
+        "is_default": isDefault,
+        "permissions": [],
+        "user_count": 1,
+    ]
+}
+
+private struct MemberRolesPatchBody: Decodable {
+    let role_ids: [String]
 }
 
 private func routePath(_ url: URL?) -> String {

@@ -106,7 +106,8 @@ struct AdminHubView: View {
             AdminMembersView(
                 client: client,
                 showRoles: showsAdminRolesTab(user),
-                canPauseAccounts: showsPauseAccount(user)
+                canPauseAccounts: showsPauseAccount(user),
+                viewerIsAdmin: user?.isAdmin == true
             )
         case .joinRequests:
             JoinRequestsView(client: client)

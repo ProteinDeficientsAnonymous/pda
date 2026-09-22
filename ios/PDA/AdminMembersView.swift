@@ -16,16 +16,18 @@ enum AdminMembersError: Error, Equatable {
 }
 
 struct AdminMemberRole: Decodable, Equatable {
+    let id: String
     let name: String
     let isDefault: Bool
 
     enum CodingKeys: String, CodingKey {
-        case name
+        case id, name
         case isDefault = "is_default"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
         isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
     }
@@ -128,6 +130,7 @@ struct AdminMembersView: View {
     var client: EventsClient
     var showRoles = false
     var canPauseAccounts = false
+    var viewerIsAdmin = false
     @State private var tab = "members"
     @State private var model: AdminMembersModel?
     @State private var addingMember = false
@@ -192,7 +195,12 @@ struct AdminMembersView: View {
                     } else {
                         List(model.members) { member in
                             NavigationLink {
-                                AdminMemberDetailView(userId: member.id, client: client, canManageUsers: canPauseAccounts)
+                                AdminMemberDetailView(
+                                    userId: member.id,
+                                    client: client,
+                                    canManageUsers: canPauseAccounts,
+                                    viewerIsAdmin: viewerIsAdmin
+                                )
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())

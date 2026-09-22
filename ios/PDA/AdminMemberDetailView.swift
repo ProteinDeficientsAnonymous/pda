@@ -85,6 +85,23 @@ func showsMemberProfileEdit(_ user: SessionUser?) -> Bool {
     return user.isAdmin || user.permissions.contains("manage_users")
 }
 
+enum MemberRolesCopy {
+    static let title = "roles"
+    static let loading = "loading roles…"
+    static let save = "save roles"
+    static let saving = "saving…"
+    static let saved = "roles updated ✓"
+    static let error = "couldn't save changes — try again"
+}
+
+func memberRoleLocked(_ role: AdminRole, viewerIsAdmin: Bool) -> Bool {
+    role.name == "admin" && role.isDefault && !viewerIsAdmin
+}
+
+func memberRolesURL(base: URL, id: String) -> URL {
+    URL(string: "/api/auth/users/\(id)/roles/", relativeTo: base)!.absoluteURL
+}
+
 func magicLoginButtonLabel(working: Bool) -> String {
     working ? MagicLoginCopy.working : MagicLoginCopy.button
 }
@@ -146,6 +163,20 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(AdminMember.self, from: data)
     }
+
+    func updateMemberRoles(id: String, roleIDs: [String]) async throws -> AdminMember {
+        var req = URLRequest(url: memberRolesURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["role_ids": roleIDs])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(AdminMember.self, from: data)
+    }
 }
 
 private func pauseErrorCode(_ data: Data) -> String? {
@@ -177,6 +208,16 @@ final class AdminMemberDetailModel {
     var profilePaused = false
     var profileError: String?
     var profileSaving = false
+    var roleCatalog: [AdminRole] = []
+    var selectedRoleIDs: Set<String> = []
+    var rolesUnavailable = false
+    var rolesLoaded = false
+    var rolesError: String?
+    var rolesSaving = false
+
+    var rolesUnchanged: Bool {
+        selectedRoleIDs == Set(member?.roles.map(\.id) ?? [])
+    }
 
     var explanationTitle: String { AdminMembersCopy.forbiddenTitle }
     var explanationBody: String { AdminMembersCopy.forbiddenBody }
@@ -315,12 +356,52 @@ final class AdminMemberDetailModel {
             profileError = MemberProfileEditCopy.error
         }
     }
+
+    func loadRoles() async {
+        do {
+            roleCatalog = try await client.adminRoles()
+            selectedRoleIDs = Set(member?.roles.map(\.id) ?? [])
+            rolesUnavailable = false
+            rolesError = nil
+            rolesLoaded = true
+        } catch {
+            roleCatalog = []
+            rolesUnavailable = true
+            rolesError = nil
+            rolesLoaded = true
+        }
+    }
+
+    func toggleRole(_ role: AdminRole, viewerIsAdmin: Bool) {
+        guard !memberRoleLocked(role, viewerIsAdmin: viewerIsAdmin) else { return }
+        if selectedRoleIDs.contains(role.id) {
+            selectedRoleIDs.remove(role.id)
+        } else {
+            selectedRoleIDs.insert(role.id)
+        }
+    }
+
+    func saveRoles() async {
+        guard let member, !rolesUnchanged else { return }
+        rolesSaving = true
+        defer { rolesSaving = false }
+        rolesError = nil
+        do {
+            let updated = try await client.updateMemberRoles(id: member.id, roleIDs: Array(selectedRoleIDs))
+            self.member = updated
+            selectedRoleIDs = Set(updated.roles.map(\.id))
+            toast = MemberRolesCopy.saved
+        } catch {
+            rolesError = MemberRolesCopy.error
+        }
+    }
 }
 
 struct AdminMemberDetailView: View {
     let userId: String
     var client: EventsClient
     var canManageUsers = false
+    var viewerIsAdmin = false
     @State private var model: AdminMemberDetailModel?
 
     var body: some View {
@@ -352,6 +433,9 @@ struct AdminMemberDetailView: View {
             } else if let model, let member = model.member {
                 List {
                     Text(adminMemberDetailTitle(member).lowercased()).font(.headline)
+                    if canManageUsers {
+                        rolesSection(model)
+                    }
                     if canManageUsers, model.editingProfile {
                         profileEditor(model)
                     } else if canManageUsers {
@@ -369,7 +453,7 @@ struct AdminMemberDetailView: View {
                         if let formError = model.formError {
                             Text(formError).foregroundStyle(.red)
                         }
-                        if let toast = model.toast {
+                        if let toast = model.toast, toast != MemberRolesCopy.saved {
                             Text(toast).font(.footnote)
                         }
                         if model.magicLink == nil {
@@ -418,6 +502,56 @@ struct AdminMemberDetailView: View {
         .task {
             if model == nil { model = AdminMemberDetailModel(client: client) }
             await model?.load(id: userId)
+            if model?.member != nil { await model?.loadRoles() }
+        }
+    }
+
+    @ViewBuilder
+    private func rolesSection(_ model: AdminMemberDetailModel) -> some View {
+        if model.rolesUnavailable {
+            EmptyView()
+        } else if !model.rolesLoaded {
+            Text(MemberRolesCopy.loading)
+                .font(PDAType.control)
+                .foregroundStyle(PDAColor.muted)
+        } else {
+            Section {
+                ForEach(model.roleCatalog) { role in
+                    Toggle(
+                        role.name,
+                        isOn: Binding(
+                            get: { model.selectedRoleIDs.contains(role.id) },
+                            set: { _ in model.toggleRole(role, viewerIsAdmin: viewerIsAdmin) }
+                        )
+                    )
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.foreground)
+                    .tint(PDAColor.brand600)
+                    .disabled(memberRoleLocked(role, viewerIsAdmin: viewerIsAdmin) || model.rolesSaving)
+                }
+                if let rolesError = model.rolesError {
+                    Text(rolesError)
+                        .font(PDAType.control)
+                        .foregroundStyle(PDAColor.destructive)
+                }
+                if model.toast == MemberRolesCopy.saved {
+                    Text(MemberRolesCopy.saved)
+                        .font(PDAType.control)
+                        .foregroundStyle(PDAColor.muted)
+                }
+                PDAButton(
+                    model.rolesSaving ? MemberRolesCopy.saving : MemberRolesCopy.save,
+                    variant: .secondary
+                ) {
+                    Task { await model.saveRoles() }
+                }
+                .disabled(model.rolesUnchanged || model.rolesSaving)
+            } header: {
+                Text(MemberRolesCopy.title)
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.muted)
+                    .textCase(nil)
+            }
         }
     }
 
