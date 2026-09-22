@@ -52,6 +52,19 @@ enum DeleteSurveyQuestionCopy {
     static let cancel = "cancel"
 }
 
+enum ReorderSurveyQuestionsCopy {
+    static let moveUp = "move up"
+    static let moveDown = "move down"
+}
+
+func showsSurveyQuestionMoveUp(index: Int, count: Int) -> Bool {
+    count > 1 && index > 0
+}
+
+func showsSurveyQuestionMoveDown(index: Int, count: Int) -> Bool {
+    count > 1 && index < count - 1
+}
+
 func surveyQuestionDeleteMessage(_ label: String) -> String {
     "delete \"\(label)\"? this also deletes responses to it."
 }
@@ -69,6 +82,14 @@ struct AdminSurveyDetail: Decodable, Equatable {
     let slug: String
     let visibility: String
     let questions: [PublicSurveyQuestion]
+
+    init(id: String, title: String, slug: String, visibility: String, questions: [PublicSurveyQuestion]) {
+        self.id = id
+        self.title = title
+        self.slug = slug
+        self.visibility = visibility
+        self.questions = questions.sorted { $0.displayOrder < $1.displayOrder }
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, title, slug, visibility, questions
@@ -122,6 +143,11 @@ func adminSurveyURL(base: URL, surveyId: String) -> URL {
 func addSurveyQuestionURL(base: URL, surveyId: String) -> URL {
     let encoded = surveyId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? surveyId
     return URL(string: "/api/community/surveys/\(encoded)/questions/", relativeTo: base)!.absoluteURL
+}
+
+func reorderSurveyQuestionsURL(base: URL, surveyId: String) -> URL {
+    let encoded = surveyId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? surveyId
+    return URL(string: "/api/community/surveys/\(encoded)/questions/order/", relativeTo: base)!.absoluteURL
 }
 
 func updateSurveyQuestionURL(base: URL, surveyId: String, questionId: String) -> URL {
@@ -213,6 +239,20 @@ extension EventsClient {
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw addSurveyQuestionError(data: data) }
     }
+
+    func reorderSurveyQuestions(surveyId: String, ids: [String]) async throws -> [PublicSurveyQuestion] {
+        var req = URLRequest(url: reorderSurveyQuestionsURL(base: baseURL, surveyId: surveyId))
+        req.httpMethod = "PUT"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["question_ids": ids])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw addSurveyQuestionError(data: data) }
+        return try Event.decoder.decode([PublicSurveyQuestion].self, from: data)
+    }
 }
 
 @Observable
@@ -261,6 +301,39 @@ final class SurveyQuestionsModel {
             actionError = AddSurveyQuestionCopy.forbidden
         } catch AddSurveyQuestionError.questionNotFound {
             actionError = AddSurveyQuestionCopy.questionNotFound
+        } catch {
+            return
+        }
+    }
+
+    func moveUp(at index: Int) async {
+        await reorder(from: index, to: index - 1)
+    }
+
+    func moveDown(at index: Int) async {
+        await reorder(from: index, to: index + 1)
+    }
+
+    private func reorder(from: Int, to: Int) async {
+        guard let current = survey else { return }
+        let questions = current.questions
+        guard questions.indices.contains(from), questions.indices.contains(to) else { return }
+        var ids = questions.map(\.id)
+        ids.swapAt(from, to)
+        do {
+            let next = try await client.reorderSurveyQuestions(surveyId: surveyId, ids: ids)
+            actionError = nil
+            survey = AdminSurveyDetail(
+                id: current.id,
+                title: current.title,
+                slug: current.slug,
+                visibility: current.visibility,
+                questions: next
+            )
+        } catch AddSurveyQuestionError.forbidden {
+            actionError = AddSurveyQuestionCopy.forbidden
+        } catch AddSurveyQuestionError.notFound {
+            actionError = AddSurveyQuestionCopy.notFound
         } catch {
             return
         }
@@ -391,8 +464,8 @@ struct SurveyQuestionsView: View {
                                 .font(PDAType.control)
                                 .foregroundStyle(PDAColor.muted)
                         } else {
-                            ForEach(survey.questions) { question in
-                                questionRow(question)
+                            ForEach(Array(survey.questions.enumerated()), id: \.element.id) { index, question in
+                                questionRow(question, index: index, count: survey.questions.count)
                             }
                         }
                     }
@@ -440,7 +513,7 @@ struct SurveyQuestionsView: View {
         }
     }
 
-    private func questionRow(_ question: PublicSurveyQuestion) -> some View {
+    private func questionRow(_ question: PublicSurveyQuestion, index: Int, count: Int) -> some View {
         HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(adminSurveyQuestionLabel(question))
@@ -451,6 +524,16 @@ struct SurveyQuestionsView: View {
                     .foregroundStyle(PDAColor.muted)
             }
             Spacer()
+            if showsSurveyQuestionMoveUp(index: index, count: count) {
+                PDAButton(ReorderSurveyQuestionsCopy.moveUp, variant: .ghost) {
+                    Task { await model?.moveUp(at: index) }
+                }
+            }
+            if showsSurveyQuestionMoveDown(index: index, count: count) {
+                PDAButton(ReorderSurveyQuestionsCopy.moveDown, variant: .ghost) {
+                    Task { await model?.moveDown(at: index) }
+                }
+            }
             PDAButton(AddSurveyQuestionCopy.edit, variant: .ghost) { editing = question }
             PDAButton(DeleteSurveyQuestionCopy.confirm, variant: .ghost) { model?.pendingDelete = question }
         }

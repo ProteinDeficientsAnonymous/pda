@@ -341,6 +341,85 @@ final class AddSurveyQuestionTests: XCTestCase {
         XCTAssertNil(model.pendingDelete)
     }
 
+    func test_reorderSurveyQuestions_moveDownPutsWebBodyWithBearer() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PUT")
+            XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/questions/order/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try JSONDecoder().decode(SurveyOrderPayload.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(body.questionIds, ["q2", "q1"])
+            return MockHTTP.json(200, [
+                questionJSON(id: "q2", label: "second", displayOrder: 0),
+                questionJSON(id: "q1", label: "first", displayOrder: 1),
+            ])
+        }
+        let model = try loadedQuestions(ids: ["q1", "q2"], tokens: tokens)
+        await model.moveDown(at: 0)
+        XCTAssertEqual(model.survey?.questions.map(\.id), ["q2", "q1"])
+        XCTAssertNil(model.actionError)
+    }
+
+    func test_reorderSurveyQuestions_moveUpPutsSwappedIds() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PUT")
+            let body = try JSONDecoder().decode(SurveyOrderPayload.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(body.questionIds, ["q2", "q1"])
+            return MockHTTP.json(200, [
+                questionJSON(id: "q2", label: "second", displayOrder: 0),
+                questionJSON(id: "q1", label: "first", displayOrder: 1),
+            ])
+        }
+        let model = try loadedQuestions(ids: ["q1", "q2"])
+        await model.moveUp(at: 1)
+        XCTAssertEqual(model.survey?.questions.map(\.id), ["q2", "q1"])
+    }
+
+    func test_surveyQuestionMoveButtons_skipEnds() {
+        XCTAssertFalse(showsSurveyQuestionMoveUp(index: 0, count: 2))
+        XCTAssertTrue(showsSurveyQuestionMoveDown(index: 0, count: 2))
+        XCTAssertTrue(showsSurveyQuestionMoveUp(index: 1, count: 2))
+        XCTAssertFalse(showsSurveyQuestionMoveDown(index: 1, count: 2))
+        XCTAssertFalse(showsSurveyQuestionMoveUp(index: 0, count: 1))
+        XCTAssertFalse(showsSurveyQuestionMoveDown(index: 0, count: 1))
+        XCTAssertEqual(ReorderSurveyQuestionsCopy.moveUp, "move up")
+        XCTAssertEqual(ReorderSurveyQuestionsCopy.moveDown, "move down")
+        XCTAssertEqual(ReorderSurveyQuestionsCopy.moveUp, ReorderSurveyQuestionsCopy.moveUp.lowercased())
+        XCTAssertEqual(ReorderSurveyQuestionsCopy.moveDown, ReorderSurveyQuestionsCopy.moveDown.lowercased())
+        let url = reorderSurveyQuestionsURL(base: base, surveyId: "srv-1")
+        XCTAssertEqual(url.absoluteString, "https://pda.test/api/community/surveys/srv-1/questions/order/")
+        XCTAssertNil(url.query)
+    }
+
+    func test_reorderSurveyQuestions_403LeavesOrder() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PUT")
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "manage_surveys"]]])
+        }
+        let model = try loadedQuestions(ids: ["q1", "q2"])
+        await model.moveDown(at: 0)
+        XCTAssertEqual(model.actionError, "you don't have permission to do that")
+        XCTAssertEqual(model.survey?.questions.map(\.id), ["q1", "q2"])
+        XCTAssertNil(model.error)
+    }
+
+    func test_reorderSurveyQuestions_endsDoNotSend() async throws {
+        MockHTTP.handler = { _ in
+            XCTFail("ends should not reorder")
+            return MockHTTP.json(500, [:])
+        }
+        let pair = try loadedQuestions(ids: ["q1", "q2"])
+        await pair.moveUp(at: 0)
+        await pair.moveDown(at: 1)
+        XCTAssertEqual(pair.survey?.questions.map(\.id), ["q1", "q2"])
+        let single = try loadedQuestions(ids: ["q1"])
+        await single.moveUp(at: 0)
+        await single.moveDown(at: 0)
+        XCTAssertEqual(single.survey?.questions.map(\.id), ["q1"])
+        XCTAssertNil(pair.actionError)
+    }
+
     private func mealQuestion() -> PublicSurveyQuestion {
         PublicSurveyQuestion(
             id: "q1",
@@ -376,6 +455,22 @@ final class AddSurveyQuestionTests: XCTestCase {
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
+
+    private func loadedQuestions(ids: [String], tokens: MemoryTokenStore? = nil) throws -> SurveyQuestionsModel {
+        let questions = ids.enumerated().map { index, id in
+            questionJSON(id: id, label: id, displayOrder: index)
+        }
+        let data = try JSONSerialization.data(withJSONObject: [
+            "id": "srv-1",
+            "title": "Retreat",
+            "slug": "retreat-a",
+            "visibility": "members_only",
+            "questions": questions,
+        ])
+        let model = SurveyQuestionsModel(client: makeClient(tokens), surveyId: "srv-1")
+        model.survey = try JSONDecoder().decode(AdminSurveyDetail.self, from: data)
+        return model
+    }
 }
 
 private struct PostedQuestion: Decodable {
@@ -391,19 +486,29 @@ private struct PostedQuestion: Decodable {
 }
 
 private func questionJSON(
+    id: String = "q1",
     label: String = "Meal",
     type: String = "text",
     options: [String] = [],
-    required: Bool = false
+    required: Bool = false,
+    displayOrder: Int = 0
 ) -> [String: Any] {
     [
-        "id": "q1",
+        "id": id,
         "label": label,
         "field_type": type,
         "options": options,
         "required": required,
-        "display_order": 0,
+        "display_order": displayOrder,
     ]
+}
+
+private struct SurveyOrderPayload: Decodable {
+    let questionIds: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case questionIds = "question_ids"
+    }
 }
 
 private func routePath(_ url: URL?) -> String {
