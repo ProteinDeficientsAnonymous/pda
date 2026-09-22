@@ -154,10 +154,12 @@ struct JoinRequestsView: View {
     @State private var editingWelcome = false
     @State private var editingTentative = false
     @State private var editingPromotion = false
+    @State private var editingPromotionEmail = false
     @State private var editingWhatsApp = false
     @State private var welcomeNotice: String?
     @State private var tentativeNotice: String?
     @State private var promotionNotice: String?
+    @State private var promotionEmailNotice: String?
     @State private var whatsAppNotice: String?
 
     var body: some View {
@@ -184,6 +186,7 @@ struct JoinRequestsView: View {
                             Button(WelcomeTemplateCopy.button) { editingWelcome = true }
                             Button(TentativeApprovalCopy.button) { editingTentative = true }
                             Button(MemberPromotionCopy.button) { editingPromotion = true }
+                            Button(MemberPromotionEmailCopy.button) { editingPromotionEmail = true }
                             Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
                         }
                     }
@@ -202,6 +205,12 @@ struct JoinRequestsView: View {
                     }
                     if let promotionNotice {
                         Text(promotionNotice)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+                    if let promotionEmailNotice {
+                        Text(promotionEmailNotice)
                             .font(.footnote)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
@@ -261,6 +270,13 @@ struct JoinRequestsView: View {
             NavigationStack {
                 MemberPromotionEditorView(client: client) {
                     promotionNotice = MemberPromotionCopy.saved
+                }
+            }
+        }
+        .sheet(isPresented: $editingPromotionEmail) {
+            NavigationStack {
+                MemberPromotionEmailEditorView(client: client) {
+                    promotionEmailNotice = MemberPromotionEmailCopy.saved
                 }
             }
         }
