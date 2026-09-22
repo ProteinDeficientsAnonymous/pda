@@ -131,7 +131,11 @@ struct AdminSurveysView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(model.surveys) { survey in
-                                AdminSurveyRow(survey: survey)
+                                NavigationLink {
+                                    SurveyQuestionsView(surveyId: survey.id, client: client)
+                                } label: {
+                                    AdminSurveyRow(survey: survey)
+                                }
                             }
                         }
                         .padding()

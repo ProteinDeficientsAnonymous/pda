@@ -1,0 +1,217 @@
+import XCTest
+
+@testable import PDA
+
+final class AddSurveyQuestionTests: XCTestCase {
+    private let base = URL(string: "https://pda.test")!
+
+    override func tearDown() {
+        MockHTTP.handler = nil
+        super.tearDown()
+    }
+
+    func test_createSurveyQuestion_postsWebBodyWithBearer() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/questions/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let posted = try JSONDecoder().decode(PostedQuestion.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(posted.label, "Meal")
+            XCTAssertEqual(posted.fieldType, "text")
+            XCTAssertEqual(posted.options, [])
+            XCTAssertFalse(posted.required)
+            return MockHTTP.json(201, questionJSON())
+        }
+        let created = try await makeClient(tokens).createSurveyQuestion(
+            surveyId: "srv-1",
+            label: "Meal",
+            fieldType: "text",
+            options: [],
+            required: false
+        )
+        XCTAssertEqual(created.id, "q1")
+        XCTAssertEqual(created.label, "Meal")
+    }
+
+    func test_addSurveyQuestion_blankLabelDoesNotPost() async {
+        MockHTTP.handler = { _ in
+            XCTFail("blank label should not post")
+            return MockHTTP.json(500, [:])
+        }
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1")
+        model.label = "   "
+        await model.save()
+        XCTAssertEqual(model.banner, "label required")
+        XCTAssertNil(model.created)
+    }
+
+    func test_addSurveyQuestion_requiresOptionsThenPostsTrimmed() async {
+        MockHTTP.handler = { _ in
+            XCTFail("empty options should not post")
+            return MockHTTP.json(500, [:])
+        }
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1")
+        model.label = " Meal "
+        model.fieldType = "select"
+        model.required = true
+        await model.save()
+        XCTAssertEqual(model.banner, "add at least one option")
+        XCTAssertNil(model.created)
+
+        MockHTTP.handler = { request in
+            let posted = try JSONDecoder().decode(PostedQuestion.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(posted.label, "Meal")
+            XCTAssertEqual(posted.fieldType, "select")
+            XCTAssertEqual(posted.options, ["vegan", "omni"])
+            XCTAssertTrue(posted.required)
+            return MockHTTP.json(201, questionJSON(type: "select", options: ["vegan", "omni"], required: true))
+        }
+        model.options = [" vegan ", "", "omni"]
+        await model.save()
+        XCTAssertEqual(model.created?.id, "q1")
+        XCTAssertNil(model.banner)
+    }
+
+    func test_addSurveyQuestion_403IsThePermissionGate() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "manage_surveys"]]])
+        }
+        let model = filledModel()
+        await model.save()
+        XCTAssertNil(model.created)
+        XCTAssertEqual(model.banner, "you don't have permission to do that")
+    }
+
+    func test_addSurveyQuestion_missingSurveyAndOtherFailure() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(404, ["detail": [["code": "survey.not_found"]]])
+        }
+        let missing = filledModel()
+        await missing.save()
+        XCTAssertEqual(missing.banner, "survey not found")
+        XCTAssertNil(missing.created)
+
+        MockHTTP.handler = { _ in MockHTTP.json(500, ["detail": "nope"]) }
+        let failed = filledModel()
+        await failed.save()
+        XCTAssertEqual(failed.banner, "couldn't save — try again")
+        XCTAssertNil(failed.created)
+    }
+
+    func test_surveyQuestions_loadsExistingSurvey() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/admin/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            return MockHTTP.json(200, [
+                "id": "srv-1",
+                "title": "Retreat",
+                "slug": "retreat-a",
+                "visibility": "members_only",
+                "questions": [questionJSON(label: "Meal", type: "select", options: ["vegan"], required: true)],
+            ])
+        }
+        let model = SurveyQuestionsModel(client: makeClient(tokens), surveyId: "srv-1")
+        await model.load()
+        let question = try XCTUnwrap(model.survey?.questions.first)
+        XCTAssertEqual(adminSurveyQuestionLabel(question), "meal · required")
+        XCTAssertEqual(adminSurveyQuestionMeta(question), "select · 1 options")
+        XCTAssertNil(model.error)
+    }
+
+    func test_addSurveyQuestionCopy_matchesWebAndIsLowercase() {
+        XCTAssertEqual(
+            surveyQuestionTypeChoices.map(\.value),
+            ["text", "textarea", "radio", "select", "checkbox", "number", "boolean", "rating", "datetime_poll"]
+        )
+        XCTAssertEqual(surveyQuestionTypeChoices.map(\.label), surveyQuestionTypeChoices.map(\.label).map { $0.lowercased() })
+        XCTAssertFalse(surveyQuestionWantsOptions("text"))
+        XCTAssertTrue(surveyQuestionWantsOptions("select"))
+        XCTAssertTrue(surveyQuestionWantsOptions("rating"))
+        XCTAssertTrue(surveyQuestionWantsOptions("datetime_poll"))
+        XCTAssertEqual(surveyQuestionOptionsHint("rating"), "up to 5 star labels")
+        XCTAssertEqual(surveyQuestionOptionsHint("datetime_poll"), "iso-8601 datetime values")
+        XCTAssertNil(surveyQuestionOptionsHint("text"))
+        XCTAssertEqual(clampedSurveyQuestionLabel(String(repeating: "a", count: 201)).count, 200)
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1")
+        XCTAssertEqual(model.fieldType, "text")
+        XCTAssertFalse(model.required)
+        model.options = ["  "]
+        model.setFieldType("radio")
+        XCTAssertEqual(model.options, [""])
+        let blobs = [
+            AddSurveyQuestionCopy.button,
+            AddSurveyQuestionCopy.title,
+            AddSurveyQuestionCopy.questions,
+            AddSurveyQuestionCopy.empty,
+            AddSurveyQuestionCopy.loadError,
+            AddSurveyQuestionCopy.label,
+            AddSurveyQuestionCopy.type,
+            AddSurveyQuestionCopy.options,
+            AddSurveyQuestionCopy.addOption,
+            AddSurveyQuestionCopy.remove,
+            AddSurveyQuestionCopy.required,
+            AddSurveyQuestionCopy.cancel,
+            AddSurveyQuestionCopy.save,
+            AddSurveyQuestionCopy.saving,
+            AddSurveyQuestionCopy.labelRequired,
+            AddSurveyQuestionCopy.optionsRequired,
+            AddSurveyQuestionCopy.failure,
+            AddSurveyQuestionCopy.forbidden,
+            AddSurveyQuestionCopy.notFound,
+            AddSurveyQuestionCopy.ratingHint,
+            AddSurveyQuestionCopy.pollHint,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    private func filledModel() -> AddSurveyQuestionModel {
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1")
+        model.label = "Meal"
+        return model
+    }
+
+    private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
+        EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
+    }
+}
+
+private struct PostedQuestion: Decodable {
+    let label: String
+    let fieldType: String
+    let options: [String]
+    let required: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case label, options, required
+        case fieldType = "field_type"
+    }
+}
+
+private func questionJSON(
+    label: String = "Meal",
+    type: String = "text",
+    options: [String] = [],
+    required: Bool = false
+) -> [String: Any] {
+    [
+        "id": "q1",
+        "label": label,
+        "field_type": type,
+        "options": options,
+        "required": required,
+        "display_order": 0,
+    ]
+}
+
+private func routePath(_ url: URL?) -> String {
+    guard let url else { return "" }
+    let path = url.path
+    return path.hasSuffix("/") ? path : path + "/"
+}
