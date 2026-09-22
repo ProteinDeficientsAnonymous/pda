@@ -42,15 +42,11 @@ struct EventListView: View {
                     } actions: {
                         PDAButton("try again") { Task { await model.load() } }
                     }
-                case let .loaded(events) where events.isEmpty:
-                    ContentUnavailableView("nothing on the horizon — pop back later", systemImage: "leaf")
                 case let .loaded(events):
-                    List(events) { event in
-                        NavigationLink(value: event) {
-                            EventRow(event: event)
-                        }
-                    }
-                    .listStyle(.plain)
+                    CalendarBrowser(
+                        events: events,
+                        weekStart: session.user?.weekStart ?? WeekStartCopy.sunday
+                    )
                 }
             }
             .navigationBarTitleDisplayMode(.inline)

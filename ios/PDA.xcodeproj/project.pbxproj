@@ -93,6 +93,7 @@
 		A10000000000000000000PP1 /* EventBlasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP0 /* EventBlasts.swift */; };
 		A10000000000000000000QQ1 /* Geocode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ0 /* Geocode.swift */; };
 		A10000000000000000000RR1 /* Giphy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000RR0 /* Giphy.swift */; };
+		A10000000000000000000SS1 /* CalendarModes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000SS0 /* CalendarModes.swift */; };
 		A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE2 /* BulkCreateTests.swift */; };
 		A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF2 /* SurveyPageTests.swift */; };
 		A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG2 /* MagicLoginTests.swift */; };
@@ -107,6 +108,7 @@
 		A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP2 /* EventBlastsTests.swift */; };
 		A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ2 /* GeocodeTests.swift */; };
 		A10000000000000000000RR3 /* GiphyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000RR2 /* GiphyTests.swift */; };
+		A10000000000000000000SS3 /* CalendarModesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000SS2 /* CalendarModesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -212,6 +214,7 @@
 		A10000000000000000000PP0 /* EventBlasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlasts.swift; sourceTree = "<group>"; };
 		A10000000000000000000QQ0 /* Geocode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocode.swift; sourceTree = "<group>"; };
 		A10000000000000000000RR0 /* Giphy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Giphy.swift; sourceTree = "<group>"; };
+		A10000000000000000000SS0 /* CalendarModes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarModes.swift; sourceTree = "<group>"; };
 		A10000000000000000000EE2 /* BulkCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000FF2 /* SurveyPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000GG2 /* MagicLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginTests.swift; sourceTree = "<group>"; };
@@ -226,6 +229,7 @@
 		A10000000000000000000PP2 /* EventBlastsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlastsTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000QQ2 /* GeocodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodeTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000RR2 /* GiphyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiphyTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000SS2 /* CalendarModesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarModesTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -313,6 +317,7 @@
 				A10000000000000000000PP0 /* EventBlasts.swift */,
 				A10000000000000000000QQ0 /* Geocode.swift */,
 				A10000000000000000000RR0 /* Giphy.swift */,
+				A10000000000000000000SS0 /* CalendarModes.swift */,
 				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
 				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
@@ -377,6 +382,7 @@
 				A10000000000000000000PP2 /* EventBlastsTests.swift */,
 				A10000000000000000000QQ2 /* GeocodeTests.swift */,
 				A10000000000000000000RR2 /* GiphyTests.swift */,
+				A10000000000000000000SS2 /* CalendarModesTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -555,6 +561,7 @@
 				A10000000000000000000PP1 /* EventBlasts.swift in Sources */,
 				A10000000000000000000QQ1 /* Geocode.swift in Sources */,
 				A10000000000000000000RR1 /* Giphy.swift in Sources */,
+				A10000000000000000000SS1 /* CalendarModes.swift in Sources */,
 				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
 				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
@@ -617,6 +624,7 @@
 				A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */,
 				A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */,
 				A10000000000000000000RR3 /* GiphyTests.swift in Sources */,
+				A10000000000000000000SS3 /* CalendarModesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
