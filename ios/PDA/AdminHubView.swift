@@ -95,7 +95,11 @@ struct AdminHubView: View {
     private func hubDestination(_ destination: AdminHubDestination) -> some View {
         switch destination {
         case .members:
-            AdminMembersView(client: client, showRoles: showsAdminRolesTab(user))
+            AdminMembersView(
+                client: client,
+                showRoles: showsAdminRolesTab(user),
+                canPauseAccounts: showsPauseAccount(user)
+            )
         case .joinRequests:
             JoinRequestsView(client: client)
         case .events:

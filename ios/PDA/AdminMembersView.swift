@@ -15,12 +15,30 @@ enum AdminMembersError: Error, Equatable {
     case notFound
 }
 
+struct AdminMemberRole: Decodable, Equatable {
+    let name: String
+    let isDefault: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case isDefault = "is_default"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
+    }
+}
+
 struct AdminMember: Decodable, Equatable, Identifiable {
     let id: String
     let fullName: String
     let phoneNumber: String
     let email: String
     let bio: String
+    let isPaused: Bool
+    let roles: [AdminMemberRole]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -28,6 +46,8 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         case phoneNumber = "phone_number"
         case email
         case bio
+        case isPaused = "is_paused"
+        case roles
     }
 
     init(from decoder: Decoder) throws {
@@ -37,6 +57,8 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber) ?? ""
         email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
         bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
+        isPaused = try c.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+        roles = try c.decodeIfPresent([AdminMemberRole].self, forKey: .roles) ?? []
     }
 }
 
@@ -99,6 +121,7 @@ final class AdminMembersModel {
 struct AdminMembersView: View {
     var client: EventsClient
     var showRoles = false
+    var canPauseAccounts = false
     @State private var tab = "members"
     @State private var model: AdminMembersModel?
     @State private var addingMember = false
@@ -163,7 +186,7 @@ struct AdminMembersView: View {
                     } else {
                         List(model.members) { member in
                             NavigationLink {
-                                AdminMemberDetailView(userId: member.id, client: client)
+                                AdminMemberDetailView(userId: member.id, client: client, canManageUsers: canPauseAccounts)
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())

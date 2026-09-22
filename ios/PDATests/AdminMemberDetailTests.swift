@@ -77,6 +77,142 @@ final class AdminMemberDetailTests: XCTestCase {
         XCTAssertEqual(model.explanationBody, AdminMembersCopy.forbiddenBody)
     }
 
+    func test_pauseMemberURL_keepsTrailingSlash() {
+        let url = pauseMemberURL(base: base, id: "u-2")
+        XCTAssertEqual(url.absoluteString, "https://pda.test/api/auth/users/u-2/")
+        XCTAssertNil(url.query)
+    }
+
+    func test_pauseMember_patchesOnlyIsPaused() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    pauseMemberJSON(id: "u-2", name: "Ada", paused: false, admin: false),
+                ])
+            }
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/auth/users/u-2/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let raw = String(data: request.httpBody ?? Data(), encoding: .utf8)
+            XCTAssertEqual(raw, "{\"is_paused\":true}")
+            return MockHTTP.json(200, ["id": "u-2", "is_paused": true])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        XCTAssertFalse(model.paused)
+        let saved = await model.setPaused(true)
+        XCTAssertTrue(saved)
+        XCTAssertTrue(model.paused)
+        XCTAssertEqual(model.toast, "member paused ✓")
+    }
+
+    func test_unpauseMember_patchesFalse() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    pauseMemberJSON(id: "u-2", name: "Ada", paused: true, admin: false),
+                ])
+            }
+            let raw = String(data: request.httpBody ?? Data(), encoding: .utf8)
+            XCTAssertEqual(raw, "{\"is_paused\":false}")
+            return MockHTTP.json(200, ["id": "u-2", "is_paused": false])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        XCTAssertTrue(model.paused)
+        let saved = await model.setPaused(false)
+        XCTAssertTrue(saved)
+        XCTAssertFalse(model.paused)
+        XCTAssertEqual(model.toast, "member unpaused ✓")
+    }
+
+    func test_pauseMember_403ShowsExplanation() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    pauseMemberJSON(id: "u-2", name: "Ada", paused: false, admin: false),
+                ])
+            }
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        let saved = await model.setPaused(true)
+        XCTAssertFalse(saved)
+        XCTAssertFalse(model.paused)
+        XCTAssertNil(model.toast)
+        XCTAssertTrue(model.pauseForbidden)
+        XCTAssertEqual(model.pauseExplanationTitle, PauseAccountCopy.forbiddenTitle)
+        XCTAssertEqual(model.pauseExplanationBody, "you need permission to manage users to pause this account.")
+    }
+
+    func test_pauseMember_selfRejectionLeavesToggle() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    pauseMemberJSON(id: "u-2", name: "Ada", paused: false, admin: false),
+                ])
+            }
+            return MockHTTP.json(400, ["detail": [["code": "user.cannot_pause_self"]]])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        let saved = await model.setPaused(true)
+        XCTAssertFalse(saved)
+        XCTAssertFalse(model.paused)
+        XCTAssertNil(model.toast)
+        XCTAssertFalse(model.pauseForbidden)
+        XCTAssertEqual(model.formError, "you can't pause your own account")
+    }
+
+    func test_pauseMember_adminDoesNotPatch() async {
+        var patched = false
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                patched = true
+            }
+            return MockHTTP.json(200, [
+                pauseMemberJSON(id: "u-2", name: "Ada", paused: false, admin: true),
+            ])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        XCTAssertTrue(memberIsDefaultAdmin(model.member!))
+        let saved = await model.setPaused(true)
+        XCTAssertFalse(saved)
+        XCTAssertFalse(patched)
+        XCTAssertFalse(model.paused)
+        XCTAssertNil(model.toast)
+        XCTAssertEqual(PauseAccountCopy.adminsCantBePaused, "admins can't be paused")
+    }
+
+    func test_showsPauseAccount_requiresManageUsers() throws {
+        XCTAssertFalse(showsPauseAccount(try viewer(permissions: ["approve_join_requests"])))
+        XCTAssertTrue(showsPauseAccount(try viewer(permissions: ["manage_users"])))
+        XCTAssertTrue(showsPauseAccount(try viewer(permissions: [], admin: true)))
+        XCTAssertFalse(showsPauseAccount(nil))
+        XCTAssertEqual(PauseAccountCopy.label, "pause account")
+    }
+
+    func test_pauseAccountCopy_isLowercase() {
+        let blobs = [
+            PauseAccountCopy.label,
+            PauseAccountCopy.paused,
+            PauseAccountCopy.unpaused,
+            PauseAccountCopy.adminsCantBePaused,
+            PauseAccountCopy.cannotPauseSelf,
+            PauseAccountCopy.forbiddenTitle,
+            PauseAccountCopy.forbiddenBody,
+        ]
+        XCTAssertEqual(PauseAccountCopy.paused, "member paused ✓")
+        XCTAssertEqual(PauseAccountCopy.unpaused, "member unpaused ✓")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     func test_adminMemberDetailCopy_isLowercase() {
         let blobs = [
             AdminMemberDetailCopy.notFound,
@@ -94,6 +230,19 @@ final class AdminMemberDetailTests: XCTestCase {
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
+
+    private func viewer(permissions: [String], admin: Bool = false) throws -> SessionUser {
+        let roles: [[String: Any]] = admin
+            ? [["name": "admin", "is_default": true, "permissions": []]]
+            : []
+        let payload: [String: Any] = [
+            "id": "user-1",
+            "is_member": true,
+            "permissions": permissions,
+            "roles": roles,
+        ]
+        return try JSONDecoder().decode(SessionUser.self, from: JSONSerialization.data(withJSONObject: payload))
+    }
 }
 
 private func adminMemberJSON(id: String, name: String, phone: String, email: String, bio: String) -> [String: Any] {
@@ -106,6 +255,15 @@ private func adminMemberJSON(id: String, name: String, phone: String, email: Str
         "date_joined": "2026-01-01T00:00:00Z",
         "roles": [],
     ]
+}
+
+private func pauseMemberJSON(id: String, name: String, paused: Bool, admin: Bool) -> [String: Any] {
+    var row = adminMemberJSON(id: id, name: name, phone: "+15555550100", email: "ada@pda.test", bio: "")
+    row["is_paused"] = paused
+    if admin {
+        row["roles"] = [["id": "r-admin", "name": "admin", "is_default": true, "permissions": []]]
+    }
+    return row
 }
 
 private func routePath(_ url: URL?) -> String {
