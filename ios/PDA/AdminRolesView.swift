@@ -71,6 +71,45 @@ func showsAdminRolesTab(_ user: SessionUser?) -> Bool {
     return user.isAdmin || user.permissions.contains("manage_roles")
 }
 
+enum RoleDeleteCopy {
+    static let button = "delete"
+    static let title = "delete role"
+    static let confirm = "delete"
+    static let cancel = "cancel"
+    static let failure = "couldn't delete role — try again"
+    static let forbiddenTitle = "delete role"
+    static let forbiddenBody = "you need permission to manage roles to delete this role."
+}
+
+struct RoleDeletePrompt: Equatable {
+    let title: String
+    let message: String
+    let confirmLabel: String
+}
+
+enum RoleDeleteError: Error {
+    case forbidden
+}
+
+func showsRoleDelete(_ role: AdminRole) -> Bool {
+    !["admin", "member"].contains(role.name.lowercased())
+}
+
+func roleDeleteMessage(_ role: AdminRole) -> String {
+    let name = adminRoleName(role)
+    if role.userCount == 0 {
+        return "delete the \"\(name)\" role? this cannot be undone."
+    }
+    if role.userCount == 1 {
+        return "1 member has the \"\(name)\" role — deleting will remove it from them. continue?"
+    }
+    return "\(role.userCount) members have the \"\(name)\" role — deleting will remove it from all of them. continue?"
+}
+
+func roleDeleteToast(_ role: AdminRole) -> String {
+    "\(adminRoleName(role)) deleted ✓"
+}
+
 extension EventsClient {
     func adminRoles() async throws -> [AdminRole] {
         var req = URLRequest(url: adminRolesURL(base: baseURL))
@@ -84,6 +123,18 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode([AdminRole].self, from: data)
     }
+
+    func deleteRole(id: String) async throws {
+        var req = URLRequest(url: updateRoleURL(base: baseURL, id: id))
+        req.httpMethod = "DELETE"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (_, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw RoleDeleteError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+    }
 }
 
 @Observable
@@ -93,12 +144,56 @@ final class AdminRolesModel {
     var forbidden = false
     var error: String?
     var loaded = false
+    var pendingDelete: AdminRole?
+    var toast: String?
+    var deleteError: String?
+    var deleteForbidden = false
 
     var explanationTitle: String { AdminRolesCopy.forbiddenTitle }
     var explanationBody: String { AdminRolesCopy.forbiddenBody }
+    var deleteExplanationTitle: String { RoleDeleteCopy.forbiddenTitle }
+    var deleteExplanationBody: String { RoleDeleteCopy.forbiddenBody }
 
     init(client: EventsClient = EventsClient()) {
         self.client = client
+    }
+
+    func prepareDelete(_ role: AdminRole) -> RoleDeletePrompt? {
+        guard showsRoleDelete(role) else { return nil }
+        pendingDelete = role
+        return RoleDeletePrompt(
+            title: RoleDeleteCopy.title,
+            message: roleDeleteMessage(role),
+            confirmLabel: RoleDeleteCopy.confirm
+        )
+    }
+
+    func cancelDelete() {
+        pendingDelete = nil
+    }
+
+    func commitDelete() async -> Bool {
+        guard let role = pendingDelete else { return false }
+        return await commitDelete(role)
+    }
+
+    func commitDelete(_ role: AdminRole) async -> Bool {
+        pendingDelete = nil
+        deleteError = nil
+        deleteForbidden = false
+        toast = nil
+        do {
+            try await client.deleteRole(id: role.id)
+            roles.removeAll { $0.id == role.id }
+            toast = roleDeleteToast(role)
+            return true
+        } catch RoleDeleteError.forbidden {
+            deleteForbidden = true
+            return false
+        } catch {
+            deleteError = RoleDeleteCopy.failure
+            return false
+        }
     }
 
     func load() async {
@@ -148,21 +243,40 @@ struct AdminRolesView: View {
                         Button(CreateRoleCopy.button) { addingRole = true }
                     }
                     .padding(.horizontal)
+                    if let toast = model.toast {
+                        Text(toast).font(.footnote)
+                    }
+                    if model.deleteForbidden {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.deleteExplanationTitle).font(.headline)
+                            Text(model.deleteExplanationBody).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                    }
+                    if let deleteError = model.deleteError {
+                        Text(deleteError).font(.footnote).foregroundStyle(.red)
+                    }
                     if model.roles.isEmpty {
                         ContentUnavailableView(AdminRolesCopy.empty, systemImage: "person.2")
                     } else {
-                            List(model.roles) { role in
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(adminRoleName(role))
-                                        Text(adminRoleSubtitle(role))
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
+                        List(model.roles) { role in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(adminRoleName(role))
+                                    Text(adminRoleSubtitle(role))
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(roleRowAction(role)) { editingRole = role }
+                                if showsRoleDelete(role) {
+                                    Button(RoleDeleteCopy.button, role: .destructive) {
+                                        _ = model.prepareDelete(role)
                                     }
-                                    Spacer()
-                                    Button(roleRowAction(role)) { editingRole = role }
                                 }
                             }
+                        }
                     }
                 }
             } else {
@@ -181,6 +295,26 @@ struct AdminRolesView: View {
                 CreateRoleView(client: client, role: role) {
                     Task { await model?.load() }
                 }
+            }
+        }
+        .confirmationDialog(
+            RoleDeleteCopy.title,
+            isPresented: Binding(
+                get: { model?.pendingDelete != nil },
+                set: { if !$0 { model?.cancelDelete() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(RoleDeleteCopy.confirm, role: .destructive) {
+                guard let role = model?.pendingDelete else { return }
+                Task { _ = await model?.commitDelete(role) }
+            }
+            Button(RoleDeleteCopy.cancel, role: .cancel) {
+                model?.cancelDelete()
+            }
+        } message: {
+            if let role = model?.pendingDelete {
+                Text(roleDeleteMessage(role))
             }
         }
         .task {

@@ -90,6 +90,133 @@ final class AdminRolesTests: XCTestCase {
         }
     }
 
+    func test_showsRoleDelete_hidesAdminAndMember() {
+        XCTAssertFalse(showsRoleDelete(AdminRole(id: "a", name: "admin", permissions: [], userCount: 1)))
+        XCTAssertFalse(showsRoleDelete(AdminRole(id: "m", name: "Member", permissions: [], userCount: 0)))
+        XCTAssertTrue(showsRoleDelete(AdminRole(id: "g", name: "greeter", permissions: [], userCount: 0)))
+        XCTAssertEqual(RoleDeleteCopy.button, "delete")
+        XCTAssertEqual(RoleDeleteCopy.title, "delete role")
+        XCTAssertEqual(RoleDeleteCopy.confirm, "delete")
+    }
+
+    func test_roleDeleteMessage_matchesMemberCount() {
+        let none = AdminRole(id: "g", name: "Greeter", permissions: [], userCount: 0)
+        let one = AdminRole(id: "g", name: "Greeter", permissions: [], userCount: 1)
+        let many = AdminRole(id: "g", name: "Greeter", permissions: [], userCount: 3)
+        XCTAssertEqual(roleDeleteMessage(none), "delete the \"greeter\" role? this cannot be undone.")
+        XCTAssertEqual(roleDeleteMessage(one), "1 member has the \"greeter\" role — deleting will remove it from them. continue?")
+        XCTAssertEqual(roleDeleteMessage(many), "3 members have the \"greeter\" role — deleting will remove it from all of them. continue?")
+        XCTAssertEqual(roleDeleteToast(none), "greeter deleted ✓")
+    }
+
+    func test_deleteRole_cancelDoesNotCallAPI() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(204, [:])
+        }
+        let model = AdminRolesModel(client: makeClient())
+        let role = AdminRole(id: "g", name: "greeter", permissions: [], userCount: 0)
+        let prompt = model.prepareDelete(role)
+        XCTAssertEqual(prompt?.title, "delete role")
+        XCTAssertEqual(prompt?.confirmLabel, "delete")
+        XCTAssertEqual(prompt?.message, roleDeleteMessage(role))
+        model.cancelDelete()
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertFalse(called)
+        XCTAssertNil(model.toast)
+    }
+
+    func test_deleteRole_sendsDeleteAndRemovesRow() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    roleJSON(id: "g", name: "Greeter", permissions: [], users: 0),
+                    roleJSON(id: "h", name: "Host", permissions: ["manage_events"], users: 2),
+                ])
+            }
+            XCTAssertEqual(request.httpMethod, "DELETE")
+            XCTAssertEqual(routePath(request.url), "/api/auth/roles/g/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            XCTAssertTrue(request.httpBody == nil || request.httpBody?.isEmpty == true)
+            return MockHTTP.json(204, [:])
+        }
+        let model = AdminRolesModel(client: makeClient(tokens))
+        await model.load()
+        let role = model.roles[0]
+        _ = model.prepareDelete(role)
+        let deleted = await model.commitDelete()
+        XCTAssertTrue(deleted)
+        XCTAssertEqual(model.roles.map(\.id), ["h"])
+        XCTAssertEqual(model.toast, "greeter deleted ✓")
+    }
+
+    func test_deleteRole_403ShowsExplanation() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+        }
+        let model = AdminRolesModel(client: makeClient())
+        let role = AdminRole(id: "g", name: "greeter", permissions: [], userCount: 2)
+        model.roles = [role]
+        _ = model.prepareDelete(role)
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertEqual(model.roles.map(\.id), ["g"])
+        XCTAssertNil(model.toast)
+        XCTAssertTrue(model.deleteForbidden)
+        XCTAssertEqual(model.deleteExplanationTitle, "delete role")
+        XCTAssertEqual(model.deleteExplanationBody, "you need permission to manage roles to delete this role.")
+    }
+
+    func test_deleteRole_failureShowsTryAgain() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(500, ["detail": "nope"])
+        }
+        let model = AdminRolesModel(client: makeClient())
+        let role = AdminRole(id: "g", name: "greeter", permissions: [], userCount: 0)
+        model.roles = [role]
+        _ = model.prepareDelete(role)
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertEqual(model.roles.map(\.id), ["g"])
+        XCTAssertEqual(model.deleteError, "couldn't delete role — try again")
+    }
+
+    func test_deleteRole_protectedNameDoesNotPrepare() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(204, [:])
+        }
+        let model = AdminRolesModel(client: makeClient())
+        XCTAssertNil(model.prepareDelete(AdminRole(id: "a", name: "admin", permissions: [], userCount: 1)))
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertFalse(called)
+    }
+
+    func test_roleDeleteCopy_isLowercase() {
+        let blobs = [
+            RoleDeleteCopy.button,
+            RoleDeleteCopy.title,
+            RoleDeleteCopy.confirm,
+            RoleDeleteCopy.cancel,
+            RoleDeleteCopy.failure,
+            RoleDeleteCopy.forbiddenTitle,
+            RoleDeleteCopy.forbiddenBody,
+            roleDeleteMessage(AdminRole(id: "g", name: "greeter", permissions: [], userCount: 0)),
+            roleDeleteMessage(AdminRole(id: "g", name: "greeter", permissions: [], userCount: 1)),
+            roleDeleteToast(AdminRole(id: "g", name: "Greeter", permissions: [], userCount: 0)),
+        ]
+        XCTAssertEqual(RoleDeleteCopy.failure, "couldn't delete role — try again")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
