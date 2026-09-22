@@ -29,6 +29,7 @@
 		A100000000000000000000H1 /* ManageEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000H0 /* ManageEventsView.swift */; };
 		A100000000000000000000I1 /* FlaggedEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000I0 /* FlaggedEventsView.swift */; };
 		A100000000000000000000J1 /* AttendanceReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000J0 /* AttendanceReportView.swift */; };
+		A100000000000000000000K1 /* DocsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K0 /* DocsLibraryView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -44,6 +45,7 @@
 		A100000000000000000000H3 /* ManageEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000H2 /* ManageEventsTests.swift */; };
 		A100000000000000000000I3 /* FlaggedEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000I2 /* FlaggedEventsTests.swift */; };
 		A100000000000000000000J3 /* AttendanceReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000J2 /* AttendanceReportTests.swift */; };
+		A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K2 /* DocsLibraryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +88,7 @@
 		A100000000000000000000H0 /* ManageEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageEventsView.swift; sourceTree = "<group>"; };
 		A100000000000000000000I0 /* FlaggedEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlaggedEventsView.swift; sourceTree = "<group>"; };
 		A100000000000000000000J0 /* AttendanceReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceReportView.swift; sourceTree = "<group>"; };
+		A100000000000000000000K0 /* DocsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -100,6 +103,7 @@
 		A100000000000000000000H2 /* ManageEventsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageEventsTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000I2 /* FlaggedEventsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlaggedEventsTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000J2 /* AttendanceReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceReportTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000K2 /* DocsLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -167,6 +171,7 @@
 				A100000000000000000000H0 /* ManageEventsView.swift */,
 				A100000000000000000000I0 /* FlaggedEventsView.swift */,
 				A100000000000000000000J0 /* AttendanceReportView.swift */,
+				A100000000000000000000K0 /* DocsLibraryView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -188,6 +193,7 @@
 				A100000000000000000000H2 /* ManageEventsTests.swift */,
 				A100000000000000000000I2 /* FlaggedEventsTests.swift */,
 				A100000000000000000000J2 /* AttendanceReportTests.swift */,
+				A100000000000000000000K2 /* DocsLibraryTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -346,6 +352,7 @@
 				A100000000000000000000H1 /* ManageEventsView.swift in Sources */,
 				A100000000000000000000I1 /* FlaggedEventsView.swift in Sources */,
 				A100000000000000000000J1 /* AttendanceReportView.swift in Sources */,
+				A100000000000000000000K1 /* DocsLibraryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,6 +372,7 @@
 				A100000000000000000000H3 /* ManageEventsTests.swift in Sources */,
 				A100000000000000000000I3 /* FlaggedEventsTests.swift in Sources */,
 				A100000000000000000000J3 /* AttendanceReportTests.swift in Sources */,
+				A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

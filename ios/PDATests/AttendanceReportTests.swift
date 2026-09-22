@@ -107,7 +107,7 @@ final class AttendanceReportTests: XCTestCase {
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .attendance }.map(\.id), ["attendance"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .events }.map(\.id), ["events"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .flaggedEvents }.map(\.id), ["flagged-events"])
-        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), ["docs"])
+        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), [])
     }
 
     func test_attendanceReportCopy_isLowercase() {
