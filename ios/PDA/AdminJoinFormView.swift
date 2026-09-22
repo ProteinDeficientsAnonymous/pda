@@ -38,6 +38,30 @@ func joinQuestionDeleteMessage(_ question: JoinQuestion) -> String {
     "delete \"\(question.label)\"?"
 }
 
+enum ReorderQuestionsCopy {
+    static let moveUp = "move up"
+    static let moveDown = "move down"
+    static let failure = "couldn't reorder questions — try again"
+    static let forbiddenTitle = "reorder questions"
+    static let forbiddenBody = "you need permission to edit join questions to reorder questions."
+}
+
+enum ReorderQuestionsError: Error {
+    case forbidden
+}
+
+func showsJoinQuestionMoveUp(index: Int, count: Int) -> Bool {
+    count > 1 && index > 0
+}
+
+func showsJoinQuestionMoveDown(index: Int, count: Int) -> Bool {
+    count > 1 && index < count - 1
+}
+
+func reorderJoinQuestionsURL(base: URL) -> URL {
+    URL(string: "/api/community/join-form/questions/order/", relativeTo: base)!.absoluteURL
+}
+
 func adminJoinQuestionsURL(base: URL) -> URL {
     joinFormURL(base: base)
 }
@@ -79,6 +103,22 @@ extension EventsClient {
         if status == 403 { throw DeleteQuestionError.forbidden }
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
     }
+
+    func reorderJoinQuestions(ids: [String]) async throws -> [JoinQuestion] {
+        var req = URLRequest(url: reorderJoinQuestionsURL(base: baseURL))
+        req.httpMethod = "PUT"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["question_ids": ids])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw ReorderQuestionsError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode([JoinQuestion].self, from: data)
+            .sorted { $0.displayOrder < $1.displayOrder }
+    }
 }
 
 @Observable
@@ -91,11 +131,15 @@ final class AdminJoinFormModel {
     var pendingDelete: JoinQuestion?
     var deleteError: String?
     var deleteForbidden = false
+    var reorderError: String?
+    var reorderForbidden = false
 
     var explanationTitle: String { AdminJoinFormCopy.forbiddenTitle }
     var explanationBody: String { AdminJoinFormCopy.forbiddenBody }
     var deleteExplanationTitle: String { DeleteQuestionCopy.forbiddenTitle }
     var deleteExplanationBody: String { DeleteQuestionCopy.forbiddenBody }
+    var reorderExplanationTitle: String { ReorderQuestionsCopy.forbiddenTitle }
+    var reorderExplanationBody: String { ReorderQuestionsCopy.forbiddenBody }
 
     init(client: EventsClient = EventsClient()) {
         self.client = client
@@ -152,6 +196,37 @@ final class AdminJoinFormModel {
             return false
         }
     }
+
+    func moveUp(_ question: JoinQuestion) async -> Bool {
+        guard let index = questions.firstIndex(where: { $0.id == question.id }), index > 0 else { return false }
+        return await reorder(from: index, to: index - 1)
+    }
+
+    func moveDown(_ question: JoinQuestion) async -> Bool {
+        guard let index = questions.firstIndex(where: { $0.id == question.id }),
+              index < questions.count - 1
+        else { return false }
+        return await reorder(from: index, to: index + 1)
+    }
+
+    private func reorder(from: Int, to: Int) async -> Bool {
+        let previous = questions
+        questions.swapAt(from, to)
+        reorderError = nil
+        reorderForbidden = false
+        do {
+            questions = try await client.reorderJoinQuestions(ids: questions.map(\.id))
+            return true
+        } catch ReorderQuestionsError.forbidden {
+            questions = previous
+            reorderForbidden = true
+            return false
+        } catch {
+            questions = previous
+            reorderError = ReorderQuestionsCopy.failure
+            return false
+        }
+    }
 }
 
 struct AdminJoinFormView: View {
@@ -197,6 +272,16 @@ struct AdminJoinFormView: View {
                     if let deleteError = model.deleteError {
                         Text(deleteError).font(.footnote).foregroundStyle(.red).padding(.horizontal)
                     }
+                    if model.reorderForbidden {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.reorderExplanationTitle).font(.headline)
+                            Text(model.reorderExplanationBody).foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal)
+                    }
+                    if let reorderError = model.reorderError {
+                        Text(reorderError).font(.footnote).foregroundStyle(.red).padding(.horizontal)
+                    }
                     if model.questions.isEmpty {
                         ContentUnavailableView(AdminJoinFormCopy.empty, systemImage: "questionmark")
                     } else {
@@ -209,6 +294,18 @@ struct AdminJoinFormView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
+                                if let index = model.questions.firstIndex(where: { $0.id == question.id }) {
+                                    if showsJoinQuestionMoveUp(index: index, count: model.questions.count) {
+                                        Button(ReorderQuestionsCopy.moveUp) {
+                                            Task { await model.moveUp(question) }
+                                        }
+                                    }
+                                    if showsJoinQuestionMoveDown(index: index, count: model.questions.count) {
+                                        Button(ReorderQuestionsCopy.moveDown) {
+                                            Task { await model.moveDown(question) }
+                                        }
+                                    }
+                                }
                                 Button(AddQuestionCopy.edit) { editingQuestion = question }
                                 Button(DeleteQuestionCopy.button, role: .destructive) {
                                     _ = model.prepareDelete(question)
