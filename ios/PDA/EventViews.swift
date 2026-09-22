@@ -96,7 +96,7 @@ struct EventListView: View {
                 FaqView(client: EventsClient(tokens: session.client.tokens), user: session.user)
             }
             .sheet(isPresented: $showGuidelines) {
-                GuidelinesView()
+                GuidelinesView(client: EventsClient(tokens: session.client.tokens), user: session.user)
             }
             .sheet(isPresented: $showDonate) {
                 DonateView()

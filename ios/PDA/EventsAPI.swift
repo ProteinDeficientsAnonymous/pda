@@ -1007,6 +1007,10 @@ struct EventsClient {
         try await fetch(guidelinesURL(base: baseURL))
     }
 
+    func updateGuidelines(contentPm: String) async throws -> HomePage {
+        try await sendJSON("PATCH", url: guidelinesURL(base: baseURL), body: ["content_pm": contentPm])
+    }
+
     func donate() async throws -> HomePage {
         try await fetch(donateURL(base: baseURL))
     }
