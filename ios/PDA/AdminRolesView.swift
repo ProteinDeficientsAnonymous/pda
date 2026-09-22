@@ -18,17 +18,20 @@ struct AdminRole: Decodable, Equatable, Identifiable {
     let name: String
     let permissions: [String]
     let userCount: Int
+    let isDefault: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, name, permissions
         case userCount = "user_count"
+        case isDefault = "is_default"
     }
 
-    init(id: String, name: String, permissions: [String], userCount: Int) {
+    init(id: String, name: String, permissions: [String], userCount: Int, isDefault: Bool = false) {
         self.id = id
         self.name = name
         self.permissions = permissions
         self.userCount = userCount
+        self.isDefault = isDefault
     }
 
     init(from decoder: Decoder) throws {
@@ -37,6 +40,7 @@ struct AdminRole: Decodable, Equatable, Identifiable {
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
         permissions = try c.decodeIfPresent([String].self, forKey: .permissions) ?? []
         userCount = try c.decodeIfPresent(Int.self, forKey: .userCount) ?? 0
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
     }
 }
 
@@ -119,6 +123,7 @@ struct AdminRolesView: View {
     var client: EventsClient
     @State private var model: AdminRolesModel?
     @State private var addingRole = false
+    @State private var editingRole: AdminRole?
 
     var body: some View {
         Group {
@@ -146,14 +151,18 @@ struct AdminRolesView: View {
                     if model.roles.isEmpty {
                         ContentUnavailableView(AdminRolesCopy.empty, systemImage: "person.2")
                     } else {
-                        List(model.roles) { role in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(adminRoleName(role))
-                                Text(adminRoleSubtitle(role))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                            List(model.roles) { role in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(adminRoleName(role))
+                                        Text(adminRoleSubtitle(role))
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button(roleRowAction(role)) { editingRole = role }
+                                }
                             }
-                        }
                     }
                 }
             } else {
@@ -163,6 +172,13 @@ struct AdminRolesView: View {
         .sheet(isPresented: $addingRole) {
             NavigationStack {
                 CreateRoleView(client: client) {
+                    Task { await model?.load() }
+                }
+            }
+        }
+        .sheet(item: $editingRole) { role in
+            NavigationStack {
+                CreateRoleView(client: client, role: role) {
                     Task { await model?.load() }
                 }
             }
