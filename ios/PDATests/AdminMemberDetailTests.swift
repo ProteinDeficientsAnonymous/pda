@@ -213,6 +213,117 @@ final class AdminMemberDetailTests: XCTestCase {
         }
     }
 
+    func test_magicLoginURL_keepsTrailingSlash() {
+        let url = magicLoginLinkURL(base: base, id: "u-2")
+        XCTAssertEqual(url.absoluteString, "https://pda.test/api/auth/users/u-2/magic-link/")
+        XCTAssertNil(url.query)
+    }
+
+    func test_generateMagicLoginLink_postsWithBearer() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    magicMemberJSON(id: "u-2", firstName: "Ada"),
+                ])
+            }
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(routePath(request.url), "/api/auth/users/u-2/magic-link/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            XCTAssertTrue(request.httpBody == nil || request.httpBody?.isEmpty == true)
+            return MockHTTP.json(200, [
+                "detail": "Magic login link generated.",
+                "magic_link_token": "tok",
+            ])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        XCTAssertEqual(magicLoginButtonLabel(working: false), "generate magic login link")
+        XCTAssertEqual(magicLoginButtonLabel(working: true), "working…")
+        let generated = await model.generateMagicLink()
+        XCTAssertTrue(generated)
+        XCTAssertFalse(model.magicWorking)
+        XCTAssertEqual(model.magicLink, "https://pda.test/magic-login/tok")
+        XCTAssertEqual(model.magicCopyLabel, "copy link")
+        model.copyMagicLink()
+        XCTAssertEqual(model.magicCopyLabel, "copied ✓")
+        XCTAssertEqual(
+            model.welcomeMessage,
+            "hi ada 🌱 welcome to pda! use this link to sign in: https://pda.test/magic-login/tok"
+        )
+        XCTAssertTrue(model.smsLink.hasPrefix("sms:+15555550100&body="))
+        XCTAssertFalse(model.smsLink.contains("?body="))
+        XCTAssertTrue(model.smsLink.contains("hi%20ada"))
+        XCTAssertTrue(model.smsLink.contains("%3A%2F%2Fpda.test%2Fmagic-login%2Ftok"))
+    }
+
+    func test_generateMagicLoginLink_emptyFirstNameUsesHiSeedling() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    magicMemberJSON(id: "u-2", firstName: "  "),
+                ])
+            }
+            return MockHTTP.json(200, ["detail": "ok", "magic_link_token": "tok"])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        _ = await model.generateMagicLink()
+        XCTAssertEqual(
+            model.welcomeMessage,
+            "hi 🌱 welcome to pda! use this link to sign in: https://pda.test/magic-login/tok"
+        )
+    }
+
+    func test_generateMagicLoginLink_403ShowsExplanation() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "GET" {
+                return MockHTTP.json(200, [
+                    magicMemberJSON(id: "u-2", firstName: "Ada"),
+                ])
+            }
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        let generated = await model.generateMagicLink()
+        XCTAssertFalse(generated)
+        XCTAssertNil(model.magicLink)
+        XCTAssertTrue(model.magicForbidden)
+        XCTAssertEqual(model.magicExplanationTitle, MagicLoginCopy.forbiddenTitle)
+        XCTAssertEqual(model.magicExplanationBody, "you need permission to manage users to generate a login link.")
+    }
+
+    func test_showsMagicLoginLink_requiresManageUsers() throws {
+        XCTAssertFalse(showsMagicLoginLink(try viewer(permissions: ["approve_join_requests"])))
+        XCTAssertTrue(showsMagicLoginLink(try viewer(permissions: ["manage_users"])))
+        XCTAssertTrue(showsMagicLoginLink(try viewer(permissions: [], admin: true)))
+        XCTAssertFalse(showsMagicLoginLink(nil))
+        XCTAssertEqual(
+            MagicLoginCopy.hint,
+            "resets password flow for this member and generates a one-time login url for you to send them."
+        )
+    }
+
+    func test_magicLoginCopy_isLowercase() {
+        let blobs = [
+            MagicLoginCopy.button,
+            MagicLoginCopy.working,
+            MagicLoginCopy.copyLink,
+            MagicLoginCopy.copied,
+            MagicLoginCopy.sendWelcome,
+            MagicLoginCopy.hint,
+            MagicLoginCopy.forbiddenTitle,
+            MagicLoginCopy.forbiddenBody,
+        ]
+        XCTAssertEqual(MagicLoginCopy.copied, "copied ✓")
+        XCTAssertEqual(MagicLoginCopy.working, "working…")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     func test_adminMemberDetailCopy_isLowercase() {
         let blobs = [
             AdminMemberDetailCopy.notFound,
@@ -263,6 +374,12 @@ private func pauseMemberJSON(id: String, name: String, paused: Bool, admin: Bool
     if admin {
         row["roles"] = [["id": "r-admin", "name": "admin", "is_default": true, "permissions": []]]
     }
+    return row
+}
+
+private func magicMemberJSON(id: String, firstName: String) -> [String: Any] {
+    var row = adminMemberJSON(id: id, name: "Ada Lovelace", phone: "+15555550100", email: "ada@pda.test", bio: "")
+    row["first_name"] = firstName
     return row
 }
 
