@@ -185,6 +185,13 @@ struct EventListView: View {
                 model.client.tokens = session.client.tokens
                 await model.load()
             }
+            .overlay(alignment: .bottomTrailing) {
+                if showsFeedbackControl(for: session.user) {
+                    FeedbackButton(client: EventsClient(tokens: session.client.tokens))
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 16)
+                }
+            }
         }
     }
 

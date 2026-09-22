@@ -82,9 +82,11 @@
 		A10000000000000000000EE1 /* BulkCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE0 /* BulkCreateView.swift */; };
 		A10000000000000000000FF1 /* SurveyPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF0 /* SurveyPageView.swift */; };
 		A10000000000000000000GG1 /* MagicLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG0 /* MagicLoginView.swift */; };
+		A10000000000000000000HH1 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000HH0 /* FeedbackView.swift */; };
 		A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE2 /* BulkCreateTests.swift */; };
 		A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF2 /* SurveyPageTests.swift */; };
 		A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG2 /* MagicLoginTests.swift */; };
+		A10000000000000000000HH3 /* FeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000HH2 /* FeedbackTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -179,9 +181,11 @@
 		A10000000000000000000EE0 /* BulkCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateView.swift; sourceTree = "<group>"; };
 		A10000000000000000000FF0 /* SurveyPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageView.swift; sourceTree = "<group>"; };
 		A10000000000000000000GG0 /* MagicLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginView.swift; sourceTree = "<group>"; };
+		A10000000000000000000HH0 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		A10000000000000000000EE2 /* BulkCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000FF2 /* SurveyPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000GG2 /* MagicLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000HH2 /* FeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -258,6 +262,7 @@
 				A10000000000000000000EE0 /* BulkCreateView.swift */,
 				A10000000000000000000FF0 /* SurveyPageView.swift */,
 				A10000000000000000000GG0 /* MagicLoginView.swift */,
+				A10000000000000000000HH0 /* FeedbackView.swift */,
 				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
 				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
@@ -311,6 +316,7 @@
 				A10000000000000000000EE2 /* BulkCreateTests.swift */,
 				A10000000000000000000FF2 /* SurveyPageTests.swift */,
 				A10000000000000000000GG2 /* MagicLoginTests.swift */,
+				A10000000000000000000HH2 /* FeedbackTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -478,6 +484,7 @@
 				A10000000000000000000EE1 /* BulkCreateView.swift in Sources */,
 				A10000000000000000000FF1 /* SurveyPageView.swift in Sources */,
 				A10000000000000000000GG1 /* MagicLoginView.swift in Sources */,
+				A10000000000000000000HH1 /* FeedbackView.swift in Sources */,
 				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
 				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
@@ -529,6 +536,7 @@
 				A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */,
 				A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */,
 				A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */,
+				A10000000000000000000HH3 /* FeedbackTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

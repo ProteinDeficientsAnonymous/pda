@@ -1251,6 +1251,29 @@ struct EventsClient {
         )
     }
 
+    func submitFeedback(
+        title: String,
+        description: String,
+        types: [String],
+        route: String,
+        userAgent: String
+    ) async throws -> FeedbackResult {
+        try await sendJSON(
+            "POST",
+            url: URL(string: "/api/community/feedback/", relativeTo: baseURL)!.absoluteURL,
+            body: [
+                "title": title,
+                "description": description,
+                "feedback_types": types,
+                "metadata": [
+                    "route": route,
+                    "user_agent": userAgent,
+                    "app_version": "",
+                ],
+            ]
+        )
+    }
+
     private func sendJSON<T: Decodable>(_ method: String, url: URL, body: [String: Any]? = nil) async throws -> T {
         var req = URLRequest(url: url)
         req.httpMethod = method
