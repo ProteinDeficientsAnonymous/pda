@@ -43,12 +43,14 @@ func adminHubTiles(for user: SessionUser?) -> [AdminHubTile] {
 enum AdminHubDestination: Equatable {
     case members
     case joinRequests
+    case events
 }
 
 func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
     switch tile.id {
     case "members": .members
     case "join-requests": .joinRequests
+    case "events": .events
     default: nil
     }
 }
@@ -88,6 +90,8 @@ struct AdminHubView: View {
             AdminMembersView(client: client)
         case .joinRequests:
             JoinRequestsView(client: client)
+        case .events:
+            ManageEventsView(client: client)
         }
     }
 
