@@ -24,7 +24,7 @@ def _jwt_headers(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 class TestRsvpCapacityRace:
     def test_concurrent_rsvps_never_exceed_capacity(self, test_user):
         """N threads RSVP to a 1-seat event at once; select_for_update() on the
