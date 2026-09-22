@@ -186,7 +186,7 @@ struct EventListView: View {
                 await model.load()
             }
             .overlay(alignment: .bottomTrailing) {
-                if showsFeedbackControl(for: session.user) {
+                if showsFeedbackControl(for: session.user, guestToken: RsvpTokenStore().load()) {
                     FeedbackButton(client: EventsClient(tokens: session.client.tokens))
                         .padding(.trailing, 16)
                         .padding(.bottom, 16)

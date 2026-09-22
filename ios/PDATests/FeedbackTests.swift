@@ -15,6 +15,34 @@ final class FeedbackTests: XCTestCase {
         XCTAssertTrue(showsFeedbackControl(for: try user()))
     }
 
+    func test_showsFeedbackControl_guestWithRsvpToken() throws {
+        XCTAssertFalse(showsFeedbackControl(for: nil, guestToken: nil))
+        XCTAssertFalse(showsFeedbackControl(for: nil, guestToken: ""))
+        XCTAssertTrue(showsFeedbackControl(for: nil, guestToken: "rsvp-token-123"))
+        XCTAssertTrue(showsFeedbackControl(for: try user(), guestToken: nil))
+    }
+
+    func test_submitFeedback_guestUsesSameEndpoint() async {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://pda.test/api/community/feedback/")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            let body = try JSONDecoder().decode(FeedbackBody.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(body.title, "guest note")
+            XCTAssertEqual(body.description, "the map link failed")
+            XCTAssertEqual(body.feedbackTypes, ["bug"])
+            XCTAssertEqual(body.metadata.route, "/calendar")
+            return MockHTTP.json(201, ["html_url": "https://github.com/owner/repo/issues/9"])
+        }
+        let model = FeedbackModel(client: makeClient(), route: "/calendar", userAgent: "ios-guest")
+        model.setTitle("guest note")
+        model.setDescription("the map link failed")
+        model.bug = true
+        await model.submit()
+        XCTAssertEqual(model.toast, FeedbackCopy.saved)
+        XCTAssertFalse(model.open)
+    }
+
     func test_submitFeedback_postsSignedInPayload() async throws {
         let tokens = MemoryTokenStore()
         try tokens.save("access-jwt")

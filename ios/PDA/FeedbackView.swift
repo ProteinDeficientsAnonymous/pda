@@ -28,8 +28,8 @@ enum FeedbackCopy {
     static let descriptionMax = 2000
 }
 
-func showsFeedbackControl(for user: SessionUser?) -> Bool {
-    user != nil
+func showsFeedbackControl(for user: SessionUser?, guestToken: String? = nil) -> Bool {
+    user != nil || !(guestToken ?? "").isEmpty
 }
 
 @Observable
