@@ -66,6 +66,25 @@ func showsMagicLoginLink(_ user: SessionUser?) -> Bool {
     return user.isAdmin || user.permissions.contains("manage_users")
 }
 
+enum MemberProfileEditCopy {
+    static let edit = "edit"
+    static let cancel = "cancel"
+    static let save = "save"
+    static let saving = "saving…"
+    static let firstName = "first name"
+    static let lastName = "last name (optional)"
+    static let phone = "phone number"
+    static let email = "email"
+    static let firstNameRequired = "first name required"
+    static let saved = "member updated ✓"
+    static let error = "couldn't save changes — try again"
+}
+
+func showsMemberProfileEdit(_ user: SessionUser?) -> Bool {
+    guard let user else { return false }
+    return user.isAdmin || user.permissions.contains("manage_users")
+}
+
 func magicLoginButtonLabel(working: Bool) -> String {
     working ? MagicLoginCopy.working : MagicLoginCopy.button
 }
@@ -113,6 +132,20 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(MagicLoginResult.self, from: data).magicLinkToken
     }
+
+    func updateMemberProfile(id: String, body: [String: Any]) async throws -> AdminMember {
+        var req = URLRequest(url: pauseMemberURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(AdminMember.self, from: data)
+    }
 }
 
 private func pauseErrorCode(_ data: Data) -> String? {
@@ -136,6 +169,14 @@ final class AdminMemberDetailModel {
     var magicCopied = false
     var magicWorking = false
     var magicForbidden = false
+    var editingProfile = false
+    var profileFirstName = ""
+    var profileLastName = ""
+    var profilePhone = ""
+    var profileEmail = ""
+    var profilePaused = false
+    var profileError: String?
+    var profileSaving = false
 
     var explanationTitle: String { AdminMembersCopy.forbiddenTitle }
     var explanationBody: String { AdminMembersCopy.forbiddenBody }
@@ -220,6 +261,60 @@ final class AdminMemberDetailModel {
     func copyMagicLink() {
         magicCopied = true
     }
+
+    func beginProfileEdit() {
+        guard let member else { return }
+        profileFirstName = member.firstName
+        profileLastName = member.lastName
+        profilePhone = member.phoneNumber
+        profileEmail = member.email
+        profilePaused = member.isPaused
+        profileError = nil
+        editingProfile = true
+    }
+
+    func cancelProfileEdit() {
+        editingProfile = false
+        profileError = nil
+    }
+
+    func saveProfile() async {
+        guard let member else { return }
+        let nextFirstName = profileFirstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if nextFirstName.isEmpty {
+            profileError = MemberProfileEditCopy.firstNameRequired
+            return
+        }
+        var body: [String: Any] = [:]
+        if nextFirstName != member.firstName { body["first_name"] = nextFirstName }
+        let lastName = profileLastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if lastName != member.lastName { body["last_name"] = lastName }
+        if profilePhone != member.phoneNumber {
+            body["phone_number"] = profilePhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if profileEmail != member.email {
+            body["email"] = profileEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if !memberIsDefaultAdmin(member), profilePaused != member.isPaused {
+            body["is_paused"] = profilePaused
+        }
+        if body.isEmpty {
+            editingProfile = false
+            return
+        }
+        profileSaving = true
+        defer { profileSaving = false }
+        profileError = nil
+        do {
+            let updated = try await client.updateMemberProfile(id: member.id, body: body)
+            self.member = updated
+            paused = updated.isPaused
+            toast = MemberProfileEditCopy.saved
+            editingProfile = false
+        } catch {
+            profileError = MemberProfileEditCopy.error
+        }
+    }
 }
 
 struct AdminMemberDetailView: View {
@@ -257,7 +352,10 @@ struct AdminMemberDetailView: View {
             } else if let model, let member = model.member {
                 List {
                     Text(adminMemberDetailTitle(member).lowercased()).font(.headline)
-                    if canManageUsers {
+                    if canManageUsers, model.editingProfile {
+                        profileEditor(model)
+                    } else if canManageUsers {
+                        PDAButton(MemberProfileEditCopy.edit) { model.beginProfileEdit() }
                         Toggle(PauseAccountCopy.label, isOn: Binding(
                             get: { model.paused },
                             set: { next in Task { await model.setPaused(next) } }
@@ -320,6 +418,47 @@ struct AdminMemberDetailView: View {
         .task {
             if model == nil { model = AdminMemberDetailModel(client: client) }
             await model?.load(id: userId)
+        }
+    }
+
+    @ViewBuilder
+    private func profileEditor(_ model: AdminMemberDetailModel) -> some View {
+        PDATextField(MemberProfileEditCopy.firstName, text: Bindable(model).profileFirstName, capitalization: .words)
+        PDATextField(MemberProfileEditCopy.lastName, text: Bindable(model).profileLastName, capitalization: .words)
+        PDATextField(
+            MemberProfileEditCopy.phone,
+            text: Bindable(model).profilePhone,
+            keyboard: .phonePad,
+            contentType: .telephoneNumber
+        )
+        PDATextField(
+            MemberProfileEditCopy.email,
+            text: Bindable(model).profileEmail,
+            capitalization: .never,
+            disableAutocorrection: true,
+            keyboard: .emailAddress,
+            contentType: .emailAddress
+        )
+        if let member = model.member {
+            Toggle(PauseAccountCopy.label, isOn: Bindable(model).profilePaused)
+                .disabled(memberIsDefaultAdmin(member) || model.profileSaving)
+            if memberIsDefaultAdmin(member) {
+                Text(PauseAccountCopy.adminsCantBePaused)
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.muted)
+            }
+        }
+        if let profileError = model.profileError {
+            Text(profileError)
+                .font(PDAType.control)
+                .foregroundStyle(PDAColor.destructive)
+        }
+        HStack {
+            PDAButton(MemberProfileEditCopy.cancel, variant: .ghost) { model.cancelProfileEdit() }
+            PDAButton(model.profileSaving ? MemberProfileEditCopy.saving : MemberProfileEditCopy.save) {
+                Task { await model.saveProfile() }
+            }
+            .disabled(model.profileSaving)
         }
     }
 }

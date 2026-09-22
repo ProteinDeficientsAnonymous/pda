@@ -338,6 +338,162 @@ final class AdminMemberDetailTests: XCTestCase {
         }
     }
 
+    func test_showsMemberProfileEdit_onlyWithManageUsers() throws {
+        XCTAssertFalse(showsMemberProfileEdit(nil))
+        XCTAssertFalse(showsMemberProfileEdit(try viewer(permissions: ["edit_faq"])))
+        XCTAssertTrue(showsMemberProfileEdit(try viewer(permissions: ["manage_users"])))
+        XCTAssertTrue(showsMemberProfileEdit(try viewer(permissions: [], admin: true)))
+    }
+
+    func test_updateMemberProfile_patchesChangedFields() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTAssertEqual(routePath(request.url), "/api/auth/users/u-2/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                let patch = try JSONDecoder().decode(MemberProfilePatchBody.self, from: request.httpBody ?? Data())
+                XCTAssertEqual(patch.first_name, "grace")
+                XCTAssertEqual(patch.last_name, "hopper")
+                XCTAssertNil(patch.phone_number)
+                XCTAssertNil(patch.email)
+                XCTAssertNil(patch.is_paused)
+                XCTAssertNil(patch.has_joined_whatsapp)
+                var saved = adminMemberJSON(id: "u-2", name: "Grace Hopper", phone: "+15555550100", email: "ada@pda.test", bio: "")
+                saved["first_name"] = "grace"
+                saved["last_name"] = "hopper"
+                return MockHTTP.json(200, saved)
+            }
+            return MockHTTP.json(200, [self.profileMemberJSON()])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        model.beginProfileEdit()
+        XCTAssertEqual(model.profileFirstName, "ada")
+        XCTAssertEqual(model.profileLastName, "lovelace")
+        model.profileFirstName = "grace"
+        model.profileLastName = "hopper"
+        await model.saveProfile()
+        XCTAssertFalse(model.editingProfile)
+        XCTAssertEqual(model.member?.firstName, "grace")
+        XCTAssertEqual(model.member?.lastName, "hopper")
+        XCTAssertEqual(model.toast, "member updated ✓")
+        XCTAssertNil(model.profileError)
+    }
+
+    func test_updateMemberProfile_requiresFirstName() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("blank first name should not patch")
+            }
+            return MockHTTP.json(200, [self.profileMemberJSON()])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        model.beginProfileEdit()
+        model.profileFirstName = "  "
+        await model.saveProfile()
+        XCTAssertTrue(model.editingProfile)
+        XCTAssertEqual(model.profileError, "first name required")
+        XCTAssertEqual(model.member?.firstName, "ada")
+    }
+
+    func test_updateMemberProfile_skipsUnchangedSave() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("unchanged profile should not patch")
+            }
+            return MockHTTP.json(200, [self.profileMemberJSON()])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        model.beginProfileEdit()
+        await model.saveProfile()
+        XCTAssertFalse(model.editingProfile)
+        XCTAssertNil(model.toast)
+        XCTAssertEqual(model.member?.firstName, "ada")
+    }
+
+    func test_updateMemberProfile_403WithoutManageUsers() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "update_user"]]])
+            }
+            return MockHTTP.json(200, [self.profileMemberJSON()])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        model.beginProfileEdit()
+        model.profileEmail = "new@pda.test"
+        await model.saveProfile()
+        XCTAssertEqual(model.member?.email, "ada@pda.test")
+        XCTAssertEqual(model.member?.firstName, "ada")
+        XCTAssertTrue(model.editingProfile)
+        XCTAssertEqual(model.profileError, "couldn't save changes — try again")
+    }
+
+    func test_updateMemberProfile_skipsPauseForDefaultAdmin() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                let patch = try JSONDecoder().decode(MemberProfilePatchBody.self, from: request.httpBody ?? Data())
+                XCTAssertNil(patch.is_paused)
+                XCTAssertEqual(patch.email, "new@pda.test")
+                var saved = self.profileMemberJSON()
+                saved["email"] = "new@pda.test"
+                saved["roles"] = [["id": "r-admin", "name": "admin", "is_default": true, "permissions": []]]
+                return MockHTTP.json(200, saved)
+            }
+            var row = self.profileMemberJSON()
+            row["roles"] = [["id": "r-admin", "name": "admin", "is_default": true, "permissions": []]]
+            return MockHTTP.json(200, [row])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        model.beginProfileEdit()
+        model.profilePaused = true
+        model.profileEmail = "new@pda.test"
+        await model.saveProfile()
+        XCTAssertEqual(model.member?.email, "new@pda.test")
+        XCTAssertFalse(model.member?.isPaused ?? true)
+    }
+
+    func test_memberProfileEditCopy_isLowercase() {
+        let blobs = [
+            MemberProfileEditCopy.edit,
+            MemberProfileEditCopy.cancel,
+            MemberProfileEditCopy.save,
+            MemberProfileEditCopy.saving,
+            MemberProfileEditCopy.firstName,
+            MemberProfileEditCopy.lastName,
+            MemberProfileEditCopy.phone,
+            MemberProfileEditCopy.email,
+            MemberProfileEditCopy.firstNameRequired,
+            MemberProfileEditCopy.saved,
+            MemberProfileEditCopy.error,
+        ]
+        XCTAssertEqual(MemberProfileEditCopy.edit, "edit")
+        XCTAssertEqual(MemberProfileEditCopy.cancel, "cancel")
+        XCTAssertEqual(MemberProfileEditCopy.save, "save")
+        XCTAssertEqual(MemberProfileEditCopy.saving, "saving…")
+        XCTAssertEqual(MemberProfileEditCopy.firstName, "first name")
+        XCTAssertEqual(MemberProfileEditCopy.lastName, "last name (optional)")
+        XCTAssertEqual(MemberProfileEditCopy.phone, "phone number")
+        XCTAssertEqual(MemberProfileEditCopy.email, "email")
+        XCTAssertEqual(MemberProfileEditCopy.firstNameRequired, "first name required")
+        XCTAssertEqual(MemberProfileEditCopy.saved, "member updated ✓")
+        XCTAssertEqual(MemberProfileEditCopy.error, "couldn't save changes — try again")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    private func profileMemberJSON() -> [String: Any] {
+        var row = adminMemberJSON(id: "u-2", name: "Ada Lovelace", phone: "+15555550100", email: "ada@pda.test", bio: "")
+        row["first_name"] = "ada"
+        row["last_name"] = "lovelace"
+        return row
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
@@ -381,6 +537,15 @@ private func magicMemberJSON(id: String, firstName: String) -> [String: Any] {
     var row = adminMemberJSON(id: id, name: "Ada Lovelace", phone: "+15555550100", email: "ada@pda.test", bio: "")
     row["first_name"] = firstName
     return row
+}
+
+private struct MemberProfilePatchBody: Decodable {
+    let first_name: String?
+    let last_name: String?
+    let phone_number: String?
+    let email: String?
+    let is_paused: Bool?
+    let has_joined_whatsapp: Bool?
 }
 
 private func routePath(_ url: URL?) -> String {

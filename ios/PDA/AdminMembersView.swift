@@ -38,6 +38,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
     let email: String
     let bio: String
     let firstName: String
+    let lastName: String
     let isPaused: Bool
     let roles: [AdminMemberRole]
 
@@ -48,6 +49,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         case email
         case bio
         case firstName = "first_name"
+        case lastName = "last_name"
         case isPaused = "is_paused"
         case roles
     }
@@ -60,6 +62,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
         bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
         firstName = try c.decodeIfPresent(String.self, forKey: .firstName) ?? ""
+        lastName = try c.decodeIfPresent(String.self, forKey: .lastName) ?? ""
         isPaused = try c.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
         roles = try c.decodeIfPresent([AdminMemberRole].self, forKey: .roles) ?? []
     }
