@@ -23,6 +23,8 @@ struct EventListView: View {
     @State private var showVolunteer = false
     @State private var showJoin = false
     @State private var showSmsPolicy = false
+    @State private var showMenu = false
+    @State private var pendingMenu: MenuSheetRoute?
     @State private var showDirectory = false
     @State private var showAdmin = false
 
@@ -57,10 +59,15 @@ struct EventListView: View {
                     Text("calendar").font(PDAType.field).fontWeight(.medium)
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    PDAButton(HomeCopy.title, variant: .ghost) { showHome = true }
-                    PDAButton(FaqCopy.title, variant: .ghost) { showFaq = true }
-                    PDAButton(GuidelinesCopy.title, variant: .ghost) { showGuidelines = true }
-                    PDAButton(DonateCopy.title, variant: .ghost) { showDonate = true }
+                    Button {
+                        showMenu = true
+                    } label: {
+                        Text("pda")
+                            .font(PDAType.field)
+                            .fontWeight(.medium)
+                            .foregroundStyle(PDAColor.brand700)
+                    }
+                    .accessibilityLabel(MenuSheetCopy.open)
                     PDAButton(JoinCopy.requestToJoin, variant: .ghost) { showJoin = true }
                     PDAButton(SmsPolicyCopy.title, variant: .ghost) { showSmsPolicy = true }
                 }
@@ -68,16 +75,9 @@ struct EventListView: View {
                     if canShowProfile(user: session.user) {
                         NotificationsButton()
                         PDAButton(ProfileCopy.title, variant: .ghost) { showProfile = true }
-                        if canShowSettings(user: session.user) {
-                            PDAButton(SettingsCopy.title, variant: .ghost) { showSettings = true }
-                        }
-                        if canShowVolunteer(user: session.user) {
-                            PDAButton(VolunteerCopy.title, variant: .ghost) { showVolunteer = true }
-                        }
                         if hasAnyAdminPermission(session.user) {
                             PDAButton(AdminHubCopy.title, variant: .ghost) { showAdmin = true }
                         }
-                        PDAButton("log out", variant: .ghost) { Task { await session.logout() } }
                     } else {
                         PDAButton("sign in") { showLogin = true }
                     }
@@ -109,6 +109,9 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showSmsPolicy) {
                 SmsPolicyView()
+            }
+            .sheet(isPresented: $showMenu, onDismiss: openPendingMenu) {
+                MenuSheet(user: session.user, onSelect: selectMenu)
             }
             .sheet(isPresented: $showDirectory) {
                 DirectoryView(client: EventsClient(tokens: session.client.tokens))
@@ -188,6 +191,37 @@ struct EventListView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 BottomNavBar(selected: .calendar, onSelect: openBottomNav)
             }
+        }
+    }
+
+    private func selectMenu(_ route: MenuSheetRoute) {
+        if route == .logOut {
+            showMenu = false
+            Task { await session.logout() }
+            return
+        }
+        pendingMenu = route
+        showMenu = false
+    }
+
+    private func openPendingMenu() {
+        guard let route = pendingMenu else { return }
+        pendingMenu = nil
+        switch route {
+        case .home:
+            showHome = true
+        case .faq:
+            showFaq = true
+        case .donate:
+            showDonate = true
+        case .guidelines:
+            showGuidelines = true
+        case .volunteer:
+            showVolunteer = true
+        case .settings:
+            showSettings = true
+        case .logOut:
+            break
         }
     }
 
