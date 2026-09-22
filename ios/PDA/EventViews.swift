@@ -7,6 +7,7 @@ struct EventListView: View {
     @Environment(AccessibilityStore.self) private var a11y
     @State private var model = EventListModel()
     @State private var showLogin = false
+    @State private var showLoginAfterMagic = false
     @State private var lockTitle = ""
     @State private var lockBody = ""
     @State private var showLock = false
@@ -125,6 +126,23 @@ struct EventListView: View {
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
                     .environment(session)
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { session.pendingMagicToken != nil },
+                    set: { if !$0 { session.pendingMagicToken = nil } }
+                ),
+                onDismiss: {
+                    if showLoginAfterMagic {
+                        showLoginAfterMagic = false
+                        showLogin = true
+                    }
+                }
+            ) {
+                MagicLoginView(token: session.pendingMagicToken ?? "", client: session.client) {
+                    showLoginAfterMagic = true
+                }
+                .environment(session)
             }
             .sheet(isPresented: $showLock) {
                 MemberLockSheet(title: lockTitle, message: lockBody)

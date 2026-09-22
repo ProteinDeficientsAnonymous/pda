@@ -17,6 +17,7 @@ struct PDAApp: App {
                 .dynamicTypeSize(a11y.typeSize)
                 .font(a11y.dyslexiaFont ? Font.custom("OpenDyslexic", size: 17, relativeTo: .body) : nil)
                 .task { await session.restore() }
+                .onOpenURL { session.open($0) }
         }
     }
 }

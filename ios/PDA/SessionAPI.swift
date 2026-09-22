@@ -552,8 +552,33 @@ struct SessionClient {
         try tokens.save(try Event.decoder.decode(Out.self, from: data).access)
     }
 
+    func consumeMagicLogin(_ token: String) async throws -> SessionUser {
+        var req = makeRequest("/api/auth/magic-login/\(token)/", method: "GET")
+        if let current = try tokens.load() {
+            req.setValue("Bearer \(current)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw MagicConsumeError.crossUser }
+        guard (200 ..< 300).contains(status) else { throw MagicConsumeError.expired }
+        struct Out: Decodable { let access: String }
+        let access = try Event.decoder.decode(Out.self, from: data).access
+        let user = try await me(bearer: access)
+        try tokens.save(access)
+        return user
+    }
+
     func me() async throws -> SessionUser {
         try await authorizedGet("/api/auth/me/")
+    }
+
+    private func me(bearer access: String) async throws -> SessionUser {
+        var req = makeRequest("/api/auth/me/", method: "GET")
+        req.setValue("Bearer \(access)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        try throwIfFailed(data, status)
+        return try Event.decoder.decode(SessionUser.self, from: data)
     }
 
     func completeOnboarding(
@@ -797,6 +822,7 @@ final class LoginModel {
 @Observable
 final class AuthSession {
     var user: SessionUser?
+    var pendingMagicToken: String?
     let client: SessionClient
 
     init(client: SessionClient = SessionClient(tokens: KeychainTokenStore())) {
@@ -819,6 +845,11 @@ final class AuthSession {
 
     func signedIn(_ user: SessionUser) {
         self.user = user
+    }
+
+    func open(_ url: URL) {
+        guard let token = magicLoginToken(from: url) else { return }
+        pendingMagicToken = token
     }
 
     func logout() async {
