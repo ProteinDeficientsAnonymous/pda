@@ -77,6 +77,7 @@
 		A100000000000000000000Z3 /* HomeEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Z2 /* HomeEditorTests.swift */; };
 		A10000000000000000000AA3 /* FaqEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000AA2 /* FaqEditorTests.swift */; };
 		A10000000000000000000BB3 /* GuidelinesEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000BB2 /* GuidelinesEditorTests.swift */; };
+		A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000CC2 /* DonateEditorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -166,6 +167,7 @@
 		A100000000000000000000Z2 /* HomeEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000AA2 /* FaqEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaqEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000BB2 /* GuidelinesEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidelinesEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000CC2 /* DonateEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonateEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -287,6 +289,7 @@
 				A100000000000000000000Z2 /* HomeEditorTests.swift */,
 				A10000000000000000000AA2 /* FaqEditorTests.swift */,
 				A10000000000000000000BB2 /* GuidelinesEditorTests.swift */,
+				A10000000000000000000CC2 /* DonateEditorTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -497,6 +500,7 @@
 				A100000000000000000000Z3 /* HomeEditorTests.swift in Sources */,
 				A10000000000000000000AA3 /* FaqEditorTests.swift in Sources */,
 				A10000000000000000000BB3 /* GuidelinesEditorTests.swift in Sources */,
+				A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
