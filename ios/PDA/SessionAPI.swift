@@ -37,6 +37,7 @@ struct SessionUser: Decodable, Equatable {
     let needsSmsConsent: Bool
     let needsContactPrivacyConsent: Bool
     let permissions: [String]
+    let isAdmin: Bool
     let birthday: Birthday?
     let showPhone: Bool
     let showEmail: Bool
@@ -60,6 +61,7 @@ struct SessionUser: Decodable, Equatable {
         case needsSmsConsent = "needs_sms_consent"
         case needsContactPrivacyConsent = "needs_contact_privacy_consent"
         case permissions
+        case roles
         case birthday
         case showPhone = "show_phone"
         case showEmail = "show_email"
@@ -84,7 +86,14 @@ struct SessionUser: Decodable, Equatable {
         needsGuidelinesConsent = try c.decodeIfPresent(Bool.self, forKey: .needsGuidelinesConsent) ?? false
         needsSmsConsent = try c.decodeIfPresent(Bool.self, forKey: .needsSmsConsent) ?? false
         needsContactPrivacyConsent = try c.decodeIfPresent(Bool.self, forKey: .needsContactPrivacyConsent) ?? false
-        permissions = try c.decodeIfPresent([String].self, forKey: .permissions) ?? []
+        let direct = try c.decodeIfPresent([String].self, forKey: .permissions) ?? []
+        let roles = try c.decodeIfPresent([SessionRole].self, forKey: .roles) ?? []
+        var merged = direct
+        for perm in roles.flatMap(\.permissions) where !merged.contains(perm) {
+            merged.append(perm)
+        }
+        permissions = merged
+        isAdmin = roles.contains { $0.name == "admin" && $0.isDefault }
         birthday = try c.decodeIfPresent(Birthday.self, forKey: .birthday)
         showPhone = try c.decodeIfPresent(Bool.self, forKey: .showPhone) ?? false
         showEmail = try c.decodeIfPresent(Bool.self, forKey: .showEmail) ?? false
@@ -93,6 +102,25 @@ struct SessionUser: Decodable, Equatable {
         profilePhotoUrl = try c.decodeIfPresent(String.self, forKey: .profilePhotoUrl) ?? ""
         weekStart = try c.decodeIfPresent(String.self, forKey: .weekStart) ?? "sunday"
         weeklyDigestOptOut = try c.decodeIfPresent(Bool.self, forKey: .weeklyDigestOptOut) ?? false
+    }
+}
+
+private struct SessionRole: Decodable {
+    let name: String
+    let isDefault: Bool
+    let permissions: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case isDefault = "is_default"
+        case permissions
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
+        permissions = (try? c.decode([String].self, forKey: .permissions)) ?? []
     }
 }
 

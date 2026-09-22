@@ -23,6 +23,7 @@ struct EventListView: View {
     @State private var showJoin = false
     @State private var showSmsPolicy = false
     @State private var showDirectory = false
+    @State private var showAdmin = false
 
     var body: some View {
         NavigationStack {
@@ -72,6 +73,9 @@ struct EventListView: View {
                         if canShowVolunteer(user: session.user) {
                             Button(VolunteerCopy.title) { showVolunteer = true }
                         }
+                        if hasAnyAdminPermission(session.user) {
+                            Button(AdminHubCopy.title) { showAdmin = true }
+                        }
                         Button("log out") { Task { await session.logout() } }
                     } else {
                         Button("sign in") { showLogin = true }
@@ -114,6 +118,9 @@ struct EventListView: View {
             }
             .sheet(isPresented: $showDirectory) {
                 DirectoryView(client: EventsClient(tokens: session.client.tokens))
+            }
+            .sheet(isPresented: $showAdmin) {
+                AdminHubView(user: session.user)
             }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
