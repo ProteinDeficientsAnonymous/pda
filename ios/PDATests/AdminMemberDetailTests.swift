@@ -648,6 +648,119 @@ final class AdminMemberDetailTests: XCTestCase {
         return row
     }
 
+    func test_setJoinedWhatsapp_patchesOnlyThatField() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTAssertEqual(routePath(request.url), "/api/auth/users/u-2/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                let obj = try JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as! [String: Any]
+                XCTAssertEqual(Set(obj.keys), Set(["has_joined_whatsapp"]))
+                let patch = try JSONDecoder().decode(WhatsappPatchBody.self, from: request.httpBody ?? Data())
+                XCTAssertTrue(patch.has_joined_whatsapp)
+                return MockHTTP.json(200, self.whatsappMemberJSON(joined: true))
+            }
+            return MockHTTP.json(200, [self.whatsappMemberJSON(joined: false)])
+        }
+        let model = AdminMemberDetailModel(client: makeClient(tokens))
+        await model.load(id: "u-2")
+        XCTAssertFalse(model.joinedWhatsapp)
+        await model.setJoinedWhatsapp(true)
+        XCTAssertTrue(model.member?.hasJoinedWhatsapp ?? false)
+        XCTAssertTrue(model.joinedWhatsapp)
+        XCTAssertEqual(model.toast, "marked as joined whatsapp ✓")
+        XCTAssertNil(model.whatsappError)
+    }
+
+    func test_setJoinedWhatsapp_marksNotOnWhatsapp() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                let patch = try JSONDecoder().decode(WhatsappPatchBody.self, from: request.httpBody ?? Data())
+                XCTAssertFalse(patch.has_joined_whatsapp)
+                return MockHTTP.json(200, self.whatsappMemberJSON(joined: false))
+            }
+            return MockHTTP.json(200, [self.whatsappMemberJSON(joined: true)])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.setJoinedWhatsapp(false)
+        XCTAssertFalse(model.member?.hasJoinedWhatsapp ?? true)
+        XCTAssertEqual(model.toast, "marked as not on whatsapp ✓")
+    }
+
+    func test_setJoinedWhatsapp_403WithoutManageUsers() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "update_user"]]])
+            }
+            return MockHTTP.json(200, [self.whatsappMemberJSON(joined: false)])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.setJoinedWhatsapp(true)
+        XCTAssertFalse(model.member?.hasJoinedWhatsapp ?? true)
+        XCTAssertFalse(model.joinedWhatsapp)
+        XCTAssertEqual(model.whatsappError, "you don't have permission to do that")
+        XCTAssertNil(model.toast)
+    }
+
+    func test_setJoinedWhatsapp_otherFailureUsesFallback() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(500, [:])
+            }
+            return MockHTTP.json(200, [self.whatsappMemberJSON(joined: false)])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.setJoinedWhatsapp(true)
+        XCTAssertFalse(model.joinedWhatsapp)
+        XCTAssertEqual(model.whatsappError, "couldn't save changes — try again")
+        XCTAssertNil(model.toast)
+    }
+
+    func test_setJoinedWhatsapp_skipsUnchanged() async {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("unchanged whatsapp must not patch")
+                return MockHTTP.json(500, [:])
+            }
+            return MockHTTP.json(200, [self.whatsappMemberJSON(joined: false)])
+        }
+        let model = AdminMemberDetailModel(client: makeClient())
+        await model.load(id: "u-2")
+        await model.setJoinedWhatsapp(false)
+        XCTAssertNil(model.toast)
+        XCTAssertNil(model.whatsappError)
+    }
+
+    func test_memberWhatsappCopy_isLowercase() {
+        let blobs = [
+            MemberWhatsappCopy.title,
+            MemberWhatsappCopy.label,
+            MemberWhatsappCopy.joined,
+            MemberWhatsappCopy.notJoined,
+            MemberWhatsappCopy.error,
+            MemberWhatsappCopy.forbidden,
+        ]
+        XCTAssertEqual(MemberWhatsappCopy.title, "whatsapp")
+        XCTAssertEqual(MemberWhatsappCopy.label, "joined whatsapp")
+        XCTAssertEqual(MemberWhatsappCopy.joined, "marked as joined whatsapp ✓")
+        XCTAssertEqual(MemberWhatsappCopy.notJoined, "marked as not on whatsapp ✓")
+        XCTAssertEqual(MemberWhatsappCopy.error, "couldn't save changes — try again")
+        XCTAssertEqual(MemberWhatsappCopy.forbidden, "you don't have permission to do that")
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    private func whatsappMemberJSON(joined: Bool) -> [String: Any] {
+        var row = adminMemberJSON(id: "u-2", name: "Ada Lovelace", phone: "+15555550100", email: "ada@pda.test", bio: "")
+        row["has_joined_whatsapp"] = joined
+        return row
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }
@@ -714,6 +827,10 @@ private func roleJSON(id: String, name: String, isDefault: Bool) -> [String: Any
 
 private struct MemberRolesPatchBody: Decodable {
     let role_ids: [String]
+}
+
+private struct WhatsappPatchBody: Decodable {
+    let has_joined_whatsapp: Bool
 }
 
 private func routePath(_ url: URL?) -> String {

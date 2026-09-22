@@ -42,6 +42,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
     let firstName: String
     let lastName: String
     let isPaused: Bool
+    let hasJoinedWhatsapp: Bool
     let roles: [AdminMemberRole]
 
     enum CodingKeys: String, CodingKey {
@@ -53,6 +54,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         case firstName = "first_name"
         case lastName = "last_name"
         case isPaused = "is_paused"
+        case hasJoinedWhatsapp = "has_joined_whatsapp"
         case roles
     }
 
@@ -66,6 +68,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         firstName = try c.decodeIfPresent(String.self, forKey: .firstName) ?? ""
         lastName = try c.decodeIfPresent(String.self, forKey: .lastName) ?? ""
         isPaused = try c.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+        hasJoinedWhatsapp = try c.decodeIfPresent(Bool.self, forKey: .hasJoinedWhatsapp) ?? false
         roles = try c.decodeIfPresent([AdminMemberRole].self, forKey: .roles) ?? []
     }
 }

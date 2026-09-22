@@ -80,6 +80,25 @@ enum MemberProfileEditCopy {
     static let error = "couldn't save changes — try again"
 }
 
+enum MemberWhatsappCopy {
+    static let title = "whatsapp"
+    static let label = "joined whatsapp"
+    static let joined = "marked as joined whatsapp ✓"
+    static let notJoined = "marked as not on whatsapp ✓"
+    static let error = "couldn't save changes — try again"
+    static let forbidden = "you don't have permission to do that"
+}
+
+enum MemberWhatsappError: Error, Equatable {
+    case forbidden
+}
+
+func memberWhatsappDenied(_ data: Data) -> Bool {
+    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let detail = json["detail"] as? [[String: Any]] else { return false }
+    return detail.contains { ($0["code"] as? String) == "perm.denied" }
+}
+
 func showsMemberProfileEdit(_ user: SessionUser?) -> Bool {
     guard let user else { return false }
     return user.isAdmin || user.permissions.contains("manage_users")
@@ -164,6 +183,21 @@ extension EventsClient {
         return try Event.decoder.decode(AdminMember.self, from: data)
     }
 
+    func setMemberWhatsapp(id: String, joined: Bool) async throws -> AdminMember {
+        var req = URLRequest(url: pauseMemberURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["has_joined_whatsapp": joined])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403, memberWhatsappDenied(data) { throw MemberWhatsappError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(AdminMember.self, from: data)
+    }
+
     func updateMemberRoles(id: String, roleIDs: [String]) async throws -> AdminMember {
         var req = URLRequest(url: memberRolesURL(base: baseURL, id: id))
         req.httpMethod = "PATCH"
@@ -192,6 +226,9 @@ final class AdminMemberDetailModel {
     var forbidden = false
     var error: String?
     var paused = false
+    var joinedWhatsapp = false
+    var whatsappError: String?
+    var whatsappSaving = false
     var toast: String?
     var formError: String?
     var pauseForbidden = false
@@ -249,6 +286,7 @@ final class AdminMemberDetailModel {
         do {
             member = try await client.adminMemberDetail(id: id)
             paused = member?.isPaused ?? false
+            joinedWhatsapp = member?.hasJoinedWhatsapp ?? false
         } catch AdminMembersError.forbidden {
             forbidden = true
         } catch AdminMembersError.notFound {
@@ -395,6 +433,25 @@ final class AdminMemberDetailModel {
             rolesError = MemberRolesCopy.error
         }
     }
+
+    func setJoinedWhatsapp(_ next: Bool) async {
+        guard let member, next != member.hasJoinedWhatsapp else { return }
+        whatsappSaving = true
+        defer { whatsappSaving = false }
+        whatsappError = nil
+        do {
+            let updated = try await client.setMemberWhatsapp(id: member.id, joined: next)
+            self.member = updated
+            joinedWhatsapp = updated.hasJoinedWhatsapp
+            toast = next ? MemberWhatsappCopy.joined : MemberWhatsappCopy.notJoined
+        } catch MemberWhatsappError.forbidden {
+            whatsappError = MemberWhatsappCopy.forbidden
+            toast = nil
+        } catch {
+            whatsappError = MemberWhatsappCopy.error
+            toast = nil
+        }
+    }
 }
 
 struct AdminMemberDetailView: View {
@@ -435,6 +492,7 @@ struct AdminMemberDetailView: View {
                     Text(adminMemberDetailTitle(member).lowercased()).font(.headline)
                     if canManageUsers {
                         rolesSection(model)
+                        whatsappSection(model)
                     }
                     if canManageUsers, model.editingProfile {
                         profileEditor(model)
@@ -453,7 +511,8 @@ struct AdminMemberDetailView: View {
                         if let formError = model.formError {
                             Text(formError).foregroundStyle(.red)
                         }
-                        if let toast = model.toast, toast != MemberRolesCopy.saved {
+                        if let toast = model.toast, toast != MemberRolesCopy.saved,
+                           toast != MemberWhatsappCopy.joined, toast != MemberWhatsappCopy.notJoined {
                             Text(toast).font(.footnote)
                         }
                         if model.magicLink == nil {
@@ -552,6 +611,38 @@ struct AdminMemberDetailView: View {
                     .foregroundStyle(PDAColor.muted)
                     .textCase(nil)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func whatsappSection(_ model: AdminMemberDetailModel) -> some View {
+        Section {
+            Toggle(
+                MemberWhatsappCopy.label,
+                isOn: Binding(
+                    get: { model.joinedWhatsapp },
+                    set: { next in Task { await model.setJoinedWhatsapp(next) } }
+                )
+            )
+            .font(PDAType.control)
+            .foregroundStyle(PDAColor.foreground)
+            .tint(PDAColor.brand600)
+            .disabled(model.whatsappSaving)
+            if let whatsappError = model.whatsappError {
+                Text(whatsappError)
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.destructive)
+            }
+            if model.toast == MemberWhatsappCopy.joined || model.toast == MemberWhatsappCopy.notJoined {
+                Text(model.toast ?? "")
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.muted)
+            }
+        } header: {
+            Text(MemberWhatsappCopy.title)
+                .font(PDAType.control)
+                .foregroundStyle(PDAColor.muted)
+                .textCase(nil)
         }
     }
 
