@@ -104,6 +104,7 @@ final class AdminSurveysModel {
 struct AdminSurveysView: View {
     var client: EventsClient
     @State private var model: AdminSurveysModel?
+    @State private var showCreate = false
 
     var body: some View {
         Group {
@@ -144,6 +145,19 @@ struct AdminSurveysView: View {
         .background(PDAColor.background)
         .navigationTitle(AdminSurveysCopy.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let model, model.loaded, !model.forbidden, model.error == nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    PDAButton(CreateSurveyCopy.button) { showCreate = true }
+                }
+            }
+        }
+        .sheet(isPresented: $showCreate) {
+            CreateSurveySheet(client: client) {
+                showCreate = false
+                Task { await model?.load() }
+            }
+        }
         .task {
             if model == nil { model = AdminSurveysModel(client: client) }
             await model?.load()
