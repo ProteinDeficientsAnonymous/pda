@@ -12,6 +12,14 @@ enum JoinRequestsCopy {
     static let filters = ["all", "pending", "tentative", "approved", "rejected"]
 }
 
+enum JoinRequestApproveCopy {
+    static let button = "approve"
+    static let title = "approve request"
+    static let confirm = "approve"
+    static let cancel = "cancel"
+    static let error = "couldn't complete that action — try again"
+}
+
 enum JoinRequestsError: Error, Equatable {
     case forbidden
 }
@@ -74,6 +82,24 @@ func joinRequestsURL(base: URL) -> URL {
     URL(string: "/api/community/join-requests/", relativeTo: base)!.absoluteURL
 }
 
+func joinRequestDecisionURL(base: URL, id: String) -> URL {
+    URL(string: "/api/community/join-requests/\(id)/", relativeTo: base)!.absoluteURL
+}
+
+func joinRequestApproveName(_ row: JoinRequestRow) -> String {
+    if !row.fullName.isEmpty { return row.fullName }
+    return row.phoneNumber
+}
+
+func joinRequestApproveMessage(_ name: String) -> String {
+    "approve \(name)? once you approve someone you can't un-approve them — are you sure?"
+}
+
+struct JoinRequestDecision: Decodable, Equatable {
+    let id: String
+    let status: String
+}
+
 func visibleJoinRequests(_ rows: [JoinRequestRow], filter: String = "pending", query: String = "") -> [JoinRequestRow] {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     return rows
@@ -111,6 +137,20 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode([JoinRequestRow].self, from: data)
     }
+
+    func approveJoinRequest(id: String) async throws -> JoinRequestDecision {
+        var req = URLRequest(url: joinRequestDecisionURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["status": "approved"])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(JoinRequestDecision.self, from: data)
+    }
 }
 
 @Observable
@@ -119,6 +159,8 @@ final class JoinRequestsModel {
     var rows: [JoinRequestRow] = []
     var forbidden = false
     var error: String?
+    var actionError: String?
+    var pendingApprove: JoinRequestRow?
     var loaded = false
 
     var explanationTitle: String { JoinRequestsCopy.forbiddenTitle }
@@ -142,6 +184,37 @@ final class JoinRequestsModel {
             rows = []
             self.error = JoinRequestsCopy.error
             loaded = true
+        }
+    }
+
+    func askApprove(_ row: JoinRequestRow) {
+        guard row.status == "pending" else { return }
+        pendingApprove = row
+    }
+
+    func cancelApprove() {
+        pendingApprove = nil
+    }
+
+    func confirmApprove(_ row: JoinRequestRow) async {
+        pendingApprove = nil
+        actionError = nil
+        do {
+            let decision = try await client.approveJoinRequest(id: row.id)
+            guard let index = rows.firstIndex(where: { $0.id == decision.id }) else { return }
+            let current = rows[index]
+            rows[index] = JoinRequestRow(
+                id: current.id,
+                fullName: current.fullName,
+                phoneNumber: current.phoneNumber,
+                email: current.email,
+                status: decision.status,
+                submittedAt: current.submittedAt,
+                approvedAt: current.approvedAt,
+                rejectedAt: current.rejectedAt
+            )
+        } catch {
+            actionError = JoinRequestApproveCopy.error
         }
     }
 }
@@ -241,8 +314,18 @@ struct JoinRequestsView: View {
                                     Text(row.email.lowercased()).font(.footnote).foregroundStyle(.secondary)
                                 }
                                 Text(row.status.lowercased()).font(.footnote).foregroundStyle(.secondary)
+                                if row.status == "pending" {
+                                    PDAButton(JoinRequestApproveCopy.button) { model.askApprove(row) }
+                                }
                             }
                         }
+                    }
+                    if let actionError = model.actionError {
+                        Text(actionError)
+                            .font(PDAType.control)
+                            .foregroundStyle(PDAColor.destructive)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
                     }
                 }
             } else {
@@ -285,6 +368,26 @@ struct JoinRequestsView: View {
                 WhatsAppLinkEditorView(client: client) {
                     whatsAppNotice = WhatsAppLinkCopy.saved
                 }
+            }
+        }
+        .confirmationDialog(
+            JoinRequestApproveCopy.title,
+            isPresented: Binding(
+                get: { model?.pendingApprove != nil },
+                set: { if !$0 { model?.cancelApprove() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(JoinRequestApproveCopy.confirm) {
+                guard let row = model?.pendingApprove else { return }
+                Task { await model?.confirmApprove(row) }
+            }
+            Button(JoinRequestApproveCopy.cancel, role: .cancel) {
+                model?.cancelApprove()
+            }
+        } message: {
+            if let row = model?.pendingApprove {
+                Text(joinRequestApproveMessage(joinRequestApproveName(row)))
             }
         }
         .task {

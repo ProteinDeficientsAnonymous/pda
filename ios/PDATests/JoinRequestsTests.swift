@@ -92,6 +92,113 @@ final class JoinRequestsTests: XCTestCase {
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), [])
     }
 
+    func test_approveJoinRequest_patchesApprovedStatus() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTAssertEqual(routePath(request.url), "/api/community/join-requests/jr-1/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                let body = try JSONDecoder().decode(JoinDecisionBody.self, from: request.httpBody ?? Data())
+                XCTAssertEqual(body.status, "approved")
+                return MockHTTP.json(200, [
+                    "id": "jr-1",
+                    "full_name": "Ada Lovelace",
+                    "first_name": "Ada",
+                    "phone_number": "+15555550100",
+                    "status": "approved",
+                    "magic_link_token": "tok",
+                    "user_id": "user-9",
+                ])
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada Lovelace", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient(tokens))
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        model.askApprove(row)
+        XCTAssertEqual(model.pendingApprove?.id, "jr-1")
+        XCTAssertEqual(
+            joinRequestApproveMessage(joinRequestApproveName(row)),
+            "approve Ada Lovelace? once you approve someone you can't un-approve them — are you sure?"
+        )
+        await model.confirmApprove(row)
+        XCTAssertNil(model.pendingApprove)
+        XCTAssertEqual(model.rows.first?.status, "approved")
+        XCTAssertNil(model.actionError)
+    }
+
+    func test_approveJoinRequest_403WithoutApprovePermission() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "update_join_request_status"]]])
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient())
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        await model.confirmApprove(row)
+        XCTAssertEqual(model.rows.first?.status, "pending")
+        XCTAssertFalse(model.forbidden)
+        XCTAssertEqual(model.actionError, "couldn't complete that action — try again")
+    }
+
+    func test_approveJoinRequest_cancelSkipsPatch() async throws {
+        MockHTTP.handler = { request in
+            if request.httpMethod == "PATCH" {
+                XCTFail("cancel should not patch")
+            }
+            return MockHTTP.json(200, [
+                requestJSON(id: "jr-1", name: "Ada", status: "pending", submitted: "2026-03-01T00:00:00Z"),
+            ])
+        }
+        let model = JoinRequestsModel(client: makeClient())
+        await model.load()
+        let row = try XCTUnwrap(model.rows.first)
+        model.askApprove(row)
+        model.cancelApprove()
+        XCTAssertNil(model.pendingApprove)
+        XCTAssertEqual(model.rows.first?.status, "pending")
+        let decided = JoinRequestRow(
+            id: "jr-2",
+            fullName: "",
+            phoneNumber: "+15555550100",
+            email: "",
+            status: "approved",
+            submittedAt: "2026-03-01T00:00:00Z"
+        )
+        model.askApprove(decided)
+        XCTAssertNil(model.pendingApprove)
+        XCTAssertEqual(joinRequestApproveName(decided), "+15555550100")
+    }
+
+    func test_joinRequestApproveCopy_isLowercase() {
+        let blobs = [
+            JoinRequestApproveCopy.button,
+            JoinRequestApproveCopy.title,
+            JoinRequestApproveCopy.confirm,
+            JoinRequestApproveCopy.cancel,
+            JoinRequestApproveCopy.error,
+        ]
+        XCTAssertEqual(JoinRequestApproveCopy.button, "approve")
+        XCTAssertEqual(JoinRequestApproveCopy.title, "approve request")
+        XCTAssertEqual(JoinRequestApproveCopy.confirm, "approve")
+        XCTAssertEqual(JoinRequestApproveCopy.cancel, "cancel")
+        XCTAssertEqual(JoinRequestApproveCopy.error, "couldn't complete that action — try again")
+        XCTAssertEqual(
+            joinRequestDecisionURL(base: base, id: "jr-1").absoluteString,
+            "https://pda.test/api/community/join-requests/jr-1/"
+        )
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     func test_joinRequestsCopy_isLowercase() {
         let blobs = [
             JoinRequestsCopy.title,
@@ -137,6 +244,10 @@ private func requestJSON(id: String, name: String, status: String, submitted: St
         "submitted_at": submitted,
         "answers": [],
     ]
+}
+
+private struct JoinDecisionBody: Decodable {
+    let status: String
 }
 
 private func routePath(_ url: URL?) -> String {
