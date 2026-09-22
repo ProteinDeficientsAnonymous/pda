@@ -42,6 +42,7 @@
 		A100000000000000000000U1 /* MemberPromotionEmailEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */; };
 		A100000000000000000000V1 /* AddQuestionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000V0 /* AddQuestionView.swift */; };
 		A100000000000000000000W1 /* PDATheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000W0 /* PDATheme.swift */; };
+		A100000000000000000000X1 /* AdminSurveysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000X0 /* AdminSurveysView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -70,6 +71,7 @@
 		A100000000000000000000U3 /* MemberPromotionEmailEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */; };
 		A100000000000000000000V3 /* AddQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000V2 /* AddQuestionTests.swift */; };
 		A100000000000000000000W3 /* PDAThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000W2 /* PDAThemeTests.swift */; };
+		A100000000000000000000X3 /* AdminSurveysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000X2 /* AdminSurveysTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,6 +127,7 @@
 		A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEmailEditor.swift; sourceTree = "<group>"; };
 		A100000000000000000000V0 /* AddQuestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddQuestionView.swift; sourceTree = "<group>"; };
 		A100000000000000000000W0 /* PDATheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDATheme.swift; sourceTree = "<group>"; };
+		A100000000000000000000X0 /* AdminSurveysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSurveysView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -152,6 +155,7 @@
 		A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEmailEditorTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000V2 /* AddQuestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddQuestionTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000W2 /* PDAThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDAThemeTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000X2 /* AdminSurveysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSurveysTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -232,6 +236,7 @@
 				A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */,
 				A100000000000000000000V0 /* AddQuestionView.swift */,
 				A100000000000000000000W0 /* PDATheme.swift */,
+				A100000000000000000000X0 /* AdminSurveysView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -266,6 +271,7 @@
 				A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */,
 				A100000000000000000000V2 /* AddQuestionTests.swift */,
 				A100000000000000000000W2 /* PDAThemeTests.swift */,
+				A100000000000000000000X2 /* AdminSurveysTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -437,6 +443,7 @@
 				A100000000000000000000U1 /* MemberPromotionEmailEditor.swift in Sources */,
 				A100000000000000000000V1 /* AddQuestionView.swift in Sources */,
 				A100000000000000000000W1 /* PDATheme.swift in Sources */,
+				A100000000000000000000X1 /* AdminSurveysView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,6 +476,7 @@
 				A100000000000000000000U3 /* MemberPromotionEmailEditorTests.swift in Sources */,
 				A100000000000000000000V3 /* AddQuestionTests.swift in Sources */,
 				A100000000000000000000W3 /* PDAThemeTests.swift in Sources */,
+				A100000000000000000000X3 /* AdminSurveysTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

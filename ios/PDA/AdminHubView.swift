@@ -17,6 +17,7 @@ private let adminHubCatalog: [AdminHubTile] = [
     AdminHubTile(id: "events", label: "events", detail: "review drafts, past, and cancelled events", permission: "manage_events"),
     AdminHubTile(id: "flagged-events", label: "flagged events", detail: "review and action flags from members", permission: "manage_events"),
     AdminHubTile(id: "attendance", label: "attendance", detail: "who came to events and when", permission: "manage_events"),
+    AdminHubTile(id: "surveys", label: "surveys", detail: "build and review surveys + polls", permission: "manage_surveys"),
     AdminHubTile(id: "join-form", label: "join form", detail: "edit the questions asked on /join", permission: "edit_join_questions"),
     AdminHubTile(id: "docs", label: "docs", detail: "manage the shared document library", permission: "manage_documents"),
 ]
@@ -27,6 +28,7 @@ private let adminHubPermissions = [
     "approve_join_requests",
     "edit_join_questions",
     "manage_documents",
+    "manage_surveys",
 ]
 
 func hasAnyAdminPermission(_ user: SessionUser?) -> Bool {
@@ -48,6 +50,7 @@ enum AdminHubDestination: Equatable {
     case attendance
     case docs
     case joinForm
+    case surveys
 }
 
 func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
@@ -59,6 +62,7 @@ func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
     case "attendance": .attendance
     case "docs": .docs
     case "join-form": .joinForm
+    case "surveys": .surveys
     default: nil
     }
 }
@@ -112,6 +116,8 @@ struct AdminHubView: View {
             DocsLibraryView(client: client)
         case .joinForm:
             AdminJoinFormView(client: client)
+        case .surveys:
+            AdminSurveysView(client: client)
         }
     }
 
