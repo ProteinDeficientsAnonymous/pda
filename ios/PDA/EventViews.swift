@@ -82,13 +82,6 @@ struct EventListView: View {
                         PDAButton("sign in") { showLogin = true }
                     }
                 }
-                ToolbarItemGroup(placement: .bottomBar) {
-                    PDAButton(PublicRsvpCopy.myRsvpsTitle, variant: .ghost) { openMyRsvps() }
-                    Spacer()
-                    PDAButton("directory", variant: .ghost) { open(directoryChrome(for: session.user)) }
-                    Spacer()
-                    PDAButton("add event") { openAddEvent() }
-                }
             }
             .sheet(isPresented: $showHome) {
                 HomeView(client: EventsClient(tokens: session.client.tokens), user: session.user)
@@ -189,46 +182,35 @@ struct EventListView: View {
                 if showsFeedbackControl(for: session.user, guestToken: RsvpTokenStore().load()) {
                     FeedbackButton(client: EventsClient(tokens: session.client.tokens))
                         .padding(.trailing, 16)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 16 + BottomNavBar.height)
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomNavBar(selected: .calendar, onSelect: openBottomNav)
             }
         }
     }
 
-    private func open(_ chrome: MemberChrome) {
-        switch chrome {
-        case .login:
-            showLogin = true
-        case let .locked(title, body):
-            lockTitle = title
-            lockBody = body
-            showLock = true
-        case .open:
-            showDirectory = true
-        }
-    }
-
-    private func openAddEvent() {
-        switch addEventChrome(for: session.user) {
-        case .login:
-            showLogin = true
-        case let .locked(title, body):
-            lockTitle = title
-            lockBody = body
-            showLock = true
-        case .open:
-            showAddEvent = true
-        }
-    }
-
-    private func openMyRsvps() {
-        switch myRsvpsDestination(user: session.user, hasGuestToken: RsvpTokenStore().load() != nil) {
-        case .login:
-            showLogin = true
-        case .guestRsvps:
-            showMyRsvps = true
+    private func openBottomNav(_ item: BottomNavItem) {
+        switch bottomNavRoute(item, user: session.user, hasGuestToken: RsvpTokenStore().load() != nil) {
+        case .calendar:
+            break
         case .myEvents:
             showMyEvents = true
+        case .guestRsvps:
+            showMyRsvps = true
+        case .login:
+            showLogin = true
+        case .addEvent:
+            showAddEvent = true
+        case .members:
+            showDirectory = true
+        case .profile:
+            showProfile = true
+        case let .locked(title, body):
+            lockTitle = title
+            lockBody = body
+            showLock = true
         }
     }
 }
