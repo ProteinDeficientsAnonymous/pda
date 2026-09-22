@@ -42,10 +42,15 @@ func adminHubTiles(for user: SessionUser?) -> [AdminHubTile] {
 
 enum AdminHubDestination: Equatable {
     case members
+    case joinRequests
 }
 
 func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
-    tile.id == "members" ? .members : nil
+    switch tile.id {
+    case "members": .members
+    case "join-requests": .joinRequests
+    default: nil
+    }
 }
 
 struct AdminHubView: View {
@@ -56,9 +61,9 @@ struct AdminHubView: View {
     var body: some View {
         NavigationStack {
             List(adminHubTiles(for: user)) { tile in
-                if adminHubDestination(for: tile) == .members {
+                if let destination = adminHubDestination(for: tile) {
                     NavigationLink {
-                        AdminMembersView(client: client)
+                        hubDestination(destination)
                     } label: {
                         hubTileLabel(tile)
                     }
@@ -73,6 +78,16 @@ struct AdminHubView: View {
                     Button("close") { dismiss() }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func hubDestination(_ destination: AdminHubDestination) -> some View {
+        switch destination {
+        case .members:
+            AdminMembersView(client: client)
+        case .joinRequests:
+            JoinRequestsView(client: client)
         }
     }
 

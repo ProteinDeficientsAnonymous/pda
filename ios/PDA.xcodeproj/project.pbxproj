@@ -25,6 +25,7 @@
 		A100000000000000000000D1 /* AdminHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000D0 /* AdminHubView.swift */; };
 		A100000000000000000000E1 /* AdminMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E0 /* AdminMembersView.swift */; };
 		A100000000000000000000F1 /* AdminMemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000F0 /* AdminMemberDetailView.swift */; };
+		A100000000000000000000G1 /* JoinRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000G0 /* JoinRequestsView.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -36,6 +37,7 @@
 		A100000000000000000000D3 /* AdminHubTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000D2 /* AdminHubTests.swift */; };
 		A100000000000000000000E3 /* AdminMembersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E2 /* AdminMembersTests.swift */; };
 		A100000000000000000000F3 /* AdminMemberDetailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000F2 /* AdminMemberDetailTests.swift */; };
+		A100000000000000000000G3 /* JoinRequestsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000G2 /* JoinRequestsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,7 @@
 		A100000000000000000000D0 /* AdminHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminHubView.swift; sourceTree = "<group>"; };
 		A100000000000000000000E0 /* AdminMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMembersView.swift; sourceTree = "<group>"; };
 		A100000000000000000000F0 /* AdminMemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMemberDetailView.swift; sourceTree = "<group>"; };
+		A100000000000000000000G0 /* JoinRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinRequestsView.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -84,6 +87,7 @@
 		A100000000000000000000D2 /* AdminHubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminHubTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000E2 /* AdminMembersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMembersTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000F2 /* AdminMemberDetailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMemberDetailTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000G2 /* JoinRequestsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinRequestsTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -147,6 +151,7 @@
 				A100000000000000000000D0 /* AdminHubView.swift */,
 				A100000000000000000000E0 /* AdminMembersView.swift */,
 				A100000000000000000000F0 /* AdminMemberDetailView.swift */,
+				A100000000000000000000G0 /* JoinRequestsView.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -164,6 +169,7 @@
 				A100000000000000000000D2 /* AdminHubTests.swift */,
 				A100000000000000000000E2 /* AdminMembersTests.swift */,
 				A100000000000000000000F2 /* AdminMemberDetailTests.swift */,
+				A100000000000000000000G2 /* JoinRequestsTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -318,6 +324,7 @@
 				A100000000000000000000D1 /* AdminHubView.swift in Sources */,
 				A100000000000000000000E1 /* AdminMembersView.swift in Sources */,
 				A100000000000000000000F1 /* AdminMemberDetailView.swift in Sources */,
+				A100000000000000000000G1 /* JoinRequestsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,6 +340,7 @@
 				A100000000000000000000D3 /* AdminHubTests.swift in Sources */,
 				A100000000000000000000E3 /* AdminMembersTests.swift in Sources */,
 				A100000000000000000000F3 /* AdminMemberDetailTests.swift in Sources */,
+				A100000000000000000000G3 /* JoinRequestsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
