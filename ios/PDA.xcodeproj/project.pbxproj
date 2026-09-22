@@ -91,6 +91,7 @@
 		A10000000000000000000NN1 /* SurveyResponses.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000NN0 /* SurveyResponses.swift */; };
 		A10000000000000000000OO1 /* RequestLoginLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000OO0 /* RequestLoginLink.swift */; };
 		A10000000000000000000PP1 /* EventBlasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP0 /* EventBlasts.swift */; };
+		A10000000000000000000QQ1 /* Geocode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ0 /* Geocode.swift */; };
 		A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE2 /* BulkCreateTests.swift */; };
 		A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF2 /* SurveyPageTests.swift */; };
 		A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG2 /* MagicLoginTests.swift */; };
@@ -103,6 +104,7 @@
 		A10000000000000000000NN3 /* SurveyResponsesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000NN2 /* SurveyResponsesTests.swift */; };
 		A10000000000000000000OO3 /* RequestLoginLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000OO2 /* RequestLoginLinkTests.swift */; };
 		A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP2 /* EventBlastsTests.swift */; };
+		A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ2 /* GeocodeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -206,6 +208,7 @@
 		A10000000000000000000NN0 /* SurveyResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyResponses.swift; sourceTree = "<group>"; };
 		A10000000000000000000OO0 /* RequestLoginLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestLoginLink.swift; sourceTree = "<group>"; };
 		A10000000000000000000PP0 /* EventBlasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlasts.swift; sourceTree = "<group>"; };
+		A10000000000000000000QQ0 /* Geocode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocode.swift; sourceTree = "<group>"; };
 		A10000000000000000000EE2 /* BulkCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000FF2 /* SurveyPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000GG2 /* MagicLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginTests.swift; sourceTree = "<group>"; };
@@ -218,6 +221,7 @@
 		A10000000000000000000NN2 /* SurveyResponsesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyResponsesTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000OO2 /* RequestLoginLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestLoginLinkTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000PP2 /* EventBlastsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlastsTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000QQ2 /* GeocodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodeTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -303,6 +307,7 @@
 				A10000000000000000000NN0 /* SurveyResponses.swift */,
 				A10000000000000000000OO0 /* RequestLoginLink.swift */,
 				A10000000000000000000PP0 /* EventBlasts.swift */,
+				A10000000000000000000QQ0 /* Geocode.swift */,
 				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
 				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
@@ -365,6 +370,7 @@
 				A10000000000000000000NN2 /* SurveyResponsesTests.swift */,
 				A10000000000000000000OO2 /* RequestLoginLinkTests.swift */,
 				A10000000000000000000PP2 /* EventBlastsTests.swift */,
+				A10000000000000000000QQ2 /* GeocodeTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -541,6 +547,7 @@
 				A10000000000000000000NN1 /* SurveyResponses.swift in Sources */,
 				A10000000000000000000OO1 /* RequestLoginLink.swift in Sources */,
 				A10000000000000000000PP1 /* EventBlasts.swift in Sources */,
+				A10000000000000000000QQ1 /* Geocode.swift in Sources */,
 				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
 				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
@@ -601,6 +608,7 @@
 				A10000000000000000000NN3 /* SurveyResponsesTests.swift in Sources */,
 				A10000000000000000000OO3 /* RequestLoginLinkTests.swift in Sources */,
 				A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */,
+				A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1302,6 +1302,9 @@ struct AddEventView: View {
     @State private var title: String
     @State private var start: Date
     @State private var description: String
+    @State private var location: String
+    @State private var latitude: Double?
+    @State private var longitude: Double?
     @State private var eventType = "community"
     @State private var error: String?
     @State private var busy = false
@@ -1312,6 +1315,7 @@ struct AddEventView: View {
         _title = State(initialValue: event?.title ?? "")
         _start = State(initialValue: event?.startDatetime ?? Date())
         _description = State(initialValue: event?.description ?? "")
+        _location = State(initialValue: event?.location ?? "")
     }
 
     var body: some View {
@@ -1321,6 +1325,12 @@ struct AddEventView: View {
                 DatePicker(AddEventCopy.whenLabel, selection: $start)
                     .datePickerStyle(.compact)
                 PDATextField(AddEventCopy.descriptionLabel, text: $description, axis: .vertical, lineLimit: 8)
+                LocationSearchField(
+                    location: $location,
+                    latitude: $latitude,
+                    longitude: $longitude,
+                    client: EventsClient(tokens: session.client.tokens)
+                )
                 let types = session.user.map(allowedEventTypes) ?? ["community"]
                 if event == nil, types.count > 1 {
                     Picker("type", selection: $eventType) {
@@ -1369,14 +1379,20 @@ struct AddEventView: View {
                     id: event.id,
                     title: title,
                     start: formatter.string(from: start),
-                    description: description
+                    description: description,
+                    location: location,
+                    latitude: latitude,
+                    longitude: longitude
                 )
             } else {
                 _ = try await client.create(
                     title: title,
                     start: formatter.string(from: start),
                     description: description,
-                    eventType: eventType
+                    eventType: eventType,
+                    location: location,
+                    latitude: latitude,
+                    longitude: longitude
                 )
             }
             onCreated()

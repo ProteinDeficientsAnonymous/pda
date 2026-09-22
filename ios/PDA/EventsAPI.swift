@@ -1095,37 +1095,61 @@ struct EventsClient {
         try await fetch(eventDetailURL(base: baseURL, id: id))
     }
 
-    func create(title: String, start: String, description: String, eventType: String) async throws -> Event {
+    func create(
+        title: String,
+        start: String,
+        description: String,
+        eventType: String,
+        location: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
+    ) async throws -> Event {
         var req = URLRequest(url: eventsListURL(base: baseURL))
         req.httpMethod = "POST"
         if let token = try tokens?.load() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: [
+        var body: [String: Any] = [
             "title": title,
             "description": description,
             "start_datetime": start,
             "event_type": eventType,
-        ])
+        ]
+        if let location { body["location"] = location }
+        if let latitude { body["latitude"] = latitude }
+        if let longitude { body["longitude"] = longitude }
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(Event.self, from: data)
     }
 
-    func update(id: String, title: String, start: String, description: String) async throws -> Event {
+    func update(
+        id: String,
+        title: String,
+        start: String,
+        description: String,
+        location: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
+    ) async throws -> Event {
         var req = URLRequest(url: eventDetailURL(base: baseURL, id: id))
         req.httpMethod = "PATCH"
         if let token = try tokens?.load() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: [
+        var body: [String: Any] = [
             "title": title,
             "description": description,
             "start_datetime": start,
-        ])
+        ]
+        if let location { body["location"] = location }
+        if let latitude { body["latitude"] = latitude }
+        if let longitude { body["longitude"] = longitude }
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
