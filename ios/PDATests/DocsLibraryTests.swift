@@ -75,7 +75,7 @@ final class DocsLibraryTests: XCTestCase {
             "edit_join_questions",
         ]))
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .docs }.map(\.id), ["docs"])
-        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), ["join-form"])
+        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), [])
     }
 
     func test_docsLibraryCopy_isLowercase() {
