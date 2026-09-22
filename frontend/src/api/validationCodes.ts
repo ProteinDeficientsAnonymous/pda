@@ -76,6 +76,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "events with no invited users or rsvps can't be cancelled — delete instead";
     case Code.Event.InvalidStatusTransition:
       return 'invalid status change';
+    case Code.Event.HasRsvps:
+      return "can't send this event back to draft — people have already rsvp'd";
+    case Code.Event.PastCannotBeUnpublished:
+      return "past events can't go back to draft";
     case Code.Event.CancelBeforeDelete:
       return 'cancel this event before deleting it';
     case Code.Event.RsvpInvalidStatus:

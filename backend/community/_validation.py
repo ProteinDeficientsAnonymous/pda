@@ -17,6 +17,8 @@ class Code:
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"
         NO_ATTENDEES_CANNOT_BE_CANCELLED = "event.no_attendees_cannot_be_cancelled"
+        HAS_RSVPS = "event.has_rsvps"
+        PAST_CANNOT_BE_UNPUBLISHED = "event.past_cannot_be_unpublished"
         INVALID_STATUS_TRANSITION = "event.invalid_status_transition"
         CANCEL_BEFORE_DELETE = "event.cancel_before_delete"
         FLAG_ALREADY_FLAGGED = "event.flag_already_flagged"

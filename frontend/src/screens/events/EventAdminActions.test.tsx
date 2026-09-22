@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +13,10 @@ import { makeEvent, makeUser as makeBaseUser } from '@/test/fixtures';
 import { EventAdminActions } from './EventAdminActions';
 
 // Mock network-touching dependencies
+const updateMutateAsync = vi.hoisted(() => vi.fn());
+
 vi.mock('@/api/eventWrites', () => ({
-  useUpdateEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateEvent: vi.fn().mockReturnValue({ mutateAsync: updateMutateAsync, isPending: false }),
   useCancelEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
 }));
@@ -34,6 +37,7 @@ function makeUser(id: string, permissions: string[] = []): User {
 const BASE_EVENT = makeEvent({
   rsvpEnabled: false,
   attendingCount: 3,
+  guestRsvpCount: 3,
   createdById: CREATOR_ID,
   createdByName: 'Creator',
   coHostIds: [CREATOR_ID, COHOST_ID],
@@ -85,6 +89,90 @@ describe('EventAdminActions', () => {
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
+  });
+
+  it('creator sees back to draft for active event with no attendees', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const emptyEvent: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 0 };
+    renderActions(emptyEvent);
+
+    expect(screen.getByRole('button', { name: /back to draft/i })).toBeInTheDocument();
+  });
+
+  it("back to draft is hidden when guests have rsvp'd, even with no attendees", () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    // attendingCount is 0 (a maybe-only guest row) but the guest rsvp count is
+    // 1 — the API guard blocks unpublish, so the button must stay hidden.
+    const maybeGuest: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 1 };
+    renderActions(maybeGuest);
+
+    expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
+  });
+
+  it("back to draft is shown when only the host crew has rsvp'd", () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    // Host rsvp rows (creator + co-hosts) are excluded from guestRsvpCount,
+    // so a host-only rsvp leaves the count at 0: unpublish is allowed.
+    const hostOnly: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 0 };
+    renderActions(hostOnly);
+
+    expect(screen.getByRole('button', { name: /back to draft/i })).toBeInTheDocument();
+  });
+
+  it('back to draft is hidden when attendees exist', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    renderActions(BASE_EVENT);
+
+    expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
+  });
+
+  it('back to draft is hidden for a past event with no attendees', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const pastEmpty: Event = {
+      ...BASE_EVENT,
+      attendingCount: 0,
+      guestRsvpCount: 0,
+      startDatetime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      isPast: true,
+    };
+    renderActions(pastEmpty);
+
+    expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
+  });
+
+  it('back to draft is hidden for draft and cancelled events', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const { unmount } = renderActions({ ...BASE_EVENT, status: EventStatus.Draft });
+    expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^publish$/i })).toBeInTheDocument();
+    unmount();
+
+    renderActions({ ...BASE_EVENT, status: EventStatus.Cancelled, attendingCount: 0 });
+    expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
+  });
+
+  it('clicking back to draft patches status to draft', async () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const emptyEvent: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 0 };
+    renderActions(emptyEvent);
+
+    await userEvent.click(screen.getByRole('button', { name: /back to draft/i }));
+
+    expect(updateMutateAsync).toHaveBeenCalledWith({ status: 'draft' });
   });
 
   it('creator sees delete for draft event', () => {
