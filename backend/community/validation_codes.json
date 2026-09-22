@@ -62,6 +62,16 @@
         "params": []
       },
       {
+        "name": "HAS_RSVPS",
+        "value": "event.has_rsvps",
+        "params": []
+      },
+      {
+        "name": "PAST_CANNOT_BE_UNPUBLISHED",
+        "value": "event.past_cannot_be_unpublished",
+        "params": []
+      },
+      {
         "name": "INVALID_STATUS_TRANSITION",
         "value": "event.invalid_status_transition",
         "params": []

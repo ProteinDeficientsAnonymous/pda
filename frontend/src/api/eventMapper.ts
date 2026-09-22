@@ -50,6 +50,7 @@ export interface WireEvent {
   attending_count?: number;
   waitlisted_count?: number;
   invited_count?: number;
+  guest_rsvp_count?: number;
 
   datetime_tbd?: boolean;
   has_poll?: boolean;
@@ -185,6 +186,7 @@ export function mapEvent(e: WireEvent): Event {
     attendingCount: e.attending_count ?? 0,
     waitlistedCount: e.waitlisted_count ?? 0,
     invitedCount: e.invited_count ?? 0,
+    guestRsvpCount: e.guest_rsvp_count ?? 0,
 
     datetimeTbd: e.datetime_tbd ?? false,
     hasPoll: e.has_poll ?? false,

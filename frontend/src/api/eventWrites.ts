@@ -197,6 +197,7 @@ export function useUpdateEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Draft) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'update-event', eventId });
@@ -221,6 +222,7 @@ export function useCancelEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Cancelled) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'cancel-event', eventId });
@@ -242,6 +244,8 @@ export function useDeleteEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Draft) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Cancelled) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'delete-event', eventId });

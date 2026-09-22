@@ -22,6 +22,7 @@ from community._event_schemas import CancellationOut, EventOut, EventSurveyOut, 
 from community._rsvp_counts import (
     _attending_headcount,
     _attending_headcount_db,
+    _guest_rsvp_count,
     _waitlisted_count,
 )
 from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
@@ -393,6 +394,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
             event, "attending_count", lambda: _attending_headcount(event)
         ),
         waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
+        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
         invited_count=invited_count,
         comment_count=_resolve_comment_count(event),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,

@@ -280,9 +280,9 @@ describe('EventDetailScreen', () => {
   });
 
   describe('error states', () => {
-    function mockError(status: number) {
+    function mockError(status: number, data?: unknown) {
       const err = new AxiosError('boom');
-      err.response = { status } as AxiosResponse;
+      err.response = { status, data } as AxiosResponse;
       mockUseEvent.mockReturnValue({
         data: undefined,
         isPending: false,
@@ -290,6 +290,44 @@ describe('EventDetailScreen', () => {
         error: err,
       } as unknown as ReturnType<typeof useEvent>);
     }
+
+    it('shows a friendly draft notice for the draft-visibility 403, while a normal load still renders the event', () => {
+      mockError(403, {
+        detail: [
+          { code: 'event.perm_denied', field: null, params: { action: 'view_draft_event' } },
+        ],
+      });
+      const first = renderScreen('ev1');
+
+      expect(screen.getByText('this event is currently in draft mode')).toBeInTheDocument();
+      expect(screen.queryByText(/you don't have permission/i)).not.toBeInTheDocument();
+      first.unmount();
+
+      mockUseEvent.mockReturnValue({
+        data: BASE_EVENT,
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+      renderScreen('ev1');
+
+      expect(screen.getByRole('heading', { name: /test event/i })).toBeInTheDocument();
+    });
+
+    it('keeps the generic permission message for other 403s', () => {
+      mockError(403, {
+        detail: [
+          {
+            code: 'event.perm_denied',
+            field: null,
+            params: { action: 'view_invite_only_event' },
+          },
+        ],
+      });
+      renderScreen('ev1');
+
+      expect(screen.queryByText('this event is currently in draft mode')).not.toBeInTheDocument();
+      expect(screen.getByText(/you don't have permission/i)).toBeInTheDocument();
+    });
 
     it('prompts an unauthenticated visitor to log in on 404 instead of a dead end', () => {
       mockError(404);
