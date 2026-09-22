@@ -429,6 +429,15 @@ func featureFlagsURL(base: URL) -> URL {
     URL(string: "/api/community/feature-flags/", relativeTo: base)!.absoluteURL
 }
 
+func featureFlagURL(base: URL, key: String) -> URL {
+    let encoded = key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key
+    return URL(string: "/api/community/feature-flags/\(encoded)/", relativeTo: base)!.absoluteURL
+}
+
+func versionURL(base: URL) -> URL {
+    URL(string: "/api/community/version/", relativeTo: base)!.absoluteURL
+}
+
 func eventCheckInReportURL(base: URL, eventId: String) -> URL {
     URL(string: "/api/community/events/\(eventId)/report/", relativeTo: base)!.absoluteURL
 }
@@ -562,6 +571,10 @@ struct CheckInReport: Decodable {
 
 struct FeatureFlagsOut: Decodable {
     let flags: [String: Bool]
+}
+
+struct AppVersionOut: Decodable {
+    let environment: String
 }
 
 struct MemberHit: Decodable, Hashable, Identifiable {
@@ -1136,6 +1149,20 @@ struct EventsClient {
 
     func featureFlags() async throws -> [String: Bool] {
         let out: FeatureFlagsOut = try await sendJSON("GET", url: featureFlagsURL(base: baseURL))
+        return out.flags
+    }
+
+    func appVersion() async throws -> String {
+        let out: AppVersionOut = try await sendJSON("GET", url: versionURL(base: baseURL))
+        return out.environment
+    }
+
+    func setFeatureFlag(_ key: String, enabled: Bool) async throws -> [String: Bool] {
+        let out: FeatureFlagsOut = try await sendJSON(
+            "PATCH",
+            url: featureFlagURL(base: baseURL, key: key),
+            body: ["enabled": enabled]
+        )
         return out.flags
     }
 

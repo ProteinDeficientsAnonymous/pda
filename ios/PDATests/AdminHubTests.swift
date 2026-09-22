@@ -6,7 +6,8 @@ final class AdminHubTests: XCTestCase {
     func test_noAdminPermission_hidesHub() throws {
         XCTAssertFalse(hasAnyAdminPermission(nil))
         XCTAssertFalse(hasAnyAdminPermission(try user()))
-        XCTAssertFalse(hasAnyAdminPermission(try user(permissions: ["edit_faq", "manage_feature_flags"])))
+        XCTAssertFalse(hasAnyAdminPermission(try user(permissions: ["edit_faq"])))
+        XCTAssertTrue(hasAnyAdminPermission(try user(permissions: ["manage_feature_flags"])))
         XCTAssertTrue(hasAnyAdminPermission(try user(permissions: ["manage_surveys"])))
         XCTAssertTrue(adminHubTiles(for: try user(permissions: ["edit_faq"])).isEmpty)
         XCTAssertTrue(adminHubTiles(for: nil).isEmpty)
@@ -49,7 +50,7 @@ final class AdminHubTests: XCTestCase {
         ])
         XCTAssertEqual(
             adminHubTiles(for: admin).map(\.label),
-            ["members", "join requests", "events", "flagged events", "attendance", "surveys", "join form", "docs"]
+            ["members", "join requests", "events", "flagged events", "attendance", "surveys", "join form", "docs", "feature flags"]
         )
         let namedOnly = try user(roles: [
             ["name": "admin", "is_default": false, "permissions": []],
