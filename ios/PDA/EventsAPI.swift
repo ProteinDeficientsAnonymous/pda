@@ -455,23 +455,59 @@ struct CalendarToken: Decodable, Equatable {
     }
 }
 
-struct MemberProfile: Decodable {
+struct MemberProfile: Decodable, Equatable {
+    let id: String
     let name: String
     let bio: String
     let pronouns: String
     let nickname: String
+    let phoneNumber: String
+    let email: String
+    let birthday: Birthday?
+    let profilePhotoUrl: String
 
     enum CodingKeys: String, CodingKey {
+        case id
         case name = "full_name"
         case bio, pronouns, nickname
+        case phoneNumber = "phone_number"
+        case email, birthday
+        case profilePhotoUrl = "profile_photo_url"
+    }
+
+    init(
+        id: String = "",
+        name: String,
+        bio: String,
+        pronouns: String,
+        nickname: String,
+        phoneNumber: String = "",
+        email: String = "",
+        birthday: Birthday? = nil,
+        profilePhotoUrl: String = ""
+    ) {
+        self.id = id
+        self.name = name
+        self.bio = bio
+        self.pronouns = pronouns
+        self.nickname = nickname
+        self.phoneNumber = phoneNumber
+        self.email = email
+        self.birthday = birthday
+        self.profilePhotoUrl = profilePhotoUrl
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? ""
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
         bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
         pronouns = try c.decodeIfPresent(String.self, forKey: .pronouns) ?? ""
         nickname = try c.decodeIfPresent(String.self, forKey: .nickname) ?? ""
+        phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber) ?? ""
+        email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
+        birthday = try c.decodeIfPresent(Birthday.self, forKey: .birthday)
+        profilePhotoUrl = try c.decodeIfPresent(String.self, forKey: .profilePhotoUrl) ?? ""
     }
 }
 

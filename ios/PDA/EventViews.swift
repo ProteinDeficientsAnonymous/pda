@@ -22,6 +22,7 @@ struct EventListView: View {
     @State private var showVolunteer = false
     @State private var showJoin = false
     @State private var showSmsPolicy = false
+    @State private var showDirectory = false
 
     var body: some View {
         NavigationStack {
@@ -111,6 +112,9 @@ struct EventListView: View {
             .sheet(isPresented: $showSmsPolicy) {
                 SmsPolicyView()
             }
+            .sheet(isPresented: $showDirectory) {
+                DirectoryView(client: EventsClient(tokens: session.client.tokens))
+            }
             .sheet(isPresented: $showLogin) {
                 LoginView(client: session.client)
                     .environment(session)
@@ -168,7 +172,7 @@ struct EventListView: View {
             lockBody = body
             showLock = true
         case .open:
-            break
+            showDirectory = true
         }
     }
 
