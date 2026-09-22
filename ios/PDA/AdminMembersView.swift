@@ -12,6 +12,7 @@ enum AdminMembersCopy {
 
 enum AdminMembersError: Error, Equatable {
     case forbidden
+    case notFound
 }
 
 struct AdminMember: Decodable, Equatable, Identifiable {
@@ -19,12 +20,14 @@ struct AdminMember: Decodable, Equatable, Identifiable {
     let fullName: String
     let phoneNumber: String
     let email: String
+    let bio: String
 
     enum CodingKeys: String, CodingKey {
         case id
         case fullName = "full_name"
         case phoneNumber = "phone_number"
         case email
+        case bio
     }
 
     init(from decoder: Decoder) throws {
@@ -33,6 +36,7 @@ struct AdminMember: Decodable, Equatable, Identifiable {
         fullName = try c.decodeIfPresent(String.self, forKey: .fullName) ?? ""
         phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber) ?? ""
         email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
+        bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
     }
 }
 
@@ -117,11 +121,15 @@ struct AdminMembersView: View {
                     ContentUnavailableView(AdminMembersCopy.empty, systemImage: "person.2")
                 } else {
                     List(model.members) { member in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())
-                            let subtitle = adminMemberSubtitle(member)
-                            if !subtitle.isEmpty {
-                                Text(subtitle.lowercased()).font(.footnote).foregroundStyle(.secondary)
+                        NavigationLink {
+                            AdminMemberDetailView(userId: member.id, client: client)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text((member.fullName.isEmpty ? AdminMembersCopy.fallbackName : member.fullName).lowercased())
+                                let subtitle = adminMemberSubtitle(member)
+                                if !subtitle.isEmpty {
+                                    Text(subtitle.lowercased()).font(.footnote).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
