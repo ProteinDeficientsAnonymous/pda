@@ -1,0 +1,194 @@
+import SwiftUI
+
+struct GateView: View {
+    @Environment(AuthSession.self) private var session
+    @State private var password = ""
+    @State private var confirm = ""
+    @State private var firstName = ""
+    @State private var email = ""
+    @State private var agreeGuidelines = false
+    @State private var agreeSms = false
+    @State private var agreePrivacy = false
+    @State private var error: String?
+    @State private var busy = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                if let user = session.user, let gate = authGate(for: user) {
+                    switch gate {
+                    case .newPassword: newPasswordForm
+                    case .onboarding: onboardingForm
+                    case .consent: consentForm(user)
+                    case .email: emailForm
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(title).font(.headline)
+                }
+            }
+            .onAppear {
+                firstName = session.user?.firstName ?? ""
+                email = session.user?.email ?? ""
+            }
+        }
+    }
+
+    private var title: String {
+        switch authGate(for: session.user) {
+        case .newPassword: GateCopy.newPasswordTitle
+        case .onboarding: GateCopy.onboardingTitle
+        case .consent: GateCopy.consentTitle
+        case .email: GateCopy.emailTitle
+        case nil: ""
+        }
+    }
+
+    private var newPasswordForm: some View {
+        form {
+            SecureField(GateCopy.newPasswordLabel, text: $password)
+            SecureField(GateCopy.confirmPasswordLabel, text: $confirm)
+            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
+            PDAButton(GateCopy.savePassword) { Task { await saveNewPassword() } }
+                .disabled(busy || !passwordIsValid(password) || password != confirm)
+        }
+    }
+
+    private var onboardingForm: some View {
+        form {
+            PDATextField(GateCopy.firstNameLabel, text: $firstName, capitalization: .never)
+            PDATextField(
+                GateCopy.emailLabel,
+                text: $email,
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .emailAddress
+            )
+            SecureField(GateCopy.newPasswordLabel, text: $password)
+            Toggle(GateCopy.agreeGuidelines, isOn: $agreeGuidelines)
+            Toggle(GateCopy.agreeSms, isOn: $agreeSms)
+            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
+            PDAButton(GateCopy.continueButton) { Task { await saveOnboarding() } }
+                .disabled(busy || firstName.isEmpty || email.isEmpty || !passwordIsValid(password) || !agreeGuidelines || !agreeSms)
+        }
+    }
+
+    private func consentForm(_ user: SessionUser) -> some View {
+        form {
+            if user.needsGuidelinesConsent {
+                Toggle(GateCopy.agreeGuidelines, isOn: $agreeGuidelines)
+            }
+            if user.needsSmsConsent {
+                Toggle(GateCopy.agreeSms, isOn: $agreeSms)
+            }
+            if user.needsContactPrivacyConsent {
+                Toggle(GateCopy.agreePrivacy, isOn: $agreePrivacy)
+            }
+            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
+            PDAButton(GateCopy.continueButton) { Task { await saveConsents(user) } }
+                .disabled(busy || !consentsReady(user))
+            PDAButton(GateCopy.notNow, variant: .secondary) { Task { await session.logout() } }
+                .disabled(busy)
+        }
+    }
+
+    private var emailForm: some View {
+        form {
+            Text(GateCopy.emailBody).font(.subheadline).foregroundStyle(.secondary)
+            PDATextField(
+                GateCopy.emailLabel,
+                text: $email,
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .emailAddress
+            )
+            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
+            PDAButton(GateCopy.save) { Task { await saveEmail() } }
+                .disabled(busy || email.isEmpty)
+            PDAButton(GateCopy.notNow, variant: .secondary) { Task { await session.logout() } }
+                .disabled(busy)
+        }
+    }
+
+    private func form(@ViewBuilder _ content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 16, content: content)
+    }
+
+    private func consentsReady(_ user: SessionUser) -> Bool {
+        (!user.needsGuidelinesConsent || agreeGuidelines)
+            && (!user.needsSmsConsent || agreeSms)
+            && (!user.needsContactPrivacyConsent || agreePrivacy)
+    }
+
+    private func saveNewPassword() async {
+        await run {
+            session.signedIn(try await session.client.completeOnboarding(newPassword: password))
+        }
+    }
+
+    private func saveOnboarding() async {
+        await run {
+            session.signedIn(
+                try await session.client.completeOnboarding(
+                    newPassword: password,
+                    firstName: firstName,
+                    email: email,
+                    consentTypes: ["guidelines", "sms"]
+                )
+            )
+        }
+    }
+
+    private func saveConsents(_ user: SessionUser) async {
+        await run {
+            var types: [String] = []
+            if user.needsGuidelinesConsent { types.append("guidelines") }
+            if user.needsSmsConsent { types.append("sms") }
+            if user.needsContactPrivacyConsent { types.append("contact_privacy") }
+            session.signedIn(try await session.client.acceptConsents(types))
+        }
+    }
+
+    private func saveEmail() async {
+        await run {
+            session.signedIn(try await session.client.setEmail(email))
+        }
+    }
+
+    private func run(_ work: () async throws -> Void) async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        do {
+            try await work()
+        } catch let err as SessionError {
+            error = err.message
+        } catch {
+            self.error = "couldn't save — try again"
+        }
+    }
+}
+
+func passwordIsValid(_ value: String) -> Bool {
+    value.count >= 12
+        && value.count <= 72
+        && value.contains(where: \.isUppercase)
+        && value.contains(where: \.isNumber)
+        && value.contains(where: { !$0.isLetter && !$0.isNumber })
+}
+
+func changePasswordError(current: String, next: String, confirm: String) -> String? {
+    if next.count < 12 { return "at least 12 characters" }
+    if next.count > 72 { return "too long" }
+    if !next.contains(where: \.isUppercase) { return "must include an uppercase letter" }
+    if !next.contains(where: \.isNumber) { return "must include a number" }
+    if !next.contains(where: { !$0.isLetter && !$0.isNumber }) { return "must include a special character" }
+    if next != confirm { return ChangePasswordCopy.mismatch }
+    if next == current { return ChangePasswordCopy.sameAsCurrent }
+    return nil
+}
