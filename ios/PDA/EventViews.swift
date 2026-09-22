@@ -1308,6 +1308,8 @@ struct AddEventView: View {
     @State private var eventType = "community"
     @State private var error: String?
     @State private var busy = false
+    @State private var showImages = false
+    @State private var pickedImage: String?
 
     init(event: Event? = nil, onCreated: @escaping () -> Void) {
         self.event = event
@@ -1331,6 +1333,12 @@ struct AddEventView: View {
                     longitude: $longitude,
                     client: EventsClient(tokens: session.client.tokens)
                 )
+                PDAButton(ImageSearchCopy.title, variant: .secondary) { showImages = true }
+                if let pickedImage {
+                    Text(pickedImage.lowercased())
+                        .font(PDAType.control)
+                        .foregroundStyle(PDAColor.muted)
+                }
                 let types = session.user.map(allowedEventTypes) ?? ["community"]
                 if event == nil, types.count > 1 {
                     Picker("type", selection: $eventType) {
@@ -1352,6 +1360,11 @@ struct AddEventView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     PDAButton(event == nil ? AddEventCopy.save : EditEventCopy.save) { Task { await save() } }
                         .disabled(busy || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .sheet(isPresented: $showImages) {
+                ImageSearchSheet(client: EventsClient(tokens: session.client.tokens)) { hit in
+                    pickedImage = hit.title.isEmpty ? hit.id : hit.title
                 }
             }
         }
