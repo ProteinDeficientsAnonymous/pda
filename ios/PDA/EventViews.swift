@@ -90,7 +90,7 @@ struct EventListView: View {
                 }
             }
             .sheet(isPresented: $showHome) {
-                HomeView()
+                HomeView(client: EventsClient(tokens: session.client.tokens), user: session.user)
             }
             .sheet(isPresented: $showFaq) {
                 FaqView()

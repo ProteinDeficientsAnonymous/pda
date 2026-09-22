@@ -991,6 +991,10 @@ struct EventsClient {
         try await fetch(homeURL(base: baseURL))
     }
 
+    func updateHome(contentPm: String) async throws -> HomePage {
+        try await sendJSON("PATCH", url: homeURL(base: baseURL), body: ["content_pm": contentPm])
+    }
+
     func faq() async throws -> HomePage {
         try await fetch(faqURL(base: baseURL))
     }
