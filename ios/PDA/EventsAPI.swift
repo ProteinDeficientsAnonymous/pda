@@ -81,6 +81,7 @@ struct Event: Decodable, Hashable, Identifiable {
     let cashappLink: String
     let zelleInfo: String
     let myRsvp: String
+    let myPaidConfirmed: Bool
     let rsvpEnabled: Bool
     let isPast: Bool
     let coHostIds: [String]
@@ -109,6 +110,7 @@ struct Event: Decodable, Hashable, Identifiable {
         case cashappLink = "cashapp_link"
         case zelleInfo = "zelle_info"
         case myRsvp = "my_rsvp"
+        case myPaidConfirmed = "my_paid_confirmed"
         case rsvpEnabled = "rsvp_enabled"
         case isPast = "is_past"
         case coHostIds = "co_host_ids"
@@ -148,6 +150,7 @@ struct Event: Decodable, Hashable, Identifiable {
         cashappLink = try c.decodeIfPresent(String.self, forKey: .cashappLink) ?? ""
         zelleInfo = try c.decodeIfPresent(String.self, forKey: .zelleInfo) ?? ""
         myRsvp = try c.decodeIfPresent(String.self, forKey: .myRsvp) ?? ""
+        myPaidConfirmed = try c.decodeIfPresent(Bool.self, forKey: .myPaidConfirmed) ?? false
         rsvpEnabled = try c.decodeIfPresent(Bool.self, forKey: .rsvpEnabled) ?? false
         isPast = try c.decodeIfPresent(Bool.self, forKey: .isPast) ?? false
         coHostIds = try c.decodeIfPresent([String].self, forKey: .coHostIds) ?? []
@@ -886,23 +889,35 @@ struct PublicRsvpClient {
         return try Event.decoder.decode(Out.self, from: data).status
     }
 
+    func paymentConfirmationEnabled() async throws -> Bool {
+        var req = URLRequest(url: featureFlagsURL(base: baseURL))
+        req.httpMethod = "GET"
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        let flags = try Event.decoder.decode(FeatureFlagsOut.self, from: data).flags
+        return flags["event_payment_confirmation"] == true
+    }
+
     func submit(
         eventId: String,
         phone: String,
         firstName: String,
         email: String,
-        status: String
+        status: String,
+        paidConfirmed: Bool = false
     ) async throws -> String {
         struct Out: Decodable { let rsvpToken: String
             enum CodingKeys: String, CodingKey { case rsvpToken = "rsvp_token" }
         }
-        let data = try await post("/api/community/public/events/\(eventId)/rsvp/", [
+        let data = try await postAny("/api/community/public/events/\(eventId)/rsvp/", [
             "phone_number": phone,
             "first_name": firstName,
             "email": email,
             "status": status,
             "last_name": "",
             "website": "",
+            "paid_confirmed": paidConfirmed,
         ])
         let token = try Event.decoder.decode(Out.self, from: data).rsvpToken
         tokens.save(token)
@@ -933,13 +948,17 @@ struct PublicRsvpClient {
     }
 
     private func post(_ path: String, _ body: [String: String]) async throws -> Data {
+        try await postAny(path, body)
+    }
+
+    private func postAny(_ path: String, _ body: [String: Any]) async throws -> Data {
         var req = URLRequest(url: URL(string: path, relativeTo: baseURL)!.absoluteURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        guard (200 ..< 300).contains(status) else { throw rsvpHTTPError(status, data) }
         return data
     }
 }
@@ -1143,11 +1162,18 @@ struct EventsClient {
         )
     }
 
-    func setRsvp(eventId: String, status: String, answers: [String: String]) async throws -> Event {
-        try await sendJSON(
+    func setRsvp(
+        eventId: String,
+        status: String,
+        answers: [String: String],
+        paidConfirmed: Bool = false
+    ) async throws -> Event {
+        var body: [String: Any] = ["status": status, "questionnaire_responses": answers]
+        if paidConfirmed { body["paid_confirmed"] = true }
+        return try await sendJSON(
             "POST",
             url: eventRsvpURL(base: baseURL, eventId: eventId),
-            body: ["status": status, "questionnaire_responses": answers]
+            body: body
         )
     }
 
@@ -1286,7 +1312,7 @@ struct EventsClient {
         }
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        guard (200 ..< 300).contains(status) else { throw rsvpHTTPError(status, data) }
         return try Event.decoder.decode(T.self, from: data)
     }
 
@@ -1304,6 +1330,11 @@ struct EventsClient {
 
 enum APIError: Error {
     case http(Int)
+}
+
+func rsvpHTTPError(_ status: Int, _ data: Data) -> Error {
+    if apiErrorCode(from: data) == PaymentConfirmError.code { return PaymentConfirmError.required }
+    return APIError.http(status)
 }
 
 struct SessionError: Error, Equatable {

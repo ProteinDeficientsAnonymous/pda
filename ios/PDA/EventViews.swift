@@ -958,7 +958,7 @@ final class EventListModel {
 
 @Observable
 final class PublicRsvpModel {
-    enum Step: Equatable { case phone, form, member, saved }
+    enum Step: Equatable { case phone, form, payment, member, saved }
 
     var step: Step = .phone
     var phone = ""
@@ -967,6 +967,7 @@ final class PublicRsvpModel {
     var status = "attending"
     var error: String?
     var busy = false
+    var flagOn = false
     let eventId: String
     var client: PublicRsvpClient
 
@@ -989,7 +990,27 @@ final class PublicRsvpModel {
         }
     }
 
-    func submitRsvp() async {
+    func loadPaymentFlag() async {
+        flagOn = (try? await client.paymentConfirmationEnabled()) == true
+    }
+
+    func requestSubmit(event: Event) async {
+        if needsPaymentConfirmation(event: event, flagOn: flagOn, status: status, alreadyPaid: false) {
+            step = .payment
+            return
+        }
+        await submitRsvp(paidConfirmed: false)
+    }
+
+    func confirmPayment() async {
+        await submitRsvp(paidConfirmed: true)
+    }
+
+    func backFromPayment() {
+        step = .form
+    }
+
+    func submitRsvp(paidConfirmed: Bool = false) async {
         error = nil
         busy = true
         defer { busy = false }
@@ -999,21 +1020,24 @@ final class PublicRsvpModel {
                 phone: phone,
                 firstName: firstName,
                 email: email,
-                status: status
+                status: status,
+                paidConfirmed: paidConfirmed
             )
             step = .saved
         } catch {
-            self.error = "couldn't save your rsvp — try again"
+            self.error = rsvpSaveError(error)
         }
     }
 }
 
 struct PublicRsvpFormView: View {
     @Environment(AuthSession.self) private var session
+    let event: Event
     @State private var model: PublicRsvpModel
     @State private var showLogin = false
 
     init(event: Event) {
+        self.event = event
         _model = State(initialValue: PublicRsvpModel(eventId: event.id))
     }
 
@@ -1047,8 +1071,18 @@ struct PublicRsvpFormView: View {
                     Text(PublicRsvpCopy.maybe).tag("maybe")
                 }
                 .pickerStyle(.segmented)
-                PDAButton(PublicRsvpCopy.submit) { Task { await model.submitRsvp() } }
+                PDAButton(PublicRsvpCopy.submit) { Task { await model.requestSubmit(event: event) } }
                     .disabled(model.busy || model.firstName.isEmpty || model.email.isEmpty)
+            case .payment:
+                PaymentConfirmStep(
+                    price: event.price,
+                    venmoLink: event.venmoLink,
+                    cashappLink: event.cashappLink,
+                    zelleInfo: event.zelleInfo,
+                    busy: model.busy,
+                    onConfirm: { Task { await model.confirmPayment() } },
+                    onBack: { model.backFromPayment() }
+                )
             case .member:
                 Text(PublicRsvpCopy.memberBody)
                     .font(PDAType.field)
@@ -1066,6 +1100,7 @@ struct PublicRsvpFormView: View {
             LoginView(client: session.client)
                 .environment(session)
         }
+        .task { await model.loadPaymentFlag() }
     }
 }
 
@@ -1541,6 +1576,8 @@ struct MemberRsvpView: View {
     @State private var answers: [String: String]
     @State private var error: String?
     @State private var busy = false
+    @State private var showPayment = false
+    @State private var flagOn = false
 
     init(event: Event, client: EventsClient, onUpdated: @escaping (Event) -> Void) {
         self.event = event
@@ -1551,6 +1588,32 @@ struct MemberRsvpView: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if showPayment {
+                if let error {
+                    Text(error)
+                        .font(PDAType.field)
+                        .foregroundStyle(PDAColor.foregroundSecondary)
+                }
+                PaymentConfirmStep(
+                    price: event.price,
+                    venmoLink: event.venmoLink,
+                    cashappLink: event.cashappLink,
+                    zelleInfo: event.zelleInfo,
+                    busy: busy,
+                    onConfirm: { Task { await save(paidConfirmed: true) } },
+                    onBack: { showPayment = false }
+                )
+            } else {
+                memberForm
+            }
+        }
+        .task {
+            flagOn = (try? await client.featureFlags())?["event_payment_confirmation"] == true
+        }
+    }
+
+    private var memberForm: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(PublicRsvpCopy.title).font(PDAType.field).fontWeight(.medium)
             HStack {
@@ -1571,8 +1634,14 @@ struct MemberRsvpView: View {
                     .font(PDAType.field)
                     .foregroundStyle(PDAColor.foregroundSecondary)
             }
-            PDAButton(MemberRsvpCopy.save) { Task { await save() } }
-                .disabled(busy)
+            PDAButton(MemberRsvpCopy.save) {
+                if memberRsvpNeedsPayment(event: event, flagOn: flagOn, status: status) {
+                    showPayment = true
+                } else {
+                    Task { await save(paidConfirmed: false) }
+                }
+            }
+            .disabled(busy)
         }
     }
 
@@ -1605,7 +1674,7 @@ struct MemberRsvpView: View {
         Binding(get: { answers[id] ?? "" }, set: { answers[id] = $0 })
     }
 
-    private func save() async {
+    private func save(paidConfirmed: Bool) async {
         let payload: [String: String]
         if rsvpQuestionsApplyToStatus(status) {
             let missing = missingRequiredQuestionIds(event.rsvpQuestions, answers: answers)
@@ -1620,11 +1689,17 @@ struct MemberRsvpView: View {
         busy = true
         defer { busy = false }
         do {
-            let updated = try await client.setRsvp(eventId: event.id, status: status, answers: payload)
+            let updated = try await client.setRsvp(
+                eventId: event.id,
+                status: status,
+                answers: payload,
+                paidConfirmed: paidConfirmed
+            )
             error = nil
+            showPayment = false
             onUpdated(updated)
         } catch {
-            self.error = "couldn't save your rsvp — try again"
+            self.error = rsvpSaveError(error)
         }
     }
 }
