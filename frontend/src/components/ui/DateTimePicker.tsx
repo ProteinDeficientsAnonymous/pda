@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { addMinutes, format, startOfDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
@@ -12,6 +12,15 @@ interface Props {
   optional?: boolean;
   /** Disable calendar days before today (inclusive). For event start times. */
   disablePast?: boolean;
+  /** Disable calendar days strictly before this date (the date itself stays selectable). */
+  minDate?: Date | null;
+  /** Fallback day when no value is set: opens the calendar on its month and prefills its time. */
+  defaultDate?: Date | null;
+}
+
+function clampAfter(iso: string, minDate: Date | null | undefined): string {
+  if (!minDate || new Date(iso) > minDate) return iso;
+  return addMinutes(minDate, 30).toISOString();
 }
 
 function isoToDate(iso: string | null): Date | undefined {
@@ -34,16 +43,20 @@ export function DateTimePicker({
   error,
   optional,
   disablePast,
+  minDate,
+  defaultDate,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
+  const baseDate = selectedDate ?? defaultDate;
   // Start-of-today so "today" itself is still selectable.
-  const todayStart = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
+  const todayStart = startOfDay(new Date());
+  const dayMatcher = minDate
+    ? { before: startOfDay(minDate) }
+    : disablePast
+      ? { before: todayStart }
+      : undefined;
 
   // Close on outside click
   useEffect(() => {
@@ -114,13 +127,13 @@ export function DateTimePicker({
             selected={selectedDate}
             onSelect={(day) => {
               if (!day) return;
-              const h = selectedDate?.getHours() ?? 12;
-              const m = selectedDate?.getMinutes() ?? 0;
-              onChange(dateToIso(day, h, m));
+              const h = baseDate?.getHours() ?? 12;
+              const m = baseDate?.getMinutes() ?? 0;
+              onChange(clampAfter(dateToIso(day, h, m), minDate));
             }}
-            defaultMonth={selectedDate ?? new Date()}
+            defaultMonth={selectedDate ?? minDate ?? baseDate ?? new Date()}
             locale={enUS}
-            {...(disablePast ? { disabled: { before: todayStart } } : {})}
+            disabled={dayMatcher}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
@@ -130,14 +143,15 @@ export function DateTimePicker({
               id="dt-time"
               type="time"
               value={
-                selectedDate
-                  ? `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`
+                baseDate
+                  ? `${String(baseDate.getHours()).padStart(2, '0')}:${String(baseDate.getMinutes()).padStart(2, '0')}`
                   : '12:00'
               }
               onChange={(e) => {
                 const [h, m] = e.target.value.split(':').map(Number) as [number, number];
-                const base = selectedDate ?? new Date();
-                onChange(dateToIso(base, h, m));
+                // Clearing yields [''] → [0, undefined]; ignore empty/unparseable input.
+                if (!Number.isFinite(h) || !Number.isFinite(m)) return;
+                onChange(clampAfter(dateToIso(baseDate ?? new Date(), h, m), minDate));
               }}
               className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
             />

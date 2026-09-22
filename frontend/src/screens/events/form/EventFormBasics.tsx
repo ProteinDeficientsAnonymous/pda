@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { addMinutes, format } from 'date-fns';
 import { useState } from 'react';
 
 import type { EventFormValues } from '@/api/eventWrites';
@@ -39,6 +39,9 @@ export function EventFormBasics({
   const [pollOpen, setPollOpen] = useState(false);
 
   const isCreateFlow = !existingEventId;
+  const startDate = values.startDatetime ? new Date(values.startDatetime) : null;
+  // Until an end is set, guide the ends picker from the start: same day, +30m.
+  const endsDefaultDate = startDate && !values.endDatetime ? addMinutes(startDate, 30) : null;
   const bufferedDates =
     bufferedPollOptions && bufferedPollOptions.length > 0 ? bufferedPollOptions : null;
   // Show the "poll for dates" button only when the time is tbd — a poll
@@ -99,7 +102,14 @@ export function EventFormBasics({
                 label="starts"
                 value={values.startDatetime}
                 onChange={(iso) => {
-                  onChange({ startDatetime: iso });
+                  const patch: Partial<EventFormValues> = { startDatetime: iso };
+                  const newStart = iso ? new Date(iso) : null;
+                  // Moving the start past the existing end would strand it stale —
+                  // re-anchor the end to the new start +30m (same default as the ends picker).
+                  if (newStart && values.endDatetime && new Date(values.endDatetime) <= newStart) {
+                    patch.endDatetime = addMinutes(newStart, 30).toISOString();
+                  }
+                  onChange(patch);
                 }}
                 error={errors.startDatetime}
                 disablePast
@@ -112,6 +122,8 @@ export function EventFormBasics({
                 }}
                 error={errors.endDatetime}
                 optional
+                minDate={startDate}
+                defaultDate={endsDefaultDate}
               />
             </div>
           ) : null}
