@@ -147,7 +147,7 @@ struct DocsLibraryView: View {
                 } else {
                     List {
                         ForEach(model.folders) { folder in
-                            DocsFolderBlock(folder: folder)
+                            DocsFolderBlock(folder: folder, client: client)
                         }
                     }
                 }
@@ -166,14 +166,19 @@ struct DocsLibraryView: View {
 
 private struct DocsFolderBlock: View {
     let folder: DocFolder
+    var client: EventsClient
 
     var body: some View {
         Section {
             ForEach(folder.documents) { doc in
-                Text(doc.title.lowercased())
+                NavigationLink {
+                    DocDetailView(docId: doc.id, client: client)
+                } label: {
+                    Text(doc.title.lowercased())
+                }
             }
             ForEach(folder.children) { child in
-                DocsFolderBlock(folder: child)
+                DocsFolderBlock(folder: child, client: client)
             }
         } header: {
             Text(folder.name.lowercased())
