@@ -86,7 +86,7 @@ final class AdminMembersTests: XCTestCase {
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .members }.map(\.id), ["members"])
         XCTAssertEqual(
             tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id),
-            ["flagged-events", "attendance", "join-form", "docs"]
+            ["attendance", "join-form", "docs"]
         )
     }
 

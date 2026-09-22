@@ -92,7 +92,6 @@ final class ManageEventsTests: XCTestCase {
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .members }.map(\.id), ["members"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .joinRequests }.map(\.id), ["join-requests"])
         let closed = tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id)
-        XCTAssertTrue(closed.contains("flagged-events"))
         XCTAssertTrue(closed.contains("attendance"))
     }
 
