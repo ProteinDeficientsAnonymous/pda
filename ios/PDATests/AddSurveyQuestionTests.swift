@@ -171,6 +171,127 @@ final class AddSurveyQuestionTests: XCTestCase {
         }
     }
 
+    func test_updateSurveyQuestion_patchesEveryFieldWithBearer() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/questions/q1/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let posted = try JSONDecoder().decode(PostedQuestion.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(posted.label, "Meal")
+            XCTAssertEqual(posted.fieldType, "select")
+            XCTAssertEqual(posted.options, ["vegan", "omni"])
+            XCTAssertTrue(posted.required)
+            return MockHTTP.json(200, questionJSON(type: "select", options: ["vegan", "omni"], required: true))
+        }
+        let updated = try await makeClient(tokens).updateSurveyQuestion(
+            surveyId: "srv-1",
+            questionId: "q1",
+            label: "Meal",
+            fieldType: "select",
+            options: ["vegan", "omni"],
+            required: true
+        )
+        XCTAssertEqual(updated.id, "q1")
+        XCTAssertEqual(updated.fieldType, "select")
+    }
+
+    func test_editSurveyQuestion_startsFromExistingAndValidates() async {
+        MockHTTP.handler = { _ in
+            XCTFail("invalid edit should not patch")
+            return MockHTTP.json(500, [:])
+        }
+        let existing = PublicSurveyQuestion(
+            id: "q1",
+            label: "Meal",
+            fieldType: "select",
+            options: ["vegan"],
+            required: true,
+            displayOrder: 0
+        )
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1", question: existing)
+        XCTAssertEqual(model.title, "edit question")
+        XCTAssertEqual(model.label, "Meal")
+        XCTAssertEqual(model.fieldType, "select")
+        XCTAssertEqual(model.options, ["vegan"])
+        XCTAssertTrue(model.required)
+
+        model.label = "   "
+        await model.save()
+        XCTAssertEqual(model.banner, "label required")
+        XCTAssertNil(model.created)
+
+        model.label = "Meal"
+        model.options = ["  "]
+        await model.save()
+        XCTAssertEqual(model.banner, "add at least one option")
+        XCTAssertNil(model.created)
+    }
+
+    func test_editSurveyQuestion_textSaveStillSendsOptions() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            let posted = try JSONDecoder().decode(PostedQuestion.self, from: request.httpBody ?? Data())
+            XCTAssertEqual(posted.label, "Meal")
+            XCTAssertEqual(posted.fieldType, "text")
+            XCTAssertEqual(posted.options, [])
+            XCTAssertTrue(posted.required)
+            return MockHTTP.json(200, questionJSON(required: true))
+        }
+        let existing = PublicSurveyQuestion(
+            id: "q1",
+            label: "Meal",
+            fieldType: "select",
+            options: ["vegan"],
+            required: true,
+            displayOrder: 0
+        )
+        let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1", question: existing)
+        model.setFieldType("text")
+        await model.save()
+        XCTAssertEqual(model.created?.fieldType, "text")
+        XCTAssertNil(model.banner)
+    }
+
+    func test_editSurveyQuestion_403IsThePermissionGate() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "manage_surveys"]]])
+        }
+        let model = editModel()
+        await model.save()
+        XCTAssertNil(model.created)
+        XCTAssertEqual(model.banner, "you don't have permission to do that")
+    }
+
+    func test_editSurveyQuestion_missingQuestionUsesBanner() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(404, ["detail": [["code": "survey.question_not_found"]]])
+        }
+        let model = editModel()
+        await model.save()
+        XCTAssertNil(model.created)
+        XCTAssertEqual(model.banner, "question not found")
+        XCTAssertEqual(AddSurveyQuestionCopy.edit, "edit")
+        XCTAssertEqual(AddSurveyQuestionCopy.editTitle, "edit question")
+        XCTAssertEqual(AddSurveyQuestionCopy.questionNotFound, AddSurveyQuestionCopy.questionNotFound.lowercased())
+    }
+
+    private func editModel() -> AddSurveyQuestionModel {
+        AddSurveyQuestionModel(
+            client: makeClient(),
+            surveyId: "srv-1",
+            question: PublicSurveyQuestion(
+                id: "q1",
+                label: "Meal",
+                fieldType: "text",
+                options: [],
+                required: false,
+                displayOrder: 0
+            )
+        )
+    }
+
     private func filledModel() -> AddSurveyQuestionModel {
         let model = AddSurveyQuestionModel(client: makeClient(), surveyId: "srv-1")
         model.label = "Meal"

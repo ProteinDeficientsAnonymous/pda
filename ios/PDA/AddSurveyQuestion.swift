@@ -2,7 +2,9 @@ import SwiftUI
 
 enum AddSurveyQuestionCopy {
     static let button = "add question"
+    static let edit = "edit"
     static let title = "add question"
+    static let editTitle = "edit question"
     static let questions = "questions"
     static let empty = "no questions yet"
     static let loadError = "couldn't load survey — try refreshing"
@@ -20,6 +22,7 @@ enum AddSurveyQuestionCopy {
     static let failure = "couldn't save — try again"
     static let forbidden = "you don't have permission to do that"
     static let notFound = "survey not found"
+    static let questionNotFound = "question not found"
     static let ratingHint = "up to 5 star labels"
     static let pollHint = "iso-8601 datetime values"
 }
@@ -46,6 +49,7 @@ let surveyQuestionTypeChoices: [SurveyQuestionTypeChoice] = [
 enum AddSurveyQuestionError: Error, Equatable {
     case forbidden
     case notFound
+    case questionNotFound
     case failed
 }
 
@@ -110,10 +114,17 @@ func addSurveyQuestionURL(base: URL, surveyId: String) -> URL {
     return URL(string: "/api/community/surveys/\(encoded)/questions/", relativeTo: base)!.absoluteURL
 }
 
+func updateSurveyQuestionURL(base: URL, surveyId: String, questionId: String) -> URL {
+    let survey = surveyId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? surveyId
+    let question = questionId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? questionId
+    return URL(string: "/api/community/surveys/\(survey)/questions/\(question)/", relativeTo: base)!.absoluteURL
+}
+
 func addSurveyQuestionError(data: Data) -> AddSurveyQuestionError {
     switch apiErrorCode(from: data) {
     case "perm.denied": .forbidden
     case "survey.not_found": .notFound
+    case "survey.question_not_found": .questionNotFound
     default: .failed
     }
 }
@@ -140,6 +151,32 @@ extension EventsClient {
     ) async throws -> PublicSurveyQuestion {
         var req = URLRequest(url: addSurveyQuestionURL(base: baseURL, surveyId: surveyId))
         req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "label": label,
+            "field_type": fieldType,
+            "options": options,
+            "required": required,
+        ])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw addSurveyQuestionError(data: data) }
+        return try Event.decoder.decode(PublicSurveyQuestion.self, from: data)
+    }
+
+    func updateSurveyQuestion(
+        surveyId: String,
+        questionId: String,
+        label: String,
+        fieldType: String,
+        options: [String],
+        required: Bool
+    ) async throws -> PublicSurveyQuestion {
+        var req = URLRequest(url: updateSurveyQuestionURL(base: baseURL, surveyId: surveyId, questionId: questionId))
+        req.httpMethod = "PATCH"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token = try tokens?.load() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -191,15 +228,24 @@ final class AddSurveyQuestionModel {
     var fieldType = "text"
     var required = false
     var options: [String] = [""]
+    var question: PublicSurveyQuestion?
     var banner: String?
     var busy = false
     var created: PublicSurveyQuestion?
 
-    init(client: EventsClient, surveyId: String) {
+    init(client: EventsClient, surveyId: String, question: PublicSurveyQuestion? = nil) {
         self.client = client
         self.surveyId = surveyId
+        self.question = question
+        if let question {
+            label = question.label
+            fieldType = question.fieldType
+            required = question.required
+            options = question.options.isEmpty ? [""] : question.options
+        }
     }
 
+    var title: String { question == nil ? AddSurveyQuestionCopy.title : AddSurveyQuestionCopy.editTitle }
     var showsOptions: Bool { surveyQuestionWantsOptions(fieldType) }
     var optionsHint: String? { surveyQuestionOptionsHint(fieldType) }
 
@@ -226,17 +272,30 @@ final class AddSurveyQuestionModel {
         busy = true
         defer { busy = false }
         do {
-            created = try await client.createSurveyQuestion(
-                surveyId: surveyId,
-                label: trimmed,
-                fieldType: fieldType,
-                options: normalized,
-                required: required
-            )
+            if let question {
+                created = try await client.updateSurveyQuestion(
+                    surveyId: surveyId,
+                    questionId: question.id,
+                    label: trimmed,
+                    fieldType: fieldType,
+                    options: normalized,
+                    required: required
+                )
+            } else {
+                created = try await client.createSurveyQuestion(
+                    surveyId: surveyId,
+                    label: trimmed,
+                    fieldType: fieldType,
+                    options: normalized,
+                    required: required
+                )
+            }
         } catch AddSurveyQuestionError.forbidden {
             banner = AddSurveyQuestionCopy.forbidden
         } catch AddSurveyQuestionError.notFound {
             banner = AddSurveyQuestionCopy.notFound
+        } catch AddSurveyQuestionError.questionNotFound {
+            banner = AddSurveyQuestionCopy.questionNotFound
         } catch {
             banner = AddSurveyQuestionCopy.failure
         }
@@ -248,6 +307,7 @@ struct SurveyQuestionsView: View {
     var client: EventsClient
     @State private var model: SurveyQuestionsModel?
     @State private var showAdd = false
+    @State private var editing: PublicSurveyQuestion?
 
     var body: some View {
         Group {
@@ -300,6 +360,12 @@ struct SurveyQuestionsView: View {
                 Task { await model?.load() }
             }
         }
+        .sheet(item: $editing) { question in
+            AddSurveyQuestionSheet(client: client, surveyId: surveyId, question: question) {
+                editing = nil
+                Task { await model?.load() }
+            }
+        }
         .task {
             if model == nil { model = SurveyQuestionsModel(client: client, surveyId: surveyId) }
             await model?.load()
@@ -307,13 +373,17 @@ struct SurveyQuestionsView: View {
     }
 
     private func questionRow(_ question: PublicSurveyQuestion) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(adminSurveyQuestionLabel(question))
-                .font(PDAType.control)
-                .foregroundStyle(PDAColor.foreground)
-            Text(adminSurveyQuestionMeta(question))
-                .font(PDAType.control)
-                .foregroundStyle(PDAColor.muted)
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(adminSurveyQuestionLabel(question))
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.foreground)
+                Text(adminSurveyQuestionMeta(question))
+                    .font(PDAType.control)
+                    .foregroundStyle(PDAColor.muted)
+            }
+            Spacer()
+            PDAButton(AddSurveyQuestionCopy.edit, variant: .ghost) { editing = question }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -330,9 +400,9 @@ struct AddSurveyQuestionSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: AddSurveyQuestionModel
 
-    init(client: EventsClient, surveyId: String, onCreated: @escaping () -> Void) {
+    init(client: EventsClient, surveyId: String, question: PublicSurveyQuestion? = nil, onCreated: @escaping () -> Void) {
         self.onCreated = onCreated
-        _model = State(initialValue: AddSurveyQuestionModel(client: client, surveyId: surveyId))
+        _model = State(initialValue: AddSurveyQuestionModel(client: client, surveyId: surveyId, question: question))
     }
 
     var body: some View {
@@ -393,7 +463,7 @@ struct AddSurveyQuestionSheet: View {
                 .padding()
             }
             .background(PDAColor.background)
-            .navigationTitle(AddSurveyQuestionCopy.title)
+            .navigationTitle(model.title)
             .navigationBarTitleDisplayMode(.inline)
         }
         .onChange(of: model.created?.id) { _, id in
