@@ -102,7 +102,7 @@ struct EventListView: View {
                 DonateView(client: EventsClient(tokens: session.client.tokens), user: session.user)
             }
             .sheet(isPresented: $showVolunteer) {
-                VolunteerView(client: EventsClient(tokens: session.client.tokens))
+                VolunteerView(client: EventsClient(tokens: session.client.tokens), user: session.user)
             }
             .sheet(isPresented: $showJoin) {
                 JoinView(

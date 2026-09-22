@@ -1023,6 +1023,10 @@ struct EventsClient {
         try await fetch(volunteerURL(base: baseURL))
     }
 
+    func updateVolunteer(contentPm: String) async throws -> HomePage {
+        try await sendJSON("PATCH", url: volunteerURL(base: baseURL), body: ["content_pm": contentPm])
+    }
+
     func joinForm() async throws -> [JoinQuestion] {
         var req = URLRequest(url: joinFormURL(base: baseURL))
         req.httpMethod = "GET"
