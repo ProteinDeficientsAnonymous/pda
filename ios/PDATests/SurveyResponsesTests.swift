@@ -21,6 +21,10 @@ final class SurveyResponsesTests: XCTestCase {
                 XCTAssertEqual(path, "/api/community/surveys/srv-1/responses/")
                 return MockHTTP.json(200, [wireResponse])
             }
+            if path.hasSuffix("/tallies/") {
+                XCTAssertEqual(request.httpMethod, "GET")
+                return MockHTTP.json(200, [])
+            }
             XCTAssertEqual(path, "/api/community/surveys/srv-1/admin/")
             return MockHTTP.json(200, wireSurvey)
         }
