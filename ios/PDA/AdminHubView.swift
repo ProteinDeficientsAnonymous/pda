@@ -85,7 +85,7 @@ struct AdminHubView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
         }

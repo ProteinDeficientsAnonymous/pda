@@ -220,7 +220,7 @@ struct JoinView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await model.load() }
@@ -236,7 +236,7 @@ struct JoinView: View {
                 ContentUnavailableView {
                     Label(loadError, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if !model.loaded {
                 ProgressView(JoinCopy.loading)
@@ -283,8 +283,7 @@ struct JoinView: View {
                     Text(error).font(.footnote).foregroundStyle(.red)
                 }
                 Toggle(JoinCopy.guidelinesConsent, isOn: $model.guidelinesConsent)
-                Button(GuidelinesCopy.title) { showGuidelines = true }
-                    .font(.subheadline)
+                PDAButton(GuidelinesCopy.title, variant: .ghost) { showGuidelines = true }
                 if let error = model.errors["guidelinesConsent"] {
                     Text(error).font(.footnote).foregroundStyle(.red)
                 }
@@ -295,7 +294,7 @@ struct JoinView: View {
                 }
             }
             Section {
-                Button(model.busy ? JoinCopy.submitting : JoinCopy.submit) {
+                PDAButton(model.busy ? JoinCopy.submitting : JoinCopy.submit) {
                     Task { await model.submit() }
                 }
                 .disabled(model.busy)
@@ -311,11 +310,10 @@ struct JoinView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(JoinCopy.backHome) {
+            PDAButton(JoinCopy.backHome, variant: .secondary) {
                 onHome()
                 dismiss()
             }
-            .buttonStyle(.bordered)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -324,11 +322,10 @@ struct JoinView: View {
     private var alreadyInvited: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(JoinCopy.alreadyInvited)
-            Button(JoinCopy.signIn) {
+            PDAButton(JoinCopy.signIn) {
                 onSignIn()
                 dismiss()
             }
-            .buttonStyle(.borderedProminent)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -336,7 +333,7 @@ struct JoinView: View {
 
     private func labeledField(_ label: String, text: Binding<String>, error: String?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            TextField(label, text: text)
+            PDATextField(label, text: text)
             if let error {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
@@ -356,12 +353,16 @@ struct JoinView: View {
                     }
                 }
             case "textarea":
-                TextField(label, text: answerBinding(question.id), axis: .vertical)
-                    .lineLimit(5, reservesSpace: true)
-                    .textInputAutocapitalization(.never)
+                PDATextField(
+                    label,
+                    text: answerBinding(question.id),
+                    axis: .vertical,
+                    capitalization: .never,
+                    lineLimit: 5,
+                    reserveLineSpace: true
+                )
             default:
-                TextField(label, text: answerBinding(question.id))
-                    .textInputAutocapitalization(.never)
+                PDATextField(label, text: answerBinding(question.id), capitalization: .never)
             }
             if let error = model.errors[question.id] {
                 Text(error).font(.footnote).foregroundStyle(.red)

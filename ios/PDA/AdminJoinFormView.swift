@@ -249,13 +249,13 @@ struct AdminJoinFormView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Spacer()
-                        Button(AddQuestionCopy.button) { addingQuestion = true }
+                        PDAButton(AddQuestionCopy.button) { addingQuestion = true }
                     }
                     .padding(.horizontal)
                     Text(AdminJoinFormCopy.subtitle)
@@ -296,18 +296,18 @@ struct AdminJoinFormView: View {
                                 Spacer()
                                 if let index = model.questions.firstIndex(where: { $0.id == question.id }) {
                                     if showsJoinQuestionMoveUp(index: index, count: model.questions.count) {
-                                        Button(ReorderQuestionsCopy.moveUp) {
+                                        PDAButton(ReorderQuestionsCopy.moveUp, variant: .ghost) {
                                             Task { await model.moveUp(question) }
                                         }
                                     }
                                     if showsJoinQuestionMoveDown(index: index, count: model.questions.count) {
-                                        Button(ReorderQuestionsCopy.moveDown) {
+                                        PDAButton(ReorderQuestionsCopy.moveDown, variant: .ghost) {
                                             Task { await model.moveDown(question) }
                                         }
                                     }
                                 }
-                                Button(AddQuestionCopy.edit) { editingQuestion = question }
-                                Button(DeleteQuestionCopy.button, role: .destructive) {
+                                PDAButton(AddQuestionCopy.edit, variant: .ghost) { editingQuestion = question }
+                                PDAButton(DeleteQuestionCopy.button, variant: .ghost) {
                                     _ = model.prepareDelete(question)
                                 }
                             }

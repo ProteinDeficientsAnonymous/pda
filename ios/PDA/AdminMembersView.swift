@@ -173,14 +173,14 @@ struct AdminMembersView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
                 VStack(spacing: 8) {
                     if showsAddMemberButton(tab: tab) {
                         HStack {
                             Spacer()
-                            Button(MemberCreateCopy.button) { addingMember = true }
+                            PDAButton(MemberCreateCopy.button) { addingMember = true }
                         }
                         .padding(.horizontal)
                     }

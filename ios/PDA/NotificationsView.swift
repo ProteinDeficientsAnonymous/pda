@@ -95,7 +95,7 @@ struct NotificationsView: View {
                     ContentUnavailableView {
                         Label(NotificationsCopy.error, systemImage: "exclamationmark.triangle")
                     } actions: {
-                        Button("try again") { Task { await load(reset: true) } }
+                        PDAButton("try again") { Task { await load(reset: true) } }
                     }
                 } else if rows.isEmpty {
                     ContentUnavailableView(NotificationsCopy.empty, systemImage: "leaf")
@@ -117,7 +117,7 @@ struct NotificationsView: View {
                             }
                         }
                         if hasMore {
-                            Button(NotificationsCopy.loadMore) {
+                            PDAButton(NotificationsCopy.loadMore, variant: .secondary) {
                                 Task { await load(reset: false) }
                             }
                             .disabled(loadingMore)
@@ -130,7 +130,7 @@ struct NotificationsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .navigationDestination(item: $target) { dest in

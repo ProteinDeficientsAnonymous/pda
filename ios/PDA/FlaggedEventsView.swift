@@ -146,7 +146,7 @@ struct FlaggedEventsView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load(status: filter) } }
+                    PDAButton("try again") { Task { await model.load(status: filter) } }
                 }
             } else if let model, model.loaded {
                 VStack(spacing: 8) {

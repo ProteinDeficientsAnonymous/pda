@@ -176,18 +176,18 @@ struct JoinRequestsView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
                 let rows = visibleJoinRequests(model.rows, filter: filter, query: query)
                 VStack(spacing: 8) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
-                            Button(WelcomeTemplateCopy.button) { editingWelcome = true }
-                            Button(TentativeApprovalCopy.button) { editingTentative = true }
-                            Button(MemberPromotionCopy.button) { editingPromotion = true }
-                            Button(MemberPromotionEmailCopy.button) { editingPromotionEmail = true }
-                            Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
+                            PDAButton(WelcomeTemplateCopy.button, variant: .secondary) { editingWelcome = true }
+                            PDAButton(TentativeApprovalCopy.button, variant: .secondary) { editingTentative = true }
+                            PDAButton(MemberPromotionCopy.button, variant: .secondary) { editingPromotion = true }
+                            PDAButton(MemberPromotionEmailCopy.button, variant: .secondary) { editingPromotionEmail = true }
+                            PDAButton(WhatsAppLinkCopy.button, variant: .secondary) { editingWhatsApp = true }
                         }
                     }
                     .padding(.horizontal)

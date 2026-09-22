@@ -205,7 +205,7 @@ struct ManageEventsView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
                 let rows = visibleManageEvents(model.rows, bucket: bucket, sort: sort, query: query)

@@ -234,13 +234,13 @@ struct AdminRolesView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let model, model.loaded {
                 VStack(spacing: 8) {
                     HStack {
                         Spacer()
-                        Button(CreateRoleCopy.button) { addingRole = true }
+                        PDAButton(CreateRoleCopy.button) { addingRole = true }
                     }
                     .padding(.horizontal)
                     if let toast = model.toast {
@@ -269,9 +269,9 @@ struct AdminRolesView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Button(roleRowAction(role)) { editingRole = role }
+                                PDAButton(roleRowAction(role), variant: .secondary) { editingRole = role }
                                 if showsRoleDelete(role) {
-                                    Button(RoleDeleteCopy.button, role: .destructive) {
+                                    PDAButton(RoleDeleteCopy.button, variant: .ghost) {
                                         _ = model.prepareDelete(role)
                                     }
                                 }

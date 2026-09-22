@@ -245,7 +245,7 @@ struct MemberCreateView: View {
         .toolbar {
             if model?.created == nil, model?.forbidden != true {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(MemberCreateCopy.cancel) { dismiss() }
+                    PDAButton(MemberCreateCopy.cancel, variant: .secondary) { dismiss() }
                 }
             }
         }
@@ -256,20 +256,20 @@ struct MemberCreateView: View {
 
     private func form(_ model: MemberCreateModel) -> some View {
         Form {
-            TextField(MemberCreateCopy.firstName, text: binding(model, \.firstName))
-                .textInputAutocapitalization(.words)
-            TextField(MemberCreateCopy.lastName, text: binding(model, \.lastName))
-                .textInputAutocapitalization(.words)
-            TextField(MemberCreateCopy.phone, text: binding(model, \.phone))
-                .keyboardType(.phonePad)
-            TextField(MemberCreateCopy.email, text: binding(model, \.email))
-                .textInputAutocapitalization(.never)
-                .keyboardType(.emailAddress)
-                .autocorrectionDisabled()
+            PDATextField(MemberCreateCopy.firstName, text: binding(model, \.firstName), capitalization: .words)
+            PDATextField(MemberCreateCopy.lastName, text: binding(model, \.lastName), capitalization: .words)
+            PDATextField(MemberCreateCopy.phone, text: binding(model, \.phone), keyboard: .phonePad)
+            PDATextField(
+                MemberCreateCopy.email,
+                text: binding(model, \.email),
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .emailAddress
+            )
             if let formError = model.formError {
                 Text(formError).foregroundStyle(.red)
             }
-            Button(model.saving ? MemberCreateCopy.creating : MemberCreateCopy.create) {
+            PDAButton(model.saving ? MemberCreateCopy.creating : MemberCreateCopy.create) {
                 Task { _ = await model.submit() }
             }
             .disabled(model.saving)
@@ -281,7 +281,7 @@ struct MemberCreateView: View {
             Text(model.welcomeBody).foregroundStyle(.secondary)
             Text(model.magicLink).font(.footnote).textSelection(.enabled)
             HStack {
-                Button(model.copyLabel) {
+                PDAButton(model.copyLabel, variant: .secondary) {
                     UIPasteboard.general.string = model.magicLink
                     model.copyLink()
                 }
@@ -290,7 +290,7 @@ struct MemberCreateView: View {
                 }
             }
             Spacer()
-            Button(MemberCreateCopy.done) {
+            PDAButton(MemberCreateCopy.done) {
                 model.done()
                 dismiss()
             }

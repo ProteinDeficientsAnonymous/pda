@@ -222,8 +222,7 @@ struct AddQuestionView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else if let model {
                 Form {
-                    TextField(AddQuestionCopy.labelField, text: labelBinding(model))
-                        .textInputAutocapitalization(.never)
+                    PDATextField(AddQuestionCopy.labelField, text: labelBinding(model), capitalization: .never)
                     Picker(AddQuestionCopy.type, selection: typeBinding(model)) {
                         ForEach(joinQuestionTypeChoices, id: \.value) { choice in
                             Text(choice.label).tag(choice.value)
@@ -233,14 +232,13 @@ struct AddQuestionView: View {
                         Section(AddQuestionCopy.options) {
                             ForEach(model.options.indices, id: \.self) { index in
                                 HStack {
-                                    TextField("option \(index + 1)", text: optionBinding(model, index))
-                                        .textInputAutocapitalization(.never)
-                                    Button(AddQuestionCopy.remove) {
+                                    PDATextField("option \(index + 1)", text: optionBinding(model, index), capitalization: .never)
+                                    PDAButton(AddQuestionCopy.remove, variant: .ghost) {
                                         model.options.remove(at: index)
                                     }
                                 }
                             }
-                            Button(AddQuestionCopy.addOption) { model.options.append("") }
+                            PDAButton(AddQuestionCopy.addOption, variant: .secondary) { model.options.append("") }
                         }
                     }
                     Toggle(AddQuestionCopy.required, isOn: requiredBinding(model))
@@ -254,14 +252,14 @@ struct AddQuestionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(AddQuestionCopy.cancel) {
+                PDAButton(AddQuestionCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(model?.saveLabel ?? AddQuestionCopy.save) {
+                    PDAButton(model?.saveLabel ?? AddQuestionCopy.save) {
                         Task { await submit() }
                     }
                     .disabled(model?.canSave != true)

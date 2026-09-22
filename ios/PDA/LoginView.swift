@@ -40,7 +40,7 @@ struct LoginView: View {
                         Text(LoginCopy.welcomeTitle).font(.headline)
                     }
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("close") { dismiss() }
+                        PDAButton("close", variant: .secondary) { dismiss() }
                     }
                 }
             }
@@ -52,24 +52,25 @@ struct LoginView: View {
             Text(LoginCopy.welcomeSubtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            TextField(LoginCopy.phoneLabel, text: $model.phone)
-                .keyboardType(.phonePad)
-                .textContentType(.username)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .accessibilityIdentifier("phone-number")
+            PDATextField(
+                LoginCopy.phoneLabel,
+                text: $model.phone,
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .phonePad,
+                contentType: .username,
+                identifier: "phone-number"
+            )
             if let error = model.error {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
-            Button(LoginCopy.continueButton) {
+            PDAButton(LoginCopy.continueButton) {
                 Task { await model.submitPhone() }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(model.busy || model.phone.isEmpty)
-            Button(JoinCopy.requestToJoin) {
+            PDAButton(JoinCopy.requestToJoin, variant: .secondary) {
                 model.step = .join
             }
-            .font(.subheadline)
         }
     }
 
@@ -84,17 +85,15 @@ struct LoginView: View {
             if let error = model.error {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
-            Button(model.busy ? "signing in…" : LoginCopy.signInButton) {
+            PDAButton(model.busy ? "signing in…" : LoginCopy.signInButton) {
                 Task { await submitPassword() }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(model.busy || model.password.isEmpty)
-            Button(LoginCopy.backButton) {
+            PDAButton(LoginCopy.backButton, variant: .secondary) {
                 model.step = .phone
                 model.password = ""
                 model.error = nil
             }
-            .font(.subheadline)
         }
     }
 
@@ -102,11 +101,10 @@ struct LoginView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title).font(.title2)
             Text(body).font(.subheadline).foregroundStyle(.secondary)
-            Button(LoginCopy.backButton) {
+            PDAButton(LoginCopy.backButton, variant: .secondary) {
                 model.step = .phone
                 model.error = nil
             }
-            .font(.subheadline)
         }
     }
 

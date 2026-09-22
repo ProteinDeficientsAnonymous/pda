@@ -275,13 +275,13 @@ struct AdminMemberDetailView: View {
                             Text(toast).font(.footnote)
                         }
                         if model.magicLink == nil {
-                            Button(magicLoginButtonLabel(working: model.magicWorking)) {
+                            PDAButton(magicLoginButtonLabel(working: model.magicWorking)) {
                                 Task { _ = await model.generateMagicLink() }
                             }
                             .disabled(model.magicWorking)
                         } else {
                             Text(model.magicLink ?? "").font(.footnote).textSelection(.enabled)
-                            Button(model.magicCopyLabel) {
+                            PDAButton(model.magicCopyLabel, variant: .secondary) {
                                 UIPasteboard.general.string = model.magicLink
                                 model.copyMagicLink()
                             }
@@ -309,7 +309,7 @@ struct AdminMemberDetailView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load(id: userId) } }
+                    PDAButton("try again") { Task { await model.load(id: userId) } }
                 }
             } else {
                 ProgressView(AdminMembersCopy.loading)

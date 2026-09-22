@@ -54,26 +54,26 @@ struct GateView: View {
             SecureField(GateCopy.newPasswordLabel, text: $password)
             SecureField(GateCopy.confirmPasswordLabel, text: $confirm)
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            Button(GateCopy.savePassword) { Task { await saveNewPassword() } }
-                .buttonStyle(.borderedProminent)
+            PDAButton(GateCopy.savePassword) { Task { await saveNewPassword() } }
                 .disabled(busy || !passwordIsValid(password) || password != confirm)
         }
     }
 
     private var onboardingForm: some View {
         form {
-            TextField(GateCopy.firstNameLabel, text: $firstName)
-                .textInputAutocapitalization(.never)
-            TextField(GateCopy.emailLabel, text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            PDATextField(GateCopy.firstNameLabel, text: $firstName, capitalization: .never)
+            PDATextField(
+                GateCopy.emailLabel,
+                text: $email,
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .emailAddress
+            )
             SecureField(GateCopy.newPasswordLabel, text: $password)
             Toggle(GateCopy.agreeGuidelines, isOn: $agreeGuidelines)
             Toggle(GateCopy.agreeSms, isOn: $agreeSms)
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            Button(GateCopy.continueButton) { Task { await saveOnboarding() } }
-                .buttonStyle(.borderedProminent)
+            PDAButton(GateCopy.continueButton) { Task { await saveOnboarding() } }
                 .disabled(busy || firstName.isEmpty || email.isEmpty || !passwordIsValid(password) || !agreeGuidelines || !agreeSms)
         }
     }
@@ -90,10 +90,9 @@ struct GateView: View {
                 Toggle(GateCopy.agreePrivacy, isOn: $agreePrivacy)
             }
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            Button(GateCopy.continueButton) { Task { await saveConsents(user) } }
-                .buttonStyle(.borderedProminent)
+            PDAButton(GateCopy.continueButton) { Task { await saveConsents(user) } }
                 .disabled(busy || !consentsReady(user))
-            Button(GateCopy.notNow) { Task { await session.logout() } }
+            PDAButton(GateCopy.notNow, variant: .secondary) { Task { await session.logout() } }
                 .disabled(busy)
         }
     }
@@ -101,15 +100,17 @@ struct GateView: View {
     private var emailForm: some View {
         form {
             Text(GateCopy.emailBody).font(.subheadline).foregroundStyle(.secondary)
-            TextField(GateCopy.emailLabel, text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            PDATextField(
+                GateCopy.emailLabel,
+                text: $email,
+                capitalization: .never,
+                disableAutocorrection: true,
+                keyboard: .emailAddress
+            )
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            Button(GateCopy.save) { Task { await saveEmail() } }
-                .buttonStyle(.borderedProminent)
+            PDAButton(GateCopy.save) { Task { await saveEmail() } }
                 .disabled(busy || email.isEmpty)
-            Button(GateCopy.notNow) { Task { await session.logout() } }
+            PDAButton(GateCopy.notNow, variant: .secondary) { Task { await session.logout() } }
                 .disabled(busy)
         }
     }

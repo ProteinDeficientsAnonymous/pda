@@ -194,10 +194,13 @@ struct CreateRoleView: View {
             } else if let model {
                 Form {
                     Section {
-                        TextField(CreateRoleCopy.placeholder, text: nameBinding(model))
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .disabled(model.readOnly)
+                        PDATextField(
+                            CreateRoleCopy.placeholder,
+                            text: nameBinding(model),
+                            capitalization: .never,
+                            disableAutocorrection: true
+                        )
+                        .disabled(model.readOnly)
                         if model.readOnly {
                             Text(model.builtInNote)
                                 .font(.footnote)
@@ -222,14 +225,14 @@ struct CreateRoleView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(model?.readOnly == true ? CreateRoleCopy.close : CreateRoleCopy.cancel) {
+                PDAButton(model?.readOnly == true ? CreateRoleCopy.close : CreateRoleCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.readOnly != true, model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saveLabel) {
+                    PDAButton(saveLabel) {
                         Task { await submit() }
                     }
                     .disabled(model?.saving == true)

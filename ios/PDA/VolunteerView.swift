@@ -29,7 +29,7 @@ struct VolunteerView: View {
                     ContentUnavailableView {
                         Label(error, systemImage: "exclamationmark.triangle")
                     } actions: {
-                        Button("try again") { Task { await load() } }
+                        PDAButton("try again") { Task { await load() } }
                     }
                 } else {
                     ProgressView(VolunteerCopy.loading)
@@ -39,7 +39,7 @@ struct VolunteerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .task { await load() }

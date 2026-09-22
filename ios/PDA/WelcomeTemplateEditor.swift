@@ -194,14 +194,14 @@ struct WelcomeTemplateEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(WelcomeTemplateCopy.cancel) {
+                PDAButton(WelcomeTemplateCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(model?.saveLabel ?? WelcomeTemplateCopy.save) {
+                    PDAButton(model?.saveLabel ?? WelcomeTemplateCopy.save) {
                         Task { await submit() }
                     }
                     .disabled(model?.canSave != true)

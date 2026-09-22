@@ -107,7 +107,7 @@ struct DocDetailView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await model.load() } }
+                    PDAButton("try again") { Task { await model.load() } }
                 }
             } else if let doc = model?.document {
                 VStack(alignment: .leading, spacing: 12) {

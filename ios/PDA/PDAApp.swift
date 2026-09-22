@@ -8,6 +8,9 @@ struct PDAApp: App {
     var body: some Scene {
         WindowGroup {
             EventListView()
+                .tint(PDAColor.brand600)
+                .background(PDAColor.background.ignoresSafeArea())
+                .foregroundStyle(PDAColor.foreground)
                 .environment(session)
                 .environment(a11y)
                 .preferredColorScheme(a11y.colorScheme)

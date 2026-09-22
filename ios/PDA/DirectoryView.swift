@@ -164,7 +164,7 @@ struct DirectoryView: View {
                     ContentUnavailableView {
                         Label(error, systemImage: "exclamationmark.triangle")
                     } actions: {
-                        Button("try again") { Task { await model.load() } }
+                        PDAButton("try again") { Task { await model.load() } }
                     }
                 } else if let model, model.loaded {
                     List {
@@ -194,7 +194,7 @@ struct DirectoryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close") { dismiss() }
+                    PDAButton("close", variant: .secondary) { dismiss() }
                 }
             }
             .navigationDestination(for: DirectoryMember.self) { member in
@@ -250,7 +250,7 @@ struct DirectoryProfileView: View {
                 ContentUnavailableView {
                     Label(error, systemImage: "exclamationmark.triangle")
                 } actions: {
-                    Button("try again") { Task { await load() } }
+                    PDAButton("try again") { Task { await load() } }
                 }
             } else {
                 ProgressView(DirectoryCopy.loading)

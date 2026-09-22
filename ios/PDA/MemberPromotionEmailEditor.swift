@@ -195,14 +195,14 @@ struct MemberPromotionEmailEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(MemberPromotionEmailCopy.cancel) {
+                PDAButton(MemberPromotionEmailCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(model?.saveLabel ?? MemberPromotionEmailCopy.save) {
+                    PDAButton(model?.saveLabel ?? MemberPromotionEmailCopy.save) {
                         Task { await submit() }
                     }
                     .disabled(model?.canSave != true)

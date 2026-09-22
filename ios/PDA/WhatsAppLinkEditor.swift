@@ -183,10 +183,13 @@ struct WhatsAppLinkEditorView: View {
                 ContentUnavailableView(error, systemImage: "exclamationmark.triangle")
             } else if let model, model.loaded {
                 Form {
-                    TextField(WhatsAppLinkCopy.placeholder, text: linkBinding(model))
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
+                    PDATextField(
+                        WhatsAppLinkCopy.placeholder,
+                        text: linkBinding(model),
+                        capitalization: .never,
+                        disableAutocorrection: true,
+                        keyboard: .URL
+                    )
                     if let formError = model.formError {
                         Text(formError).foregroundStyle(.red)
                     }
@@ -199,14 +202,14 @@ struct WhatsAppLinkEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(WhatsAppLinkCopy.cancel) {
+                PDAButton(WhatsAppLinkCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(model?.saving == true ? WhatsAppLinkCopy.saving : WhatsAppLinkCopy.save) {
+                    PDAButton(model?.saving == true ? WhatsAppLinkCopy.saving : WhatsAppLinkCopy.save) {
                         Task { await submit() }
                     }
                     .disabled(model?.canSave != true)

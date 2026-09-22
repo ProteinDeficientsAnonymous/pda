@@ -194,14 +194,14 @@ struct TentativeApprovalEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(TentativeApprovalCopy.cancel) {
+                PDAButton(TentativeApprovalCopy.cancel, variant: .secondary) {
                     model?.cancel()
                     dismiss()
                 }
             }
             if model?.forbidden != true {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(model?.saveLabel ?? TentativeApprovalCopy.save) {
+                    PDAButton(model?.saveLabel ?? TentativeApprovalCopy.save) {
                         Task { await submit() }
                     }
                     .disabled(model?.canSave != true)
