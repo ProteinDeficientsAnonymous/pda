@@ -45,6 +45,7 @@ enum AdminHubDestination: Equatable {
     case joinRequests
     case events
     case flaggedEvents
+    case attendance
 }
 
 func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
@@ -53,6 +54,7 @@ func adminHubDestination(for tile: AdminHubTile) -> AdminHubDestination? {
     case "join-requests": .joinRequests
     case "events": .events
     case "flagged-events": .flaggedEvents
+    case "attendance": .attendance
     default: nil
     }
 }
@@ -96,6 +98,8 @@ struct AdminHubView: View {
             ManageEventsView(client: client)
         case .flaggedEvents:
             FlaggedEventsView(client: client)
+        case .attendance:
+            AttendanceReportView(client: client)
         }
     }
 

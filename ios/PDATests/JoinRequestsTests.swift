@@ -89,7 +89,7 @@ final class JoinRequestsTests: XCTestCase {
         ]))
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .joinRequests }.map(\.id), ["join-requests"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .members }.map(\.id), ["members"])
-        XCTAssertTrue(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id).contains("attendance"))
+        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), [])
     }
 
     func test_joinRequestsCopy_isLowercase() {

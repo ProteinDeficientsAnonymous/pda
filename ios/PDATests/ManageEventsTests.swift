@@ -92,7 +92,7 @@ final class ManageEventsTests: XCTestCase {
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .members }.map(\.id), ["members"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .joinRequests }.map(\.id), ["join-requests"])
         let closed = tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id)
-        XCTAssertTrue(closed.contains("attendance"))
+        XCTAssertEqual(closed, [])
     }
 
     func test_manageEventsCopy_isLowercase() {

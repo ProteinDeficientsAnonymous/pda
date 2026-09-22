@@ -95,7 +95,7 @@ final class FlaggedEventsTests: XCTestCase {
         ]))
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .flaggedEvents }.map(\.id), ["flagged-events"])
         XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == .events }.map(\.id), ["events"])
-        XCTAssertTrue(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id).contains("attendance"))
+        XCTAssertEqual(tiles.filter { adminHubDestination(for: $0) == nil }.map(\.id), [])
     }
 
     func test_flaggedEventsCopy_isLowercase() {
