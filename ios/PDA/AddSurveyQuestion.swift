@@ -46,6 +46,16 @@ let surveyQuestionTypeChoices: [SurveyQuestionTypeChoice] = [
     SurveyQuestionTypeChoice(value: "datetime_poll", label: "datetime poll (iso options)", wantsOptions: true),
 ]
 
+enum DeleteSurveyQuestionCopy {
+    static let title = "delete question"
+    static let confirm = "delete"
+    static let cancel = "cancel"
+}
+
+func surveyQuestionDeleteMessage(_ label: String) -> String {
+    "delete \"\(label)\"? this also deletes responses to it."
+}
+
 enum AddSurveyQuestionError: Error, Equatable {
     case forbidden
     case notFound
@@ -192,6 +202,17 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw addSurveyQuestionError(data: data) }
         return try Event.decoder.decode(PublicSurveyQuestion.self, from: data)
     }
+
+    func deleteSurveyQuestion(surveyId: String, questionId: String) async throws {
+        var req = URLRequest(url: updateSurveyQuestionURL(base: baseURL, surveyId: surveyId, questionId: questionId))
+        req.httpMethod = "DELETE"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200 ..< 300).contains(status) else { throw addSurveyQuestionError(data: data) }
+    }
 }
 
 @Observable
@@ -200,6 +221,8 @@ final class SurveyQuestionsModel {
     var surveyId: String
     var survey: AdminSurveyDetail?
     var error: String?
+    var actionError: String?
+    var pendingDelete: PublicSurveyQuestion?
     var loaded = false
 
     init(client: EventsClient, surveyId: String) {
@@ -216,6 +239,30 @@ final class SurveyQuestionsModel {
             survey = nil
             self.error = AddSurveyQuestionCopy.loadError
             loaded = true
+        }
+    }
+
+    func cancelDelete() {
+        pendingDelete = nil
+    }
+
+    func commitDelete() async {
+        guard let question = pendingDelete else { return }
+        await commitDelete(question)
+    }
+
+    func commitDelete(_ question: PublicSurveyQuestion) async {
+        pendingDelete = nil
+        do {
+            try await client.deleteSurveyQuestion(surveyId: surveyId, questionId: question.id)
+            actionError = nil
+            await load()
+        } catch AddSurveyQuestionError.forbidden {
+            actionError = AddSurveyQuestionCopy.forbidden
+        } catch AddSurveyQuestionError.questionNotFound {
+            actionError = AddSurveyQuestionCopy.questionNotFound
+        } catch {
+            return
         }
     }
 }
@@ -334,6 +381,11 @@ struct SurveyQuestionsView: View {
                             Spacer()
                             PDAButton(AddSurveyQuestionCopy.button) { showAdd = true }
                         }
+                        if let actionError = model.actionError {
+                            Text(actionError)
+                                .font(PDAType.control)
+                                .foregroundStyle(PDAColor.destructive)
+                        }
                         if survey.questions.isEmpty {
                             Text(AddSurveyQuestionCopy.empty)
                                 .font(PDAType.control)
@@ -366,6 +418,22 @@ struct SurveyQuestionsView: View {
                 Task { await model?.load() }
             }
         }
+        .confirmationDialog(
+            DeleteSurveyQuestionCopy.title,
+            isPresented: Binding(
+                get: { model?.pendingDelete != nil },
+                set: { if !$0 { model?.cancelDelete() } }
+            ),
+            titleVisibility: .visible,
+            presenting: model?.pendingDelete
+        ) { question in
+            Button(DeleteSurveyQuestionCopy.confirm, role: .destructive) {
+                Task { await model?.commitDelete(question) }
+            }
+            Button(DeleteSurveyQuestionCopy.cancel, role: .cancel) {}
+        } message: { question in
+            Text(surveyQuestionDeleteMessage(question.label))
+        }
         .task {
             if model == nil { model = SurveyQuestionsModel(client: client, surveyId: surveyId) }
             await model?.load()
@@ -384,6 +452,7 @@ struct SurveyQuestionsView: View {
             }
             Spacer()
             PDAButton(AddSurveyQuestionCopy.edit, variant: .ghost) { editing = question }
+            PDAButton(DeleteSurveyQuestionCopy.confirm, variant: .ghost) { model?.pendingDelete = question }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -277,6 +277,81 @@ final class AddSurveyQuestionTests: XCTestCase {
         XCTAssertEqual(AddSurveyQuestionCopy.questionNotFound, AddSurveyQuestionCopy.questionNotFound.lowercased())
     }
 
+    func test_deleteSurveyQuestion_sendsDeleteWithBearerThenReloads() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        MockHTTP.handler = { request in
+            if request.httpMethod == "DELETE" {
+                XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/questions/q1/")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+                return (204, Data(), [:])
+            }
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(routePath(request.url), "/api/community/surveys/srv-1/admin/")
+            return MockHTTP.json(200, [
+                "id": "srv-1",
+                "title": "Retreat",
+                "slug": "retreat-a",
+                "visibility": "members_only",
+                "questions": [],
+            ])
+        }
+        let model = SurveyQuestionsModel(client: makeClient(tokens), surveyId: "srv-1")
+        model.pendingDelete = mealQuestion()
+        await model.commitDelete()
+        XCTAssertNil(model.actionError)
+        XCTAssertEqual(model.survey?.questions.count, 0)
+        XCTAssertNil(model.pendingDelete)
+    }
+
+    func test_deleteSurveyQuestion_403IsThePermissionGate() async {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "DELETE")
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied", "action": "manage_surveys"]]])
+        }
+        let model = SurveyQuestionsModel(client: makeClient(), surveyId: "srv-1")
+        model.pendingDelete = mealQuestion()
+        await model.commitDelete()
+        XCTAssertEqual(model.actionError, "you don't have permission to do that")
+        XCTAssertNil(model.survey)
+        XCTAssertNil(model.error)
+    }
+
+    func test_surveyQuestionDeleteMessage_matchesWebConfirm() {
+        XCTAssertEqual(
+            surveyQuestionDeleteMessage("Meal"),
+            "delete \"Meal\"? this also deletes responses to it."
+        )
+        XCTAssertEqual(DeleteSurveyQuestionCopy.title, "delete question")
+        XCTAssertEqual(DeleteSurveyQuestionCopy.confirm, "delete")
+        XCTAssertEqual(DeleteSurveyQuestionCopy.cancel, "cancel")
+        for text in [DeleteSurveyQuestionCopy.title, DeleteSurveyQuestionCopy.confirm, DeleteSurveyQuestionCopy.cancel] {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
+    func test_deleteSurveyQuestion_cancelDoesNotSend() {
+        MockHTTP.handler = { _ in
+            XCTFail("cancel should not delete")
+            return MockHTTP.json(500, [:])
+        }
+        let model = SurveyQuestionsModel(client: makeClient(), surveyId: "srv-1")
+        model.pendingDelete = mealQuestion()
+        model.cancelDelete()
+        XCTAssertNil(model.pendingDelete)
+    }
+
+    private func mealQuestion() -> PublicSurveyQuestion {
+        PublicSurveyQuestion(
+            id: "q1",
+            label: "Meal",
+            fieldType: "select",
+            options: ["vegan"],
+            required: true,
+            displayOrder: 0
+        )
+    }
+
     private func editModel() -> AddSurveyQuestionModel {
         AddSurveyQuestionModel(
             client: makeClient(),
