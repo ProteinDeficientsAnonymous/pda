@@ -151,7 +151,9 @@ struct JoinRequestsView: View {
     @State private var model: JoinRequestsModel?
     @State private var filter = "pending"
     @State private var query = ""
+    @State private var editingWelcome = false
     @State private var editingWhatsApp = false
+    @State private var welcomeNotice: String?
     @State private var whatsAppNotice: String?
 
     var body: some View {
@@ -174,10 +176,17 @@ struct JoinRequestsView: View {
                 let rows = visibleJoinRequests(model.rows, filter: filter, query: query)
                 VStack(spacing: 8) {
                     HStack {
+                        Button(WelcomeTemplateCopy.button) { editingWelcome = true }
                         Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
                         Spacer()
                     }
                     .padding(.horizontal)
+                    if let welcomeNotice {
+                        Text(welcomeNotice)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
                     if let whatsAppNotice {
                         Text(whatsAppNotice)
                             .font(.footnote)
@@ -215,6 +224,13 @@ struct JoinRequestsView: View {
         .searchable(text: $query, prompt: JoinRequestsCopy.search)
         .navigationTitle(JoinRequestsCopy.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $editingWelcome) {
+            NavigationStack {
+                WelcomeTemplateEditorView(client: client) {
+                    welcomeNotice = WelcomeTemplateCopy.saved
+                }
+            }
+        }
         .sheet(isPresented: $editingWhatsApp) {
             NavigationStack {
                 WhatsAppLinkEditorView(client: client) {
