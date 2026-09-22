@@ -82,17 +82,27 @@ struct AdminSurveyDetail: Decodable, Equatable {
     let slug: String
     let visibility: String
     let questions: [PublicSurveyQuestion]
+    let pollResult: PublicSurveyPollResult?
 
-    init(id: String, title: String, slug: String, visibility: String, questions: [PublicSurveyQuestion]) {
+    init(
+        id: String,
+        title: String,
+        slug: String,
+        visibility: String,
+        questions: [PublicSurveyQuestion],
+        pollResult: PublicSurveyPollResult? = nil
+    ) {
         self.id = id
         self.title = title
         self.slug = slug
         self.visibility = visibility
         self.questions = questions.sorted { $0.displayOrder < $1.displayOrder }
+        self.pollResult = pollResult
     }
 
     enum CodingKeys: String, CodingKey {
         case id, title, slug, visibility, questions
+        case pollResult = "poll_result"
     }
 
     init(from decoder: Decoder) throws {
@@ -103,6 +113,7 @@ struct AdminSurveyDetail: Decodable, Equatable {
         visibility = try c.decodeIfPresent(String.self, forKey: .visibility) ?? ""
         questions = (try c.decodeIfPresent([PublicSurveyQuestion].self, forKey: .questions) ?? [])
             .sorted { $0.displayOrder < $1.displayOrder }
+        pollResult = try c.decodeIfPresent(PublicSurveyPollResult.self, forKey: .pollResult)
     }
 }
 
@@ -447,6 +458,13 @@ struct SurveyQuestionsView: View {
                         Text("/\(survey.slug) · \(survey.visibility)")
                             .font(PDAType.control)
                             .foregroundStyle(PDAColor.muted)
+                        NavigationLink {
+                            SurveyResponsesView(surveyId: surveyId, client: client)
+                        } label: {
+                            Text(SurveyResponsesCopy.responses)
+                                .font(PDAType.control)
+                                .foregroundStyle(PDAColor.foregroundSecondary)
+                        }
                         HStack {
                             Text(AddSurveyQuestionCopy.questions)
                                 .font(PDAType.field)
