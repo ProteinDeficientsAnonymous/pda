@@ -151,6 +151,8 @@ struct JoinRequestsView: View {
     @State private var model: JoinRequestsModel?
     @State private var filter = "pending"
     @State private var query = ""
+    @State private var editingWhatsApp = false
+    @State private var whatsAppNotice: String?
 
     var body: some View {
         Group {
@@ -171,6 +173,17 @@ struct JoinRequestsView: View {
             } else if let model, model.loaded {
                 let rows = visibleJoinRequests(model.rows, filter: filter, query: query)
                 VStack(spacing: 8) {
+                    HStack {
+                        Button(WhatsAppLinkCopy.button) { editingWhatsApp = true }
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    if let whatsAppNotice {
+                        Text(whatsAppNotice)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
                     Picker("filter", selection: $filter) {
                         ForEach(JoinRequestsCopy.filters, id: \.self) { name in
                             Text(name).tag(name)
@@ -202,6 +215,13 @@ struct JoinRequestsView: View {
         .searchable(text: $query, prompt: JoinRequestsCopy.search)
         .navigationTitle(JoinRequestsCopy.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $editingWhatsApp) {
+            NavigationStack {
+                WhatsAppLinkEditorView(client: client) {
+                    whatsAppNotice = WhatsAppLinkCopy.saved
+                }
+            }
+        }
         .task {
             if model == nil { model = JoinRequestsModel(client: client) }
             await model?.load()
