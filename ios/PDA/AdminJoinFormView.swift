@@ -81,6 +81,7 @@ final class AdminJoinFormModel {
 struct AdminJoinFormView: View {
     var client: EventsClient
     @State private var model: AdminJoinFormModel?
+    @State private var addingQuestion = false
 
     var body: some View {
         Group {
@@ -100,6 +101,11 @@ struct AdminJoinFormView: View {
                 }
             } else if let model, model.loaded {
                 VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Spacer()
+                        Button(AddQuestionCopy.button) { addingQuestion = true }
+                    }
+                    .padding(.horizontal)
                     Text(AdminJoinFormCopy.subtitle)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -123,6 +129,13 @@ struct AdminJoinFormView: View {
         }
         .navigationTitle(AdminJoinFormCopy.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $addingQuestion) {
+            NavigationStack {
+                AddQuestionView(client: client) { question in
+                    model?.includeCreated(question)
+                }
+            }
+        }
         .task {
             if model == nil { model = AdminJoinFormModel(client: client) }
             await model?.load()
