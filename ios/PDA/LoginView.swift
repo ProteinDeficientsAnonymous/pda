@@ -4,6 +4,7 @@ struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthSession.self) private var session
     @State private var model: LoginModel
+    @State private var showRequestLink = false
 
     init(client: SessionClient) {
         _model = State(initialValue: LoginModel(client: client))
@@ -89,6 +90,12 @@ struct LoginView: View {
                 Task { await submitPassword() }
             }
             .disabled(model.busy || model.password.isEmpty)
+            PDAButton(RequestLoginLinkCopy.button, variant: .ghost) {
+                showRequestLink = true
+            }
+            .sheet(isPresented: $showRequestLink) {
+                RequestLoginLinkSheet(client: model.client, phone: model.phone)
+            }
             PDAButton(LoginCopy.backButton, variant: .secondary) {
                 model.step = .phone
                 model.password = ""
