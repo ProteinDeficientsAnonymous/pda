@@ -38,6 +38,7 @@
 		A100000000000000000000Q1 /* CreateRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q0 /* CreateRoleView.swift */; };
 		A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000R0 /* WelcomeTemplateEditor.swift */; };
 		A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000S0 /* TentativeApprovalEditor.swift */; };
+		A100000000000000000000T1 /* MemberPromotionEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000T0 /* MemberPromotionEditor.swift */; };
 		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
 		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
 		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
@@ -62,6 +63,7 @@
 		A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q2 /* CreateRoleTests.swift */; };
 		A100000000000000000000R3 /* WelcomeTemplateEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */; };
 		A100000000000000000000S3 /* TentativeApprovalEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */; };
+		A100000000000000000000T3 /* MemberPromotionEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000T2 /* MemberPromotionEditorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +115,7 @@
 		A100000000000000000000Q0 /* CreateRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleView.swift; sourceTree = "<group>"; };
 		A100000000000000000000R0 /* WelcomeTemplateEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeTemplateEditor.swift; sourceTree = "<group>"; };
 		A100000000000000000000S0 /* TentativeApprovalEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TentativeApprovalEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000T0 /* MemberPromotionEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEditor.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
@@ -136,6 +139,7 @@
 		A100000000000000000000Q2 /* CreateRoleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeTemplateEditorTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TentativeApprovalEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000T2 /* MemberPromotionEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -212,6 +216,7 @@
 				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
 				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
+				A100000000000000000000T0 /* MemberPromotionEditor.swift */,
 				A10000000000000000000019 /* Info.plist */,
 				A10000000000000000000020 /* Assets.xcassets */,
 			);
@@ -242,6 +247,7 @@
 				A100000000000000000000Q2 /* CreateRoleTests.swift */,
 				A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */,
 				A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */,
+				A100000000000000000000T2 /* MemberPromotionEditorTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -409,6 +415,7 @@
 				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
 				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
+				A100000000000000000000T1 /* MemberPromotionEditor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -437,6 +444,7 @@
 				A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */,
 				A100000000000000000000R3 /* WelcomeTemplateEditorTests.swift in Sources */,
 				A100000000000000000000S3 /* TentativeApprovalEditorTests.swift in Sources */,
+				A100000000000000000000T3 /* MemberPromotionEditorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
