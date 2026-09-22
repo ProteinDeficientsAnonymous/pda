@@ -681,6 +681,8 @@ struct EventDetailView: View {
     @State private var showEdit = false
     @State private var showLogin = false
     @State private var showInvite = false
+    @State private var showGroupText = false
+    @State private var showEmailBlast = false
     @State private var showCheckIn = false
     @State private var showManageRsvps = false
     @State private var showCheckInReport = false
@@ -732,6 +734,24 @@ struct EventDetailView: View {
 
                 if canInviteGuests(detail, user: session.user) {
                     PDAButton(InviteCopy.send, variant: .secondary) { showInvite = true }
+                }
+
+                if showsGroupText(
+                    userId: session.user?.id,
+                    coHostIds: detail.coHostIds,
+                    permissions: session.user?.permissions ?? []
+                ) {
+                    PDAButton(GroupTextCopy.title, variant: .secondary) { showGroupText = true }
+                }
+
+                if showsEmailBlast(
+                    userId: session.user?.id,
+                    coHostIds: detail.coHostIds,
+                    permissions: session.user?.permissions ?? [],
+                    status: detail.status,
+                    guestCount: detail.guests.count
+                ) {
+                    PDAButton(EmailBlastCopy.title, variant: .secondary) { showEmailBlast = true }
                 }
 
                 if canShowCheckIn(detail, user: session.user) {
@@ -904,6 +924,16 @@ struct EventDetailView: View {
                 client: EventsClient(tokens: session.client.tokens)
             ) { detail = $0 }
             .environment(session)
+        }
+        .sheet(isPresented: $showGroupText) {
+            GroupTextSheet(eventId: detail.id, client: EventsClient(tokens: session.client.tokens))
+        }
+        .sheet(isPresented: $showEmailBlast) {
+            EmailBlastSheet(
+                eventId: detail.id,
+                guestStatuses: detail.guests.map(\.status),
+                client: EventsClient(tokens: session.client.tokens)
+            )
         }
         .sheet(isPresented: $showCheckIn) {
             CheckInView(
