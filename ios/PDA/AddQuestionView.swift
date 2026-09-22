@@ -2,7 +2,9 @@ import SwiftUI
 
 enum AddQuestionCopy {
     static let button = "add question"
+    static let edit = "edit"
     static let title = "add question"
+    static let editTitle = "edit question"
     static let labelField = "label"
     static let type = "type"
     static let required = "required"
@@ -17,6 +19,7 @@ enum AddQuestionCopy {
     static let failure = "couldn't save — try again"
     static let forbiddenTitle = "add question"
     static let forbiddenBody = "you need permission to edit join questions to add a question."
+    static let editForbiddenBody = "you need permission to edit join questions to edit this question."
 }
 
 struct JoinQuestionTypeChoice: Equatable {
@@ -40,6 +43,10 @@ func joinQuestionPayloadOptions(fieldType: String, options: [String]) -> [String
 
 func addQuestionURL(base: URL) -> URL {
     URL(string: "/api/community/join-form/questions/", relativeTo: base)!.absoluteURL
+}
+
+func updateJoinQuestionURL(base: URL, id: String) -> URL {
+    URL(string: "/api/community/join-form/questions/\(id)/", relativeTo: base)!.absoluteURL
 }
 
 enum AddQuestionError: Error, Equatable {
@@ -71,11 +78,38 @@ extension EventsClient {
         guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
         return try Event.decoder.decode(JoinQuestion.self, from: data)
     }
+
+    func updateJoinQuestion(
+        id: String,
+        label: String,
+        fieldType: String,
+        options: [String],
+        required: Bool
+    ) async throws -> JoinQuestion {
+        var req = URLRequest(url: updateJoinQuestionURL(base: baseURL, id: id))
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "label": label,
+            "field_type": fieldType,
+            "options": options,
+            "required": required,
+        ])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw AddQuestionError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+        return try Event.decoder.decode(JoinQuestion.self, from: data)
+    }
 }
 
 @Observable
 final class AddQuestionModel {
     var client: EventsClient
+    var question: JoinQuestion?
     var label = ""
     var fieldType = "text"
     var required = false
@@ -87,13 +121,23 @@ final class AddQuestionModel {
     var created: JoinQuestion?
 
     var showsOptions: Bool { fieldType == "select" }
+    var title: String { question == nil ? AddQuestionCopy.title : AddQuestionCopy.editTitle }
     var saveLabel: String { saving ? AddQuestionCopy.saving : AddQuestionCopy.save }
     var canSave: Bool { !saving && !forbidden }
-    var explanationTitle: String { AddQuestionCopy.forbiddenTitle }
-    var explanationBody: String { AddQuestionCopy.forbiddenBody }
+    var explanationTitle: String { question == nil ? AddQuestionCopy.forbiddenTitle : AddQuestionCopy.editTitle }
+    var explanationBody: String {
+        question == nil ? AddQuestionCopy.forbiddenBody : AddQuestionCopy.editForbiddenBody
+    }
 
-    init(client: EventsClient = EventsClient()) {
+    init(client: EventsClient = EventsClient(), question: JoinQuestion? = nil) {
         self.client = client
+        self.question = question
+        if let question {
+            label = question.label
+            fieldType = question.fieldType
+            required = question.required
+            options = question.options.isEmpty ? [""] : question.options
+        }
     }
 
     func save() async -> Bool {
@@ -111,12 +155,22 @@ final class AddQuestionModel {
         saving = true
         defer { saving = false }
         do {
-            created = try await client.createJoinQuestion(
-                label: trimmed,
-                fieldType: fieldType,
-                options: payloadOptions,
-                required: required
-            )
+            if let question {
+                created = try await client.updateJoinQuestion(
+                    id: question.id,
+                    label: trimmed,
+                    fieldType: fieldType,
+                    options: payloadOptions,
+                    required: required
+                )
+            } else {
+                created = try await client.createJoinQuestion(
+                    label: trimmed,
+                    fieldType: fieldType,
+                    options: payloadOptions,
+                    required: required
+                )
+            }
             closed = true
             return true
         } catch AddQuestionError.forbidden {
@@ -138,10 +192,20 @@ extension AdminJoinFormModel {
         questions.append(question)
         questions.sort { $0.displayOrder < $1.displayOrder }
     }
+
+    func replaceUpdated(_ question: JoinQuestion) {
+        if let index = questions.firstIndex(where: { $0.id == question.id }) {
+            questions[index] = question
+        } else {
+            questions.append(question)
+        }
+        questions.sort { $0.displayOrder < $1.displayOrder }
+    }
 }
 
 struct AddQuestionView: View {
     var client: EventsClient
+    var question: JoinQuestion?
     var onCreated: (JoinQuestion) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     @State private var model: AddQuestionModel?
@@ -186,7 +250,7 @@ struct AddQuestionView: View {
                 }
             }
         }
-        .navigationTitle(AddQuestionCopy.title)
+        .navigationTitle(model?.title ?? AddQuestionCopy.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -205,7 +269,7 @@ struct AddQuestionView: View {
             }
         }
         .task {
-            if model == nil { model = AddQuestionModel(client: client) }
+            if model == nil { model = AddQuestionModel(client: client, question: question) }
         }
     }
 

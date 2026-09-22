@@ -203,6 +203,188 @@ final class AddQuestionTests: XCTestCase {
         }
     }
 
+    func test_editQuestion_prefillsAndPatchesAllFields() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        let existing = JoinQuestion(
+            id: "q1",
+            label: "Diet",
+            fieldType: "select",
+            required: true,
+            options: ["vegan", "other"],
+            displayOrder: 0
+        )
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            XCTAssertEqual(routePath(request.url), "/api/community/join-form/questions/q1/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            let body = try payload(request.httpBody ?? Data())
+            XCTAssertEqual(body.label, "diet")
+            XCTAssertEqual(body.fieldType, "select")
+            XCTAssertEqual(body.options, ["vegan"])
+            XCTAssertEqual(body.required, true)
+            return MockHTTP.json(200, questionJSON(
+                id: "q1",
+                label: "diet",
+                type: "select",
+                order: 0,
+                required: true,
+                options: ["vegan"]
+            ))
+        }
+        let model = AddQuestionModel(client: makeClient(tokens), question: existing)
+        XCTAssertEqual(model.title, "edit question")
+        XCTAssertEqual(model.label, "Diet")
+        XCTAssertEqual(model.fieldType, "select")
+        XCTAssertEqual(model.required, true)
+        XCTAssertEqual(model.options, ["vegan", "other"])
+        XCTAssertTrue(model.showsOptions)
+        model.label = "  diet  "
+        model.options = [" vegan ", ""]
+        let saved = await model.save()
+        XCTAssertTrue(saved)
+        XCTAssertTrue(model.closed)
+        let updated = try XCTUnwrap(model.created)
+        let form = AdminJoinFormModel(client: makeClient(tokens))
+        form.questions = [
+            existing,
+            JoinQuestion(id: "q2", label: "Why", fieldType: "text", required: false, options: [], displayOrder: 1),
+        ]
+        form.replaceUpdated(updated)
+        XCTAssertEqual(form.questions.map(\.id), ["q1", "q2"])
+        XCTAssertEqual(form.questions[0].label, "diet")
+        XCTAssertEqual(form.questions[0].options, ["vegan"])
+    }
+
+    func test_editQuestion_textSendsEmptyOptions() async throws {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            let body = try payload(request.httpBody ?? Data())
+            XCTAssertEqual(body.fieldType, "textarea")
+            XCTAssertEqual(body.options, [])
+            XCTAssertEqual(body.required, false)
+            return MockHTTP.json(200, questionJSON(id: "q1", label: "why", type: "textarea", order: 0))
+        }
+        let existing = JoinQuestion(
+            id: "q1",
+            label: "Diet",
+            fieldType: "select",
+            required: true,
+            options: ["vegan"],
+            displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        model.label = "why"
+        model.fieldType = "textarea"
+        model.required = false
+        XCTAssertFalse(model.showsOptions)
+        let saved = await model.save()
+        XCTAssertTrue(saved)
+    }
+
+    func test_editQuestion_emptyLabelDoesNotPatch() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(200, questionJSON(id: "q1", label: "x", type: "text", order: 0))
+        }
+        let existing = JoinQuestion(
+            id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        model.label = "   "
+        let saved = await model.save()
+        XCTAssertFalse(saved)
+        XCTAssertFalse(called)
+        XCTAssertEqual(model.formError, "label required")
+        XCTAssertFalse(model.closed)
+    }
+
+    func test_editQuestion_selectWithoutOptionsDoesNotPatch() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(200, questionJSON(id: "q1", label: "diet", type: "select", order: 0))
+        }
+        let existing = JoinQuestion(
+            id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        model.fieldType = "select"
+        model.options = ["  ", ""]
+        let saved = await model.save()
+        XCTAssertFalse(saved)
+        XCTAssertFalse(called)
+        XCTAssertEqual(model.formError, "add at least one option")
+    }
+
+    func test_editQuestion_403ShowsExplanation() async {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "PATCH")
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+        }
+        let existing = JoinQuestion(
+            id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        let saved = await model.save()
+        XCTAssertFalse(saved)
+        XCTAssertTrue(model.forbidden)
+        XCTAssertNil(model.created)
+        XCTAssertEqual(model.explanationTitle, "edit question")
+        XCTAssertEqual(
+            model.explanationBody,
+            "you need permission to edit join questions to edit this question."
+        )
+    }
+
+    func test_editQuestion_failureShowsTryAgain() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(500, ["detail": "nope"])
+        }
+        let existing = JoinQuestion(
+            id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        let saved = await model.save()
+        XCTAssertFalse(saved)
+        XCTAssertFalse(model.forbidden)
+        XCTAssertEqual(model.formError, "couldn't save — try again")
+    }
+
+    func test_editQuestion_cancelDoesNotPatch() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(200, questionJSON(id: "q1", label: "Diet", type: "text", order: 0))
+        }
+        let existing = JoinQuestion(
+            id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0
+        )
+        let model = AddQuestionModel(client: makeClient(), question: existing)
+        model.cancel()
+        XCTAssertTrue(model.closed)
+        XCTAssertFalse(called)
+        XCTAssertNil(model.created)
+    }
+
+    func test_editQuestionCopy_isLowercase() {
+        XCTAssertEqual(AddQuestionCopy.edit, "edit")
+        XCTAssertEqual(AddQuestionCopy.editTitle, "edit question")
+        XCTAssertEqual(
+            updateJoinQuestionURL(base: base, id: "q1").absoluteString,
+            "https://pda.test/api/community/join-form/questions/q1/"
+        )
+        let blobs = [
+            AddQuestionCopy.edit,
+            AddQuestionCopy.editTitle,
+            AddQuestionCopy.editForbiddenBody,
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }

@@ -82,6 +82,7 @@ struct AdminJoinFormView: View {
     var client: EventsClient
     @State private var model: AdminJoinFormModel?
     @State private var addingQuestion = false
+    @State private var editingQuestion: JoinQuestion?
 
     var body: some View {
         Group {
@@ -114,11 +115,15 @@ struct AdminJoinFormView: View {
                         ContentUnavailableView(AdminJoinFormCopy.empty, systemImage: "questionmark")
                     } else {
                         List(model.questions) { question in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(adminJoinQuestionTitle(question))
-                                Text(adminJoinQuestionDetail(question))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(adminJoinQuestionTitle(question))
+                                    Text(adminJoinQuestionDetail(question))
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(AddQuestionCopy.edit) { editingQuestion = question }
                             }
                         }
                     }
@@ -133,6 +138,13 @@ struct AdminJoinFormView: View {
             NavigationStack {
                 AddQuestionView(client: client) { question in
                     model?.includeCreated(question)
+                }
+            }
+        }
+        .sheet(item: $editingQuestion) { question in
+            NavigationStack {
+                AddQuestionView(client: client, question: question) { updated in
+                    model?.replaceUpdated(updated)
                 }
             }
         }
