@@ -90,6 +90,105 @@ final class AdminJoinFormTests: XCTestCase {
         }
     }
 
+    func test_deleteQuestion_confirmsThenDeletes() async throws {
+        let tokens = MemoryTokenStore()
+        try tokens.save("access-jwt")
+        let diet = JoinQuestion(id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0)
+        let why = JoinQuestion(id: "q2", label: "why", fieldType: "textarea", required: false, options: [], displayOrder: 1)
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "DELETE")
+            XCTAssertEqual(routePath(request.url), "/api/community/join-form/questions/q1/")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access-jwt")
+            XCTAssertTrue(request.httpBody == nil || request.httpBody?.isEmpty == true)
+            return MockHTTP.json(204, [:])
+        }
+        let model = AdminJoinFormModel(client: makeClient(tokens))
+        model.questions = [diet, why]
+        let prompt = model.prepareDelete(diet)
+        XCTAssertEqual(prompt?.title, "delete question")
+        XCTAssertEqual(prompt?.confirmLabel, "delete")
+        XCTAssertEqual(prompt?.message, "delete \"Diet\"?")
+        let deleted = await model.commitDelete()
+        XCTAssertTrue(deleted)
+        XCTAssertEqual(model.questions.map(\.id), ["q2"])
+        XCTAssertNil(model.deleteError)
+        XCTAssertFalse(model.deleteForbidden)
+    }
+
+    func test_deleteQuestion_cancelDoesNotCallAPI() async {
+        var called = false
+        MockHTTP.handler = { _ in
+            called = true
+            return MockHTTP.json(204, [:])
+        }
+        let model = AdminJoinFormModel(client: makeClient())
+        let diet = JoinQuestion(id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0)
+        _ = model.prepareDelete(diet)
+        model.cancelDelete()
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertFalse(called)
+        XCTAssertEqual(model.questions.map(\.id), [])
+    }
+
+    func test_deleteQuestion_403ShowsExplanation() async {
+        MockHTTP.handler = { request in
+            XCTAssertEqual(request.httpMethod, "DELETE")
+            return MockHTTP.json(403, ["detail": [["code": "perm.denied"]]])
+        }
+        let diet = JoinQuestion(id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0)
+        let model = AdminJoinFormModel(client: makeClient())
+        model.questions = [diet]
+        _ = model.prepareDelete(diet)
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertEqual(model.questions.map(\.id), ["q1"])
+        XCTAssertTrue(model.deleteForbidden)
+        XCTAssertEqual(model.deleteExplanationTitle, "delete question")
+        XCTAssertEqual(
+            model.deleteExplanationBody,
+            "you need permission to edit join questions to delete this question."
+        )
+        XCTAssertNil(model.deleteError)
+    }
+
+    func test_deleteQuestion_failureShowsTryAgain() async {
+        MockHTTP.handler = { _ in
+            MockHTTP.json(500, ["detail": "nope"])
+        }
+        let diet = JoinQuestion(id: "q1", label: "Diet", fieldType: "text", required: false, options: [], displayOrder: 0)
+        let model = AdminJoinFormModel(client: makeClient())
+        model.questions = [diet]
+        _ = model.prepareDelete(diet)
+        let deleted = await model.commitDelete()
+        XCTAssertFalse(deleted)
+        XCTAssertEqual(model.questions.map(\.id), ["q1"])
+        XCTAssertEqual(model.deleteError, "couldn't delete the question — try again")
+        XCTAssertFalse(model.deleteForbidden)
+    }
+
+    func test_deleteQuestionCopy_isLowercase() {
+        XCTAssertEqual(DeleteQuestionCopy.button, "delete")
+        XCTAssertEqual(DeleteQuestionCopy.title, "delete question")
+        XCTAssertEqual(DeleteQuestionCopy.confirm, "delete")
+        XCTAssertEqual(DeleteQuestionCopy.failure, "couldn't delete the question — try again")
+        let why = JoinQuestion(id: "q", label: "why", fieldType: "text", required: false, options: [], displayOrder: 0)
+        XCTAssertEqual(joinQuestionDeleteMessage(why), "delete \"why\"?")
+        let blobs = [
+            DeleteQuestionCopy.button,
+            DeleteQuestionCopy.title,
+            DeleteQuestionCopy.confirm,
+            DeleteQuestionCopy.cancel,
+            DeleteQuestionCopy.failure,
+            DeleteQuestionCopy.forbiddenTitle,
+            DeleteQuestionCopy.forbiddenBody,
+            joinQuestionDeleteMessage(why),
+        ]
+        for text in blobs {
+            XCTAssertEqual(text, text.lowercased(), text)
+        }
+    }
+
     private func makeClient(_ tokens: MemoryTokenStore? = nil) -> EventsClient {
         EventsClient(baseURL: base, session: MockHTTP.session(), tokens: tokens)
     }

@@ -14,6 +14,30 @@ enum AdminJoinFormError: Error, Equatable {
     case forbidden
 }
 
+enum DeleteQuestionCopy {
+    static let button = "delete"
+    static let title = "delete question"
+    static let confirm = "delete"
+    static let cancel = "cancel"
+    static let failure = "couldn't delete the question — try again"
+    static let forbiddenTitle = "delete question"
+    static let forbiddenBody = "you need permission to edit join questions to delete this question."
+}
+
+struct DeleteQuestionPrompt: Equatable {
+    let title: String
+    let message: String
+    let confirmLabel: String
+}
+
+enum DeleteQuestionError: Error {
+    case forbidden
+}
+
+func joinQuestionDeleteMessage(_ question: JoinQuestion) -> String {
+    "delete \"\(question.label)\"?"
+}
+
 func adminJoinQuestionsURL(base: URL) -> URL {
     joinFormURL(base: base)
 }
@@ -43,6 +67,18 @@ extension EventsClient {
         return try Event.decoder.decode([JoinQuestion].self, from: data)
             .sorted { $0.displayOrder < $1.displayOrder }
     }
+
+    func deleteJoinQuestion(id: String) async throws {
+        var req = URLRequest(url: updateJoinQuestionURL(base: baseURL, id: id))
+        req.httpMethod = "DELETE"
+        if let token = try tokens?.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (_, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 403 { throw DeleteQuestionError.forbidden }
+        guard (200 ..< 300).contains(status) else { throw APIError.http(status) }
+    }
 }
 
 @Observable
@@ -52,9 +88,14 @@ final class AdminJoinFormModel {
     var forbidden = false
     var error: String?
     var loaded = false
+    var pendingDelete: JoinQuestion?
+    var deleteError: String?
+    var deleteForbidden = false
 
     var explanationTitle: String { AdminJoinFormCopy.forbiddenTitle }
     var explanationBody: String { AdminJoinFormCopy.forbiddenBody }
+    var deleteExplanationTitle: String { DeleteQuestionCopy.forbiddenTitle }
+    var deleteExplanationBody: String { DeleteQuestionCopy.forbiddenBody }
 
     init(client: EventsClient = EventsClient()) {
         self.client = client
@@ -74,6 +115,41 @@ final class AdminJoinFormModel {
             questions = []
             self.error = AdminJoinFormCopy.error
             loaded = true
+        }
+    }
+
+    func prepareDelete(_ question: JoinQuestion) -> DeleteQuestionPrompt? {
+        pendingDelete = question
+        return DeleteQuestionPrompt(
+            title: DeleteQuestionCopy.title,
+            message: joinQuestionDeleteMessage(question),
+            confirmLabel: DeleteQuestionCopy.confirm
+        )
+    }
+
+    func cancelDelete() {
+        pendingDelete = nil
+    }
+
+    func commitDelete() async -> Bool {
+        guard let question = pendingDelete else { return false }
+        return await commitDelete(question)
+    }
+
+    func commitDelete(_ question: JoinQuestion) async -> Bool {
+        pendingDelete = nil
+        deleteError = nil
+        deleteForbidden = false
+        do {
+            try await client.deleteJoinQuestion(id: question.id)
+            questions.removeAll { $0.id == question.id }
+            return true
+        } catch DeleteQuestionError.forbidden {
+            deleteForbidden = true
+            return false
+        } catch {
+            deleteError = DeleteQuestionCopy.failure
+            return false
         }
     }
 }
@@ -111,6 +187,16 @@ struct AdminJoinFormView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal)
+                    if model.deleteForbidden {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.deleteExplanationTitle).font(.headline)
+                            Text(model.deleteExplanationBody).foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal)
+                    }
+                    if let deleteError = model.deleteError {
+                        Text(deleteError).font(.footnote).foregroundStyle(.red).padding(.horizontal)
+                    }
                     if model.questions.isEmpty {
                         ContentUnavailableView(AdminJoinFormCopy.empty, systemImage: "questionmark")
                     } else {
@@ -124,6 +210,9 @@ struct AdminJoinFormView: View {
                                 }
                                 Spacer()
                                 Button(AddQuestionCopy.edit) { editingQuestion = question }
+                                Button(DeleteQuestionCopy.button, role: .destructive) {
+                                    _ = model.prepareDelete(question)
+                                }
                             }
                         }
                     }
@@ -146,6 +235,26 @@ struct AdminJoinFormView: View {
                 AddQuestionView(client: client, question: question) { updated in
                     model?.replaceUpdated(updated)
                 }
+            }
+        }
+        .confirmationDialog(
+            DeleteQuestionCopy.title,
+            isPresented: Binding(
+                get: { model?.pendingDelete != nil },
+                set: { if !$0 { model?.cancelDelete() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(DeleteQuestionCopy.confirm, role: .destructive) {
+                guard let question = model?.pendingDelete else { return }
+                Task { _ = await model?.commitDelete(question) }
+            }
+            Button(DeleteQuestionCopy.cancel, role: .cancel) {
+                model?.cancelDelete()
+            }
+        } message: {
+            if let question = model?.pendingDelete {
+                Text(joinQuestionDeleteMessage(question))
             }
         }
         .task {
