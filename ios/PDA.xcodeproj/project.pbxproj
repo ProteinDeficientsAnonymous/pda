@@ -80,7 +80,9 @@
 		A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000CC2 /* DonateEditorTests.swift */; };
 		A10000000000000000000DD3 /* VolunteerEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000DD2 /* VolunteerEditorTests.swift */; };
 		A10000000000000000000EE1 /* BulkCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE0 /* BulkCreateView.swift */; };
+		A10000000000000000000FF1 /* SurveyPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF0 /* SurveyPageView.swift */; };
 		A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE2 /* BulkCreateTests.swift */; };
+		A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF2 /* SurveyPageTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -173,7 +175,9 @@
 		A10000000000000000000CC2 /* DonateEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonateEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000DD2 /* VolunteerEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerEditorTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000EE0 /* BulkCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000FF0 /* SurveyPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageView.swift; sourceTree = "<group>"; };
 		A10000000000000000000EE2 /* BulkCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000FF2 /* SurveyPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
@@ -248,6 +252,7 @@
 				A100000000000000000000O0 /* WhatsAppLinkEditor.swift */,
 				A100000000000000000000P0 /* MemberCreateView.swift */,
 				A10000000000000000000EE0 /* BulkCreateView.swift */,
+				A10000000000000000000FF0 /* SurveyPageView.swift */,
 				A100000000000000000000Q0 /* CreateRoleView.swift */,
 				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
 				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
@@ -299,6 +304,7 @@
 				A10000000000000000000CC2 /* DonateEditorTests.swift */,
 				A10000000000000000000DD2 /* VolunteerEditorTests.swift */,
 				A10000000000000000000EE2 /* BulkCreateTests.swift */,
+				A10000000000000000000FF2 /* SurveyPageTests.swift */,
 			);
 			path = PDATests;
 			sourceTree = "<group>";
@@ -464,6 +470,7 @@
 				A100000000000000000000O1 /* WhatsAppLinkEditor.swift in Sources */,
 				A100000000000000000000P1 /* MemberCreateView.swift in Sources */,
 				A10000000000000000000EE1 /* BulkCreateView.swift in Sources */,
+				A10000000000000000000FF1 /* SurveyPageView.swift in Sources */,
 				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
 				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
 				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
@@ -513,6 +520,7 @@
 				A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */,
 				A10000000000000000000DD3 /* VolunteerEditorTests.swift in Sources */,
 				A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */,
+				A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
