@@ -54,6 +54,7 @@ from community.models.survey import (
     SurveyResponse,
 )
 from community.models.tag import EventTag
+from community.models.whatsapp_join_reminder import WhatsAppJoinReminder
 
 __all__ = [
     "AttendanceMilestone",
@@ -113,4 +114,5 @@ __all__ = [
     "Survey",
     "SurveyQuestion",
     "SurveyResponse",
+    "WhatsAppJoinReminder",
 ]
