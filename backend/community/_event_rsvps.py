@@ -26,9 +26,9 @@ from community._event_helpers import (
 from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
-from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import _attending_headcount_db
 from community._rsvp_payment import requires_payment_gate
+from community._rsvp_status_emails import email_member_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._tentative_member_access import (
     enforce_tentative_member_write_access,
@@ -312,6 +312,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
+        previous_status = (
+            EventRSVP.objects.filter(event_id=event_id, user=request.auth)
+            .values_list("status", flat=True)
+            .first()
+        )
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
             event_id,
             request.auth,
@@ -345,7 +350,9 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         notify_rsvp_status_changed(event, request.auth, final_status)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    if final_status != previous_status:
+        email_member_rsvp_status(request, event, request.auth, final_status)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -370,7 +377,7 @@ def delete_rsvp(request, event_id: UUID):
         request,
         target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
     )
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(204, None)
 
 
