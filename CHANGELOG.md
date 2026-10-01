@@ -1,3 +1,10 @@
+## [0.114.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.0...v0.114.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **events:** mention the join request in the non-member rsvp hint ([#1509](https://github.com/ProteinDeficientsAnonymous/pda/issues/1509)) ([880a75e](https://github.com/ProteinDeficientsAnonymous/pda/commit/880a75e389a0fc959cb807084d0b77252c23d08e))
+
 # [0.114.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.113.0...v0.114.0) (2026-10-01)
 
 
