@@ -192,16 +192,20 @@ describe('EventDetailScreen', () => {
       renderScreen();
     }
 
-    it('swaps the rsvp button for a full-member note on community events', () => {
+    it('swaps the rsvp button for an unlock note on community events', () => {
       renderAs(TENTATIVE_USER, EventType.Community);
       expect(screen.queryByTestId('rsvp-section')).not.toBeInTheDocument();
-      expect(screen.getByText(/rsvps open once you're a full member/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/attend an official or club event to unlock rsvps/i),
+      ).toBeInTheDocument();
     });
 
     it.each([EventType.Official, EventType.Club])('lets them rsvp to %s events', (type) => {
       renderAs(TENTATIVE_USER, type);
       expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
-      expect(screen.queryByText(/rsvps open once you're a full member/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/attend an official or club event to unlock rsvps/i),
+      ).not.toBeInTheDocument();
     });
 
     it('full members still get the rsvp button on community events', () => {

@@ -259,7 +259,9 @@ function MemberRsvpControl({
   if (membershipBlocksRsvp) {
     if (rsvpLocked) return null;
     return (
-      <p className="text-muted text-center text-sm">rsvps open once you're a full member 🌱</p>
+      <p className="text-muted text-center text-sm">
+        attend an official or club event to unlock rsvps 🌱
+      </p>
     );
   }
 
