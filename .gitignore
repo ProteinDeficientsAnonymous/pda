@@ -41,5 +41,10 @@ frontend/.vite/
 # workflow design docs (superpowers) — not tracked
 docs/superpowers/
 
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
 # root release tooling
 node_modules/

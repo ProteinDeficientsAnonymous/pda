@@ -1,0 +1,878 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000014 /* PDAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* PDAApp.swift */; };
+		A10000000000000000000016 /* EventsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* EventsAPI.swift */; };
+		A10000000000000000000018 /* EventViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* EventViews.swift */; };
+		A10000000000000000000063 /* SessionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000062 /* SessionAPI.swift */; };
+		A10000000000000000000065 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000064 /* LoginView.swift */; };
+		A10000000000000000000071 /* GateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000070 /* GateView.swift */; };
+		A10000000000000000000081 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* NotificationsView.swift */; };
+		A10000000000000000000091 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000090 /* HomeView.swift */; };
+		A10000000000000000000093 /* FaqView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* FaqView.swift */; };
+		A10000000000000000000095 /* GuidelinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* GuidelinesView.swift */; };
+		A10000000000000000000097 /* DonateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000096 /* DonateView.swift */; };
+		A10000000000000000000099 /* VolunteerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000098 /* VolunteerView.swift */; };
+		A100000000000000000000A1 /* JoinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000A0 /* JoinView.swift */; };
+		A100000000000000000000B1 /* SmsPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000B0 /* SmsPolicyView.swift */; };
+		A100000000000000000000C1 /* DirectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000C0 /* DirectoryView.swift */; };
+		A100000000000000000000D1 /* AdminHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000D0 /* AdminHubView.swift */; };
+		A100000000000000000000E1 /* AdminMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E0 /* AdminMembersView.swift */; };
+		A100000000000000000000F1 /* AdminMemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000F0 /* AdminMemberDetailView.swift */; };
+		A100000000000000000000G1 /* JoinRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000G0 /* JoinRequestsView.swift */; };
+		A100000000000000000000H1 /* ManageEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000H0 /* ManageEventsView.swift */; };
+		A100000000000000000000I1 /* FlaggedEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000I0 /* FlaggedEventsView.swift */; };
+		A100000000000000000000J1 /* AttendanceReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000J0 /* AttendanceReportView.swift */; };
+		A100000000000000000000K1 /* DocsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K0 /* DocsLibraryView.swift */; };
+		A100000000000000000000L1 /* AdminJoinFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000L0 /* AdminJoinFormView.swift */; };
+		A100000000000000000000M1 /* DocDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000M0 /* DocDetailView.swift */; };
+		A100000000000000000000N1 /* AdminRolesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N0 /* AdminRolesView.swift */; };
+		A100000000000000000000O1 /* WhatsAppLinkEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000O0 /* WhatsAppLinkEditor.swift */; };
+		A100000000000000000000P1 /* MemberCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000P0 /* MemberCreateView.swift */; };
+		A100000000000000000000Q1 /* CreateRoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q0 /* CreateRoleView.swift */; };
+		A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000R0 /* WelcomeTemplateEditor.swift */; };
+		A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000S0 /* TentativeApprovalEditor.swift */; };
+		A100000000000000000000T1 /* MemberPromotionEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000T0 /* MemberPromotionEditor.swift */; };
+		A100000000000000000000U1 /* MemberPromotionEmailEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */; };
+		A100000000000000000000V1 /* AddQuestionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000V0 /* AddQuestionView.swift */; };
+		A100000000000000000000W1 /* PDATheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000W0 /* PDATheme.swift */; };
+		A100000000000000000000X1 /* AdminSurveysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000X0 /* AdminSurveysView.swift */; };
+		A100000000000000000000Y1 /* AdminFeatureFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Y0 /* AdminFeatureFlagsView.swift */; };
+		A10000000000000000000021 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
+		A10000000000000000000023 /* EventsAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* EventsAPITests.swift */; };
+		A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* GuestCalendarUITests.swift */; };
+		A10000000000000000000067 /* LoginUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000066 /* LoginUITests.swift */; };
+		A10000000000000000000061 /* SessionAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000060 /* SessionAPITests.swift */; };
+		A100000000000000000000A3 /* JoinAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000A2 /* JoinAPITests.swift */; };
+		A100000000000000000000B3 /* SmsPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000B2 /* SmsPolicyTests.swift */; };
+		A100000000000000000000C3 /* DirectoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000C2 /* DirectoryTests.swift */; };
+		A100000000000000000000D3 /* AdminHubTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000D2 /* AdminHubTests.swift */; };
+		A100000000000000000000E3 /* AdminMembersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E2 /* AdminMembersTests.swift */; };
+		A100000000000000000000F3 /* AdminMemberDetailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000F2 /* AdminMemberDetailTests.swift */; };
+		A100000000000000000000G3 /* JoinRequestsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000G2 /* JoinRequestsTests.swift */; };
+		A100000000000000000000H3 /* ManageEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000H2 /* ManageEventsTests.swift */; };
+		A100000000000000000000I3 /* FlaggedEventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000I2 /* FlaggedEventsTests.swift */; };
+		A100000000000000000000J3 /* AttendanceReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000J2 /* AttendanceReportTests.swift */; };
+		A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000K2 /* DocsLibraryTests.swift */; };
+		A100000000000000000000L3 /* AdminJoinFormTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000L2 /* AdminJoinFormTests.swift */; };
+		A100000000000000000000M3 /* DocDetailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000M2 /* DocDetailTests.swift */; };
+		A100000000000000000000N3 /* AdminRolesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000N2 /* AdminRolesTests.swift */; };
+		A100000000000000000000O3 /* WhatsAppLinkEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */; };
+		A100000000000000000000P3 /* MemberCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000P2 /* MemberCreateTests.swift */; };
+		A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Q2 /* CreateRoleTests.swift */; };
+		A100000000000000000000R3 /* WelcomeTemplateEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */; };
+		A100000000000000000000S3 /* TentativeApprovalEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */; };
+		A100000000000000000000T3 /* MemberPromotionEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000T2 /* MemberPromotionEditorTests.swift */; };
+		A100000000000000000000U3 /* MemberPromotionEmailEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */; };
+		A100000000000000000000V3 /* AddQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000V2 /* AddQuestionTests.swift */; };
+		A100000000000000000000W3 /* PDAThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000W2 /* PDAThemeTests.swift */; };
+		A100000000000000000000X3 /* AdminSurveysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000X2 /* AdminSurveysTests.swift */; };
+		A100000000000000000000Y3 /* AdminFeatureFlagsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Y2 /* AdminFeatureFlagsTests.swift */; };
+		A100000000000000000000Z3 /* HomeEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000Z2 /* HomeEditorTests.swift */; };
+		A10000000000000000000AA3 /* FaqEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000AA2 /* FaqEditorTests.swift */; };
+		A10000000000000000000BB3 /* GuidelinesEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000BB2 /* GuidelinesEditorTests.swift */; };
+		A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000CC2 /* DonateEditorTests.swift */; };
+		A10000000000000000000DD3 /* VolunteerEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000DD2 /* VolunteerEditorTests.swift */; };
+		A10000000000000000000EE1 /* BulkCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE0 /* BulkCreateView.swift */; };
+		A10000000000000000000FF1 /* SurveyPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF0 /* SurveyPageView.swift */; };
+		A10000000000000000000GG1 /* MagicLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG0 /* MagicLoginView.swift */; };
+		A10000000000000000000HH1 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000HH0 /* FeedbackView.swift */; };
+		A10000000000000000000II1 /* PaymentConfirm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000II0 /* PaymentConfirm.swift */; };
+		A10000000000000000000JJ1 /* BottomNav.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000JJ0 /* BottomNav.swift */; };
+		A10000000000000000000KK1 /* MenuSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000KK0 /* MenuSheet.swift */; };
+		A10000000000000000000LL1 /* CreateSurvey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000LL0 /* CreateSurvey.swift */; };
+		A10000000000000000000MM1 /* AddSurveyQuestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000MM0 /* AddSurveyQuestion.swift */; };
+		A10000000000000000000NN1 /* SurveyResponses.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000NN0 /* SurveyResponses.swift */; };
+		A10000000000000000000OO1 /* RequestLoginLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000OO0 /* RequestLoginLink.swift */; };
+		A10000000000000000000PP1 /* EventBlasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP0 /* EventBlasts.swift */; };
+		A10000000000000000000QQ1 /* Geocode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ0 /* Geocode.swift */; };
+		A10000000000000000000RR1 /* Giphy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000RR0 /* Giphy.swift */; };
+		A10000000000000000000SS1 /* CalendarModes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000SS0 /* CalendarModes.swift */; };
+		A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000EE2 /* BulkCreateTests.swift */; };
+		A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000FF2 /* SurveyPageTests.swift */; };
+		A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000GG2 /* MagicLoginTests.swift */; };
+		A10000000000000000000HH3 /* FeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000HH2 /* FeedbackTests.swift */; };
+		A10000000000000000000II3 /* PaymentConfirmTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000II2 /* PaymentConfirmTests.swift */; };
+		A10000000000000000000JJ3 /* BottomNavTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000JJ2 /* BottomNavTests.swift */; };
+		A10000000000000000000KK3 /* MenuSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000KK2 /* MenuSheetTests.swift */; };
+		A10000000000000000000LL3 /* CreateSurveyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000LL2 /* CreateSurveyTests.swift */; };
+		A10000000000000000000MM3 /* AddSurveyQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000MM2 /* AddSurveyQuestionTests.swift */; };
+		A10000000000000000000NN3 /* SurveyResponsesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000NN2 /* SurveyResponsesTests.swift */; };
+		A10000000000000000000OO3 /* RequestLoginLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000OO2 /* RequestLoginLinkTests.swift */; };
+		A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000PP2 /* EventBlastsTests.swift */; };
+		A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000QQ2 /* GeocodeTests.swift */; };
+		A10000000000000000000RR3 /* GiphyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000RR2 /* GiphyTests.swift */; };
+		A10000000000000000000SS3 /* CalendarModesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000SS2 /* CalendarModesTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000026 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000002;
+			remoteInfo = PDA;
+		};
+		A10000000000000000000046 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000002;
+			remoteInfo = PDA;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000013 /* PDAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDAApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000015 /* EventsAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPI.swift; sourceTree = "<group>"; };
+		A10000000000000000000017 /* EventViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventViews.swift; sourceTree = "<group>"; };
+		A10000000000000000000062 /* SessionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPI.swift; sourceTree = "<group>"; };
+		A10000000000000000000064 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A10000000000000000000070 /* GateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000080 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
+		A10000000000000000000090 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A10000000000000000000092 /* FaqView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaqView.swift; sourceTree = "<group>"; };
+		A10000000000000000000094 /* GuidelinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidelinesView.swift; sourceTree = "<group>"; };
+		A10000000000000000000096 /* DonateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000098 /* VolunteerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerView.swift; sourceTree = "<group>"; };
+		A100000000000000000000A0 /* JoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinView.swift; sourceTree = "<group>"; };
+		A100000000000000000000B0 /* SmsPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmsPolicyView.swift; sourceTree = "<group>"; };
+		A100000000000000000000C0 /* DirectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryView.swift; sourceTree = "<group>"; };
+		A100000000000000000000D0 /* AdminHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminHubView.swift; sourceTree = "<group>"; };
+		A100000000000000000000E0 /* AdminMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMembersView.swift; sourceTree = "<group>"; };
+		A100000000000000000000F0 /* AdminMemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMemberDetailView.swift; sourceTree = "<group>"; };
+		A100000000000000000000G0 /* JoinRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinRequestsView.swift; sourceTree = "<group>"; };
+		A100000000000000000000H0 /* ManageEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageEventsView.swift; sourceTree = "<group>"; };
+		A100000000000000000000I0 /* FlaggedEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlaggedEventsView.swift; sourceTree = "<group>"; };
+		A100000000000000000000J0 /* AttendanceReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceReportView.swift; sourceTree = "<group>"; };
+		A100000000000000000000K0 /* DocsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryView.swift; sourceTree = "<group>"; };
+		A100000000000000000000L0 /* AdminJoinFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminJoinFormView.swift; sourceTree = "<group>"; };
+		A100000000000000000000M0 /* DocDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocDetailView.swift; sourceTree = "<group>"; };
+		A100000000000000000000N0 /* AdminRolesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesView.swift; sourceTree = "<group>"; };
+		A100000000000000000000O0 /* WhatsAppLinkEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsAppLinkEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000P0 /* MemberCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberCreateView.swift; sourceTree = "<group>"; };
+		A100000000000000000000Q0 /* CreateRoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleView.swift; sourceTree = "<group>"; };
+		A100000000000000000000R0 /* WelcomeTemplateEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeTemplateEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000S0 /* TentativeApprovalEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TentativeApprovalEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000T0 /* MemberPromotionEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEmailEditor.swift; sourceTree = "<group>"; };
+		A100000000000000000000V0 /* AddQuestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddQuestionView.swift; sourceTree = "<group>"; };
+		A100000000000000000000W0 /* PDATheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDATheme.swift; sourceTree = "<group>"; };
+		A100000000000000000000X0 /* AdminSurveysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSurveysView.swift; sourceTree = "<group>"; };
+		A100000000000000000000Y0 /* AdminFeatureFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminFeatureFlagsView.swift; sourceTree = "<group>"; };
+		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000022 /* EventsAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsAPITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000060 /* SessionAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPITests.swift; sourceTree = "<group>"; };
+		A100000000000000000000A2 /* JoinAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinAPITests.swift; sourceTree = "<group>"; };
+		A100000000000000000000B2 /* SmsPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmsPolicyTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000C2 /* DirectoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000D2 /* AdminHubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminHubTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000E2 /* AdminMembersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMembersTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000F2 /* AdminMemberDetailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMemberDetailTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000G2 /* JoinRequestsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinRequestsTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000H2 /* ManageEventsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageEventsTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000I2 /* FlaggedEventsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlaggedEventsTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000J2 /* AttendanceReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceReportTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000K2 /* DocsLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsLibraryTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000L2 /* AdminJoinFormTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminJoinFormTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000M2 /* DocDetailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocDetailTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000N2 /* AdminRolesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRolesTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsAppLinkEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000P2 /* MemberCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberCreateTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000Q2 /* CreateRoleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoleTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeTemplateEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TentativeApprovalEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000T2 /* MemberPromotionEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPromotionEmailEditorTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000V2 /* AddQuestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddQuestionTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000W2 /* PDAThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDAThemeTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000X2 /* AdminSurveysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSurveysTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000Y2 /* AdminFeatureFlagsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminFeatureFlagsTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000Z2 /* HomeEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000AA2 /* FaqEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaqEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000BB2 /* GuidelinesEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidelinesEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000CC2 /* DonateEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonateEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000DD2 /* VolunteerEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerEditorTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000EE0 /* BulkCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateView.swift; sourceTree = "<group>"; };
+		A10000000000000000000FF0 /* SurveyPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageView.swift; sourceTree = "<group>"; };
+		A10000000000000000000GG0 /* MagicLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginView.swift; sourceTree = "<group>"; };
+		A10000000000000000000HH0 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		A10000000000000000000II0 /* PaymentConfirm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentConfirm.swift; sourceTree = "<group>"; };
+		A10000000000000000000JJ0 /* BottomNav.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomNav.swift; sourceTree = "<group>"; };
+		A10000000000000000000KK0 /* MenuSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuSheet.swift; sourceTree = "<group>"; };
+		A10000000000000000000LL0 /* CreateSurvey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSurvey.swift; sourceTree = "<group>"; };
+		A10000000000000000000MM0 /* AddSurveyQuestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSurveyQuestion.swift; sourceTree = "<group>"; };
+		A10000000000000000000NN0 /* SurveyResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyResponses.swift; sourceTree = "<group>"; };
+		A10000000000000000000OO0 /* RequestLoginLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestLoginLink.swift; sourceTree = "<group>"; };
+		A10000000000000000000PP0 /* EventBlasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlasts.swift; sourceTree = "<group>"; };
+		A10000000000000000000QQ0 /* Geocode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geocode.swift; sourceTree = "<group>"; };
+		A10000000000000000000RR0 /* Giphy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Giphy.swift; sourceTree = "<group>"; };
+		A10000000000000000000SS0 /* CalendarModes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarModes.swift; sourceTree = "<group>"; };
+		A10000000000000000000EE2 /* BulkCreateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkCreateTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000FF2 /* SurveyPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyPageTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000GG2 /* MagicLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicLoginTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000HH2 /* FeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000II2 /* PaymentConfirmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentConfirmTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000JJ2 /* BottomNavTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomNavTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000KK2 /* MenuSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuSheetTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000LL2 /* CreateSurveyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSurveyTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000MM2 /* AddSurveyQuestionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSurveyQuestionTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000NN2 /* SurveyResponsesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyResponsesTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000OO2 /* RequestLoginLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestLoginLinkTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000PP2 /* EventBlastsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBlastsTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000QQ2 /* GeocodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodeTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000RR2 /* GiphyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiphyTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000SS2 /* CalendarModesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarModesTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000024 /* PDA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000025 /* PDATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000040 /* GuestCalendarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCalendarUITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000066 /* LoginUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000042 /* PDAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000045 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000009 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000010 /* PDA */,
+				A10000000000000000000011 /* PDATests */,
+				A10000000000000000000051 /* PDAUITests */,
+				A10000000000000000000012 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000010 /* PDA */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000013 /* PDAApp.swift */,
+				A10000000000000000000015 /* EventsAPI.swift */,
+				A10000000000000000000017 /* EventViews.swift */,
+				A10000000000000000000062 /* SessionAPI.swift */,
+				A10000000000000000000064 /* LoginView.swift */,
+				A10000000000000000000070 /* GateView.swift */,
+				A10000000000000000000080 /* NotificationsView.swift */,
+				A10000000000000000000090 /* HomeView.swift */,
+				A10000000000000000000092 /* FaqView.swift */,
+				A10000000000000000000094 /* GuidelinesView.swift */,
+				A10000000000000000000096 /* DonateView.swift */,
+				A10000000000000000000098 /* VolunteerView.swift */,
+				A100000000000000000000A0 /* JoinView.swift */,
+				A100000000000000000000B0 /* SmsPolicyView.swift */,
+				A100000000000000000000C0 /* DirectoryView.swift */,
+				A100000000000000000000D0 /* AdminHubView.swift */,
+				A100000000000000000000E0 /* AdminMembersView.swift */,
+				A100000000000000000000F0 /* AdminMemberDetailView.swift */,
+				A100000000000000000000G0 /* JoinRequestsView.swift */,
+				A100000000000000000000H0 /* ManageEventsView.swift */,
+				A100000000000000000000I0 /* FlaggedEventsView.swift */,
+				A100000000000000000000J0 /* AttendanceReportView.swift */,
+				A100000000000000000000K0 /* DocsLibraryView.swift */,
+				A100000000000000000000L0 /* AdminJoinFormView.swift */,
+				A100000000000000000000M0 /* DocDetailView.swift */,
+				A100000000000000000000N0 /* AdminRolesView.swift */,
+				A100000000000000000000O0 /* WhatsAppLinkEditor.swift */,
+				A100000000000000000000P0 /* MemberCreateView.swift */,
+				A10000000000000000000EE0 /* BulkCreateView.swift */,
+				A10000000000000000000FF0 /* SurveyPageView.swift */,
+				A10000000000000000000GG0 /* MagicLoginView.swift */,
+				A10000000000000000000HH0 /* FeedbackView.swift */,
+				A10000000000000000000II0 /* PaymentConfirm.swift */,
+				A10000000000000000000JJ0 /* BottomNav.swift */,
+				A10000000000000000000KK0 /* MenuSheet.swift */,
+				A10000000000000000000LL0 /* CreateSurvey.swift */,
+				A10000000000000000000MM0 /* AddSurveyQuestion.swift */,
+				A10000000000000000000NN0 /* SurveyResponses.swift */,
+				A10000000000000000000OO0 /* RequestLoginLink.swift */,
+				A10000000000000000000PP0 /* EventBlasts.swift */,
+				A10000000000000000000QQ0 /* Geocode.swift */,
+				A10000000000000000000RR0 /* Giphy.swift */,
+				A10000000000000000000SS0 /* CalendarModes.swift */,
+				A100000000000000000000Q0 /* CreateRoleView.swift */,
+				A100000000000000000000R0 /* WelcomeTemplateEditor.swift */,
+				A100000000000000000000S0 /* TentativeApprovalEditor.swift */,
+				A100000000000000000000T0 /* MemberPromotionEditor.swift */,
+				A100000000000000000000U0 /* MemberPromotionEmailEditor.swift */,
+				A100000000000000000000V0 /* AddQuestionView.swift */,
+				A100000000000000000000W0 /* PDATheme.swift */,
+				A100000000000000000000X0 /* AdminSurveysView.swift */,
+				A100000000000000000000Y0 /* AdminFeatureFlagsView.swift */,
+				A10000000000000000000019 /* Info.plist */,
+				A10000000000000000000020 /* Assets.xcassets */,
+			);
+			path = PDA;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000011 /* PDATests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000022 /* EventsAPITests.swift */,
+				A10000000000000000000060 /* SessionAPITests.swift */,
+				A100000000000000000000A2 /* JoinAPITests.swift */,
+				A100000000000000000000B2 /* SmsPolicyTests.swift */,
+				A100000000000000000000C2 /* DirectoryTests.swift */,
+				A100000000000000000000D2 /* AdminHubTests.swift */,
+				A100000000000000000000E2 /* AdminMembersTests.swift */,
+				A100000000000000000000F2 /* AdminMemberDetailTests.swift */,
+				A100000000000000000000G2 /* JoinRequestsTests.swift */,
+				A100000000000000000000H2 /* ManageEventsTests.swift */,
+				A100000000000000000000I2 /* FlaggedEventsTests.swift */,
+				A100000000000000000000J2 /* AttendanceReportTests.swift */,
+				A100000000000000000000K2 /* DocsLibraryTests.swift */,
+				A100000000000000000000L2 /* AdminJoinFormTests.swift */,
+				A100000000000000000000M2 /* DocDetailTests.swift */,
+				A100000000000000000000N2 /* AdminRolesTests.swift */,
+				A100000000000000000000O2 /* WhatsAppLinkEditorTests.swift */,
+				A100000000000000000000P2 /* MemberCreateTests.swift */,
+				A100000000000000000000Q2 /* CreateRoleTests.swift */,
+				A100000000000000000000R2 /* WelcomeTemplateEditorTests.swift */,
+				A100000000000000000000S2 /* TentativeApprovalEditorTests.swift */,
+				A100000000000000000000T2 /* MemberPromotionEditorTests.swift */,
+				A100000000000000000000U2 /* MemberPromotionEmailEditorTests.swift */,
+				A100000000000000000000V2 /* AddQuestionTests.swift */,
+				A100000000000000000000W2 /* PDAThemeTests.swift */,
+				A100000000000000000000X2 /* AdminSurveysTests.swift */,
+				A100000000000000000000Y2 /* AdminFeatureFlagsTests.swift */,
+				A100000000000000000000Z2 /* HomeEditorTests.swift */,
+				A10000000000000000000AA2 /* FaqEditorTests.swift */,
+				A10000000000000000000BB2 /* GuidelinesEditorTests.swift */,
+				A10000000000000000000CC2 /* DonateEditorTests.swift */,
+				A10000000000000000000DD2 /* VolunteerEditorTests.swift */,
+				A10000000000000000000EE2 /* BulkCreateTests.swift */,
+				A10000000000000000000FF2 /* SurveyPageTests.swift */,
+				A10000000000000000000GG2 /* MagicLoginTests.swift */,
+				A10000000000000000000HH2 /* FeedbackTests.swift */,
+				A10000000000000000000II2 /* PaymentConfirmTests.swift */,
+				A10000000000000000000JJ2 /* BottomNavTests.swift */,
+				A10000000000000000000KK2 /* MenuSheetTests.swift */,
+				A10000000000000000000LL2 /* CreateSurveyTests.swift */,
+				A10000000000000000000MM2 /* AddSurveyQuestionTests.swift */,
+				A10000000000000000000NN2 /* SurveyResponsesTests.swift */,
+				A10000000000000000000OO2 /* RequestLoginLinkTests.swift */,
+				A10000000000000000000PP2 /* EventBlastsTests.swift */,
+				A10000000000000000000QQ2 /* GeocodeTests.swift */,
+				A10000000000000000000RR2 /* GiphyTests.swift */,
+				A10000000000000000000SS2 /* CalendarModesTests.swift */,
+			);
+			path = PDATests;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000051 /* PDAUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000040 /* GuestCalendarUITests.swift */,
+				A10000000000000000000066 /* LoginUITests.swift */,
+			);
+			path = PDAUITests;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000012 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000024 /* PDA.app */,
+				A10000000000000000000025 /* PDATests.xctest */,
+				A10000000000000000000042 /* PDAUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000002 /* PDA */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000031 /* Build configuration list for PBXNativeTarget "PDA" */;
+			buildPhases = (
+				A10000000000000000000004 /* Sources */,
+				A10000000000000000000006 /* Frameworks */,
+				A10000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PDA;
+			productName = PDA;
+			productReference = A10000000000000000000024 /* PDA.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000003 /* PDATests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000034 /* Build configuration list for PBXNativeTarget "PDATests" */;
+			buildPhases = (
+				A10000000000000000000007 /* Sources */,
+				A10000000000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000027 /* PBXTargetDependency */,
+			);
+			name = PDATests;
+			productName = PDATests;
+			productReference = A10000000000000000000025 /* PDATests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A10000000000000000000043 /* PDAUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000048 /* Build configuration list for PBXNativeTarget "PDAUITests" */;
+			buildPhases = (
+				A10000000000000000000044 /* Sources */,
+				A10000000000000000000045 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000047 /* PBXTargetDependency */,
+			);
+			name = PDAUITests;
+			productName = PDAUITests;
+			productReference = A10000000000000000000042 /* PDAUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					A10000000000000000000002 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					A10000000000000000000003 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A10000000000000000000002;
+					};
+					A10000000000000000000043 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A10000000000000000000002;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000028 /* Build configuration list for PBXProject "PDA" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000000000000000000009;
+			productRefGroup = A10000000000000000000012 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000002 /* PDA */,
+				A10000000000000000000003 /* PDATests */,
+				A10000000000000000000043 /* PDAUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000021 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000014 /* PDAApp.swift in Sources */,
+				A10000000000000000000016 /* EventsAPI.swift in Sources */,
+				A10000000000000000000018 /* EventViews.swift in Sources */,
+				A10000000000000000000063 /* SessionAPI.swift in Sources */,
+				A10000000000000000000065 /* LoginView.swift in Sources */,
+				A10000000000000000000071 /* GateView.swift in Sources */,
+				A10000000000000000000081 /* NotificationsView.swift in Sources */,
+				A10000000000000000000091 /* HomeView.swift in Sources */,
+				A10000000000000000000093 /* FaqView.swift in Sources */,
+				A10000000000000000000095 /* GuidelinesView.swift in Sources */,
+				A10000000000000000000097 /* DonateView.swift in Sources */,
+				A10000000000000000000099 /* VolunteerView.swift in Sources */,
+				A100000000000000000000A1 /* JoinView.swift in Sources */,
+				A100000000000000000000B1 /* SmsPolicyView.swift in Sources */,
+				A100000000000000000000C1 /* DirectoryView.swift in Sources */,
+				A100000000000000000000D1 /* AdminHubView.swift in Sources */,
+				A100000000000000000000E1 /* AdminMembersView.swift in Sources */,
+				A100000000000000000000F1 /* AdminMemberDetailView.swift in Sources */,
+				A100000000000000000000G1 /* JoinRequestsView.swift in Sources */,
+				A100000000000000000000H1 /* ManageEventsView.swift in Sources */,
+				A100000000000000000000I1 /* FlaggedEventsView.swift in Sources */,
+				A100000000000000000000J1 /* AttendanceReportView.swift in Sources */,
+				A100000000000000000000K1 /* DocsLibraryView.swift in Sources */,
+				A100000000000000000000L1 /* AdminJoinFormView.swift in Sources */,
+				A100000000000000000000M1 /* DocDetailView.swift in Sources */,
+				A100000000000000000000N1 /* AdminRolesView.swift in Sources */,
+				A100000000000000000000O1 /* WhatsAppLinkEditor.swift in Sources */,
+				A100000000000000000000P1 /* MemberCreateView.swift in Sources */,
+				A10000000000000000000EE1 /* BulkCreateView.swift in Sources */,
+				A10000000000000000000FF1 /* SurveyPageView.swift in Sources */,
+				A10000000000000000000GG1 /* MagicLoginView.swift in Sources */,
+				A10000000000000000000HH1 /* FeedbackView.swift in Sources */,
+				A10000000000000000000II1 /* PaymentConfirm.swift in Sources */,
+				A10000000000000000000JJ1 /* BottomNav.swift in Sources */,
+				A10000000000000000000KK1 /* MenuSheet.swift in Sources */,
+				A10000000000000000000LL1 /* CreateSurvey.swift in Sources */,
+				A10000000000000000000MM1 /* AddSurveyQuestion.swift in Sources */,
+				A10000000000000000000NN1 /* SurveyResponses.swift in Sources */,
+				A10000000000000000000OO1 /* RequestLoginLink.swift in Sources */,
+				A10000000000000000000PP1 /* EventBlasts.swift in Sources */,
+				A10000000000000000000QQ1 /* Geocode.swift in Sources */,
+				A10000000000000000000RR1 /* Giphy.swift in Sources */,
+				A10000000000000000000SS1 /* CalendarModes.swift in Sources */,
+				A100000000000000000000Q1 /* CreateRoleView.swift in Sources */,
+				A100000000000000000000R1 /* WelcomeTemplateEditor.swift in Sources */,
+				A100000000000000000000S1 /* TentativeApprovalEditor.swift in Sources */,
+				A100000000000000000000T1 /* MemberPromotionEditor.swift in Sources */,
+				A100000000000000000000U1 /* MemberPromotionEmailEditor.swift in Sources */,
+				A100000000000000000000V1 /* AddQuestionView.swift in Sources */,
+				A100000000000000000000W1 /* PDATheme.swift in Sources */,
+				A100000000000000000000X1 /* AdminSurveysView.swift in Sources */,
+				A100000000000000000000Y1 /* AdminFeatureFlagsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000023 /* EventsAPITests.swift in Sources */,
+				A10000000000000000000061 /* SessionAPITests.swift in Sources */,
+				A100000000000000000000A3 /* JoinAPITests.swift in Sources */,
+				A100000000000000000000B3 /* SmsPolicyTests.swift in Sources */,
+				A100000000000000000000C3 /* DirectoryTests.swift in Sources */,
+				A100000000000000000000D3 /* AdminHubTests.swift in Sources */,
+				A100000000000000000000E3 /* AdminMembersTests.swift in Sources */,
+				A100000000000000000000F3 /* AdminMemberDetailTests.swift in Sources */,
+				A100000000000000000000G3 /* JoinRequestsTests.swift in Sources */,
+				A100000000000000000000H3 /* ManageEventsTests.swift in Sources */,
+				A100000000000000000000I3 /* FlaggedEventsTests.swift in Sources */,
+				A100000000000000000000J3 /* AttendanceReportTests.swift in Sources */,
+				A100000000000000000000K3 /* DocsLibraryTests.swift in Sources */,
+				A100000000000000000000L3 /* AdminJoinFormTests.swift in Sources */,
+				A100000000000000000000M3 /* DocDetailTests.swift in Sources */,
+				A100000000000000000000N3 /* AdminRolesTests.swift in Sources */,
+				A100000000000000000000O3 /* WhatsAppLinkEditorTests.swift in Sources */,
+				A100000000000000000000P3 /* MemberCreateTests.swift in Sources */,
+				A100000000000000000000Q3 /* CreateRoleTests.swift in Sources */,
+				A100000000000000000000R3 /* WelcomeTemplateEditorTests.swift in Sources */,
+				A100000000000000000000S3 /* TentativeApprovalEditorTests.swift in Sources */,
+				A100000000000000000000T3 /* MemberPromotionEditorTests.swift in Sources */,
+				A100000000000000000000U3 /* MemberPromotionEmailEditorTests.swift in Sources */,
+				A100000000000000000000V3 /* AddQuestionTests.swift in Sources */,
+				A100000000000000000000W3 /* PDAThemeTests.swift in Sources */,
+				A100000000000000000000X3 /* AdminSurveysTests.swift in Sources */,
+				A100000000000000000000Y3 /* AdminFeatureFlagsTests.swift in Sources */,
+				A100000000000000000000Z3 /* HomeEditorTests.swift in Sources */,
+				A10000000000000000000AA3 /* FaqEditorTests.swift in Sources */,
+				A10000000000000000000BB3 /* GuidelinesEditorTests.swift in Sources */,
+				A10000000000000000000CC3 /* DonateEditorTests.swift in Sources */,
+				A10000000000000000000DD3 /* VolunteerEditorTests.swift in Sources */,
+				A10000000000000000000EE3 /* BulkCreateTests.swift in Sources */,
+				A10000000000000000000FF3 /* SurveyPageTests.swift in Sources */,
+				A10000000000000000000GG3 /* MagicLoginTests.swift in Sources */,
+				A10000000000000000000HH3 /* FeedbackTests.swift in Sources */,
+				A10000000000000000000II3 /* PaymentConfirmTests.swift in Sources */,
+				A10000000000000000000JJ3 /* BottomNavTests.swift in Sources */,
+				A10000000000000000000KK3 /* MenuSheetTests.swift in Sources */,
+				A10000000000000000000LL3 /* CreateSurveyTests.swift in Sources */,
+				A10000000000000000000MM3 /* AddSurveyQuestionTests.swift in Sources */,
+				A10000000000000000000NN3 /* SurveyResponsesTests.swift in Sources */,
+				A10000000000000000000OO3 /* RequestLoginLinkTests.swift in Sources */,
+				A10000000000000000000PP3 /* EventBlastsTests.swift in Sources */,
+				A10000000000000000000QQ3 /* GeocodeTests.swift in Sources */,
+				A10000000000000000000RR3 /* GiphyTests.swift in Sources */,
+				A10000000000000000000SS3 /* CalendarModesTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000044 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000041 /* GuestCalendarUITests.swift in Sources */,
+				A10000000000000000000067 /* LoginUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000027 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000002 /* PDA */;
+			targetProxy = A10000000000000000000026 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000047 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000002 /* PDA */;
+			targetProxy = A10000000000000000000046 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000029 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000030 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10000000000000000000032 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PDA/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = pda;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10000000000000000000033 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PDA/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = pda;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A10000000000000000000035 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PDA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PDA";
+			};
+			name = Debug;
+		};
+		A10000000000000000000036 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PDA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PDA";
+			};
+			name = Release;
+		};
+		A10000000000000000000049 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = PDA;
+			};
+			name = Debug;
+		};
+		A10000000000000000000050 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anonymous.pda.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = PDA;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000028 /* Build configuration list for PBXProject "PDA" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000029 /* Debug */,
+				A10000000000000000000030 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000031 /* Build configuration list for PBXNativeTarget "PDA" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000032 /* Debug */,
+				A10000000000000000000033 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000034 /* Build configuration list for PBXNativeTarget "PDATests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000035 /* Debug */,
+				A10000000000000000000036 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000048 /* Build configuration list for PBXNativeTarget "PDAUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000049 /* Debug */,
+				A10000000000000000000050 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000001 /* Project object */;
+}
