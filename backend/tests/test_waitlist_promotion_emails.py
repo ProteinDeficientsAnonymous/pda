@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
-from users.models import User
+from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.conftest import future_iso
@@ -61,7 +61,7 @@ class TestWaitlistPromotionEmailsNonMember:
         assert EventRSVP.objects.get(event=event, user=waited).status == RSVPStatus.ATTENDING
         assert _promoted_email_count(fake_email_sender, "waited2@e.com") == 1
 
-    def test_promoted_member_is_not_emailed(
+    def test_promoted_member_is_emailed(
         self, api_client, test_user, auth_headers, fake_email_sender
     ):
         event = _one_spot_event(test_user)
@@ -74,12 +74,12 @@ class TestWaitlistPromotionEmailsNonMember:
         api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
 
         assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
-        assert _promoted_email_count(fake_email_sender, "member@e.com") == 0
+        assert _promoted_email_count(fake_email_sender, "member@e.com") == 1
 
-    def test_promoted_tentative_member_is_not_emailed(
+    def test_promoted_tentative_member_gets_member_email(
         self, api_client, test_user, auth_headers, fake_email_sender
     ):
-        """They can sign in, so the in-app waitlist notification reaches them like a member."""
+        """They can sign in, so they get the member email rather than a manage link."""
         event = _one_spot_event(test_user)
         _rsvp(api_client, event, auth_headers)
         tentative = make_tentative_member("+14155559914", "tentative@e.com")
@@ -88,4 +88,5 @@ class TestWaitlistPromotionEmailsNonMember:
         api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
 
         assert EventRSVP.objects.get(event=event, user=tentative).status == RSVPStatus.ATTENDING
-        assert _promoted_email_count(fake_email_sender, "tentative@e.com") == 0
+        assert _promoted_email_count(fake_email_sender, "tentative@e.com") == 1
+        assert not NonMemberRsvpToken.objects.filter(user=tentative).exists()
