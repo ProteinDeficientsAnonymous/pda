@@ -60,7 +60,7 @@ def _event_links(event: Event) -> list[str]:
 def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails:
     return RsvpEmailDetails(
         to=user.email,
-        display_name=user.full_name,
+        display_name=user.first_name,
         event_title=event.title,
         event_when=_format_event_when(event),
         event_location=event.location,
