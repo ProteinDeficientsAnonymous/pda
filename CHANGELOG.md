@@ -1,3 +1,10 @@
+## [0.112.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.0...v0.112.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **events:** gate tentative-member rsvp in the ui, show rsvp errors in the modal ([#1505](https://github.com/ProteinDeficientsAnonymous/pda/issues/1505)) ([b1a0fcc](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1a0fccaeedbfcc697531cdd1a5bfb05ef32a507))
+
 # [0.112.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.111.0...v0.112.0) (2026-10-01)
 
 
