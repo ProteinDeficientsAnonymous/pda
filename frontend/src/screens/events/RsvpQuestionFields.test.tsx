@@ -33,7 +33,7 @@ describe('RsvpQuestionFields', () => {
     render(
       <RsvpQuestionFields questions={questions} answers={{}} onChange={vi.fn()} errors={{}} />,
     );
-    expect(screen.getByLabelText('notes (optional)')).toBeInTheDocument();
+    expect(screen.getByLabelText('notes optional')).toBeInTheDocument();
   });
 
   it('renders select one as a select and reports changes', () => {
@@ -41,7 +41,7 @@ describe('RsvpQuestionFields', () => {
     render(
       <RsvpQuestionFields questions={questions} answers={{}} onChange={onChange} errors={{}} />,
     );
-    const select = screen.getByRole('combobox', { name: 'transport' });
+    const select = screen.getByRole('combobox', { name: 'transport required' });
     fireEvent.change(select, { target: { value: 'car' } });
     expect(onChange).toHaveBeenCalledWith('q-one', 'car');
   });
@@ -71,6 +71,6 @@ describe('RsvpQuestionFields', () => {
         errors={{ 'q-one': 'required' }}
       />,
     );
-    expect(screen.getByText('required')).toBeInTheDocument();
+    expect(screen.getByText('required', { selector: 'p' })).toBeInTheDocument();
   });
 });
