@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -139,16 +139,7 @@ def send_member_rsvp_status_email(
 
     param kind(str): attending | waitlisted | maybe | cant_go | promoted
     """
-    context = {
-        "display_name": details.display_name or "",
-        "event_title": details.event_title,
-        "event_when": details.event_when,
-        "event_location": details.event_location,
-        "event_links": details.event_links,
-        "event_url": details.event_url,
-        "kind": kind,
-        "payment_pending": payment_pending,
-    }
+    context = {**asdict(details), "kind": kind, "payment_pending": payment_pending}
     html = render_to_string("emails/member_rsvp_status.html", context)
     text = render_to_string("emails/member_rsvp_status.txt", context)
     return sender.send(
