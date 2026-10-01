@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as authApi from '@/api/auth';
+import { getStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { makeUser } from '@/test/fixtures';
 
 import { useAuthStore } from './store';
@@ -52,6 +53,29 @@ describe('useAuthStore', () => {
       expect(status).toBe('unauthed');
       expect(user).toBeNull();
       expect(accessToken).toBeNull();
+    });
+  });
+
+  describe('stored rsvp token', () => {
+    it('is cleared on login', async () => {
+      setStoredRsvpToken('rsvp-tok');
+      vi.mocked(authApi.login).mockResolvedValueOnce({ access: 'a', user: mockUser });
+      await useAuthStore.getState().login('+12125551234', 'pw');
+      expect(getStoredRsvpToken()).toBeNull();
+    });
+
+    it('is cleared on magic login', async () => {
+      setStoredRsvpToken('rsvp-tok');
+      vi.mocked(authApi.magicLogin).mockResolvedValueOnce({ access: 'a', user: mockUser });
+      await useAuthStore.getState().magicLogin('m');
+      expect(getStoredRsvpToken()).toBeNull();
+    });
+
+    it('is cleared when a session is restored', async () => {
+      setStoredRsvpToken('rsvp-tok');
+      vi.mocked(authApi.restoreSession).mockResolvedValueOnce({ access: 'a', user: mockUser });
+      await useAuthStore.getState().restoreSession();
+      expect(getStoredRsvpToken()).toBeNull();
     });
   });
 
