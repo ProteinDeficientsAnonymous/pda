@@ -1,3 +1,10 @@
+# [0.114.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.113.0...v0.114.0) (2026-10-01)
+
+
+### Features
+
+* **join-requests:** keep members listed until whatsapp joined ([#1511](https://github.com/ProteinDeficientsAnonymous/pda/issues/1511)) ([3114070](https://github.com/ProteinDeficientsAnonymous/pda/commit/31140706c0ef0ec6ea5198dba9c41fab291da82c))
+
 # [0.113.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.2...v0.113.0) (2026-10-01)
 
 
