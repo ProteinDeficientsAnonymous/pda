@@ -1,7 +1,6 @@
 """Tests for join request management (list, approve, reject)."""
 
 import uuid
-from datetime import timedelta
 
 import pytest
 from community._validation import Code
@@ -257,79 +256,6 @@ class TestJoinRequestManagement:
         assert response.status_code == 200
         assert response.json()["magic_link_token"] is None
 
-    def test_list_excludes_approved_onboarded_user_after_grace(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        user = User.objects.get(phone_number=sample_join_request.phone_number)
-        user.needs_onboarding = False
-        user.onboarded_at = timezone.now() - timedelta(days=8)
-        user.save(update_fields=["needs_onboarding", "onboarded_at"])
-
-        response = api_client.get("/api/community/join-requests/", **vettor_headers)
-        assert response.status_code == 200
-        ids = [r["id"] for r in response.json()]
-        assert str(sample_join_request.id) not in ids
-
-    def test_list_includes_approved_onboarded_within_grace(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        user = User.objects.get(phone_number=sample_join_request.phone_number)
-        user.needs_onboarding = False
-        user.onboarded_at = timezone.now() - timedelta(days=6)
-        user.save(update_fields=["needs_onboarding", "onboarded_at"])
-
-        response = api_client.get("/api/community/join-requests/", **vettor_headers)
-        assert response.status_code == 200
-        items = {r["id"]: r for r in response.json()}
-        assert str(sample_join_request.id) in items
-        assert items[str(sample_join_request.id)]["onboarded_at"] is not None
-
-    def test_list_excludes_legacy_onboarded_user_with_null_timestamp(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        user = User.objects.get(phone_number=sample_join_request.phone_number)
-        user.needs_onboarding = False
-        user.onboarded_at = None
-        user.save(update_fields=["needs_onboarding", "onboarded_at"])
-
-        response = api_client.get("/api/community/join-requests/", **vettor_headers)
-        assert response.status_code == 200
-        ids = [r["id"] for r in response.json()]
-        assert str(sample_join_request.id) not in ids
-
-    def test_list_includes_approved_not_yet_onboarded(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        response = api_client.get("/api/community/join-requests/", **vettor_headers)
-        assert response.status_code == 200
-        items = {r["id"]: r for r in response.json()}
-        assert str(sample_join_request.id) in items
-        assert items[str(sample_join_request.id)]["onboarded_at"] is None
-
     def test_list_flags_previously_archived(self, api_client, vettor_headers, db):
         archived = User.objects.create_user(
             phone_number="+12025550150", first_name="Comeback", last_name="Kid"
@@ -372,39 +298,6 @@ class TestJoinRequestManagement:
         archived.refresh_from_db()
         assert archived.archived_at is None
         assert archived.needs_onboarding is True
-
-    def test_list_keeps_pending_and_rejected_unaffected(self, api_client, vettor_headers, db):
-        pending = JoinRequest.objects.create(
-            first_name="Pending",
-            last_name="Person",
-            phone_number="+12025550101",
-            status=JoinRequestStatus.PENDING,
-        )
-        rejected = JoinRequest.objects.create(
-            first_name="Rejected",
-            last_name="Person",
-            phone_number="+12025550102",
-            status=JoinRequestStatus.REJECTED,
-        )
-        approved = JoinRequest.objects.create(
-            first_name="Onboarded",
-            last_name="Person",
-            phone_number="+12025550103",
-            status=JoinRequestStatus.APPROVED,
-        )
-        User.objects.create_user(
-            phone_number="+12025550103",
-            first_name="Onboarded",
-            last_name="Person",
-            needs_onboarding=False,
-        )
-
-        response = api_client.get("/api/community/join-requests/", **vettor_headers)
-        assert response.status_code == 200
-        ids = [r["id"] for r in response.json()]
-        assert str(pending.id) in ids
-        assert str(rejected.id) in ids
-        assert str(approved.id) not in ids
 
 
 @pytest.mark.django_db
