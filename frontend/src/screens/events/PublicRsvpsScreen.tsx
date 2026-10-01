@@ -9,6 +9,7 @@ import {
   setStoredRsvpToken,
 } from '@/api/rsvpTokenStorage';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { RsvpServerStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventRow } from './EventRow';
@@ -54,6 +55,7 @@ export default function PublicRsvpsScreen() {
   if (isPending) return <ContentLoading label="loading your rsvps…" />;
 
   const events = data.rsvps
+    .filter((r) => r.status !== RsvpServerStatus.CantGo)
     .map((r) => r.event)
     .sort(
       (a, b) => (a.startDatetime?.getTime() ?? Infinity) - (b.startDatetime?.getTime() ?? Infinity),

@@ -137,6 +137,33 @@ describe('PublicRsvpsScreen', () => {
     expect(titles[2]).toContain('tbd one');
   });
 
+  it('omits cant_go rsvps but keeps maybe and waitlisted', () => {
+    const row = (
+      id: string,
+      title: string,
+      status: (typeof RsvpServerStatus)[keyof typeof RsvpServerStatus],
+    ) => ({
+      event: makeEvent({ id, title }),
+      status,
+      hasPlusOne: false,
+    });
+    usePublicMyRsvps.mockReturnValue({
+      data: successData({
+        rsvps: [
+          row('a', 'going one', RsvpServerStatus.Attending),
+          row('b', 'maybe one', RsvpServerStatus.Maybe),
+          row('c', 'waitlist one', RsvpServerStatus.Waitlisted),
+          row('d', 'declined one', RsvpServerStatus.CantGo),
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    });
+    renderAt('good-token');
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.queryByRole('link', { name: /declined one/ })).not.toBeInTheDocument();
+  });
+
   it('shows the empty state when there are no rsvps', () => {
     usePublicMyRsvps.mockReturnValue({
       data: successData({ rsvps: [] }),
