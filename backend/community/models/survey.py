@@ -23,6 +23,9 @@ class Survey(models.Model):
     )
     is_active = models.BooleanField(default=True)
     one_response_per_user = models.BooleanField(default=False)
+    opens_at = models.DateTimeField(null=True, blank=True)
+    closes_at = models.DateTimeField(null=True, blank=True)
+    max_responses = models.PositiveIntegerField(null=True, blank=True)
     linked_event = models.ForeignKey(
         "community.Event",
         null=True,

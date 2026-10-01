@@ -621,6 +621,11 @@
         "params": []
       },
       {
+        "name": "CLOSES_BEFORE_OPENS",
+        "value": "survey.closes_before_opens",
+        "params": []
+      },
+      {
         "name": "QUESTION_NOT_FOUND",
         "value": "survey.question_not_found",
         "params": []

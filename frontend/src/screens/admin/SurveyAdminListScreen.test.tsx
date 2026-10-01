@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SurveySummary } from '@/api/surveyAdmin';
+import { surveyStatus } from '@/models/survey';
 
 import SurveyAdminListScreen from './SurveyAdminListScreen';
 
@@ -13,28 +14,42 @@ const toastSuccess = vi.fn();
 const createMutateAsync = vi.fn();
 const navigate = vi.fn();
 
-const surveys: SurveySummary[] = [
-  {
+function makeSurvey(overrides: Partial<SurveySummary> = {}): SurveySummary {
+  return {
+    id: 's1',
+    title: 'feedback',
+    slug: 'feedback',
+    visibility: 'members_only',
+    isActive: true,
+    opensAt: null,
+    closesAt: null,
+    maxResponses: null,
+    linkedEventId: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    responseCount: 0,
+    ...overrides,
+  };
+}
+
+const defaultSurveys: SurveySummary[] = [
+  makeSurvey({
     id: 's1',
     title: 'spring potluck',
     slug: 'spring-potluck',
-    visibility: 'members_only',
-    isActive: true,
-    linkedEventId: null,
     createdAt: '2026-03-01T00:00:00Z',
     responseCount: 2,
-  },
-  {
+  }),
+  makeSurvey({
     id: 's2',
     title: 'summer picnic',
     slug: 'summer-picnic',
     visibility: 'public',
     isActive: false,
-    linkedEventId: null,
     createdAt: '2026-04-01T00:00:00Z',
-    responseCount: 0,
-  },
+  }),
 ];
+
+let surveysMock: SurveySummary[] = defaultSurveys;
 
 vi.mock('sonner', () => ({
   toast: {
@@ -46,7 +61,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@/api/surveyAdmin', () => ({
-  useAdminSurveys: () => ({ data: surveys, isPending: false, isError: false }),
+  useAdminSurveys: () => ({ data: surveysMock, isPending: false, isError: false }),
   useCreateSurvey: () => ({ mutateAsync: createMutateAsync, isPending: false }),
   useDeleteSurvey: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -70,7 +85,7 @@ function fieldError(code: string, field: string) {
 }
 
 function renderScreen() {
-  render(
+  return render(
     <MemoryRouter>
       <SurveyAdminListScreen />
     </MemoryRouter>,
@@ -86,6 +101,74 @@ async function fillCreateForm() {
   await userEvent.type(screen.getByLabelText('slug'), 'retreat-a');
   await userEvent.selectOptions(screen.getByLabelText('linked event'), 'evt-1');
 }
+
+beforeEach(() => {
+  surveysMock = defaultSurveys;
+});
+
+describe('surveyStatus', () => {
+  const now = new Date('2026-06-01T12:00:00.000Z');
+
+  it('is closed when inactive, regardless of window', () => {
+    expect(surveyStatus(makeSurvey({ isActive: false }), { now })).toBe('closed');
+  });
+
+  it('is scheduled when opens_at is in the future', () => {
+    const survey = makeSurvey({ opensAt: '2026-06-02T00:00:00.000Z' });
+    expect(surveyStatus(survey, { now })).toBe('scheduled');
+  });
+
+  it('is closed once closes_at has passed', () => {
+    const survey = makeSurvey({ closesAt: '2026-05-31T00:00:00.000Z' });
+    expect(surveyStatus(survey, { now })).toBe('closed');
+  });
+
+  it('is capped once the response cap is reached', () => {
+    const survey = makeSurvey({ maxResponses: 5, responseCount: 5 });
+    expect(surveyStatus(survey, { now })).toBe('capped');
+  });
+
+  // A survey that is both scheduled and already at cap reads as scheduled —
+  // the cap only becomes the reason it's shut once the window has opened.
+  it('prefers scheduled over capped before the window opens', () => {
+    const survey = makeSurvey({
+      opensAt: '2026-06-02T00:00:00.000Z',
+      maxResponses: 1,
+      responseCount: 1,
+    });
+    expect(surveyStatus(survey, { now })).toBe('scheduled');
+  });
+
+  it('is active inside the window and under the cap', () => {
+    const survey = makeSurvey({
+      opensAt: '2026-05-01T00:00:00.000Z',
+      closesAt: '2026-07-01T00:00:00.000Z',
+      maxResponses: 10,
+      responseCount: 3,
+    });
+    expect(surveyStatus(survey, { now })).toBe('active');
+  });
+});
+
+describe('SurveyAdminListScreen badges', () => {
+  it('shows a scheduled badge for a survey that has not opened yet', () => {
+    surveysMock = [makeSurvey({ opensAt: '2999-01-01T00:00:00.000Z' })];
+    renderScreen();
+    expect(screen.getByText('scheduled')).toBeInTheDocument();
+  });
+
+  it('shows an at capacity badge for a survey at its response cap', () => {
+    surveysMock = [makeSurvey({ maxResponses: 2, responseCount: 2 })];
+    renderScreen();
+    expect(screen.getByText('at capacity')).toBeInTheDocument();
+  });
+
+  it('shows an active badge for an open survey', () => {
+    surveysMock = [makeSurvey()];
+    renderScreen();
+    expect(screen.getByText('active')).toBeInTheDocument();
+  });
+});
 
 describe('SurveyAdminListScreen', () => {
   beforeEach(() => {
@@ -116,6 +199,29 @@ describe('SurveyAdminListScreen create dialog', () => {
     createMutateAsync.mockReset();
     createMutateAsync.mockResolvedValue({ id: 's-new' });
     navigate.mockReset();
+  });
+
+  it('renders opens at, closes at, and max responses fields', async () => {
+    renderScreen();
+    await openCreateDialog();
+    expect(screen.getByText('opens at')).toBeInTheDocument();
+    expect(screen.getByText('closes at')).toBeInTheDocument();
+    expect(screen.getByLabelText('max responses')).toBeInTheDocument();
+  });
+
+  it('submits max responses as a number, and null when left blank', async () => {
+    renderScreen();
+    await openCreateDialog();
+    await fillCreateForm();
+    await userEvent.type(screen.getByLabelText('max responses'), '25');
+    await userEvent.click(screen.getByRole('button', { name: 'create' }));
+
+    await waitFor(() => {
+      expect(createMutateAsync).toHaveBeenCalled();
+    });
+    expect(createMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ maxResponses: 25, opensAt: null, closesAt: null }),
+    );
   });
 
   it('resets the form after a successful create', async () => {

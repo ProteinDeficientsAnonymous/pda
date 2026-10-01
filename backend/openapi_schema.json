@@ -5944,6 +5944,18 @@
       },
       "SurveyIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -5966,10 +5978,34 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "maxLength": 100,
@@ -5997,6 +6033,18 @@
       },
       "SurveyListOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -6020,6 +6068,29 @@
               }
             ],
             "title": "Linked Event Id"
+          },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "response_count": {
             "default": 0,
@@ -6052,6 +6123,18 @@
       },
       "SurveyOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -6091,6 +6174,17 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "my_answers": {
             "anyOf": [
               {
@@ -6118,6 +6212,18 @@
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "poll_result": {
             "anyOf": [
@@ -6169,6 +6275,18 @@
       },
       "SurveyPatchIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "anyOf": [
               {
@@ -6203,6 +6321,18 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "anyOf": [
               {
@@ -6213,6 +6343,18 @@
               }
             ],
             "title": "One Response Per User"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "anyOf": [
