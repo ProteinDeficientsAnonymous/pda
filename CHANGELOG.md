@@ -1,3 +1,10 @@
+## [0.112.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.1...v0.112.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* show public rsvpers a join notice instead of the login page ([#1508](https://github.com/ProteinDeficientsAnonymous/pda/issues/1508)) ([51402ad](https://github.com/ProteinDeficientsAnonymous/pda/commit/51402ad3815136051aeb9b3eaabca59defc2e1f0))
+
 ## [0.112.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.0...v0.112.1) (2026-10-01)
 
 
