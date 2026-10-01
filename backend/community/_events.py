@@ -58,11 +58,6 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
-from community._non_member_access import (
-    event_viewer_for,
-    is_non_member,
-    non_member_event_q,
-)
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import (
     attending_count_annotation,
@@ -70,6 +65,11 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details
 from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
+from community._tentative_member_access import (
+    event_viewer_for,
+    is_tentative_member,
+    tentative_member_event_q,
+)
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
@@ -137,8 +137,8 @@ def _build_events_queryset(status: str, auth_user, is_authed):
     )
     if not is_authed:
         qs = qs.filter(visibility=PageVisibility.PUBLIC)
-    elif is_non_member(auth_user):
-        qs = qs.filter(non_member_event_q())
+    elif is_tentative_member(auth_user):
+        qs = qs.filter(tentative_member_event_q())
     return qs
 
 
@@ -352,7 +352,7 @@ def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
-    if is_non_member(request.auth):
+    if is_tentative_member(request.auth):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="create_event")
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)

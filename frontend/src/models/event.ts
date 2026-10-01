@@ -226,11 +226,11 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
-// Mirrors backend NON_MEMBER_EVENT_TYPES — the only types a tentative member can rsvp to.
-const NON_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
+// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
+const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
 
-export function canNonMemberRsvp(event: Event): boolean {
-  return NON_MEMBER_RSVP_TYPES.includes(event.eventType);
+export function canTentativeMemberRsvp(event: Event): boolean {
+  return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
 }
 
 export function canPublicRsvp(event: Event): boolean {
