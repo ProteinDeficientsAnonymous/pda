@@ -63,6 +63,19 @@ export default function PublicRsvpsScreen() {
 
   return (
     <ContentContainer className="pt-4 md:pt-6">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <p className="text-foreground-secondary text-sm">{data.user.name}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setForgetOpen(true);
+          }}
+          className="text-foreground-secondary text-sm underline underline-offset-2"
+        >
+          not you?
+        </button>
+      </div>
+
       {events.length === 0 ? (
         <p className="text-muted text-sm">
           nothing coming up 🌿 — events you rsvp to will show up here
@@ -76,16 +89,6 @@ export default function PublicRsvpsScreen() {
           ))}
         </ul>
       )}
-
-      <button
-        type="button"
-        onClick={() => {
-          setForgetOpen(true);
-        }}
-        className="text-foreground-secondary mt-6 text-sm underline underline-offset-2"
-      >
-        not you?
-      </button>
 
       <ConfirmDialog
         open={forgetOpen}

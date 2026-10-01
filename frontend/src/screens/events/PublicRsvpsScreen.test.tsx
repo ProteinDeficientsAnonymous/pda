@@ -87,7 +87,7 @@ describe('PublicRsvpsScreen', () => {
     const link = screen.getByRole('link', { name: /potluck/ });
     expect(link).toHaveAttribute('href', eventPath(makeEvent({ id: 'ev1', title: 'potluck' })));
     expect(screen.queryByRole('heading', { name: 'your rsvps' })).not.toBeInTheDocument();
-    expect(screen.queryByText('sam green')).not.toBeInTheDocument();
+    expect(screen.getByText('sam green')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'cancel rsvp' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'maybe' })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
