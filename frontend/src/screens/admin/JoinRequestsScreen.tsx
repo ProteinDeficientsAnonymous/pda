@@ -261,8 +261,8 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
   if (filter === Filter.APPROVED) {
     return (
       <p className="text-muted mb-3 text-xs">
-        sorted newest first — approved members show here until 7 days after their first login, then
-        this tab clears them out automatically
+        sorted newest first — approved members stay here until it's been 7 days since their first
+        login and they're marked as joined the whatsapp
       </p>
     );
   }

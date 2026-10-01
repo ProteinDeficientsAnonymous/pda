@@ -7,7 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -38,8 +38,8 @@ from community.models import (
 
 router = Router()
 
-# Approved members stay visible in the join requests list for this many days
-# after they complete onboarding, so admins can confirm someone logged in.
+# Approved/tentative members stay in the join requests list until they've been
+# onboarded this many days AND are marked as having joined the whatsapp.
 APPROVED_GRACE_DAYS = 7
 
 
@@ -266,18 +266,17 @@ def list_join_requests(request):
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
-    expired_phones = User.objects.filter(
-        needs_onboarding=False, onboarded_at__lt=cutoff
-    ).values_list("phone_number", flat=True)
     # Legacy users onboarded before onboarded_at existed have it as null;
-    # treat them as already-expired so they don't linger in the list forever.
-    legacy_onboarded_phones = User.objects.filter(
-        needs_onboarding=False, onboarded_at__isnull=True
+    # treat them as past the grace window.
+    expired_phones = User.objects.filter(
+        Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True),
+        needs_onboarding=False,
+        has_joined_whatsapp=True,
     ).values_list("phone_number", flat=True)
     join_requests = (
         JoinRequest.objects.exclude(
-            status=JoinRequestStatus.APPROVED,
-            phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
+            status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
+            phone_number__in=expired_phones,
         )
         .select_related("user", "approved_by", "rejected_by")
         .prefetch_related(
