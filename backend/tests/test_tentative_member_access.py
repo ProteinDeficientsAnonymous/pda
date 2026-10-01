@@ -111,20 +111,24 @@ class TestTentativeEventAccess:
         response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
         assert response.status_code == 200
 
-    def test_public_community_event_hides_member_fields(self, api_client, tentative_user, host):
+    def test_public_community_event_is_hidden(self, api_client, tentative_user, host):
         event = _event("Potluck", EventType.COMMUNITY, host=host)
         response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
-        assert response.status_code == 200
-        assert response.json()["whatsapp_link"] == ""
+        assert response.status_code == 404
+
+    def test_public_community_event_guests_are_hidden(self, api_client, tentative_user, host):
+        event = _event("Potluck", EventType.COMMUNITY, host=host)
+        response = api_client.get(
+            f"/api/community/events/{event.id}/guests/", **_auth(tentative_user)
+        )
+        assert response.status_code == 404
 
     def test_members_only_community_event_is_hidden(self, api_client, tentative_user, host):
         event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
         response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
         assert response.status_code == 404
 
-    def test_list_includes_official_club_and_public_community(
-        self, api_client, tentative_user, host
-    ):
+    def test_list_includes_only_official_and_club(self, api_client, tentative_user, host):
         _event("Official", EventType.OFFICIAL, host=host)
         _event("Club", EventType.CLUB, PageVisibility.MEMBERS_ONLY, host=host)
         _event("Potluck", EventType.COMMUNITY, host=host)
@@ -132,15 +136,18 @@ class TestTentativeEventAccess:
         response = api_client.get("/api/community/events/", **_auth(tentative_user))
         assert response.status_code == 200
         titles = {e["title"] for e in response.json()}
-        assert titles == {"Official", "Club", "Potluck"}
+        assert titles == {"Official", "Club"}
 
-    def test_list_gates_member_fields_per_event_type(self, api_client, tentative_user, host):
+    def test_list_unlocks_member_fields_on_official_events(self, api_client, tentative_user, host):
         _event("Official", EventType.OFFICIAL, host=host)
-        _event("Potluck", EventType.COMMUNITY, host=host)
         response = api_client.get("/api/community/events/", **_auth(tentative_user))
         by_title = {e["title"]: e for e in response.json()}
         assert by_title["Official"]["whatsapp_link"] == "https://chat.whatsapp.com/abc"
-        assert by_title["Potluck"]["whatsapp_link"] == ""
+
+    def test_logged_out_visitor_still_sees_public_community_event(self, api_client, host):
+        event = _event("Potluck", EventType.COMMUNITY, host=host)
+        response = api_client.get(f"/api/community/events/{event.id}/")
+        assert response.status_code == 200
 
     def test_can_rsvp_to_official_event(self, api_client, tentative_user, host):
         event = _event("Official", EventType.OFFICIAL, host=host)

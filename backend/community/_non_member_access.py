@@ -1,7 +1,7 @@
 from django.db.models import Q
 
 from community._validation import Code, raise_validation
-from community.models import EventType, PageVisibility
+from community.models import EventType
 
 # Event types a signed-in non-member (a tentatively-approved applicant) engages
 # with fully. They're also the two types whose check-in promotes them to member
@@ -14,20 +14,21 @@ def is_non_member(user) -> bool:
 
 
 def non_member_event_q() -> Q:
-    """Rows a signed-in non-member may list: anything public, plus official/club."""
-    return Q(visibility=PageVisibility.PUBLIC) | Q(event_type__in=NON_MEMBER_EVENT_TYPES)
+    """Rows a signed-in non-member may list: official/club only."""
+    return Q(event_type__in=NON_MEMBER_EVENT_TYPES)
 
 
 def event_viewer_for(viewer, event):
-    """The viewer to gate one event's fields with.
-
-    Outside official/club, a non-member sees exactly what a logged-out visitor
-    sees — so they're downgraded to anonymous rather than filtered out, and a
-    public community event stays as visible as it was before they signed in.
-    """
+    """The viewer to gate one event's fields with; a non-member is anonymous outside official/club."""
     if is_non_member(viewer) and event.event_type not in NON_MEMBER_EVENT_TYPES:
         return None
     return viewer
+
+
+def enforce_non_member_read_access(user, event) -> None:
+    """Hide non-official/club events from a signed-in non-member, even public ones."""
+    if is_non_member(user) and event.event_type not in NON_MEMBER_EVENT_TYPES:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
 
 def enforce_non_member_write_access(user, event, action: str) -> None:

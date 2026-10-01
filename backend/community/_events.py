@@ -59,6 +59,7 @@ from community._event_update import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._non_member_access import (
+    enforce_non_member_read_access,
     event_viewer_for,
     is_non_member,
     non_member_event_q,
@@ -271,6 +272,7 @@ def _get_visible_event(request, event_id: str):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    enforce_non_member_read_access(_authenticated_user(request.auth), event)
     viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
     _enforce_event_read_visibility(event, viewer)
     return event, viewer

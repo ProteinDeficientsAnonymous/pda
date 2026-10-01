@@ -146,17 +146,19 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           busy={busy}
           locked={locked}
           onOpenCreate={(status) => {
+            setError(null);
             setBox({ mode: 'create', initialStatus: status });
           }}
           onOpenEdit={() => {
             if (!myInputStatus) return;
+            setError(null);
             setBox({ mode: 'edit', initialStatus: myInputStatus });
           }}
         />
       )}
 
       <SpotsLeft event={event} />
-      {error ? (
+      {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
@@ -174,6 +176,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           allowComment={Boolean(token) || box.mode === 'create'}
           atCapacity={atCapacity}
           busy={busy}
+          error={error}
           questions={event.rsvpQuestions}
           initialAnswers={Object.fromEntries(
             Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
@@ -181,6 +184,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
+            setError(null);
             setBox(null);
           }}
         />
