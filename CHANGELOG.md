@@ -1,3 +1,10 @@
+# [0.112.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.111.0...v0.112.0) (2026-10-01)
+
+
+### Features
+
+* **settings:** add show/hide toggle to change password fields ([#1506](https://github.com/ProteinDeficientsAnonymous/pda/issues/1506)) ([edc8aa9](https://github.com/ProteinDeficientsAnonymous/pda/commit/edc8aa9e8310c91e67c9a2e34274fd5c12bdbe0d))
+
 # [0.111.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.110.0...v0.111.0) (2026-09-15)
 
 
