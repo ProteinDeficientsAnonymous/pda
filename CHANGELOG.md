@@ -1,3 +1,10 @@
+## [0.114.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.1...v0.114.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* greet rsvp emails by first name only ([#1519](https://github.com/ProteinDeficientsAnonymous/pda/issues/1519)) ([8e1e369](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e1e3691807ce2537d879fb5c751d9ee43fc34c4))
+
 ## [0.114.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.0...v0.114.1) (2026-10-01)
 
 
