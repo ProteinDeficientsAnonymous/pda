@@ -1,3 +1,10 @@
+# [0.113.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.2...v0.113.0) (2026-10-01)
+
+
+### Features
+
+* **events:** match /my-rsvps to the member my-events list ([#1510](https://github.com/ProteinDeficientsAnonymous/pda/issues/1510)) ([2a21db5](https://github.com/ProteinDeficientsAnonymous/pda/commit/2a21db509b0fdae6971f983dc2c29d6474234422))
+
 ## [0.112.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.112.1...v0.112.2) (2026-10-01)
 
 
