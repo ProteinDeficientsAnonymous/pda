@@ -27,7 +27,7 @@ def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[st
 
 
 def email_removed_non_members(request, event: Event, removed_user_ids: list[str]) -> None:
-    """Email any removed non-members. Best-effort per user, mirrors _email_promoted_non_members."""
+    """Email any removed non-members. Best-effort per user, mirrors email_promoted_users."""
     if not removed_user_ids:
         return
     removed = User.objects.filter(id__in=removed_user_ids, is_member=False, email__isnull=False)

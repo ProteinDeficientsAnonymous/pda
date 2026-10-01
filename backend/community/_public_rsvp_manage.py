@@ -27,10 +27,10 @@ from community._public_rsvp_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
     _email_details,
-    _email_promoted_non_members,
     _load_public_rsvp_event,
     _log_email_failure,
 )
+from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, RSVPStatus
@@ -194,7 +194,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     )
     if email_error is not None:
         _log_email_failure(request, event, user, email_error)
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     if not sent_decline_note:
         notify_rsvp_status_changed(event, user, final_status)
     broadcast_capacity_change(event.id)
@@ -242,6 +242,6 @@ def delete_my_rsvp(request, event_id, token: str = ""):
             type=AuditTargetType.EVENT, id=str(event_id), details={"user_id": str(user.pk)}
         ),
     )
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     broadcast_capacity_change(event.id)
     return Status(204, None)

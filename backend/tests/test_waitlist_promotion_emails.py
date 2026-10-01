@@ -61,7 +61,7 @@ class TestWaitlistPromotionEmailsNonMember:
         assert EventRSVP.objects.get(event=event, user=waited).status == RSVPStatus.ATTENDING
         assert _promoted_email_count(fake_email_sender, "waited2@e.com") == 1
 
-    def test_promoted_member_is_not_emailed(
+    def test_promoted_member_is_emailed(
         self, api_client, test_user, auth_headers, fake_email_sender
     ):
         event = _one_spot_event(test_user)
@@ -74,4 +74,4 @@ class TestWaitlistPromotionEmailsNonMember:
         api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
 
         assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
-        assert _promoted_email_count(fake_email_sender, "member@e.com") == 0
+        assert _promoted_email_count(fake_email_sender, "member@e.com") == 1
