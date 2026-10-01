@@ -179,6 +179,37 @@ describe('EventDetailScreen', () => {
     expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
   });
 
+  describe('tentative member rsvp gate', () => {
+    const TENTATIVE_USER = makeUser({ ...AUTHED_USER, isMember: false });
+
+    function renderAs(user: User, eventType: string) {
+      useAuthStore.setState({ status: 'authed', user, accessToken: 'tok' });
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, eventType, rsvpEnabled: true, isPast: false },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+      renderScreen();
+    }
+
+    it('swaps the rsvp button for a full-member note on community events', () => {
+      renderAs(TENTATIVE_USER, EventType.Community);
+      expect(screen.queryByTestId('rsvp-section')).not.toBeInTheDocument();
+      expect(screen.getByText(/rsvps open once you're a full member/i)).toBeInTheDocument();
+    });
+
+    it.each([EventType.Official, EventType.Club])('lets them rsvp to %s events', (type) => {
+      renderAs(TENTATIVE_USER, type);
+      expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+      expect(screen.queryByText(/rsvps open once you're a full member/i)).not.toBeInTheDocument();
+    });
+
+    it('full members still get the rsvp button on community events', () => {
+      renderAs(AUTHED_USER, EventType.Community);
+      expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+    });
+  });
+
   describe('token-scoped rsvp viewer', () => {
     it('renders the public-rsvp section when rsvp_token is present and the event comes back unlocked', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
