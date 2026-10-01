@@ -251,8 +251,19 @@ function MemberRsvpControl({
   const user = useAuthStore((s) => s.user);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp, rsvpLocked } = eventMemberSectionFlags(event, isAuthed ? user : null);
+  const { showRsvp, rsvpLocked, membershipBlocksRsvp } = eventMemberSectionFlags(
+    event,
+    isAuthed ? user : null,
+  );
   if (!showRsvp) return null;
+  if (membershipBlocksRsvp) {
+    if (rsvpLocked) return null;
+    return (
+      <p className="text-muted text-center text-sm">
+        attend an official or club event to unlock rsvps 🌱
+      </p>
+    );
+  }
 
   return (
     <MyRsvpSection

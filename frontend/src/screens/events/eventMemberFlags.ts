@@ -1,5 +1,5 @@
 import type { Event } from '@/models/event';
-import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
+import { canTentativeMemberRsvp, EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
@@ -19,6 +19,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     event.rsvpEnabled &&
     (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = event.rsvpEnabled;
+  const membershipBlocksRsvp = user !== null && !user.isMember && !canTentativeMemberRsvp(event);
   const rsvpLocked = !isOpen;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
@@ -27,6 +28,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     canInvite,
     showRsvp,
     rsvpLocked,
+    membershipBlocksRsvp,
     showStandaloneInvited,
   };
 }

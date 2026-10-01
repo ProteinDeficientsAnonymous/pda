@@ -137,7 +137,7 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]
     Reuses a non-member already linked or matched by phone; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but keep ``is_member=False`` and no member role, which is what
-    limits them to official/club events (see ``community/_non_member_access``).
+    limits them to official/club events (see ``community/_tentative_member_access``).
     Returns ``(user, magic_token)``.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
