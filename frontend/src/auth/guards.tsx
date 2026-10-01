@@ -2,6 +2,8 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useFeatureFlags } from '@/api/featureFlags';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
@@ -117,6 +119,7 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
@@ -154,6 +157,7 @@ export function RequireMember({ unlocks }: { unlocks: string }) {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
