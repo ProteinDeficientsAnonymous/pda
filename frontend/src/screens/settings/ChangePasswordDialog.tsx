@@ -4,7 +4,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { TextField } from '@/components/ui/TextField';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { PasswordChecklist } from '@/screens/auth/PasswordChecklist';
 import { passwordRule } from '@/screens/auth/passwordRule';
 
@@ -65,9 +65,8 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
       title="change password"
     >
       <div className="flex flex-col gap-3">
-        <TextField
+        <PasswordField
           label="current password"
-          type="password"
           value={current}
           onChange={(e) => {
             setCurrent(e.target.value);
@@ -76,9 +75,8 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
           maxLength={72}
         />
         <PasswordChecklist value={next} />
-        <TextField
+        <PasswordField
           label="new password"
-          type="password"
           value={next}
           onChange={(e) => {
             setNext(e.target.value);
@@ -86,9 +84,8 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
           autoComplete="new-password"
           maxLength={72}
         />
-        <TextField
+        <PasswordField
           label="confirm new password"
-          type="password"
           value={confirm}
           onChange={(e) => {
             setConfirm(e.target.value);
