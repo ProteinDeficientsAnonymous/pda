@@ -106,6 +106,22 @@ describe('EventFormBasics ends picker defaults', () => {
     expect(new Date(patch.endDatetime!)).toEqual(addMinutes(lateStart, 30));
   });
 
+  it('a start within 30m of the next month opens that month, matching the time it will save', () => {
+    const lateStart = new Date(2030, 0, 31, 23, 45);
+    const { onChange } = renderBasics({ startDatetime: lateStart.toISOString() });
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick a date & time' }));
+
+    expect(screen.getByText('February 2030')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('00:15')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByDisplayValue('00:15'), { target: { value: '10:00' } });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
+    expect(new Date(patch.endDatetime!)).toEqual(new Date(2030, 1, 1, 10, 0));
+  });
+
   it('typing a time before the start snaps to start + 30m', () => {
     const { onChange } = renderBasics({ startDatetime: START.toISOString() });
 

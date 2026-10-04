@@ -131,7 +131,7 @@ export function DateTimePicker({
               const m = baseDate?.getMinutes() ?? 0;
               onChange(clampAfter(dateToIso(day, h, m), minDate));
             }}
-            defaultMonth={selectedDate ?? minDate ?? baseDate ?? new Date()}
+            defaultMonth={selectedDate ?? baseDate ?? new Date()}
             locale={enUS}
             disabled={dayMatcher}
           />
