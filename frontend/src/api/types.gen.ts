@@ -3313,6 +3313,11 @@ export interface components {
              */
             event_type: string;
             /**
+             * Guest Rsvp Count
+             * @default 0
+             */
+            guest_rsvp_count: number;
+            /**
              * Guests
              * @default []
              */

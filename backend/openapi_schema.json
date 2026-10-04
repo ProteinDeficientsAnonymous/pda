@@ -2371,6 +2371,11 @@
             "title": "Event Type",
             "type": "string"
           },
+          "guest_rsvp_count": {
+            "default": 0,
+            "title": "Guest Rsvp Count",
+            "type": "integer"
+          },
           "guests": {
             "default": [],
             "items": {

@@ -79,16 +79,6 @@ def sample_draft(db, creator):
     )
 
 
-@pytest.fixture
-def future_active_event(db, creator):
-    return Event.objects.create(
-        title="Active BBQ",
-        start_datetime=future_iso(days=180),
-        created_by=creator,
-        status=EventStatus.ACTIVE,
-    )
-
-
 @pytest.mark.django_db
 class TestPublishDraft:
     def test_publish_draft_transitions_to_active(self, api_client, sample_draft, creator_headers):
@@ -246,12 +236,3 @@ class TestPublishDraft:
             **cohost_headers,
         )
         assert response.status_code == 200
-
-    def test_active_to_draft_rejected(self, api_client, future_active_event, creator_headers):
-        response = api_client.patch(
-            f"/api/community/events/{future_active_event.id}/",
-            data=json.dumps({"status": "draft"}),
-            content_type="application/json",
-            **creator_headers,
-        )
-        assert response.status_code == 400

@@ -162,6 +162,9 @@ export interface Event {
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
+  /** RSVP rows from outside the current co-hosts.
+   *  0 means the API allows unpublishing back to draft. */
+  guestRsvpCount: number;
 
   datetimeTbd: boolean;
   hasPoll: boolean;

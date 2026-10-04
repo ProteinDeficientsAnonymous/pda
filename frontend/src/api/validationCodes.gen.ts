@@ -19,6 +19,8 @@ export const Code = {
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
     NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
+    HasRsvps: 'event.has_rsvps',
+    PastCannotBeUnpublished: 'event.past_cannot_be_unpublished',
     InvalidStatusTransition: 'event.invalid_status_transition',
     CancelBeforeDelete: 'event.cancel_before_delete',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
@@ -267,6 +269,8 @@ export type ValidationCode =
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
   | 'event.no_attendees_cannot_be_cancelled'
+  | 'event.has_rsvps'
+  | 'event.past_cannot_be_unpublished'
   | 'event.invalid_status_transition'
   | 'event.cancel_before_delete'
   | 'event.flag_already_flagged'
@@ -449,6 +453,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
   'event.no_attendees_cannot_be_cancelled': [],
+  'event.has_rsvps': [],
+  'event.past_cannot_be_unpublished': [],
   'event.invalid_status_transition': [],
   'event.cancel_before_delete': [],
   'event.flag_already_flagged': [],

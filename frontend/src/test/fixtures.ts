@@ -56,6 +56,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     attendingCount: 1,
     waitlistedCount: 0,
     invitedCount: 0,
+    guestRsvpCount: 1,
     datetimeTbd: false,
     hasPoll: false,
     datetimePollSlug: null,
