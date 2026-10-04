@@ -24,7 +24,7 @@ def _jwt_headers(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 class TestPollFinalizeRace:
     def test_concurrent_finalize_only_one_succeeds(self, test_user):
         """N co-hosts finalize the same poll with different winning options at
