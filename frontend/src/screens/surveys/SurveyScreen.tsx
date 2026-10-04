@@ -8,6 +8,7 @@ import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api
 import { Code } from '@/api/validationCodes';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
+import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyScreen() {
@@ -15,11 +16,27 @@ export default function SurveyScreen() {
   const { data: survey, isPending, isError } = useSurvey(slug);
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
-  if (!survey.isActive && survey.pollResult === null) return <SurveyClosed survey={survey} />;
+  const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
+  // A finalized poll keeps rendering its result rather than a shut-door message.
+  if (status !== 'active' && survey.pollResult === null) {
+    return <SurveyUnavailable survey={survey} status={status} />;
+  }
   return <SurveyForm survey={survey} />;
 }
 
-function SurveyClosed({ survey }: { survey: Survey }) {
+const UNAVAILABLE_MESSAGE: Record<Exclude<SurveyStatus, 'active'>, string> = {
+  scheduled: "this survey isn't open yet — check back when it opens",
+  capped: 'this survey has reached its response limit',
+  closed: 'this survey is closed — responses are no longer accepted',
+};
+
+function SurveyUnavailable({
+  survey,
+  status,
+}: {
+  survey: Survey;
+  status: Exclude<SurveyStatus, 'active'>;
+}) {
   return (
     <ContentContainer>
       <h1 className="mb-2 text-2xl font-medium tracking-tight">{survey.title}</h1>
@@ -30,7 +47,7 @@ function SurveyClosed({ survey }: { survey: Survey }) {
         role="status"
         className="bg-surface-dim text-foreground-secondary rounded-md px-3 py-2 text-sm"
       >
-        this survey is closed — responses are no longer accepted
+        {UNAVAILABLE_MESSAGE[status]}
       </p>
     </ContentContainer>
   );
