@@ -1,3 +1,15 @@
+# [0.116.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.115.0...v0.116.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* **events:** enter in form fields no longer submits event form ([#1502](https://github.com/ProteinDeficientsAnonymous/pda/issues/1502)) ([d538a36](https://github.com/ProteinDeficientsAnonymous/pda/commit/d538a364f4d7780c2f99e829660b60f9191d1302))
+
+
+### Features
+
+* **events:** end time picker defaults to start +30m and grays out earlier days ([#1503](https://github.com/ProteinDeficientsAnonymous/pda/issues/1503)) ([8a14743](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a14743c856377ac73fff2d60c82a95935c47df3))
+
 # [0.115.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.2...v0.115.0) (2026-10-04)
 
 
