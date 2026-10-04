@@ -1,0 +1,13 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+don't forget to join the whatsapp! it's where we plan everything — events go up there first, rides get sorted, and it's the easiest way to actually meet people before you show up somewhere.
+
+{{ whatsapp_url }}
+
+not a whatsapp person? let us know here and we'll stop emailing you about it:
+
+{{ settings_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

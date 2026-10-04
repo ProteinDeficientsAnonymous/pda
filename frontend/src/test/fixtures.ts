@@ -135,6 +135,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     showBirthday: false,
     hideLastName: false,
     weeklyDigestOptOut: false,
+    whatsappReminderOptOut: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     calendarFeedExcludedTypes: [],

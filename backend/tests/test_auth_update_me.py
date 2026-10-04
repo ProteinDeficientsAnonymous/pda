@@ -224,3 +224,28 @@ class TestPatchMeEmail:
         )
         assert resp.status_code == 409
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
+
+    def test_opt_out_of_whatsapp_reminders(self, api_client, auth_headers, test_user):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"whatsapp_reminder_opt_out": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["whatsapp_reminder_opt_out"] is True
+        test_user.refresh_from_db()
+        assert test_user.whatsapp_reminder_opt_out is True
+
+    def test_opt_back_in_to_whatsapp_reminders(self, api_client, auth_headers, test_user):
+        test_user.whatsapp_reminder_opt_out = True
+        test_user.save()
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"whatsapp_reminder_opt_out": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.whatsapp_reminder_opt_out is False
