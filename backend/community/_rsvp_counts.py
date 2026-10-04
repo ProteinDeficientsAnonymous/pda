@@ -119,12 +119,12 @@ def _not_marked_count(event: Event) -> int:
 
 
 def _host_crew_ids(event: Event) -> list:
-    """Creator + co-host ids — the "host crew" whose own RSVP rows never block unpublish."""
-    return [uid for uid in (event.created_by_id, *(u.pk for u in event.co_hosts.all())) if uid]
+    """Current co-host ids. The creator is one until they step down."""
+    return [u.pk for u in event.co_hosts.all()]
 
 
 def _guest_rsvp_count(event: Event) -> int:
-    """RSVP rows from users outside the host crew (creator + co-hosts excluded).
+    """RSVP rows from users outside the current co-hosts.
 
     Exactly `_unpublish_event`'s guard predicate: 0 ⇔ unpublish allowed
     (modulo the past guard). Any status counts — even can't-go. Reuses the

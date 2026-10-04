@@ -429,6 +429,68 @@ class TestUnpublishActive:
         past_active_event.refresh_from_db()
         assert past_active_event.status == EventStatus.ACTIVE
 
+    def test_stepped_down_creator_rsvp_blocks_unpublish(
+        self, api_client, future_active_event, creator, cohost, cohost_headers
+    ):
+        # created_by stays set after step-down, but co_hosts is the host crew.
+        future_active_event.co_hosts.add(cohost)
+        future_active_event.co_hosts.remove(creator)
+        EventRSVP.objects.create(
+            event=future_active_event, user=creator, status=RSVPStatus.ATTENDING
+        )
+        detail = api_client.get(
+            f"/api/community/events/{future_active_event.id}/", **cohost_headers
+        )
+        assert detail.status_code == 200
+        assert detail.json()["guest_rsvp_count"] == 1
+        response = api_client.patch(
+            f"/api/community/events/{future_active_event.id}/",
+            data=json.dumps({"status": "draft"}),
+            content_type="application/json",
+            **cohost_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.HAS_RSVPS)
+        future_active_event.refresh_from_db()
+        assert future_active_event.status == EventStatus.ACTIVE
+
+    def test_unpublish_schedules_live_refresh(
+        self, api_client, future_active_event, creator_headers, other_member, monkeypatch
+    ):
+        future_active_event.invited_users.add(other_member)
+        Notification.objects.create(
+            recipient=other_member,
+            notification_type=NotificationType.EVENT_INVITE,
+            event=future_active_event,
+            message="you're invited",
+        )
+        callbacks: list = []
+        pinged: list = []
+        bell: list = []
+        monkeypatch.setattr(
+            "django.db.transaction.on_commit",
+            lambda fn, using=None, robust=False: callbacks.append(fn),
+        )
+        monkeypatch.setattr(
+            "community._event_transitions.broadcast_event_created",
+            lambda event: pinged.append(event.pk),
+        )
+        monkeypatch.setattr(
+            "community._event_transitions.notify_users",
+            lambda ids: bell.append([str(uid) for uid in ids]),
+        )
+        response = api_client.patch(
+            f"/api/community/events/{future_active_event.id}/",
+            data=json.dumps({"status": "draft"}),
+            content_type="application/json",
+            **creator_headers,
+        )
+        assert response.status_code == 200
+        for fn in callbacks:
+            fn()
+        assert pinged == [future_active_event.pk]
+        assert bell == [[str(other_member.pk)]]
+
 
 @pytest.mark.django_db
 class TestRepublishNotifications:

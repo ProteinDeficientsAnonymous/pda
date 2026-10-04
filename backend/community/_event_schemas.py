@@ -206,7 +206,7 @@ class EventOut(BaseModel):
     waitlisted_count: int = 0
     invited_count: int = 0
     comment_count: int = 0
-    # RSVP rows from outside the host crew (creator + co-hosts excluded) —
+    # RSVP rows from outside the current co-hosts —
     # exactly the unpublish guard's predicate: 0 ⇔ "back to draft" is allowed.
     guest_rsvp_count: int = 0
     linked_surveys: list[EventSurveyOut] = []

@@ -12,6 +12,7 @@ from notifications.service import (
     broadcast_event_created,
     create_event_cancellation_notifications,
     create_event_invite_notifications,
+    notify_users,
 )
 from users.permissions import PermissionKey
 
@@ -128,15 +129,13 @@ def _notify_new_invitees(request, event: Event) -> None:
 
 
 def _unpublish_event(request, event: Event) -> None:
-    """ACTIVE → DRAFT. Allowed only with zero non-host RSVP rows; silent (nobody to notify)."""
+    """ACTIVE → DRAFT. Allowed only with zero non-host RSVP rows; no new notification rows."""
     if event.is_past:
         raise_validation(Code.Event.PAST_CANNOT_BE_UNPUBLISHED, status_code=400)
     # Lock the event row first — the RSVP write path locks it before inserting,
     # so the check can't race an in-flight rsvp into a now-draft event.
     locked = Event.objects.select_for_update().get(pk=event.pk)
-    # The host crew's own rsvps (creator + co-hosts) don't block; only rsvps
-    # from everyone else do. Fresh query, matching the count exposed as
-    # `guest_rsvp_count` on EventOut — count 0 ⇔ this guard passes.
+    # Current co-hosts only — a stepped-down creator's RSVP still blocks.
     host_ids = _host_crew_ids(locked)
     if EventRSVP.objects.filter(event=locked).exclude(user_id__in=host_ids).exists():
         raise_validation(Code.Event.HAS_RSVPS, status_code=400)
@@ -146,10 +145,21 @@ def _unpublish_event(request, event: Event) -> None:
     # publish that made them visible — republish re-creates them via
     # _notify_new_invitees, leaving each invitee exactly one at any time.
     # Email can't be recalled; only the Notification rows are deleted.
+    invitee_ids = [
+        str(uid)
+        for uid in Notification.objects.filter(
+            event=event,
+            notification_type=NotificationType.EVENT_INVITE,
+        ).values_list("recipient_id", flat=True)
+    ]
     Notification.objects.filter(
         event=event,
         notification_type=NotificationType.EVENT_INVITE,
     ).delete()
+    # Live calendars and the invite bell stay stale unless we ping after commit.
+    transaction.on_commit(lambda: broadcast_event_created(event))
+    if invitee_ids:
+        transaction.on_commit(lambda ids=invitee_ids: notify_users(ids))
     _audit_event(request, event, "event_unpublished")
 
 
