@@ -258,11 +258,24 @@ export function EventForm({ existing }: Props) {
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         void submit('active');
+      }}
+      onKeyDown={(e) => {
+        // Enter must never implicitly submit (#1496) — saving is button-only; nested dialog forms and IME composition keep their defaults (old WebKit marks composition with keyCode 229 while reporting isComposing: false).
+        const target = e.target as Element;
+        if (
+          e.key === 'Enter' &&
+          // eslint-disable-next-line @typescript-eslint/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
+          !(e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) &&
+          target.closest('form') === e.currentTarget &&
+          target.matches('input, select')
+        )
+          e.preventDefault();
       }}
       className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4"
     >

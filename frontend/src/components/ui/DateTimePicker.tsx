@@ -129,6 +129,9 @@ export function DateTimePicker({
             <input
               id="dt-time"
               type="time"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setOpen(false);
+              }}
               value={
                 selectedDate
                   ? `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`
