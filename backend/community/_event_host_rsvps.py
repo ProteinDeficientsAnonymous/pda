@@ -26,7 +26,7 @@ from community._event_rsvps import (
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
 from community._events import _can_edit_event
-from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, RSVPStatus
@@ -132,7 +132,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -238,7 +238,7 @@ def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(204, None)
 
 

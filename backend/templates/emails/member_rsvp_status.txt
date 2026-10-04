@@ -1,0 +1,17 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{% if kind == "promoted" %}good news — a spot opened up and you're off the waitlist for {{ event_title|lower }} 🌱{% if payment_pending %}
+
+your spot isn't confirmed until you pay for this event. payment details are on the event page — head there to confirm payment so your rsvp isn't cancelled.{% endif %}{% elif kind == "waitlisted" %}you're on the waitlist for {{ event_title|lower }}. we'll email you if a spot opens up.{% elif kind == "maybe" %}you're a maybe for {{ event_title|lower }}.{% elif kind == "cant_go" %}you're not going to {{ event_title|lower }}. changed your mind? you can update your rsvp anytime.{% else %}you're in for {{ event_title|lower }} 🌱{% endif %}
+{% if event_when %}
+when: {{ event_when|lower }}{% endif %}{% if kind != "cant_go" %}{% if event_location %}
+where: {{ event_location|lower }}{% endif %}
+{% for link in event_links %}{{ link }}
+{% endfor %}{% endif %}
+view the event:
+
+{{ event_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
