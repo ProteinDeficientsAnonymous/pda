@@ -17,6 +17,7 @@ export const NotificationType = {
   RsvpStatusChanged: 'rsvp_status_changed',
   CheckinNudge: 'checkin_nudge',
   PaymentRevoked: 'payment_revoked',
+  AccountDeleted: 'account_deleted',
 } as const;
 
 export interface AppNotification {

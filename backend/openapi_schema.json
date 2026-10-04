@@ -7498,6 +7498,34 @@
       }
     },
     "/api/auth/me/": {
+      "delete": {
+        "operationId": "users__auth_delete_me",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Me",
+        "tags": [
+          "auth"
+        ]
+      },
       "get": {
         "operationId": "users__auth_me",
         "parameters": [],
