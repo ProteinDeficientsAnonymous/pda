@@ -1,3 +1,10 @@
+# [0.115.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.2...v0.115.0) (2026-10-04)
+
+
+### Features
+
+* **events:** allow unpublishing an event back to draft when it has no rsvps ([#1501](https://github.com/ProteinDeficientsAnonymous/pda/issues/1501)) ([7bae174](https://github.com/ProteinDeficientsAnonymous/pda/commit/7bae174c6e95839b062066d184973748121868ac))
+
 ## [0.114.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.1...v0.114.2) (2026-10-01)
 
 
