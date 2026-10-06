@@ -10,6 +10,14 @@ interface ShotOptions {
   themes?: boolean;
 }
 
+async function freezeMotion(page: Page) {
+  // Tailwind `transition-colors` ignores reduced motion, so a theme switch
+  // is still fading when the screenshot is taken.
+  await page.addStyleTag({
+    content: '*, *::before, *::after { animation: none !important; transition: none !important; }',
+  });
+}
+
 async function writeShot(page: Page, name: string, options?: ShotOptions) {
   const file = path.join(screenshotsDir, `${name}.png`);
   if (options?.locator) {
@@ -24,6 +32,7 @@ async function writeShot(page: Page, name: string, options?: ShotOptions) {
 }
 
 export async function shot(page: Page, name: string, options?: ShotOptions) {
+  await freezeMotion(page);
   if (options?.themes === false) {
     await writeShot(page, name, options);
     return;

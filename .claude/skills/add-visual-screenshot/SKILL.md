@@ -14,8 +14,8 @@ argument-hint: "<shot-name> <route>"
 Copy `frontend/visual/login.spec.ts` to `frontend/visual/<shot-name>.spec.ts`.
 Change the route and `shot(page, '<shot-name>')`. That writes
 `frontend/screenshots/<shot-name>-light.png` and `<shot-name>-dark.png`.
-`shot` sets both color schemes and reduced motion. Wait for a heading that is
-absent while the page is loading.
+`shot` sets both color schemes, turns CSS animations and transitions off, and
+sets reduced motion. Wait for a heading that is absent while the page is loading.
 
 Pass `{ themes: false }` only when the page ignores the app theme, such as
 rendered email HTML.
