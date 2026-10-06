@@ -16,10 +16,12 @@ from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
+from notifications.service import create_account_deleted_notifications
 
 from users._consents import ConsentType, stamp_consents
 from users._helpers import (
     _check_and_set_email,
+    _is_last_admin,
     _require_first_name,
     _resolve_name_fields,
 )
@@ -267,6 +269,26 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, UserOut.from_user(user))
+
+
+@router.delete("/me/", response={204: None, 400: ErrorOut}, auth=gated_jwt)
+def delete_me(request, response: HttpResponse):
+    user = request.auth
+    if _is_last_admin(user):
+        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
+    user.archived_at = timezone.now()
+    user.save(update_fields=["archived_at"])
+    create_account_deleted_notifications(user)
+    audit_log(
+        logging.WARNING,
+        "user_self_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.USER, id=str(user.pk), details={"full_name": user.full_name}
+        ),
+    )
+    clear_refresh_cookie(response)
+    return Status(204, None)
 
 
 @router.delete("/me/photo/", response={200: UserOut}, auth=gated_jwt)

@@ -17,6 +17,7 @@ import { email, optionalPersonName, personName, ValidationMessage } from '@/util
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { DeleteAccountSection } from './DeleteAccountSection';
 import { EmailPreferences } from './EmailPreferences';
 import { InlineBirthday, InlineVeganniversary } from './InlineBirthday';
 import { PrivacyToggles } from './PrivacyToggles';
@@ -125,6 +126,10 @@ export default function SettingsScreen() {
         <ThemeToggle value={themeMode} onChange={setThemeMode} />
         <DyslexiaToggle checked={dyslexiaFont} onChange={toggleDyslexiaFont} />
         <TextScaleToggle value={textScale} onChange={setTextScale} />
+      </Section>
+
+      <Section label="delete account">
+        <DeleteAccountSection />
       </Section>
 
       <ChangePasswordDialog

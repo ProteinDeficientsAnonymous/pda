@@ -187,6 +187,10 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function deleteAccount(): Promise<void> {
+  await apiClient.delete('/api/auth/me/');
+}
+
 export async function fetchMe(): Promise<User> {
   const { data } = await apiClient.get<WireUser>('/api/auth/me/');
   return mapUser(data);
