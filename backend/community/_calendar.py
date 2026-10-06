@@ -203,8 +203,9 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
     desc = _event_ics_description(event, target_url, is_authed)
     if desc:
         vevent.add("description", desc)
-    if event.location:
-        vevent.add("location", event.location)
+    location = _gated(event.location, "", is_authed)
+    if location:
+        vevent.add("location", location)
     return vevent
 
 
