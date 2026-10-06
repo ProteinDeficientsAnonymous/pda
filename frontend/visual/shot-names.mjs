@@ -3,12 +3,19 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const shotCall = /\bshot\(\s*[^,\n]+,\s*(['"])([^'"]+)\1/g;
+const screenCall = /\bscreen\(\s*(['"])([^'"]+)\1/g;
 
 export function duplicateShotNames(files) {
   const seen = new Map();
   const errors = [];
   for (const file of files) {
     for (const match of file.source.matchAll(shotCall)) {
+      const name = match[2];
+      const prior = seen.get(name);
+      if (prior) errors.push(`duplicate shot name "${name}" in ${prior} and ${file.path}`);
+      else seen.set(name, file.path);
+    }
+    for (const match of file.source.matchAll(screenCall)) {
       const name = match[2];
       const prior = seen.get(name);
       if (prior) errors.push(`duplicate shot name "${name}" in ${prior} and ${file.path}`);

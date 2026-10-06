@@ -37,6 +37,8 @@ export interface SeedScenarioMap {
     jamie_token: string;
     ash_phone: string;
     digest_html: string;
+    event_id: string;
+    guest_token: string;
   };
 }
 

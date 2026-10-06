@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 import pytest
 from community.models import Event, EventRSVP
@@ -95,8 +96,20 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     assert ash.needs_onboarding is True
     assert "potluck" in out["digest_html"]
     assert "see the full calendar" in out["digest_html"]
+    event = Event.objects.get(slug="potluck")
+    assert event.title == "potluck"
+    assert event.location == "the park"
+    assert event.start_datetime == datetime(2026, 10, 9, 22, 0, tzinfo=UTC)
+    assert out["event_id"] == str(event.id)
+    assert EventRSVP.objects.filter(event=event, user=seed).exists()
+    guest = User.objects.get(phone_number="+17025550005")
+    assert guest.first_name == "River"
+    assert guest.is_member is False
+    assert EventRSVP.objects.filter(event=event, user=guest).exists()
+    assert out["guest_token"]
     call_command("e2e_seed", "member-screens")
     assert User.objects.filter(phone_number="+17025550002").count() == 1
+    assert Event.objects.filter(slug="potluck").count() == 1
 
 
 @pytest.mark.django_db

@@ -24,7 +24,10 @@ No clocks, unread counts, or random seed text. Do not commit the PNG. Do not
 use `toHaveScreenshot` or add another workflow. Do not add a fixture named
 `use`; that name fails the hooks lint.
 
-From `frontend/`: `pnpm test:visual`. A repeated `shot` name fails that command.
+From `frontend/`: `pnpm test:visual`. A repeated `shot` or `screen` name fails that command.
+
+Screens that share a visitor belong in one test, so login happens once. Build that
+list with `screen()` from `frontend/visual/session.ts` and pass it to `shootAll`.
 
 ## Logged-in or first-login
 

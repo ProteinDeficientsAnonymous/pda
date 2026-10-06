@@ -154,8 +154,9 @@ def _seed_live_updates() -> dict:
     }
 
 
-_SCREEN_PHONES = ("+17025550002", "+17025550003", "+17025550004")
-_SCREEN_EMAILS = ("member@pda.test", "jamie@pda.test")
+_SCREEN_PHONES = ("+17025550002", "+17025550003", "+17025550004", "+17025550005")
+_SCREEN_EMAILS = ("member@pda.test", "jamie@pda.test", "river@example.com")
+_POTLUCK_AT = datetime(2026, 10, 9, 22, 0, tzinfo=UTC)
 _CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
 
 
@@ -178,6 +179,7 @@ def _seed_member_screens() -> dict:
     # Login is capped at 5/minute per IP. Pytest's database has no cache table.
     if "django_cache" in connection.introspection.table_names():
         caches["ratelimit"].clear()
+    Event.objects.filter(slug="potluck").delete()
     User.objects.filter(phone_number__in=_SCREEN_PHONES).delete()
     User.objects.filter(email__in=_SCREEN_EMAILS).delete()
     seed = _screen_user(
@@ -210,6 +212,29 @@ def _seed_member_screens() -> dict:
         email=None,
         needs_onboarding=True,
     )
+    guest = User.objects.create_user(
+        phone_number="+17025550005",
+        first_name="River",
+        last_name="Guest",
+        email="river@example.com",
+        is_member=False,
+        password=E2E_PASSWORD,
+    )
+    event = Event.objects.create(
+        title="potluck",
+        slug="potluck",
+        description="bring a dish to share.",
+        start_datetime=_POTLUCK_AT,
+        location="the park",
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        status=EventStatus.ACTIVE,
+        rsvp_enabled=True,
+        created_by=seed,
+    )
+    EventRSVP.objects.create(event=event, user=seed, status=RSVPStatus.ATTENDING)
+    EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+    guest_token = NonMemberRsvpToken.issue_or_extend(guest)
     digest_html = render_to_string(
         "emails/weekly_digest.html",
         {
@@ -234,6 +259,8 @@ def _seed_member_screens() -> dict:
         "jamie_token": _access_token(jamie),
         "ash_phone": "+17025550004",
         "digest_html": digest_html,
+        "event_id": str(event.id),
+        "guest_token": guest_token.token,
     }
 
 
