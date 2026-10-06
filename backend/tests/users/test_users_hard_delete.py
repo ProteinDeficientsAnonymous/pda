@@ -2,6 +2,7 @@ import logging
 
 import pytest
 from community._validation import Code
+from community.models import Event, EventComment
 from django.utils import timezone
 from tests._asserts import assert_error_code
 from users.models import MagicLoginToken, User
@@ -75,6 +76,46 @@ class TestHardDeleteUser:
         other_user.last_login = timezone.now()
         other_user.save(update_fields=["last_login"])
 
+        response = api_client.delete(self._url(other_user), **manage_users_headers)
+        assert response.status_code == 400
+        assert_error_code(response, Code.User.CANNOT_HARD_DELETE_LOGGED_IN)
+        assert User.objects.filter(pk=other_user.pk).exists()
+
+    def test_hard_delete_api_login_returns_400(self, api_client, manage_users_headers, other_user):
+        assert other_user.last_login is None
+        login = api_client.post(
+            "/api/auth/login/",
+            {"phone_number": "+12025550301", "password": "otherpass123"},
+            content_type="application/json",
+        )
+        assert login.status_code == 200
+        response = api_client.delete(self._url(other_user), **manage_users_headers)
+        assert response.status_code == 400
+        assert_error_code(response, Code.User.CANNOT_HARD_DELETE_LOGGED_IN)
+        assert User.objects.filter(pk=other_user.pk).exists()
+
+    def test_hard_delete_magic_login_returns_400(
+        self, api_client, manage_users_headers, other_user
+    ):
+        assert other_user.last_login is None
+        magic = MagicLoginToken.create_for_user(other_user)
+        login = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert login.status_code == 200
+        response = api_client.delete(self._url(other_user), **manage_users_headers)
+        assert response.status_code == 400
+        assert_error_code(response, Code.User.CANNOT_HARD_DELETE_LOGGED_IN)
+        assert User.objects.filter(pk=other_user.pk).exists()
+
+    def test_hard_delete_user_with_event_comment_returns_400(
+        self, api_client, manage_users_headers, manage_users_user, other_user
+    ):
+        assert other_user.last_login is None
+        event = Event.objects.create(
+            title="Test Event",
+            start_datetime="2030-01-01T00:00:00Z",
+            created_by=manage_users_user,
+        )
+        EventComment.objects.create(event=event, author=other_user, body="hello")
         response = api_client.delete(self._url(other_user), **manage_users_headers)
         assert response.status_code == 400
         assert_error_code(response, Code.User.CANNOT_HARD_DELETE_LOGGED_IN)
