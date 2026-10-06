@@ -171,6 +171,21 @@ def _apply_veganniversary(user, veganniversary: VeganniversaryIn | None) -> None
     user.veganniversary_year = veganniversary.year if veganniversary else None
 
 
+_ME_PATCH_COLUMN_GROUPS = {
+    "birthday": ("birthday_month", "birthday_day", "birthday_year"),
+    "veganniversary": ("veganniversary_month", "veganniversary_day", "veganniversary_year"),
+}
+
+
+def _save_me_patch(user, changed: list[str]) -> None:
+    """Write only the patched columns so a second in-flight save cannot restore them."""
+    fields: list[str] = []
+    for name in changed:
+        fields.extend(_ME_PATCH_COLUMN_GROUPS.get(name, (name,)))
+    if fields:
+        user.save(update_fields=fields)
+
+
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
@@ -208,7 +223,8 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
-    user.save()
+    _save_me_patch(user, changed)
+    user = User.objects.prefetch_related("roles").get(pk=user.pk)
     if changed:
         audit_log(
             logging.INFO,

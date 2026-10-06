@@ -1,6 +1,8 @@
 import pytest
 from ninja_jwt.tokens import RefreshToken
+from users._auth import _apply_me_patch, _save_me_patch
 from users.models import User
+from users.schemas import MePatchIn
 
 
 @pytest.mark.django_db
@@ -103,6 +105,20 @@ class TestMeVeganniversaryPrivacy:
         test_user.refresh_from_db()
         assert test_user.show_veganniversary is False
         assert test_user.veganniversary_shoutout_opt_in is True
+
+    def test_overlapping_has_seen_save_keeps_shoutout_opt_out(self, test_user):
+        test_user.veganniversary_shoutout_opt_in = True
+        test_user.has_seen_veganniversary = False
+        test_user.save()
+        opt_out = User.objects.get(pk=test_user.pk)
+        seen = User.objects.get(pk=test_user.pk)
+        opt_out_changed = _apply_me_patch(opt_out, MePatchIn(veganniversary_shoutout_opt_in=False))
+        seen_changed = _apply_me_patch(seen, MePatchIn(has_seen_veganniversary=True))
+        _save_me_patch(opt_out, opt_out_changed)
+        _save_me_patch(seen, seen_changed)
+        test_user.refresh_from_db()
+        assert test_user.veganniversary_shoutout_opt_in is False
+        assert test_user.has_seen_veganniversary is True
 
     def test_me_has_seen_veganniversary_defaults_false(self, api_client, test_user):
         refresh = RefreshToken.for_user(test_user)
