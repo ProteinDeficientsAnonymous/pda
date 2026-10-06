@@ -20,3 +20,15 @@ export async function shot(
     fullPage: options?.fullPage,
   });
 }
+
+export async function shotThemes(
+  page: Page,
+  name: string,
+  options?: { locator?: Locator; fullPage?: boolean },
+) {
+  for (const theme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: theme });
+    await page.locator(`html.${theme}`).waitFor({ state: 'attached' });
+    await shot(page, `${name}-${theme}`, options);
+  }
+}

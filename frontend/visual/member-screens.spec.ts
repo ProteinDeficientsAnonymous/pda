@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { seed } from '../e2e/fixtures';
-import { shot } from './shot';
+import { shot, shotThemes } from './shot';
 
 const ONBOARDING_PASSWORD = 'E2e-test-pass-1';
 
@@ -19,7 +19,7 @@ function section(page: Page, label: string) {
 }
 
 async function signIn(page: Page, phone: string, password: string) {
-  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/login');
   await page.getByLabel('phone number').pressSequentially(phone.replace('+1', ''));
   await page.getByRole('button', { name: 'continue' }).click();
@@ -43,7 +43,7 @@ test('settings profile', async ({ page }) => {
   const profile = section(page, 'profile');
   await expect(profile.getByText('june 15, 1990')).toBeVisible();
   await hideBottomNav(page);
-  await shot(page, 'settings-profile', { locator: profile });
+  await shotThemes(page, 'settings-profile', { locator: profile });
 });
 
 test('settings privacy', async ({ page }) => {
@@ -53,7 +53,7 @@ test('settings privacy', async ({ page }) => {
   const privacy = section(page, 'privacy');
   await expect(privacy.getByText('show my last name to other members')).toBeVisible();
   await hideBottomNav(page);
-  await shot(page, 'settings-privacy', { locator: privacy });
+  await shotThemes(page, 'settings-privacy', { locator: privacy });
 });
 
 test('onboarding profile', async ({ page }) => {
@@ -65,7 +65,7 @@ test('onboarding profile', async ({ page }) => {
   await page.getByRole('button', { name: 'continue' }).click();
   await expect(page.getByRole('heading', { name: 'make it yours' })).toBeVisible();
   await expect(page.getByText('add your birthday')).toBeVisible();
-  await shot(page, 'onboarding', { fullPage: true });
+  await shotThemes(page, 'onboarding', { fullPage: true });
 });
 
 test('own profile', async ({ page }) => {
@@ -75,7 +75,7 @@ test('own profile', async ({ page }) => {
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'Seed Member' })).toBeVisible();
   await expect(page.getByText('🎂')).toHaveCount(0);
-  await shot(page, 'own-profile', { fullPage: true });
+  await shotThemes(page, 'own-profile', { fullPage: true });
 });
 
 test('own profile with birthday', async ({ page }) => {
@@ -83,7 +83,7 @@ test('own profile with birthday', async ({ page }) => {
   await signIn(page, data.seed_phone, data.password);
   await page.goto('/profile');
   await expect(page.getByText('🎂 june 15, 1990')).toBeVisible();
-  await shot(page, 'own-profile-with-birthday', { fullPage: true });
+  await shotThemes(page, 'own-profile-with-birthday', { fullPage: true });
 });
 
 test('member profile', async ({ page }) => {
@@ -93,7 +93,7 @@ test('member profile', async ({ page }) => {
   await page.goto(`/members/${data.jamie_id}`);
   await expect(page.getByRole('heading', { name: 'Jamie Okafor' })).toBeVisible();
   await expect(page.getByText('🎂')).toHaveCount(0);
-  await shot(page, 'member-profile', { fullPage: true });
+  await shotThemes(page, 'member-profile', { fullPage: true });
 });
 
 test('member profile with birthday', async ({ page }) => {
@@ -101,7 +101,7 @@ test('member profile with birthday', async ({ page }) => {
   await signIn(page, data.seed_phone, data.password);
   await page.goto(`/members/${data.jamie_id}`);
   await expect(page.getByText('🎂 march 2, 1991')).toBeVisible();
-  await shot(page, 'member-profile-with-birthday', { fullPage: true });
+  await shotThemes(page, 'member-profile-with-birthday', { fullPage: true });
 });
 
 test('weekly digest', async ({ page }) => {
