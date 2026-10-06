@@ -28,7 +28,7 @@ async function patchMe(page: Page, token: string, data: Record<string, unknown>)
 }
 
 test('member screens', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   const data = seed('member-screens');
   await prepare(page);
   await signIn(page, data.seed_phone, data.password);
@@ -74,7 +74,28 @@ test('member screens', async ({ page }) => {
     screen('volunteer', '/volunteer', { heading: 'volunteer' }),
     screen('join-member', '/join', { heading: "you're already in" }),
     screen('admin', '/admin', { text: 'nothing available to you yet' }),
+    screen('event-create', '/events/add', { label: 'title' }),
+    screen('event-edit', '/events/potluck/edit', { label: 'title' }),
+    screen('event-check-in', '/events/potluck/check-in', {
+      heading: 'check-in',
+      text: 'check-in opens an hour before the event',
+    }),
+    screen('event-rsvps', '/events/potluck/manage-rsvps', { heading: 'manage rsvps' }),
+    screen('event-report', `/events/${data.hike_id}/report`, {
+      heading: 'check-in report',
+      text: 'attended',
+    }),
+    screen('past-event', '/events/hike', { text: 'the woods' }),
+    screen('cancelled-event', '/events/picnic', { text: 'cancelled' }),
   ]);
+
+  await page.goto('/events/mine');
+  await page.locator('label', { has: page.getByRole('radio', { name: 'past' }) }).click();
+  await expect(page.getByText('hike').first()).toBeVisible();
+  await shot(page, 'my-events-past', { fullPage: true });
+  await page.locator('label', { has: page.getByRole('radio', { name: 'cancelled' }) }).click();
+  await expect(page.getByText('picnic').first()).toBeVisible();
+  await shot(page, 'my-events-cancelled', { fullPage: true });
 });
 
 test('onboarding profile', async ({ page }) => {

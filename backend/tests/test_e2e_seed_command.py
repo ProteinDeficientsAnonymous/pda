@@ -2,7 +2,8 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community.models import Event, EventRSVP
+from community.models import Document, Event, EventRSVP, JoinRequest, Survey
+from community.models.feature_flag import FeatureFlagState
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from users.models import NonMemberRsvpToken, User
@@ -110,6 +111,38 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     call_command("e2e_seed", "member-screens")
     assert User.objects.filter(phone_number="+17025550002").count() == 1
     assert Event.objects.filter(slug="potluck").count() == 1
+
+
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
+    call_command("e2e_seed", "member-screens")
+    out = json.loads(capsys.readouterr().out)
+    hike = Event.objects.get(slug="hike")
+    assert hike.start_datetime == datetime(2026, 9, 4, 22, 0, tzinfo=UTC)
+    assert out["hike_id"] == str(hike.id)
+    picnic = Event.objects.get(slug="picnic")
+    assert picnic.status == "cancelled"
+    ada = User.objects.get(phone_number="+17025550006")
+    assert ada.first_name == "Ada"
+    assert ada.roles.filter(name="admin", is_default=True).exists()
+    assert out["admin_phone"] == ada.phone_number
+    remy = User.objects.get(phone_number="+17025550008")
+    assert remy.needs_password_reset is True
+    assert out["reset_phone"] == remy.phone_number
+    casey = User.objects.get(phone_number="+17025550009")
+    assert casey.guidelines_consent_at is None
+    assert out["consent_phone"] == casey.phone_number
+    assert FeatureFlagState.objects.get(key="host_attendance_report").enabled is True
+    survey = Survey.objects.get(slug="potluck-feedback")
+    assert survey.created_at == datetime(2026, 6, 1, 18, 0, tzinfo=UTC)
+    assert out["survey_id"] == str(survey.id)
+    assert JoinRequest.objects.get(phone_number="+17025550007").submitted_at == datetime(
+        2026, 6, 1, 18, 0, tzinfo=UTC
+    )
+    assert out["doc_id"] == str(Document.objects.get(title="house rules").id)
+    call_command("e2e_seed", "member-screens")
+    assert Event.objects.filter(slug="hike").count() == 1
+    assert Event.objects.filter(slug="picnic").count() == 1
 
 
 @pytest.mark.django_db

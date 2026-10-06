@@ -11,6 +11,10 @@ const loggedOutScreens = [
   screen('install', '/install', { heading: 'install the app' }),
   screen('sms-policy', '/sms-policy', { heading: 'sms policy' }),
   screen('join', '/join', { heading: 'request to join pda' }),
+  screen('join-success', '/join/success', { heading: 'request received!' }),
+  screen('magic-login', '/magic-login/00000000-0000-0000-0000-000000000000', {
+    heading: 'link expired',
+  }),
   screen('calendar', '/calendar?date=2026-10-09&view=month', { text: 'october 2026' }),
 ];
 

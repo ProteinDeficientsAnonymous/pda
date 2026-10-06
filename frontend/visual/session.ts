@@ -24,13 +24,14 @@ export interface ScreenShot {
   path: string;
   heading?: string;
   text?: string;
+  label?: string;
   readyUrl?: string;
 }
 
 export function screen(
   name: string,
   path: string,
-  ready: Pick<ScreenShot, 'heading' | 'text' | 'readyUrl'> = {},
+  ready: Pick<ScreenShot, 'heading' | 'text' | 'label' | 'readyUrl'> = {},
 ): ScreenShot {
   return { name, path, ...ready };
 }
@@ -50,7 +51,10 @@ export async function shootAll(page: Page, shots: ScreenShot[]) {
     if (item.text) {
       await expect(page.getByText(item.text).first()).toBeVisible();
     }
-    if (!item.heading && !item.text) {
+    if (item.label) {
+      await expect(page.getByLabel(item.label).first()).toBeVisible();
+    }
+    if (!item.heading && !item.text && !item.label) {
       await expect(page.getByText('loading…')).toHaveCount(0);
     }
     await shot(page, item.name, { fullPage: true });
