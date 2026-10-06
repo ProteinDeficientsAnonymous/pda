@@ -38,6 +38,25 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
+# Archive and pause apply even on the pending allowlist. Password, onboarding,
+# and guidelines consent do not — those endpoints are how the user clears them.
+_HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
+
+
+def account_block_code(user: User) -> str | None:
+    """Return the auth code that blocks this account, or None if it may act."""
+    if user.archived_at is not None:
+        return Code.Auth.ACCOUNT_ARCHIVED
+    if user.is_paused:
+        return Code.Auth.ACCOUNT_PAUSED
+    if user.needs_password_reset:
+        return Code.Auth.PASSWORD_RESET_REQUIRED
+    if user.needs_onboarding:
+        return Code.Auth.ONBOARDING_REQUIRED
+    if user.guidelines_consent_at is None:
+        return Code.Auth.GUIDELINES_CONSENT_REQUIRED
+    return None
+
 
 class GatedJWTAuth(JWTAuth):
     """JWTAuth that also rejects tokens whose account is in a blocked state.
@@ -53,26 +72,12 @@ class GatedJWTAuth(JWTAuth):
         if not isinstance(user, User):
             return user
 
-        # Hard blocks — apply on every protected endpoint, no allowlist. These
-        # mirror the login-time checks so a token issued before the state change
-        # can't outlive it.
-        if user.archived_at is not None:
-            raise ValidationException(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-        if user.is_paused:
-            raise ValidationException(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-
-        # Pending account state — allow only the endpoints needed to resolve it.
-        # Order mirrors the frontend gate: a brand-new user sets their password
-        # (onboarding / reset) before being asked to consent to the guidelines.
-        if request.path not in _PENDING_ALLOWLIST:
-            if user.needs_password_reset:
-                raise ValidationException(Code.Auth.PASSWORD_RESET_REQUIRED, status_code=403)
-            if user.needs_onboarding:
-                raise ValidationException(Code.Auth.ONBOARDING_REQUIRED, status_code=403)
-            if user.guidelines_consent_at is None:
-                raise ValidationException(Code.Auth.GUIDELINES_CONSENT_REQUIRED, status_code=403)
-
-        return user
+        code = account_block_code(user)
+        if code is None or (
+            request.path in _PENDING_ALLOWLIST and code not in _HARD_ACCOUNT_BLOCKS
+        ):
+            return user
+        raise ValidationException(code, status_code=403)
 
 
 # Single shared instance — import and pass as ``auth=gated_jwt`` everywhere a
