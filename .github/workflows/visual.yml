@@ -1,0 +1,57 @@
+name: Visual
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: visual-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# contents: write pushes the ci__screenshots branch the comment's images live on.
+# pull-requests: write posts the diff comment. actions: read downloads the
+# baseline artifact from the last main run.
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  screenshots:
+    name: Screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: cd frontend && pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: cd frontend && pnpm exec playwright install --with-deps chromium
+
+      - name: Capture screenshots
+        working-directory: frontend
+        run: pnpm test:visual
+
+      - uses: reg-viz/reg-actions@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-directory-path: frontend/screenshots
+          artifact-name: screenshots
+          branch: ci__screenshots
+          comment-mode: changes
+          outdated-comment-action: update
+          enable-antialias: true
+          matching-threshold: 0.1
