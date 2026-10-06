@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("users", "0044_user_calendar_feed_excluded_types"),
+        ("users", "0045_user_has_joined_whatsapp"),
     ]
 
     operations = [
