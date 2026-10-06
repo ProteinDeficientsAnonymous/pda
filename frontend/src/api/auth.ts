@@ -121,7 +121,7 @@ function mapUser(u: WireUser): User {
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
     showVeganniversary: u.show_veganniversary ?? true,
-    veganniversaryShoutoutOptIn: u.veganniversary_shoutout_opt_in ?? false,
+    veganniversaryShoutoutOptIn: u.veganniversary_shoutout_opt_in ?? true,
     hasSeenVeganniversary: u.has_seen_veganniversary ?? false,
     hideLastName: u.hide_last_name ?? false,
     weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,

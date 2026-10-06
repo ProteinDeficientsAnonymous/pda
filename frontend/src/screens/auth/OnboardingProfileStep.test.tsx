@@ -131,7 +131,7 @@ describe('OnboardingProfileStep', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('switch', { name: /show my name in veganniversary shout out emails/i }),
-    ).not.toBeChecked();
+    ).toBeChecked();
   });
 
   it('shows the "photo added" confirmation once a profile photo exists', () => {

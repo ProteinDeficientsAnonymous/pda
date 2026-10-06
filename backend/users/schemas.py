@@ -157,7 +157,7 @@ class UserOut(BaseModel):
     show_email: bool = True
     show_birthday: bool = True
     show_veganniversary: bool = True
-    veganniversary_shoutout_opt_in: bool = False
+    veganniversary_shoutout_opt_in: bool = True
     has_seen_veganniversary: bool = False
     hide_last_name: bool = False
     weekly_digest_opt_out: bool = False

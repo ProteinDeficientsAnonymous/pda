@@ -331,6 +331,7 @@ class TestSendWeeklyDigestCommand:
             first_name="Fay",
             veganniversary_month=6,
             veganniversary_year=2024,
+            veganniversary_shoutout_opt_in=False,
         )
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()

@@ -133,7 +133,7 @@ class User(AbstractUser):
     veganniversary_day = models.PositiveSmallIntegerField(null=True, blank=True)
     veganniversary_year = models.PositiveSmallIntegerField(null=True, blank=True)
     show_veganniversary = models.BooleanField(default=True)
-    veganniversary_shoutout_opt_in = models.BooleanField(default=False)
+    veganniversary_shoutout_opt_in = models.BooleanField(default=True)
     has_seen_veganniversary = models.BooleanField(default=False)
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
     photo_updated_at = models.DateTimeField(null=True, blank=True)

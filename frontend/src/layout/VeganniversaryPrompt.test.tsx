@@ -51,7 +51,7 @@ describe('VeganniversaryPrompt', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('switch', { name: /show my name in veganniversary shout out emails/i }),
-    ).toBeInTheDocument();
+    ).toBeChecked();
   });
 
   it('does not open once the user has seen veganniversary', () => {

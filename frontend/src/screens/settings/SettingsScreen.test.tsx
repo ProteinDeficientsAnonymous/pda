@@ -298,10 +298,10 @@ describe('SettingsScreen', () => {
     const shoutout = screen.getByRole('switch', {
       name: /show my name in veganniversary shout out emails/i,
     });
-    expect(shoutout).not.toBeChecked();
+    expect(shoutout).toBeChecked();
     await user.click(shoutout);
     await waitFor(() => {
-      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganniversaryShoutoutOptIn: true });
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ veganniversaryShoutoutOptIn: false });
     });
   });
 

@@ -135,7 +135,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     showEmail: false,
     showBirthday: false,
     showVeganniversary: true,
-    veganniversaryShoutoutOptIn: false,
+    veganniversaryShoutoutOptIn: true,
     hasSeenVeganniversary: false,
     hideLastName: false,
     weeklyDigestOptOut: false,

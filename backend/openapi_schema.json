@@ -6881,7 +6881,7 @@
             ]
           },
           "veganniversary_shoutout_opt_in": {
-            "default": false,
+            "default": true,
             "title": "Veganniversary Shoutout Opt In",
             "type": "boolean"
           },

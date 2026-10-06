@@ -88,7 +88,7 @@ class TestMeVeganniversaryPrivacy:
         assert response.status_code == 200
         assert response.json()["veganniversary"] == {"month": 6, "day": 15, "year": 2019}
         assert response.json()["show_veganniversary"] is False
-        assert response.json()["veganniversary_shoutout_opt_in"] is False
+        assert response.json()["veganniversary_shoutout_opt_in"] is True
 
     def test_patch_me_persists_privacy_flags(self, api_client, auth_headers, test_user):
         response = api_client.patch(
