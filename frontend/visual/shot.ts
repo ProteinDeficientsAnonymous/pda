@@ -4,11 +4,13 @@ import { type Locator, type Page } from '@playwright/test';
 
 const screenshotsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../screenshots');
 
-export async function shot(
-  page: Page,
-  name: string,
-  options?: { locator?: Locator; fullPage?: boolean },
-) {
+interface ShotOptions {
+  locator?: Locator;
+  fullPage?: boolean;
+  themes?: boolean;
+}
+
+async function writeShot(page: Page, name: string, options?: ShotOptions) {
   const file = path.join(screenshotsDir, `${name}.png`);
   if (options?.locator) {
     await options.locator.screenshot({ path: file, caret: 'hide' });
@@ -21,14 +23,14 @@ export async function shot(
   });
 }
 
-export async function shotThemes(
-  page: Page,
-  name: string,
-  options?: { locator?: Locator; fullPage?: boolean },
-) {
+export async function shot(page: Page, name: string, options?: ShotOptions) {
+  if (options?.themes === false) {
+    await writeShot(page, name, options);
+    return;
+  }
   for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: theme });
     await page.locator(`html.${theme}`).waitFor({ state: 'attached' });
-    await shot(page, `${name}-${theme}`, options);
+    await writeShot(page, `${name}-${theme}`, options);
   }
 }
