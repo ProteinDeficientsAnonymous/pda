@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './visual',
+  // Vitest files (*.test.ts) live next to the specs. Playwright's default
+  // match includes them, and loading one crashes outside Vitest.
+  testMatch: '**/*.spec.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
