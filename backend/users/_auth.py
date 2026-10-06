@@ -4,7 +4,7 @@ import logging
 import time
 
 from community._image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
-from community._validation import Code, raise_validation
+from community._validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
@@ -26,6 +26,7 @@ from users._helpers import (
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
+    issue_refresh_token,
     read_refresh_cookie,
     set_refresh_cookie,
 )
@@ -91,7 +92,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
             target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-    refresh = RefreshToken.for_user(user)
+    refresh = issue_refresh_token(user)
     request.auth = user
     set_refresh_cookie(response, str(refresh))
     audit_log(
@@ -100,7 +101,34 @@ def login(request, payload: LoginIn, response: HttpResponse):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))
+
+
+def _load_refresh_user(token: str) -> User:
+    old_refresh = RefreshToken(token)
+    user = User.objects.get(pk=old_refresh.payload["user_id"])
+    try:
+        version = int(old_refresh.get("session_version", 0))
+    except (TypeError, ValueError):
+        version = -1
+    if user.is_paused or user.archived_at is not None or version != user.session_version:
+        raise_validation(
+            Code.Auth.REFRESH_TOKEN_INVALID, status_code=401, clear_refresh_cookie=True
+        )
+    return user
+
+
+def _invalidate_refresh_cookie(request) -> None:
+    token = read_refresh_cookie(request)
+    if not token:
+        return
+    try:
+        user_id = RefreshToken(token).payload["user_id"]
+    except (TokenError, KeyError):
+        return
+    user = User.objects.filter(pk=user_id).first()
+    if user is not None:
+        user.bump_session_version()
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
@@ -109,12 +137,9 @@ def refresh_token(request, response: HttpResponse):
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
-        old_refresh = RefreshToken(token)
-        # Mint fresh, don't reuse old_refresh — it keeps the original exp.
-        user = User.objects.get(pk=old_refresh.payload["user_id"])
-        refresh = RefreshToken.for_user(user)
-        set_refresh_cookie(response, str(refresh))
-        return Status(200, AccessOut(access=str(refresh.access_token)))
+        user = _load_refresh_user(token)
+    except ValidationException:
+        raise
     except (TokenError, User.DoesNotExist):
         raise_validation(
             Code.Auth.REFRESH_TOKEN_INVALID, status_code=401, clear_refresh_cookie=True
@@ -122,11 +147,16 @@ def refresh_token(request, response: HttpResponse):
     except Exception:
         logger.exception("Unexpected error during token refresh")
         raise_validation(Code.Auth.REFRESH_FAILED, status_code=401, clear_refresh_cookie=True)
+    # Mint fresh — the presented token keeps its original exp.
+    refresh = issue_refresh_token(user)
+    set_refresh_cookie(response, str(refresh))
+    return Status(200, AccessOut(access=str(refresh.access_token)))
 
 
 @router.post("/logout/", response={200: LogoutOut}, auth=None)
 def logout(request, response: HttpResponse):
     """Clear the refresh cookie. Idempotent; safe to call unauthenticated."""
+    _invalidate_refresh_cookie(request)
     clear_refresh_cookie(response)
     return Status(200, LogoutOut(detail="logged out"))
 

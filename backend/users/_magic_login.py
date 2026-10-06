@@ -10,9 +10,8 @@ from django.http import HttpResponse
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from ninja_jwt.tokens import RefreshToken
 
-from users._refresh_cookie import set_refresh_cookie
+from users._refresh_cookie import issue_refresh_token, set_refresh_cookie
 from users.models import MagicLoginToken, User
 from users.schemas import ErrorOut, TokenOut
 
@@ -133,7 +132,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
 @rate_limit(key_func=client_ip, rate="5/m")
 def magic_login(request, token: str, response: HttpResponse):
     magic = _consume_magic_token(request, token)
-    refresh = RefreshToken.for_user(magic.user)
+    refresh = issue_refresh_token(magic.user)
     request.auth = magic.user
     set_refresh_cookie(response, str(refresh))
     audit_log(
@@ -142,4 +141,4 @@ def magic_login(request, token: str, response: HttpResponse):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))

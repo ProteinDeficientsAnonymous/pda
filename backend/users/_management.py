@@ -376,6 +376,8 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
     if payload.is_paused is not None:
+        if payload.is_paused and not user.is_paused:
+            user.bump_session_version()
         user.is_paused = payload.is_paused
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp

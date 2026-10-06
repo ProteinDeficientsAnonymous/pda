@@ -51,6 +51,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
     full_name = user.full_name
     user.archived_at = timezone.now()
+    user.bump_session_version()
     user.save(update_fields=["archived_at"])
     audit_log(
         logging.WARNING,

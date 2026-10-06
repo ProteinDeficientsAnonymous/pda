@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
+from ninja_jwt.tokens import RefreshToken
 
 REFRESH_COOKIE_NAME = "refresh_token"
 
@@ -42,3 +43,10 @@ def clear_refresh_cookie(response: HttpResponse) -> None:
 
 def read_refresh_cookie(request: HttpRequest) -> str | None:
     return request.COOKIES.get(REFRESH_COOKIE_NAME)
+
+
+def issue_refresh_token(user):
+    """Bind the refresh token to the user's current session version."""
+    refresh = RefreshToken.for_user(user)
+    refresh["session_version"] = user.session_version
+    return refresh

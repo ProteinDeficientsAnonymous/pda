@@ -139,6 +139,7 @@ class User(AbstractUser):
     is_paused = models.BooleanField(default=False)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    session_version = models.PositiveIntegerField(default=0)
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
@@ -182,7 +183,26 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
+        # Omit session_version: queryset bumps must survive a stale full save.
+        if not self._state.adding and kwargs.get("update_fields") is None:
+            kwargs["update_fields"] = [
+                f.name
+                for f in self._meta.concrete_fields
+                if not f.primary_key and f.name != "session_version"
+            ]
         super().save(*args, **kwargs)
+
+    def set_unusable_password(self):
+        super().set_unusable_password()
+        self.bump_session_version()
+
+    def bump_session_version(self) -> None:
+        # UUID pk defaults are set before insert, so pk alone is not "row exists".
+        if self._state.adding:
+            self.session_version += 1
+            return
+        User.objects.filter(pk=self.pk).update(session_version=models.F("session_version") + 1)
+        self.refresh_from_db(fields=["session_version"])
 
     def __str__(self):
         return self.full_name or self.phone_number
