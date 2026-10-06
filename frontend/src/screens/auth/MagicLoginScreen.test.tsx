@@ -34,15 +34,17 @@ vi.mock('@/auth/store', () => ({
   ),
 }));
 
-function renderAt(token: string) {
+function renderAt(token: string, redirect?: string) {
+  const query = redirect === undefined ? '' : `?redirect=${encodeURIComponent(redirect)}`;
   return render(
-    <MemoryRouter initialEntries={[`/magic-login/${token}`]}>
+    <MemoryRouter initialEntries={[`/magic-login/${token}${query}`]}>
       <Routes>
         <Route path="/magic-login/:token" element={<MagicLoginScreen />} />
         <Route path="/new-password" element={<div>new password page</div>} />
         <Route path="/onboarding" element={<div>onboarding page</div>} />
         <Route path="/consent" element={<div>consent page</div>} />
         <Route path="/calendar" element={<div>calendar page</div>} />
+        <Route path="/events/:slug" element={<div>event page</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -109,4 +111,33 @@ describe('MagicLoginScreen', () => {
       expect(magicLoginMock).toHaveBeenCalledWith('tok-4');
     });
   });
+
+  it('should land on /calendar when redirect is scheme-relative', async () => {
+    currentUser = makeUser();
+    renderAt('tok-evil', '//evil.example/phish');
+    expect(await screen.findByText('calendar page')).toBeInTheDocument();
+  });
+
+  it('should follow a same-app redirect when login is complete', async () => {
+    currentUser = makeUser();
+    renderAt('tok-event', '/events/some-slug');
+    expect(await screen.findByText('event page')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['onboarding', { needsOnboarding: true, firstName: '', fullName: '' }, 'onboarding page'],
+    [
+      'new-password',
+      { needsPasswordReset: true, firstName: 'Alice', fullName: 'Alice' },
+      'new password page',
+    ],
+    ['consent', { needsGuidelinesConsent: true }, 'consent page'],
+  ] as const)(
+    'should ignore redirect when post-auth sends the user to %s',
+    async (name, overrides, page) => {
+      currentUser = makeUser(overrides);
+      renderAt(`tok-${name}`, '/events/some-slug');
+      expect(await screen.findByText(page)).toBeInTheDocument();
+    },
+  );
 });
