@@ -22,8 +22,37 @@ jobs:
   screenshots:
     name: Screenshots
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pda
+          POSTGRES_PASSWORD: pda
+          POSTGRES_DB: pda
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
+      SECRET_KEY: ci-only-not-used-in-prod
+      ALLOWED_HOSTS: localhost,127.0.0.1
+
     steps:
       - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
       - uses: pnpm/action-setup@v6
         with:
@@ -35,15 +64,32 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Install dependencies
+      - name: Install backend dependencies
+        run: uv sync --locked
+
+      - name: Install frontend dependencies
         run: cd frontend && pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install --with-deps chromium
 
+      - name: Migrate database
+        run: cd backend && uv run python manage.py migrate
+
+      - name: Create cache table
+        run: cd backend && uv run python manage.py createcachetable
+
+      # uvicorn has to share this step with Playwright. A process started in
+      # an earlier step is not still running when the next step starts.
       - name: Capture screenshots
-        working-directory: frontend
-        run: pnpm test:visual
+        run: |
+          (cd backend && uv run uvicorn config.asgi:application --host 127.0.0.1 --port 8000) &
+          for _ in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8000/api/openapi.json > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8000/api/openapi.json > /dev/null
+          cd frontend && pnpm test:visual
 
       - uses: reg-viz/reg-actions@v3
         with:
