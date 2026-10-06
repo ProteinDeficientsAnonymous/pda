@@ -10,7 +10,7 @@ concurrency:
   group: visual-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# contents: write pushes the reg_actions branch the comment's images live on.
+# contents: write pushes the ci__screenshots branch the comment's images live on.
 # pull-requests: write posts the diff comment. actions: read downloads the
 # baseline artifact from the last main run.
 permissions:
@@ -59,6 +59,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           image-directory-path: frontend/screenshots
           artifact-name: login
+          branch: ci__screenshots
           comment-mode: changes
           outdated-comment-action: update
           enable-antialias: true
