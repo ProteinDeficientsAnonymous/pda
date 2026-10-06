@@ -47,6 +47,7 @@ def _member_user(phone: str) -> User:
         last_name="Member",
         email=f"{phone.lstrip('+')}@example.com",
         is_member=True,
+        has_seen_veganniversary=True,
         password=E2E_PASSWORD,
     )
     return user

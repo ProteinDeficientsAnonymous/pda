@@ -14,6 +14,7 @@ def test_e2e_seed_member(capsys):
     assert Event.objects.filter(id=out["event_id"]).exists()
     user = User.objects.get(phone_number=out["user_phone"])
     assert user.is_member is True
+    assert user.has_seen_veganniversary is True
     assert user.check_password(out["user_password"])
     assert out["access_token"]
 
@@ -56,7 +57,9 @@ def test_e2e_seed_live_updates(capsys):
     out = json.loads(capsys.readouterr().out)
     for key in ("user_a_phone", "user_a_password", "user_b_phone", "user_b_password"):
         assert out[key]
-    assert User.objects.get(phone_number=out["user_a_phone"]).is_member is True
+    user_a = User.objects.get(phone_number=out["user_a_phone"])
+    assert user_a.is_member is True
+    assert user_a.has_seen_veganniversary is True
     user_b = User.objects.get(phone_number=out["user_b_phone"])
     assert user_b.is_member is True
     assert EventRSVP.objects.filter(event_id=out["event_id"], user=user_b).exists()

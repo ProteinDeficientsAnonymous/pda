@@ -5304,7 +5304,7 @@ export interface components {
             veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
             /**
              * Veganniversary Shoutout Opt In
-             * @default false
+             * @default true
              */
             veganniversary_shoutout_opt_in: boolean;
             /**
