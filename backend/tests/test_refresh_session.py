@@ -32,6 +32,8 @@ def _login(api_client) -> str:
 
 
 def _refresh(api_client, cookie: str):
+    # A prior 401 clears the jar entry; assigning over that morsel does not replace it.
+    api_client.cookies.pop(REFRESH_COOKIE_NAME, None)
     api_client.cookies[REFRESH_COOKIE_NAME] = cookie
     return api_client.post("/api/auth/refresh/", {}, content_type="application/json")
 
@@ -116,5 +118,50 @@ class TestRefreshSession:
         test_user.refresh_from_db()
         assert test_user.check_password(_NEW_PASSWORD)
         assert test_user.needs_password_reset is False
+        kept = onboard.cookies[REFRESH_COOKIE_NAME].value
+        assert kept
+        assert _refresh(api_client, kept).status_code == 200
+        _assert_refresh_rejected(_refresh(api_client, new_cookie))
 
         _assert_refresh_rejected(_refresh(api_client, old_cookie))
+
+    def test_refresh_token_after_password_change_returns_401(self, api_client, test_user):
+        login = api_client.post(
+            "/api/auth/login/",
+            {"phone_number": test_user.phone_number, "password": "testpass123"},
+            content_type="application/json",
+        )
+        assert login.status_code == 200, login.content
+        stolen = login.cookies[REFRESH_COOKIE_NAME].value
+        changed = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "testpass123", "new_password": _NEW_PASSWORD},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {login.json()['access']}",
+        )
+        assert changed.status_code == 200, changed.content
+        _assert_refresh_rejected(_refresh(api_client, stolen))
+        kept = changed.cookies[REFRESH_COOKIE_NAME].value
+        assert kept
+        assert _refresh(api_client, kept).status_code == 200
+
+    def test_pause_then_unpause_does_not_revive_refresh_token(
+        self, api_client, test_user, manage_users_headers
+    ):
+        stolen = _login(api_client)
+        paused = api_client.patch(
+            f"/api/auth/users/{test_user.id}/",
+            {"is_paused": True},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert paused.status_code == 200, paused.content
+        _assert_refresh_rejected(_refresh(api_client, stolen))
+        resumed = api_client.patch(
+            f"/api/auth/users/{test_user.id}/",
+            {"is_paused": False},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert resumed.status_code == 200, resumed.content
+        _assert_refresh_rejected(_refresh(api_client, stolen))

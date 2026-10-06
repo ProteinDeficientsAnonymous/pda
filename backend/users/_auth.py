@@ -9,6 +9,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
@@ -292,7 +293,7 @@ def delete_photo(request):
     response={200: UserOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut},
     auth=gated_jwt,
 )
-def complete_onboarding(request, payload: OnboardingIn):
+def complete_onboarding(request, payload: OnboardingIn, response: HttpResponse):
     pw_errors = validate_password(payload.new_password)
     if pw_errors:
         raise_validation(
@@ -321,7 +322,11 @@ def complete_onboarding(request, payload: OnboardingIn):
     user.needs_password_reset = False
     # The onboarding profile step already shows the privacy toggles.
     stamp_consents(user, [*payload.consent_types, ConsentType.CONTACT_PRIVACY])
-    user.save()
+    # Drop cookies from before this password, then reissue one for this browser.
+    with transaction.atomic():
+        user.bump_session_version()
+        user.save()
+    set_refresh_cookie(response, str(issue_refresh_token(user)))
     audit_log(
         logging.INFO,
         "onboarding_completed",
@@ -353,7 +358,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
 
 
 @router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=gated_jwt)
-def change_password(request, payload: ChangePasswordIn):
+def change_password(request, payload: ChangePasswordIn, response: HttpResponse):
     user = User.objects.get(pk=request.auth.pk)
     if not user.check_password(payload.current_password):
         audit_log(
@@ -381,7 +386,10 @@ def change_password(request, payload: ChangePasswordIn):
     user.set_password(payload.new_password)
     # Setting a password also satisfies a pending forced reset.
     user.needs_password_reset = False
-    user.save()
+    with transaction.atomic():
+        user.bump_session_version()
+        user.save()
+    set_refresh_cookie(response, str(issue_refresh_token(user)))
     audit_log(
         logging.INFO,
         "password_changed",
