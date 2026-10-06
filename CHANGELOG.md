@@ -1,3 +1,10 @@
+# [0.117.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.116.0...v0.117.0) (2026-10-06)
+
+
+### Features
+
+* **profile:** add optional veganniversary field (Issue 1429) ([#1430](https://github.com/ProteinDeficientsAnonymous/pda/issues/1430)) ([d707c2f](https://github.com/ProteinDeficientsAnonymous/pda/commit/d707c2f0167b497f96bca05f8def1b96e961cb03))
+
 # [0.116.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.115.0...v0.116.0) (2026-10-04)
 
 
