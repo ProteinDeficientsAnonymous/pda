@@ -14,6 +14,7 @@ def test_e2e_seed_member(capsys):
     assert Event.objects.filter(id=out["event_id"]).exists()
     user = User.objects.get(phone_number=out["user_phone"])
     assert user.is_member is True
+    assert user.has_seen_veganniversary is True
     assert user.check_password(out["user_password"])
     assert out["access_token"]
 
@@ -56,7 +57,9 @@ def test_e2e_seed_live_updates(capsys):
     out = json.loads(capsys.readouterr().out)
     for key in ("user_a_phone", "user_a_password", "user_b_phone", "user_b_password"):
         assert out[key]
-    assert User.objects.get(phone_number=out["user_a_phone"]).is_member is True
+    user_a = User.objects.get(phone_number=out["user_a_phone"])
+    assert user_a.is_member is True
+    assert user_a.has_seen_veganniversary is True
     user_b = User.objects.get(phone_number=out["user_b_phone"])
     assert user_b.is_member is True
     assert EventRSVP.objects.filter(event_id=out["event_id"], user=user_b).exists()
@@ -72,6 +75,12 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     assert seed.email == "member@pda.test"
     assert seed.bio == "vegan six years, big into potlucks and mutual aid."
     assert (seed.birthday_month, seed.birthday_day, seed.birthday_year) == (6, 15, 1990)
+    assert seed.has_seen_veganniversary is True
+    assert (seed.veganniversary_month, seed.veganniversary_day, seed.veganniversary_year) == (
+        6,
+        None,
+        2020,
+    )
     assert seed.guidelines_consent_at is not None
     jamie = User.objects.get(phone_number="+17025550003")
     assert jamie.first_name == "Jamie"
