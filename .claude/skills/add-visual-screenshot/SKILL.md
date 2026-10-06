@@ -23,7 +23,7 @@ the hooks lint.
 No clocks, unread counts, or random seed text. Do not commit the PNG. Do not
 use `toHaveScreenshot` or add another workflow.
 
-From `frontend/`: `pnpm test:visual`.
+From `frontend/`: `pnpm test:visual`. A repeated `shot` name fails that command.
 
 ## Logged-in or first-login
 
