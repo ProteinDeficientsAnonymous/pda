@@ -128,7 +128,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <AuthLayout title="welcome back" subtitle="sign in to your pda account">
+    <AuthLayout title="welcome back" subtitle="sign in to pda">
       {invited ? (
         <div
           role="status"
