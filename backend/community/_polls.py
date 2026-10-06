@@ -107,7 +107,7 @@ def _voter_out(user, viewer=None) -> VoterOut:
 def _option_out(
     option: PollOption, my_votes: dict[str, str], viewer=None, is_authed: bool = False
 ) -> EventPollOptionOut:
-    votes = list(option.votes.select_related("user").all())
+    votes = list(option.votes.all())
     yes_voters = [
         _voter_out(v.user, viewer) for v in votes if v.availability == PollAvailability.YES
     ]

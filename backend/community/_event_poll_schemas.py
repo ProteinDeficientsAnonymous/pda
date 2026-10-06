@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class VoterOut(BaseModel):
@@ -36,7 +36,7 @@ class EventPollOut(BaseModel):
 
 
 class EventPollIn(BaseModel):
-    options: list[datetime]
+    options: list[datetime] = Field(..., max_length=10)
 
 
 class PollOptionIn(BaseModel):
