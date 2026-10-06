@@ -63,6 +63,34 @@ def test_e2e_seed_live_updates(capsys):
 
 
 @pytest.mark.django_db
+def test_e2e_seed_member_screens_fixed_copy(capsys):
+    call_command("e2e_seed", "member-screens")
+    out = json.loads(capsys.readouterr().out)
+    seed = User.objects.get(phone_number="+17025550002")
+    assert seed.first_name == "Seed"
+    assert seed.last_name == "Member"
+    assert seed.email == "member@pda.test"
+    assert seed.bio == "vegan six years, big into potlucks and mutual aid."
+    assert (seed.birthday_month, seed.birthday_day, seed.birthday_year) == (6, 15, 1990)
+    assert seed.guidelines_consent_at is not None
+    jamie = User.objects.get(phone_number="+17025550003")
+    assert jamie.first_name == "Jamie"
+    assert jamie.last_name == "Okafor"
+    assert jamie.email == "jamie@pda.test"
+    assert (jamie.birthday_month, jamie.birthday_day, jamie.birthday_year) == (3, 2, 1991)
+    assert out["jamie_id"] == str(jamie.id)
+    ash = User.objects.get(phone_number="+17025550004")
+    assert ash.first_name == "Ash"
+    assert ash.last_name == "Smith"
+    assert ash.email in (None, "")
+    assert ash.needs_onboarding is True
+    assert "potluck" in out["digest_html"]
+    assert "see the full calendar" in out["digest_html"]
+    call_command("e2e_seed", "member-screens")
+    assert User.objects.filter(phone_number="+17025550002").count() == 1
+
+
+@pytest.mark.django_db
 def test_e2e_seed_unknown_scenario():
     with pytest.raises(CommandError):
         call_command("e2e_seed", "not-a-real-scenario")

@@ -1,8 +1,11 @@
 import json
 import secrets
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
+from django.core.cache import caches
 from django.core.management.base import BaseCommand
+from django.db import connection
+from django.template.loader import render_to_string
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
@@ -150,8 +153,89 @@ def _seed_live_updates() -> dict:
     }
 
 
+_SCREEN_PHONES = ("+17025550002", "+17025550003", "+17025550004")
+_SCREEN_EMAILS = ("member@pda.test", "jamie@pda.test")
+_CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
+
+
+def _screen_user(**fields) -> User:
+    user = User.objects.create_user(password=E2E_PASSWORD, is_member=True, **fields)
+    user.guidelines_consent_at = _CONSENT_AT
+    user.sms_consent_at = _CONSENT_AT
+    user.contact_privacy_consent_at = _CONSENT_AT
+    user.save(
+        update_fields=[
+            "guidelines_consent_at",
+            "sms_consent_at",
+            "contact_privacy_consent_at",
+        ]
+    )
+    return user
+
+
+def _seed_member_screens() -> dict:
+    # Login is capped at 5/minute per IP. Pytest's database has no cache table.
+    if "django_cache" in connection.introspection.table_names():
+        caches["ratelimit"].clear()
+    User.objects.filter(phone_number__in=_SCREEN_PHONES).delete()
+    User.objects.filter(email__in=_SCREEN_EMAILS).delete()
+    seed = _screen_user(
+        phone_number="+17025550002",
+        first_name="Seed",
+        last_name="Member",
+        email="member@pda.test",
+        bio="vegan six years, big into potlucks and mutual aid.",
+        birthday_month=6,
+        birthday_day=15,
+        birthday_year=1990,
+    )
+    jamie = _screen_user(
+        phone_number="+17025550003",
+        first_name="Jamie",
+        last_name="Okafor",
+        email="jamie@pda.test",
+        bio="food not bombs volunteer. cook, eat, organize.",
+        birthday_month=3,
+        birthday_day=2,
+        birthday_year=1991,
+    )
+    _screen_user(
+        phone_number="+17025550004",
+        first_name="Ash",
+        last_name="Smith",
+        email=None,
+        needs_onboarding=True,
+    )
+    digest_html = render_to_string(
+        "emails/weekly_digest.html",
+        {
+            "display_name": "Seed",
+            "events": [
+                {
+                    "title": "potluck",
+                    "when": "friday, october 9 at 6:00 pm",
+                    "location": "the park",
+                    "url": "http://127.0.0.1:3000/events/potluck",
+                }
+            ],
+            "calendar_url": "http://127.0.0.1:3000/calendar",
+            "settings_url": "http://127.0.0.1:3000/settings",
+        },
+    )
+    return {
+        "password": E2E_PASSWORD,
+        "seed_phone": seed.phone_number,
+        "seed_token": _access_token(seed),
+        "jamie_id": str(jamie.id),
+        "jamie_token": _access_token(jamie),
+        "ash_phone": "+17025550004",
+        "digest_html": digest_html,
+    }
+
+
 SCENARIOS = {
     "member": _seed_member,
+    "member-screens": _seed_member_screens,
     "public-new": _seed_public_new,
     "public-recognized": _seed_public_recognized,
     "public-returning": _seed_public_returning,
