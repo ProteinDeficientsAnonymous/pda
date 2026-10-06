@@ -75,6 +75,12 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     assert seed.email == "member@pda.test"
     assert seed.bio == "vegan six years, big into potlucks and mutual aid."
     assert (seed.birthday_month, seed.birthday_day, seed.birthday_year) == (6, 15, 1990)
+    assert seed.has_seen_veganniversary is True
+    assert (seed.veganniversary_month, seed.veganniversary_day, seed.veganniversary_year) == (
+        6,
+        None,
+        2020,
+    )
     assert seed.guidelines_consent_at is not None
     jamie = User.objects.get(phone_number="+17025550003")
     assert jamie.first_name == "Jamie"

@@ -189,6 +189,9 @@ def _seed_member_screens() -> dict:
         birthday_month=6,
         birthday_day=15,
         birthday_year=1990,
+        veganniversary_month=6,
+        veganniversary_year=2020,
+        has_seen_veganniversary=True,
     )
     jamie = _screen_user(
         phone_number="+17025550003",
