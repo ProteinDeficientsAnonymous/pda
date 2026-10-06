@@ -19,8 +19,8 @@ permissions:
   actions: read
 
 jobs:
-  login:
-    name: Login page
+  screenshots:
+    name: Screenshots
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -41,24 +41,15 @@ jobs:
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install --with-deps chromium
 
-      # Auth boot calls /api/auth/refresh/ and treats a failed refresh as
-      # logged-out, so the login form renders without Postgres.
-      - name: Capture login screenshot
+      - name: Capture screenshots
         working-directory: frontend
-        run: |
-          pnpm dev --host 127.0.0.1 --port 3000 &
-          for _ in $(seq 1 60); do
-            curl -sf http://127.0.0.1:3000 >/dev/null && break
-            sleep 1
-          done
-          curl -sf http://127.0.0.1:3000 >/dev/null
-          pnpm capture:login
+        run: pnpm test:visual
 
       - uses: reg-viz/reg-actions@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           image-directory-path: frontend/screenshots
-          artifact-name: login
+          artifact-name: screenshots
           branch: ci__screenshots
           comment-mode: changes
           outdated-comment-action: update
