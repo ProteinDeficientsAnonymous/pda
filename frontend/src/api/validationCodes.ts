@@ -98,6 +98,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.WaitlistOrderStale:
+      return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.RsvpCouldNotBeCreated:

@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from community._event_helpers import promote_from_waitlist
+from community._waitlist import promote_from_waitlist
 from community.models import (
     Event,
     EventPoll,

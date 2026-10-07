@@ -248,6 +248,10 @@ class HostRSVPPaymentIn(BaseModel):
     paid_confirmed: bool
 
 
+class WaitlistOrderIn(BaseModel):
+    user_ids: list[UUID]
+
+
 class TextRecipientsOut(BaseModel):
     attending: list[str] = []
     maybe: list[str] = []

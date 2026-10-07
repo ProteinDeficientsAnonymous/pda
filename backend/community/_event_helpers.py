@@ -7,7 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
-from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
+from notifications.service import broadcast_event_update
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -21,13 +21,13 @@ from community._event_rsvp_serialize import event_rsvp_question_out, with_guest_
 from community._event_schemas import CancellationOut, EventOut, EventSurveyOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
-    _attending_headcount_db,
     _guest_rsvp_count,
     _waitlisted_count,
 )
-from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
+from community._rsvp_payment import can_see_payment_details
 from community._shared import _authenticated_user, _gated
 from community._validation import Code, raise_validation
+from community._waitlist import waitlist_sort_key
 from community.models import (
     Event,
     EventRSVP,
@@ -85,6 +85,13 @@ _GUEST_LIST_STATUS_ORDER = {
 }
 
 
+def _guest_list_sort_key(rsvp: EventRSVP) -> tuple:
+    status_rank = _GUEST_LIST_STATUS_ORDER.get(rsvp.status, 99)
+    if rsvp.status == RSVPStatus.WAITLISTED:
+        return (status_rank, waitlist_sort_key(rsvp))
+    return (status_rank, ())
+
+
 def _build_guest_list(
     rsvps,
     can_see_phones: bool,
@@ -94,7 +101,7 @@ def _build_guest_list(
     include_questionnaire_responses: bool = False,
 ) -> list[RSVPGuestOut]:
     """Build guest list ordered going > maybe > can't go > waitlisted."""
-    ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
+    ordered_rsvps = sorted(rsvps, key=_guest_list_sort_key)
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -158,49 +165,6 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
     return rows
-
-
-def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | None:
-    """Return the oldest waitlisted RSVP that still fits under max_attendees, if any."""
-    oldest = (
-        EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
-        .order_by("created_at")
-        .first()
-    )
-    if not oldest:
-        return None
-    if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
-        return None
-    return oldest
-
-
-def promote_from_waitlist(event: Event) -> list[str]:
-    """Promote oldest waitlisted users to attending (FIFO by created_at).
-
-    Must be called inside a transaction.atomic() block with the event row locked.
-    Returns the list of promoted user ids so callers that need to follow up per
-    promoted user (e.g. emailing promoted non-members) can do so after commit.
-    """
-    if event.max_attendees is None:
-        return []
-    promoted_user_ids: list[str] = []
-    unpaid_user_ids: list[str] = []
-    needs_payment = payment_enforced_for_event(event)
-    while True:
-        headcount = _attending_headcount_db(event)
-        if headcount >= event.max_attendees:
-            break
-        oldest = _next_promotable_waitlist_rsvp(event, headcount)
-        if oldest is None:
-            break
-        oldest.status = RSVPStatus.ATTENDING
-        oldest.save(update_fields=["status", "updated_at"])
-        promoted_user_ids.append(str(oldest.user_id))
-        if needs_payment and oldest.paid_confirmed_at is None:
-            unpaid_user_ids.append(str(oldest.user_id))
-    if promoted_user_ids:
-        create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
-    return promoted_user_ids
 
 
 def _has_attendees(event: Event) -> bool:

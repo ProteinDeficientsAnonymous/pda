@@ -29,6 +29,7 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
+        WAITLIST_ORDER_STALE = "event.waitlist_order_stale"
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
