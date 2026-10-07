@@ -37,6 +37,14 @@ export interface SeedScenarioMap {
     jamie_token: string;
     ash_phone: string;
     digest_html: string;
+    event_id: string;
+    guest_token: string;
+    hike_id: string;
+    admin_phone: string;
+    reset_phone: string;
+    consent_phone: string;
+    survey_id: string;
+    doc_id: string;
   };
 }
 
