@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -263,6 +263,7 @@ def seed_creator_as_host(sender, instance, created, **kwargs):
 
 class EventRSVP(models.Model):
     if TYPE_CHECKING:
+        event_id: uuid.UUID
         user_id: uuid.UUID
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvps")
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
@@ -283,7 +284,7 @@ class EventRSVP(models.Model):
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
-    # Host-set waitlist order; null sorts after positioned rows (then by created_at).
+    # Set on joining the waitlist, cleared on leaving; hosts can renumber via the reorder endpoint.
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -296,12 +297,25 @@ class EventRSVP(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        # Leaving the waitlist forfeits the spot, so a later rejoin lands at the end.
-        if self.status != RSVPStatus.WAITLISTED and self.waitlist_position is not None:
-            self.waitlist_position = None
+        position = self._resolved_waitlist_position()
+        if position != self.waitlist_position:
+            self.waitlist_position = position
             if kwargs.get("update_fields") is not None:
                 kwargs["update_fields"] = {*kwargs["update_fields"], "waitlist_position"}
         super().save(*args, **kwargs)
+
+    def _resolved_waitlist_position(self) -> int | None:
+        # Callers hold the event row lock, so max+1 can't race with another joiner.
+        if self.status != RSVPStatus.WAITLISTED:
+            return None
+        if self.waitlist_position is not None:
+            return self.waitlist_position
+        last = (
+            EventRSVP.objects.filter(event_id=self.event_id, status=RSVPStatus.WAITLISTED)
+            .exclude(pk=self.pk)
+            .aggregate(m=Max("waitlist_position"))["m"]
+        )
+        return (last or 0) + 1
 
     def __str__(self):
         return (
