@@ -2,16 +2,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
   AttendanceStatusValue,
+  Event,
   EventCancellation,
   EventStats,
   RsvpInputStatus,
 } from '@/models/event';
+import { RsvpServerStatus } from '@/models/event';
 
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
 import { checkInReportKeys } from './eventCheckInReport';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { invalidateEventDetail, invalidateEventGuests, setEventDetailData } from './events';
+import {
+  eventKeys,
+  invalidateEventDetail,
+  invalidateEventGuests,
+  setEventDetailData,
+} from './events';
 import { USERS_KEY } from './users';
 
 interface WireCancellation {
@@ -116,6 +123,19 @@ export function useSetGuestRsvp(eventId: string) {
   });
 }
 
+export function withWaitlistOrder(event: Event, userIds: string[]): Event {
+  const rank = new Map(userIds.map((id, i) => [id, i]));
+  const isWaitlisted = (g: Event['guests'][number]) => g.status === RsvpServerStatus.Waitlisted;
+  const waitlisted = event.guests
+    .filter(isWaitlisted)
+    .sort((a, b) => (rank.get(a.userId) ?? rank.size) - (rank.get(b.userId) ?? rank.size));
+  let next = 0;
+  return {
+    ...event,
+    guests: event.guests.map((g) => (isWaitlisted(g) ? (waitlisted[next++] ?? g) : g)),
+  };
+}
+
 export function useSetGuestPayment(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -141,6 +161,17 @@ export function useReorderWaitlist(eventId: string) {
         { user_ids: args.userIds },
       );
       return mapEvent(data);
+    },
+    // Optimistic so a dropped row stays put instead of snapping back until the save lands.
+    onMutate: async (args: { userIds: string[] }) => {
+      const key = eventKeys.detail(eventId, true);
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<Event>(key);
+      if (previous) setEventDetailData(qc, withWaitlistOrder(previous, args.userIds), true);
+      return { previous };
+    },
+    onError: (_err, _args, context) => {
+      if (context?.previous) setEventDetailData(qc, context.previous, true);
     },
     onSuccess: (event) => {
       setEventDetailData(qc, event, true);
