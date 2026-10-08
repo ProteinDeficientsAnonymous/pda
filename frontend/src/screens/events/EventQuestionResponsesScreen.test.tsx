@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
-import EventManageRsvpsScreen from './EventManageRsvpsScreen';
+import EventQuestionResponsesScreen from './EventQuestionResponsesScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -28,9 +28,9 @@ function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/ev1/manage-rsvps']}>
+      <MemoryRouter initialEntries={['/events/ev1/responses']}>
         <Routes>
-          <Route path="/events/:id/manage-rsvps" element={<EventManageRsvpsScreen />} />
+          <Route path="/events/:id/responses" element={<EventQuestionResponsesScreen />} />
           <Route path="/events/:id" element={<div>event detail</div>} />
         </Routes>
       </MemoryRouter>
@@ -46,7 +46,7 @@ beforeEach(() => {
   } as ReturnType<typeof useEvent>);
 });
 
-describe('EventManageRsvpsScreen', () => {
+describe('EventQuestionResponsesScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
     useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
     renderScreen();
@@ -54,13 +54,32 @@ describe('EventManageRsvpsScreen', () => {
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
-  it('shows a forbidden notice for a past event', () => {
+  it('shows a notice when the event has no questions', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByText(/no rsvp questions/i)).toBeInTheDocument();
+  });
+
+  it('shows responses on a past event with rsvps off', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: makeEvent({
         createdById: 'user-creator',
         coHostIds: ['user-creator'],
-        guests: [],
         isPast: true,
+        rsvpEnabled: false,
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+        guests: [
+          makeGuest({ questionnaireResponses: { q1: { label: 'dietary?', answer: 'no nuts' } } }),
+        ],
       }),
       isPending: false,
       isError: false,
@@ -68,16 +87,23 @@ describe('EventManageRsvpsScreen', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();
 
-    expect(screen.getByText(/event has already happened/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
+    expect(screen.getByText('no nuts')).toBeInTheDocument();
   });
 
-  it('shows a forbidden notice when rsvps are disabled', () => {
+  it('shows saved answers for deleted questions', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: makeEvent({
         createdById: 'user-creator',
         coHostIds: ['user-creator'],
-        guests: [],
-        rsvpEnabled: false,
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            questionnaireResponses: {
+              deleted: { label: 'deleted question', answer: 'saved answer' },
+            },
+          }),
+        ],
       }),
       isPending: false,
       isError: false,
@@ -85,14 +111,6 @@ describe('EventManageRsvpsScreen', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();
 
-    expect(screen.getByText(/rsvps are off/i)).toBeInTheDocument();
-  });
-
-  it('renders the panel heading for a host on a future rsvp-enabled event', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
-    renderScreen();
-
-    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
-    expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
+    expect(screen.getByText('saved answer')).toBeInTheDocument();
   });
 });

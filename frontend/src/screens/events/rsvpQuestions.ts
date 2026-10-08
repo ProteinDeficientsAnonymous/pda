@@ -40,6 +40,10 @@ export function rsvpQuestionsApplyToStatus(status: string): boolean {
   return RESPONDENT_STATUSES.has(status);
 }
 
+export function hasQuestionHistory(event: Event): boolean {
+  return event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
+}
+
 export function hasSavedQuestionnaireResponses(event: Event): boolean {
   return event.guests.some(
     (guest) =>

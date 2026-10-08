@@ -296,15 +296,5 @@ describe('EventManageRsvpsPanel', () => {
       renderPanel(waitlistEvent());
       expect(screen.getAllByRole('list', { name: /order$/ })).toHaveLength(1);
     });
-
-    it('is not draggable when read-only', () => {
-      const qc = new QueryClient();
-      render(
-        <QueryClientProvider client={qc}>
-          <EventManageRsvpsPanel event={waitlistEvent()} readOnly />
-        </QueryClientProvider>,
-      );
-      expect(screen.queryByRole('list', { name: 'waitlisted order' })).not.toBeInTheDocument();
-    });
   });
 });

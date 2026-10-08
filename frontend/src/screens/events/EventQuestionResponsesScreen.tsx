@@ -6,9 +6,10 @@ import { useAuthStore } from '@/auth/store';
 import { canManageEvent } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
+import { EventRsvpResponsesSection } from './EventRsvpResponsesSection';
+import { hasQuestionHistory } from './rsvpQuestions';
 
-export default function EventManageRsvpsScreen() {
+export default function EventQuestionResponsesScreen() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
   const { data: event, isPending, isError, error } = useEvent(id);
@@ -24,27 +25,22 @@ export default function EventManageRsvpsScreen() {
 
   if (!canManageEvent(event, user)) {
     return (
-      <ForbiddenNotice eventId={event.id} message="only the host or a co-host can manage rsvps" />
-    );
-  }
-  if (!event.rsvpEnabled) {
-    return (
       <ForbiddenNotice
         eventId={event.id}
-        message="rsvps are off for this event — nothing to manage"
+        message="only the host or a co-host can see question responses"
       />
     );
   }
-  if (event.isPast) {
-    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
+  if (!hasQuestionHistory(event)) {
+    return <ForbiddenNotice eventId={event.id} message="this event has no rsvp questions" />;
   }
 
   return (
     <ContentContainer>
       <BackLink eventId={event.id} />
-      <h1 className="mb-1 text-2xl font-medium tracking-tight">manage rsvps</h1>
+      <h1 className="mb-1 text-2xl font-medium tracking-tight">question responses</h1>
       <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
-      <EventManageRsvpsPanel event={event} />
+      <EventRsvpResponsesSection event={event} />
     </ContentContainer>
   );
 }

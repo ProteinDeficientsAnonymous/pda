@@ -12,7 +12,6 @@ export function GuestGroup({
   onTogglePaid,
   onReorder,
   isPending,
-  readOnly,
 }: {
   label: string;
   guests: EventGuest[];
@@ -21,12 +20,10 @@ export function GuestGroup({
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   onReorder?: ((userIds: string[]) => void) | undefined;
   isPending: boolean;
-  readOnly: boolean;
 }) {
   const row = (g: EventGuest) => (
     <GuestRow
       guest={g}
-      readOnly={readOnly}
       onChangeStatus={onChangeStatus}
       onRemove={onRemove}
       onTogglePaid={onTogglePaid}
@@ -39,7 +36,7 @@ export function GuestGroup({
       <h2 className="text-muted text-xs font-medium">
         {label} ({guests.length})
       </h2>
-      {onReorder && !readOnly ? (
+      {onReorder ? (
         <SortableList
           ariaLabel={`${label} order`}
           items={guests.map((g) => ({ id: g.userId, guest: g }))}
@@ -103,31 +100,14 @@ function GuestRow({
   onRemove,
   onTogglePaid,
   isPending,
-  readOnly,
 }: {
   guest: EventGuest;
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
-  readOnly: boolean;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
-
-  if (readOnly) {
-    return (
-      <div className="border-border flex items-center justify-between gap-2 rounded-md border p-2">
-        <span className="text-foreground text-sm">
-          {guest.name}
-          {!guest.isMember ? ' (not a member)' : ''}
-        </span>
-        <span className="text-muted text-xs">
-          {currentStatus ?? guest.status}
-          {guest.hasPlusOne ? ' · +1' : ''}
-        </span>
-      </div>
-    );
-  }
 
   if (!guest.isMember) {
     return (
