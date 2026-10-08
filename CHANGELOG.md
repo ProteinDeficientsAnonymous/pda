@@ -1,3 +1,10 @@
+# [0.118.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.117.0...v0.118.0) (2026-10-08)
+
+
+### Features
+
+* **events:** 1553 - let hosts reorder the waitlist ([#1555](https://github.com/ProteinDeficientsAnonymous/pda/issues/1555)) ([7226b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/7226b13934abfba640c2aead01bf340f76046333))
+
 # [0.117.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.116.0...v0.117.0) (2026-10-06)
 
 
