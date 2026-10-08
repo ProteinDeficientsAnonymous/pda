@@ -1,9 +1,12 @@
 """Tests for host-driven waitlist reordering (Issue 1553)."""
 
+import importlib
+
 import pytest
 from community._validation import Code
 from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
+from django.apps import apps as django_apps
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
@@ -118,3 +121,56 @@ class TestReorderWaitlist:
         a, b, c = waitlisted
         response = _reorder(api_client, full_event, a, [a.pk, b.pk, c.pk])
         assert response.status_code == 403
+
+
+@pytest.mark.django_db
+class TestWaitlistPositionOnJoin:
+    def test_joiners_get_sequential_positions(self, full_event, waitlisted):
+        positions = [
+            EventRSVP.objects.get(event=full_event, user=u).waitlist_position for u in waitlisted
+        ]
+        assert positions == [1, 2, 3]
+
+    def test_rejoin_goes_to_end(self, full_event, waitlisted):
+        a, _, _ = waitlisted
+        rsvp = EventRSVP.objects.get(event=full_event, user=a)
+        rsvp.status = RSVPStatus.CANT_GO
+        rsvp.save(update_fields=["status"])
+        rsvp.status = RSVPStatus.WAITLISTED
+        rsvp.save(update_fields=["status"])
+        rsvp.refresh_from_db()
+        assert rsvp.waitlist_position == 4
+
+    def test_update_or_create_assigns_position(self, full_event, waitlisted):
+        late = _user(6)
+        EventRSVP.objects.update_or_create(
+            event=full_event, user=late, defaults={"status": RSVPStatus.WAITLISTED}
+        )
+        assert EventRSVP.objects.get(event=full_event, user=late).waitlist_position == 4
+
+    def test_positions_are_per_event(self, full_event, host, waitlisted):
+        other = Event.objects.create(
+            title="Other", start_datetime=future_iso(days=14), rsvp_enabled=True, created_by=host
+        )
+        rsvp = EventRSVP.objects.create(
+            event=other, user=waitlisted[0], status=RSVPStatus.WAITLISTED
+        )
+        assert rsvp.waitlist_position == 1
+
+
+@pytest.mark.django_db
+def test_backfill_numbers_existing_waitlists_in_line_order(full_event):
+    backfill = importlib.import_module(
+        "community.migrations.0097_backfill_waitlist_positions"
+    ).backfill_positions
+    users = [_user(n) for n in (7, 8, 9)]
+    EventRSVP.objects.bulk_create(
+        [EventRSVP(event=full_event, user=u, status=RSVPStatus.WAITLISTED) for u in users]
+    )
+    backfill(django_apps, None)
+    positions = list(
+        EventRSVP.objects.filter(event=full_event, status=RSVPStatus.WAITLISTED)
+        .order_by("created_at", "pk")
+        .values_list("waitlist_position", flat=True)
+    )
+    assert positions == [1, 2, 3]
