@@ -976,11 +976,25 @@
             "title": "Non Member Going Count",
             "type": "integer"
           },
+          "optional_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Optional Question Count",
+            "type": "integer"
+          },
           "price": {
             "default": "",
             "maxLength": 300,
             "title": "Price",
             "type": "string"
+          },
+          "required_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Required Question Count",
+            "type": "integer"
           },
           "rsvp_enabled": {
             "default": true,
@@ -998,6 +1012,13 @@
             "maxLength": 20,
             "title": "Visibility",
             "type": "string"
+          },
+          "waitlisted_count": {
+            "default": 0,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Waitlisted Count",
+            "type": "integer"
           },
           "zelle_info": {
             "default": "",
