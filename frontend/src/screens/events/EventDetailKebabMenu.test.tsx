@@ -142,7 +142,7 @@ describe('EventDetailKebabMenu', () => {
     expect(manageRsvps).toHaveAttribute('href', '/events/ev1/manage-rsvps');
   });
 
-  it('hides rsvp management once the event has ended without question history', async () => {
+  it('hides rsvp management and question responses on a past event without questions', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ eventHasEnded: true, canManageRsvps: true });
     await openMenu();
@@ -151,7 +151,7 @@ describe('EventDetailKebabMenu', () => {
     expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
-  it('keeps "manage rsvps" label on past events with questions', async () => {
+  it('shows "question responses" instead of "manage rsvps" on a past event with questions', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({
       eventHasEnded: true,
@@ -170,13 +170,37 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
+    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toHaveAttribute(
       'href',
-      '/events/ev1/manage-rsvps',
+      '/events/ev1/responses',
     );
   });
 
-  it('keeps "manage rsvps" when only saved answer history remains', async () => {
+  it('shows both items on a future event with questions', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: false,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toBeInTheDocument();
+  });
+
+  it('shows "question responses" when only saved answer history remains', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({
       eventHasEnded: true,
@@ -194,13 +218,10 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
-      'href',
-      '/events/ev1/manage-rsvps',
-    );
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toBeInTheDocument();
   });
 
-  it('hides "manage rsvps" when only declined snapshots remain', async () => {
+  it('hides "question responses" when only declined snapshots remain', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({
       eventHasEnded: true,
@@ -219,7 +240,7 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
   it('hides "manage rsvps" when the viewer cannot manage rsvps', async () => {

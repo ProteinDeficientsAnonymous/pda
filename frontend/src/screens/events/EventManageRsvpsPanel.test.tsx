@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,6 +18,36 @@ vi.mock('@/api/eventStats', () => ({
   useRemoveGuestRsvp: () => ({ mutate: removeGuestRsvpMutate, isPending: false }),
   useSetGuestPayment: () => ({ mutate: setGuestPaymentMutate, isPending: false }),
   useReorderWaitlist: () => ({ mutate: reorderWaitlistMutate, isPending: false }),
+}));
+vi.mock('@/components/SortableList', () => ({
+  SortableList: ({
+    items,
+    onReorder,
+    renderItem,
+    ariaLabel,
+  }: {
+    items: { id: string }[];
+    onReorder: (ids: string[]) => void;
+    renderItem: (item: { id: string }) => ReactNode;
+    ariaLabel?: string;
+  }) => (
+    <div>
+      <ul aria-label={ariaLabel}>
+        {items.map((item) => (
+          <li key={item.id}>{renderItem(item)}</li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        onClick={() => {
+          const ids = items.map((i) => i.id);
+          onReorder([...ids.slice(-1), ...ids.slice(0, -1)]);
+        }}
+      >
+        mock drop: move last to top
+      </button>
+    </div>
+  ),
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/api/userSearch', () => ({
@@ -250,43 +281,20 @@ describe('EventManageRsvpsPanel', () => {
         ],
       });
 
-    it('moves a waitlisted guest up', () => {
+    it('reorders the waitlist on drop', () => {
       renderPanel(waitlistEvent());
-      fireEvent.click(screen.getByRole('button', { name: 'move Sam up the waitlist' }));
+      const list = screen.getByRole('list', { name: 'waitlisted order' });
+      expect(list).toHaveTextContent(/Alex.*Sam.*Jo/);
+      fireEvent.click(screen.getByRole('button', { name: 'mock drop: move last to top' }));
       expect(reorderWaitlistMutate).toHaveBeenCalledWith(
-        { userIds: ['w2', 'w1', 'w3'] },
+        { userIds: ['w3', 'w1', 'w2'] },
         expect.objectContaining({ onError: expect.any(Function) }),
       );
     });
 
-    it('lets non-member waitlisted guests be moved too', () => {
+    it('only makes the waitlist draggable', () => {
       renderPanel(waitlistEvent());
-      fireEvent.click(screen.getByRole('button', { name: 'move Jo up the waitlist' }));
-      expect(reorderWaitlistMutate).toHaveBeenCalledWith(
-        { userIds: ['w1', 'w3', 'w2'] },
-        expect.anything(),
-      );
-    });
-
-    it('disables moving past either end', () => {
-      renderPanel(waitlistEvent());
-      expect(screen.getByRole('button', { name: 'move Alex up the waitlist' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'move Jo down the waitlist' })).toBeDisabled();
-    });
-
-    it('only shows order controls on the waitlist', () => {
-      renderPanel(waitlistEvent());
-      expect(screen.queryByRole('button', { name: /^move Pat/ })).not.toBeInTheDocument();
-    });
-
-    it('hides order controls when read-only', () => {
-      const qc = new QueryClient();
-      render(
-        <QueryClientProvider client={qc}>
-          <EventManageRsvpsPanel event={waitlistEvent()} readOnly />
-        </QueryClientProvider>,
-      );
-      expect(screen.queryByRole('button', { name: /up the waitlist/ })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('list', { name: /order$/ })).toHaveLength(1);
     });
   });
 });

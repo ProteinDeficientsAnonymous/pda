@@ -70,7 +70,7 @@ describe('EventRsvpResponsesSection', () => {
 
     render(<EventRsvpResponsesSection event={event} />);
 
-    expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /question responses/i })).toBeInTheDocument();
     expect(screen.getByText('2 guests going or waitlisted')).toBeInTheDocument();
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('bob')).toBeInTheDocument();
