@@ -169,9 +169,9 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         description=e.description,
         start_datetime=e.start_datetime,
         end_datetime=e.end_datetime,
-        location=e.location,
-        latitude=_float_or_none(e.latitude),
-        longitude=_float_or_none(e.longitude),
+        location=_gated(e.location, "", is_authed),
+        latitude=_gated(_float_or_none(e.latitude), None, is_authed),
+        longitude=_gated(_float_or_none(e.longitude), None, is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
         # Calendar/My Events never render these; skip media_path to avoid per-row presigns.
