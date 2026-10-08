@@ -1,3 +1,10 @@
+# [0.121.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.120.0...v0.121.0) (2026-10-08)
+
+
+### Features
+
+* **events:** move question responses to their own page ([#1563](https://github.com/ProteinDeficientsAnonymous/pda/issues/1563)) ([90b2975](https://github.com/ProteinDeficientsAnonymous/pda/commit/90b2975b5db04d75a1ad7707fcb721656007ec42))
+
 # [0.120.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.119.0...v0.120.0) (2026-10-08)
 
 
