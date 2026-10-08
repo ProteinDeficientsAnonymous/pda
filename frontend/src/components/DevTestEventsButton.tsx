@@ -25,12 +25,15 @@ const DEFAULT_OPTIONS: DevTestEventOptions = {
   goingCount: 5,
   maybeCount: 5,
   cantGoCount: 5,
+  waitlistedCount: 0,
   invitedCount: 5,
   nonMemberGoingCount: 0,
   rsvpEnabled: true,
   visibility: 'public',
   maxAttendees: null,
   allowPlusOnes: false,
+  requiredQuestionCount: 0,
+  optionalQuestionCount: 0,
 };
 
 export function DevTestEventsButton() {

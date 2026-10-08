@@ -2645,10 +2645,20 @@ export interface components {
              */
             non_member_going_count: number;
             /**
+             * Optional Question Count
+             * @default 0
+             */
+            optional_question_count: number;
+            /**
              * Price
              * @default
              */
             price: string;
+            /**
+             * Required Question Count
+             * @default 0
+             */
+            required_question_count: number;
             /**
              * Rsvp Enabled
              * @default true
@@ -2664,6 +2674,11 @@ export interface components {
              * @default public
              */
             visibility: string;
+            /**
+             * Waitlisted Count
+             * @default 0
+             */
+            waitlisted_count: number;
             /**
              * Zelle Info
              * @default
