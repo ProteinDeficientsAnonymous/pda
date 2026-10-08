@@ -132,6 +132,24 @@ export function useSetGuestPayment(eventId: string) {
   });
 }
 
+export function useReorderWaitlist(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { userIds: string[] }) => {
+      const { data } = await apiClient.put<WireEvent>(
+        `/api/community/events/${eventId}/waitlist/order/`,
+        { user_ids: args.userIds },
+      );
+      return mapEvent(data);
+    },
+    onSuccess: (event) => {
+      setEventDetailData(qc, event, true);
+      invalidateEventGuests(qc, eventId);
+      void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+    },
+  });
+}
+
 export function useRemoveGuestRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({

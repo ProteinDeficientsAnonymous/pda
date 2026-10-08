@@ -31,6 +31,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
@@ -282,6 +283,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
@@ -467,6 +469,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],

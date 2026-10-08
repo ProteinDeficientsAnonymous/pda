@@ -122,6 +122,11 @@
         "params": []
       },
       {
+        "name": "WAITLIST_ORDER_STALE",
+        "value": "event.waitlist_order_stale",
+        "params": []
+      },
+      {
         "name": "MEMBER_CONTACT_MUST_SIGN_IN",
         "value": "event.member_contact_must_sign_in",
         "params": []

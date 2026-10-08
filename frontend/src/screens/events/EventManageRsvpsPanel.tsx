@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useRemoveGuestRsvp, useSetGuestPayment, useSetGuestRsvp } from '@/api/eventStats';
+import {
+  useRemoveGuestRsvp,
+  useReorderWaitlist,
+  useSetGuestPayment,
+  useSetGuestRsvp,
+} from '@/api/eventStats';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +29,7 @@ export function EventManageRsvpsPanel({
   const setGuestRsvp = useSetGuestRsvp(event.id);
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
   const setGuestPayment = useSetGuestPayment(event.id);
+  const reorderWaitlist = useReorderWaitlist(event.id);
   const showPaymentStatus = !readOnly && eventRequiresPaymentConfirmation(event);
 
   return (
@@ -92,8 +98,27 @@ export function EventManageRsvpsPanel({
                     }
                   : undefined
               }
+              onReorder={
+                group.status === RsvpServerStatus.Waitlisted
+                  ? (userIds) => {
+                      reorderWaitlist.mutate(
+                        { userIds },
+                        {
+                          onError: (err) => {
+                            toast.error(
+                              extractApiErrorOr(err, "couldn't reorder the waitlist — try again"),
+                            );
+                          },
+                        },
+                      );
+                    }
+                  : undefined
+              }
               isPending={
-                setGuestRsvp.isPending || removeGuestRsvp.isPending || setGuestPayment.isPending
+                setGuestRsvp.isPending ||
+                removeGuestRsvp.isPending ||
+                setGuestPayment.isPending ||
+                reorderWaitlist.isPending
               }
             />
           );

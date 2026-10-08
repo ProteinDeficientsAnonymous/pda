@@ -283,6 +283,8 @@ class EventRSVP(models.Model):
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Host-set waitlist order; null sorts after positioned rows (then by created_at).
+    waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -292,6 +294,14 @@ class EventRSVP(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
         ]
+
+    def save(self, *args, **kwargs):
+        # Leaving the waitlist forfeits the spot, so a later rejoin lands at the end.
+        if self.status != RSVPStatus.WAITLISTED and self.waitlist_position is not None:
+            self.waitlist_position = None
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "waitlist_position"}
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return (
