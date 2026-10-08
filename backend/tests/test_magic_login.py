@@ -31,6 +31,14 @@ class TestMagicLogin:
         assert "access" in data
         assert "refresh" not in data
 
+    def test_magic_login_sets_last_login(self, api_client, test_user):
+        assert test_user.last_login is None
+        magic = MagicLoginToken.create_for_user(test_user)
+        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.last_login is not None
+
     def test_magic_login_invalid_token(self, api_client, db):
         response = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
         assert response.status_code == 400
