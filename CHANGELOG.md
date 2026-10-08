@@ -1,3 +1,10 @@
+# [0.119.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.1...v0.119.0) (2026-10-08)
+
+
+### Features
+
+* **events:** assign waitlist position on join ([#1559](https://github.com/ProteinDeficientsAnonymous/pda/issues/1559)) ([bc78f45](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc78f45068ea3b867d34597fb562c226389bc6fd))
+
 ## [0.118.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.0...v0.118.1) (2026-10-08)
 
 
