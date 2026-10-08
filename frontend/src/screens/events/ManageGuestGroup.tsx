@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-
+import { SortableList } from '@/components/SortableList';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import type { EventGuest, RsvpInputStatus } from '@/models/event';
 import { isRsvpInputStatus } from '@/models/event';
@@ -22,89 +21,35 @@ export function GuestGroup({
   onReorder?: ((userIds: string[]) => void) | undefined;
   isPending: boolean;
 }) {
-  const ids = guests.map((g) => g.userId);
-  const move = (index: number, delta: -1 | 1) => {
-    const next = [...ids];
-    const [moved] = next.splice(index, 1);
-    if (moved === undefined) return;
-    next.splice(index + delta, 0, moved);
-    onReorder?.(next);
-  };
+  const row = (g: EventGuest) => (
+    <GuestRow
+      guest={g}
+      onChangeStatus={onChangeStatus}
+      onRemove={onRemove}
+      onTogglePaid={onTogglePaid}
+      isPending={isPending}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-2">
       <h2 className="text-muted text-xs font-medium">
         {label} ({guests.length})
       </h2>
-      <ul className="flex flex-col gap-2">
-        {guests.map((g, i) => (
-          <GuestRow
-            key={g.userId}
-            guest={g}
-            onChangeStatus={onChangeStatus}
-            onRemove={onRemove}
-            onTogglePaid={onTogglePaid}
-            isPending={isPending}
-            orderControls={
-              onReorder ? (
-                <WaitlistOrderControls
-                  name={g.name}
-                  position={i + 1}
-                  count={guests.length}
-                  disabled={isPending}
-                  onMove={(delta) => {
-                    move(i, delta);
-                  }}
-                />
-              ) : null
-            }
-          />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function WaitlistOrderControls({
-  name,
-  position,
-  count,
-  disabled,
-  onMove,
-}: {
-  name: string;
-  position: number;
-  count: number;
-  disabled: boolean;
-  onMove: (delta: -1 | 1) => void;
-}) {
-  const arrowClass =
-    'bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 rounded-full px-2 py-0.5 text-xs disabled:opacity-40';
-  return (
-    <div className="flex items-center gap-1">
-      <span className="text-muted min-w-[3ch] text-xs tabular-nums">#{position}</span>
-      <button
-        type="button"
-        aria-label={`move ${name} up the waitlist`}
-        disabled={disabled || position === 1}
-        onClick={() => {
-          onMove(-1);
-        }}
-        className={arrowClass}
-      >
-        ↑
-      </button>
-      <button
-        type="button"
-        aria-label={`move ${name} down the waitlist`}
-        disabled={disabled || position === count}
-        onClick={() => {
-          onMove(1);
-        }}
-        className={arrowClass}
-      >
-        ↓
-      </button>
+      {onReorder ? (
+        <SortableList
+          ariaLabel={`${label} order`}
+          items={guests.map((g) => ({ id: g.userId, guest: g }))}
+          onReorder={onReorder}
+          renderItem={(item) => row(item.guest)}
+        />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {guests.map((g) => (
+            <li key={g.userId}>{row(g)}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -155,39 +100,34 @@ function GuestRow({
   onRemove,
   onTogglePaid,
   isPending,
-  orderControls,
 }: {
   guest: EventGuest;
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
-  orderControls: ReactNode;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
 
   if (!guest.isMember) {
     return (
-      <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2 opacity-60">
+      <div className="border-border flex items-center justify-between gap-2 rounded-md border p-2 opacity-60">
         <span className="text-foreground text-sm">{guest.name} (not a member)</span>
-        <div className="flex items-center gap-2">
-          {onTogglePaid ? (
-            <PaidBadge
-              paidConfirmed={guest.paidConfirmed}
-              isPending={isPending}
-              onToggle={() => {
-                onTogglePaid(guest.userId, !guest.paidConfirmed);
-              }}
-            />
-          ) : null}
-          {orderControls}
-        </div>
-      </li>
+        {onTogglePaid ? (
+          <PaidBadge
+            paidConfirmed={guest.paidConfirmed}
+            isPending={isPending}
+            onToggle={() => {
+              onTogglePaid(guest.userId, !guest.paidConfirmed);
+            }}
+          />
+        ) : null}
+      </div>
     );
   }
 
   return (
-    <li className="border-border flex flex-col gap-2 rounded-md border p-2">
+    <div className="border-border flex flex-col gap-2 rounded-md border p-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-foreground text-sm">{guest.name}</span>
@@ -201,20 +141,17 @@ function GuestRow({
             />
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
-          {orderControls}
-          <button
-            type="button"
-            aria-label={`remove ${guest.name}`}
-            onClick={() => {
-              onRemove(guest.userId);
-            }}
-            disabled={isPending}
-            className="text-muted hover:text-destructive text-xs disabled:opacity-60"
-          >
-            remove
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label={`remove ${guest.name}`}
+          onClick={() => {
+            onRemove(guest.userId);
+          }}
+          disabled={isPending}
+          className="text-muted hover:text-destructive text-xs disabled:opacity-60"
+        >
+          remove
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <RsvpStatusPicker
@@ -237,6 +174,6 @@ function GuestRow({
           {guest.hasPlusOne ? '−1' : '+1'}
         </button>
       </div>
-    </li>
+    </div>
   );
 }
