@@ -142,6 +142,30 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
+  it('does not offer the waitlist when editing an attending rsvp at capacity', () => {
+    renderSection(
+      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Attending }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /RSVP/i });
+    expect(within(dialog).queryByText('join the waitlist')).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'save' })).toBeInTheDocument();
+  });
+
+  it('offers the waitlist when a maybe switches to going at capacity', () => {
+    renderSection(
+      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Maybe }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /RSVP/i });
+    expect(within(dialog).getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+  });
+
   it('removes the RSVP when "remove rsvp" is tapped in the edit box', async () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
 
