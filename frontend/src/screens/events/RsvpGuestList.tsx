@@ -9,10 +9,11 @@ import { countWithPlusOnes, PREVIEW_LIMIT, previewGuests } from './guestSort';
 interface Props {
   event: Event;
   canSeeInvited: boolean;
+  canReorderWaitlist?: boolean;
   token?: string;
 }
 
-export function RsvpGuestList({ event, canSeeInvited, token }: Props) {
+export function RsvpGuestList({ event, canSeeInvited, canReorderWaitlist = false, token }: Props) {
   const [openTab, setOpenTab] = useState<GuestTab | null>(null);
 
   const going = event.guests.filter((g) => g.status === RsvpServerStatus.Attending);
@@ -72,6 +73,7 @@ export function RsvpGuestList({ event, canSeeInvited, token }: Props) {
         <GuestListDialog
           event={event}
           canSeeInvited={canSeeInvited}
+          canReorderWaitlist={canReorderWaitlist}
           initialTab={openTab}
           {...(token ? { token } : {})}
           onClose={() => {
