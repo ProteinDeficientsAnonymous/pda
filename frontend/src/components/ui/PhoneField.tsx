@@ -1,8 +1,7 @@
 import 'react-phone-number-input/style.css';
 
-import type { CSSProperties } from 'react';
 import type { InputHTMLAttributes } from 'react';
-import PhoneInput, { type Country, type Value } from 'react-phone-number-input';
+import PhoneInput, { type Country } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
 
 import { cn } from '@/utils/cn';
@@ -51,7 +50,7 @@ export function PhoneField({
         {...(testCountries !== undefined ? { countries: testCountries } : {})}
         {...(name !== undefined ? { name } : {})}
         {...(autoComplete !== undefined ? { autoComplete } : {})}
-        value={value as Value}
+        value={value}
         onChange={(next) => {
           onChange((next as string | undefined) ?? '');
         }}
@@ -69,11 +68,9 @@ export function PhoneField({
         countrySelectProps={{
           'aria-label': 'country',
         }}
-        style={
-          {
-            '--PhoneInput-color--focus': 'var(--color-brand-600)',
-          } as CSSProperties
-        }
+        style={{
+          '--PhoneInput-color--focus': 'var(--color-brand-600)',
+        }}
         className={cn(
           'PhoneInput flex items-center gap-2',
           '[&_.PhoneInputCountry]:border-border-strong [&_.PhoneInputCountry]:bg-surface [&_.PhoneInputCountry]:relative [&_.PhoneInputCountry]:flex [&_.PhoneInputCountry]:h-10 [&_.PhoneInputCountry]:items-center [&_.PhoneInputCountry]:gap-1 [&_.PhoneInputCountry]:rounded-md [&_.PhoneInputCountry]:border [&_.PhoneInputCountry]:px-2',

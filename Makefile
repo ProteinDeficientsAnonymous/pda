@@ -42,7 +42,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
-        agent-frontend-eslint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
+        agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
 
 help:
@@ -73,9 +73,9 @@ help:
 	@echo "  make frontend-install   pnpm install (frontend)"
 	@echo "  make frontend-run        Run Vite dev server (localhost:3000, proxies /api to 8000)"
 	@echo "  make frontend-build     Build Vite production bundle"
-	@echo "  make frontend-lint        Run ESLint"
-	@echo "  make frontend-format      Auto-format files (prettier --write)"
-	@echo "  make frontend-format-check  Prettier check (no write)"
+	@echo "  make frontend-lint        Run oxlint"
+	@echo "  make frontend-format      Auto-format files (oxfmt)"
+	@echo "  make frontend-format-check  oxfmt check (no write)"
 	@echo "  make frontend-test        Run Vitest suite"
 	@echo "  make frontend-typecheck   Run TypeScript check"
 	@echo "  make frontend-types       Generate API types from OpenAPI + regen validation codes"
@@ -262,7 +262,7 @@ backend-ci: lint check test typecheck complexity check-codes
 
 frontend-ci: parallel-frontend
 
-# ESLint, Prettier, Vitest, tsc, and the types.gen.ts parity check are
+# oxlint, oxfmt, Vitest, tsc, and the types.gen.ts parity check are
 # independent — run in parallel to cut wall-clock time.
 parallel-frontend:
 	$(MAKE) -j5 frontend-lint frontend-format-check frontend-test frontend-typecheck frontend-types-check
@@ -302,18 +302,18 @@ agent-complexity:
 		echo "$$violations"; \
 		exit 1; \
 	fi
-agent-frontend-eslint:
-	cd frontend && pnpm exec eslint . --max-warnings 0
+agent-frontend-oxlint:
+	cd frontend && pnpm exec oxlint
 
-# Cheap pre-push gate: ESLint + Prettier in parallel (~same wall time as eslint).
+# Cheap pre-push gate: oxlint + oxfmt in parallel.
 agent-frontend-lint:
-	$(MAKE) -j2 agent-frontend-eslint agent-frontend-format-check
+	$(MAKE) -j2 agent-frontend-oxlint agent-frontend-format-check
 
 agent-frontend-format:
-	cd frontend && pnpm exec prettier --write --log-level warn .
+	cd frontend && pnpm exec oxfmt
 
 agent-frontend-format-check:
-	cd frontend && pnpm exec prettier --check --log-level warn .
+	cd frontend && pnpm exec oxfmt --check
 
 agent-frontend-test:
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
@@ -338,7 +338,7 @@ agent-frontend-ci: parallel-agent-frontend
 
 # Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:
-	$(MAKE) -j5 agent-frontend-eslint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
+	$(MAKE) -j5 agent-frontend-oxlint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:
