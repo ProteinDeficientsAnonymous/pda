@@ -1,3 +1,10 @@
+## [0.118.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.0...v0.118.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** let event managers see guest paid status ([#1558](https://github.com/ProteinDeficientsAnonymous/pda/issues/1558)) ([9f83910](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f83910b853dadd3dc6ed9a78d64076ed27128b3))
+
 # [0.118.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.117.0...v0.118.0) (2026-10-08)
 
 
