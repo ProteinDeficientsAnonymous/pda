@@ -10,9 +10,9 @@ import { useAuthStore } from '@/auth/store';
 import { useIsWideScreen } from '@/hooks/useResponsive';
 import {
   DEFAULT_EVENT_DURATION_MS,
-  type Event as PdaEvent,
   eventClass,
   eventPath,
+  type Event as PdaEvent,
 } from '@/models/event';
 
 import { AgendaList } from './AgendaList';

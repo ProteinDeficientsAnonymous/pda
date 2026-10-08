@@ -258,7 +258,7 @@ export function EventForm({ existing }: Props) {
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form
       ref={formRef}
       onSubmit={(e) => {
@@ -270,7 +270,7 @@ export function EventForm({ existing }: Props) {
         const target = e.target as Element;
         if (
           e.key === 'Enter' &&
-          // eslint-disable-next-line @typescript-eslint/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
+          // oxlint-disable-next-line typescript/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
           !(e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) &&
           target.closest('form') === e.currentTarget &&
           target.matches('input, select')

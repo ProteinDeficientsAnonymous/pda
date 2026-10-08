@@ -1,6 +1,6 @@
 import { format, isSameDay } from 'date-fns';
 
-import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
+import { eventClass, EventType, type Event as PdaEvent } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';

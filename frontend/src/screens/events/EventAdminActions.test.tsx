@@ -8,7 +8,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
-import { makeEvent, makeUser as makeBaseUser } from '@/test/fixtures';
+import { makeUser as makeBaseUser, makeEvent } from '@/test/fixtures';
 
 import { EventAdminActions } from './EventAdminActions';
 

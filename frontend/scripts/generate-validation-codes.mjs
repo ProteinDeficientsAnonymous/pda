@@ -7,8 +7,8 @@
 // `--check`: exits non-zero if the on-disk .gen.ts is out of date. Used in CI.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const INPUT = resolve(__dirname, '../../backend/community/validation_codes.json');
