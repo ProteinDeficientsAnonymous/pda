@@ -1,3 +1,10 @@
+# [0.123.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.1...v0.123.0) (2026-10-08)
+
+
+### Features
+
+* **dev-tools:** add rsvp questions and waitlisted guests to test events ([#1565](https://github.com/ProteinDeficientsAnonymous/pda/issues/1565)) ([9bc18a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/9bc18a74800bcb39b66ee2b52f42ffaf12212e79))
+
 ## [0.122.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.0...v0.122.1) (2026-10-08)
 
 
