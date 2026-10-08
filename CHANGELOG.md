@@ -1,3 +1,10 @@
+# [0.120.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.119.0...v0.120.0) (2026-10-08)
+
+
+### Features
+
+* **events:** drag to reorder the waitlist in manage rsvps ([#1560](https://github.com/ProteinDeficientsAnonymous/pda/issues/1560)) ([ca1d211](https://github.com/ProteinDeficientsAnonymous/pda/commit/ca1d21151a11b35aa66b5f5a9f2cc218ed0cc8a7))
+
 # [0.119.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.1...v0.119.0) (2026-10-08)
 
 
