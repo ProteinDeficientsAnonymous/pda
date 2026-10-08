@@ -1,3 +1,10 @@
+## [0.122.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.0...v0.122.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** don't show waitlist options when editing a going rsvp at capacity ([#1566](https://github.com/ProteinDeficientsAnonymous/pda/issues/1566)) ([7a0582c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7a0582c2fb95d0173094bdbec3b8f8eed0626be7))
+
 # [0.122.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.121.0...v0.122.0) (2026-10-08)
 
 
