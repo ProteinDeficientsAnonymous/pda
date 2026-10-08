@@ -67,6 +67,8 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
+  // An attending member already holds a seat — re-saving "going" keeps it.
+  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
 
   async function confirmRsvp(args: {
     status: RsvpInputStatus;
@@ -174,7 +176,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={atCapacity}
+          atCapacity={goingWouldWaitlist}
           busy={busy}
           error={error}
           questions={event.rsvpQuestions}
