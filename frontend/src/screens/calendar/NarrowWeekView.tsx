@@ -1,6 +1,7 @@
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 
-import { type Event as PdaEvent, eventClass } from '@/models/event';
+import { useToday } from '@/hooks/useToday';
+import { eventClass, type Event as PdaEvent } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 interface Props {
@@ -15,7 +16,7 @@ const lower = (d: Date, f: string) => format(d, f).toLowerCase();
 export function NarrowWeekView({ date, weekStartsOn, events, onSelectEvent }: Props) {
   const weekStart = startOfWeek(date, { weekStartsOn });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const today = new Date();
+  const today = useToday();
 
   return (
     <ul

@@ -3,6 +3,8 @@ import { enUS } from 'date-fns/locale/en-US';
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 
+import { useToday } from '@/hooks/useToday';
+
 interface Props {
   label: string;
   value: string | null;
@@ -51,7 +53,7 @@ export function DateTimePicker({
   const selectedDate = isoToDate(value);
   const baseDate = selectedDate ?? defaultDate;
   // Start-of-today so "today" itself is still selectable.
-  const todayStart = startOfDay(new Date());
+  const todayStart = useToday();
   const dayMatcher = minDate
     ? { before: startOfDay(minDate) }
     : disablePast
@@ -131,7 +133,7 @@ export function DateTimePicker({
               const m = baseDate?.getMinutes() ?? 0;
               onChange(clampAfter(dateToIso(day, h, m), minDate));
             }}
-            defaultMonth={selectedDate ?? baseDate ?? new Date()}
+            defaultMonth={selectedDate ?? baseDate ?? todayStart}
             locale={enUS}
             disabled={dayMatcher}
           />
