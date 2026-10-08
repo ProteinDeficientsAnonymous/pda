@@ -278,15 +278,5 @@ describe('EventManageRsvpsPanel', () => {
       renderPanel(waitlistEvent());
       expect(screen.queryByRole('button', { name: /^move Pat/ })).not.toBeInTheDocument();
     });
-
-    it('hides order controls when read-only', () => {
-      const qc = new QueryClient();
-      render(
-        <QueryClientProvider client={qc}>
-          <EventManageRsvpsPanel event={waitlistEvent()} readOnly />
-        </QueryClientProvider>,
-      );
-      expect(screen.queryByRole('button', { name: /up the waitlist/ })).not.toBeInTheDocument();
-    });
   });
 });

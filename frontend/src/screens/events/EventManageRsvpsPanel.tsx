@@ -15,41 +15,31 @@ import type { Event } from '@/models/event';
 import { RSVP_GROUP_LABELS, RsvpServerStatus } from '@/models/event';
 import { eventRequiresPaymentConfirmation } from '@/utils/eventCost';
 
-import { EventRsvpResponsesSection } from './EventRsvpResponsesSection';
 import { GuestGroup } from './ManageGuestGroup';
 
-export function EventManageRsvpsPanel({
-  event,
-  readOnly = false,
-}: {
-  event: Event;
-  /** Past events: hide add/edit controls; still show question responses. */
-  readOnly?: boolean;
-}) {
+export function EventManageRsvpsPanel({ event }: { event: Event }) {
   const setGuestRsvp = useSetGuestRsvp(event.id);
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
   const setGuestPayment = useSetGuestPayment(event.id);
   const reorderWaitlist = useReorderWaitlist(event.id);
-  const showPaymentStatus = !readOnly && eventRequiresPaymentConfirmation(event);
+  const showPaymentStatus = eventRequiresPaymentConfirmation(event);
 
   return (
     <div className="flex flex-col gap-8">
-      {readOnly ? null : (
-        <AddMemberSection
-          event={event}
-          isPending={setGuestRsvp.isPending}
-          onAdd={(userId) => {
-            setGuestRsvp.mutate(
-              { userId, status: RsvpServerStatus.Attending, hasPlusOne: false },
-              {
-                onError: (err) => {
-                  toast.error(extractApiErrorOr(err, "couldn't add them — try again"));
-                },
+      <AddMemberSection
+        event={event}
+        isPending={setGuestRsvp.isPending}
+        onAdd={(userId) => {
+          setGuestRsvp.mutate(
+            { userId, status: RsvpServerStatus.Attending, hasPlusOne: false },
+            {
+              onError: (err) => {
+                toast.error(extractApiErrorOr(err, "couldn't add them — try again"));
               },
-            );
-          }}
-        />
-      )}
+            },
+          );
+        }}
+      />
       {event.guests.length === 0 ? (
         <p className="text-muted text-sm">no one yet 🌿</p>
       ) : (
@@ -61,7 +51,6 @@ export function EventManageRsvpsPanel({
               key={group.status}
               label={group.label}
               guests={guests}
-              readOnly={readOnly}
               onChangeStatus={(userId, status, hasPlusOne) => {
                 setGuestRsvp.mutate(
                   { userId, status, hasPlusOne },
@@ -124,7 +113,6 @@ export function EventManageRsvpsPanel({
           );
         })
       )}
-      <EventRsvpResponsesSection event={event} />
     </div>
   );
 }

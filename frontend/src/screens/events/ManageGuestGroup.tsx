@@ -13,7 +13,6 @@ export function GuestGroup({
   onTogglePaid,
   onReorder,
   isPending,
-  readOnly,
 }: {
   label: string;
   guests: EventGuest[];
@@ -22,7 +21,6 @@ export function GuestGroup({
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   onReorder?: ((userIds: string[]) => void) | undefined;
   isPending: boolean;
-  readOnly: boolean;
 }) {
   const ids = guests.map((g) => g.userId);
   const move = (index: number, delta: -1 | 1) => {
@@ -43,13 +41,12 @@ export function GuestGroup({
           <GuestRow
             key={g.userId}
             guest={g}
-            readOnly={readOnly}
             onChangeStatus={onChangeStatus}
             onRemove={onRemove}
             onTogglePaid={onTogglePaid}
             isPending={isPending}
             orderControls={
-              onReorder && !readOnly ? (
+              onReorder ? (
                 <WaitlistOrderControls
                   name={g.name}
                   position={i + 1}
@@ -158,7 +155,6 @@ function GuestRow({
   onRemove,
   onTogglePaid,
   isPending,
-  readOnly,
   orderControls,
 }: {
   guest: EventGuest;
@@ -166,25 +162,9 @@ function GuestRow({
   onRemove: (userId: string) => void;
   onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
-  readOnly: boolean;
   orderControls: ReactNode;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
-
-  if (readOnly) {
-    return (
-      <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2">
-        <span className="text-foreground text-sm">
-          {guest.name}
-          {!guest.isMember ? ' (not a member)' : ''}
-        </span>
-        <span className="text-muted text-xs">
-          {currentStatus ?? guest.status}
-          {guest.hasPlusOne ? ' · +1' : ''}
-        </span>
-      </li>
-    );
-  }
 
   if (!guest.isMember) {
     return (
