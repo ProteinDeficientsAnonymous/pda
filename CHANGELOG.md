@@ -1,3 +1,10 @@
+# [0.122.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.121.0...v0.122.0) (2026-10-08)
+
+
+### Features
+
+* **events:** drag to reorder the waitlist from the guest list ([#1561](https://github.com/ProteinDeficientsAnonymous/pda/issues/1561)) ([f6c7d29](https://github.com/ProteinDeficientsAnonymous/pda/commit/f6c7d2926c6834d40cae60036b54997df93435b3))
+
 # [0.121.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.120.0...v0.121.0) (2026-10-08)
 
 
