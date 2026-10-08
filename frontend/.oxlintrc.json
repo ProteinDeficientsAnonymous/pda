@@ -7,7 +7,8 @@
   "options": {
     "typeAware": true,
     "denyWarnings": true,
-    "reportUnusedDisableDirectives": "error"
+    "reportUnusedDisableDirectives": "error",
+    "respectEslintDisableDirectives": false
   },
   "ignorePatterns": ["dist", "node_modules", "src/api/types.gen.ts"],
   "overrides": [
