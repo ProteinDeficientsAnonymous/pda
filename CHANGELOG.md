@@ -1,3 +1,10 @@
+## [0.123.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.0...v0.123.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** hide location from anonymous event payloads ([#1541](https://github.com/ProteinDeficientsAnonymous/pda/issues/1541)) ([c2b9a45](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2b9a451820f085b4b281bbee1782c9d18fe3756))
+
 # [0.123.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.1...v0.123.0) (2026-10-08)
 
 
