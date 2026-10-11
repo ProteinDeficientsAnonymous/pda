@@ -28,10 +28,10 @@ from community._public_rsvp_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
     _email_details,
-    _email_promoted_non_members,
     _load_public_rsvp_event,
     _log_email_failure,
 )
+from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, RSVPStatus
@@ -303,7 +303,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
 
     waitlisted = final_status == RSVPStatus.WAITLISTED
     _send_confirmation_email(request, event, user, token.token, waitlisted)
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
 
     fresh_event = (
         Event.objects.select_related("created_by")

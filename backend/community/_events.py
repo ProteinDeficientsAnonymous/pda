@@ -58,12 +58,12 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
-from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import (
     attending_count_annotation,
     waitlisted_count_annotation,
 )
 from community._rsvp_payment import can_see_payment_details
+from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
 from community._tentative_member_access import (
     event_viewer_for,
@@ -483,7 +483,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     email_removed_non_members(request, event, removed_user_ids)
     if promoted_user_ids:
         broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-        _email_promoted_non_members(request, event, promoted_user_ids)
+        email_promoted_users(request, event, promoted_user_ids)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()
