@@ -1,3 +1,4 @@
+import calendar
 import json
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -8,6 +9,7 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications._email_helpers import format_eastern_datetime
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
@@ -179,12 +181,16 @@ _SCREEN_EMAILS = (
     "casey@example.com",
     "sam@example.com",
 )
-_POTLUCK_AT = datetime(2026, 10, 9, 22, 0, tzinfo=UTC)
-_HIKE_AT = datetime(2026, 9, 4, 22, 0, tzinfo=UTC)
-_PICNIC_AT = datetime(2026, 11, 6, 22, 0, tzinfo=UTC)
 _RECORD_AT = datetime(2026, 6, 1, 18, 0, tzinfo=UTC)
 _SCREEN_SLUGS = ("potluck", "hike", "picnic")
 _CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
+
+
+def _month_end(now: datetime, *, months_ago: int = 0) -> datetime:
+    index = now.year * 12 + now.month - 1 - months_ago
+    year, month0 = divmod(index, 12)
+    last_day = calendar.monthrange(year, month0 + 1)[1]
+    return datetime(year, month0 + 1, last_day, 22, 0, tzinfo=UTC)
 
 
 def _screen_user(**fields) -> User:
@@ -207,6 +213,10 @@ def _seed_member_screens() -> dict:
     if "django_cache" in connection.introspection.table_names():
         caches["ratelimit"].clear()
     Event.objects.filter(slug__in=_SCREEN_SLUGS).delete()
+    now = timezone.now()
+    potluck_at = _month_end(now)
+    hike_at = _month_end(now, months_ago=1)  # previous month stays past for the check-in report
+    picnic_at = _month_end(now)
     Survey.objects.filter(slug="potluck-feedback").delete()
     DocFolder.objects.filter(name="guides").delete()
     JoinRequest.objects.filter(phone_number="+17025550007").delete()
@@ -255,7 +265,7 @@ def _seed_member_screens() -> dict:
         title="potluck",
         slug="potluck",
         description="bring a dish to share.",
-        start_datetime=_POTLUCK_AT,
+        start_datetime=potluck_at,
         location="the park",
         event_type=EventType.OFFICIAL,
         visibility=PageVisibility.PUBLIC,
@@ -270,7 +280,7 @@ def _seed_member_screens() -> dict:
         title="hike",
         slug="hike",
         description="a short walk in the woods.",
-        start_datetime=_HIKE_AT,
+        start_datetime=hike_at,
         location="the woods",
         event_type=EventType.OFFICIAL,
         visibility=PageVisibility.PUBLIC,
@@ -282,7 +292,7 @@ def _seed_member_screens() -> dict:
         title="picnic",
         slug="picnic",
         description="called off for rain.",
-        start_datetime=_PICNIC_AT,
+        start_datetime=picnic_at,
         location="the meadow",
         event_type=EventType.OFFICIAL,
         visibility=PageVisibility.PUBLIC,
@@ -348,7 +358,7 @@ def _seed_member_screens() -> dict:
             "events": [
                 {
                     "title": "potluck",
-                    "when": "friday, october 9 at 6:00 pm",
+                    "when": format_eastern_datetime(potluck_at).lower(),
                     "location": "the park",
                     "url": "http://127.0.0.1:3000/events/potluck",
                 }
@@ -366,6 +376,7 @@ def _seed_member_screens() -> dict:
         "ash_phone": "+17025550004",
         "digest_html": digest_html,
         "event_id": str(event.id),
+        "calendar_date": potluck_at.date().isoformat(),
         "guest_token": guest_token.token,
         "hike_id": str(hike.id),
         "admin_phone": ada.phone_number,

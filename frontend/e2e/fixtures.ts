@@ -38,6 +38,7 @@ export interface SeedScenarioMap {
     ash_phone: string;
     digest_html: string;
     event_id: string;
+    calendar_date: string;
     guest_token: string;
     hike_id: string;
     admin_phone: string;

@@ -70,7 +70,9 @@ test('member screens', async ({ page }) => {
     screen('members', '/members', { text: 'Jamie Okafor' }),
     screen('my-events', '/events/mine', { text: 'potluck' }),
     screen('event', '/events/potluck', { text: 'the park' }),
-    screen('calendar-member', '/calendar?date=2026-10-09&view=month', { text: 'potluck' }),
+    screen('calendar-member', `/calendar?date=${data.calendar_date}&view=month`, {
+      text: 'potluck',
+    }),
     screen('volunteer', '/volunteer', { heading: 'volunteer' }),
     screen('join-member', '/join', { heading: "you're already in" }),
     screen('admin', '/admin', { text: 'nothing available to you yet' }),

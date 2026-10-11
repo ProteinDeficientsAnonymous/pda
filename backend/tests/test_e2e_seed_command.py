@@ -100,7 +100,6 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     event = Event.objects.get(slug="potluck")
     assert event.title == "potluck"
     assert event.location == "the park"
-    assert event.start_datetime == datetime(2026, 10, 9, 22, 0, tzinfo=UTC)
     assert out["event_id"] == str(event.id)
     assert EventRSVP.objects.filter(event=event, user=seed).exists()
     guest = User.objects.get(phone_number="+17025550005")
@@ -118,7 +117,6 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
     call_command("e2e_seed", "member-screens")
     out = json.loads(capsys.readouterr().out)
     hike = Event.objects.get(slug="hike")
-    assert hike.start_datetime == datetime(2026, 9, 4, 22, 0, tzinfo=UTC)
     assert out["hike_id"] == str(hike.id)
     picnic = Event.objects.get(slug="picnic")
     assert picnic.status == "cancelled"
@@ -143,6 +141,34 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
     call_command("e2e_seed", "member-screens")
     assert Event.objects.filter(slug="hike").count() == 1
     assert Event.objects.filter(slug="picnic").count() == 1
+
+
+def test_month_end_in_january_uses_prior_december():
+    from community.management.commands.e2e_seed import _month_end
+
+    now = datetime(2026, 1, 4, 12, 0, tzinfo=UTC)
+    assert _month_end(now) == datetime(2026, 1, 31, 22, 0, tzinfo=UTC)
+    assert _month_end(now, months_ago=1) == datetime(2025, 12, 31, 22, 0, tzinfo=UTC)
+
+
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_events_use_month_end(capsys, monkeypatch):
+    frozen = datetime(2026, 10, 11, 15, 0, tzinfo=UTC)
+    monkeypatch.setattr(
+        "community.management.commands.e2e_seed.timezone.now",
+        lambda: frozen,
+    )
+    call_command("e2e_seed", "member-screens")
+    out = json.loads(capsys.readouterr().out)
+    assert Event.objects.get(slug="potluck").start_datetime == datetime(
+        2026, 10, 31, 22, 0, tzinfo=UTC
+    )
+    assert Event.objects.get(slug="hike").start_datetime == datetime(2026, 9, 30, 22, 0, tzinfo=UTC)
+    assert Event.objects.get(slug="picnic").start_datetime == datetime(
+        2026, 10, 31, 22, 0, tzinfo=UTC
+    )
+    assert out["calendar_date"] == "2026-10-31"
+    assert "october 31" in out["digest_html"]
 
 
 @pytest.mark.django_db
