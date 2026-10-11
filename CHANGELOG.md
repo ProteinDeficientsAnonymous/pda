@@ -1,3 +1,10 @@
+## [0.123.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.1...v0.123.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* pin seeded event dates to month end ([#1585](https://github.com/ProteinDeficientsAnonymous/pda/issues/1585)) ([be16121](https://github.com/ProteinDeficientsAnonymous/pda/commit/be16121d00da50b93ccb779a9d50cf0776214dd8))
+
 ## [0.123.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.0...v0.123.1) (2026-10-08)
 
 
