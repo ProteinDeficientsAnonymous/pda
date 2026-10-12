@@ -1,7 +1,12 @@
 import { useState } from 'react';
 
 import type { AttendanceStatusValue, EventGuest, RsvpServerStatusValue } from '@/models/event';
-import { AttendanceStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
+import {
+  AttendanceStatus,
+  RSVP_GROUP_LABELS,
+  rsvpGroupLabel,
+  RsvpServerStatus,
+} from '@/models/event';
 import { cn } from '@/utils/cn';
 
 function firstName(name: string): string {
@@ -18,12 +23,14 @@ export function EventCheckInList({
   isPending: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useState<RsvpServerStatusValue | null>(null);
+  const checkInGuests = guests.filter((g) => g.status !== RsvpServerStatus.CantGo);
 
-  if (guests.length === 0) {
+  if (checkInGuests.length === 0) {
     return <p className="text-muted text-xs">no rsvps to check in</p>;
   }
 
-  const filtered = statusFilter === null ? guests : guests.filter((g) => g.status === statusFilter);
+  const filtered =
+    statusFilter === null ? checkInGuests : checkInGuests.filter((g) => g.status === statusFilter);
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,7 +117,7 @@ function StatusFilter({
           onChange(null);
         }}
       />
-      {RSVP_GROUP_LABELS.map((s) => (
+      {RSVP_GROUP_LABELS.filter((s) => s.status !== RsvpServerStatus.CantGo).map((s) => (
         <FilterChip
           key={s.status}
           active={value === s.status}

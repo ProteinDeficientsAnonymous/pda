@@ -172,13 +172,14 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByRole('button', { name: /^attended$/i })).toBeInTheDocument();
   });
 
-  it('lists guests of every rsvp status by default', () => {
+  it('omits cant_go guests from the check-in list', () => {
     mockStats(BASE_STATS);
     renderPanel(MIXED_RSVP_EVENT);
 
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('mabel')).toBeInTheDocument();
-    expect(screen.getByText('cassie')).toBeInTheDocument();
+    expect(screen.queryByText('cassie')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^can't go$/i })).not.toBeInTheDocument();
   });
 
   it('narrows the list to one rsvp status when a filter chip is picked', () => {
@@ -201,7 +202,7 @@ describe('EventAttendancePanel', () => {
 
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('mabel')).toBeInTheDocument();
-    expect(screen.getByText('cassie')).toBeInTheDocument();
+    expect(screen.queryByText('cassie')).not.toBeInTheDocument();
   });
 
   it('renders cancellations list before the event opens for check-in', () => {
