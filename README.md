@@ -51,7 +51,7 @@ Manual Railway deploys via GitHub Actions (`workflow_dispatch`) are documented i
 3. Verify on [staging-pda.up.railway.app](https://staging-pda.up.railway.app) after merge
 4. When ready, run the `deploy railway (production)` GitHub Action to promote to production
 
-Direct pushes to `main` are not allowed for contributors.
+Direct pushes to `main` are not allowed for contributors. Merges require the Backend, Frontend, and Screenshots checks.
 
 ## releases
 
