@@ -92,6 +92,8 @@ def login(request, payload: LoginIn, response: HttpResponse):
             target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    user.last_login = timezone.now()
+    user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(user)
     request.auth = user
     set_refresh_cookie(response, str(refresh))
