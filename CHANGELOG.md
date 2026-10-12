@@ -1,3 +1,10 @@
+## [0.123.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.2...v0.123.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* **users:** record last_login on api login ([#1539](https://github.com/ProteinDeficientsAnonymous/pda/issues/1539)) ([9324def](https://github.com/ProteinDeficientsAnonymous/pda/commit/9324def6e9eae0e7160c0d506c5635d07a13cedb))
+
 ## [0.123.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.1...v0.123.2) (2026-10-11)
 
 
