@@ -308,6 +308,18 @@ describe('JoinRequestsScreen pending actions', () => {
     expect(screen.getByRole('button', { name: 'reject' })).toBeInTheDocument();
   });
 
+  it('should confirm the named applicant without claiming reject is irreversible', async () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING, fullName: 'Ada Lovelace' })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'reject' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/reject ada lovelace\?/i)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/can't un-reject/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/you can un-reject them later/i)).toBeInTheDocument();
+  });
+
   it('calls decide with tentative status when tentatively approve is confirmed', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       fullName: 'Ada Lovelace',
