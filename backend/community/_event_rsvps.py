@@ -22,7 +22,7 @@ from community._event_helpers import (
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
 )
-from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
+from community._event_rsvp_answers import build_rsvp_answers, should_apply_answer_payload
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
@@ -181,7 +181,8 @@ def _snapshot_rsvp_answers(
     answers: dict[str, str] | None,
 ) -> dict:
     existing_answers = dict(existing.questionnaire_responses or {}) if existing is not None else {}
-    if not answers_required_for_status(final_status):
+    previous_status = existing.status if existing is not None else None
+    if not should_apply_answer_payload(final_status, previous_status, answers):
         return existing_answers
 
     questions = list(event.rsvp_questions.all())

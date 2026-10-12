@@ -211,20 +211,38 @@ describe('RsvpBox', () => {
     expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
   });
 
-  it('should hide questions when status is maybe', () => {
+  it('should show questions when a new rsvp switches to maybe', () => {
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(screen.getByText('how are you getting there?')).toBeInTheDocument();
+  });
+
+  it('should hide questions when an existing maybe stays maybe', () => {
+    render(
+      <RsvpBox
+        {...base}
+        mode="edit"
+        initialStatus={RsvpStatus.Maybe}
+        questions={[requiredSelect]}
+        onConfirm={() => {}}
+      />,
+    );
     expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
   });
 
-  it('should allow confirm for maybe without answering required questions', () => {
+  it('should show questions when an existing rsvp switches to maybe', () => {
+    render(<RsvpBox {...base} mode="edit" questions={[requiredSelect]} onConfirm={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(screen.getByText('how are you getting there?')).toBeInTheDocument();
+  });
+
+  it('should require answers when confirming a new maybe', () => {
     const onConfirm = vi.fn();
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
     fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
     fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
-    expect(onConfirm).toHaveBeenCalledWith(
-      expect.objectContaining({ status: RsvpStatus.Maybe, questionnaireResponses: {} }),
-    );
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(/required/i)).toBeInTheDocument();
   });
 
   it('should block confirm when a required question is unanswered', () => {

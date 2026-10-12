@@ -37,7 +37,9 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-muted text-sm">shown when guests rsvp as going or waitlisted</p>
+        <p className="text-muted text-sm">
+          shown for going, waitlist, and when someone switches to maybe
+        </p>
         <Button
           type="button"
           variant="secondary"

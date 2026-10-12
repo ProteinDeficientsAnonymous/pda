@@ -111,19 +111,92 @@ class TestRsvpWithAnswers:
         )
         assert response.status_code == 200
 
-    def test_maybe_skips_required_answers(
-        self, api_client, other_headers, auth_headers, rsvp_event
-    ):
-        _create_question(rsvp_event)
-        response = api_client.post(
+    def test_new_maybe_requires_answers(self, api_client, other_headers, auth_headers, rsvp_event):
+        q = _create_question(rsvp_event)
+        missing = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
             {"status": RSVPStatus.MAYBE, "has_plus_one": False},
             content_type="application/json",
             **other_headers,
         )
-        assert response.status_code == 200
+        assert missing.status_code == 422
+        assert_error_code(missing, Code.Event.RSVP_ANSWER_REQUIRED)
+
+        ok = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {
+                "status": RSVPStatus.MAYBE,
+                "has_plus_one": False,
+                "questionnaire_responses": {q["id"]: "driving"},
+            },
+            content_type="application/json",
+            **other_headers,
+        )
+        assert ok.status_code == 200
         rsvp = EventRSVP.objects.get(event=rsvp_event)
-        assert rsvp.questionnaire_responses == {}
+        assert rsvp.questionnaire_responses[q["id"]]["answer"] == "driving"
+
+    def test_staying_maybe_keeps_answers_without_resubmit(
+        self, api_client, other_headers, auth_headers, rsvp_event
+    ):
+        q = _create_question(rsvp_event)
+        created = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {
+                "status": RSVPStatus.MAYBE,
+                "questionnaire_responses": {q["id"]: "transit"},
+            },
+            content_type="application/json",
+            **other_headers,
+        )
+        assert created.status_code == 200
+
+        stayed = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.MAYBE, "questionnaire_responses": {}},
+            content_type="application/json",
+            **other_headers,
+        )
+        assert stayed.status_code == 200
+        rsvp = EventRSVP.objects.get(event=rsvp_event)
+        assert rsvp.questionnaire_responses[q["id"]]["answer"] == "transit"
+
+        updated = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {
+                "status": RSVPStatus.MAYBE,
+                "questionnaire_responses": {q["id"]: "driving"},
+            },
+            content_type="application/json",
+            **other_headers,
+        )
+        assert updated.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.questionnaire_responses[q["id"]]["answer"] == "driving"
+
+    def test_switching_to_maybe_requires_answers(
+        self, api_client, other_headers, auth_headers, rsvp_event
+    ):
+        q = _create_question(rsvp_event)
+        going = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {
+                "status": RSVPStatus.ATTENDING,
+                "questionnaire_responses": {q["id"]: "driving"},
+            },
+            content_type="application/json",
+            **other_headers,
+        )
+        assert going.status_code == 200
+
+        missing = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.MAYBE, "questionnaire_responses": {}},
+            content_type="application/json",
+            **other_headers,
+        )
+        assert missing.status_code == 422
+        assert_error_code(missing, Code.Event.RSVP_ANSWER_REQUIRED)
 
     def test_invalid_option_rejected(self, api_client, other_headers, auth_headers, rsvp_event):
         q = _create_question(rsvp_event)

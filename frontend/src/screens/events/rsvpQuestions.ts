@@ -40,15 +40,38 @@ export function rsvpQuestionsApplyToStatus(status: string): boolean {
   return RESPONDENT_STATUSES.has(status);
 }
 
+export function shouldShowRsvpQuestions({
+  status,
+  questionCount,
+  mode,
+  changedFromInitial,
+}: {
+  status: string;
+  questionCount: number;
+  mode: 'create' | 'edit';
+  changedFromInitial: boolean;
+}): boolean {
+  if (questionCount === 0) return false;
+  if (rsvpQuestionsApplyToStatus(status)) return true;
+  if (status !== RsvpServerStatus.Maybe) return false;
+  if (mode === 'create') return true;
+  return changedFromInitial;
+}
+
+export function guestShowsQuestionnaire(status: string, responseCount: number): boolean {
+  if (isRsvpRespondentStatus(status)) return true;
+  return status === RsvpServerStatus.Maybe && responseCount > 0;
+}
+
 export function hasQuestionHistory(event: Event): boolean {
   return event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
 }
 
 export function hasSavedQuestionnaireResponses(event: Event): boolean {
-  return event.guests.some(
-    (guest) =>
-      isRsvpRespondentStatus(guest.status) && Object.keys(guest.questionnaireResponses).length > 0,
-  );
+  return event.guests.some((guest) => {
+    const responseCount = Object.keys(guest.questionnaireResponses).length;
+    return responseCount > 0 && guestShowsQuestionnaire(guest.status, responseCount);
+  });
 }
 
 export { questionTypeWantsOptions as wantsOptions };

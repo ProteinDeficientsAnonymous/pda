@@ -36,6 +36,22 @@ def answers_required_for_status(status: str) -> bool:
     return status in {RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED}
 
 
+def collect_answers_for_status(status: str, previous_status: str | None) -> bool:
+    if answers_required_for_status(status):
+        return True
+    # A new maybe, or a switch onto maybe, is asked once. Staying maybe is not.
+    return status == RSVPStatus.MAYBE and previous_status != RSVPStatus.MAYBE
+
+
+def should_apply_answer_payload(
+    status: str, previous_status: str | None, answers: dict | None
+) -> bool:
+    if collect_answers_for_status(status, previous_status):
+        return True
+    # Non-empty answers on an existing maybe are a re-ask; {} keeps the snapshot.
+    return status == RSVPStatus.MAYBE and bool(answers)
+
+
 def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
     if require_answers and q.required:
         raise_validation(

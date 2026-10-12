@@ -2,7 +2,7 @@ import { QuestionType } from '@/api/questionTypes';
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
 import { rsvpGroupLabel } from '@/models/event';
 
-import { isRsvpRespondentStatus } from './rsvpQuestions';
+import { guestShowsQuestionnaire } from './rsvpQuestions';
 
 interface ResponseColumn {
   id: string;
@@ -41,7 +41,9 @@ function responseColumns(
 }
 
 export function EventRsvpResponsesSection({ event }: Props) {
-  const respondents = event.guests.filter((guest) => isRsvpRespondentStatus(guest.status));
+  const respondents = event.guests.filter((guest) =>
+    guestShowsQuestionnaire(guest.status, Object.keys(guest.questionnaireResponses).length),
+  );
   const columns = responseColumns(event.rsvpQuestions, respondents);
   if (columns.length === 0) return null;
 
@@ -52,7 +54,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
   return (
     <section aria-label="question responses" className="flex flex-col gap-4">
       <p className="text-muted text-sm">
-        {String(respondents.length)} guest{respondents.length === 1 ? '' : 's'} going or waitlisted
+        {`${String(respondents.length)} guest${respondents.length === 1 ? '' : 's'} going, waitlisted, or maybe`}
       </p>
 
       {choiceColumns.length > 0 ? (

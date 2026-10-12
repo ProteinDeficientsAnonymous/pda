@@ -32,7 +32,7 @@ import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
   missingRequiredQuestionIds,
   type RsvpAnswerValue,
-  rsvpQuestionsApplyToStatus,
+  shouldShowRsvpQuestions,
 } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 
@@ -109,8 +109,12 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     submitErrorRef.current?.focus();
   }, [submitError]);
 
-  const showQuestions =
-    status !== null && rsvpQuestionsApplyToStatus(status) && questions.length > 0;
+  const showQuestions = shouldShowRsvpQuestions({
+    status: status ?? '',
+    questionCount: questions.length,
+    mode: 'create',
+    changedFromInitial: false,
+  });
 
   function validate(): boolean {
     const next: Record<string, string> = {};

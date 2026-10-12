@@ -12,7 +12,7 @@ import {
   missingRequiredQuestionIds,
   type RsvpAnswerValue,
   type RsvpQuestionDraft,
-  rsvpQuestionsApplyToStatus,
+  shouldShowRsvpQuestions,
 } from './rsvpQuestions';
 import { usePaymentGate } from './usePaymentGate';
 
@@ -60,6 +60,7 @@ export function RsvpBox({
   onClose,
 }: Props) {
   const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
+  const [changedFromInitial, setChangedFromInitial] = useState(false);
   const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
   const [showPayment, setShowPayment] = useState(false);
@@ -72,7 +73,17 @@ export function RsvpBox({
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
   const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
-  const showQuestions = questions.length > 0 && rsvpQuestionsApplyToStatus(status);
+  const showQuestions = shouldShowRsvpQuestions({
+    status,
+    questionCount: questions.length,
+    mode,
+    changedFromInitial,
+  });
+
+  function selectStatus(next: RsvpInputStatus) {
+    setStatus(next);
+    if (next !== initialStatus) setChangedFromInitial(true);
+  }
 
   function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
     const next: Record<string, RsvpAnswerValue> = {};
@@ -134,7 +145,7 @@ export function RsvpBox({
           <div data-testid="rsvp-status-controls" className="flex shrink-0 flex-col gap-4">
             <RsvpStatusPicker
               value={status}
-              onSelect={setStatus}
+              onSelect={selectStatus}
               disabled={busy}
               labelFor={(s, defaultLabel) =>
                 s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel

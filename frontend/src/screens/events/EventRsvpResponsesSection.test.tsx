@@ -71,16 +71,16 @@ describe('EventRsvpResponsesSection', () => {
     render(<EventRsvpResponsesSection event={event} />);
 
     expect(screen.getByRole('region', { name: /question responses/i })).toBeInTheDocument();
-    expect(screen.getByText('2 guests going or waitlisted')).toBeInTheDocument();
+    expect(screen.getByText(/3 guests going, waitlisted, or maybe/)).toBeInTheDocument();
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('bob')).toBeInTheDocument();
-    expect(screen.queryByText('cara')).not.toBeInTheDocument();
+    expect(screen.getByText('cara')).toBeInTheDocument();
     expect(screen.queryByText('dana')).not.toBeInTheDocument();
     expect(screen.getByText('bringing chips')).toBeInTheDocument();
     const tallies = screen.getByRole('list');
     expect(tallies).toHaveTextContent(/driving\s*1/);
     expect(tallies).toHaveTextContent(/transit\s*1/);
-    expect(tallies).not.toHaveTextContent(/bike/);
+    expect(tallies).toHaveTextContent(/bike\s*1/);
   });
 
   it('shows empty state when no going or waitlisted guests', () => {

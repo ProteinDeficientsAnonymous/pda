@@ -37,10 +37,11 @@ describe('EventFormQuestions', () => {
     expect(screen.getByRole('button', { name: /add question/i })).toBeInTheDocument();
   });
 
-  it('should explain questions only show for going or waitlisted guests', () => {
+  it('should explain questions show for going, waitlist, and a switch to maybe', () => {
     render(<EventFormQuestions rsvpEnabled questions={[]} onQuestionsChange={vi.fn()} />);
-    expect(screen.getByText('shown when guests rsvp as going or waitlisted')).toBeInTheDocument();
-    expect(screen.queryByText(/going or maybe/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText('shown for going, waitlist, and when someone switches to maybe'),
+    ).toBeInTheDocument();
   });
 
   it('lists questions with type and required marker', () => {
