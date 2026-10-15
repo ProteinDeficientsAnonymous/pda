@@ -34,10 +34,9 @@ def _assert_no_location(sent: dict) -> None:
         assert LONGITUDE not in body
 
 
-def _assert_links_event_page(sent: dict, event, token: str) -> None:
-    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}?rsvp_token={token}"
-    assert event_url in sent["html"]
-    assert event_url in sent["text"]
+def _assert_no_where_line(sent: dict) -> None:
+    assert "where:" not in sent["html"].lower()
+    assert "where:" not in sent["text"].lower()
 
 
 def _sent_with_subject(fake_email_sender, fragment: str) -> dict:
@@ -54,11 +53,8 @@ class TestNonMemberRsvpEmailsOmitLocation:
         assert post(api_client, located_event).status_code == 200
 
         sent = _sent_with_subject(fake_email_sender, "you're in for")
-        user = User.objects.get(email="sam@example.com")
         _assert_no_location(sent)
-        _assert_links_event_page(
-            sent, located_event, NonMemberRsvpToken.objects.get(user=user).token
-        )
+        _assert_no_where_line(sent)
 
     def test_updated(self, api_client, located_event, fake_email_sender):
         nonmember = make_non_member("+14155550031", "nm@example.com", name="non member")
@@ -74,7 +70,7 @@ class TestNonMemberRsvpEmailsOmitLocation:
         assert resp.status_code == 200
         sent = _sent_with_subject(fake_email_sender, "your rsvp was updated")
         _assert_no_location(sent)
-        _assert_links_event_page(sent, located_event, token.token)
+        _assert_no_where_line(sent)
 
     def test_waitlist_promoted(self, api_client, auth_headers, located_event, fake_email_sender):
         located_event.max_attendees = 1
@@ -93,9 +89,7 @@ class TestNonMemberRsvpEmailsOmitLocation:
 
         sent = _sent_with_subject(fake_email_sender, "off the waitlist")
         _assert_no_location(sent)
-        _assert_links_event_page(
-            sent, located_event, NonMemberRsvpToken.objects.get(user=waited).token
-        )
+        _assert_no_where_line(sent)
 
 
 @pytest.mark.django_db

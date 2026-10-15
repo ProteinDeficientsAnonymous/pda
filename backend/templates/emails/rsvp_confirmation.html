@@ -9,7 +9,6 @@
     <p style="margin: 0 0 24px;">you're in for <strong>{{ event_title|lower }}</strong> 🌱</p>
     {% endif %}
     {% if event_when %}<p style="margin: 0 0 8px;">when: {{ event_when|lower }}</p>{% endif %}
-    <p style="margin: 0 0 8px;">where: <a href="{{ event_url }}" style="color: #3c6939;">details on the event page</a></p>
     {% for link in event_links %}<p style="margin: 0 0 8px; font-size: 13px; word-break: break-all;"><a href="{{ link }}" style="color: #3c6939;">{{ link }}</a></p>{% endfor %}
     <p style="margin: 24px 0 16px;">manage or change your rsvp anytime:</p>
     <p style="margin: 0 0 24px;">
