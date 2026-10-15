@@ -9,7 +9,7 @@ from notifications._email_helpers import format_eastern_datetime, send_weekly_di
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community.models import Event, EventStatus, EventType, JoinRequest, JoinRequestStatus
+from community.models import Event, EventStatus, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -41,17 +41,6 @@ def veganniversary_groups(*, now, users) -> list[dict]:
         {"label": "1 year" if y == 1 else f"{y} years", "people": people}
         for y, people in sorted(grouped.items(), reverse=True)
     ]
-
-
-def _tentative_members():
-    tentative_ids = JoinRequest.objects.filter(status=JoinRequestStatus.TENTATIVE).values("user_id")
-    return User.objects.filter(
-        pk__in=tentative_ids,
-        is_member=False,
-        is_active=True,
-        is_paused=False,
-        archived_at__isnull=True,
-    )
 
 
 def _with_email(users):
@@ -154,7 +143,9 @@ class Command(BaseCommand):
         if events:
             # Shoutouts link to member profiles, which tentative members can't open.
             tentative_sent, tentative_failed = self._send_all(
-                sender, _with_email(_tentative_members()), {**payload, "veganniversaries": []}
+                sender,
+                _with_email(User.objects.active_tentative_members()),
+                {**payload, "veganniversaries": []},
             )
             sent_count += tentative_sent
             failed_count += tentative_failed
