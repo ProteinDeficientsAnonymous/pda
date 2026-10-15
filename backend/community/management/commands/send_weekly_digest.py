@@ -82,7 +82,6 @@ class Command(BaseCommand):
             {
                 "title": event.title,
                 "when": _format_event_when(event),
-                "location": event.location,
                 "url": f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}",
             }
             for event in upcoming

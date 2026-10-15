@@ -4,8 +4,8 @@ good news — a spot opened up and you're off the waitlist for {{ event_title|lo
 {% if payment_pending %}
 your spot isn't confirmed until you pay for this event. payment details are on the event page! head to the event on the link below to get the payment info so that your rsvp is not cancelled.
 {% endif %}{% if event_when %}
-when: {{ event_when|lower }}{% endif %}{% if event_location %}
-where: {{ event_location|lower }}{% endif %}
+when: {{ event_when|lower }}{% endif %}
+where: details on the event page — {{ event_url }}
 {% for link in event_links %}{{ link }}
 {% endfor %}
 manage or change your rsvp anytime:

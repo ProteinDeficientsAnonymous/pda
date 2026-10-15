@@ -22,7 +22,7 @@ class RsvpEmailDetails:
     display_name: str
     event_title: str
     event_when: str
-    event_location: str
+    event_url: str
     event_links: list[str]
     manage_url: str
     join_url: str
@@ -32,7 +32,7 @@ class RsvpEmailDetails:
             "display_name": self.display_name or "",
             "event_title": self.event_title,
             "event_when": self.event_when,
-            "event_location": self.event_location,
+            "event_url": self.event_url,
             "event_links": self.event_links,
             "manage_url": self.manage_url,
             "join_url": self.join_url,
@@ -301,7 +301,7 @@ def send_weekly_digest_email(  # noqa: PLR0913
 ) -> SendResult:
     """Render and send the weekly "what's coming up" digest to one member.
 
-    param events(list[dict]): upcoming events, each with title/when/location/url keys
+    param events(list[dict]): upcoming events, each with title/when/url keys
     param urls: calendar_url and settings_url
     param veganniversaries: year-grouped shout-out people, or empty
     """
