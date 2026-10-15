@@ -1,3 +1,10 @@
+# [0.124.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.3...v0.124.0) (2026-10-15)
+
+
+### Features
+
+* **digest:** send weekly digest to tentative members (Issue 1601) ([#1604](https://github.com/ProteinDeficientsAnonymous/pda/issues/1604)) ([faf6f68](https://github.com/ProteinDeficientsAnonymous/pda/commit/faf6f68ef4c790144ccc1f86d27d22e79137ac58))
+
 ## [0.123.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.2...v0.123.3) (2026-10-12)
 
 
