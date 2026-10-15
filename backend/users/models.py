@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import phonenumbers
 from community._validation import Code, raise_validation
+from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -84,6 +85,20 @@ class UserManager(BaseUserManager):
             is_active=True,
             is_paused=False,
             archived_at__isnull=True,
+        )
+
+    def active_tentative_members(self):
+        """Signed-in tentative applicants, filtered like ``active_members``."""
+        return (
+            self.get_queryset()
+            .filter(
+                is_member=False,
+                join_requests__status=JoinRequestStatus.TENTATIVE,
+                is_active=True,
+                is_paused=False,
+                archived_at__isnull=True,
+            )
+            .distinct()
         )
 
     def with_permission(self, key: str):
