@@ -1,3 +1,10 @@
+# [0.127.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.3...v0.127.0) (2026-10-16)
+
+
+### Features
+
+* **events:** add start/end/include_imported params to list endpoint (Issue 1600) ([#1616](https://github.com/ProteinDeficientsAnonymous/pda/issues/1616)) ([f65fd3d](https://github.com/ProteinDeficientsAnonymous/pda/commit/f65fd3d1f1220463bf2f07c27f590c0d994fea92))
+
 ## [0.126.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.2...v0.126.3) (2026-10-16)
 
 
