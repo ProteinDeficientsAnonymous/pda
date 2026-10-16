@@ -46,6 +46,7 @@ from community.models.event import (
 )
 from community.models.feature_flag import FeatureFlagState, flag_enabled, resolve_flags
 from community.models.join_form import JoinFormQuestion, JoinRequest
+from community.models.login_reminder import LoginReminder
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
     DatetimePollResult,
@@ -103,6 +104,7 @@ __all__ = [
     "resolve_flags",
     "JoinFormQuestion",
     "JoinRequest",
+    "LoginReminder",
     "EventComment",
     "EventCommentReaction",
     "ReactionEmoji",

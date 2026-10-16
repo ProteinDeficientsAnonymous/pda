@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
-from users.models import User
+from users.models import HAS_EMAIL, User
 
 from community._login_reminder import send_login_reminders
 from community.models import Event, EventStatus, EventType
@@ -45,14 +45,13 @@ def veganniversary_groups(*, now, users) -> list[dict]:
 
 
 def _with_email(users):
-    return users.filter(email__isnull=False, weekly_digest_opt_out=False).exclude(email="")
+    return users.filter(HAS_EMAIL, weekly_digest_opt_out=False)
 
 
 class Command(BaseCommand):
     help = (
-        "Email active and tentative members a digest of upcoming events "
-        "and this month's veganniversaries, then remind anyone who hasn't "
-        "finished first login."
+        "Remind anyone who hasn't finished first login, then email active and "
+        "tentative members a digest of upcoming events and this month's veganniversaries."
     )
 
     def add_arguments(self, parser):
@@ -93,15 +92,23 @@ class Command(BaseCommand):
         return sent, failed
 
     def handle(self, *args, **options):
-        self._send_digest(options)
+        # Reminders go first so a digest failure can't skip them.
         if not options["to"]:
             self._send_login_reminders()
+        self._send_digest(options)
 
     def _send_login_reminders(self) -> None:
-        sent, failed = send_login_reminders(get_email_sender(EmailStream.BULK))
-        logger.info("send_weekly_digest: sent %d login reminder(s), %d failed", sent, failed)
+        sent, failed, archived = send_login_reminders(get_email_sender())
+        logger.info(
+            "send_weekly_digest: sent %d login reminder(s), %d failed, archived %d",
+            sent,
+            failed,
+            archived,
+        )
         style = self.style.WARNING if failed else self.style.SUCCESS
-        self.stdout.write(style(f"Sent {sent} login reminder(s); {failed} failed."))
+        self.stdout.write(
+            style(f"Sent {sent} login reminder(s); {failed} failed; archived {archived} member(s).")
+        )
 
     def _send_digest(self, options) -> None:
         now = timezone.now()

@@ -1,11 +1,3 @@
-hi{% if display_name %} {{ display_name|lower }}{% endif %} —
-
-your pda account isn't set up yet. use this link to log in and finish setting it up — it only takes a minute:
-
-{{ magic_link_url }}
-
-this link expires in 7 days. we'll send a fresh one each week until your account is set up.
-
-— pda
-
-{% include "emails/_no_reply_footer.txt" %}
+{% extends "emails/magic_login.txt" %}
+{% block intro %}your pda account isn't set up yet. use this link to log in and finish setting it up — it only takes a minute:{% endblock %}
+{% block note %}if your account still isn't set up, we'll send a fresh link next week.{% endblock %}
