@@ -9,6 +9,7 @@ from notifications._email_helpers import format_eastern_datetime, send_weekly_di
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
+from community._login_reminder import send_login_reminders
 from community.models import Event, EventStatus, EventType
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,8 @@ def _with_email(users):
 class Command(BaseCommand):
     help = (
         "Email active and tentative members a digest of upcoming events "
-        "and this month's veganniversaries."
+        "and this month's veganniversaries, then remind anyone who hasn't "
+        "finished first login."
     )
 
     def add_arguments(self, parser):
@@ -91,6 +93,17 @@ class Command(BaseCommand):
         return sent, failed
 
     def handle(self, *args, **options):
+        self._send_digest(options)
+        if not options["to"]:
+            self._send_login_reminders()
+
+    def _send_login_reminders(self) -> None:
+        sent, failed = send_login_reminders(get_email_sender(EmailStream.BULK))
+        logger.info("send_weekly_digest: sent %d login reminder(s), %d failed", sent, failed)
+        style = self.style.WARNING if failed else self.style.SUCCESS
+        self.stdout.write(style(f"Sent {sent} login reminder(s); {failed} failed."))
+
+    def _send_digest(self, options) -> None:
         now = timezone.now()
         upcoming = Event.objects.filter(
             status=EventStatus.ACTIVE,
