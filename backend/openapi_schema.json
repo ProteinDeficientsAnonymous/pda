@@ -2012,11 +2012,6 @@
             "title": "Co Host Photo Urls",
             "type": "array"
           },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
-          },
           "created_by_id": {
             "anyOf": [
               {
@@ -2322,11 +2317,6 @@
             },
             "title": "Co Host Photo Urls",
             "type": "array"
-          },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
           },
           "created_by_id": {
             "anyOf": [

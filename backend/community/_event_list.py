@@ -1,4 +1,4 @@
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -35,14 +35,21 @@ def _list_rsvp_prefetch(auth_user):
 
 def _list_count_annotations():
     return {
-        "comment_count": Count(
-            "comments",
-            filter=Q(comments__deleted_at__isnull=True),
-            distinct=True,
-        ),
         "attending_count": attending_count_annotation(),
         "waitlisted_count": waitlisted_count_annotation(),
     }
+
+
+def _viewer_is_cohost(auth_user) -> Exists:
+    return Exists(
+        Event.co_hosts.through.objects.filter(event_id=OuterRef("pk"), user_id=auth_user.pk)
+    )
+
+
+def _viewer_is_invited(auth_user) -> Exists:
+    return Exists(
+        Event.invited_users.through.objects.filter(event_id=OuterRef("pk"), user_id=auth_user.pk)
+    )
 
 
 def _build_events_queryset(status: str, auth_user, is_authed):
@@ -54,8 +61,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
             .prefetch_related(*related)
             .annotate(**_list_count_annotations())
             .filter(status=status)
-            .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
-            .distinct()
+            .filter(Q(created_by=auth_user) | _viewer_is_cohost(auth_user))
         )
     qs = (
         Event.objects.select_related("created_by")
@@ -79,9 +85,9 @@ def _filter_invite_only(events, auth_user, status: str):
     return events.filter(
         ~Q(visibility=PageVisibility.INVITE_ONLY)
         | Q(created_by=auth_user)
-        | Q(co_hosts=auth_user)
-        | Q(invited_users=auth_user)
-    ).distinct()
+        | _viewer_is_cohost(auth_user)
+        | _viewer_is_invited(auth_user)
+    )
 
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
@@ -123,7 +129,6 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         attending_count=e.attending_count,
         waitlisted_count=e.waitlisted_count,
         invited_count=0,  # host-only; filled on event detail, not the calendar list
-        comment_count=e.comment_count,
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
         co_host_ids=[str(c.id) for c in co_hosts],

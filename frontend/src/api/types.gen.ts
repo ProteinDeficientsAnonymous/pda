@@ -3139,11 +3139,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
@@ -3317,11 +3312,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
