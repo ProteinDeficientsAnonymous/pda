@@ -1,5 +1,4 @@
-from django.db.models import Count, Exists, IntegerField, OuterRef, Prefetch, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Exists, OuterRef, Prefetch, Q
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -23,7 +22,7 @@ from community._tentative_member_access import (
     is_tentative_member,
     tentative_member_event_q,
 )
-from community.models import Event, EventComment, EventRSVP, EventStatus, PageVisibility
+from community.models import Event, EventRSVP, EventStatus, PageVisibility
 
 
 def _list_rsvp_prefetch(auth_user):
@@ -34,24 +33,8 @@ def _list_rsvp_prefetch(auth_user):
     return Prefetch("rsvps", queryset=qs, to_attr="_viewer_rsvps")
 
 
-def _comment_count_annotation() -> Coalesce:
-    """Correlated count so the list query needs no comments join or GROUP BY."""
-    return Coalesce(
-        Subquery(
-            EventComment.objects.filter(event_id=OuterRef("pk"), deleted_at__isnull=True)
-            .order_by()
-            .values("event_id")
-            .annotate(total=Count("pk"))
-            .values("total")[:1],
-            output_field=IntegerField(),
-        ),
-        Value(0),
-    )
-
-
 def _list_count_annotations():
     return {
-        "comment_count": _comment_count_annotation(),
         "attending_count": attending_count_annotation(),
         "waitlisted_count": waitlisted_count_annotation(),
     }
@@ -146,7 +129,6 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         attending_count=e.attending_count,
         waitlisted_count=e.waitlisted_count,
         invited_count=0,  # host-only; filled on event detail, not the calendar list
-        comment_count=e.comment_count,
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
         co_host_ids=[str(c.id) for c in co_hosts],

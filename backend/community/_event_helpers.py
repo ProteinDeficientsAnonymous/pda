@@ -265,15 +265,6 @@ def _annotated_or(event: Event, attr: str, fallback):
     return fallback()
 
 
-def _resolve_comment_count(event: Event) -> int:
-    """Read the annotated comment_count, falling back to a per-event count query."""
-    return _annotated_or(
-        event,
-        "comment_count",
-        lambda: event.comments.filter(deleted_at__isnull=True).count(),
-    )
-
-
 def _viewer_rsvp_rows(event: Event, auth_user) -> list:
     cached = getattr(event, "_viewer_rsvps", None)
     if cached is not None:
@@ -363,7 +354,6 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
         guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
         invited_count=invited_count,
-        comment_count=_resolve_comment_count(event),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator, auth_user),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",

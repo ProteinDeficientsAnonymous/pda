@@ -1,6 +1,5 @@
 import pytest
-from community.models import Event, EventComment, EventStatus, PageVisibility
-from django.utils import timezone
+from community.models import Event, EventStatus, PageVisibility
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -36,9 +35,6 @@ def party(db):
     )
     event.co_hosts.add(*cohosts)
     event.invited_users.add(*invitees, cohosts[0])
-    for author in (*cohosts, *invitees):
-        EventComment.objects.create(event=event, author=author, body="hi")
-    EventComment.objects.create(event=event, author=creator, body="gone", deleted_at=timezone.now())
     return event, creator, cohosts, invitees
 
 
@@ -79,23 +75,15 @@ class TestInviteOnlyListVisibility:
         stranger = _user("+12025551303", "Stranger")
         assert str(event.id) not in [e["id"] for e in _listed(api_client, stranger)]
 
-    def test_comment_count_excludes_deleted(self, api_client, party):
-        event, creator, *_ = party
-        row = next(e for e in _listed(api_client, creator) if e["id"] == str(event.id))
-        assert row["comment_count"] == 6
-
-    def test_public_event_listed_once_with_many_cohosts_and_comments(self, api_client, party):
+    def test_public_event_listed_once_with_many_cohosts(self, api_client, party):
         _event, creator, cohosts, invitees = party
         public = Event.objects.create(
             title="Open", start_datetime=future_iso(days=6), created_by=creator
         )
         public.co_hosts.add(*cohosts)
         public.invited_users.add(*invitees)
-        for author in invitees:
-            EventComment.objects.create(event=public, author=author, body="yo")
-        rows = [e for e in _listed(api_client, cohosts[0]) if e["id"] == str(public.id)]
-        assert len(rows) == 1
-        assert rows[0]["comment_count"] == 3
+        ids = [e["id"] for e in _listed(api_client, cohosts[0])]
+        assert ids.count(str(public.id)) == 1
 
 
 @pytest.mark.django_db
