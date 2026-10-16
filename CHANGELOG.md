@@ -1,3 +1,10 @@
+## [0.126.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.1...v0.126.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1423 - consent box ([#1593](https://github.com/ProteinDeficientsAnonymous/pda/issues/1593)) ([9f5decb](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f5decbbbfd63039e7d52e40616858c03eb3056e))
+
 ## [0.126.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.0...v0.126.1) (2026-10-16)
 
 
