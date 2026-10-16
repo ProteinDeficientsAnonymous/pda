@@ -63,6 +63,7 @@ def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails
         display_name=user.first_name,
         event_title=event.title,
         event_when=_format_event_when(event),
+        event_location=event.location,
         event_links=_event_links(event),
         manage_url=f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token_str}",
         join_url=f"{settings.FRONTEND_BASE_URL}/join",

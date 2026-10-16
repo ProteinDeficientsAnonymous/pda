@@ -2,7 +2,8 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 your rsvp for {{ event_title|lower }} was updated 🌱
 {% if event_when %}
-when: {{ event_when|lower }}{% endif %}
+when: {{ event_when|lower }}{% endif %}{% if event_location %}
+where: {{ event_location|lower }}{% endif %}
 {% for link in event_links %}{{ link }}
 {% endfor %}
 manage or change your rsvp anytime:

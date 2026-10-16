@@ -13,7 +13,7 @@ from tests._public_rsvp_helpers import make_non_member, make_official_event, pos
 LOCATION = "18 Willow House, Apt 4"
 LATITUDE = "40.712776"
 LONGITUDE = "-74.005974"
-EMAIL_TEMPLATES = sorted((settings.BASE_DIR / "templates" / "emails").iterdir())
+DIGEST_TEMPLATES = sorted((settings.BASE_DIR / "templates" / "emails").glob("weekly_digest.*"))
 
 
 @pytest.fixture
@@ -35,9 +35,9 @@ def _assert_no_location(sent: dict) -> None:
         assert LONGITUDE not in body
 
 
-def _assert_no_where_line(sent: dict) -> None:
-    assert "where:" not in sent["html"].lower()
-    assert "where:" not in sent["text"].lower()
+def _assert_where_line(sent: dict) -> None:
+    assert f"where: {LOCATION.lower()}" in sent["html"].lower()
+    assert f"where: {LOCATION.lower()}" in sent["text"].lower()
 
 
 def _sent_with_subject(fake_email_sender, fragment: str) -> dict:
@@ -49,13 +49,12 @@ def _sent_with_subject(fake_email_sender, fragment: str) -> dict:
 
 
 @pytest.mark.django_db
-class TestRsvpEmailsOmitLocation:
+class TestRsvpEmailsIncludeLocation:
     def test_confirmation(self, api_client, located_event, fake_email_sender):
         assert post(api_client, located_event).status_code == 200
 
         sent = _sent_with_subject(fake_email_sender, "you're in for")
-        _assert_no_location(sent)
-        _assert_no_where_line(sent)
+        _assert_where_line(sent)
 
     def test_updated(self, api_client, located_event, fake_email_sender):
         nonmember = make_non_member("+14155550031", "nm@example.com", name="non member")
@@ -70,8 +69,7 @@ class TestRsvpEmailsOmitLocation:
 
         assert resp.status_code == 200
         sent = _sent_with_subject(fake_email_sender, "your rsvp was updated")
-        _assert_no_location(sent)
-        _assert_no_where_line(sent)
+        _assert_where_line(sent)
 
     def test_waitlist_promoted(self, api_client, auth_headers, located_event, fake_email_sender):
         located_event.max_attendees = 1
@@ -89,8 +87,7 @@ class TestRsvpEmailsOmitLocation:
         api_client.delete(rsvp_url, **auth_headers)
 
         sent = _sent_with_subject(fake_email_sender, "off the waitlist")
-        _assert_no_location(sent)
-        _assert_no_where_line(sent)
+        _assert_where_line(sent)
 
 
 @pytest.mark.django_db
@@ -117,8 +114,8 @@ def test_weekly_digest_omits_location(fake_email_sender):
     assert f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}" in sent["text"]
 
 
-@pytest.mark.parametrize("template", EMAIL_TEMPLATES, ids=lambda p: p.name)
-def test_email_templates_never_reference_location(template):
+@pytest.mark.parametrize("template", DIGEST_TEMPLATES, ids=lambda p: p.name)
+def test_digest_templates_never_reference_location(template):
     source = template.read_text().lower()
     for field in ("location", "latitude", "longitude"):
         assert field not in source
