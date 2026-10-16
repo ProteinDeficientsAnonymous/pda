@@ -9843,6 +9843,7 @@
     },
     "/api/community/events/": {
       "get": {
+        "description": "start/end bound a calendar window; include_imported=false drops partiful/legacy rows.",
         "operationId": "community__events_list_events",
         "parameters": [
           {
@@ -9853,6 +9854,50 @@
               "default": "active",
               "title": "Status",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_imported",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Imported",
+              "type": "boolean"
             }
           }
         ],

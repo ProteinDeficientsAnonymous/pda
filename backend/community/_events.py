@@ -1,6 +1,7 @@
 """Events CRUD endpoints."""
 
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -33,6 +34,7 @@ from community._event_list import (
     _build_events_queryset,
     _event_list_out,
     _filter_invite_only,
+    _filter_window,
     _list_count_annotations,
 )
 from community._event_nonmember_removal import (
@@ -90,7 +92,14 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 
 @router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
-def list_events(request, status: str = EventStatus.ACTIVE):
+def list_events(
+    request,
+    status: str = EventStatus.ACTIVE,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    include_imported: bool = True,
+):
+    """start/end bound a calendar window; include_imported=false drops partiful/legacy rows."""
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
 
@@ -100,6 +109,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     events = _filter_invite_only(
         _build_events_queryset(status, auth_user, is_authed), auth_user, status
     )
+    events = _filter_window(events, start, end, include_imported)
     return Status(
         200,
         [_event_list_out(e, auth_user, is_authed) for e in events],

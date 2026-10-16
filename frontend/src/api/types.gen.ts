@@ -650,7 +650,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Events */
+        /**
+         * List Events
+         * @description start/end bound a calendar window; include_imported=false drops partiful/legacy rows.
+         */
         get: operations["community__events_list_events"];
         put?: never;
         /** Create Event */
@@ -7262,6 +7265,9 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string;
+                start?: string | null;
+                end?: string | null;
+                include_imported?: boolean;
             };
             header?: never;
             path?: never;
