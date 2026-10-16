@@ -1,3 +1,10 @@
+# [0.125.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.1...v0.125.0) (2026-10-16)
+
+
+### Features
+
+* **surveys:** open/close scheduling and response cap (Issue 1465) ([#1476](https://github.com/ProteinDeficientsAnonymous/pda/issues/1476)) ([de8c49f](https://github.com/ProteinDeficientsAnonymous/pda/commit/de8c49f6e05e1276143924ad63ec3ddd4af19ec9))
+
 ## [0.124.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.0...v0.124.1) (2026-10-16)
 
 
