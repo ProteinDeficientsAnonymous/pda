@@ -1,3 +1,10 @@
+## [0.127.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.0...v0.127.1) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** fetch events by visible range (Issue 1600) ([#1617](https://github.com/ProteinDeficientsAnonymous/pda/issues/1617)) ([788e0e4](https://github.com/ProteinDeficientsAnonymous/pda/commit/788e0e4b2208bfa259fdacb4d14fdef1e5d2133b))
+
 # [0.127.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.3...v0.127.0) (2026-10-16)
 
 
