@@ -1,3 +1,10 @@
+## [0.126.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.0...v0.126.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1552 - update reject pop-up text ([#1596](https://github.com/ProteinDeficientsAnonymous/pda/issues/1596)) ([203295c](https://github.com/ProteinDeficientsAnonymous/pda/commit/203295c23a6d57f514696ed0e6de2c1490172a13))
+
 # [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
 
 
