@@ -13,6 +13,7 @@ import { AppShell } from '@/layout/AppShell';
 import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
+import { CALENDAR_PATH, prefetchCalendarOnBoot } from './bootPrefetch';
 import { lazyEl as el, lazyWithRetry, preloadOnPath } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 
@@ -32,7 +33,7 @@ const Join = lazyWithRetry(() => import('@/screens/public/JoinScreen'));
 const JoinSuccess = lazyWithRetry(() => import('@/screens/public/JoinSuccessScreen'));
 const loadCalendar = () => import('@/screens/calendar/CalendarScreen');
 const Calendar = lazyWithRetry(loadCalendar);
-preloadOnPath('/calendar', loadCalendar);
+preloadOnPath(CALENDAR_PATH, loadCalendar);
 const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
@@ -72,7 +73,7 @@ const Stub = lazyWithRetry(() => import('@/screens/NotImplemented'));
 export const router = createBrowserRouter([
   {
     element: (
-      <AuthBoot>
+      <AuthBoot onSessionToken={prefetchCalendarOnBoot}>
         <OnboardingGate />
       </AuthBoot>
     ),

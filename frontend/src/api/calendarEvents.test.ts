@@ -10,6 +10,7 @@ import {
   calendarEventKeys,
   calendarRangeParams,
   monthRange,
+  prefetchCalendarEvents,
   upcomingRange,
   useCalendarEvents,
 } from './calendarEvents';
@@ -100,5 +101,35 @@ describe('useCalendarEvents', () => {
 
     await waitFor(() => expect(result.current.data).toBeUndefined());
     expect(result.current.isPlaceholderData).toBe(false);
+  });
+});
+
+describe('prefetchCalendarEvents', () => {
+  it('fetches with the refreshed token under the authed key', async () => {
+    const { qc } = buildWrapper();
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [wire('e1', 'members only')] });
+    const range = monthRange(new Date(2026, 2, 1));
+
+    await prefetchCalendarEvents(qc, range, 'tok-1');
+
+    expect(apiClient.get).toHaveBeenCalledWith('/api/community/events/', {
+      params: calendarRangeParams(range),
+      headers: { Authorization: 'Bearer tok-1' },
+    });
+    expect(qc.getQueryData(calendarEventKeys(true, range))).toHaveLength(1);
+    expect(qc.getQueryData(calendarEventKeys(false, range))).toBeUndefined();
+  });
+
+  it('fetches anonymously under the signed-out key', async () => {
+    const { qc } = buildWrapper();
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [] });
+    const range = upcomingRange();
+
+    await prefetchCalendarEvents(qc, range, null);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/api/community/events/', {
+      params: calendarRangeParams(range),
+    });
+    expect(qc.getQueryData(calendarEventKeys(false, range))).toEqual([]);
   });
 });
