@@ -1,3 +1,10 @@
+# [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
+
+
+### Features
+
+* **events:** lock +1s off for official and club events ([#1609](https://github.com/ProteinDeficientsAnonymous/pda/issues/1609)) ([8d58750](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d587500192341a79acca4097861ba33ed336700))
+
 # [0.125.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.1...v0.125.0) (2026-10-16)
 
 
