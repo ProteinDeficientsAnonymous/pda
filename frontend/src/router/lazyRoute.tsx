@@ -44,6 +44,14 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
   });
 }
 
+// AuthBoot holds every route until the session restores; landing on `path`
+// starts its chunk download alongside that instead of after it.
+export function preloadOnPath(path: string, factory: () => Promise<unknown>): void {
+  if (window.location.pathname.toLowerCase() !== path) return;
+  // A failed preload is fine: lazyWithRetry retries when the route renders.
+  factory().catch(() => undefined);
+}
+
 export function isChunkLoadError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const msg = err.message.toLowerCase();
