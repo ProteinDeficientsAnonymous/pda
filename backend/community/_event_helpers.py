@@ -26,6 +26,7 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details
 from community._shared import _authenticated_user, _gated
+from community._survey_helpers import survey_is_open
 from community._validation import Code, raise_validation
 from community._waitlist import waitlist_sort_key
 from community.models import (
@@ -38,6 +39,7 @@ from community.models import (
     RSVPStatus,
     SurveyQuestionType,
     flag_enabled,
+    is_official_or_club,
 )
 
 if TYPE_CHECKING:
@@ -393,7 +395,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         photo_updated_at=_iso_or_none(event.photo_updated_at),
         linked_surveys=[
             EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
-            for s in event.surveys.filter(is_active=True)
+            for s in event.surveys.all()
+            if survey_is_open(s)
         ],
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
@@ -421,8 +424,6 @@ def _can_edit_event(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
-
 # Event types that require an explicit permission to tag. Community events need
 # none. Maps type → the permission that gates it.
 _TYPE_TAG_PERMISSIONS = {
@@ -433,7 +434,7 @@ _TYPE_TAG_PERMISSIONS = {
 
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
-    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+    return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
 
 
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:

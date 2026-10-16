@@ -19,6 +19,7 @@ from community.models.choices import (
     RSVPStatus,
     SurveyQuestionType,
     SurveyVisibility,
+    is_official_or_club,
 )
 from community.models.cohost_invite import EventCoHostInvite
 from community.models.comment import EventComment, EventCommentReaction, ReactionEmoji
@@ -79,6 +80,7 @@ __all__ = [
     "RSVPStatus",
     "SurveyQuestionType",
     "SurveyVisibility",
+    "is_official_or_club",
     "EventCoHostInvite",
     "CommunityGuidelines",
     "EditablePage",

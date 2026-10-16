@@ -60,6 +60,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'end time must be after the start time';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
+    case Code.Event.OfficialNoPlusOnes:
+      return "official and club events can't allow +1s";
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -342,6 +344,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this survey is closed — responses are no longer accepted';
     case Code.Survey.SlugAlreadyExists:
       return 'a survey with that slug already exists';
+    case Code.Survey.ClosesBeforeOpens:
+      return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
     case Code.Survey.NoDatetimePollQuestion:

@@ -15,7 +15,7 @@ from community._event_schemas import EventOut
 from community._rsvp_payment import payment_enforced_for_event
 from community._shared import logger
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP
+from community.models import Event, EventRSVP, JoinRequestStatus
 
 
 class PublicRsvpStateOut(BaseModel):
@@ -104,7 +104,10 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
     """Email any promoted non-members their manage link. Best-effort per user."""
     if not promoted_user_ids:
         return
-    promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)
+    # Tentative members can sign in, so the in-app waitlist notification reaches them like a member.
+    promoted = User.objects.filter(
+        id__in=promoted_user_ids, is_member=False, email__isnull=False
+    ).exclude(join_requests__status=JoinRequestStatus.TENTATIVE)
     unpaid = _unpaid_user_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:

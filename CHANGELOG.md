@@ -1,3 +1,24 @@
+# [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
+
+
+### Features
+
+* **events:** lock +1s off for official and club events ([#1609](https://github.com/ProteinDeficientsAnonymous/pda/issues/1609)) ([8d58750](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d587500192341a79acca4097861ba33ed336700))
+
+# [0.125.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.1...v0.125.0) (2026-10-16)
+
+
+### Features
+
+* **surveys:** open/close scheduling and response cap (Issue 1465) ([#1476](https://github.com/ProteinDeficientsAnonymous/pda/issues/1476)) ([de8c49f](https://github.com/ProteinDeficientsAnonymous/pda/commit/de8c49f6e05e1276143924ad63ec3ddd4af19ec9))
+
+## [0.124.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.0...v0.124.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **rsvp:** stop treating tentative members as public rsvpers ([#1607](https://github.com/ProteinDeficientsAnonymous/pda/issues/1607)) ([99b780f](https://github.com/ProteinDeficientsAnonymous/pda/commit/99b780fcf26eb62f788422c3f2f3b0c90fc60f40))
+
 # [0.124.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.3...v0.124.0) (2026-10-15)
 
 

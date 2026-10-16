@@ -46,6 +46,7 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
   function set<K extends keyof DevTestEventOptions>(key: K, value: DevTestEventOptions[K]) {
     onChange({ ...options, [key]: value });
   }
+  const officialOrClub = options.isOfficial || options.isClub;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1">
@@ -101,7 +102,8 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
         />
         <Toggle
           label="allow plus-ones"
-          checked={options.allowPlusOnes}
+          checked={options.allowPlusOnes && !officialOrClub}
+          disabled={officialOrClub}
           onChange={(v) => {
             set('allowPlusOnes', v);
           }}
@@ -116,7 +118,7 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
             set('visibility', e.target.value as DevEventVisibility);
           }}
           options={VISIBILITY_OPTIONS}
-          disabled={options.isOfficial || options.isClub}
+          disabled={officialOrClub}
         />
         <NumberField
           label="max attendees (0 = unlimited)"

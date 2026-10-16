@@ -79,6 +79,7 @@ from community.models import (
     FeatureFlag,
     PageVisibility,
     flag_enabled,
+    is_official_or_club,
     parse_event_ref,
 )
 
@@ -361,6 +362,9 @@ def create_event(request, payload: EventIn):
 
     if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
+
+    if payload.allow_plus_ones and is_official_or_club(payload.event_type):
+        raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
 
     # Drafts can save without a start_datetime (see #357). But if a start IS
     # provided, the same rules apply as for any event — must be in the future,
