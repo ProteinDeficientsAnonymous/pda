@@ -1,3 +1,10 @@
+## [0.126.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.2...v0.126.3) (2026-10-16)
+
+
+### Performance Improvements
+
+* **events:** drop unused comment_count and use exists for invite-only filter (Issue 1600) ([#1615](https://github.com/ProteinDeficientsAnonymous/pda/issues/1615)) ([6c9175f](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c9175f4b80ff572af5259194d3a75741d5ccc73))
+
 ## [0.126.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.1...v0.126.2) (2026-10-16)
 
 
