@@ -8,6 +8,8 @@ interface Props {
   onChange: (options: DevTestEventOptions) => void;
 }
 
+const MAX_QUESTIONS = 10;
+
 const VISIBILITY_OPTIONS: { value: DevEventVisibility; label: string }[] = [
   { value: 'public', label: 'public' },
   { value: 'members_only', label: 'members only' },
@@ -44,6 +46,7 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
   function set<K extends keyof DevTestEventOptions>(key: K, value: DevTestEventOptions[K]) {
     onChange({ ...options, [key]: value });
   }
+  const officialOrClub = options.isOfficial || options.isClub;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1">
@@ -99,7 +102,8 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
         />
         <Toggle
           label="allow plus-ones"
-          checked={options.allowPlusOnes}
+          checked={options.allowPlusOnes && !officialOrClub}
+          disabled={officialOrClub}
           onChange={(v) => {
             set('allowPlusOnes', v);
           }}
@@ -114,7 +118,7 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
             set('visibility', e.target.value as DevEventVisibility);
           }}
           options={VISIBILITY_OPTIONS}
-          disabled={options.isOfficial || options.isClub}
+          disabled={officialOrClub}
         />
         <NumberField
           label="max attendees (0 = unlimited)"
@@ -143,6 +147,13 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
             set('nonMemberGoingCount', v);
           }}
           disabled={!options.isOfficial}
+        />
+        <NumberField
+          label="waitlisted (caps unlimited events at going)"
+          value={options.waitlistedCount}
+          onChange={(v) => {
+            set('waitlistedCount', v);
+          }}
         />
         <NumberField
           label="maybe"
@@ -177,6 +188,26 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           value={options.invitedCohostCount}
           onChange={(v) => {
             set('invitedCohostCount', v);
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="text-muted-foreground text-xs">
+          rsvp questions — going + waitlisted guests answer all required and some optional
+        </div>
+        <NumberField
+          label="required questions (max 10)"
+          value={options.requiredQuestionCount}
+          onChange={(v) => {
+            set('requiredQuestionCount', Math.min(v, MAX_QUESTIONS));
+          }}
+        />
+        <NumberField
+          label="optional questions (max 10)"
+          value={options.optionalQuestionCount}
+          onChange={(v) => {
+            set('optionalQuestionCount', Math.min(v, MAX_QUESTIONS));
           }}
         />
       </div>

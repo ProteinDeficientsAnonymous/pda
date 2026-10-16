@@ -1,7 +1,7 @@
 """Tests for waitlist promotion behaviour when RSVP capacity frees up."""
 
 import pytest
-from community._event_helpers import promote_from_waitlist
+from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType

@@ -27,6 +27,10 @@ const survey: Survey = {
   visibility: 'members_only',
   isActive: true,
   oneResponsePerUser: false,
+  opensAt: null,
+  closesAt: null,
+  maxResponses: null,
+  responseCount: 0,
   linkedEventId: null,
   questions: [],
   myResponseId: null,
@@ -74,6 +78,9 @@ describe('SurveySettingsDialog', () => {
         slug: 'old-slug',
         visibility: 'public',
         oneResponsePerUser: true,
+        opensAt: null,
+        closesAt: null,
+        maxResponses: null,
         linkedEventId: 'evt-1',
       });
     });

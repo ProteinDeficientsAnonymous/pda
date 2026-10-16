@@ -21,12 +21,15 @@ export interface DevTestEventOptions {
   goingCount: number;
   maybeCount: number;
   cantGoCount: number;
+  waitlistedCount: number;
   invitedCount: number;
   nonMemberGoingCount: number;
   rsvpEnabled: boolean;
   visibility: DevEventVisibility;
   maxAttendees: number | null;
   allowPlusOnes: boolean;
+  requiredQuestionCount: number;
+  optionalQuestionCount: number;
 }
 
 interface CreateDevTestEventResponse {
@@ -56,12 +59,15 @@ export function useCreateDevTestEvents() {
           going_count: options.goingCount,
           maybe_count: options.maybeCount,
           cant_go_count: options.cantGoCount,
+          waitlisted_count: options.waitlistedCount,
           invited_count: options.invitedCount,
           non_member_going_count: options.nonMemberGoingCount,
           rsvp_enabled: options.rsvpEnabled,
           visibility: options.visibility,
           max_attendees: options.maxAttendees,
           allow_plus_ones: options.allowPlusOnes,
+          required_question_count: options.requiredQuestionCount,
+          optional_question_count: options.optionalQuestionCount,
         },
       );
       return data;

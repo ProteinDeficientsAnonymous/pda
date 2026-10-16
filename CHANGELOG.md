@@ -1,3 +1,141 @@
+# [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
+
+
+### Features
+
+* **events:** lock +1s off for official and club events ([#1609](https://github.com/ProteinDeficientsAnonymous/pda/issues/1609)) ([8d58750](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d587500192341a79acca4097861ba33ed336700))
+
+# [0.125.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.1...v0.125.0) (2026-10-16)
+
+
+### Features
+
+* **surveys:** open/close scheduling and response cap (Issue 1465) ([#1476](https://github.com/ProteinDeficientsAnonymous/pda/issues/1476)) ([de8c49f](https://github.com/ProteinDeficientsAnonymous/pda/commit/de8c49f6e05e1276143924ad63ec3ddd4af19ec9))
+
+## [0.124.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.0...v0.124.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **rsvp:** stop treating tentative members as public rsvpers ([#1607](https://github.com/ProteinDeficientsAnonymous/pda/issues/1607)) ([99b780f](https://github.com/ProteinDeficientsAnonymous/pda/commit/99b780fcf26eb62f788422c3f2f3b0c90fc60f40))
+
+# [0.124.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.3...v0.124.0) (2026-10-15)
+
+
+### Features
+
+* **digest:** send weekly digest to tentative members (Issue 1601) ([#1604](https://github.com/ProteinDeficientsAnonymous/pda/issues/1604)) ([faf6f68](https://github.com/ProteinDeficientsAnonymous/pda/commit/faf6f68ef4c790144ccc1f86d27d22e79137ac58))
+
+## [0.123.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.2...v0.123.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* **users:** record last_login on api login ([#1539](https://github.com/ProteinDeficientsAnonymous/pda/issues/1539)) ([9324def](https://github.com/ProteinDeficientsAnonymous/pda/commit/9324def6e9eae0e7160c0d506c5635d07a13cedb))
+
+## [0.123.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.1...v0.123.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* pin seeded event dates to month end ([#1585](https://github.com/ProteinDeficientsAnonymous/pda/issues/1585)) ([be16121](https://github.com/ProteinDeficientsAnonymous/pda/commit/be16121d00da50b93ccb779a9d50cf0776214dd8))
+
+## [0.123.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.0...v0.123.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** hide location from anonymous event payloads ([#1541](https://github.com/ProteinDeficientsAnonymous/pda/issues/1541)) ([c2b9a45](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2b9a451820f085b4b281bbee1782c9d18fe3756))
+
+# [0.123.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.1...v0.123.0) (2026-10-08)
+
+
+### Features
+
+* **dev-tools:** add rsvp questions and waitlisted guests to test events ([#1565](https://github.com/ProteinDeficientsAnonymous/pda/issues/1565)) ([9bc18a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/9bc18a74800bcb39b66ee2b52f42ffaf12212e79))
+
+## [0.122.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.122.0...v0.122.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** don't show waitlist options when editing a going rsvp at capacity ([#1566](https://github.com/ProteinDeficientsAnonymous/pda/issues/1566)) ([7a0582c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7a0582c2fb95d0173094bdbec3b8f8eed0626be7))
+
+# [0.122.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.121.0...v0.122.0) (2026-10-08)
+
+
+### Features
+
+* **events:** drag to reorder the waitlist from the guest list ([#1561](https://github.com/ProteinDeficientsAnonymous/pda/issues/1561)) ([f6c7d29](https://github.com/ProteinDeficientsAnonymous/pda/commit/f6c7d2926c6834d40cae60036b54997df93435b3))
+
+# [0.121.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.120.0...v0.121.0) (2026-10-08)
+
+
+### Features
+
+* **events:** move question responses to their own page ([#1563](https://github.com/ProteinDeficientsAnonymous/pda/issues/1563)) ([90b2975](https://github.com/ProteinDeficientsAnonymous/pda/commit/90b2975b5db04d75a1ad7707fcb721656007ec42))
+
+# [0.120.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.119.0...v0.120.0) (2026-10-08)
+
+
+### Features
+
+* **events:** drag to reorder the waitlist in manage rsvps ([#1560](https://github.com/ProteinDeficientsAnonymous/pda/issues/1560)) ([ca1d211](https://github.com/ProteinDeficientsAnonymous/pda/commit/ca1d21151a11b35aa66b5f5a9f2cc218ed0cc8a7))
+
+# [0.119.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.1...v0.119.0) (2026-10-08)
+
+
+### Features
+
+* **events:** assign waitlist position on join ([#1559](https://github.com/ProteinDeficientsAnonymous/pda/issues/1559)) ([bc78f45](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc78f45068ea3b867d34597fb562c226389bc6fd))
+
+## [0.118.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.118.0...v0.118.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **events:** let event managers see guest paid status ([#1558](https://github.com/ProteinDeficientsAnonymous/pda/issues/1558)) ([9f83910](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f83910b853dadd3dc6ed9a78d64076ed27128b3))
+
+# [0.118.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.117.0...v0.118.0) (2026-10-08)
+
+
+### Features
+
+* **events:** 1553 - let hosts reorder the waitlist ([#1555](https://github.com/ProteinDeficientsAnonymous/pda/issues/1555)) ([7226b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/7226b13934abfba640c2aead01bf340f76046333))
+
+# [0.117.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.116.0...v0.117.0) (2026-10-06)
+
+
+### Features
+
+* **profile:** add optional veganniversary field (Issue 1429) ([#1430](https://github.com/ProteinDeficientsAnonymous/pda/issues/1430)) ([d707c2f](https://github.com/ProteinDeficientsAnonymous/pda/commit/d707c2f0167b497f96bca05f8def1b96e961cb03))
+
+# [0.116.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.115.0...v0.116.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* **events:** enter in form fields no longer submits event form ([#1502](https://github.com/ProteinDeficientsAnonymous/pda/issues/1502)) ([d538a36](https://github.com/ProteinDeficientsAnonymous/pda/commit/d538a364f4d7780c2f99e829660b60f9191d1302))
+
+
+### Features
+
+* **events:** end time picker defaults to start +30m and grays out earlier days ([#1503](https://github.com/ProteinDeficientsAnonymous/pda/issues/1503)) ([8a14743](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a14743c856377ac73fff2d60c82a95935c47df3))
+
+# [0.115.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.2...v0.115.0) (2026-10-04)
+
+
+### Features
+
+* **events:** allow unpublishing an event back to draft when it has no rsvps ([#1501](https://github.com/ProteinDeficientsAnonymous/pda/issues/1501)) ([7bae174](https://github.com/ProteinDeficientsAnonymous/pda/commit/7bae174c6e95839b062066d184973748121868ac))
+
+## [0.114.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.1...v0.114.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* greet rsvp emails by first name only ([#1519](https://github.com/ProteinDeficientsAnonymous/pda/issues/1519)) ([8e1e369](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e1e3691807ce2537d879fb5c751d9ee43fc34c4))
+
 ## [0.114.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.114.0...v0.114.1) (2026-10-01)
 
 

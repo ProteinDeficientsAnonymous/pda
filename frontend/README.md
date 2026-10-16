@@ -32,7 +32,7 @@ path away, so it can't reach production.
 
 ```bash
 pnpm typecheck     # tsc -b
-pnpm lint          # eslint with zero warnings
+pnpm lint          # oxlint (type-aware), zero warnings
 pnpm test          # vitest run
 pnpm build         # tsc -b && vite build
 ```

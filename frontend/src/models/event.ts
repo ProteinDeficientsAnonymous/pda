@@ -13,6 +13,10 @@ export const EventType = {
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
 
+export function isOfficialOrClub(type: string): boolean {
+  return type === EventType.Official || type === EventType.Club;
+}
+
 export const EventVisibility = {
   Public: 'public',
   MembersOnly: 'members_only',
@@ -162,6 +166,9 @@ export interface Event {
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
+  /** RSVP rows from outside the current co-hosts.
+   *  0 means the API allows unpublishing back to draft. */
+  guestRsvpCount: number;
 
   datetimeTbd: boolean;
   hasPoll: boolean;

@@ -6,6 +6,8 @@ from community.models import Event, EventRSVP, FeatureFlag, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
+from users.models import Role
+from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event, set_payment_flag
@@ -250,6 +252,39 @@ class TestPaymentStatusVisibility:
     def test_host_sees_payment_status(self, api_client, auth_headers, test_user, django_user_model):
         event = self._event_with_a_payer(test_user, django_user_model, "+14155550401")
         assert self._guests(api_client, event, auth_headers)["Payer"] is True
+
+    def test_event_manager_sees_payment_status(self, api_client, test_user, django_user_model):
+        event = self._event_with_a_payer(test_user, django_user_model, "+14155550407")
+        manager = django_user_model.objects.create_user(
+            phone_number="+14155550408", first_name="Manager", is_member=True
+        )
+        manager.roles.add(
+            Role.objects.create(name="event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
+        )
+        assert self._guests(api_client, event, _headers(manager))["Payer"] is True
+
+    def test_event_manager_can_mark_paid(self, api_client, test_user, django_user_model):
+        event = _paid_event(test_user)
+        guest = django_user_model.objects.create_user(
+            phone_number="+14155550409", first_name="Guest", is_member=True
+        )
+        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        manager = django_user_model.objects.create_user(
+            phone_number="+14155550410", first_name="Manager", is_member=True
+        )
+        manager.roles.add(
+            Role.objects.create(name="event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
+        )
+
+        response = api_client.patch(
+            PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
+            {"paid_confirmed": True},
+            content_type="application/json",
+            **_headers(manager),
+        )
+        assert response.status_code == 200
+        paid = {g["name"]: g["paid_confirmed"] for g in response.json()["guests"]}
+        assert paid["Guest"] is True
 
     def test_plain_member_does_not_see_payment_status(
         self, api_client, test_user, django_user_model

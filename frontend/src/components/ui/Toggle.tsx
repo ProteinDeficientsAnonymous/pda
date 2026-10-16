@@ -5,10 +5,11 @@ interface Props {
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   label: string;
+  describedBy?: string | undefined;
   className?: string;
 }
 
-export function Toggle({ checked, onChange, disabled, label, className }: Props) {
+export function Toggle({ checked, onChange, disabled, label, describedBy, className }: Props) {
   return (
     <label className={cn('flex items-center justify-between gap-3 py-1', className)}>
       <span className="text-foreground text-sm">{label}</span>
@@ -16,6 +17,7 @@ export function Toggle({ checked, onChange, disabled, label, className }: Props)
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-describedby={describedBy}
         disabled={disabled}
         onClick={() => {
           onChange(!checked);

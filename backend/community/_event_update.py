@@ -10,10 +10,10 @@ from community._event_helpers import (
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
-    promote_from_waitlist,
 )
 from community._validation import Code, raise_validation
-from community.models import Event
+from community._waitlist import promote_from_waitlist
+from community.models import Event, is_official_or_club
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -74,6 +74,16 @@ def _promote_if_capacity_increased(
     return promote_from_waitlist(event)
 
 
+def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
+    """Older official/club events keep +1s until turned off; nothing can turn them back on."""
+    new_type = updates.get("event_type", event.event_type)
+    if not is_official_or_club(new_type):
+        return
+    turning_on = updates.get("allow_plus_ones") and not event.allow_plus_ones
+    if turning_on or new_type != event.event_type:
+        updates["allow_plus_ones"] = False
+
+
 def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     if _can_edit_event(request.auth, event):
         return
@@ -97,6 +107,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         # Lock the row so a concurrent capacity-based promotion can't race this edit.
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)
+    _lock_typed_plus_ones(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())

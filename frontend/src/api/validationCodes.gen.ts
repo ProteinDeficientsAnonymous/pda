@@ -13,12 +13,15 @@ export const Code = {
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
     OfficialMustBePublic: 'event.official_must_be_public',
+    OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
     AuthRequired: 'event.auth_required',
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
     NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
+    HasRsvps: 'event.has_rsvps',
+    PastCannotBeUnpublished: 'event.past_cannot_be_unpublished',
     InvalidStatusTransition: 'event.invalid_status_transition',
     CancelBeforeDelete: 'event.cancel_before_delete',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
@@ -29,6 +32,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
@@ -144,11 +148,13 @@ export const Code = {
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
+    InvalidVeganniversary: 'user.invalid_veganniversary',
   },
   Survey: {
     NotFound: 'survey.not_found',
     Closed: 'survey.closed',
     SlugAlreadyExists: 'survey.slug_already_exists',
+    ClosesBeforeOpens: 'survey.closes_before_opens',
     QuestionNotFound: 'survey.question_not_found',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
@@ -261,12 +267,15 @@ export type ValidationCode =
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
   | 'event.official_must_be_public'
+  | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
   | 'event.auth_required'
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
   | 'event.no_attendees_cannot_be_cancelled'
+  | 'event.has_rsvps'
+  | 'event.past_cannot_be_unpublished'
   | 'event.invalid_status_transition'
   | 'event.cancel_before_delete'
   | 'event.flag_already_flagged'
@@ -277,6 +286,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
@@ -366,9 +376,11 @@ export type ValidationCode =
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
+  | 'user.invalid_veganniversary'
   | 'survey.not_found'
   | 'survey.closed'
   | 'survey.slug_already_exists'
+  | 'survey.closes_before_opens'
   | 'survey.question_not_found'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
@@ -443,12 +455,15 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
   'event.official_must_be_public': [],
+  'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
   'event.auth_required': [],
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
   'event.no_attendees_cannot_be_cancelled': [],
+  'event.has_rsvps': [],
+  'event.past_cannot_be_unpublished': [],
   'event.invalid_status_transition': [],
   'event.cancel_before_delete': [],
   'event.flag_already_flagged': [],
@@ -459,6 +474,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
@@ -548,9 +564,11 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
+  'user.invalid_veganniversary': [],
   'survey.not_found': [],
   'survey.closed': [],
   'survey.slug_already_exists': [],
+  'survey.closes_before_opens': [],
   'survey.question_not_found': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],

@@ -27,6 +27,7 @@ from community._event_rsvp_questions import router as event_rsvp_questions_route
 from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
 from community._event_tags import router as event_tags_router
+from community._event_waitlist_order import router as event_waitlist_order_router
 from community._events import router as events_router
 from community._feature_flags import router as feature_flags_router
 from community._feedback import router as feedback_router
@@ -80,6 +81,7 @@ router.add_router("", event_rsvps_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
 router.add_router("", event_host_rsvps_router)
+router.add_router("", event_waitlist_order_router)
 router.add_router("", event_report_router)
 router.add_router("", public_rsvp_submit_router)
 # Mount resend before manage so the literal `/public/my-rsvps/resend/` route

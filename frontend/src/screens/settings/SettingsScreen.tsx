@@ -19,7 +19,7 @@ import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { DeleteAccountSection } from './DeleteAccountSection';
 import { EmailPreferences } from './EmailPreferences';
-import { InlineBirthday } from './InlineBirthday';
+import { InlineBirthday, InlineVeganniversary } from './InlineBirthday';
 import { PrivacyToggles } from './PrivacyToggles';
 
 export default function SettingsScreen() {
@@ -77,8 +77,16 @@ export default function SettingsScreen() {
         <InlineBirthday
           label="birthday"
           value={user.birthday}
-          onSave={(v) => updateProfile({ birthday: v })}
+          onSave={(v) =>
+            updateProfile({
+              birthday: v?.day != null ? { month: v.month, day: v.day, year: v.year } : null,
+            })
+          }
           placeholder="add your birthday"
+        />
+        <InlineVeganniversary
+          value={user.veganniversary}
+          onSave={(veganniversary) => updateProfile({ veganniversary })}
         />
       </Section>
 

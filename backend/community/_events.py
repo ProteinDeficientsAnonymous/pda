@@ -79,6 +79,7 @@ from community.models import (
     FeatureFlag,
     PageVisibility,
     flag_enabled,
+    is_official_or_club,
     parse_event_ref,
 )
 
@@ -169,9 +170,9 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         description=e.description,
         start_datetime=e.start_datetime,
         end_datetime=e.end_datetime,
-        location=e.location,
-        latitude=_float_or_none(e.latitude),
-        longitude=_float_or_none(e.longitude),
+        location=_gated(e.location, "", is_authed),
+        latitude=_gated(_float_or_none(e.latitude), None, is_authed),
+        longitude=_gated(_float_or_none(e.longitude), None, is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
         # Calendar/My Events never render these; skip media_path to avoid per-row presigns.
@@ -361,6 +362,9 @@ def create_event(request, payload: EventIn):
 
     if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
+
+    if payload.allow_plus_ones and is_official_or_club(payload.event_type):
+        raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
 
     # Drafts can save without a start_datetime (see #357). But if a start IS
     # provided, the same rules apply as for any event — must be in the future,

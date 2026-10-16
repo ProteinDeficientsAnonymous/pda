@@ -60,6 +60,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'end time must be after the start time';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
+    case Code.Event.OfficialNoPlusOnes:
+      return "official and club events can't allow +1s";
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -76,6 +78,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "events with no invited users or rsvps can't be cancelled — delete instead";
     case Code.Event.InvalidStatusTransition:
       return 'invalid status change';
+    case Code.Event.HasRsvps:
+      return "can't send this event back to draft — people have already rsvp'd";
+    case Code.Event.PastCannotBeUnpublished:
+      return "past events can't go back to draft";
     case Code.Event.CancelBeforeDelete:
       return 'cancel this event before deleting it';
     case Code.Event.RsvpInvalidStatus:
@@ -94,6 +100,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.WaitlistOrderStale:
+      return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.RsvpCouldNotBeCreated:
@@ -326,6 +334,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
       return "that's not a valid birthday";
+    case Code.User.InvalidVeganniversary:
+      return "that's not a valid veganniversary";
 
     // Survey
     case Code.Survey.NotFound:
@@ -334,6 +344,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this survey is closed — responses are no longer accepted';
     case Code.Survey.SlugAlreadyExists:
       return 'a survey with that slug already exists';
+    case Code.Survey.ClosesBeforeOpens:
+      return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
     case Code.Survey.NoDatetimePollQuestion:

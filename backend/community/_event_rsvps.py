@@ -21,7 +21,6 @@ from community._event_helpers import (
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
-    promote_from_waitlist,
 )
 from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
@@ -35,6 +34,7 @@ from community._tentative_member_access import (
     event_viewer_for,
 )
 from community._validation import Code, raise_validation
+from community._waitlist import promote_from_waitlist
 from community.models import Event, EventComment, EventRSVP, RSVPStatus
 
 router = Router()

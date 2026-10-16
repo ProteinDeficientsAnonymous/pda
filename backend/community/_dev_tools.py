@@ -15,6 +15,7 @@ from community._dev_tools_populate import (
     RsvpCounts,
     populate_cohosts,
     populate_invited_users,
+    populate_rsvp_questions,
     populate_rsvps,
 )
 from community._event_helpers import _event_out
@@ -23,11 +24,20 @@ from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.management.commands._seed_staging_data import is_seed_allowed
-from community.models import Event, EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.models import (
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+    is_official_or_club,
+)
 
 router = Router()
 
 MAX_PARTICIPANTS = 50
+MAX_QUESTIONS = 10
 
 
 class DevTestEventIn(BaseModel):
@@ -47,11 +57,14 @@ class DevTestEventIn(BaseModel):
     non_member_going_count: int = Field(default=0, ge=0, le=MAX_PARTICIPANTS)
     maybe_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     cant_go_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
+    waitlisted_count: int = Field(default=0, ge=0, le=MAX_PARTICIPANTS)
     invited_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     rsvp_enabled: bool = True
     visibility: str = Field(default=PageVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     max_attendees: int | None = Field(default=None, ge=1)
     allow_plus_ones: bool = False
+    required_question_count: int = Field(default=0, ge=0, le=MAX_QUESTIONS)
+    optional_question_count: int = Field(default=0, ge=0, le=MAX_QUESTIONS)
 
 
 def _dev_tools_allowed() -> bool:
@@ -74,6 +87,13 @@ def _event_datetimes(payload: DevTestEventIn) -> tuple:
     return start, start + timedelta(hours=2)
 
 
+def _max_attendees(payload: DevTestEventIn, going_total: int) -> int | None:
+    # A waitlist only makes sense at capacity, so cap an unlimited event at its going count.
+    if payload.max_attendees is None and payload.waitlisted_count:
+        return max(going_total, 1)
+    return payload.max_attendees
+
+
 def _event_type(payload: DevTestEventIn) -> str:
     if payload.is_official:
         return EventType.OFFICIAL
@@ -94,15 +114,16 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     start, end = _event_datetimes(payload)
     status = EventStatus.CANCELLED if payload.is_canceled else EventStatus.ACTIVE
     event_type = _event_type(payload)
-    # Mirrors _is_invalid_typed_visibility, which this dev endpoint bypasses.
-    is_public_only_type = event_type in (EventType.OFFICIAL, EventType.CLUB)
-    visibility = PageVisibility.PUBLIC if is_public_only_type else payload.visibility
+    # Mirrors create_event's official/club rules, which this dev endpoint bypasses.
+    official_or_club = is_official_or_club(event_type)
+    visibility = PageVisibility.PUBLIC if official_or_club else payload.visibility
     # Mirrors Event.is_public_rsvp_eligible.
     non_member_going_count = (
         payload.non_member_going_count
         if (payload.is_official and status == EventStatus.ACTIVE and payload.rsvp_enabled)
         else 0
     )
+    max_attendees = _max_attendees(payload, payload.going_count + non_member_going_count)
 
     event = Event.objects.create(
         title=random_event_title(),
@@ -112,8 +133,8 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         event_type=event_type,
         visibility=visibility,
         rsvp_enabled=payload.rsvp_enabled,
-        max_attendees=payload.max_attendees,
-        allow_plus_ones=payload.allow_plus_ones,
+        max_attendees=max_attendees,
+        allow_plus_ones=payload.allow_plus_ones and not official_or_club,
         status=status,
         price=payload.price,
         venmo_link=payload.venmo_link,
@@ -142,7 +163,8 @@ def create_dev_test_event(request, payload: DevTestEventIn):
             non_member_going=non_member_going_count,
             maybe=payload.maybe_count,
             cant_go=payload.cant_go_count,
-            max_attendees=payload.max_attendees,
+            waitlisted=payload.waitlisted_count,
+            max_attendees=max_attendees,
         ),
     )
     populate_invited_users(event, count=payload.invited_count)
@@ -151,6 +173,12 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         EventRSVP.objects.update_or_create(
             event=event, user=request.auth, defaults={"status": RSVPStatus.ATTENDING}
         )
+
+    populate_rsvp_questions(
+        event,
+        required_count=payload.required_question_count,
+        optional_count=payload.optional_question_count,
+    )
 
     audit_log(
         logging.INFO,
