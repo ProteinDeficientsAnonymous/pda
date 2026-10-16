@@ -13,6 +13,7 @@ from tests._public_rsvp_helpers import make_non_member, make_official_event, pos
 LOCATION = "18 Willow House, Apt 4"
 LATITUDE = "40.712776"
 LONGITUDE = "-74.005974"
+EMAIL_TEMPLATES = sorted((settings.BASE_DIR / "templates" / "emails").iterdir())
 
 
 @pytest.fixture
@@ -48,7 +49,7 @@ def _sent_with_subject(fake_email_sender, fragment: str) -> dict:
 
 
 @pytest.mark.django_db
-class TestNonMemberRsvpEmailsOmitLocation:
+class TestRsvpEmailsOmitLocation:
     def test_confirmation(self, api_client, located_event, fake_email_sender):
         assert post(api_client, located_event).status_code == 200
 
@@ -114,3 +115,10 @@ def test_weekly_digest_omits_location(fake_email_sender):
     sent = _sent_with_subject(fake_email_sender, "coming up this week")
     _assert_no_location(sent)
     assert f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}" in sent["text"]
+
+
+@pytest.mark.parametrize("template", EMAIL_TEMPLATES, ids=lambda p: p.name)
+def test_email_templates_never_reference_location(template):
+    source = template.read_text().lower()
+    for field in ("location", "latitude", "longitude"):
+        assert field not in source
