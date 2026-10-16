@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import type { SessionTokenListener } from '@/api/auth';
 import { useFeatureFlags } from '@/api/featureFlags';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
@@ -28,7 +29,13 @@ const CONSENT_POLICY_PATHS = new Set(CONSENT_REGISTRY.map((c) => c.linkTo.toLowe
 // and burn single-use tokens.
 // ----------------------------------------------------------------------------
 
-export function AuthBoot({ children }: { children: ReactNode }) {
+export function AuthBoot({
+  children,
+  onSessionToken,
+}: {
+  children: ReactNode;
+  onSessionToken?: SessionTokenListener;
+}) {
   const status = useAuthStore((s) => s.status);
   const restore = useAuthStore((s) => s.restoreSession);
   // Subscribe to the store's boot latch — set once the initial restore
@@ -42,13 +49,13 @@ export function AuthBoot({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === 'idle') {
-      void restore()
+      void restore(onSessionToken)
         .then(attemptDevAutoLogin)
         .finally(() => {
           setDevLoginPending(false);
         });
     }
-  }, [status, restore]);
+  }, [status, restore, onSessionToken]);
 
   if (!booted && (status === 'idle' || status === 'loading')) {
     return <BootSpinner />;

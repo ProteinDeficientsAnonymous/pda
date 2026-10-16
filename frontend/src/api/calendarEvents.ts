@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { type QueryClient, useQuery } from '@tanstack/react-query';
 import { addDays, addMonths, format, parseISO, startOfDay, subDays } from 'date-fns';
 
 import { useAuthStore } from '@/auth/store';
@@ -46,11 +46,24 @@ export function calendarRangeParams(range: CalendarRange): ListEventsQuery {
 export const calendarEventKeys = (isAuthed: boolean, range: CalendarRange) =>
   [...eventKeys.list(isAuthed), range] as const;
 
-export async function fetchCalendarEvents(range: CalendarRange): Promise<Event[]> {
+export async function fetchCalendarEvents(range: CalendarRange, token?: string): Promise<Event[]> {
   const { data } = await apiClient.get<WireEvent[]>('/api/community/events/', {
     params: calendarRangeParams(range),
+    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
   });
   return data.map(mapEvent);
+}
+
+/** Boot-time fetch with the just-refreshed token (null when anonymous), before the store holds it. */
+export function prefetchCalendarEvents(
+  qc: QueryClient,
+  range: CalendarRange,
+  token: string | null,
+): Promise<void> {
+  return qc.prefetchQuery({
+    queryKey: calendarEventKeys(token !== null, range),
+    queryFn: () => fetchCalendarEvents(range, token ?? undefined),
+  });
 }
 
 export function useCalendarEvents(range: CalendarRange) {
