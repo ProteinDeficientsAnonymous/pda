@@ -21,7 +21,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventHostCount, eventPath, EventType } from '@/models/event';
+import { type Event, eventHostCount, eventPath, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
@@ -339,9 +339,7 @@ export function EventForm({ existing }: Props) {
             values={values}
             onChange={patch}
             errors={errors}
-            typeLocked={
-              values.eventType === EventType.Official || values.eventType === EventType.Club
-            }
+            typeLocked={isOfficialOrClub(values.eventType)}
           />
         </CollapsibleCard>
 

@@ -31,7 +31,7 @@ describe('EventFormType', () => {
     expect(screen.queryByText('make it a pda club event')).not.toBeInTheDocument();
   });
 
-  it('official toggle sets official type and forces public visibility', async () => {
+  it('official toggle sets official type, forces public visibility, and turns off +1s', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
@@ -45,11 +45,12 @@ describe('EventFormType', () => {
     expect(onChange).toHaveBeenCalledWith({
       eventType: 'official',
       visibility: 'public',
+      allowPlusOnes: false,
       cashappLink: '$pdanyc',
     });
   });
 
-  it('club toggle sets club type and forces public visibility', async () => {
+  it('club toggle sets club type, forces public visibility, and turns off +1s', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
@@ -60,7 +61,11 @@ describe('EventFormType', () => {
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'club', visibility: 'public' });
+    expect(onChange).toHaveBeenCalledWith({
+      eventType: 'club',
+      visibility: 'public',
+      allowPlusOnes: false,
+    });
   });
 
   it('official toggle does not overwrite existing cashapp link', async () => {
@@ -77,10 +82,11 @@ describe('EventFormType', () => {
     expect(onChange).toHaveBeenCalledWith({
       eventType: 'official',
       visibility: 'public',
+      allowPlusOnes: false,
     });
   });
 
-  it('turning a type off reverts to community without forcing visibility', async () => {
+  it('turning a type off reverts to community without forcing visibility or +1s', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType

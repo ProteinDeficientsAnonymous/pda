@@ -436,6 +436,11 @@ def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
 
 
+def _plus_ones_locked(event_type: str) -> bool:
+    """Official and club events can't turn +1s on; older ones keep theirs until turned off."""
+    return event_type in _PUBLIC_ONLY_TYPES
+
+
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
     """Raise 403 if the event type requires a tag permission the user lacks."""
     required = _TYPE_TAG_PERMISSIONS.get(event_type)

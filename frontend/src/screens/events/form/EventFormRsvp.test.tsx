@@ -69,3 +69,29 @@ describe('max attendees field (issue 1264)', () => {
     expect(onChange).toHaveBeenCalledWith({ maxAttendees: null });
   });
 });
+
+describe('+1s lock for official and club events', () => {
+  const plusOnes = () => screen.getByRole('switch', { name: 'allow +1s' });
+  const lockNote = '+1s are off for official and club pda events';
+
+  it.each(['official', 'club'] as const)('locks +1s off on %s events', (eventType) => {
+    renderRsvp({ eventType, allowPlusOnes: false });
+    expect(plusOnes()).toBeDisabled();
+    expect(plusOnes()).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText(lockNote)).toBeInTheDocument();
+  });
+
+  it('lets an older official event that still has +1s on turn them off', () => {
+    const { onChange } = renderRsvp({ eventType: 'official', allowPlusOnes: true });
+    expect(plusOnes()).toBeEnabled();
+    expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
+    fireEvent.click(plusOnes());
+    expect(onChange).toHaveBeenCalledWith({ allowPlusOnes: false });
+  });
+
+  it('leaves +1s unlocked on community events', () => {
+    renderRsvp({ eventType: 'community', allowPlusOnes: false });
+    expect(plusOnes()).toBeEnabled();
+    expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
+  });
+});
