@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
+import { EventType } from '@/models/event';
 
 import { EventFormRsvp } from './EventFormRsvp';
 
@@ -17,11 +18,12 @@ function renderRsvp(overrides: Partial<EventFormValues> = {}, onChange = vi.fn()
   return { onChange, input: screen.getByLabelText('max attendees (optional)') };
 }
 
-function Harness() {
+function Harness({ overrides = {} }: { overrides?: Partial<EventFormValues> }) {
   const [values, setValues] = useState<EventFormValues>({
     ...emptyEventFormValues(),
     rsvpEnabled: true,
     maxAttendees: 15,
+    ...overrides,
   });
   return (
     <EventFormRsvp
@@ -74,24 +76,27 @@ describe('+1s lock for official and club events', () => {
   const plusOnes = () => screen.getByRole('switch', { name: 'allow +1s' });
   const lockNote = '+1s are off for official and club pda events';
 
-  it.each(['official', 'club'] as const)('locks +1s off on %s events', (eventType) => {
+  it.each([EventType.Official, EventType.Club])('locks +1s off on %s events', (eventType) => {
     renderRsvp({ eventType, allowPlusOnes: false });
     expect(plusOnes()).toBeDisabled();
     expect(plusOnes()).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getByText(lockNote)).toBeInTheDocument();
+    expect(plusOnes()).toHaveAccessibleDescription(lockNote);
   });
 
-  it('lets an older official event that still has +1s on turn them off', () => {
-    const { onChange } = renderRsvp({ eventType: 'official', allowPlusOnes: true });
+  it('lets an older official event turn +1s off, then locks them off', () => {
+    render(<Harness overrides={{ eventType: EventType.Official, allowPlusOnes: true }} />);
     expect(plusOnes()).toBeEnabled();
     expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
     fireEvent.click(plusOnes());
-    expect(onChange).toHaveBeenCalledWith({ allowPlusOnes: false });
+    expect(plusOnes()).toBeDisabled();
+    fireEvent.click(plusOnes());
+    expect(plusOnes()).toHaveAttribute('aria-checked', 'false');
   });
 
   it('leaves +1s unlocked on community events', () => {
-    renderRsvp({ eventType: 'community', allowPlusOnes: false });
+    renderRsvp({ eventType: EventType.Community, allowPlusOnes: false });
     expect(plusOnes()).toBeEnabled();
+    expect(plusOnes()).not.toHaveAccessibleDescription();
     expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
   });
 });

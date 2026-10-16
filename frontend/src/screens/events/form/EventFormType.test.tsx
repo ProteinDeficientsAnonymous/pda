@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
+import { EventType, EventVisibility } from '@/models/event';
 
 import { EventFormType } from './EventFormType';
 
@@ -35,7 +36,7 @@ describe('EventFormType', () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ visibility: 'members_only' })}
+        values={values({ visibility: EventVisibility.MembersOnly })}
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
@@ -43,8 +44,8 @@ describe('EventFormType', () => {
     );
     await userEvent.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith({
-      eventType: 'official',
-      visibility: 'public',
+      eventType: EventType.Official,
+      visibility: EventVisibility.Public,
       allowPlusOnes: false,
       cashappLink: '$pdanyc',
     });
@@ -54,7 +55,7 @@ describe('EventFormType', () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ visibility: 'members_only' })}
+        values={values({ visibility: EventVisibility.MembersOnly })}
         onChange={onChange}
         canTagOfficial={false}
         canTagClub
@@ -62,8 +63,8 @@ describe('EventFormType', () => {
     );
     await userEvent.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith({
-      eventType: 'club',
-      visibility: 'public',
+      eventType: EventType.Club,
+      visibility: EventVisibility.Public,
       allowPlusOnes: false,
     });
   });
@@ -72,7 +73,7 @@ describe('EventFormType', () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ visibility: 'members_only', cashappLink: '@existinghandle' })}
+        values={values({ visibility: EventVisibility.MembersOnly, cashappLink: '@existinghandle' })}
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
@@ -80,8 +81,8 @@ describe('EventFormType', () => {
     );
     await userEvent.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith({
-      eventType: 'official',
-      visibility: 'public',
+      eventType: EventType.Official,
+      visibility: EventVisibility.Public,
       allowPlusOnes: false,
     });
   });
@@ -90,20 +91,20 @@ describe('EventFormType', () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ eventType: 'official' })}
+        values={values({ eventType: EventType.Official })}
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'community' });
+    expect(onChange).toHaveBeenCalledWith({ eventType: EventType.Community });
   });
 
   it('with both permissions, the club toggle is off while official is selected', () => {
     render(
       <EventFormType
-        values={values({ eventType: 'official' })}
+        values={values({ eventType: EventType.Official })}
         onChange={vi.fn()}
         canTagOfficial
         canTagClub

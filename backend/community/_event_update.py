@@ -9,12 +9,11 @@ from community._event_helpers import (
     _can_edit_event,
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
-    _plus_ones_locked,
     _set_event_tags,
 )
 from community._validation import Code, raise_validation
 from community._waitlist import promote_from_waitlist
-from community.models import Event
+from community.models import Event, is_official_or_club
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -76,9 +75,9 @@ def _promote_if_capacity_increased(
 
 
 def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
-    """Force +1s off when an official/club event would turn them on or become official/club."""
+    """Older official/club events keep +1s until turned off; nothing can turn them back on."""
     new_type = updates.get("event_type", event.event_type)
-    if not _plus_ones_locked(new_type):
+    if not is_official_or_club(new_type):
         return
     turning_on = updates.get("allow_plus_ones") and not event.allow_plus_ones
     if turning_on or new_type != event.event_type:

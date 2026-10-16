@@ -13,6 +13,7 @@ export const Code = {
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
     OfficialMustBePublic: 'event.official_must_be_public',
+    OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
     AuthRequired: 'event.auth_required',
@@ -265,6 +266,7 @@ export type ValidationCode =
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
   | 'event.official_must_be_public'
+  | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
   | 'event.auth_required'
@@ -451,6 +453,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
   'event.official_must_be_public': [],
+  'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
   'event.auth_required': [],

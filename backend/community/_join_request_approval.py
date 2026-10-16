@@ -11,10 +11,10 @@ from users.roles import Role
 
 from community._shared import render_template_placeholders, validate_display_name
 from community.models import (
-    EventType,
     JoinRequestStatus,
     MemberPromotionEmailTemplate,
     WhatsAppLinkConfig,
+    is_official_or_club,
 )
 
 
@@ -179,7 +179,7 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     user has a linked TENTATIVE join request. Returns whether a promotion
     happened, so the caller knows to send the approval email.
     """
-    if event.event_type not in (EventType.OFFICIAL, EventType.CLUB):
+    if not is_official_or_club(event.event_type):
         return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:

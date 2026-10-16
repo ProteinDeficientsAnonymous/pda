@@ -60,6 +60,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'end time must be after the start time';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
+    case Code.Event.OfficialNoPlusOnes:
+      return "official and club events can't allow +1s";
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:

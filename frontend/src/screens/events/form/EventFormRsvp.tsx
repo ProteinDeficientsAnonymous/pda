@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 import type { EventFormValues } from '@/api/eventWrites';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
@@ -15,6 +17,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
   const rsvpOn = values.rsvpEnabled;
   // Older official/club events that still have +1s on stay unlocked so hosts can turn them off.
   const plusOnesLocked = isOfficialOrClub(values.eventType) && !values.allowPlusOnes;
+  const lockNoteId = useId();
 
   return (
     <div className="flex flex-col gap-4">
@@ -40,12 +43,16 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
               label="allow +1s"
               checked={values.allowPlusOnes}
               disabled={plusOnesLocked}
+              describedBy={plusOnesLocked ? lockNoteId : undefined}
               onChange={(checked) => {
                 onChange({ allowPlusOnes: checked });
               }}
             />
             {plusOnesLocked ? (
-              <p className="text-foreground-secondary flex items-center gap-1 text-xs">
+              <p
+                id={lockNoteId}
+                className="text-foreground-secondary flex items-center gap-1 text-xs"
+              >
                 <LockIcon className="h-3.5 w-3.5 shrink-0" />
                 +1s are off for official and club pda events
               </p>

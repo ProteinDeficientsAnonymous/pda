@@ -1,9 +1,12 @@
 import pytest
+from community._validation import Code
 from community.models import Event, EventType, PageVisibility
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._asserts import assert_error_code
 
 EVENTS_URL = "/api/community/events/"
 
@@ -30,7 +33,7 @@ def tagger_headers(tagger):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-def _create(api_client, headers, event_type):
+def _create(api_client, headers, event_type, *, allow_plus_ones):
     return api_client.post(
         EVENTS_URL,
         {
@@ -38,7 +41,7 @@ def _create(api_client, headers, event_type):
             "datetime_tbd": True,
             "event_type": event_type,
             "visibility": PageVisibility.PUBLIC,
-            "allow_plus_ones": True,
+            "allow_plus_ones": allow_plus_ones,
         },
         content_type="application/json",
         **headers,
@@ -65,13 +68,22 @@ def _event(tagger, event_type, *, allow_plus_ones):
 @pytest.mark.django_db
 class TestCreate:
     @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
-    def test_official_and_club_force_plus_ones_off(self, api_client, tagger_headers, event_type):
-        response = _create(api_client, tagger_headers, event_type)
+    def test_official_and_club_reject_plus_ones(self, api_client, tagger_headers, event_type):
+        response = _create(api_client, tagger_headers, event_type, allow_plus_ones=True)
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.OFFICIAL_NO_PLUS_ONES)
+        assert not Event.objects.filter(title="Locked +1s").exists()
+
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_official_and_club_create_without_plus_ones(
+        self, api_client, tagger_headers, event_type
+    ):
+        response = _create(api_client, tagger_headers, event_type, allow_plus_ones=False)
         assert response.status_code == 201
         assert Event.objects.get(id=response.json()["id"]).allow_plus_ones is False
 
     def test_community_keeps_plus_ones(self, api_client, tagger_headers):
-        response = _create(api_client, tagger_headers, EventType.COMMUNITY)
+        response = _create(api_client, tagger_headers, EventType.COMMUNITY, allow_plus_ones=True)
         assert response.status_code == 201
         assert Event.objects.get(id=response.json()["id"]).allow_plus_ones is True
 
@@ -125,6 +137,39 @@ class TestUpdate:
     def test_community_can_turn_plus_ones_on(self, api_client, tagger, tagger_headers):
         event = _event(tagger, EventType.COMMUNITY, allow_plus_ones=False)
         response = _patch(api_client, tagger_headers, event, allow_plus_ones=True)
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.allow_plus_ones is True
+
+    def test_switching_to_official_without_plus_ones_field_turns_them_off(
+        self, api_client, tagger, tagger_headers
+    ):
+        event = _event(tagger, EventType.COMMUNITY, allow_plus_ones=True)
+        response = _patch(api_client, tagger_headers, event, event_type=EventType.OFFICIAL)
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.allow_plus_ones is False
+
+    def test_existing_official_event_switching_to_club_turns_plus_ones_off(
+        self, api_client, tagger, tagger_headers
+    ):
+        event = _event(tagger, EventType.OFFICIAL, allow_plus_ones=True)
+        response = _patch(
+            api_client, tagger_headers, event, event_type=EventType.CLUB, allow_plus_ones=True
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.allow_plus_ones is False
+
+    def test_switching_to_community_can_turn_plus_ones_on(self, api_client, tagger, tagger_headers):
+        event = _event(tagger, EventType.OFFICIAL, allow_plus_ones=False)
+        response = _patch(
+            api_client,
+            tagger_headers,
+            event,
+            event_type=EventType.COMMUNITY,
+            allow_plus_ones=True,
+        )
         assert response.status_code == 200
         event.refresh_from_db()
         assert event.allow_plus_ones is True

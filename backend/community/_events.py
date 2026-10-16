@@ -31,7 +31,6 @@ from community._event_helpers import (
     _is_invalid_typed_visibility,
     _iso_or_none,
     _my_rsvp_fields,
-    _plus_ones_locked,
     _set_event_tags,
     _tags_out,
     _viewer_rsvp_rows,
@@ -80,6 +79,7 @@ from community.models import (
     FeatureFlag,
     PageVisibility,
     flag_enabled,
+    is_official_or_club,
     parse_event_ref,
 )
 
@@ -363,6 +363,9 @@ def create_event(request, payload: EventIn):
     if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
+    if payload.allow_plus_ones and is_official_or_club(payload.event_type):
+        raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
+
     # Drafts can save without a start_datetime (see #357). But if a start IS
     # provided, the same rules apply as for any event — must be in the future,
     # end must be after start.
@@ -394,7 +397,7 @@ def create_event(request, payload: EventIn):
         zelle_info=payload.zelle_info,
         rsvp_enabled=payload.rsvp_enabled,
         datetime_tbd=payload.datetime_tbd,
-        allow_plus_ones=payload.allow_plus_ones and not _plus_ones_locked(payload.event_type),
+        allow_plus_ones=payload.allow_plus_ones,
         max_attendees=payload.max_attendees,
         event_type=payload.event_type,
         visibility=payload.visibility,
