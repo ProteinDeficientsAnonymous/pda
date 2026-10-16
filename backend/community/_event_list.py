@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.utils import timezone
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -88,6 +91,24 @@ def _filter_invite_only(events, auth_user, status: str):
         | _viewer_is_cohost(auth_user)
         | _viewer_is_invited(auth_user)
     )
+
+
+def _aware(value: datetime) -> datetime:
+    return timezone.make_aware(value) if timezone.is_naive(value) else value
+
+
+def _filter_window(events, start: datetime | None, end: datetime | None, include_imported: bool):
+    """Keep events overlapping [start, end); undated (TBD) rows drop out once either bound is set."""
+    if not include_imported:
+        events = events.filter(is_partiful_import=False, is_legacy=False)
+    if start is not None:
+        start = _aware(start)
+        events = events.filter(
+            Q(end_datetime__gte=start) | Q(end_datetime__isnull=True, start_datetime__gte=start)
+        )
+    if end is not None:
+        events = events.filter(start_datetime__lt=_aware(end))
+    return events
 
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
