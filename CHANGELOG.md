@@ -1,3 +1,10 @@
+## [0.124.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.0...v0.124.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **rsvp:** stop treating tentative members as public rsvpers ([#1607](https://github.com/ProteinDeficientsAnonymous/pda/issues/1607)) ([99b780f](https://github.com/ProteinDeficientsAnonymous/pda/commit/99b780fcf26eb62f788422c3f2f3b0c90fc60f40))
+
 # [0.124.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.3...v0.124.0) (2026-10-15)
 
 
