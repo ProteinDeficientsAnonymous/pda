@@ -22,7 +22,7 @@ def _jwt_headers(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 class TestSurveyCapacityRace:
     def test_concurrent_submits_never_exceed_max_responses(self):
         """N threads submit to a 1-response survey at once; select_for_update() on the
