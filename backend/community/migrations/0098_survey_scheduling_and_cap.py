@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0095_event_is_legacy"),
+        ("community", "0097_backfill_waitlist_positions"),
     ]
 
     operations = [
