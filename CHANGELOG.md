@@ -1,3 +1,10 @@
+## [0.127.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.1...v0.127.2) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** prefetch calendar events alongside /me (Issue 1600) ([#1619](https://github.com/ProteinDeficientsAnonymous/pda/issues/1619)) ([81c7092](https://github.com/ProteinDeficientsAnonymous/pda/commit/81c70928ae4a55ebddcd633ca6de032e4049e906))
+
 ## [0.127.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.0...v0.127.1) (2026-10-16)
 
 
