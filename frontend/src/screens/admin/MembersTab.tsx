@@ -110,55 +110,57 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
         </div>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="flex-1 sm:min-w-56">
-          <TextField
-            label="search"
-            placeholder="name, phone, email, or user id"
-            value={query}
-            maxLength={100}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-          />
-        </div>
-        <div className="sm:w-48">
-          <Select
-            label="sort by"
-            options={SORT_OPTIONS}
-            value={sort}
-            onChange={(e) => {
-              setSort(e.target.value as SortKey);
-            }}
-          />
-        </div>
-        {roleNames.length > 0 ? (
-          <div className="sm:w-56">
-            <MembersRoleFilter
-              roleNames={roleNames}
-              selected={selectedRoles}
-              onChange={setSelectedRoles}
+      <div className="bg-background sticky top-10 z-0 -mx-4 px-4 pt-2">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex-1 sm:min-w-56">
+            <TextField
+              label="search"
+              placeholder="name, phone, email, or user id"
+              value={query}
+              maxLength={100}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
             />
           </div>
-        ) : null}
-        <div className="sm:w-56">
-          <MembersStatusFilter selected={selectedStatuses} onChange={setSelectedStatuses} />
+          <div className="sm:w-48">
+            <Select
+              label="sort by"
+              options={SORT_OPTIONS}
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as SortKey);
+              }}
+            />
+          </div>
+          {roleNames.length > 0 ? (
+            <div className="sm:w-56">
+              <MembersRoleFilter
+                roleNames={roleNames}
+                selected={selectedRoles}
+                onChange={setSelectedRoles}
+              />
+            </div>
+          ) : null}
+          <div className="sm:w-56">
+            <MembersStatusFilter selected={selectedStatuses} onChange={setSelectedStatuses} />
+          </div>
         </div>
+
+        {data.length > 0 ? (
+          <p className="text-foreground-tertiary mb-3 text-sm">{countText}</p>
+        ) : null}
+
+        {canMarkAttendance ? (
+          <MembersSelectionBar
+            count={selectedMembers.length}
+            onMark={() => {
+              setMarkOpen(true);
+            }}
+            onClear={clearSelection}
+          />
+        ) : null}
       </div>
-
-      {data.length > 0 ? (
-        <p className="text-foreground-tertiary mb-3 text-sm">{countText}</p>
-      ) : null}
-
-      {canMarkAttendance ? (
-        <MembersSelectionBar
-          count={selectedMembers.length}
-          onMark={() => {
-            setMarkOpen(true);
-          }}
-          onClear={clearSelection}
-        />
-      ) : null}
 
       <MembersList
         members={visible}

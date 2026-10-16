@@ -58,6 +58,7 @@ export function EventMemberSection({ event, token }: Props) {
           <RsvpGuestList
             event={event}
             canSeeInvited={isHostOrEventManager}
+            canReorderWaitlist={isHostOrEventManager && !event.isPast && !token}
             {...(token ? { token } : {})}
           />
           {canInvite || isHostOrEventManager ? (

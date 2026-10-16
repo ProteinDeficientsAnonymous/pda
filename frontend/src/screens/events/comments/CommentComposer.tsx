@@ -61,7 +61,7 @@ export function CommentComposer({
           setValue(e.target.value);
         }}
         placeholder={placeholder}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
+        // oxlint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         rows={3}
         onKeyDown={(e) => {

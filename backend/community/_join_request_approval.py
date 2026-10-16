@@ -10,7 +10,12 @@ from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
 from community._shared import render_template_placeholders, validate_display_name
-from community.models import EventType, JoinRequestStatus, MemberPromotionEmailTemplate
+from community.models import (
+    EventType,
+    JoinRequestStatus,
+    MemberPromotionEmailTemplate,
+    WhatsAppLinkConfig,
+)
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -45,14 +50,25 @@ def _reactivate_archived_user(existing_user, join_request):
     return _create_magic_token(existing_user)
 
 
-def _promote_non_member(user, join_request):
-    """Promote a linked non-member User to a member in place.
+def _grant_membership(user) -> None:
+    """Add the default member role and revoke any scoped rsvp tokens."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if member_role:
+        user.roles.add(member_role)
 
-    Their prior RSVPs already point at this row, so flipping is_member keeps the
-    full history instead of orphaning it under a fresh account. Outstanding
-    scoped RSVP tokens are revoked — the member flow replaces them.
+    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+        revoked_at=timezone.now()
+    )
+
+
+def _promote_public_non_member(user, join_request) -> str:
+    """Promote a publicly-RSVP'd non-member in place; returns their replacement login token.
+
+    param(user): the non-member User to promote, linked to join_request.
+    return(str): magic token replacing the rsvp tokens this revokes.
     """
     user.is_member = True
+    # Never onboarded and no password — dropping the token below strands them.
     user.needs_onboarding = True
     user.first_name, user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
@@ -69,35 +85,47 @@ def _promote_non_member(user, join_request):
             "sms_consent_at",
         ]
     )
-
-    member_role = Role.objects.filter(name="member", is_default=True).first()
-    if member_role:
-        user.roles.add(member_role)
-
-    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
-        revoked_at=timezone.now()
-    )
+    _grant_membership(user)
     return _create_magic_token(user)
+
+
+def _promote_tentative_member(user, join_request) -> None:
+    """Promote a tentatively-approved applicant in place; they onboarded already.
+
+    Only membership changes: no token to mint, no needs_onboarding re-flag
+    (that would lock them out of every endpoint), no name to overwrite.
+    """
+    # Their own name, not the application's — this path copies none (Issue 733).
+    validate_display_name(user.first_name, field="first_name")
+    user.is_member = True
+    if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
+        user.guidelines_consent_at = join_request.guidelines_consent_at
+    if join_request.sms_consent_at is not None and user.sms_consent_at is None:
+        user.sms_consent_at = join_request.sms_consent_at
+    user.save(update_fields=["is_member", "guidelines_consent_at", "sms_consent_at"])
+    _grant_membership(user)
 
 
 _DEFAULT_MEMBER_PROMOTION_EMAIL = "you now have full member access."
 
 
-def send_join_approval(*, to: str, display_name: str, first_name: str, magic_token: str) -> None:
+def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
     """Best-effort promotion email. A send failure must not roll back approval."""
     if not to:
         return
     template = MemberPromotionEmailTemplate.get()
     body = template.body.strip() or _DEFAULT_MEMBER_PROMOTION_EMAIL
-    message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
-    magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
+    message_body = render_template_placeholders(
+        body,
+        {"FIRST_NAME": first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
+    )
     try:
         send_join_approval_email(
             sender=get_email_sender(),
             to=to,
             display_name=display_name,
             message_body=message_body,
-            magic_link_url=magic_link_url,
+            login_url=f"{settings.FRONTEND_BASE_URL}/login",
         )
     except Exception:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
@@ -109,7 +137,7 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]
     Reuses a non-member already linked or matched by phone; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but keep ``is_member=False`` and no member role, which is what
-    limits them to official/club events (see ``community/_non_member_access``).
+    limits them to official/club events (see ``community/_tentative_member_access``).
     Returns ``(user, magic_token)``.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
@@ -144,40 +172,43 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]
     return user, _create_magic_token(user)
 
 
-def _maybe_promote_tentative(user, event, actor) -> str | None:
+def _maybe_promote_tentative(user, event, actor) -> bool:
     """Promote a tentative applicant to full member when they check in.
 
     Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
-    user has a linked TENTATIVE join request. Returns the minted magic token so
-    the caller can send the approval email with a login link. Returns None
-    (no promotion) otherwise.
+    user has a linked TENTATIVE join request. Returns whether a promotion
+    happened, so the caller knows to send the approval email.
     """
     if event.event_type not in (EventType.OFFICIAL, EventType.CLUB):
-        return None
+        return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
-        return None
+        return False
 
-    magic_token = _promote_non_member(user, join_request)
+    _promote_tentative_member(user, join_request)
     join_request.status = JoinRequestStatus.APPROVED
     join_request.approved_at = timezone.now()
     join_request.approved_by = actor
     join_request.save(update_fields=["status", "approved_at", "approved_by"])
-    return magic_token
+    return True
 
 
-def _provision_approved_user(join_request, requesting_user) -> tuple[str | None, bool]:
+def _provision_approved_user(
+    join_request, requesting_user, *, was_tentative: bool
+) -> tuple[str | None, bool]:
     """Create, reactivate, or promote the user for an approved join request.
 
     Returns ``(magic_token, user_created)``: the one-time login token and whether
-    a brand-new User row was created. A promoted non-member or reactivated
-    archived user returns a token with ``user_created`` reflecting whether the
-    row is new. When the phone already maps to an active member, nothing is
-    provisioned and ``(None, False)`` is returned.
+    a brand-new User row was created. A tentative applicant already has a login,
+    so their promotion returns no token. When the phone already maps to an active
+    member, nothing is provisioned and ``(None, False)`` is returned.
     """
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:
-        return _promote_non_member(join_request.user, join_request), False
+        if was_tentative:
+            _promote_tentative_member(join_request.user, join_request)
+            return None, False
+        return _promote_public_non_member(join_request.user, join_request), False
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:

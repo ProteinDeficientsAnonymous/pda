@@ -19,6 +19,8 @@ export const Code = {
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
     NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
+    HasRsvps: 'event.has_rsvps',
+    PastCannotBeUnpublished: 'event.past_cannot_be_unpublished',
     InvalidStatusTransition: 'event.invalid_status_transition',
     CancelBeforeDelete: 'event.cancel_before_delete',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
@@ -29,6 +31,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
@@ -144,6 +147,7 @@ export const Code = {
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
+    InvalidVeganniversary: 'user.invalid_veganniversary',
   },
   Survey: {
     NotFound: 'survey.not_found',
@@ -249,6 +253,10 @@ export const Code = {
     BodyRequired: 'member_promotion_message.body_required',
     BodyTooLong: 'member_promotion_message.body_too_long',
   },
+  MemberPromotionEmail: {
+    BodyRequired: 'member_promotion_email.body_required',
+    BodyTooLong: 'member_promotion_email.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -264,6 +272,8 @@ export type ValidationCode =
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
   | 'event.no_attendees_cannot_be_cancelled'
+  | 'event.has_rsvps'
+  | 'event.past_cannot_be_unpublished'
   | 'event.invalid_status_transition'
   | 'event.cancel_before_delete'
   | 'event.flag_already_flagged'
@@ -274,6 +284,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
@@ -363,6 +374,7 @@ export type ValidationCode =
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
+  | 'user.invalid_veganniversary'
   | 'survey.not_found'
   | 'survey.closed'
   | 'survey.slug_already_exists'
@@ -430,7 +442,9 @@ export type ValidationCode =
   | 'tentative_approval_message.body_required'
   | 'tentative_approval_message.body_too_long'
   | 'member_promotion_message.body_required'
-  | 'member_promotion_message.body_too_long';
+  | 'member_promotion_message.body_too_long'
+  | 'member_promotion_email.body_required'
+  | 'member_promotion_email.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -445,6 +459,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
   'event.no_attendees_cannot_be_cancelled': [],
+  'event.has_rsvps': [],
+  'event.past_cannot_be_unpublished': [],
   'event.invalid_status_transition': [],
   'event.cancel_before_delete': [],
   'event.flag_already_flagged': [],
@@ -455,6 +471,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
@@ -544,6 +561,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
+  'user.invalid_veganniversary': [],
   'survey.not_found': [],
   'survey.closed': [],
   'survey.slug_already_exists': [],
@@ -612,4 +630,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tentative_approval_message.body_too_long': ['max_length'],
   'member_promotion_message.body_required': [],
   'member_promotion_message.body_too_long': ['max_length'],
+  'member_promotion_email.body_required': [],
+  'member_promotion_email.body_too_long': ['max_length'],
 };

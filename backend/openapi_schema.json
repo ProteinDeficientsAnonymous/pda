@@ -976,11 +976,25 @@
             "title": "Non Member Going Count",
             "type": "integer"
           },
+          "optional_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Optional Question Count",
+            "type": "integer"
+          },
           "price": {
             "default": "",
             "maxLength": 300,
             "title": "Price",
             "type": "string"
+          },
+          "required_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Required Question Count",
+            "type": "integer"
           },
           "rsvp_enabled": {
             "default": true,
@@ -998,6 +1012,13 @@
             "maxLength": 20,
             "title": "Visibility",
             "type": "string"
+          },
+          "waitlisted_count": {
+            "default": 0,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Waitlisted Count",
+            "type": "integer"
           },
           "zelle_info": {
             "default": "",
@@ -2370,6 +2391,11 @@
             "default": "community",
             "title": "Event Type",
             "type": "string"
+          },
+          "guest_rsvp_count": {
+            "default": 0,
+            "title": "Guest Rsvp Count",
+            "type": "integer"
           },
           "guests": {
             "default": [],
@@ -4576,6 +4602,17 @@
             ],
             "title": "First Name"
           },
+          "has_seen_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Seen Veganniversary"
+          },
           "hide_last_name": {
             "anyOf": [
               {
@@ -4666,6 +4703,38 @@
               }
             ],
             "title": "Show Phone"
+          },
+          "show_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Veganniversary"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Veganniversary Shoutout Opt In"
           },
           "week_start": {
             "anyOf": [
@@ -4900,6 +4969,16 @@
             "default": "",
             "title": "Pronouns",
             "type": "string"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4907,6 +4986,42 @@
           "phone_number"
         ],
         "title": "MemberProfileOut",
+        "type": "object"
+      },
+      "MemberPromotionEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberPromotionEmailOut",
+        "type": "object"
+      },
+      "MemberPromotionEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberPromotionEmailPatchIn",
         "type": "object"
       },
       "MemberPromotionMessageOut": {
@@ -6785,6 +6900,11 @@
             "title": "Has Logged In",
             "type": "boolean"
           },
+          "has_seen_veganniversary": {
+            "default": false,
+            "title": "Has Seen Veganniversary",
+            "type": "boolean"
+          },
           "hide_last_name": {
             "default": false,
             "title": "Hide Last Name",
@@ -6906,6 +7026,26 @@
           "show_phone": {
             "default": true,
             "title": "Show Phone",
+            "type": "boolean"
+          },
+          "show_veganniversary": {
+            "default": true,
+            "title": "Show Veganniversary",
+            "type": "boolean"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "default": true,
+            "title": "Veganniversary Shoutout Opt In",
             "type": "boolean"
           },
           "week_start": {
@@ -7053,6 +7193,70 @@
         "title": "UserSearchOut",
         "type": "object"
       },
+      "VeganniversaryIn": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "maximum": 2026,
+            "minimum": 1900,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryIn",
+        "type": "object"
+      },
+      "VeganniversaryOut": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryOut",
+        "type": "object"
+      },
       "VersionOut": {
         "properties": {
           "commit_sha": {
@@ -7097,6 +7301,23 @@
           "photo_url"
         ],
         "title": "VoterOut",
+        "type": "object"
+      },
+      "WaitlistOrderIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "WaitlistOrderIn",
         "type": "object"
       },
       "WelcomeTemplateOut": {
@@ -13052,6 +13273,95 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/waitlist/order/": {
+      "put": {
+        "description": "Let an event host/co-host/manager set the waitlist order (Issue 1553).",
+        "operationId": "community__event_waitlist_order_reorder_waitlist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitlistOrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Reorder Waitlist",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/faq/": {
       "get": {
         "operationId": "community__guidelines_get_faq",
@@ -14107,6 +14417,88 @@
           }
         ],
         "summary": "Unreject Join Request",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-promotion-email/": {
+      "get": {
+        "operationId": "community__member_promotion_email_get_member_promotion_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Promotion Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__member_promotion_email_update_member_promotion_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPromotionEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Promotion Email",
         "tags": [
           "community"
         ]

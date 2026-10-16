@@ -1322,6 +1322,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/waitlist/order/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder Waitlist
+         * @description Let an event host/co-host/manager set the waitlist order (Issue 1553).
+         */
+        put: operations["community__event_waitlist_order_reorder_waitlist"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/faq/": {
         parameters: {
             query?: never;
@@ -1629,6 +1649,24 @@ export interface paths {
         head?: never;
         /** Unreject Join Request */
         patch: operations["community__join_requests_unreject_join_request"];
+        trace?: never;
+    };
+    "/api/community/member-promotion-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Promotion Email */
+        get: operations["community__member_promotion_email_get_member_promotion_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Member Promotion Email */
+        patch: operations["community__member_promotion_email_update_member_promotion_email"];
         trace?: never;
     };
     "/api/community/member-promotion-message/": {
@@ -2607,10 +2645,20 @@ export interface components {
              */
             non_member_going_count: number;
             /**
+             * Optional Question Count
+             * @default 0
+             */
+            optional_question_count: number;
+            /**
              * Price
              * @default
              */
             price: string;
+            /**
+             * Required Question Count
+             * @default 0
+             */
+            required_question_count: number;
             /**
              * Rsvp Enabled
              * @default true
@@ -2626,6 +2674,11 @@ export interface components {
              * @default public
              */
             visibility: string;
+            /**
+             * Waitlisted Count
+             * @default 0
+             */
+            waitlisted_count: number;
             /**
              * Zelle Info
              * @default
@@ -3294,6 +3347,11 @@ export interface components {
              * @default community
              */
             event_type: string;
+            /**
+             * Guest Rsvp Count
+             * @default 0
+             */
+            guest_rsvp_count: number;
             /**
              * Guests
              * @default []
@@ -4236,6 +4294,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Has Seen Veganniversary */
+            has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
             /** Last Name */
@@ -4252,6 +4312,11 @@ export interface components {
             show_email?: boolean | null;
             /** Show Phone */
             show_phone?: boolean | null;
+            /** Show Veganniversary */
+            show_veganniversary?: boolean | null;
+            veganniversary?: components["schemas"]["VeganniversaryIn"] | null;
+            /** Veganniversary Shoutout Opt In */
+            veganniversary_shoutout_opt_in?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
@@ -4400,6 +4465,22 @@ export interface components {
              * @default
              */
             pronouns: string;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
+        };
+        /** MemberPromotionEmailOut */
+        MemberPromotionEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberPromotionEmailPatchIn */
+        MemberPromotionEmailPatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** MemberPromotionMessageOut */
         MemberPromotionMessageOut: {
@@ -5175,6 +5256,11 @@ export interface components {
              */
             has_logged_in: boolean;
             /**
+             * Has Seen Veganniversary
+             * @default false
+             */
+            has_seen_veganniversary: boolean;
+            /**
              * Hide Last Name
              * @default false
              */
@@ -5270,6 +5356,17 @@ export interface components {
              */
             show_phone: boolean;
             /**
+             * Show Veganniversary
+             * @default true
+             */
+            show_veganniversary: boolean;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
+            /**
+             * Veganniversary Shoutout Opt In
+             * @default true
+             */
+            veganniversary_shoutout_opt_in: boolean;
+            /**
              * Week Start
              * @default sunday
              */
@@ -5322,6 +5419,24 @@ export interface components {
             /** Phone Number */
             phone_number: string;
         };
+        /** VeganniversaryIn */
+        VeganniversaryIn: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
+        };
+        /** VeganniversaryOut */
+        VeganniversaryOut: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
+        };
         /** VersionOut */
         VersionOut: {
             /** Commit Sha */
@@ -5339,6 +5454,11 @@ export interface components {
             photo_url: string;
             /** User Id */
             user_id: string;
+        };
+        /** WaitlistOrderIn */
+        WaitlistOrderIn: {
+            /** User Ids */
+            user_ids: string[];
         };
         /** WelcomeTemplateOut */
         WelcomeTemplateOut: {
@@ -9497,6 +9617,68 @@ export interface operations {
             };
         };
     };
+    community__event_waitlist_order_reorder_waitlist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistOrderIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__guidelines_get_faq: {
         parameters: {
             query?: never;
@@ -10243,6 +10425,68 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_email_get_member_promotion_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_email_update_member_promotion_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberPromotionEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

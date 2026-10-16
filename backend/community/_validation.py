@@ -17,6 +17,8 @@ class Code:
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"
         NO_ATTENDEES_CANNOT_BE_CANCELLED = "event.no_attendees_cannot_be_cancelled"
+        HAS_RSVPS = "event.has_rsvps"
+        PAST_CANNOT_BE_UNPUBLISHED = "event.past_cannot_be_unpublished"
         INVALID_STATUS_TRANSITION = "event.invalid_status_transition"
         CANCEL_BEFORE_DELETE = "event.cancel_before_delete"
         FLAG_ALREADY_FLAGGED = "event.flag_already_flagged"
@@ -27,6 +29,7 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
+        WAITLIST_ORDER_STALE = "event.waitlist_order_stale"
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
@@ -144,6 +147,7 @@ class Code:
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
+        INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
 
     class Survey:
         NOT_FOUND = "survey.not_found"
@@ -252,6 +256,10 @@ class Code:
     class MemberPromotionMessage:
         BODY_REQUIRED = "member_promotion_message.body_required"
         BODY_TOO_LONG = "member_promotion_message.body_too_long"  # params: { max_length: int }
+
+    class MemberPromotionEmail:
+        BODY_REQUIRED = "member_promotion_email.body_required"
+        BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
 
 
 class ValidationException(Exception):

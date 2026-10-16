@@ -1,7 +1,9 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useFeatureFlags } from '@/api/featureFlags';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
@@ -9,6 +11,7 @@ import type { FeatureFlagKey } from '@/models/featureFlags';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
+import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
 import { useAuthStore } from './store';
 
 // Policy pages the consent screen links to must stay reachable while the consent
@@ -33,14 +36,24 @@ export function AuthBoot({ children }: { children: ReactNode }) {
   // loading UX and re-mounting them mid-request would re-fire their effects
   // and burn single-use tokens.
   const booted = useAuthStore((s) => s.booted);
+  // Always false in production.
+  const [devLoginPending, setDevLoginPending] = useState(devAutoLoginConfigured);
 
   useEffect(() => {
     if (status === 'idle') {
-      void restore();
+      void restore()
+        .then(attemptDevAutoLogin)
+        .finally(() => {
+          setDevLoginPending(false);
+        });
     }
   }, [status, restore]);
 
   if (!booted && (status === 'idle' || status === 'loading')) {
+    return <BootSpinner />;
+  }
+  // Otherwise local dev flashes the login screen before the credentials land.
+  if (devLoginPending) {
     return <BootSpinner />;
   }
   return <>{children}</>;
@@ -106,6 +119,7 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
@@ -143,6 +157,7 @@ export function RequireMember({ unlocks }: { unlocks: string }) {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }

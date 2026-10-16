@@ -13,7 +13,7 @@ from notifications.service import notify_rsvp_status_changed
 from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out, broadcast_capacity_change, promote_from_waitlist
+from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
@@ -33,6 +33,7 @@ from community._public_rsvp_shared import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
+from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
 

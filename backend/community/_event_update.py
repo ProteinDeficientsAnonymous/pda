@@ -10,9 +10,9 @@ from community._event_helpers import (
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
-    promote_from_waitlist,
 )
 from community._validation import Code, raise_validation
+from community._waitlist import promote_from_waitlist
 from community.models import Event
 
 

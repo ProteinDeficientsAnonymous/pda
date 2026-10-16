@@ -162,6 +162,9 @@ export interface Event {
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
+  /** RSVP rows from outside the current co-hosts.
+   *  0 means the API allows unpublishing back to draft. */
+  guestRsvpCount: number;
 
   datetimeTbd: boolean;
   hasPoll: boolean;
@@ -224,6 +227,13 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   if (!user) return false;
   if (isHosting(event, user.id)) return true;
   return hasPermission(user, Permission.ManageEvents);
+}
+
+// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
+const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
+
+export function canTentativeMemberRsvp(event: Event): boolean {
+  return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
 }
 
 export function canPublicRsvp(event: Event): boolean {

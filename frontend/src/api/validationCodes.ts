@@ -76,6 +76,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "events with no invited users or rsvps can't be cancelled — delete instead";
     case Code.Event.InvalidStatusTransition:
       return 'invalid status change';
+    case Code.Event.HasRsvps:
+      return "can't send this event back to draft — people have already rsvp'd";
+    case Code.Event.PastCannotBeUnpublished:
+      return "past events can't go back to draft";
     case Code.Event.CancelBeforeDelete:
       return 'cancel this event before deleting it';
     case Code.Event.RsvpInvalidStatus:
@@ -94,6 +98,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.WaitlistOrderStale:
+      return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.RsvpCouldNotBeCreated:
@@ -326,6 +332,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
       return "that's not a valid birthday";
+    case Code.User.InvalidVeganniversary:
+      return "that's not a valid veganniversary";
 
     // Survey
     case Code.Survey.NotFound:
@@ -521,6 +529,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return max !== null
         ? `member promotion message must be at most ${String(max)} characters`
         : 'member promotion message is too long';
+    }
+
+    // Member promotion email
+    case Code.MemberPromotionEmail.BodyRequired:
+      return 'member promotion email body is required';
+    case Code.MemberPromotionEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `member promotion email must be at most ${String(max)} characters`
+        : 'member promotion email is too long';
     }
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)

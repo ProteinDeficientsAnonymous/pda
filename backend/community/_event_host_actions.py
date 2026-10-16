@@ -111,10 +111,10 @@ def get_text_recipients(request, event_id: UUID):
     return Status(200, _build_text_recipients(event))
 
 
-def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> str | None:
-    """Persist the attendance mark and return a magic token if it promoted a tentative member.
+def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> bool:
+    """Persist the attendance mark, promoting a tentative member if it was a check-in.
 
-    return(str | None): join-approval magic token, or None if no promotion occurred.
+    return(bool): whether the mark promoted a tentative applicant to full member.
     """
     attendance_field, checked_in_field = (
         ("plus_one_attendance", "plus_one_checked_in_at")
@@ -129,7 +129,7 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> str
     rsvp.save(update_fields=[attendance_field, checked_in_field, "updated_at"])
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
-        return None
+        return False
     return _maybe_promote_tentative(rsvp.user, rsvp.event, actor)
 
 
@@ -163,14 +163,13 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     # mid-promotion failure can't leave a member flagged without their request
     # stamped approved.
     with transaction.atomic():
-        magic_token = _apply_attendance_mark(rsvp, payload, request.auth)
+        promoted = _apply_attendance_mark(rsvp, payload, request.auth)
 
-    if magic_token:
+    if promoted:
         send_join_approval(
             to=rsvp.user.email,
             display_name=rsvp.user.full_name,
             first_name=rsvp.user.first_name,
-            magic_token=magic_token,
         )
 
     audit_log(

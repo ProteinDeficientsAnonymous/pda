@@ -103,4 +103,37 @@ describe('DevTestEventsButton', () => {
 
     expect(screen.getByLabelText('going (non-members, official events only)')).toBeDisabled();
   });
+
+  it('sends question and waitlist counts, capping questions at 10', async () => {
+    const user = userEvent.setup();
+    mockUseVersion.mockReturnValue({
+      data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
+    } as ReturnType<typeof useVersion>);
+    const mutateAsync = vi.fn().mockResolvedValue({ id: '1', slug: 'test-event' });
+    mockUseCreate.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateDevTestEvents>);
+
+    renderButton();
+    await user.click(screen.getByLabelText('dev test events'));
+    const required = screen.getByLabelText('required questions (max 10)');
+    await user.clear(required);
+    await user.type(required, '3');
+    const optional = screen.getByLabelText('optional questions (max 10)');
+    await user.clear(optional);
+    await user.type(optional, '25');
+    const waitlisted = screen.getByLabelText('waitlisted (caps unlimited events at going)');
+    await user.clear(waitlisted);
+    await user.type(waitlisted, '4');
+    await user.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requiredQuestionCount: 3,
+        optionalQuestionCount: 10,
+        waitlistedCount: 4,
+      }),
+    );
+  });
 });

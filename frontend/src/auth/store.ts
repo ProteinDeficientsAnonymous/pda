@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
 import { queryClient } from '@/api/queryClient';
+import { clearStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import type { ConsentTypeValue } from '@/models/consent';
 import type { User } from '@/models/user';
 
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { access, user } = await authApi.login(phoneNumber, password);
       queryClient.clear();
+      clearStoredRsvpToken();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
       set({ status: 'unauthed', user: null, accessToken: null });
@@ -69,6 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { access, user } = await authApi.magicLogin(token);
       queryClient.clear();
+      clearStoredRsvpToken();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
       // Preserve the existing session on failure. If the caller was already
@@ -88,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ status: 'loading' });
     const result = await authApi.restoreSession();
     if (result) {
+      clearStoredRsvpToken();
       set({ status: 'authed', user: result.user, accessToken: result.access, booted: true });
     } else {
       set({ status: 'unauthed', user: null, accessToken: null, booted: true });

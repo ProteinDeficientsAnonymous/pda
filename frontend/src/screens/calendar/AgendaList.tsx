@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import {
   DEFAULT_EVENT_DURATION_MS,
-  type Event as PdaEvent,
   eventClass,
   EventType,
+  type Event as PdaEvent,
 } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
