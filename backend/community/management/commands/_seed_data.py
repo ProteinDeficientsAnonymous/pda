@@ -166,7 +166,6 @@ SEED_EVENTS = [
         location="Kitchen Lab",
         event_type=EventType.OFFICIAL,
         rsvp_enabled=True,
-        allow_plus_ones=True,
     ),
     SeedEvent(
         title="Movie Night",
@@ -269,7 +268,6 @@ SEED_RSVPS = [
         COOKING_WORKSHOP_TITLE,
         _MEMBER,
         RSVPStatus.ATTENDING,
-        has_plus_one=True,
         answers={
             _TRAVEL_Q: "transit",
             _NOTES_Q: "Nut allergy — please avoid shared utensils.",

@@ -11,6 +11,7 @@ class Code:
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
+        OFFICIAL_NO_PLUS_ONES = "event.official_no_plus_ones"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
         AUTH_REQUIRED = "event.auth_required"

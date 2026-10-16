@@ -104,6 +104,23 @@ describe('DevTestEventsButton', () => {
     expect(screen.getByLabelText('going (non-members, official events only)')).toBeDisabled();
   });
 
+  it.each(['official event', 'club event'])('locks plus-ones off for %s', async (typeLabel) => {
+    const user = userEvent.setup();
+    mockUseVersion.mockReturnValue({
+      data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
+    } as ReturnType<typeof useVersion>);
+
+    renderButton();
+    await user.click(screen.getByLabelText('dev test events'));
+    const plusOnes = screen.getByRole('switch', { name: 'allow plus-ones' });
+    await user.click(plusOnes);
+    expect(plusOnes).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(screen.getByRole('switch', { name: typeLabel }));
+    expect(plusOnes).toBeDisabled();
+    expect(plusOnes).toHaveAttribute('aria-checked', 'false');
+  });
+
   it('sends question and waitlist counts, capping questions at 10', async () => {
     const user = userEvent.setup();
     mockUseVersion.mockReturnValue({

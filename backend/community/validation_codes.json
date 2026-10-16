@@ -32,6 +32,11 @@
         "params": []
       },
       {
+        "name": "OFFICIAL_NO_PLUS_ONES",
+        "value": "event.official_no_plus_ones",
+        "params": []
+      },
+      {
         "name": "INVALID_CREATE_STATUS",
         "value": "event.invalid_create_status",
         "params": []

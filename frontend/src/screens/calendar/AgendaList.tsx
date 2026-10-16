@@ -6,6 +6,7 @@ import {
   DEFAULT_EVENT_DURATION_MS,
   eventClass,
   EventType,
+  isOfficialOrClub,
   type Event as PdaEvent,
 } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
@@ -128,7 +129,7 @@ function AgendaCard({ event, onSelect }: CardProps) {
       )}
     >
       <div className="text-[15px] font-semibold">{event.title}</div>
-      {event.eventType === EventType.Official || event.eventType === EventType.Club ? (
+      {isOfficialOrClub(event.eventType) ? (
         <div className="mt-1 flex flex-wrap gap-1.5">
           <EventBadge event={event} onCard />
         </div>

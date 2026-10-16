@@ -1,7 +1,7 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { Toggle } from '@/components/ui/Toggle';
 import { OFFICIAL_EVENT_CASHAPP_TAG } from '@/config/organization';
-import { EventType, EventVisibility } from '@/models/event';
+import { EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
 
 interface Props {
   values: EventFormValues;
@@ -10,16 +10,17 @@ interface Props {
   canTagClub: boolean;
 }
 
-// Single-valued event_type makes the toggles mutually exclusive; only official/club force public.
+// Single-valued event_type makes the toggles mutually exclusive; official/club force public and lock +1s off.
 export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: Props) {
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    const isPublicOnly = type === EventType.Official || type === EventType.Club;
     const prefillCashapp = type === EventType.Official && !values.cashappLink.trim();
     onChange({
       eventType: type,
-      ...(isPublicOnly ? { visibility: EventVisibility.Public } : {}),
+      ...(isOfficialOrClub(type)
+        ? { visibility: EventVisibility.Public, allowPlusOnes: false }
+        : {}),
       ...(prefillCashapp ? { cashappLink: OFFICIAL_EVENT_CASHAPP_TAG } : {}),
     });
   };
