@@ -13,8 +13,8 @@ import { AppShell } from '@/layout/AppShell';
 import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
-import { prefetchCalendarOnBoot } from './bootPrefetch';
-import { lazyEl as el, lazyWithRetry, preloadOnPath } from './lazyRoute';
+import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
+import { lazyEl as el, lazyWithRetry } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 
 const Login = lazyWithRetry(() => import('@/screens/auth/LoginScreen'));
@@ -33,7 +33,7 @@ const Join = lazyWithRetry(() => import('@/screens/public/JoinScreen'));
 const JoinSuccess = lazyWithRetry(() => import('@/screens/public/JoinSuccessScreen'));
 const loadCalendar = () => import('@/screens/calendar/CalendarScreen');
 const Calendar = lazyWithRetry(loadCalendar);
-preloadOnPath('/calendar', loadCalendar);
+preloadCalendarChunk(loadCalendar);
 const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
