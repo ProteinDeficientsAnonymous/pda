@@ -2,6 +2,7 @@ import logging
 import re
 from urllib.parse import urlparse
 
+from config.auth import account_block_code
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja.security import HttpBearer
@@ -10,15 +11,31 @@ from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel
 
-from community._validation import Code, raise_validation
+from community._validation import Code, ValidationException, raise_validation
 
 logger = logging.getLogger("pda.community")
 
 
+# Safe methods stay public. Writes 403 so a blocked account cannot act.
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
 class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
-    """JWT auth that returns AnonymousUser instead of None/401 when no/invalid token."""
+    """Anonymous for a missing, invalid, or blocked token on reads; writes 403."""
 
     def authenticate(self, request: HttpRequest, token: str):
+        user = self._user_from_token(request, token)
+        if not isinstance(user, UserModel):
+            return user
+        code = account_block_code(user)
+        if code is None:
+            return user
+        if request.method in _SAFE_METHODS:
+            request.user = AnonymousUser()
+            return AnonymousUser()
+        raise ValidationException(code, status_code=403)
+
+    def _user_from_token(self, request: HttpRequest, token: str):
         try:
             return self.jwt_authenticate(request, token)
         except (AuthenticationFailed, TokenError):
