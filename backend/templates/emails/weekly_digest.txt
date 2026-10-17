@@ -3,8 +3,7 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 here's what's coming up this week:
 {% for event in events %}
 {{ event.title|lower }}{% if event.when %}
-{{ event.when|lower }}{% endif %}{% if event.location %}
-{{ event.location|lower }}{% endif %}
+{{ event.when|lower }}{% endif %}
 {{ event.url }}
 {% endfor %}{% endif %}{% if veganniversaries %}
 Happy veganniversary!
