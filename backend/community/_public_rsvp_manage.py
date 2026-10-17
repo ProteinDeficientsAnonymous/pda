@@ -3,7 +3,6 @@ import logging
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
-from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -81,13 +80,6 @@ def _eligible_event_rsvps(user):
     # Ineligible events must drop out, else their member-only details leak to the token holder.
     return (
         user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
-        .annotate(
-            event_comment_count=Count(
-                "event__comments",
-                filter=Q(event__comments__deleted_at__isnull=True),
-                distinct=True,
-            )
-        )
         .select_related("event", "event__created_by")
         .prefetch_related("event__co_hosts", "event__invited_users", "event__rsvps__user")
     )
@@ -130,8 +122,6 @@ def list_my_rsvps(request, token: str = ""):
     user = _resolve_token_user(token)
     items = []
     for rsvp in _eligible_event_rsvps(user):
-        # Feed the annotation to _event_out's event.comment_count lookup, avoiding a per-event query.
-        rsvp.event.comment_count = rsvp.event_comment_count
         items.append(
             PublicRsvpManageItemOut(
                 event=_event_out(rsvp.event, user),

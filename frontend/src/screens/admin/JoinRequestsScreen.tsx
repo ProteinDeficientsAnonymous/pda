@@ -307,8 +307,7 @@ const DECISION_CONFIRM_PROPS: Record<
     title: 'reject request',
     confirmLabel: 'reject',
     destructive: true,
-    message: (name) =>
-      `reject ${name}? once you reject someone you can't un-reject them — are you sure?`,
+    message: (name) => `reject ${name}? are you sure? you can un-reject them later.`,
   },
 };
 

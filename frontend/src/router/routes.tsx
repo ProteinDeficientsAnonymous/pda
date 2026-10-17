@@ -13,6 +13,7 @@ import { AppShell } from '@/layout/AppShell';
 import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
+import { prefetchCalendarOnBoot } from './bootPrefetch';
 import { lazyEl as el, lazyWithRetry, preloadOnPath } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 
@@ -72,7 +73,7 @@ const Stub = lazyWithRetry(() => import('@/screens/NotImplemented'));
 export const router = createBrowserRouter([
   {
     element: (
-      <AuthBoot>
+      <AuthBoot onSessionToken={prefetchCalendarOnBoot}>
         <OnboardingGate />
       </AuthBoot>
     ),

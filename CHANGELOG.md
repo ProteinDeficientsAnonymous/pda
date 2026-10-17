@@ -1,3 +1,45 @@
+## [0.127.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.1...v0.127.2) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** prefetch calendar events alongside /me (Issue 1600) ([#1619](https://github.com/ProteinDeficientsAnonymous/pda/issues/1619)) ([81c7092](https://github.com/ProteinDeficientsAnonymous/pda/commit/81c70928ae4a55ebddcd633ca6de032e4049e906))
+
+## [0.127.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.0...v0.127.1) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** fetch events by visible range (Issue 1600) ([#1617](https://github.com/ProteinDeficientsAnonymous/pda/issues/1617)) ([788e0e4](https://github.com/ProteinDeficientsAnonymous/pda/commit/788e0e4b2208bfa259fdacb4d14fdef1e5d2133b))
+
+# [0.127.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.3...v0.127.0) (2026-10-16)
+
+
+### Features
+
+* **events:** add start/end/include_imported params to list endpoint (Issue 1600) ([#1616](https://github.com/ProteinDeficientsAnonymous/pda/issues/1616)) ([f65fd3d](https://github.com/ProteinDeficientsAnonymous/pda/commit/f65fd3d1f1220463bf2f07c27f590c0d994fea92))
+
+## [0.126.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.2...v0.126.3) (2026-10-16)
+
+
+### Performance Improvements
+
+* **events:** drop unused comment_count and use exists for invite-only filter (Issue 1600) ([#1615](https://github.com/ProteinDeficientsAnonymous/pda/issues/1615)) ([6c9175f](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c9175f4b80ff572af5259194d3a75741d5ccc73))
+
+## [0.126.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.1...v0.126.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1423 - consent box ([#1593](https://github.com/ProteinDeficientsAnonymous/pda/issues/1593)) ([9f5decb](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f5decbbbfd63039e7d52e40616858c03eb3056e))
+
+## [0.126.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.0...v0.126.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1552 - update reject pop-up text ([#1596](https://github.com/ProteinDeficientsAnonymous/pda/issues/1596)) ([203295c](https://github.com/ProteinDeficientsAnonymous/pda/commit/203295c23a6d57f514696ed0e6de2c1490172a13))
+
 # [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
 
 

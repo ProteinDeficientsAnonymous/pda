@@ -159,20 +159,31 @@ export async function magicLogin(token: string): Promise<{ access: string; user:
   return { access: data.access, user };
 }
 
-async function tryRestoreSession(): Promise<{ access: string; user: User } | null> {
+// Hears the refreshed access token before /me resolves, or null once the visitor is known to be anonymous.
+export type SessionTokenListener = (token: string | null) => void;
+
+async function tryRestoreSession(
+  onSessionToken?: SessionTokenListener,
+): Promise<{ access: string; user: User } | null> {
   const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
+  onSessionToken?.(data.access);
   const user = await fetchMeWithToken(data.access);
   return { access: data.access, user };
 }
 
-export async function restoreSession(): Promise<{ access: string; user: User } | null> {
+export async function restoreSession(
+  onSessionToken?: SessionTokenListener,
+): Promise<{ access: string; user: User } | null> {
   // Retry once unless it's a real 401 — avoids re-login on a transient 5xx.
   try {
-    return await tryRestoreSession();
+    return await tryRestoreSession(onSessionToken);
   } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 401) return null;
+    if (isAxiosError(err) && err.response?.status === 401) {
+      onSessionToken?.(null);
+      return null;
+    }
     try {
-      return await tryRestoreSession();
+      return await tryRestoreSession(onSessionToken);
     } catch {
       return null;
     }
