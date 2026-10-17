@@ -35,7 +35,7 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-muted text-sm">shown when guests rsvp as going or waitlisted</p>
         <Button
@@ -56,9 +56,9 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
           onReorder={reorderQuestions}
           ariaLabel="rsvp questions"
           renderItem={(q) => (
-            <article className="border-border bg-surface flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3">
+            <article className="border-border bg-surface flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-lg border p-3">
               <div className="min-w-0 flex-1">
-                <p className="flex items-baseline text-sm font-medium">
+                <p className="flex min-w-0 items-baseline overflow-hidden text-sm font-medium">
                   <span className="min-w-0 truncate">{q.label}</span>
                   {q.required ? (
                     <span className="text-muted ms-1 shrink-0 text-xs">· required</span>

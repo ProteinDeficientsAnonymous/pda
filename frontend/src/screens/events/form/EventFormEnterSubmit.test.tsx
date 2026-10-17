@@ -62,6 +62,15 @@ function pressEnter(target: Element, form: HTMLFormElement) {
   return event;
 }
 
+describe('EventForm question column', () => {
+  it('lets the fields column shrink so a long question cannot widen the page', () => {
+    useAuthStore.setState({ user: makeUser(), status: 'authed' });
+    const { form } = renderForm();
+    const fields = form.querySelector(':scope > div.flex.w-full');
+    expect(fields).toHaveClass('min-w-0');
+  });
+});
+
 describe('EventForm enter handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
