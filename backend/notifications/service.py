@@ -181,6 +181,25 @@ def create_magic_link_request_notifications(user: User) -> None:
     notify_users(str(recipient.pk) for recipient in recipients)
 
 
+def create_account_deleted_notifications(user: User) -> None:
+    name = (user.full_name or "a member").lower()
+    recipients = User.objects.with_permission(PermissionKey.MANAGE_USERS).exclude(pk=user.pk)
+
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=recipient,
+                notification_type=NotificationType.ACCOUNT_DELETED,
+                related_user=user,
+                message=f"{name} ({user.phone_number}) deleted their account"
+                " — remove them from the whatsapp",
+            )
+            for recipient in recipients
+        ]
+    )
+    notify_users(str(recipient.pk) for recipient in recipients)
+
+
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
     canceller_id = str(canceller.pk)
     invited_ids = {str(u.pk) for u in event.invited_users.all()}
