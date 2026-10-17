@@ -3,6 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makeEvent } from '@/test/fixtures';
+
 import { apiClient } from './client';
 import { eventCommentKeys } from './eventComments';
 import { eventKeys } from './events';
@@ -57,32 +59,38 @@ describe('useSubmitPublicRsvp', () => {
 describe('useUpdatePublicMyRsvp', () => {
   beforeEach(() => vi.mocked(apiClient.post).mockReset());
 
-  it('invalidates the token event-detail and comment-list queries on success', async () => {
+  it('invalidates the slug-keyed event detail after changing to cant go', async () => {
     const token = 'tok123';
-    vi.mocked(apiClient.post).mockResolvedValue({ data: { event: { id: 'ev1' } } });
+    const eventId = '11111111-1111-1111-1111-111111111111';
+    const slug = 'pda-hudson-river-walk';
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { event: { id: eventId } } });
     const { qc, wrapper } = makeWrapper();
+    qc.setQueryData(
+      eventKeys.detail(slug, false, token),
+      makeEvent({ id: eventId, slug, myRsvp: 'attending' }),
+    );
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdatePublicMyRsvp(token), { wrapper });
 
     result.current.mutate({
-      eventId: 'ev1',
-      status: 'attending',
+      eventId,
+      status: 'cant_go',
       hasPlusOne: false,
       comment: 'hi',
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(apiClient.post).toHaveBeenCalledWith(
-      '/api/community/public/my-rsvps/ev1/',
+      `/api/community/public/my-rsvps/${eventId}/`,
       {
-        status: 'attending',
+        status: 'cant_go',
         has_plus_one: false,
         comment: 'hi',
         paid_confirmed: false,
       },
       { params: { token } },
     );
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.detail('ev1', false, token) });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: eventCommentKeys.list('ev1') });
+    expect(qc.getQueryState(eventKeys.detail(slug, false, token))?.isInvalidated).toBe(true);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: eventCommentKeys.list(eventId) });
   });
 });
