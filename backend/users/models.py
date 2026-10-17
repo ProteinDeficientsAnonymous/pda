@@ -8,6 +8,7 @@ from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -17,6 +18,8 @@ from users.roles import Role  # noqa: F401 — re-exported so Django discovers i
 # Fallback for bare digits only — a number with an explicit country code is unaffected.
 ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
+
+HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -225,10 +228,11 @@ class User(AbstractUser):
 
 class MagicLoginTokenSource(models.TextChoices):
     # SELF_SERVICE tokens are the only ones the self-service login-link cooldown
-    # counts; every other mint path (admin generation, onboarding, resend) is ADMIN
-    # so it never suppresses a user's own login-link email.
+    # counts; admin generation, onboarding and resend are ADMIN, and the weekly
+    # login reminder is REMINDER, so neither suppresses a user's own login-link email.
     SELF_SERVICE = "self_service", "Self-service"
     ADMIN = "admin", "Admin"
+    REMINDER = "reminder", "Reminder"
 
 
 class MagicLoginToken(models.Model):

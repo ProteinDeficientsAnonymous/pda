@@ -1,0 +1,3 @@
+{% extends "emails/magic_login.txt" %}
+{% block intro %}this is your last reminder: your pda account still isn't set up. if you don't finish setting it up within a week, we'll remove your pda membership. use this link to log in and finish — it only takes a minute:{% endblock %}
+{% block note %}this is the last login link we'll send.{% endblock %}
