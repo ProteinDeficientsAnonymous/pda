@@ -5,10 +5,9 @@ function isNonPreservedTarget(path: string): boolean {
   return pathname === '/members' || pathname.startsWith('/members/');
 }
 
-// Only allow relative in-app paths. Reject anything that could leave the app —
-// absolute URLs (`http://evil.com`), scheme-relative URLs (`//evil.com`),
-// backslash tricks (`/\evil.com`), or paths that don't start with a single
-// `/`. Falls back to the default route on anything unsafe or malformed.
+// Only allow a same-origin relative path. The URL parser folds backslash,
+// dot-segment, and tab/newline tricks into the path the browser would use.
+// Falls back to the default route when that path is off-site or malformed.
 export function safeRedirect(raw: string | null): string {
   if (!raw) return DEFAULT_POST_LOGIN_ROUTE;
   let decoded: string;
@@ -17,10 +16,19 @@ export function safeRedirect(raw: string | null): string {
   } catch {
     return DEFAULT_POST_LOGIN_ROUTE;
   }
-  const isRelativePath =
-    decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes('://');
-  // Normalize backslashes — some browsers treat `/\` like `//`.
-  if (!isRelativePath || decoded.startsWith('/\\')) return DEFAULT_POST_LOGIN_ROUTE;
-  if (isNonPreservedTarget(decoded)) return DEFAULT_POST_LOGIN_ROUTE;
-  return decoded;
+  if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.includes('://')) {
+    return DEFAULT_POST_LOGIN_ROUTE;
+  }
+  let url: URL;
+  try {
+    url = new URL(decoded, window.location.origin);
+  } catch {
+    return DEFAULT_POST_LOGIN_ROUTE;
+  }
+  if (url.origin !== window.location.origin || url.pathname.startsWith('//')) {
+    return DEFAULT_POST_LOGIN_ROUTE;
+  }
+  const target = `${url.pathname}${url.search}${url.hash}`;
+  if (isNonPreservedTarget(target)) return DEFAULT_POST_LOGIN_ROUTE;
+  return target;
 }

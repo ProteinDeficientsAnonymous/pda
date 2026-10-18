@@ -41,6 +41,18 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/\\evil.com')).toBe(DEFAULT);
   });
 
+  it('rejects paths the URL parser turns into a scheme-relative url', () => {
+    expect(safeRedirect('/.\\\\evil.com')).toBe(DEFAULT);
+    expect(safeRedirect('/a/..\\\\evil.com')).toBe(DEFAULT);
+    expect(safeRedirect('/\t/x/\t/evil.com')).toBe(DEFAULT);
+    expect(safeRedirect('/\t/x/\\evil.com')).toBe(DEFAULT);
+  });
+
+  it('does not preserve /members reached through dot segments', () => {
+    expect(safeRedirect('/./members')).toBe(DEFAULT);
+    expect(safeRedirect('/x/../members')).toBe(DEFAULT);
+  });
+
   it('falls back when decoding throws on a malformed escape', () => {
     expect(safeRedirect('%')).toBe(DEFAULT);
     expect(safeRedirect('%E0%A4%A')).toBe(DEFAULT);
