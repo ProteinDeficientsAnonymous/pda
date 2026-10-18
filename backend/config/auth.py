@@ -38,8 +38,7 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
-# Archive and pause apply even on the pending allowlist. Password, onboarding,
-# and guidelines consent do not — those endpoints are how the user clears them.
+# Archive and pause still 403 on the pending allowlist; password and consent do not.
 _HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
 
 

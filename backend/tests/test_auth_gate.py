@@ -3,9 +3,6 @@
 A valid JWT outlives the state changes that should revoke access (unusable
 password, pause, archive). GatedJWTAuth re-checks on every protected request and
 403s, except for the allowlist a pending user needs to resolve their state.
-
-OptionalJWTAuth uses the same checks: a blocked token is anonymous on reads and
-403s on writes.
 """
 
 from datetime import timedelta
@@ -169,17 +166,60 @@ class TestGatedJWTAuth:
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.password_reset_required"
 
+    @pytest.mark.parametrize("block", ["archived", "paused"])
+    def test_hard_block_rejects_me(self, api_client, block):
+        user = User.objects.create_user(
+            phone_number="+12025550330" if block == "archived" else "+12025550331",
+            password="pass",
+            first_name="Hard",
+            last_name="Block",
+        )
+        headers = _headers(user)
+        _block_user(user, block)
+
+        resp = api_client.get("/api/auth/me/", **headers)
+        assert resp.status_code == 403
+        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+
+    @pytest.mark.parametrize("block", ["archived", "paused"])
+    def test_hard_block_rejects_complete_onboarding_while_onboarding_pending(
+        self, api_client, block
+    ):
+        user = User.objects.create_user(
+            phone_number="+12025550332" if block == "archived" else "+12025550333",
+            password="pass",
+            first_name="Hard",
+            last_name="Onboard",
+            email="hard-archive@example.com" if block == "archived" else "hard-pause@example.com",
+            needs_onboarding=True,
+        )
+        headers = _headers(user)
+        _block_user(user, block)
+
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "FreshPass123!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 403, resp.content
+        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+
 
 _BLOCK_CODES = {
     "paused": "auth.account_paused",
     "archived": "auth.account_archived",
     "needs_password_reset": "auth.password_reset_required",
+    "needs_onboarding": "auth.onboarding_required",
+    "needs_guidelines_consent": "auth.guidelines_consent_required",
 }
 
 _BLOCK_PHONES = {
     "paused": "+12025550321",
     "archived": "+12025550322",
     "needs_password_reset": "+12025550323",
+    "needs_onboarding": "+12025550326",
+    "needs_guidelines_consent": "+12025550327",
 }
 
 
@@ -191,6 +231,14 @@ def _block_user(user, block: str) -> None:
     if block == "archived":
         user.archived_at = timezone.now()
         user.save(update_fields=["archived_at"])
+        return
+    if block == "needs_onboarding":
+        user.needs_onboarding = True
+        user.save(update_fields=["needs_onboarding"])
+        return
+    if block == "needs_guidelines_consent":
+        user.guidelines_consent_at = None
+        user.save(update_fields=["guidelines_consent_at"])
         return
     user.needs_password_reset = True
     user.save(update_fields=["needs_password_reset"])
@@ -213,7 +261,16 @@ def _rsvp_viewer(phone: str, event):
 
 @pytest.mark.django_db
 class TestOptionalJWTAccountState:
-    @pytest.mark.parametrize("block", ["paused", "archived", "needs_password_reset"])
+    @pytest.mark.parametrize(
+        "block",
+        [
+            "paused",
+            "archived",
+            "needs_password_reset",
+            "needs_onboarding",
+            "needs_guidelines_consent",
+        ],
+    )
     def test_event_detail_blocked_token_matches_logged_out(self, api_client, test_user, block):
         event = _public_event(test_user)
         viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
@@ -230,7 +287,16 @@ class TestOptionalJWTAccountState:
         assert blocked.json()["guests"] == []
         assert blocked.json() == anon.json()
 
-    @pytest.mark.parametrize("block", ["paused", "archived", "needs_password_reset"])
+    @pytest.mark.parametrize(
+        "block",
+        [
+            "paused",
+            "archived",
+            "needs_password_reset",
+            "needs_onboarding",
+            "needs_guidelines_consent",
+        ],
+    )
     def test_comment_post_blocked_token_forbidden(self, api_client, test_user, block):
         event = _public_event(test_user)
         viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
