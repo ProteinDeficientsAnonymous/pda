@@ -8,7 +8,7 @@ import { makeEvent } from '@/test/fixtures';
 import { apiClient } from './client';
 import { eventCommentKeys } from './eventComments';
 import { eventKeys } from './events';
-import { useSubmitPublicRsvp, useUpdatePublicMyRsvp } from './publicRsvp';
+import { useCancelPublicMyRsvp, useSubmitPublicRsvp, useUpdatePublicMyRsvp } from './publicRsvp';
 
 vi.mock('./client', () => ({
   apiClient: { post: vi.fn(), get: vi.fn(), delete: vi.fn() },
@@ -65,9 +65,15 @@ describe('useUpdatePublicMyRsvp', () => {
     const slug = 'pda-hudson-river-walk';
     vi.mocked(apiClient.post).mockResolvedValue({ data: { event: { id: eventId } } });
     const { qc, wrapper } = makeWrapper();
+    const otherId = '22222222-2222-2222-2222-222222222222';
+    const otherSlug = 'other-event';
     qc.setQueryData(
       eventKeys.detail(slug, false, token),
       makeEvent({ id: eventId, slug, myRsvp: 'attending' }),
+    );
+    qc.setQueryData(
+      eventKeys.detail(otherSlug, false, token),
+      makeEvent({ id: otherId, slug: otherSlug, myRsvp: 'attending' }),
     );
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdatePublicMyRsvp(token), { wrapper });
@@ -91,6 +97,32 @@ describe('useUpdatePublicMyRsvp', () => {
       { params: { token } },
     );
     expect(qc.getQueryState(eventKeys.detail(slug, false, token))?.isInvalidated).toBe(true);
+    expect(qc.getQueryState(eventKeys.detail(otherSlug, false, token))?.isInvalidated).toBe(false);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: eventCommentKeys.list(eventId) });
+  });
+});
+
+describe('useCancelPublicMyRsvp', () => {
+  beforeEach(() => vi.mocked(apiClient.delete).mockReset());
+
+  it('invalidates the slug-keyed event detail after remove', async () => {
+    const token = 'tok123';
+    const eventId = '11111111-1111-1111-1111-111111111111';
+    const slug = 'pda-hudson-river-walk';
+    vi.mocked(apiClient.delete).mockResolvedValue({ data: null });
+    const { qc, wrapper } = makeWrapper();
+    qc.setQueryData(
+      eventKeys.detail(slug, false, token),
+      makeEvent({ id: eventId, slug, myRsvp: 'attending' }),
+    );
+    const { result } = renderHook(() => useCancelPublicMyRsvp(token), { wrapper });
+
+    result.current.mutate(eventId);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(apiClient.delete).toHaveBeenCalledWith(`/api/community/public/my-rsvps/${eventId}/`, {
+      params: { token },
+    });
+    expect(qc.getQueryState(eventKeys.detail(slug, false, token))?.isInvalidated).toBe(true);
   });
 });
