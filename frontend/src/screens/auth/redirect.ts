@@ -5,23 +5,18 @@ function isNonPreservedTarget(path: string): boolean {
   return pathname === '/members' || pathname.startsWith('/members/');
 }
 
-// Only allow a same-origin relative path. The URL parser folds backslash,
-// dot-segment, and tab/newline tricks into the path the browser would use.
-// Falls back to the default route when that path is off-site or malformed.
+// Only allow a same-origin relative path. Callers pass the value
+// URLSearchParams already decoded, so this does not decode again. The URL
+// parser folds backslash, dot-segment, and tab/newline tricks into the path
+// the browser would use.
 export function safeRedirect(raw: string | null): string {
   if (!raw) return DEFAULT_POST_LOGIN_ROUTE;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(raw);
-  } catch {
-    return DEFAULT_POST_LOGIN_ROUTE;
-  }
-  if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.includes('://')) {
+  if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('://')) {
     return DEFAULT_POST_LOGIN_ROUTE;
   }
   let url: URL;
   try {
-    url = new URL(decoded, window.location.origin);
+    url = new URL(raw, window.location.origin);
   } catch {
     return DEFAULT_POST_LOGIN_ROUTE;
   }

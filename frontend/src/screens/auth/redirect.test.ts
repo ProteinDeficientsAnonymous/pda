@@ -15,10 +15,9 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/admin/members')).toBe('/admin/members');
   });
 
-  it('decodes percent-encoded relative paths', () => {
-    expect(safeRedirect(encodeURIComponent('/events/abc?tab=guests'))).toBe(
-      '/events/abc?tab=guests',
-    );
+  it('keeps a query value that is already percent-encoded', () => {
+    expect(safeRedirect('/events/abc?tab=guests')).toBe('/events/abc?tab=guests');
+    expect(safeRedirect('/events/x?q=a%26b')).toBe('/events/x?q=a%26b');
   });
 
   it('rejects scheme-relative urls (//evil.com)', () => {
@@ -53,7 +52,7 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/x/../members')).toBe(DEFAULT);
   });
 
-  it('falls back when decoding throws on a malformed escape', () => {
+  it('falls back when the value is not a path', () => {
     expect(safeRedirect('%')).toBe(DEFAULT);
     expect(safeRedirect('%E0%A4%A')).toBe(DEFAULT);
   });
