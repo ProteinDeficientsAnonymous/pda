@@ -283,7 +283,7 @@ export function EventForm({ existing }: Props) {
           scroll-up drift. Height is 100vh minus twice that offset so the flex
           box centers the photo on the true viewport middle (89 + (100vh-178)/2
           = 50vh), not the middle of the space below the header. */}
-      <div className="lg:sticky lg:top-[89px] lg:flex lg:h-[calc(100vh-178px)] lg:w-full lg:min-w-0 lg:flex-1 lg:items-center lg:justify-center lg:self-start">
+      <div className="lg:sticky lg:top-[89px] lg:flex lg:h-[calc(100vh-178px)] lg:w-full lg:flex-1 lg:items-center lg:justify-center lg:self-start">
         <div className="mx-auto w-full max-w-md">
           <EventFormPhoto
             photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
