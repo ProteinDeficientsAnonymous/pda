@@ -63,7 +63,9 @@ describe('useUpdatePublicMyRsvp', () => {
     const token = 'tok123';
     const eventId = '11111111-1111-1111-1111-111111111111';
     const slug = 'pda-hudson-river-walk';
-    vi.mocked(apiClient.post).mockResolvedValue({ data: { event: { id: eventId } } });
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: { event: { id: eventId, slug, title: 'walk', my_rsvp: 'cant_go' } },
+    });
     const { qc, wrapper } = makeWrapper();
     const otherId = '22222222-2222-2222-2222-222222222222';
     const otherSlug = 'other-event';
@@ -75,6 +77,7 @@ describe('useUpdatePublicMyRsvp', () => {
       eventKeys.detail(otherSlug, false, token),
       makeEvent({ id: otherId, slug: otherSlug, myRsvp: 'attending' }),
     );
+    qc.setQueryData(eventKeys.list(false), [makeEvent({ id: eventId, slug })]);
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdatePublicMyRsvp(token), { wrapper });
 
@@ -96,8 +99,12 @@ describe('useUpdatePublicMyRsvp', () => {
       },
       { params: { token } },
     );
+    expect(
+      qc.getQueryData<ReturnType<typeof makeEvent>>(eventKeys.detail(slug, false, token))?.myRsvp,
+    ).toBe('cant_go');
     expect(qc.getQueryState(eventKeys.detail(slug, false, token))?.isInvalidated).toBe(true);
     expect(qc.getQueryState(eventKeys.detail(otherSlug, false, token))?.isInvalidated).toBe(false);
+    expect(qc.getQueryState(eventKeys.list(false))?.isInvalidated).toBe(true);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: eventCommentKeys.list(eventId) });
   });
 });
