@@ -2,7 +2,7 @@ import logging
 import re
 from urllib.parse import urlparse
 
-from config.auth import account_block_code
+from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja.security import HttpBearer
@@ -16,12 +16,24 @@ from community._validation import Code, ValidationException, raise_validation
 logger = logging.getLogger("pda.community")
 
 
-# Safe methods stay public. Writes 403 so a blocked account cannot act.
+# Reads stay public. Pause and archive 403 on every write. A pending account
+# (password, onboarding, consent) is anonymous on writes that already allow
+# anonymous callers, and 403 on every other write.
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 
+def _allows_anonymous_write(path: str) -> bool:
+    return path == "/api/community/feedback/" or (
+        path.startswith("/api/community/surveys/view/") and path.endswith("/respond/")
+    )
+
+
 class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
-    """Anonymous for a missing, invalid, or blocked token on reads; writes 403."""
+    """Anonymous for a missing, invalid, or blocked token on reads.
+
+    Pause and archive 403 on writes. Pending accounts are anonymous on writes
+    that already allow anonymous callers, and 403 on every other write.
+    """
 
     def authenticate(self, request: HttpRequest, token: str):
         user = self._user_from_token(request, token)
@@ -30,7 +42,9 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         code = account_block_code(user)
         if code is None:
             return user
-        if request.method in _SAFE_METHODS:
+        if request.method in _SAFE_METHODS or (
+            code not in _HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
+        ):
             request.user = AnonymousUser()
             return AnonymousUser()
         raise ValidationException(code, status_code=403)
