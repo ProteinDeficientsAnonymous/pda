@@ -18,12 +18,14 @@ from community.models import (
     Document,
     Event,
     EventRSVP,
+    EventRsvpQuestion,
     EventStatus,
     EventType,
     JoinFormQuestion,
     JoinRequest,
     PageVisibility,
     RSVPStatus,
+    RsvpQuestionType,
     Survey,
 )
 from community.models.feature_flag import FeatureFlagState
@@ -272,6 +274,12 @@ def _seed_member_screens() -> dict:
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,
         created_by=seed,
+    )
+    EventRsvpQuestion.objects.create(
+        event=event,
+        label=("dietary restrictions " * 14).strip(),
+        field_type=RsvpQuestionType.TEXTAREA,
+        required=True,
     )
     EventRSVP.objects.create(event=event, user=seed, status=RSVPStatus.ATTENDING)
     EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
