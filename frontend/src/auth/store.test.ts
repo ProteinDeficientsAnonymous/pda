@@ -227,6 +227,18 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('changePassword', () => {
+    it('drops cached events so member fields refetch', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser });
+      vi.mocked(authApi.changePassword).mockResolvedValueOnce(undefined);
+      const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+      await useAuthStore.getState().changePassword('old', 'new');
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.all });
+    });
+  });
+
   describe('logout', () => {
     it('sets status to unauthed and clears user and accessToken', async () => {
       // Start in an authed state.

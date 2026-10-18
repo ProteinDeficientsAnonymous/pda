@@ -118,6 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async changePassword(current, next) {
     await authApi.changePassword(current, next);
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   async updateProfile(patch) {
