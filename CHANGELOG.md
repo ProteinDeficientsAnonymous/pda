@@ -1,3 +1,10 @@
+# [0.128.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.2...v0.128.0) (2026-10-20)
+
+
+### Features
+
+* **join-requests:** stronger warning on direct approve confirm ([#1627](https://github.com/ProteinDeficientsAnonymous/pda/issues/1627)) ([2c0c499](https://github.com/ProteinDeficientsAnonymous/pda/commit/2c0c499f794d5bda03fceca433855dacf0d9f887))
+
 ## [0.127.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.1...v0.127.2) (2026-10-16)
 
 
