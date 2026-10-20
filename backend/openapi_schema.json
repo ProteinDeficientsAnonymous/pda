@@ -4397,6 +4397,29 @@
             "title": "Submitted At",
             "type": "string"
           },
+          "tentative_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative At"
+          },
+          "tentative_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative By Name"
+          },
           "upcoming_club_count": {
             "default": 0,
             "title": "Upcoming Club Count",

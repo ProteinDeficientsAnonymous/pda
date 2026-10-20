@@ -77,6 +77,8 @@ class JoinRequestOut(BaseModel):
     # A prior request from this number was rejected — rejected applicants may
     # re-apply, so vettors need the history on the fresh request.
     previously_rejected: bool = False
+    tentative_at: datetime | None = None
+    tentative_by_name: str | None = None
     approved_at: datetime | None = None
     approved_by_name: str | None = None
     rejected_at: datetime | None = None
@@ -231,6 +233,8 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         user_id=str(user.id) if user else None,
         previously_archived=previously_archived,
         previously_rejected=previously_rejected,
+        tentative_at=jr.tentative_at,
+        tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
@@ -278,7 +282,7 @@ def list_join_requests(request):
             status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
             phone_number__in=expired_phones,
         )
-        .select_related("user", "approved_by", "rejected_by")
+        .select_related("user", "tentative_by", "approved_by", "rejected_by")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
@@ -289,7 +293,10 @@ def list_join_requests(request):
 def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     now = timezone.now()
     join_request.status = status
-    if status == JoinRequestStatus.APPROVED:
+    if status == JoinRequestStatus.TENTATIVE:
+        join_request.tentative_at = now
+        join_request.tentative_by = actor
+    elif status == JoinRequestStatus.APPROVED:
         join_request.approved_at = now
         join_request.approved_by = actor
     elif status == JoinRequestStatus.REJECTED:

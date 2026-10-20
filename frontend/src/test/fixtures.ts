@@ -186,6 +186,8 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
     userId: null,
     previouslyArchived: false,
     previouslyRejected: false,
+    tentativeAt: null,
+    tentativeByName: null,
     approvedAt: null,
     approvedByName: null,
     rejectedAt: null,

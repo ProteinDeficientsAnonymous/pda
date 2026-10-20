@@ -322,7 +322,8 @@ function confirmPropsForDecision(status: Decision, name: string) {
 }
 
 function sortKey(request: JoinRequestSummary): number {
-  const stamp = request.approvedAt ?? request.rejectedAt ?? request.submittedAt;
+  const stamp =
+    request.approvedAt ?? request.rejectedAt ?? request.tentativeAt ?? request.submittedAt;
   return new Date(stamp).getTime();
 }
 
