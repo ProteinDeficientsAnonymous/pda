@@ -369,6 +369,21 @@ describe('JoinRequestsScreen pending actions', () => {
 });
 
 describe('JoinRequestsScreen tentative section', () => {
+  it('shows who tentatively approved the request and when', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.TENTATIVE,
+        tentativeAt: '2026-03-01T18:00:00Z',
+        tentativeByName: 'Sam Vettor',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+  });
+
   it('shows a manually approve button for tentative requests', async () => {
     mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
 

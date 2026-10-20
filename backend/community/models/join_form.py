@@ -48,6 +48,14 @@ class JoinRequest(models.Model):
         choices=JoinRequestStatus.choices,
         default=JoinRequestStatus.PENDING,
     )
+    tentative_at = models.DateTimeField(null=True, blank=True)
+    tentative_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tentative_join_requests",
+    )
     approved_at = models.DateTimeField(null=True, blank=True)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

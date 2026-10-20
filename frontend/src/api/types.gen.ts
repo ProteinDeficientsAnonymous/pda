@@ -4230,6 +4230,10 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+            /** Tentative At */
+            tentative_at?: string | null;
+            /** Tentative By Name */
+            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
