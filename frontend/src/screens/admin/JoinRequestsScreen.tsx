@@ -283,18 +283,18 @@ const DECISION_CONFIRM_PROPS: Record<
   { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
 > = {
   [JoinRequestStatus.APPROVED]: {
-    title: 'approve request',
-    confirmLabel: 'approve',
-    destructive: false,
+    title: 'skip tentative and fully approve?',
+    confirmLabel: 'yes, fully approve',
+    destructive: true,
     message: (name) =>
-      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+      `heads up: this is the legacy direct-approval flow — it skips tentative approval entirely.\n\n${name} becomes a full member right away and gets a login link. this cannot be undone.\n\nif they haven't come to an event yet, cancel and use "tentatively approve" instead.`,
   },
   manually_approved: {
     title: 'approve request',
     confirmLabel: 'approve',
     destructive: false,
     message: (name) =>
-      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+      `approve ${name} as a full member? this cannot be undone — you can't un-approve someone.`,
   },
   [JoinRequestStatus.TENTATIVE]: {
     title: 'tentatively approve request',
