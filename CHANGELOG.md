@@ -1,3 +1,10 @@
+# [0.129.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.128.0...v0.129.0) (2026-10-20)
+
+
+### Features
+
+* show who tentatively approved a join request and when ([#1628](https://github.com/ProteinDeficientsAnonymous/pda/issues/1628)) ([2c0eb69](https://github.com/ProteinDeficientsAnonymous/pda/commit/2c0eb692347b966952db5aa2d76bcb3174871183))
+
 # [0.128.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.2...v0.128.0) (2026-10-20)
 
 
