@@ -405,6 +405,30 @@ describe('JoinRequestsScreen tentative section', () => {
     expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
   });
 
+  it('warns that direct approve is the legacy flow and cannot be undone', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-pending', status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'approve' }));
+    const confirmDialog = screen.getByRole('dialog');
+
+    expect(within(confirmDialog).getByText(/legacy direct-approval flow/i)).toBeInTheDocument();
+    expect(within(confirmDialog).getByText(/cannot be undone/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      within(confirmDialog).getByRole('button', { name: 'yes, fully approve' }),
+    );
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-pending',
+      status: JoinRequestStatus.APPROVED,
+    });
+  });
+
   it('calls decide with approved status when manually approve is clicked', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
