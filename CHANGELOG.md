@@ -1,3 +1,11 @@
+## [0.129.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.3...v0.129.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1624 - count plus-ones in admin attendance counts ([#1630](https://github.com/ProteinDeficientsAnonymous/pda/issues/1630)) ([b959d1b](https://github.com/ProteinDeficientsAnonymous/pda/commit/b959d1b8c12464550229fe0e5a02409560a0bbd2))
+* 1625 - can't remove a non-member from rsvp list ([#1629](https://github.com/ProteinDeficientsAnonymous/pda/issues/1629)) ([c36b9d7](https://github.com/ProteinDeficientsAnonymous/pda/commit/c36b9d751b264b57087cfbc7e80935205d453192))
+
 ## [0.129.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.2...v0.129.3) (2026-10-21)
 
 

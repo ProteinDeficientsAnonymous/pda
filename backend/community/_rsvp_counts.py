@@ -41,6 +41,22 @@ def no_show_q(prefix: str = "rsvps") -> Q:
     )
 
 
+def plus_one_attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
+    """Has a plus-one carrying this attendance mark, mirroring attendance_q for the guest."""
+    return Q(**{f"{prefix}__has_plus_one": True, f"{prefix}__plus_one_attendance": attendance})
+
+
+def plus_one_no_show_q(prefix: str = "rsvps") -> Q:
+    """RSVP'd going with a plus-one who didn't go."""
+    return Q(
+        **{
+            f"{prefix}__status": RSVPStatus.ATTENDING,
+            f"{prefix}__has_plus_one": True,
+            f"{prefix}__plus_one_attendance": AttendanceStatus.DIDNT_GO,
+        }
+    )
+
+
 def going_q(prefix: str = "rsvps") -> Q:
     """Q matching all ATTENDING rsvps across `prefix` (the going denominator)."""
     return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING})
