@@ -22,9 +22,8 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]

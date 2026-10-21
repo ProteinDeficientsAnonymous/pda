@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyQuestionDialog } from './SurveyQuestionDialog';
+import { SurveySettingsDialog } from './SurveySettingsDialog';
 
 export default function SurveyBuilderScreen() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +27,7 @@ export default function SurveyBuilderScreen() {
 
   const [editing, setEditing] = useState<SurveyQuestion | null>(null);
   const [creating, setCreating] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -61,6 +64,7 @@ export default function SurveyBuilderScreen() {
           </p>
         </div>
         <div className="flex gap-2">
+          <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
             to={`/surveys/${currentSurvey.slug}`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
@@ -73,6 +77,14 @@ export default function SurveyBuilderScreen() {
           >
             responses
           </Link>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSettingsOpen(true);
+            }}
+          >
+            settings
+          </Button>
           <Button
             variant="secondary"
             onClick={() => {
@@ -161,6 +173,13 @@ export default function SurveyBuilderScreen() {
           setEditing(null);
         }}
         existing={editing ?? undefined}
+      />
+      <SurveySettingsDialog
+        survey={currentSurvey}
+        open={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
+        }}
       />
 
       {confirmElement}

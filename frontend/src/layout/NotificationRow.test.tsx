@@ -67,4 +67,23 @@ describe('NotificationRow', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/e456');
   });
+
+  it('navigates to event for payment revoked notification', async () => {
+    const paymentRevokedNotification = {
+      id: 'n3',
+      notificationType: NotificationType.PaymentRevoked,
+      eventId: 'e789',
+      relatedUserId: null,
+      message: 'your payment needs attention',
+      isRead: false,
+      createdAt: '2026-08-02T00:00:00Z',
+    };
+
+    render(
+      <NotificationRow n={paymentRevokedNotification} onMarkRead={vi.fn()} onActivate={vi.fn()} />,
+    );
+    await userEvent.click(screen.getByRole('button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/e789');
+  });
 });

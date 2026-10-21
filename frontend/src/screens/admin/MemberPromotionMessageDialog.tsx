@@ -7,13 +7,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { SendLink } from '@/components/ui/SendLink';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
-import {
-  buildMagicLinkUrl,
-  buildSmsHref,
-  buildWelcomeMessage,
-  buildWhatsAppHref,
-  renderWelcomeMessage,
-} from '@/utils/welcomeMessage';
+import { buildSmsHref, buildWhatsAppHref, renderWelcomeMessage } from '@/utils/welcomeMessage';
 
 import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 
@@ -21,9 +15,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   fullName: string;
-  firstName: string;
-  phoneNumber: string;
-  magicLinkToken: string | null;
+  // Sourced from join-request rows, where either can be absent.
+  firstName: string | null | undefined;
+  phoneNumber: string | null | undefined;
+}
+
+function fallbackMessage(name: string): string {
+  return `${name ? `hi ${name} 🌱` : 'hi 🌱'} you're a full member now — welcome in!`;
 }
 
 export function MemberPromotionMessageDialog({
@@ -32,53 +30,40 @@ export function MemberPromotionMessageDialog({
   fullName,
   firstName,
   phoneNumber,
-  magicLinkToken,
 }: Props) {
-  const [copied, setCopied] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useMemberPromotionMessage();
   const whatsappLinkQ = useWhatsAppLink();
 
-  if (!magicLinkToken) return null;
-  const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
   const senderName = currentUser?.firstName ?? '';
-  // If the template fetch fails, fall back to the legacy hardcoded body so
-  // vetters can still send a message.
+  const name = (firstName ?? '').trim();
+  const phone = phoneNumber ?? '';
+  // If the template fetch fails, fall back to a plain body so vetters can
+  // still send something.
   const message = templateQ.data
     ? renderWelcomeMessage(templateQ.data.body, {
-        name: firstName,
+        name,
         senderName,
-        magicLink: magicLinkUrl,
         whatsappLink: whatsappLinkQ.data?.link ?? '',
       })
-    : buildWelcomeMessage(firstName, magicLinkUrl);
-  const smsHref = buildSmsHref(phoneNumber, message);
-  const whatsappHref = buildWhatsAppHref(phoneNumber, message);
+    : fallbackMessage(name);
+  const smsHref = buildSmsHref(phone, message);
+  const whatsappHref = buildWhatsAppHref(phone, message);
   const sendButtonsDisabled = templateQ.isPending;
   const canEditTemplate = hasPermission(currentUser, Permission.ApproveJoinRequests);
-
-  async function copyLink() {
-    await navigator.clipboard.writeText(magicLinkUrl);
-    setCopied(true);
-    window.setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  }
 
   return (
     <>
       <Dialog open={open} onClose={onClose} title={`welcome ${fullName}`}>
         <p className="text-foreground-secondary text-sm">
-          share this one-time login link with {formatPhone(phoneNumber)}. it won't be shown again.
+          let {formatPhone(phone)} know they're a full member now — they sign in the same way they
+          already do.
         </p>
-        <div className="bg-surface-dim mt-3 overflow-x-auto rounded-md px-3 py-2 font-mono text-xs break-all">
-          {magicLinkUrl}
+        <div className="bg-surface-dim mt-3 overflow-x-auto rounded-md px-3 py-2 text-xs break-words whitespace-pre-wrap">
+          {message}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => void copyLink()}>
-            {copied ? 'copied ✓' : 'copy link'}
-          </Button>
           <SendLink href={smsHref} label="send via sms" disabled={sendButtonsDisabled} />
           <SendLink href={whatsappHref} label="send via whatsapp" disabled={sendButtonsDisabled} />
         </div>

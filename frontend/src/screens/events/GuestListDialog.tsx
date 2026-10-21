@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { mergeEventGuestPhotos } from '@/api/eventMapper';
 import { useEventGuests } from '@/api/events';
+import { useReorderWaitlist } from '@/api/eventStats';
+import { SortableList } from '@/components/SortableList';
 import { TextField } from '@/components/ui/TextField';
-import type { Event, RsvpServerStatusValue } from '@/models/event';
+import type { Event, EventGuest, RsvpServerStatusValue } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
 
@@ -39,13 +43,22 @@ function guestTabs(event: Event, canSeeInvited: boolean): GuestTab[] {
 interface Props {
   event: Event;
   canSeeInvited: boolean;
+  canReorderWaitlist?: boolean;
   initialTab: GuestTab;
   onClose: () => void;
   token?: string;
 }
 
-export function GuestListDialog({ event, canSeeInvited, initialTab, onClose, token }: Props) {
+export function GuestListDialog({
+  event,
+  canSeeInvited,
+  canReorderWaitlist = false,
+  initialTab,
+  onClose,
+  token,
+}: Props) {
   const { data: withPhotos } = useEventGuests(event.id, token);
+  const reorderWaitlist = useReorderWaitlist(event.id);
   const displayEvent = mergeEventGuestPhotos(event, withPhotos);
   const tabs = guestTabs(displayEvent, canSeeInvited);
   const [active, setActive] = useState<GuestTab>(initialTab);
@@ -56,6 +69,19 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose, tok
 
   const needle = query.trim().toLowerCase();
   const visible = needle ? inTab.filter((g) => g.name.toLowerCase().includes(needle)) : inTab;
+  // Reordering a search-filtered subset would send the server an incomplete waitlist.
+  const draggable = canReorderWaitlist && active === 'waitlist' && !needle;
+
+  function onReorder(userIds: string[]) {
+    reorderWaitlist.mutate(
+      { userIds },
+      {
+        onError: (err) => {
+          toast.error(extractApiErrorOr(err, "couldn't reorder the waitlist — try again"));
+        },
+      },
+    );
+  }
 
   return (
     <div
@@ -128,6 +154,8 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose, tok
             <InvitedList event={displayEvent} row />
           ) : visible.length === 0 ? (
             <p className="text-muted text-xs">{needle ? 'no one matches' : 'no one yet'}</p>
+          ) : draggable ? (
+            <DraggableWaitlist guests={visible} onReorder={onReorder} />
           ) : (
             <div className="flex flex-col gap-1">
               {visible.map((g) => (
@@ -137,6 +165,26 @@ export function GuestListDialog({ event, canSeeInvited, initialTab, onClose, tok
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function DraggableWaitlist({
+  guests,
+  onReorder,
+}: {
+  guests: EventGuest[];
+  onReorder: (userIds: string[]) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-muted text-xs">drag to change who gets the next open spot</p>
+      <SortableList
+        ariaLabel="waitlist order"
+        items={guests.map((g) => ({ id: g.userId, guest: g }))}
+        onReorder={onReorder}
+        renderItem={(item) => <GuestChip guest={item.guest} row />}
+      />
     </div>
   );
 }

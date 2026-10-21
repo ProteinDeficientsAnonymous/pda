@@ -9,7 +9,7 @@ Stage and create a commit using **conventional commits** format.
 
 ## Steps
 
-1. **Run cheap checks first**: typecheck + the tests you touched (e.g. `make agent-typecheck`, `make agent-frontend-typecheck`, `make agent-test-since`). If they fail, surface the errors and stop — do not commit. The full `make agent-ci` suite is a **pre-PR gate**, not a per-commit one: GitHub re-runs CI on every push, so run the umbrella once before the PR is review-ready (see `.claude/skills/open-pr`), not on every commit.
+1. **Run cheap checks first**: typecheck + the tests you touched (e.g. `make agent-typecheck`, `make agent-frontend-typecheck`, `make agent-test-since`). If they fail, surface the errors and stop — do not commit. The full `make agent-ci` suite is a **pre-PR gate**, not a per-commit one: GitHub re-runs CI on every push, so run the umbrella once before the PR is review-ready (see `/skillet:open-pr`), not on every commit.
 2. **Inspect state** in parallel:
    - `git status` (no `-uall`)
    - `git diff` (staged + unstaged)

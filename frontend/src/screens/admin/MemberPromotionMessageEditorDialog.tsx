@@ -54,13 +54,12 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
       <p className="text-foreground-secondary text-sm">
         sent when a tentatively-approved applicant is manually promoted to full member — this
-        replaces the default message text.
+        replaces the default message text. they already have a login, so there is no link to share.
       </p>
       <p className="text-muted text-xs">
         available placeholders:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
         name), <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
-        <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code>,{' '}
         <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
       </p>
       <textarea

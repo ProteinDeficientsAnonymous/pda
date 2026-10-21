@@ -1,9 +1,11 @@
+import { useToday } from '@/hooks/useToday';
+
 interface Props {
   onClick: () => void;
 }
 
 export function TodayIconButton({ onClick }: Props) {
-  const day = new Date().getDate();
+  const day = useToday().getDate();
   return (
     <button
       type="button"

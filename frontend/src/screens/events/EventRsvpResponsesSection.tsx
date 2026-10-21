@@ -51,13 +51,9 @@ export function EventRsvpResponsesSection({ event }: Props) {
 
   return (
     <section aria-label="question responses" className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-base font-medium">question responses</h2>
-        <p className="text-muted text-sm">
-          {String(respondents.length)} guest{respondents.length === 1 ? '' : 's'} going or
-          waitlisted
-        </p>
-      </div>
+      <p className="text-muted text-sm">
+        {String(respondents.length)} guest{respondents.length === 1 ? '' : 's'} going or waitlisted
+      </p>
 
       {choiceColumns.length > 0 ? (
         <div className="flex flex-col gap-3">

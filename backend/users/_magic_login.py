@@ -7,6 +7,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.http import HttpResponse
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -133,6 +134,8 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
 @rate_limit(key_func=client_ip, rate="5/m")
 def magic_login(request, token: str, response: HttpResponse):
     magic = _consume_magic_token(request, token)
+    magic.user.last_login = timezone.now()
+    magic.user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(magic.user)
     request.auth = magic.user
     set_refresh_cookie(response, str(refresh))

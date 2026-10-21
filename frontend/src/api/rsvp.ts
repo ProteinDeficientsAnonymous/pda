@@ -34,9 +34,9 @@ function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAut
     { queryKey: eventKeys.all, predicate: (query) => isDetailQueryForEvent(query.queryKey, event) },
     () => event,
   );
-  // Also patch the list cache if we've got it. The list endpoint returns
-  // fewer fields than detail, so we merge conservatively.
-  qc.setQueryData<Event[] | undefined>(eventKeys.list(isAuthed), (prev) => {
+  // Also patch the list caches (full list and each calendar range) if we've got
+  // them. The list endpoint returns fewer fields than detail, so we merge conservatively.
+  qc.setQueriesData<Event[] | undefined>({ queryKey: eventKeys.list(isAuthed) }, (prev) => {
     if (!prev) return prev;
     return prev.map((e) => (e.id === event.id ? { ...e, ...event } : e));
   });

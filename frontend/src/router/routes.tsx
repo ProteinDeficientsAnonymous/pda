@@ -6,12 +6,14 @@ import {
   OnboardingGate,
   RequireAuth,
   RequireFlag,
+  RequireMember,
   RequirePermission,
 } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
 import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
+import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 
@@ -29,12 +31,17 @@ const Guidelines = lazyWithRetry(() => import('@/screens/public/GuidelinesScreen
 const Volunteer = lazyWithRetry(() => import('@/screens/public/VolunteerScreen'));
 const Join = lazyWithRetry(() => import('@/screens/public/JoinScreen'));
 const JoinSuccess = lazyWithRetry(() => import('@/screens/public/JoinSuccessScreen'));
-const Calendar = lazyWithRetry(() => import('@/screens/calendar/CalendarScreen'));
+const loadCalendar = () => import('@/screens/calendar/CalendarScreen');
+const Calendar = lazyWithRetry(loadCalendar);
+preloadCalendarChunk(loadCalendar);
 const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
 const EventManageRsvps = lazyWithRetry(() => import('@/screens/events/EventManageRsvpsScreen'));
+const EventQuestionResponses = lazyWithRetry(
+  () => import('@/screens/events/EventQuestionResponsesScreen'),
+);
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
@@ -66,7 +73,7 @@ const Stub = lazyWithRetry(() => import('@/screens/NotImplemented'));
 export const router = createBrowserRouter([
   {
     element: (
-      <AuthBoot>
+      <AuthBoot onSessionToken={prefetchCalendarOnBoot}>
         <OnboardingGate />
       </AuthBoot>
     ),
@@ -110,10 +117,21 @@ export const router = createBrowserRouter([
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },
                   { path: '/events/mine', element: el(<MyEvents />) },
-                  { path: '/events/add', element: el(<EventCreate />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
                   { path: '/events/:id/check-in', element: el(<EventAttendance />) },
                   { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
+                  { path: '/events/:id/responses', element: el(<EventQuestionResponses />) },
+                ],
+              },
+
+              {
+                element: <RequireMember unlocks="add events" />,
+                children: [{ path: '/events/add', element: el(<EventCreate />) }],
+              },
+
+              {
+                element: <RequireMember unlocks="see the member list" />,
+                children: [
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
                 ],

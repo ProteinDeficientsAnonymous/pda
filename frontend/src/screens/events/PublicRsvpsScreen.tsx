@@ -9,9 +9,10 @@ import {
   setStoredRsvpToken,
 } from '@/api/rsvpTokenStorage';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { RsvpServerStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { PublicRsvpCard } from './PublicRsvpCard';
+import { EventRow } from './EventRow';
 import { ResendManageLinkForm } from './ResendManageLinkForm';
 
 const INVALID_TOKEN_COPY = "this link's expired or invalid — rsvp again to get a new one";
@@ -53,10 +54,16 @@ export default function PublicRsvpsScreen() {
   if (isError) return <ContentError message="couldn't load your rsvps — try refreshing" />;
   if (isPending) return <ContentLoading label="loading your rsvps…" />;
 
+  const events = data.rsvps
+    .filter((r) => r.status !== RsvpServerStatus.CantGo)
+    .map((r) => r.event)
+    .sort(
+      (a, b) => (a.startDatetime?.getTime() ?? Infinity) - (b.startDatetime?.getTime() ?? Infinity),
+    );
+
   return (
-    <ContentContainer>
-      <h1 className="text-foreground mb-1 text-2xl font-semibold">your rsvps</h1>
-      <div className="mb-6 flex items-center justify-between gap-2">
+    <ContentContainer className="pt-4 md:pt-6">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <p className="text-foreground-secondary text-sm">{data.user.name}</p>
         <button
           type="button"
@@ -69,16 +76,18 @@ export default function PublicRsvpsScreen() {
         </button>
       </div>
 
-      {data.rsvps.length === 0 ? (
-        <p className="text-foreground-secondary text-sm">
-          you don't have any active rsvps right now 🌿
+      {events.length === 0 ? (
+        <p className="text-muted text-sm">
+          nothing coming up 🌿 — events you rsvp to will show up here
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
-          {data.rsvps.map((r) => (
-            <PublicRsvpCard key={r.event.id} token={token} event={r.event} status={r.status} />
+        <ul className="flex flex-col gap-2">
+          {events.map((e) => (
+            <li key={e.id}>
+              <EventRow event={e} />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <ConfirmDialog

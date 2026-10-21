@@ -58,6 +58,17 @@ class TestLogin:
         assert "access" in data
         assert "refresh" not in data
 
+    def test_login_sets_last_login(self, api_client, test_user):
+        assert test_user.last_login is None
+        response = api_client.post(
+            "/api/auth/login/",
+            {"phone_number": "+12025550101", "password": "testpass123"},
+            content_type="application/json",
+        )
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.last_login is not None
+
     def test_login_wrong_password(self, api_client, test_user):
         response = api_client.post(
             "/api/auth/login/",
