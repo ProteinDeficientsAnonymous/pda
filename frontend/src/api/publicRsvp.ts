@@ -150,9 +150,11 @@ export function useUpdatePublicMyRsvp(token: string) {
           ? {}
           : { questionnaire_responses: questionnaireResponses }),
       };
-      const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
-        params: { token },
-      });
+      const { data } = await apiClient.post<Omit<PublicRsvpOut, 'event'> & { event: WireEvent }>(
+        `${MANAGE_BASE}${eventId}/`,
+        body,
+        { params: { token } },
+      );
       return data;
     },
     onSuccess: (data, { eventId }) => {
