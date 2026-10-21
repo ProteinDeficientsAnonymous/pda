@@ -85,8 +85,7 @@ def resolve_question_order(
     ordered_ids(list[str]): ids in the order the caller asked for
     return(list[str]): every id in the survey, in its new order
     """
-    # Renumbering everything keeps ids the payload omitted from tying with a
-    # listed one, and a tie lets a dependent sort above its own source.
+    # Renumber everything: an omitted id tying a listed one could sort a dependent above its source.
     current = [str(q.id) for q in sorted(questions, key=lambda q: q.display_order)]
     known = set(current)
     resolved = [qid for qid in dict.fromkeys(ordered_ids) if qid in known]
@@ -126,21 +125,22 @@ def _condition_still_valid(condition: Mapping[str, object], source: SurveyQuesti
     return condition.get("value") in condition_values(source)
 
 
-def clear_invalidated_conditions(survey_id: UUID, source: SurveyQuestion) -> None:
-    """Drop `show_if` from dependents the edited source question can no longer satisfy."""
-    # Retyping a source, or renaming an option it is compared against, would
-    # otherwise leave the dependent permanently hidden with nothing to show why.
-    stale = [
-        q
+def assert_edit_keeps_conditions(survey_id: UUID, source: SurveyQuestion) -> None:
+    """Reject an unsaved edit to `source` that would break a dependent's condition."""
+    broken = [
+        q.label
         for q in SurveyQuestion.objects.filter(survey_id=survey_id).exclude(id=source.id)
         if q.show_if
         and str(q.show_if.get("question_id")) == str(source.id)
         and not _condition_still_valid(q.show_if, source)
     ]
-    for q in stale:
-        q.show_if = None
-    if stale:
-        SurveyQuestion.objects.bulk_update(stale, ["show_if"])
+    if broken:
+        raise_validation(
+            Code.Survey.CONDITION_SOURCE_IN_USE,
+            field=SHOW_IF_FIELD,
+            status_code=400,
+            label=", ".join(broken),
+        )
 
 
 def clear_dependent_conditions(survey_id: UUID, question_id: UUID) -> None:
@@ -156,9 +156,10 @@ def clear_dependent_conditions(survey_id: UUID, question_id: UUID) -> None:
         SurveyQuestion.objects.bulk_update(dependents, ["show_if"])
 
 
-def _condition_met(answer: str, operator: str, value: str) -> bool:
-    if operator == ShowIfOperator.CONTAINS:
-        return value in [v.strip() for v in answer.split(",") if v.strip()]
+def _condition_met(answer: str, operator: str, value: str, *, multi: bool) -> bool:
+    if multi:
+        ticked = value in [v.strip() for v in answer.split(",") if v.strip()]
+        return not ticked if operator == ShowIfOperator.NOT_EQUALS else ticked
     if operator == ShowIfOperator.NOT_EQUALS:
         return answer != value
     return answer == value
@@ -168,11 +169,7 @@ def visible_question_ids(
     questions: Mapping[str, SurveyQuestion],
     answers: Mapping[str, str | dict[str, str]],
 ) -> set[str]:
-    """Ids of questions the respondent should see, given their answers.
-
-    A condition pointing at a hidden question is never met, so hiding
-    cascades down a chain of dependents.
-    """
+    """Ids of visible questions; a condition on a hidden question is never met, so hiding cascades."""
     visible: set[str] = set()
     ordered = sorted(questions.items(), key=lambda item: item[1].display_order)
     for q_id, q in ordered:
@@ -190,6 +187,7 @@ def visible_question_ids(
             answer,
             str(condition.get("operator", ShowIfOperator.EQUALS)),
             str(condition.get("value", "")),
+            multi=questions[source_id].field_type == QuestionType.CHECKBOX,
         ):
             visible.add(q_id)
     return visible

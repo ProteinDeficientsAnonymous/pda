@@ -41,9 +41,15 @@ export default function SurveyBuilderScreen() {
   }
 
   async function askDelete(q: SurveyQuestion) {
+    const dependents = currentSurvey.questions
+      .filter((other) => other.showIf?.questionId === q.id)
+      .map((other) => `"${other.label}"`);
+    const conditionNote = dependents.length
+      ? ` ${dependents.join(', ')} will lose ${dependents.length === 1 ? 'its condition' : 'their conditions'} and always show.`
+      : '';
     const ok = await confirm({
       title: 'delete question',
-      message: `delete "${q.label}"? this also deletes responses to it.`,
+      message: `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
       confirmLabel: 'delete',
       destructive: true,
     });

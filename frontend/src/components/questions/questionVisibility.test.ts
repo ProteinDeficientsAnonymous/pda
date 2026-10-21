@@ -70,6 +70,21 @@ describe('visibleQuestionIds', () => {
     expect(visibleQuestionIds([interests, dish], { interests: 'art' }).has('dish')).toBe(false);
   });
 
+  it('treats not_equals on a checkbox as "not ticked"', () => {
+    const interests = question('interests', {
+      fieldType: 'checkbox',
+      options: ['food', 'art'],
+      displayOrder: 0,
+    });
+    const why = question('why', {
+      fieldType: 'text',
+      displayOrder: 1,
+      showIf: { questionId: 'interests', operator: ShowIfOperator.NotEquals, value: 'food' },
+    });
+    expect(visibleQuestionIds([interests, why], { interests: 'food,art' }).has('why')).toBe(false);
+    expect(visibleQuestionIds([interests, why], { interests: 'art' }).has('why')).toBe(true);
+  });
+
   it('cascades hiding down a chain', () => {
     const member = question('member', {
       fieldType: 'boolean',

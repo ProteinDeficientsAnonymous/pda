@@ -1,3 +1,4 @@
+import { QuestionType } from '@/api/questionTypes';
 import { type ShowIfCondition, ShowIfOperator, type SurveyQuestion } from '@/api/surveyAdmin';
 import {
   conditionValues,
@@ -11,6 +12,13 @@ const OPERATOR_LABELS: Record<ShowIfOperator, string> = {
   [ShowIfOperator.NotEquals]: 'is not',
   [ShowIfOperator.Contains]: 'includes',
 };
+
+function operatorLabel(op: ShowIfOperator, fieldType: QuestionType): string {
+  if (fieldType === QuestionType.Checkbox && op === ShowIfOperator.NotEquals) {
+    return "doesn't include";
+  }
+  return OPERATOR_LABELS[op];
+}
 
 interface Props {
   questions: SurveyQuestion[];
@@ -27,7 +35,7 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
   function defaultCondition(question: SurveyQuestion): ShowIfCondition {
     return {
       questionId: question.id,
-      operator: ShowIfOperator.Equals,
+      operator: operatorsFor(question.fieldType)[0] ?? ShowIfOperator.Equals,
       value: conditionValues(question)[0] ?? '',
     };
   }
@@ -79,7 +87,7 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
             }}
             options={operatorsFor(source.fieldType).map((op) => ({
               value: op,
-              label: OPERATOR_LABELS[op],
+              label: operatorLabel(op, source.fieldType),
             }))}
           />
           <Select

@@ -96,7 +96,7 @@ describe('SurveyConditionPicker', () => {
     expect([...answer.querySelectorAll('option')].map((o) => o.value)).toEqual(['vegan', 'veg']);
   });
 
-  it('offers "includes" only for checkbox sources', () => {
+  it('offers membership operators only for checkbox sources', () => {
     const interests = question({
       id: 'interests',
       fieldType: 'checkbox',
@@ -115,10 +115,12 @@ describe('SurveyConditionPicker', () => {
     rerender(
       <SurveyConditionPicker
         questions={[interests]}
-        value={{ questionId: 'interests', operator: ShowIfOperator.Equals, value: 'food' }}
+        value={{ questionId: 'interests', operator: ShowIfOperator.Contains, value: 'food' }}
         onChange={vi.fn()}
       />,
     );
     expect(screen.getByRole('option', { name: 'includes' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: "doesn't include" })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'is' })).not.toBeInTheDocument();
   });
 });

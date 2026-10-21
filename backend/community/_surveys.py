@@ -5,6 +5,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.db import transaction
 from django.db.models import Max
 from ninja import Router
 from ninja.responses import Status
@@ -13,9 +14,9 @@ from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
 from community._survey_conditions import (
+    assert_edit_keeps_conditions,
     assert_order_keeps_dependencies,
     clear_dependent_conditions,
-    clear_invalidated_conditions,
     resolve_question_order,
     validate_show_if,
 )
@@ -348,8 +349,9 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
     existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
     ordered_ids = resolve_question_order(existing, payload.question_ids)
     assert_order_keeps_dependencies(existing, ordered_ids)
-    for idx, qid in enumerate(ordered_ids):
-        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    with transaction.atomic():
+        for idx, qid in enumerate(ordered_ids):
+            SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
     audit_log(
         logging.INFO,
         "survey_questions_reordered",
@@ -394,8 +396,8 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.show_if = validate_show_if(
         payload.show_if, survey_id=survey_id, display_order=q.display_order
     )
+    assert_edit_keeps_conditions(survey_id, q)
     q.save()
-    clear_invalidated_conditions(survey_id, q)
     audit_log(
         logging.INFO,
         "survey_question_updated",
@@ -435,8 +437,9 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
         raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
-    clear_dependent_conditions(survey_id, question_id)
-    q.delete()
+    with transaction.atomic():
+        clear_dependent_conditions(survey_id, question_id)
+        q.delete()
     audit_log(
         logging.INFO,
         "survey_question_deleted",

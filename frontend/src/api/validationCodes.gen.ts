@@ -173,6 +173,7 @@ export const Code = {
     ConditionOperatorNotSupported: 'survey.condition_operator_not_supported',
     ConditionValueInvalid: 'survey.condition_value_invalid',
     ConditionOrderConflict: 'survey.condition_order_conflict',
+    ConditionSourceInUse: 'survey.condition_source_in_use',
   },
   JoinRequest: {
     NotFound: 'join_request.not_found',
@@ -405,6 +406,7 @@ export type ValidationCode =
   | 'survey.condition_operator_not_supported'
   | 'survey.condition_value_invalid'
   | 'survey.condition_order_conflict'
+  | 'survey.condition_source_in_use'
   | 'join_request.not_found'
   | 'join_request.already_decided'
   | 'join_request.only_rejected_can_be_un_rejected'
@@ -599,6 +601,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.condition_operator_not_supported': ['operator'],
   'survey.condition_value_invalid': ['label'],
   'survey.condition_order_conflict': ['label'],
+  'survey.condition_source_in_use': ['label'],
   'join_request.not_found': [],
   'join_request.already_decided': [],
   'join_request.only_rejected_can_be_un_rejected': [],

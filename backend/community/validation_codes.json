@@ -764,6 +764,13 @@
         "params": [
           "label"
         ]
+      },
+      {
+        "name": "CONDITION_SOURCE_IN_USE",
+        "value": "survey.condition_source_in_use",
+        "params": [
+          "label"
+        ]
       }
     ],
     "JoinRequest": [

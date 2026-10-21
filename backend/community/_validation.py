@@ -179,6 +179,7 @@ class Code:
         )
         CONDITION_VALUE_INVALID = "survey.condition_value_invalid"  # params: { label }
         CONDITION_ORDER_CONFLICT = "survey.condition_order_conflict"  # params: { label }
+        CONDITION_SOURCE_IN_USE = "survey.condition_source_in_use"  # params: { label }
 
     class JoinRequest:
         NOT_FOUND = "join_request.not_found"

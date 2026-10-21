@@ -399,7 +399,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : "that question can't be used in a condition";
     }
     case Code.Survey.ConditionOperatorNotSupported:
-      return '"contains" only works with checkbox questions';
+      return '"includes" only works with checkbox questions';
     case Code.Survey.ConditionValueInvalid: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `pick one of the options from "${label}"` : 'pick a valid option';
@@ -409,6 +409,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return label
         ? `"${label}" must stay below the question its condition depends on`
         : 'a question must stay below the question its condition depends on';
+    }
+    case Code.Survey.ConditionSourceInUse: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label
+        ? `this change would break the condition on ${label} — update or remove that condition first`
+        : 'this change would break a condition on a later question — update or remove it first';
     }
 
     // Join request

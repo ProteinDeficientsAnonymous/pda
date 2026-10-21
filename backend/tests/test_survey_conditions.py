@@ -3,14 +3,11 @@
 import json
 
 import pytest
-from community._survey_conditions import visible_question_ids
 from community._validation import Code
 from community.models import (
     ShowIfOperator,
     Survey,
-    SurveyQuestion,
     SurveyQuestionType,
-    SurveyResponse,
 )
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -18,6 +15,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._survey_condition_helpers import equals, make_question
 
 
 @pytest.fixture
@@ -40,24 +38,6 @@ def admin_headers(surveys_admin):
 @pytest.fixture
 def survey(db):
     return Survey.objects.create(title="Conditions", slug="conditions")
-
-
-def make_question(survey, label, field_type, order=0, **fields):
-    return SurveyQuestion.objects.create(
-        survey=survey,
-        label=label,
-        field_type=field_type,
-        display_order=order,
-        **fields,
-    )
-
-
-def equals(question, value):
-    return {
-        "question_id": str(question.id),
-        "operator": ShowIfOperator.EQUALS.value,
-        "value": value,
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +308,9 @@ class TestConditionOrdering:
         assert response.status_code == 201
         assert response.json()["display_order"] == 3
 
-    def test_retyping_a_source_clears_its_dependents(self, api_client, admin_headers, survey):
+    def test_retyping_a_source_is_rejected_while_dependents_use_it(
+        self, api_client, admin_headers, survey
+    ):
         source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
         dependent = make_question(
             survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
@@ -347,11 +329,14 @@ class TestConditionOrdering:
             content_type="application/json",
             **admin_headers,
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CONDITION_SOURCE_IN_USE, "show_if")
+        source.refresh_from_db()
         dependent.refresh_from_db()
-        assert dependent.show_if is None
+        assert source.field_type == SurveyQuestionType.RADIO
+        assert dependent.show_if is not None
 
-    def test_renaming_a_source_option_clears_dependents_that_referenced_it(
+    def test_renaming_a_source_option_a_dependent_uses_is_rejected(
         self, api_client, admin_headers, survey
     ):
         source = make_question(
@@ -377,11 +362,59 @@ class TestConditionOrdering:
             content_type="application/json",
             **admin_headers,
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CONDITION_SOURCE_IN_USE, "show_if")
+        assert response.json()["detail"][0]["params"]["label"] == "Stale"
         stale.refresh_from_db()
         kept.refresh_from_db()
-        assert stale.show_if is None
+        assert stale.show_if is not None
         assert kept.show_if is not None
+
+    def test_renaming_an_unused_source_option_is_allowed(self, api_client, admin_headers, survey):
+        source = make_question(
+            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
+        )
+        dependent = make_question(
+            survey, "Dependent", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "veg")
+        )
+        response = api_client.patch(
+            f"/api/community/surveys/{survey.id}/questions/{source.id}/",
+            data=json.dumps(
+                {
+                    "label": "Diet",
+                    "field_type": SurveyQuestionType.RADIO,
+                    "options": ["plant-based", "veg"],
+                    "required": False,
+                    "show_if": None,
+                }
+            ),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 200
+        dependent.refresh_from_db()
+        assert dependent.show_if == equals(source, "veg")
+
+    def test_update_rejects_a_condition_on_itself(self, api_client, admin_headers, survey):
+        question = make_question(
+            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0
+        )
+        response = api_client.patch(
+            f"/api/community/surveys/{survey.id}/questions/{question.id}/",
+            data=json.dumps(
+                {
+                    "label": "Diet",
+                    "field_type": SurveyQuestionType.RADIO,
+                    "options": ["vegan"],
+                    "required": False,
+                    "show_if": equals(question, "vegan"),
+                }
+            ),
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CONDITION_QUESTION_NOT_EARLIER, "show_if")
 
     def test_deleting_source_clears_dependent_condition(self, api_client, admin_headers, survey):
         source = make_question(survey, "Diet", SurveyQuestionType.RADIO, options=["vegan"], order=0)
@@ -394,123 +427,3 @@ class TestConditionOrdering:
         assert response.status_code == 204
         dependent.refresh_from_db()
         assert dependent.show_if is None
-
-
-# ---------------------------------------------------------------------------
-# Visibility evaluation
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-class TestVisibleQuestionIds:
-    def test_condition_met_and_unmet(self, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
-        )
-        dependent = make_question(
-            survey, "Why?", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
-        )
-        questions = {str(source.id): source, str(dependent.id): dependent}
-
-        assert visible_question_ids(questions, {str(source.id): "vegan"}) == set(questions)
-        assert visible_question_ids(questions, {str(source.id): "veg"}) == {str(source.id)}
-
-    def test_checkbox_contains(self, survey):
-        source = make_question(
-            survey, "Interests", SurveyQuestionType.CHECKBOX, options=["food", "art"], order=0
-        )
-        dependent = make_question(
-            survey,
-            "Favourite dish?",
-            SurveyQuestionType.TEXT,
-            order=1,
-            show_if={
-                "question_id": str(source.id),
-                "operator": ShowIfOperator.CONTAINS.value,
-                "value": "food",
-            },
-        )
-        questions = {str(source.id): source, str(dependent.id): dependent}
-
-        assert str(dependent.id) in visible_question_ids(questions, {str(source.id): "art,food"})
-        assert str(dependent.id) not in visible_question_ids(questions, {str(source.id): "art"})
-
-    def test_hiding_cascades_down_a_chain(self, survey):
-        first = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
-        )
-        second = make_question(
-            survey,
-            "Member?",
-            SurveyQuestionType.BOOLEAN,
-            order=1,
-            show_if=equals(first, "vegan"),
-        )
-        third = make_question(
-            survey, "Since when?", SurveyQuestionType.TEXT, order=2, show_if=equals(second, "yes")
-        )
-        questions = {str(q.id): q for q in (first, second, third)}
-
-        answers = {str(first.id): "veg", str(second.id): "yes"}
-        assert visible_question_ids(questions, answers) == {str(first.id)}
-
-
-# ---------------------------------------------------------------------------
-# Submit
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-class TestSubmitWithConditions:
-    def _submit(self, api_client, survey, answers):
-        return api_client.post(
-            f"/api/community/surveys/view/{survey.slug}/respond/",
-            data=json.dumps({"answers": answers}),
-            content_type="application/json",
-        )
-
-    def test_hidden_required_question_is_not_enforced(self, api_client, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
-        )
-        make_question(
-            survey,
-            "Why vegan?",
-            SurveyQuestionType.TEXT,
-            order=1,
-            required=True,
-            show_if=equals(source, "vegan"),
-        )
-        response = self._submit(api_client, survey, {str(source.id): "veg"})
-        assert response.status_code == 201
-
-    def test_visible_required_question_is_still_enforced(self, api_client, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
-        )
-        dependent = make_question(
-            survey,
-            "Why vegan?",
-            SurveyQuestionType.TEXT,
-            order=1,
-            required=True,
-            show_if=equals(source, "vegan"),
-        )
-        response = self._submit(api_client, survey, {str(source.id): "vegan"})
-        assert response.status_code == 422
-        assert_error_code(response, Code.Survey.ANSWER_REQUIRED, f"answers.{dependent.id}")
-
-    def test_answers_to_hidden_questions_are_dropped(self, api_client, survey):
-        source = make_question(
-            survey, "Diet", SurveyQuestionType.RADIO, options=["vegan", "veg"], order=0
-        )
-        dependent = make_question(
-            survey, "Why vegan?", SurveyQuestionType.TEXT, order=1, show_if=equals(source, "vegan")
-        )
-        response = self._submit(
-            api_client, survey, {str(source.id): "veg", str(dependent.id): "smuggled"}
-        )
-        assert response.status_code == 201
-        stored = SurveyResponse.objects.get(survey=survey).answers
-        assert str(dependent.id) not in stored
-        assert str(source.id) in stored

@@ -29,7 +29,7 @@ export function conditionValues(question: Pick<SurveyQuestion, 'fieldType' | 'op
 
 export function operatorsFor(fieldType: QuestionType): ShowIfOperator[] {
   return fieldType === QuestionType.Checkbox
-    ? [ShowIfOperator.Equals, ShowIfOperator.NotEquals, ShowIfOperator.Contains]
+    ? [ShowIfOperator.Contains, ShowIfOperator.NotEquals]
     : [ShowIfOperator.Equals, ShowIfOperator.NotEquals];
 }
 
@@ -44,28 +44,27 @@ export function eligibleSourceQuestions(
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
-function conditionMet(answer: string, condition: ShowIfCondition): boolean {
-  if (condition.operator === ShowIfOperator.Contains) {
-    return answer
+function conditionMet(answer: string, condition: ShowIfCondition, multi: boolean): boolean {
+  if (multi) {
+    const ticked = answer
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean)
       .includes(condition.value);
+    return condition.operator === ShowIfOperator.NotEquals ? !ticked : ticked;
   }
   if (condition.operator === ShowIfOperator.NotEquals) return answer !== condition.value;
   return answer === condition.value;
 }
 
-/**
- * Ids of the questions a respondent should see. Mirrors the server evaluator —
- * a condition pointing at a hidden question is never met, so hiding cascades.
- */
+/** mirrors the server evaluator: a condition on a hidden question is never met, so hiding cascades */
 export function visibleQuestionIds(
   questions: readonly SurveyQuestion[],
   answers: Record<string, AnswerValue>,
 ): Set<string> {
   const visible = new Set<string>();
   const ordered = [...questions].sort((a, b) => a.displayOrder - b.displayOrder);
+  const types = new Map(questions.map((q) => [q.id, q.fieldType]));
   for (const q of ordered) {
     if (!q.showIf) {
       visible.add(q.id);
@@ -73,7 +72,8 @@ export function visibleQuestionIds(
     }
     if (!visible.has(q.showIf.questionId)) continue;
     const answer = answers[q.showIf.questionId];
-    if (conditionMet(typeof answer === 'string' ? answer : '', q.showIf)) {
+    const multi = types.get(q.showIf.questionId) === QuestionType.Checkbox;
+    if (conditionMet(typeof answer === 'string' ? answer : '', q.showIf, multi)) {
       visible.add(q.id);
     }
   }
