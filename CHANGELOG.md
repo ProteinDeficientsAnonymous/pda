@@ -1,3 +1,10 @@
+## [0.130.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.0...v0.130.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **events:** treat end-less events as past 2h after start ([#1641](https://github.com/ProteinDeficientsAnonymous/pda/issues/1641)) ([ac459db](https://github.com/ProteinDeficientsAnonymous/pda/commit/ac459db0af360eef1e379ac9d06c9dd105b4d546))
+
 # [0.130.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.6...v0.130.0) (2026-10-21)
 
 
