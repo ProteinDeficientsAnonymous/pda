@@ -14,7 +14,7 @@ from notifications.models import Notification, NotificationType
 from notifications.service import notify_users
 
 from users._helpers import _create_magic_token
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.permissions import PermissionKey
 from users.schemas import ErrorOut, ResetPasswordOut
 
@@ -59,6 +59,7 @@ def generate_magic_link(request, user_id: str):
                 used=False,
                 created_at__gte=timezone.now() - timedelta(minutes=5),
             )
+            .exclude(source=MagicLoginTokenSource.REMINDER)
             .order_by("-created_at")
             .first()
         )
