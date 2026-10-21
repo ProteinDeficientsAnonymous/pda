@@ -1,3 +1,10 @@
+## [0.136.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.1...v0.136.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* og previews for public static pages, generic preview for hidden events (Issue 1215) ([#1219](https://github.com/ProteinDeficientsAnonymous/pda/issues/1219)) ([d96ce4c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d96ce4c342afa406dc2f64edfde0986f130b46d7))
+
 ## [0.136.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.0...v0.136.1) (2026-10-21)
 
 
