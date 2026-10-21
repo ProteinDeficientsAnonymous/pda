@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community.models import Document, Event, EventRSVP, JoinRequest, Survey
+from community.models import Document, Event, EventRSVP, JoinRequest, RSVPStatus, Survey
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from users.models import NonMemberRsvpToken, User
@@ -170,6 +170,31 @@ def test_e2e_seed_member_screens_events_use_month_end(capsys, monkeypatch):
     )
     assert out["calendar_date"] == "2026-10-31"
     assert "october 31" in out["digest_html"]
+
+
+@pytest.mark.django_db
+def test_e2e_seed_waitlist_screens_is_rerunnable(capsys):
+    call_command("e2e_seed", "waitlist-screens")
+    capsys.readouterr()
+    call_command("e2e_seed", "waitlist-screens")
+    out = json.loads(capsys.readouterr().out)
+    event = Event.objects.get(slug="supper")
+    assert event.max_attendees == 1
+    assert event.allow_plus_ones is True
+    wren = User.objects.get(phone_number=out["wren_phone"])
+    assert wren.check_password(out["password"])
+    rsvp = EventRSVP.objects.get(event=event, user=wren)
+    assert rsvp.status == RSVPStatus.WAITLISTED
+    guest = NonMemberRsvpToken.resolve_user(out["guest_token"])
+    assert guest is not None
+    assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.WAITLISTED
+
+
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
+    call_command("e2e_seed", "waitlist-screens")
+    call_command("e2e_seed", "member-screens")
+    assert not Event.objects.filter(slug="supper").exists()
 
 
 @pytest.mark.django_db

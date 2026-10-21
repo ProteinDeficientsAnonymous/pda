@@ -47,6 +47,7 @@ export interface SeedScenarioMap {
     survey_id: string;
     doc_id: string;
   };
+  'waitlist-screens': { password: string; wren_phone: string; guest_token: string };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;
