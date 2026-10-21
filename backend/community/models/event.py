@@ -1,5 +1,4 @@
 import uuid
-from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -8,7 +7,6 @@ from django.db.models import Max, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.text import slugify
 
 from community.models.choices import (
     RSVP_QUESTION_TYPE_CHOICES,
@@ -20,6 +18,7 @@ from community.models.choices import (
     PageVisibility,
     RSVPStatus,
 )
+from community.models.event_slug import EventSlugAlias, build_event_slug
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -29,9 +28,6 @@ if TYPE_CHECKING:
     from community.models.poll import EventPoll
     from community.models.survey import Survey
 
-
-# Leaves room inside SlugField(max_length=80) for a "-<n>" dedupe suffix.
-SLUG_BASE_MAX = 70
 
 # How long an event with no end_datetime is treated as running; mirrors frontend DEFAULT_EVENT_DURATION_MS.
 DEFAULT_EVENT_DURATION = timedelta(hours=2)
@@ -60,58 +56,6 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
         & Q(**{f"{prefix}rsvp_enabled": True})
         & ~_is_past_q(now, prefix)
     )
-
-
-@dataclass(frozen=True)
-class EventRef:
-    """A parsed {event_id} path segment: exactly one of event_id or slug is set."""
-
-    event_id: uuid.UUID | None
-    slug: str | None
-
-    def as_q(self) -> Q:
-        if self.event_id is not None:
-            return Q(id=self.event_id)
-        return Q(slug=self.slug)
-
-
-def parse_event_ref(raw: str) -> EventRef:
-    """Parse the {event_id} path segment: a slug, or a UUID so pre-slug shared links keep resolving."""
-    try:
-        return EventRef(event_id=uuid.UUID(raw), slug=None)
-    except ValueError:
-        return EventRef(event_id=None, slug=raw)
-
-
-def event_lookup_q(event_ref: str) -> Q:
-    """Match an event by slug, or by UUID so pre-slug shared links keep resolving.
-
-    param event_ref(str): the {event_id} path segment — a slug or a UUID
-    return(Q): lookup for exactly one of the two identifier forms
-    """
-    return parse_event_ref(event_ref).as_q()
-
-
-def build_event_slug(title: str, manager, exclude_pk=None) -> str:
-    """Slugify `title`, appending -2, -3, … until unique in `manager`.
-
-    param title(str): event title to slugify
-    param manager(Manager): Event manager to check uniqueness against (the historical
-        model's in a migration, Event.objects otherwise)
-    param exclude_pk(UUID | None): row to ignore when checking, for re-saves
-    return(str): a slug unique across events
-    """
-    base = slugify(title)[:SLUG_BASE_MAX] or "event"
-    taken = manager.filter(slug__startswith=base)
-    if exclude_pk is not None:
-        taken = taken.exclude(pk=exclude_pk)
-    taken = set(taken.values_list("slug", flat=True))
-    if base not in taken:
-        return base
-    suffix = 2
-    while f"{base}-{suffix}" in taken:
-        suffix += 1
-    return f"{base}-{suffix}"
 
 
 class Event(models.Model):
@@ -199,7 +143,9 @@ class Event(models.Model):
     def save(self, *args, **kwargs):
         # Assigned once and never regenerated on title edits, so shared links never break.
         if not self.slug:
-            self.slug = build_event_slug(self.title, Event.objects, exclude_pk=self.pk)
+            self.slug = build_event_slug(
+                self.title, Event.objects, exclude_pk=self.pk, aliases=EventSlugAlias.objects
+            )
             if (update_fields := kwargs.get("update_fields")) is not None:
                 kwargs["update_fields"] = {*update_fields, "slug"}
         super().save(*args, **kwargs)

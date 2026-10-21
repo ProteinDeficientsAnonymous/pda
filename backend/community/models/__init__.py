@@ -41,9 +41,12 @@ from community.models.event import (
     Event,
     EventEmailBlast,
     EventFlag,
-    EventRef,
     EventRSVP,
     EventRsvpQuestion,
+)
+from community.models.event_slug import (
+    EventRef,
+    EventSlugAlias,
     event_lookup_q,
     parse_event_ref,
 )
@@ -101,6 +104,7 @@ __all__ = [
     "EventEmailBlast",
     "EventFlag",
     "EventRef",
+    "EventSlugAlias",
     "EventRSVP",
     "EventTag",
     "event_lookup_q",
