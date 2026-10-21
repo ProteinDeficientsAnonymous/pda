@@ -1,9 +1,11 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 
+import { LabelSuffix } from '@/components/ui/LabelSuffix';
 import { cn } from '@/utils/cn';
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  labelSuffix?: string | undefined;
   hideLabel?: boolean;
   error?: string | undefined;
   hint?: string | undefined;
@@ -11,7 +13,7 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
-  { label, hideLabel, error, hint, rightAdornment, className, id, ...rest },
+  { label, labelSuffix, hideLabel, error, hint, rightAdornment, className, id, ...rest },
   ref,
 ) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
@@ -23,6 +25,7 @@ export const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
         className={cn('text-foreground text-sm font-medium', hideLabel && 'sr-only')}
       >
         {label}
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </label>
       <div className="relative">
         <input

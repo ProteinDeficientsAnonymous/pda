@@ -38,12 +38,13 @@ def list_roles(request):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
+    # Django drops Meta.ordering on GROUP BY queries, so order explicitly.
     roles = Role.objects.annotate(
         user_count=Count(
             "users",
             filter=Q(users__archived_at__isnull=True, users__is_member=True),
         ),
-    )
+    ).order_by("name")
     return Status(
         200,
         [
