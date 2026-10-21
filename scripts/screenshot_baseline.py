@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Choose the commit reg-actions should diff PR screenshots against.
 
-reg-actions looks up a GitHub Actions artifact whose workflow run head SHA is
-the PR merge-base. Release commits use [skip ci], so that SHA has no Visual
-run and every image is reported as new. Walk ancestors until a successful
-Visual run on main exists.
+The baseline artifact is the last successful Visual run on main. A pull
+request into another branch still diffs against that, so a stack that is
+squash-merged later still gets a comparison. Release commits skip CI, so the
+merge-base with main often has no Visual run. Walk ancestors until a
+successful Visual run on main exists.
 
 ponytail: walks at most 30 ancestors. A longer stretch of commits with no
 successful Visual run fails the job. Upgrade: paginate `gh run list` for the
@@ -22,6 +23,12 @@ from collections.abc import Callable
 MAX_ANCESTORS = 30
 
 
+def baseline_pair(main_sha: str, pr_base_sha: str, head_sha: str) -> tuple[str, str]:
+    """Diff every PR against main. Only a push to main uploads the baseline."""
+    del pr_base_sha
+    return main_sha, head_sha
+
+
 def pick_baseline_sha(
     ancestor_shas: list[str],
     has_success: Callable[[str], bool],
@@ -36,15 +43,18 @@ def _run(args: list[str]) -> str:
     return subprocess.check_output(args, text=True).strip()
 
 
-def fetch_commits(pr_number: str) -> None:
+def fetch_commits(pr_number: str) -> tuple[str, str]:
     fetch = ["git", "fetch", "--no-tags", "origin", "main"]
     if _run(["git", "rev-parse", "--is-shallow-repository"]) == "true":
         fetch.insert(2, "--unshallow")
     subprocess.run(fetch, check=True)
+    # The next fetch replaces FETCH_HEAD, so keep main's SHA now.
+    main_sha = _run(["git", "rev-parse", "FETCH_HEAD"])
     subprocess.run(
         ["git", "fetch", "--no-tags", "origin", f"pull/{pr_number}/head"],
         check=True,
     )
+    return main_sha, _run(["git", "rev-parse", "FETCH_HEAD"])
 
 
 def ancestors(sha: str, limit: int = MAX_ANCESTORS) -> list[str]:
@@ -84,10 +94,10 @@ def write_sha(sha: str) -> None:
 
 
 def main() -> None:
-    base_sha = os.environ["BASE_SHA"]
     pr_number = os.environ["PR_NUMBER"]
-    fetch_commits(pr_number)
-    base = _run(["git", "merge-base", base_sha, "FETCH_HEAD"])
+    main_sha, head_sha = fetch_commits(pr_number)
+    left, right = baseline_pair(main_sha, os.environ.get("BASE_SHA", ""), head_sha)
+    base = _run(["git", "merge-base", left, right])
     sha = pick_baseline_sha(ancestors(base), has_visual_success)
     if sha is None:
         sys.exit(f"No successful Visual run on main within {MAX_ANCESTORS} commits of {base}")

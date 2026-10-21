@@ -1,8 +1,10 @@
 name: Visual
 
 on:
+  # Stacks often target another feature branch and never open a pull request
+  # into main. Compare those too. The baseline artifact is uploaded only by
+  # the push below: reg-actions writes it when the event is not a pull request.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -53,7 +55,6 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: python3 scripts/screenshot_baseline.py
 

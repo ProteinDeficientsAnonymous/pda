@@ -41,3 +41,12 @@ def test_pick_baseline_sha_no_run_in_ancestors_returns_none():
     baseline = _load()
 
     assert baseline.pick_baseline_sha(["skip-ci", "also-skipped"], set().__contains__) is None
+
+
+def test_baseline_pair_stack_pr_diffs_against_main_not_the_parent_branch():
+    baseline = _load()
+
+    assert baseline.baseline_pair("main-tip", "feature-a-tip", "feature-b") == (
+        "main-tip",
+        "feature-b",
+    )
