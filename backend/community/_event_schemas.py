@@ -263,7 +263,9 @@ class CancellationOut(BaseModel):
     name: str
     cancelled_at: datetime
     days_before_event: int
-    previous_status: str | None
+    within_24h: bool
+    previous_status: RSVPStatus | None
+    declined_outright: bool
 
 
 class EventStatsOut(BaseModel):

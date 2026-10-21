@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0101_delete_featureflagstate"),
+        ("community", "0104_surveyquestion_show_if"),
     ]
 
     operations = [

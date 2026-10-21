@@ -121,7 +121,9 @@ export interface EventCancellation {
   name: string;
   cancelledAt: Date;
   daysBeforeEvent: number;
-  previousStatus: RsvpServerStatusValue | null;
+  within24h: boolean;
+  previousStatus: components['schemas']['RSVPStatus'] | null;
+  declinedOutright: boolean;
 }
 
 export interface EventStats {

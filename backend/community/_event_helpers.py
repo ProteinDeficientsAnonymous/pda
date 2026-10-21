@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -143,28 +144,34 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
 
 
-def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
-    """Return currently-CANT_GO RSVPs with lead time (local calendar days before start).
+def _declined_outright(r: EventRSVP) -> bool:
+    # cancelled_at is stamped in the create transaction, so a row born cant_go has it ~= created_at.
+    if r.previous_status is not None or r.cancelled_at is None:
+        return False
+    return r.cancelled_at - r.created_at < timedelta(seconds=5)
 
-    Compares local calendar dates, not raw UTC durations, so a cancellation just
-    after local midnight isn't misreported as a full day early/late.
-    """
+
+def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
+    """Currently-CANT_GO RSVPs with lead time in local calendar days, plus a raw-24h flag."""
     if event.start_datetime is None:
         return []
-    start_date = timezone.localtime(event.start_datetime, settings.LOCAL_DAY_TZ).date()
+    start_date = timezone.localtime(event.start_datetime, settings.COMMUNITY_TZ).date()
     rows = []
     for r in event.rsvps.all():
         if r.status != RSVPStatus.CANT_GO:
             continue
         cancelled_at = r.cancelled_at or r.updated_at
-        cancelled_date = timezone.localtime(cancelled_at, settings.LOCAL_DAY_TZ).date()
+        cancelled_date = timezone.localtime(cancelled_at, settings.COMMUNITY_TZ).date()
+        notice = event.start_datetime - cancelled_at
         rows.append(
             CancellationOut(
                 user_id=str(r.user_id),
                 name=visible_display_name(r.user, viewer),
                 cancelled_at=cancelled_at,
                 days_before_event=(start_date - cancelled_date).days,
+                within_24h=timedelta(0) <= notice < timedelta(hours=24),
                 previous_status=r.previous_status,
+                declined_outright=_declined_outright(r),
             )
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)

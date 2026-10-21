@@ -1,7 +1,6 @@
 """Tests for host-only event stats, attendance marking, and cancellation lead time."""
 
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 
 import pytest
 from community._event_helpers import _cancellations
@@ -13,10 +12,13 @@ from community._rsvp_counts import (
     _no_show_count,
 )
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from django.conf import settings
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
+
+ET = settings.COMMUNITY_TZ
 
 
 def _auth(user):
@@ -172,61 +174,71 @@ class TestCancellations:
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
 
+    def _cancel_at_existing(self, event, rsvp, **fields):
+        EventRSVP.objects.filter(pk=rsvp.pk).update(**fields)
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
+        return _cancellations(event)[0]
+
+    def _cancel_at(self, event, user, cancelled_at, **fields):
+        rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
+        return self._cancel_at_existing(event, rsvp, cancelled_at=cancelled_at, **fields)
+
+    def _event_at(self, host_user, start):
+        return Event.objects.create(
+            title="Timed Event", start_datetime=start, rsvp_enabled=True, created_by=host_user
+        )
+
     def test_zero_days_just_after_local_midnight(self, host_user, members):
-        """Cancelling 1 minute into the event's local calendar day is still 0 days
-        even though it's ~14 hours before start — Issue 1318."""
-        et = ZoneInfo("America/New_York")
-        start = timezone.datetime(2026, 6, 15, 14, 0, tzinfo=et)  # 2pm ET
-        event = Event.objects.create(
-            title="Same Day Event", start_datetime=start, rsvp_enabled=True, created_by=host_user
-        )
-        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
-        cancelled_at = timezone.datetime(2026, 6, 15, 0, 1, tzinfo=et)  # 12:01am ET, same day
-        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
-        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
-        rows = _cancellations(event)
-        assert rows[0].days_before_event == 0
+        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 14, 0, tzinfo=ET))
+        row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 15, 0, 1, tzinfo=ET))
+        assert row.days_before_event == 0
+        assert row.within_24h is True
 
-    def test_one_day_when_cancelled_prior_local_day(self, host_user, members):
-        """Cancelling 1 minute before the event's local calendar day starts is 1 day
-        before, not 0, even though it's under 24 hours before start."""
-        et = ZoneInfo("America/New_York")
-        start = timezone.datetime(2026, 6, 15, 0, 30, tzinfo=et)  # 12:30am ET
-        event = Event.objects.create(
-            title="Early Start Event",
-            start_datetime=start,
-            rsvp_enabled=True,
-            created_by=host_user,
-        )
-        rsvp = EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
-        cancelled_at = timezone.datetime(2026, 6, 14, 23, 59, tzinfo=et)  # prior local day
-        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
-        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
-        rows = _cancellations(event)
-        assert rows[0].days_before_event == 1
+    def test_prior_local_day_under_24h_is_one_day_and_within_24h(self, host_user, members):
+        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+        row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 14, 23, 0, tzinfo=ET))
+        assert row.days_before_event == 1
+        assert row.within_24h is True
 
-    def test_negative_days_when_cancelled_after_start(self, stats_event, members):
-        rsvp = EventRSVP.objects.create(
-            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+    def test_prior_local_day_over_24h_is_not_within_24h(self, host_user, members):
+        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+        row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 14, 8, 0, tzinfo=ET))
+        assert row.days_before_event == 1
+        assert row.within_24h is False
+
+    def test_cancel_after_start_is_negative_and_not_within_24h(self, stats_event, members):
+        row = self._cancel_at(
+            stats_event, members[0], stats_event.start_datetime + timedelta(days=1)
         )
-        cancelled_at = stats_event.start_datetime + timedelta(days=1)
-        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
-        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
-            pk=stats_event.pk
-        )
-        rows = _cancellations(stats_event)
-        assert rows[0].days_before_event == -1
+        assert row.days_before_event == -1
+        assert row.within_24h is False
 
     def test_includes_previous_status(self, stats_event, members):
+        row = self._cancel_at(
+            stats_event,
+            members[0],
+            stats_event.start_datetime - timedelta(days=2),
+            previous_status=RSVPStatus.MAYBE,
+        )
+        assert row.previous_status == RSVPStatus.MAYBE
+        assert row.declined_outright is False
+
+    def test_declined_outright_when_born_cant_go(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
         )
-        EventRSVP.objects.filter(pk=rsvp.pk).update(previous_status=RSVPStatus.MAYBE)
-        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
-            pk=stats_event.pk
+        row = self._cancel_at_existing(stats_event, rsvp, cancelled_at=rsvp.created_at)
+        assert row.declined_outright is True
+
+    def test_not_declined_outright_for_legacy_row_cancelled_later(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
         )
-        rows = _cancellations(stats_event)
-        assert rows[0].previous_status == RSVPStatus.MAYBE
+        row = self._cancel_at_existing(
+            stats_event, rsvp, cancelled_at=rsvp.created_at + timedelta(days=1)
+        )
+        assert row.previous_status is None
+        assert row.declined_outright is False
 
 
 @pytest.mark.django_db

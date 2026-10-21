@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from community._event_helpers import _cancellations
 from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
@@ -245,6 +246,21 @@ class TestRSVP:
         user = User.objects.get(phone_number="+12025550101")
         rsvp = EventRSVP.objects.get(event=rsvp_event, user=user)
         assert rsvp.previous_status == RSVPStatus.MAYBE
+
+    def test_outright_decline_reads_as_declined_outright(
+        self, api_client, auth_headers, rsvp_event
+    ):
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.CANT_GO},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=rsvp_event.pk)
+        row = _cancellations(event)[0]
+        assert row.previous_status is None
+        assert row.declined_outright is True
 
     def test_rsvp_delete_success(self, api_client, auth_headers, rsvp_event, test_user):
         EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)

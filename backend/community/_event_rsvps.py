@@ -118,11 +118,7 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
 
 
 def _resolve_previous_status(existing: EventRSVP | None, final_status: str) -> str | None:
-    """Record the status just before a CANT_GO transition; clear it on any other status.
-
-    Preserves the original prior status on a re-save while already CANT_GO,
-    mirroring _resolve_cancelled_at's "first cancellation wins" behavior.
-    """
+    """Status before the first cant_go transition; cleared when leaving cant_go."""
     if final_status != RSVPStatus.CANT_GO:
         return None
     if existing is None:

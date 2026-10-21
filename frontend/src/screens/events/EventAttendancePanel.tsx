@@ -95,9 +95,8 @@ function CancellationsList({ cancellations }: { cancellations: EventCancellation
         <ul className="flex flex-col gap-1 text-sm">
           {filtered.map((c) => (
             <li key={c.userId} className="text-foreground-secondary">
-              <span className="text-foreground">{c.name}</span> —{' '}
-              {formatLeadTime(c.daysBeforeEvent)}
-              {c.previousStatus ? ` (was ${rsvpGroupLabel(c.previousStatus)})` : ''}
+              <span className="text-foreground">{c.name}</span> — {formatLeadTime(c)}
+              {formatPriorStatus(c)}
             </li>
           ))}
         </ul>
@@ -152,9 +151,19 @@ function WithinDaysFilter({
   );
 }
 
-function formatLeadTime(days: number): string {
-  if (days === 0) return 'cancelled same day';
-  if (days < 0) return `cancelled ${String(Math.abs(days))} days after start`;
-  if (days === 1) return 'cancelled 1 day before';
-  return `cancelled ${String(days)} days before`;
+function pluralDays(n: number): string {
+  return n === 1 ? '1 day' : `${String(n)} days`;
+}
+
+function formatLeadTime({ daysBeforeEvent: days, within24h }: EventCancellation): string {
+  if (within24h) return 'cancelled within 24 hours';
+  if (days === 0) return 'cancelled after start';
+  if (days < 0) return `cancelled ${pluralDays(-days)} after start`;
+  return `cancelled ${pluralDays(days)} before`;
+}
+
+function formatPriorStatus({ previousStatus, declinedOutright }: EventCancellation): string {
+  if (previousStatus) return ` (was ${rsvpGroupLabel(previousStatus)})`;
+  if (declinedOutright) return ' (declined)';
+  return '';
 }

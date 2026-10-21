@@ -2480,12 +2480,15 @@ export interface components {
             cancelled_at: string;
             /** Days Before Event */
             days_before_event: number;
+            /** Declined Outright */
+            declined_outright: boolean;
             /** Name */
             name: string;
-            /** Previous Status */
-            previous_status: string | null;
+            previous_status: components["schemas"]["RSVPStatus"] | null;
             /** User Id */
             user_id: string;
+            /** Within 24H */
+            within_24h: boolean;
         };
         /** ChangePasswordIn */
         ChangePasswordIn: {

@@ -45,7 +45,9 @@ const BASE_STATS: EventStats = {
       name: 'bob',
       cancelledAt: new Date('2026-05-29T12:00:00Z'),
       daysBeforeEvent: 3,
+      within24h: false,
       previousStatus: null,
+      declinedOutright: false,
     },
   ],
 };
@@ -211,7 +213,13 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText(/cancelled 3 days before/i)).toBeInTheDocument();
   });
 
-  it('shows "same day" when the backend reports zero days before start (Issue 1318)', () => {
+  it.each([
+    { daysBeforeEvent: 1, within24h: true, label: /cancelled within 24 hours/i },
+    { daysBeforeEvent: 1, within24h: false, label: /cancelled 1 day before/i },
+    { daysBeforeEvent: 0, within24h: false, label: /cancelled after start/i },
+    { daysBeforeEvent: -1, within24h: false, label: /cancelled 1 day after start/i },
+    { daysBeforeEvent: -2, within24h: false, label: /cancelled 2 days after start/i },
+  ])('labels lead time $label', ({ daysBeforeEvent, within24h, label }) => {
     const stats: EventStats = {
       ...BASE_STATS,
       cancellations: [
@@ -219,14 +227,16 @@ describe('EventAttendancePanel', () => {
           userId: 'lastminute',
           name: 'lastminute larry',
           cancelledAt: new Date('2026-06-04T13:00:00Z'),
-          daysBeforeEvent: 0,
+          daysBeforeEvent,
+          within24h,
           previousStatus: null,
+          declinedOutright: false,
         },
       ],
     };
     mockStats(stats);
     renderPanel(BASE_EVENT);
-    expect(screen.getByText(/cancelled same day/i)).toBeInTheDocument();
+    expect(screen.getByText(label)).toBeInTheDocument();
   });
 
   it('shows the prior rsvp status alongside a cancellation', () => {
@@ -238,14 +248,18 @@ describe('EventAttendancePanel', () => {
           name: 'was going wendy',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
+          within24h: false,
           previousStatus: RsvpServerStatus.Attending,
+          declinedOutright: false,
         },
         {
           userId: 'wasmaybe',
           name: 'was maybe mia',
           cancelledAt: new Date('2026-05-29T12:00:00Z'),
           daysBeforeEvent: 3,
+          within24h: false,
           previousStatus: RsvpServerStatus.Maybe,
+          declinedOutright: false,
         },
       ],
     };
@@ -253,6 +267,27 @@ describe('EventAttendancePanel', () => {
     renderPanel(BASE_EVENT);
     expect(screen.getByText(/\(was going\)/i)).toBeInTheDocument();
     expect(screen.getByText(/\(was maybe\)/i)).toBeInTheDocument();
+  });
+
+  it('marks an outright decline, and shows nothing when prior status is unknown', () => {
+    const stats: EventStats = {
+      ...BASE_STATS,
+      cancellations: [
+        {
+          userId: 'declined',
+          name: 'declined dana',
+          cancelledAt: new Date('2026-05-29T12:00:00Z'),
+          daysBeforeEvent: 3,
+          within24h: false,
+          previousStatus: null,
+          declinedOutright: true,
+        },
+      ],
+    };
+    mockStats(stats);
+    renderPanel(BASE_EVENT);
+    expect(screen.getByText(/\(declined\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\(was /i)).not.toBeInTheDocument();
   });
 
   it('filters cancellations by "within N days" when host enters a value', () => {
@@ -264,14 +299,18 @@ describe('EventAttendancePanel', () => {
           name: 'early bird',
           cancelledAt: new Date('2026-05-20T00:00:00Z'),
           daysBeforeEvent: 12,
+          within24h: false,
           previousStatus: null,
+          declinedOutright: false,
         },
         {
           userId: 'late',
           name: 'late one',
           cancelledAt: new Date('2026-05-31T00:00:00Z'),
           daysBeforeEvent: 1,
+          within24h: false,
           previousStatus: null,
+          declinedOutright: false,
         },
       ],
     };

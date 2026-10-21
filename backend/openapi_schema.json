@@ -634,6 +634,10 @@
             "title": "Days Before Event",
             "type": "integer"
           },
+          "declined_outright": {
+            "title": "Declined Outright",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -641,17 +645,20 @@
           "previous_status": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/RSVPStatus"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Previous Status"
+            ]
           },
           "user_id": {
             "title": "User Id",
             "type": "string"
+          },
+          "within_24h": {
+            "title": "Within 24H",
+            "type": "boolean"
           }
         },
         "required": [
@@ -659,7 +666,9 @@
           "name",
           "cancelled_at",
           "days_before_event",
-          "previous_status"
+          "within_24h",
+          "previous_status",
+          "declined_outright"
         ],
         "title": "CancellationOut",
         "type": "object"
