@@ -227,9 +227,6 @@ class Code:
         MEMBERS_ONLY = "page.members_only"
         VISIBILITY_INVALID = "page.visibility_invalid"  # params: { allowed: list[str] }
 
-    class FeatureFlag:
-        NOT_FOUND = "feature_flag.not_found"
-
     class DevTools:
         NOT_FOUND = "dev_tools.not_found"  # 404 in prod — route must not confirm it exists
 

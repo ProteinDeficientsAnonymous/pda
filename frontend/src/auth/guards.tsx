@@ -2,14 +2,12 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import type { SessionTokenListener } from '@/api/auth';
-import { useFeatureFlags } from '@/api/featureFlags';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import { isTentativeMember } from '@/models/event';
-import type { FeatureFlagKey } from '@/models/featureFlags';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
@@ -171,31 +169,6 @@ export function RequireMember({ unlocks }: { unlocks: string }) {
   }
   if (isTentativeMember(user)) {
     return <MembersOnlyNotice unlocks={unlocks} />;
-  }
-  return <Outlet />;
-}
-
-// ----------------------------------------------------------------------------
-// RequireFlag — authed + feature flag check. Fail-closed: a flag that is off
-// or missing redirects to /calendar. While the flags query is still loading,
-// renders a spinner instead of redirecting, so a flag that resolves true
-// doesn't briefly bounce the user away first.
-// ----------------------------------------------------------------------------
-
-export function RequireFlag({ flag }: { flag: FeatureFlagKey }) {
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
-  const location = useLocation();
-  const { data: flags, isPending } = useFeatureFlags();
-
-  if (!isAuthed) {
-    const redirect = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?redirect=${redirect}`} replace />;
-  }
-  if (isPending) {
-    return <BootSpinner />;
-  }
-  if (!(flags?.[flag] ?? false)) {
-    return <Navigate to="/calendar" replace />;
   }
   return <Outlet />;
 }

@@ -307,6 +307,23 @@ export interface paths {
         patch: operations["users__management_update_user"];
         trace?: never;
     };
+    "/api/auth/users/{user_id}/attended-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Member Attended Events */
+        get: operations["users__management_list_member_attended_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/hard/": {
         parameters: {
             query?: never;
@@ -1361,40 +1378,6 @@ export interface paths {
         head?: never;
         /** Update Faq */
         patch: operations["community__guidelines_update_faq"];
-        trace?: never;
-    };
-    "/api/community/feature-flags/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Feature Flags */
-        get: operations["community__feature_flags_get_feature_flags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/community/feature-flags/{key}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Feature Flag */
-        patch: operations["community__feature_flags_update_feature_flag"];
         trace?: never;
     };
     "/api/community/feedback/": {
@@ -3850,18 +3833,6 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** FeatureFlagPatchIn */
-        FeatureFlagPatchIn: {
-            /** Enabled */
-            enabled: boolean;
-        };
-        /** FeatureFlagsOut */
-        FeatureFlagsOut: {
-            /** Flags */
-            flags: {
-                [key: string]: boolean;
-            };
-        };
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -4425,6 +4396,17 @@ export interface components {
             qualifying_count_12mo: number;
             /** User Id */
             user_id: string;
+        };
+        /** MemberAttendedEventOut */
+        MemberAttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
@@ -5343,6 +5325,11 @@ export interface components {
         };
         /** UserOut */
         UserOut: {
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
             /**
              * Bio
              * @default
@@ -6475,6 +6462,46 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__management_list_member_attended_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9860,70 +9887,6 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__feature_flags_get_feature_flags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeatureFlagsOut"];
-                };
-            };
-        };
-    };
-    community__feature_flags_update_feature_flag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                key: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FeatureFlagPatchIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeatureFlagsOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

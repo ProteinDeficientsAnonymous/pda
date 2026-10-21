@@ -221,9 +221,6 @@ export const Code = {
     MembersOnly: 'page.members_only',
     VisibilityInvalid: 'page.visibility_invalid',
   },
-  FeatureFlag: {
-    NotFound: 'feature_flag.not_found',
-  },
   DevTools: {
     NotFound: 'dev_tools.not_found',
   },
@@ -441,7 +438,6 @@ export type ValidationCode =
   | 'rate.limited'
   | 'page.members_only'
   | 'page.visibility_invalid'
-  | 'feature_flag.not_found'
   | 'dev_tools.not_found'
   | 'docs.folder_not_found'
   | 'docs.parent_folder_not_found'
@@ -638,7 +634,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'rate.limited': [],
   'page.members_only': [],
   'page.visibility_invalid': ['allowed'],
-  'feature_flag.not_found': [],
   'dev_tools.not_found': [],
   'docs.folder_not_found': [],
   'docs.parent_folder_not_found': [],

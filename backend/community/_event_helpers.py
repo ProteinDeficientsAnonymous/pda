@@ -34,11 +34,9 @@ from community.models import (
     EventRSVP,
     EventTag,
     EventType,
-    FeatureFlag,
     PageVisibility,
     RSVPStatus,
     SurveyQuestionType,
-    flag_enabled,
     is_official_or_club,
 )
 
@@ -317,7 +315,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     can_manage = viewer_is_cohost or (
         auth_user is not None and auth_user.has_permission(PermissionKey.MANAGE_EVENTS)
     )
-    payment_status_visible = can_manage and flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
+    payment_status_visible = can_manage
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
     all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible

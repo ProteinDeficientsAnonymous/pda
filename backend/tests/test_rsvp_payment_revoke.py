@@ -2,7 +2,7 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, FeatureFlag, RSVPStatus
+from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
@@ -10,17 +10,10 @@ from users.models import Role
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"
-
-FLAG = FeatureFlag.EVENT_PAYMENT_CONFIRMATION
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_payment_flag(True)
 
 
 def _paid_event(creator, **overrides) -> Event:
@@ -295,13 +288,6 @@ class TestPaymentStatusVisibility:
         )
         EventRSVP.objects.create(event=event, user=nosy, status=RSVPStatus.ATTENDING)
         assert self._guests(api_client, event, _headers(nosy))["Payer"] is False
-
-    def test_flag_off_hides_payment_status_from_the_host_too(
-        self, api_client, auth_headers, test_user, django_user_model
-    ):
-        set_payment_flag(False)
-        event = self._event_with_a_payer(test_user, django_user_model, "+14155550404")
-        assert self._guests(api_client, event, auth_headers)["Payer"] is False
 
     def test_revoked_guest_reads_as_unpaid_to_the_host(
         self, api_client, auth_headers, test_user, django_user_model

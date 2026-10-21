@@ -20,7 +20,7 @@ from community._event_report_schemas import (
 from community._events import _can_edit_event
 from community._shared import ErrorOut, csv_response, csv_safe
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, FeatureFlag, RSVPStatus, flag_enabled
+from community.models import AttendanceStatus, Event, RSVPStatus
 
 router = Router()
 
@@ -31,8 +31,6 @@ def _load_and_authorize(request, event_id: UUID) -> Event:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="check_in_report")
-    if not flag_enabled(FeatureFlag.HOST_ATTENDANCE_REPORT):
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not event.is_past:
         raise_validation(Code.Event.CHECK_IN_REPORT_NOT_YET_AVAILABLE, status_code=400)
     return event
