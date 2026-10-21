@@ -4,7 +4,7 @@ import type * as CalendarEventsModule from '@/api/calendarEvents';
 import { monthRange, prefetchCalendarEvents, upcomingRange } from '@/api/calendarEvents';
 import { queryClient } from '@/api/queryClient';
 
-import { prefetchCalendarOnBoot } from './bootPrefetch';
+import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
 
 vi.mock('@/api/calendarEvents', async (importOriginal) => ({
   ...(await importOriginal<typeof CalendarEventsModule>()),
@@ -37,11 +37,50 @@ describe('prefetchCalendarOnBoot', () => {
     expect(prefetchCalendarEvents).toHaveBeenCalledWith(queryClient, upcomingRange(), null);
   });
 
+  it('treats a trailing slash as the calendar', () => {
+    window.history.pushState({}, '', '/calendar/');
+
+    prefetchCalendarOnBoot(null);
+
+    expect(prefetchCalendarEvents).toHaveBeenCalledOnce();
+  });
+
   it('skips every other landing page', () => {
     window.history.pushState({}, '', '/events/potluck');
 
     prefetchCalendarOnBoot('tok-1');
 
     expect(prefetchCalendarEvents).not.toHaveBeenCalled();
+  });
+});
+
+describe('preloadCalendarChunk', () => {
+  it('starts the chunk download when landing on the calendar', () => {
+    window.history.pushState({}, '', '/Calendar/?view=month');
+    const factory = vi.fn(() => Promise.resolve({}));
+
+    preloadCalendarChunk(factory);
+
+    expect(factory).toHaveBeenCalledOnce();
+  });
+
+  it('does nothing on other paths', () => {
+    window.history.pushState({}, '', '/events/abc');
+    const factory = vi.fn(() => Promise.resolve({}));
+
+    preloadCalendarChunk(factory);
+
+    expect(factory).not.toHaveBeenCalled();
+  });
+
+  it('swallows a failed preload so the route can retry on render', async () => {
+    window.history.pushState({}, '', '/calendar');
+    const factory = vi.fn(() => Promise.reject(new Error('failed to fetch')));
+
+    // Vitest fails the run on an unhandled rejection.
+    preloadCalendarChunk(factory);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(factory).toHaveBeenCalledOnce();
   });
 });
