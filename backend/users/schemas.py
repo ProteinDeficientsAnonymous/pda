@@ -348,6 +348,10 @@ class ChangePasswordIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
 
 
+class DeleteAccountIn(BaseModel):
+    password: str = Field(max_length=FieldLimit.PASSWORD)
+
+
 class UserRolesIn(BaseModel):
     role_ids: list[str]
 

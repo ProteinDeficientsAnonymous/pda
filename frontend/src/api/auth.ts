@@ -200,6 +200,10 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function deleteAccount(password: string): Promise<void> {
+  await apiClient.post('/api/auth/me/delete/', { password });
+}
+
 export async function fetchMe(): Promise<User> {
   const { data } = await apiClient.get<WireUser>('/api/auth/me/');
   return mapUser(data);
