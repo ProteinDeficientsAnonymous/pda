@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { calendarEventKeys, monthRange } from '@/api/calendarEvents';
 import { apiClient } from '@/api/client';
 import { eventKeys } from '@/api/events';
 import { RsvpStatus } from '@/models/event';
@@ -85,6 +86,25 @@ describe('useSetRsvp cache patching (issue 1242)', () => {
     expect(qc.getQueryData(eventKeys.detail(EVENT_SLUG, true))).toMatchObject({
       myRsvp: RsvpStatus.Attending,
     });
+  });
+
+  it('patches the calendar range cache as well as the full list', async () => {
+    const { qc, Wrapper } = buildWrapper();
+    const rangeKey = calendarEventKeys(true, monthRange(new Date()));
+    qc.setQueryData(eventKeys.list(true), [makeEvent({ id: EVENT_ID, myRsvp: null })]);
+    qc.setQueryData(rangeKey, [makeEvent({ id: EVENT_ID, myRsvp: null })]);
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: { id: EVENT_ID, title: 'potluck', my_rsvp: RsvpStatus.Attending },
+    });
+
+    const { result } = renderHook(() => useSetRsvp(), { wrapper: Wrapper });
+    result.current.mutate({ eventId: EVENT_ID, status: RsvpStatus.Attending });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    for (const key of [eventKeys.list(true), rangeKey]) {
+      expect(qc.getQueryData(key)).toMatchObject([{ myRsvp: RsvpStatus.Attending }]);
+    }
   });
 });
 

@@ -15,6 +15,7 @@ from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
     _survey_question_out,
+    _validate_survey_window,
 )
 from community._survey_schemas import (
     SurveyIn,
@@ -69,6 +70,9 @@ def list_surveys_admin(request):
                 slug=s.slug,
                 visibility=s.visibility,
                 is_active=s.is_active,
+                opens_at=s.opens_at,
+                closes_at=s.closes_at,
+                max_responses=s.max_responses,
                 linked_event_id=str(s.linked_event_id) if s.linked_event_id else None,
                 created_at=s.created_at,
                 response_count=s.responses.count(),
@@ -100,6 +104,7 @@ def create_survey(request, payload: SurveyIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     if Survey.objects.filter(slug=payload.slug).exists():
         raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
+    _validate_survey_window(payload.opens_at, payload.closes_at)
     linked_event = None
     if payload.linked_event_id:
         try:
@@ -113,6 +118,9 @@ def create_survey(request, payload: SurveyIn):
         visibility=payload.visibility,
         is_active=payload.is_active,
         one_response_per_user=payload.one_response_per_user,
+        opens_at=payload.opens_at,
+        closes_at=payload.closes_at,
+        max_responses=payload.max_responses,
         linked_event=linked_event,
         created_by=request.auth,
     )
@@ -190,6 +198,9 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     if "slug" in updates and updates["slug"] != survey.slug:
         if Survey.objects.filter(slug=updates["slug"]).exists():
             raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
+    _validate_survey_window(
+        updates.get("opens_at", survey.opens_at), updates.get("closes_at", survey.closes_at)
+    )
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
@@ -296,6 +307,45 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
     return Status(201, _survey_question_out(q))
 
 
+@router.put(
+    "/surveys/{survey_id}/questions/order/",
+    response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "reorder_survey_questions",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    for idx, qid in enumerate(payload.question_ids):
+        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    audit_log(
+        logging.INFO,
+        "survey_questions_reordered",
+        request,
+        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
+    )
+    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
+    return Status(200, [_survey_question_out(q) for q in questions])
+
+
+# Order must precede /{question_id}/ below: Django matches by registration order and would 405.
 @router.patch(
     "/surveys/{survey_id}/questions/{question_id}/",
     response={200: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
@@ -378,44 +428,6 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         ),
     )
     return Status(204, None)
-
-
-@router.put(
-    "/surveys/{survey_id}/questions/order/",
-    response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": "reorder_survey_questions",
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        Survey.objects.get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    for idx, qid in enumerate(payload.question_ids):
-        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
-    audit_log(
-        logging.INFO,
-        "survey_questions_reordered",
-        request,
-        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
-    )
-    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
-    return Status(200, [_survey_question_out(q) for q in questions])
 
 
 # -- Survey responses (admin) --

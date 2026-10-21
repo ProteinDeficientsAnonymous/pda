@@ -2,7 +2,7 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const backendTarget = `http://localhost:${process.env.BACKEND_PORT ?? 8000}`;
+const backendTarget = `http://localhost:${process.env.BACKEND_PORT ?? '8000'}`;
 
 export default defineConfig({
   plugins: [react()],

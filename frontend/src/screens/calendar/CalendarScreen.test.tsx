@@ -6,7 +6,8 @@ import { useEffect } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useEvents } from '@/api/events';
+import type * as CalendarEventsModule from '@/api/calendarEvents';
+import { upcomingRange, useCalendarEvents } from '@/api/calendarEvents';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent } from '@/test/fixtures';
 
@@ -26,12 +27,12 @@ vi.mock('./calendarLocalizer', () => ({
   makeLocalizer: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('@/api/events', () => ({
-  useEvents: vi.fn(),
-  eventKeys: { all: ['events'], list: vi.fn(), detail: vi.fn() },
+vi.mock('@/api/calendarEvents', async (importOriginal) => ({
+  ...(await importOriginal<typeof CalendarEventsModule>()),
+  useCalendarEvents: vi.fn(),
 }));
 
-const mockUseEvents = vi.mocked(useEvents);
+const mockUseCalendarEvents = vi.mocked(useCalendarEvents);
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -62,12 +63,12 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
   vi.clearAllMocks();
 
-  mockUseEvents.mockReturnValue({
+  mockUseCalendarEvents.mockReturnValue({
     data: [],
     isPending: false,
     isError: false,
     refetch: vi.fn(),
-  } as unknown as ReturnType<typeof useEvents>);
+  } as unknown as ReturnType<typeof useCalendarEvents>);
 });
 
 describe('CalendarScreen', () => {
@@ -92,12 +93,12 @@ describe('CalendarScreen', () => {
   });
 
   it('shows loading indicator while events are pending', () => {
-    mockUseEvents.mockReturnValue({
+    mockUseCalendarEvents.mockReturnValue({
       data: undefined,
       isPending: true,
       isError: false,
       refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useEvents>);
+    } as unknown as ReturnType<typeof useCalendarEvents>);
 
     renderCalendar();
 
@@ -105,12 +106,12 @@ describe('CalendarScreen', () => {
   });
 
   it('shows error message and retry button when events fail to load', async () => {
-    mockUseEvents.mockReturnValue({
+    mockUseCalendarEvents.mockReturnValue({
       data: [],
       isPending: false,
       isError: true,
       refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useEvents>);
+    } as unknown as ReturnType<typeof useCalendarEvents>);
 
     renderCalendar();
 
@@ -179,7 +180,7 @@ describe('CalendarScreen', () => {
 
   it('leaves events hidden from the calendar out of the list view', async () => {
     const user = userEvent.setup();
-    mockUseEvents.mockReturnValue({
+    mockUseCalendarEvents.mockReturnValue({
       data: [
         makeEvent({ id: 'e1', title: 'community potluck', startDatetime: new Date() }),
         makeEvent({
@@ -188,11 +189,17 @@ describe('CalendarScreen', () => {
           startDatetime: new Date(),
           isPartifulImport: true,
         }),
+        makeEvent({
+          id: 'e3',
+          title: 'legacy potluck',
+          startDatetime: new Date(),
+          isLegacy: true,
+        }),
       ],
       isPending: false,
       isError: false,
       refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useEvents>);
+    } as unknown as ReturnType<typeof useCalendarEvents>);
 
     renderCalendar();
     await user.click(screen.getByRole('radio', { name: /^list$/i }));
@@ -201,6 +208,7 @@ describe('CalendarScreen', () => {
       expect(screen.getByText('community potluck')).toBeInTheDocument();
     });
     expect(screen.queryByText('imported backfill')).not.toBeInTheDocument();
+    expect(screen.queryByText('legacy potluck')).not.toBeInTheDocument();
   });
 
   it('scrolls the list inside the view box so the toggles stay put', async () => {
@@ -213,5 +221,42 @@ describe('CalendarScreen', () => {
       expect(container.querySelector('main > div.min-h-0.flex-1')).not.toBeNull();
     });
     expect(container.querySelector('.overflow-y-auto')).not.toBeNull();
+  });
+
+  it('fetches only the month around the url date in the grid views', () => {
+    renderCalendar('/calendar?view=week&date=2026-03-10');
+
+    expect(mockUseCalendarEvents).toHaveBeenLastCalledWith({ month: '2026-03' });
+  });
+
+  it('fetches upcoming events in the list view', () => {
+    renderCalendar('/calendar?view=agenda&date=2025-01-01');
+
+    expect(mockUseCalendarEvents).toHaveBeenLastCalledWith(upcomingRange());
+  });
+
+  it('fetches an earlier month on demand when stepping back into it', async () => {
+    const user = userEvent.setup();
+    renderCalendar('/calendar?view=day&date=2026-03-01');
+
+    await user.click(screen.getByRole('button', { name: /previous day/i }));
+
+    await waitFor(() => {
+      expect(mockUseCalendarEvents).toHaveBeenLastCalledWith({ month: '2026-02' });
+    });
+  });
+
+  it('shows the loading hint while a new range loads over the last one', () => {
+    mockUseCalendarEvents.mockReturnValue({
+      data: [],
+      isPending: false,
+      isPlaceholderData: true,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useCalendarEvents>);
+
+    renderCalendar();
+
+    expect(screen.getByText(/loading events/i)).toBeInTheDocument();
   });
 });

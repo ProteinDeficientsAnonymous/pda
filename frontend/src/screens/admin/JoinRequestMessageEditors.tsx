@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  useMemberPromotionEmail,
   useMemberPromotionMessage,
   useTentativeApprovalMessage,
   useWelcomeTemplate,
@@ -9,6 +10,7 @@ import {
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
 
+import { MemberPromotionEmailEditorDialog } from './MemberPromotionEmailEditorDialog';
 import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
@@ -18,11 +20,13 @@ export function JoinRequestMessageEditors() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tentativeOpen, setTentativeOpen] = useState(false);
   const [memberPromotionOpen, setMemberPromotionOpen] = useState(false);
+  const [promotionEmailOpen, setPromotionEmailOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
   const memberPromotionQ = useMemberPromotionMessage();
+  const promotionEmailQ = useMemberPromotionEmail();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -52,6 +56,12 @@ export function JoinRequestMessageEditors() {
           }}
         />
         <EditorTrigger
+          label="edit member promotion email"
+          onClick={() => {
+            setPromotionEmailOpen(true);
+          }}
+        />
+        <EditorTrigger
           label="edit whatsapp link"
           onClick={() => {
             setWhatsappOpen(true);
@@ -78,6 +88,13 @@ export function JoinRequestMessageEditors() {
           setMemberPromotionOpen(false);
         }}
         template={memberPromotionQ.data ?? null}
+      />
+      <MemberPromotionEmailEditorDialog
+        open={promotionEmailOpen}
+        onClose={() => {
+          setPromotionEmailOpen(false);
+        }}
+        template={promotionEmailQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}

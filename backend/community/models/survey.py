@@ -23,6 +23,9 @@ class Survey(models.Model):
     )
     is_active = models.BooleanField(default=True)
     one_response_per_user = models.BooleanField(default=False)
+    opens_at = models.DateTimeField(null=True, blank=True)
+    closes_at = models.DateTimeField(null=True, blank=True)
+    max_responses = models.PositiveIntegerField(null=True, blank=True)
     linked_event = models.ForeignKey(
         "community.Event",
         null=True,
@@ -88,7 +91,7 @@ class SurveyResponse(models.Model):
         related_name="survey_responses",
     )
     answers = models.JSONField(default=dict, blank=True)
-    anonymous_token = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+    anonymous_token = models.CharField(max_length=64, null=True, blank=True, unique=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

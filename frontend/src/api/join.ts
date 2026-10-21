@@ -147,6 +147,9 @@ export interface JoinRequestSummary {
   status: JoinRequestStatus;
   userId: string | null;
   previouslyArchived: boolean;
+  previouslyRejected: boolean;
+  tentativeAt: string | null;
+  tentativeByName: string | null;
   approvedAt: string | null;
   approvedByName: string | null;
   rejectedAt: string | null;
@@ -187,6 +190,9 @@ interface WireJoinRequest {
   status: JoinRequestStatus;
   user_id: string | null;
   previously_archived?: boolean;
+  previously_rejected?: boolean;
+  tentative_at?: string | null;
+  tentative_by_name?: string | null;
   approved_at?: string | null;
   approved_by_name?: string | null;
   rejected_at?: string | null;
@@ -216,6 +222,9 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     status: w.status,
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
+    previouslyRejected: w.previously_rejected ?? false,
+    tentativeAt: w.tentative_at ?? null,
+    tentativeByName: w.tentative_by_name ?? null,
     approvedAt: w.approved_at ?? null,
     approvedByName: w.approved_by_name ?? null,
     rejectedAt: w.rejected_at ?? null,
@@ -346,10 +355,8 @@ export interface JoinRequestDecision {
   firstName: string;
   phoneNumber: string;
   status: JoinRequestStatus;
-  /** Present only when the decision created a brand-new user. */
+  /** Present when the decision provisioned a login — tentative, or a new/reactivated member. */
   magicLinkToken: string | null;
-  /** Present only on a tentative-approval decision. */
-  rsvpLinkToken: string | null;
   userId: string | null;
 }
 
@@ -360,7 +367,6 @@ interface WireDecision {
   phone_number: string;
   status: JoinRequestStatus;
   magic_link_token: string | null;
-  rsvp_link_token: string | null;
   user_id: string | null;
 }
 
@@ -385,7 +391,6 @@ export function useDecideJoinRequest() {
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
-        rsvpLinkToken: data.rsvp_link_token,
         userId: data.user_id,
       } satisfies JoinRequestDecision;
     },
@@ -420,7 +425,6 @@ export function useResendMagicLink() {
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
-        rsvpLinkToken: data.rsvp_link_token,
         userId: data.user_id,
       } satisfies JoinRequestDecision;
     },

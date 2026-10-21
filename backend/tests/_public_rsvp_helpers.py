@@ -10,6 +10,8 @@ from community.models import (
     Event,
     EventStatus,
     EventType,
+    JoinRequest,
+    JoinRequestStatus,
     PageVisibility,
     RSVPStatus,
 )
@@ -69,4 +71,16 @@ def make_non_member(phone, email, name="Existing Nonmember"):
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
+    return user
+
+
+def make_tentative_member(phone, email, name="Tentative Sprout"):
+    user = make_non_member(phone, email, name=name)
+    JoinRequest.objects.create(
+        first_name=user.first_name,
+        phone_number=phone,
+        email=email,
+        user=user,
+        status=JoinRequestStatus.TENTATIVE,
+    )
     return user

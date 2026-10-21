@@ -1,10 +1,19 @@
 """Tests for public survey endpoints: tally authorization + submit rate limit."""
 
 import json
+from datetime import timedelta
 
 import pytest
 from community._validation import Code
-from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import (
+    DatetimePollResult,
+    Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
+    SurveyResponse,
+    SurveyVisibility,
+)
+from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -134,6 +143,183 @@ class TestSurveySubmitRateLimit:
 
 
 # ---------------------------------------------------------------------------
+# One-response-per-user upsert
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def upsert_survey(db):
+    survey = Survey.objects.create(title="Checkin", slug="checkin", one_response_per_user=True)
+    SurveyQuestion.objects.create(survey=survey, label="Mood", field_type=SurveyQuestionType.TEXT)
+    return survey
+
+
+@pytest.mark.django_db
+class TestSurveySubmitUpsert:
+    def _submit(self, api_client, survey, text, headers=None):
+        question = survey.questions.first()
+        url = f"/api/community/surveys/view/{survey.slug}/respond/"
+        payload = json.dumps({"answers": {str(question.id): text}})
+        kwargs = {**headers} if headers else {}
+        return api_client.post(url, data=payload, content_type="application/json", **kwargs)
+
+    def test_first_submit_creates_response(self, api_client, auth_headers, upsert_survey):
+        response = self._submit(api_client, upsert_survey, "great", auth_headers)
+        assert response.status_code == 201
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 1
+
+    def test_second_submit_updates_in_place(self, api_client, auth_headers, upsert_survey):
+        first = self._submit(api_client, upsert_survey, "great", auth_headers)
+        second = self._submit(api_client, upsert_survey, "even better", auth_headers)
+        assert second.status_code == 200
+        assert second.json()["id"] == first.json()["id"]
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 1
+        row = SurveyResponse.objects.get(survey=upsert_survey)
+        question = upsert_survey.questions.first()
+        assert row.answers[str(question.id)]["answer"] == "even better"
+
+    def test_off_creates_a_second_row_per_user(self, api_client, auth_headers, test_user):
+        survey = Survey.objects.create(title="Repeat", slug="repeat", one_response_per_user=False)
+        SurveyQuestion.objects.create(
+            survey=survey, label="Mood", field_type=SurveyQuestionType.TEXT
+        )
+        first = self._submit(api_client, survey, "great", auth_headers)
+        second = self._submit(api_client, survey, "still great", auth_headers)
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert first.json()["id"] != second.json()["id"]
+        assert SurveyResponse.objects.filter(survey=survey).count() == 2
+
+    def test_anonymous_submits_are_never_upserted(self, api_client, upsert_survey):
+        first = self._submit(api_client, upsert_survey, "great")
+        second = self._submit(api_client, upsert_survey, "also great")
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert SurveyResponse.objects.filter(survey=upsert_survey).count() == 2
+
+
+# ---------------------------------------------------------------------------
+# Closed surveys (Issue 1460)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def closed_survey(db):
+    survey = Survey.objects.create(title="Closed feedback", slug="closed-feedback", is_active=False)
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="Thoughts?",
+        field_type=SurveyQuestionType.TEXT,
+    )
+    return survey
+
+
+@pytest.fixture
+def closed_members_survey(db):
+    survey = Survey.objects.create(
+        title="Closed members",
+        slug="closed-members",
+        description="Secret members-only debrief",
+        is_active=False,
+        visibility=SurveyVisibility.MEMBERS_ONLY,
+    )
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="Secret question?",
+        field_type=SurveyQuestionType.TEXT,
+    )
+    return survey
+
+
+@pytest.fixture
+def finalized_poll_survey(db):
+    survey = Survey.objects.create(title="Finalized poll", slug="finalized-poll", is_active=False)
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="When works?",
+        field_type=SurveyQuestionType.DATETIME_POLL,
+        options=[future_iso()],
+    )
+    DatetimePollResult.objects.create(
+        survey=survey, winning_datetime=timezone.now() + timedelta(days=30)
+    )
+    return survey
+
+
+@pytest.mark.django_db
+class TestClosedSurvey:
+    def _view_url(self, survey):
+        return f"/api/community/surveys/view/{survey.slug}/"
+
+    def _respond_url(self, survey):
+        return f"/api/community/surveys/view/{survey.slug}/respond/"
+
+    def test_get_closed_survey_returns_inactive(self, api_client, closed_survey):
+        resp = api_client.get(self._view_url(closed_survey))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["is_active"] is False
+        assert data["slug"] == closed_survey.slug
+
+    def test_get_closed_members_survey_hidden_from_anonymous(
+        self, api_client, closed_members_survey
+    ):
+        resp = api_client.get(self._view_url(closed_members_survey))
+        assert resp.status_code == 404
+        assert_error_code(resp, Code.Survey.NOT_FOUND)
+        body = resp.content.decode()
+        assert closed_members_survey.title not in body
+        assert closed_members_survey.description not in body
+        assert "Secret question?" not in body
+
+    def test_get_closed_members_survey_visible_to_member(
+        self, api_client, auth_headers, closed_members_survey
+    ):
+        resp = api_client.get(self._view_url(closed_members_survey), **auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["is_active"] is False
+
+    def test_submit_to_closed_survey_rejected(self, api_client, closed_survey):
+        question = closed_survey.questions.first()
+        payload = json.dumps({"answers": {str(question.id): "too late"}})
+        resp = api_client.post(
+            self._respond_url(closed_survey), data=payload, content_type="application/json"
+        )
+        assert resp.status_code == 400
+        assert_error_code(resp, Code.Survey.CLOSED)
+        assert not SurveyResponse.objects.filter(survey=closed_survey).exists()
+
+    def test_submit_to_closed_members_survey_hidden_from_anonymous(
+        self, api_client, closed_members_survey
+    ):
+        resp = api_client.post(
+            self._respond_url(closed_members_survey),
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+        )
+        # NOT_FOUND must win over CLOSED here, or the 400 would confirm the survey exists.
+        assert resp.status_code == 404
+        assert_error_code(resp, Code.Survey.NOT_FOUND)
+
+    def test_get_finalized_poll_is_readable(self, api_client, finalized_poll_survey):
+        resp = api_client.get(self._view_url(finalized_poll_survey))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["is_active"] is False
+        assert data["poll_result"] is not None
+
+    def test_submit_to_finalized_poll_rejected(self, api_client, finalized_poll_survey):
+        resp = api_client.post(
+            self._respond_url(finalized_poll_survey),
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert_error_code(resp, Code.Survey.CLOSED)
+        assert not SurveyResponse.objects.filter(survey=finalized_poll_survey).exists()
+
+
+# ---------------------------------------------------------------------------
 # Anonymous response token (Issue 1461)
 # ---------------------------------------------------------------------------
 
@@ -191,6 +377,31 @@ class TestAnonymousResponseToken:
         assert one_per_user_survey.responses.count() == 1
         question_id = str(one_per_user_survey.questions.first().id)
         assert one_per_user_survey.responses.get().answers[question_id]["answer"] == "second"
+
+    def test_token_upsert_not_blocked_by_cap(self, api_client, one_per_user_survey):
+        one_per_user_survey.max_responses = 1
+        one_per_user_survey.save()
+        first = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "first"),
+            content_type="application/json",
+        )
+        assert first.status_code == 201
+        token = first.json()["response_token"]
+        second = api_client.post(
+            _respond_url(one_per_user_survey) + f"?response_token={token}",
+            data=_answers(one_per_user_survey, "second"),
+            content_type="application/json",
+        )
+        assert second.status_code == 200
+        assert one_per_user_survey.responses.count() == 1
+        fresh = api_client.post(
+            _respond_url(one_per_user_survey),
+            data=_answers(one_per_user_survey, "someone else"),
+            content_type="application/json",
+        )
+        assert fresh.status_code == 400
+        assert_error_code(fresh, Code.Survey.CLOSED)
 
     def test_resubmit_without_token_creates_new_row(self, api_client, one_per_user_survey):
         for _ in range(2):
@@ -365,4 +576,4 @@ class TestAnonymousResponseToken:
         listing = api_client.get(url, **admin_headers)
         assert listing.status_code == 200
         assert one_per_user_survey.responses.get().anonymous_token
-        assert all(r["response_token"] is None for r in listing.json())
+        assert all("response_token" not in r for r in listing.json())

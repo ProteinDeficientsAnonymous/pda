@@ -31,6 +31,8 @@ vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
@@ -306,13 +308,24 @@ describe('JoinRequestsScreen pending actions', () => {
     expect(screen.getByRole('button', { name: 'reject' })).toBeInTheDocument();
   });
 
+  it('should confirm the named applicant without claiming reject is irreversible', async () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING, fullName: 'Ada Lovelace' })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'reject' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/reject ada lovelace\?/i)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/can't un-reject/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/you can un-reject them later/i)).toBeInTheDocument();
+  });
+
   it('calls decide with tentative status when tentatively approve is confirmed', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       fullName: 'Ada Lovelace',
       firstName: 'Ada',
       phoneNumber: '+16505550001',
-      magicLinkToken: null,
-      rsvpLinkToken: 'rsvp-tok',
+      magicLinkToken: 'magic-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
@@ -336,8 +349,7 @@ describe('JoinRequestsScreen pending actions', () => {
       fullName: 'Ada Lovelace',
       firstName: 'Ada',
       phoneNumber: '+16505550001',
-      magicLinkToken: null,
-      rsvpLinkToken: 'rsvp-tok',
+      magicLinkToken: 'magic-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
@@ -357,6 +369,21 @@ describe('JoinRequestsScreen pending actions', () => {
 });
 
 describe('JoinRequestsScreen tentative section', () => {
+  it('shows who tentatively approved the request and when', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.TENTATIVE,
+        tentativeAt: '2026-03-01T18:00:00Z',
+        tentativeByName: 'Sam Vettor',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+  });
+
   it('shows a manually approve button for tentative requests', async () => {
     mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
 
@@ -391,6 +418,30 @@ describe('JoinRequestsScreen tentative section', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
 
     expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
+  });
+
+  it('warns that direct approve is the legacy flow and cannot be undone', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-pending', status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'approve' }));
+    const confirmDialog = screen.getByRole('dialog');
+
+    expect(within(confirmDialog).getByText(/legacy direct-approval flow/i)).toBeInTheDocument();
+    expect(within(confirmDialog).getByText(/cannot be undone/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      within(confirmDialog).getByRole('button', { name: 'yes, fully approve' }),
+    );
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-pending',
+      status: JoinRequestStatus.APPROVED,
+    });
   });
 
   it('calls decide with approved status when manually approve is clicked', async () => {

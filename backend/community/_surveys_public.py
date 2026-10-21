@@ -7,6 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -15,16 +16,17 @@ from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
     _find_my_response,
     _has_finalize_permission,
-    _response_out,
+    _submit_out,
     _survey_out,
     _tally_question,
+    survey_is_open,
 )
 from community._survey_schemas import (
     FinalizePollIn,
     PollResultsOut,
     SurveyAnswersIn,
     SurveyOut,
-    SurveyResponseOut,
+    SurveySubmitOut,
 )
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community._validation import Code, raise_validation
@@ -39,19 +41,28 @@ from community.models import (
 router = Router()
 
 
+def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) -> Survey:
+    # Closed surveys still resolve so the UI can render a closed state.
+    qs = Survey.objects.prefetch_related("questions")
+    if for_update:
+        qs = qs.select_for_update()
+    try:
+        survey = qs.get(slug=slug)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    return survey
+
+
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
 def get_survey_public(request, slug: str, response_token: str = ""):
-    try:
-        survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
-    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    survey = _visible_survey_or_404(slug, auth_user)
     return Status(
         200,
         _survey_out(
@@ -66,8 +77,8 @@ def get_survey_public(request, slug: str, response_token: str = ""):
 @router.post(
     "/surveys/view/{slug}/respond/",
     response={
-        200: SurveyResponseOut,
-        201: SurveyResponseOut,
+        200: SurveySubmitOut,
+        201: SurveySubmitOut,
         400: ErrorOut,
         404: ErrorOut,
         429: ErrorOut,
@@ -76,37 +87,36 @@ def get_survey_public(request, slug: str, response_token: str = ""):
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, response_token: str = ""):
-    try:
-        survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
-    if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    questions = {str(q.id): q for q in survey.questions.all()}
-    _validate_survey_answers(payload.answers, questions)
-    answers = _build_survey_answers(payload.answers, questions)
-    user_name = visible_display_name(auth_user, auth_user) if auth_user else None
-    target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
-    existing = (
-        _find_my_response(survey, auth_user, response_token)
-        if survey.one_response_per_user
-        else None
-    )
-    if existing:
-        existing.answers = answers
-        existing.save(update_fields=["answers"])
-        audit_log(logging.INFO, "survey_response_updated", request, target=target)
-        return Status(200, _response_out(existing, user_name, include_token=auth_user is None))
-    # Anonymous responders get a server-issued token so a resubmit updates in place.
-    anonymous_token = None
-    if auth_user is None and survey.one_response_per_user:
-        anonymous_token = secrets.token_urlsafe(32)
-    response = SurveyResponse.objects.create(
-        survey=survey, user=auth_user, answers=answers, anonymous_token=anonymous_token
-    )
-    audit_log(logging.INFO, "survey_response_submitted", request, target=target)
-    return Status(201, _response_out(response, user_name, include_token=auth_user is None))
+    # select_for_update() serializes concurrent submits against the same survey row,
+    # so the max_responses check-then-create can't race past the cap (issue #1465).
+    with transaction.atomic():
+        survey = _visible_survey_or_404(slug, auth_user, for_update=True)
+        existing = (
+            _find_my_response(survey, auth_user, response_token)
+            if survey.one_response_per_user
+            else None
+        )
+        if not survey_is_open(survey, check_cap=existing is None):
+            raise_validation(Code.Survey.CLOSED, status_code=400)
+        questions = {str(q.id): q for q in survey.questions.all()}
+        _validate_survey_answers(payload.answers, questions)
+        answers = _build_survey_answers(payload.answers, questions)
+        user_name = visible_display_name(auth_user, auth_user) if auth_user else None
+        target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
+        if existing:
+            existing.answers = answers
+            existing.save(update_fields=["answers"])
+            audit_log(logging.INFO, "survey_response_updated", request, target=target)
+            return Status(200, _submit_out(existing, user_name))
+        anonymous_token = None
+        if auth_user is None and survey.one_response_per_user:
+            anonymous_token = secrets.token_urlsafe(32)
+        response = SurveyResponse.objects.create(
+            survey=survey, user=auth_user, answers=answers, anonymous_token=anonymous_token
+        )
+        audit_log(logging.INFO, "survey_response_submitted", request, target=target)
+        return Status(201, _submit_out(response, user_name))
 
 
 @router.get(

@@ -47,13 +47,17 @@ function AdminActionRow({
   const update = useUpdateEvent(event.id);
   const cancelMut = useCancelEvent(event.id);
   const deleteMut = useDeleteEvent(event.id);
-  const [publishError, setPublishError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const isCancelled = event.status === EventStatus.Cancelled;
   const isDraft = event.status === EventStatus.Draft;
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isHost || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees && !event.isPast;
+  // Mirrors the API guard exactly: only rsvps from outside the host crew block
+  // unpublish, so the button keys off guestRsvpCount, not attendingCount.
+  const showBackToDraft =
+    event.status === EventStatus.Active && !event.isPast && event.guestRsvpCount === 0;
   const eventIsEditable = isEventEditable(event);
 
   async function onCancel() {
@@ -66,12 +70,12 @@ function AdminActionRow({
     }
   }
 
-  async function onPublish() {
-    setPublishError(null);
+  async function onSetStatus(status: 'active' | 'draft') {
+    setStatusError(null);
     try {
-      await update.mutateAsync({ status: 'active' });
+      await update.mutateAsync({ status });
     } catch (err) {
-      setPublishError(extractMutationError(err));
+      setStatusError(extractMutationError(err));
     }
   }
 
@@ -96,11 +100,22 @@ function AdminActionRow({
         {isDraft ? (
           <Button
             onClick={() => {
-              void onPublish();
+              void onSetStatus('active');
             }}
             disabled={update.isPending}
           >
             {update.isPending ? 'publishing…' : 'publish'}
+          </Button>
+        ) : null}
+        {showBackToDraft ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              void onSetStatus('draft');
+            }}
+            disabled={update.isPending}
+          >
+            {update.isPending ? 'saving…' : 'back to draft'}
           </Button>
         ) : null}
         {showCancel ? (
@@ -130,9 +145,9 @@ function AdminActionRow({
           editing closes 6 hours after the event ends
         </p>
       ) : null}
-      {publishError ? (
+      {statusError ? (
         <p role="alert" className="text-sm font-medium text-red-600">
-          ⚠ {publishError}
+          ⚠ {statusError}
         </p>
       ) : null}
 

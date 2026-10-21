@@ -88,6 +88,12 @@ class TagOut(BaseModel):
     slug: str
 
 
+class EventSurveyOut(BaseModel):
+    id: str
+    title: str
+    slug: str
+
+
 class TagIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
 
@@ -150,12 +156,12 @@ class EventListOut(BaseModel):
     attending_count: int = 0
     waitlisted_count: int = 0
     invited_count: int = 0
-    comment_count: int = 0
     my_rsvp: str | None = None
     my_paid_confirmed: bool = False
     is_past: bool = False
     status: str = "active"
     is_partiful_import: bool = False
+    is_legacy: bool = False
     tags: list[TagOut] = []
 
 
@@ -198,8 +204,10 @@ class EventOut(BaseModel):
     attending_count: int = 0
     waitlisted_count: int = 0
     invited_count: int = 0
-    comment_count: int = 0
-    survey_slugs: list[str] = []
+    # RSVP rows from outside the current co-hosts —
+    # exactly the unpublish guard's predicate: 0 ⇔ "back to draft" is allowed.
+    guest_rsvp_count: int = 0
+    linked_surveys: list[EventSurveyOut] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False
     invited_user_ids: list[str] = []
@@ -209,6 +217,7 @@ class EventOut(BaseModel):
     is_past: bool = False
     status: str = "active"
     is_partiful_import: bool = False
+    is_legacy: bool = False
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []
@@ -235,6 +244,10 @@ class HostRSVPIn(BaseModel):
 
 class HostRSVPPaymentIn(BaseModel):
     paid_confirmed: bool
+
+
+class WaitlistOrderIn(BaseModel):
+    user_ids: list[UUID]
 
 
 class TextRecipientsOut(BaseModel):

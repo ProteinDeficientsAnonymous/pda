@@ -330,7 +330,53 @@ export function useUpdateMemberPromotionMessage() {
   });
 }
 
-// --- WhatsApp link (substituted into welcome + tentative-approval messages). -
+// --- Member promotion email (auto-sent when a tentative applicant is promoted). -
+
+export interface MemberPromotionEmail {
+  body: string;
+  updatedAt: string;
+}
+
+interface WireMemberPromotionEmail {
+  body: string;
+  updated_at: string;
+}
+
+function mapMemberPromotionEmail(data: WireMemberPromotionEmail): MemberPromotionEmail {
+  return { body: data.body, updatedAt: data.updated_at };
+}
+
+export function useMemberPromotionEmail() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useQuery({
+    queryKey: ['member-promotion-email'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireMemberPromotionEmail>(
+        '/api/community/member-promotion-email/',
+      );
+      return mapMemberPromotionEmail(data);
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useUpdateMemberPromotionEmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: string) => {
+      const { data } = await apiClient.patch<WireMemberPromotionEmail>(
+        '/api/community/member-promotion-email/',
+        { body },
+      );
+      return mapMemberPromotionEmail(data);
+    },
+    onSuccess: (template) => {
+      qc.setQueryData(['member-promotion-email'], template);
+    },
+  });
+}
+
+// --- WhatsApp link (substituted into the vetter messages + promotion email). -
 
 export interface WhatsAppLink {
   link: string;

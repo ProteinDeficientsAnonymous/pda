@@ -29,6 +29,24 @@ export interface SeedScenarioMap {
     user_b_phone: string;
     user_b_password: string;
   };
+  'member-screens': {
+    password: string;
+    seed_phone: string;
+    seed_token: string;
+    jamie_id: string;
+    jamie_token: string;
+    ash_phone: string;
+    digest_html: string;
+    event_id: string;
+    calendar_date: string;
+    guest_token: string;
+    hike_id: string;
+    admin_phone: string;
+    reset_phone: string;
+    consent_phone: string;
+    survey_id: string;
+    doc_id: string;
+  };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;
