@@ -7,7 +7,7 @@ from users.api import router as auth_router
 
 from config.media_proxy import serve_media
 from config.memory_view import memory_snapshot_view
-from config.og_preview import event_og_preview
+from config.og_preview import event_og_preview, static_page_og_preview
 from config.validation_handlers import register_validation_handlers
 
 api = NinjaAPI(title="PDA API", version="1.0.0")
@@ -26,4 +26,7 @@ urlpatterns = [
     # OG/Twitter meta tags for link scrapers. nginx routes /events/<id> here
     # only for scraper user-agents; real browsers get the SPA (see nginx.conf).
     path("events/<str:event_id>/preview/", event_og_preview),
+    # <str:page> path converter won't match an empty segment (home page slug ""),
+    # so this needs an explicit regex instead.
+    re_path(r"^pages/(?P<page>[a-z0-9-]*)/preview/$", static_page_og_preview),
 ]
