@@ -33,6 +33,8 @@ interface Props {
   allowPlusOnes: boolean;
   allowComment?: boolean;
   atCapacity?: boolean;
+  // Already in line: "going" keeps their place rather than joining the waitlist.
+  onWaitlist?: boolean;
   busy?: boolean;
   error?: string | null;
   questions?: readonly RsvpQuestionDraft[];
@@ -51,6 +53,7 @@ export function RsvpBox({
   allowPlusOnes,
   allowComment,
   atCapacity = false,
+  onWaitlist = false,
   busy = false,
   error = null,
   questions = [],
@@ -71,7 +74,7 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
+  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity && !onWaitlist;
   const showQuestions = questions.length > 0 && rsvpQuestionsApplyToStatus(status);
 
   function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
@@ -137,7 +140,9 @@ export function RsvpBox({
               onSelect={setStatus}
               disabled={busy}
               labelFor={(s, defaultLabel) =>
-                s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+                s === RsvpStatus.Attending
+                  ? attendingLabel(onWaitlist, atCapacity, defaultLabel)
+                  : defaultLabel
               }
             />
 
@@ -210,6 +215,12 @@ export function RsvpBox({
       )}
     </Dialog>
   );
+}
+
+function attendingLabel(onWaitlist: boolean, atCapacity: boolean, defaultLabel: string): string {
+  if (onWaitlist) return 'stay on the waitlist';
+  if (atCapacity) return 'join the waitlist';
+  return defaultLabel;
 }
 
 function confirmLabel(mode: 'create' | 'edit', joiningWaitlist: boolean): string {
