@@ -183,6 +183,31 @@ class TestCreateDevTestEvent:
         event = Event.objects.get(id=response.json()["id"])
         assert event.visibility == PageVisibility.PUBLIC
 
+    @pytest.mark.parametrize("type_flag", ["is_official", "is_club"])
+    def test_official_and_club_force_plus_ones_off(
+        self, api_client, dev_tools_headers, monkeypatch, type_flag
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={type_flag: True, "allow_plus_ones": True},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.allow_plus_ones is False
+
+    def test_community_keeps_plus_ones(self, api_client, dev_tools_headers, monkeypatch):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"allow_plus_ones": True},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.allow_plus_ones is True
+
     def test_max_attendees_below_going_count_creates_waitlist(
         self, api_client, dev_tools_headers, monkeypatch
     ):

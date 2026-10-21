@@ -24,7 +24,15 @@ from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.management.commands._seed_staging_data import is_seed_allowed
-from community.models import Event, EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.models import (
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+    is_official_or_club,
+)
 
 router = Router()
 
@@ -106,9 +114,9 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     start, end = _event_datetimes(payload)
     status = EventStatus.CANCELLED if payload.is_canceled else EventStatus.ACTIVE
     event_type = _event_type(payload)
-    # Mirrors _is_invalid_typed_visibility, which this dev endpoint bypasses.
-    is_public_only_type = event_type in (EventType.OFFICIAL, EventType.CLUB)
-    visibility = PageVisibility.PUBLIC if is_public_only_type else payload.visibility
+    # Mirrors create_event's official/club rules, which this dev endpoint bypasses.
+    official_or_club = is_official_or_club(event_type)
+    visibility = PageVisibility.PUBLIC if official_or_club else payload.visibility
     # Mirrors Event.is_public_rsvp_eligible.
     non_member_going_count = (
         payload.non_member_going_count
@@ -126,7 +134,7 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         visibility=visibility,
         rsvp_enabled=payload.rsvp_enabled,
         max_attendees=max_attendees,
-        allow_plus_ones=payload.allow_plus_ones,
+        allow_plus_ones=payload.allow_plus_ones and not official_or_club,
         status=status,
         price=payload.price,
         venmo_link=payload.venmo_link,

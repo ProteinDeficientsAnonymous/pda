@@ -22,7 +22,7 @@ interface AuthState {
   profileStepActive: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
   magicLogin: (token: string) => Promise<void>;
-  restoreSession: () => Promise<void>;
+  restoreSession: (onSessionToken?: authApi.SessionTokenListener) => Promise<void>;
   completeOnboarding: (payload: {
     newPassword: string;
     firstName?: string | undefined;
@@ -87,9 +87,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  async restoreSession() {
+  async restoreSession(onSessionToken) {
     set({ status: 'loading' });
-    const result = await authApi.restoreSession();
+    const result = await authApi.restoreSession(onSessionToken);
     if (result) {
       clearStoredRsvpToken();
       set({ status: 'authed', user: result.user, accessToken: result.access, booted: true });

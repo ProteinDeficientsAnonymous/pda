@@ -13,6 +13,10 @@ export const EventType = {
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
 
+export function isOfficialOrClub(type: string): boolean {
+  return type === EventType.Official || type === EventType.Club;
+}
+
 export const EventVisibility = {
   Public: 'public',
   MembersOnly: 'members_only',
@@ -234,6 +238,11 @@ const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, Even
 
 export function canTentativeMemberRsvp(event: Event): boolean {
   return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
+}
+
+// Mirrors backend is_tentative_member: only tentative applicants sign in without membership.
+export function isTentativeMember(user: Pick<User, 'isMember'> | null | undefined): boolean {
+  return user?.isMember === false;
 }
 
 export function canPublicRsvp(event: Event): boolean {

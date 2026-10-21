@@ -1,3 +1,101 @@
+## [0.129.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.1...v0.129.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1598 - remove event location from weekly digest email ([#1605](https://github.com/ProteinDeficientsAnonymous/pda/issues/1605)) ([5db6966](https://github.com/ProteinDeficientsAnonymous/pda/commit/5db6966f2f09597ba25a08ef80d573324db98702))
+
+## [0.129.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.0...v0.129.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **auth:** sanitize magic-login redirect ([#1538](https://github.com/ProteinDeficientsAnonymous/pda/issues/1538)) ([e54098f](https://github.com/ProteinDeficientsAnonymous/pda/commit/e54098fb9b5f36b9af9f86f795523fbf0e572366))
+
+# [0.129.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.128.0...v0.129.0) (2026-10-20)
+
+
+### Features
+
+* show who tentatively approved a join request and when ([#1628](https://github.com/ProteinDeficientsAnonymous/pda/issues/1628)) ([2c0eb69](https://github.com/ProteinDeficientsAnonymous/pda/commit/2c0eb692347b966952db5aa2d76bcb3174871183))
+
+# [0.128.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.2...v0.128.0) (2026-10-20)
+
+
+### Features
+
+* **join-requests:** stronger warning on direct approve confirm ([#1627](https://github.com/ProteinDeficientsAnonymous/pda/issues/1627)) ([2c0c499](https://github.com/ProteinDeficientsAnonymous/pda/commit/2c0c499f794d5bda03fceca433855dacf0d9f887))
+
+## [0.127.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.1...v0.127.2) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** prefetch calendar events alongside /me (Issue 1600) ([#1619](https://github.com/ProteinDeficientsAnonymous/pda/issues/1619)) ([81c7092](https://github.com/ProteinDeficientsAnonymous/pda/commit/81c70928ae4a55ebddcd633ca6de032e4049e906))
+
+## [0.127.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.127.0...v0.127.1) (2026-10-16)
+
+
+### Performance Improvements
+
+* **calendar:** fetch events by visible range (Issue 1600) ([#1617](https://github.com/ProteinDeficientsAnonymous/pda/issues/1617)) ([788e0e4](https://github.com/ProteinDeficientsAnonymous/pda/commit/788e0e4b2208bfa259fdacb4d14fdef1e5d2133b))
+
+# [0.127.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.3...v0.127.0) (2026-10-16)
+
+
+### Features
+
+* **events:** add start/end/include_imported params to list endpoint (Issue 1600) ([#1616](https://github.com/ProteinDeficientsAnonymous/pda/issues/1616)) ([f65fd3d](https://github.com/ProteinDeficientsAnonymous/pda/commit/f65fd3d1f1220463bf2f07c27f590c0d994fea92))
+
+## [0.126.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.2...v0.126.3) (2026-10-16)
+
+
+### Performance Improvements
+
+* **events:** drop unused comment_count and use exists for invite-only filter (Issue 1600) ([#1615](https://github.com/ProteinDeficientsAnonymous/pda/issues/1615)) ([6c9175f](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c9175f4b80ff572af5259194d3a75741d5ccc73))
+
+## [0.126.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.1...v0.126.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1423 - consent box ([#1593](https://github.com/ProteinDeficientsAnonymous/pda/issues/1593)) ([9f5decb](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f5decbbbfd63039e7d52e40616858c03eb3056e))
+
+## [0.126.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.126.0...v0.126.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* 1552 - update reject pop-up text ([#1596](https://github.com/ProteinDeficientsAnonymous/pda/issues/1596)) ([203295c](https://github.com/ProteinDeficientsAnonymous/pda/commit/203295c23a6d57f514696ed0e6de2c1490172a13))
+
+# [0.126.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.125.0...v0.126.0) (2026-10-16)
+
+
+### Features
+
+* **events:** lock +1s off for official and club events ([#1609](https://github.com/ProteinDeficientsAnonymous/pda/issues/1609)) ([8d58750](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d587500192341a79acca4097861ba33ed336700))
+
+# [0.125.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.1...v0.125.0) (2026-10-16)
+
+
+### Features
+
+* **surveys:** open/close scheduling and response cap (Issue 1465) ([#1476](https://github.com/ProteinDeficientsAnonymous/pda/issues/1476)) ([de8c49f](https://github.com/ProteinDeficientsAnonymous/pda/commit/de8c49f6e05e1276143924ad63ec3ddd4af19ec9))
+
+## [0.124.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.124.0...v0.124.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* **rsvp:** stop treating tentative members as public rsvpers ([#1607](https://github.com/ProteinDeficientsAnonymous/pda/issues/1607)) ([99b780f](https://github.com/ProteinDeficientsAnonymous/pda/commit/99b780fcf26eb62f788422c3f2f3b0c90fc60f40))
+
+# [0.124.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.3...v0.124.0) (2026-10-15)
+
+
+### Features
+
+* **digest:** send weekly digest to tentative members (Issue 1601) ([#1604](https://github.com/ProteinDeficientsAnonymous/pda/issues/1604)) ([faf6f68](https://github.com/ProteinDeficientsAnonymous/pda/commit/faf6f68ef4c790144ccc1f86d27d22e79137ac58))
+
 ## [0.123.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.123.2...v0.123.3) (2026-10-12)
 
 

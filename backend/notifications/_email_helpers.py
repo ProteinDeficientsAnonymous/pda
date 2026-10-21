@@ -301,7 +301,7 @@ def send_weekly_digest_email(  # noqa: PLR0913
 ) -> SendResult:
     """Render and send the weekly "what's coming up" digest to one member.
 
-    param events(list[dict]): upcoming events, each with title/when/location/url keys
+    param events(list[dict]): upcoming events, each with title/when/url keys
     param urls: calendar_url and settings_url
     param veganniversaries: year-grouped shout-out people, or empty
     """

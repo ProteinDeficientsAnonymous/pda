@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -28,18 +29,21 @@ const baseUser = makeUser({
 
 describe('OnboardingProfileStep', () => {
   const updateProfile = vi.fn();
+  const acceptConsents = vi.fn();
   const onDone = vi.fn();
 
   function mockStore(user: User) {
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ user, updateProfile } as never),
+      selector({ user, updateProfile, acceptConsents } as never),
     );
   }
 
   beforeEach(() => {
     updateProfile.mockReset();
+    acceptConsents.mockReset();
     onDone.mockReset();
     updateProfile.mockResolvedValue(undefined);
+    acceptConsents.mockResolvedValue(undefined);
     mockStore(baseUser);
   });
 
@@ -143,5 +147,28 @@ describe('OnboardingProfileStep', () => {
   it('does not show the "photo added" confirmation when there is no photo', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     expect(screen.queryByText(/photo added/i)).not.toBeInTheDocument();
+  });
+
+  it('should record guidelines consent before saving when consent is still required', async () => {
+    mockStore({ ...baseUser, needsGuidelinesConsent: true });
+    render(
+      <MemoryRouter>
+        <OnboardingProfileStep onDone={onDone} />
+      </MemoryRouter>,
+    );
+
+    const done = screen.getByRole('button', { name: /^done$/i });
+    expect(screen.getByRole('checkbox', { name: /community guidelines/i })).toBeInTheDocument();
+    expect(done).toBeDisabled();
+    expect(screen.getByRole('button', { name: /edit birthday/i })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    expect(await screen.findByRole('button', { name: /^done$/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /edit birthday/i })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
+
+    expect(acceptConsents).toHaveBeenCalledWith(['guidelines']);
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,6 +13,7 @@ export const Code = {
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
     OfficialMustBePublic: 'event.official_must_be_public',
+    OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
     AuthRequired: 'event.auth_required',
@@ -153,6 +154,7 @@ export const Code = {
     NotFound: 'survey.not_found',
     Closed: 'survey.closed',
     SlugAlreadyExists: 'survey.slug_already_exists',
+    ClosesBeforeOpens: 'survey.closes_before_opens',
     QuestionNotFound: 'survey.question_not_found',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
@@ -265,6 +267,7 @@ export type ValidationCode =
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
   | 'event.official_must_be_public'
+  | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
   | 'event.auth_required'
@@ -377,6 +380,7 @@ export type ValidationCode =
   | 'survey.not_found'
   | 'survey.closed'
   | 'survey.slug_already_exists'
+  | 'survey.closes_before_opens'
   | 'survey.question_not_found'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
@@ -451,6 +455,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
   'event.official_must_be_public': [],
+  'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
   'event.auth_required': [],
@@ -563,6 +568,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.not_found': [],
   'survey.closed': [],
   'survey.slug_already_exists': [],
+  'survey.closes_before_opens': [],
   'survey.question_not_found': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],

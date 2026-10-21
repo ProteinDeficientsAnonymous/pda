@@ -1,11 +1,11 @@
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-import { addDays, format as dfFormat, isValid, parseISO, startOfWeek } from 'date-fns';
+import { addDays, format as dfFormat, startOfWeek } from 'date-fns';
 import { useCallback, useMemo } from 'react';
 import { Calendar, type View } from 'react-big-calendar';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useEvents } from '@/api/events';
+import { useCalendarEvents } from '@/api/calendarEvents';
 import { useAuthStore } from '@/auth/store';
 import { useIsWideScreen } from '@/hooks/useResponsive';
 import {
@@ -17,6 +17,7 @@ import {
 
 import { AgendaList } from './AgendaList';
 import { makeLocalizer } from './calendarLocalizer';
+import { calendarRangeFor, parseDate, parseView } from './calendarParams';
 import { CalendarToolbar } from './CalendarToolbar';
 import { DayEventList } from './DayEventList';
 import { NarrowWeekView } from './NarrowWeekView';
@@ -33,16 +34,6 @@ function toBigCalEvent(e: PdaEvent): BigCalEvent | null {
 }
 
 const lower = (d: Date, f: string) => dfFormat(d, f).toLowerCase();
-
-const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
-function parseView(raw: string | null): View {
-  return VIEWS.find((v) => v === raw) ?? 'month';
-}
-function parseDate(raw: string | null): Date {
-  if (!raw) return new Date();
-  const parsed = parseISO(raw);
-  return isValid(parsed) ? parsed : new Date();
-}
 
 const FORMATS = {
   weekdayFormat: (d: Date) => lower(d, 'EEE'),
@@ -82,7 +73,19 @@ export default function CalendarScreen() {
   const localizer = useMemo(() => makeLocalizer(weekStartsOn), [weekStartsOn]);
   const isWide = useIsWideScreen(720);
 
-  const { data: allEvents = [], isPending, isError, refetch } = useEvents();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = parseView(searchParams.get('view'));
+  const rawDate = searchParams.get('date');
+  // Keyed on the raw param so an absent date doesn't mint a new Date each render.
+  const date = useMemo(() => parseDate(rawDate), [rawDate]);
+
+  const {
+    data: allEvents = [],
+    isPending,
+    isPlaceholderData,
+    isError,
+    refetch,
+  } = useCalendarEvents(calendarRangeFor(view, date));
   const events = useMemo(
     () => allEvents.filter((e) => !e.isPartifulImport && !e.isLegacy),
     [allEvents],
@@ -96,12 +99,6 @@ export default function CalendarScreen() {
     [events],
   );
   const datedEvents = useMemo(() => events.filter((e) => !e.datetimeTbd), [events]);
-
-  const [searchParams, setSearchParams] = useSearchParams();
-  const view = parseView(searchParams.get('view'));
-  const rawDate = searchParams.get('date');
-  // Keyed on the raw param so an absent date doesn't mint a new Date each render.
-  const date = useMemo(() => parseDate(rawDate), [rawDate]);
 
   const setView = useCallback(
     (v: View) => {
@@ -237,7 +234,9 @@ export default function CalendarScreen() {
             style={{ height: '100%' }}
           />
         )}
-        {isPending ? <p className="text-muted mt-2 text-center text-xs">loading events…</p> : null}
+        {isPending || isPlaceholderData ? (
+          <p className="text-muted mt-2 text-center text-xs">loading events…</p>
+        ) : null}
       </div>
     </main>
   );

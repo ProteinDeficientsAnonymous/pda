@@ -2012,11 +2012,6 @@
             "title": "Co Host Photo Urls",
             "type": "array"
           },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
-          },
           "created_by_id": {
             "anyOf": [
               {
@@ -2322,11 +2317,6 @@
             },
             "title": "Co Host Photo Urls",
             "type": "array"
-          },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
           },
           "created_by_id": {
             "anyOf": [
@@ -4407,6 +4397,29 @@
             "title": "Submitted At",
             "type": "string"
           },
+          "tentative_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative At"
+          },
+          "tentative_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative By Name"
+          },
           "upcoming_club_count": {
             "default": 0,
             "title": "Upcoming Club Count",
@@ -6023,6 +6036,18 @@
       },
       "SurveyIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -6045,10 +6070,34 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "maxLength": 100,
@@ -6076,6 +6125,18 @@
       },
       "SurveyListOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -6099,6 +6160,29 @@
               }
             ],
             "title": "Linked Event Id"
+          },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "response_count": {
             "default": 0,
@@ -6131,6 +6215,18 @@
       },
       "SurveyOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -6170,6 +6266,17 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "my_answers": {
             "anyOf": [
               {
@@ -6197,6 +6304,18 @@
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "poll_result": {
             "anyOf": [
@@ -6248,6 +6367,18 @@
       },
       "SurveyPatchIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "anyOf": [
               {
@@ -6282,6 +6413,18 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "anyOf": [
               {
@@ -6292,6 +6435,18 @@
               }
             ],
             "title": "One Response Per User"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "anyOf": [
@@ -9711,6 +9866,7 @@
     },
     "/api/community/events/": {
       "get": {
+        "description": "start/end bound a calendar window; include_imported=false drops partiful/legacy rows.",
         "operationId": "community__events_list_events",
         "parameters": [
           {
@@ -9721,6 +9877,50 @@
               "default": "active",
               "title": "Status",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_imported",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Imported",
+              "type": "boolean"
             }
           }
         ],

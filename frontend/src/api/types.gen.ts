@@ -650,7 +650,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Events */
+        /**
+         * List Events
+         * @description start/end bound a calendar window; include_imported=false drops partiful/legacy rows.
+         */
         get: operations["community__events_list_events"];
         put?: never;
         /** Create Event */
@@ -3139,11 +3142,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
@@ -3317,11 +3315,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
@@ -4237,6 +4230,10 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+            /** Tentative At */
+            tentative_at?: string | null;
+            /** Tentative By Name */
+            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
@@ -4898,6 +4895,8 @@ export interface components {
         };
         /** SurveyIn */
         SurveyIn: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Description
              * @default
@@ -4910,11 +4909,15 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /**
              * One Response Per User
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug: string;
             /** Title */
@@ -4927,6 +4930,8 @@ export interface components {
         };
         /** SurveyListOut */
         SurveyListOut: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4938,6 +4943,10 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
+            /** Opens At */
+            opens_at?: string | null;
             /**
              * Response Count
              * @default 0
@@ -4952,6 +4961,8 @@ export interface components {
         };
         /** SurveyOut */
         SurveyOut: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4967,6 +4978,8 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** My Answers */
             my_answers?: {
                 [key: string]: unknown;
@@ -4978,6 +4991,8 @@ export interface components {
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
@@ -4998,14 +5013,20 @@ export interface components {
         };
         /** SurveyPatchIn */
         SurveyPatchIn: {
+            /** Closes At */
+            closes_at?: string | null;
             /** Description */
             description?: string | null;
             /** Is Active */
             is_active?: boolean | null;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** One Response Per User */
             one_response_per_user?: boolean | null;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug?: string | null;
             /** Title */
@@ -7248,6 +7269,9 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string;
+                start?: string | null;
+                end?: string | null;
+                include_imported?: boolean;
             };
             header?: never;
             path?: never;

@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 
 import { useEvents } from '@/api/events';
 import type { SurveyInput } from '@/api/surveyAdmin';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
@@ -76,6 +77,35 @@ export function SurveyFields({ values, onChange, slugError, linkedEventError }: 
         />
         <span>one response per user</span>
       </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <DateTimePicker
+          label="opens at"
+          value={values.opensAt}
+          onChange={(opensAt) => {
+            onChange({ opensAt });
+          }}
+          optional
+        />
+        <DateTimePicker
+          label="closes at"
+          value={values.closesAt}
+          onChange={(closesAt) => {
+            onChange({ closesAt });
+          }}
+          optional
+        />
+      </div>
+      <TextField
+        label="max responses"
+        type="number"
+        min={1}
+        value={values.maxResponses ?? ''}
+        onChange={(e) => {
+          const raw = e.target.value;
+          onChange({ maxResponses: raw === '' ? null : Number(raw) });
+        }}
+        hint="optional — leave blank for unlimited"
+      />
     </>
   );
 }

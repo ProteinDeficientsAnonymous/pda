@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pytest
-from community.models import Event, EventStatus, EventType
+from community.models import Event, EventStatus, EventType, JoinRequest, JoinRequestStatus
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.utils import timezone
@@ -33,6 +33,24 @@ def _make_member(phone_number: str, **extra) -> User:
         password="testpass123",
         **extra,
     )
+
+
+def _make_tentative(phone_number: str, **extra) -> User:
+    user = User.objects.create(
+        phone_number=phone_number,
+        email=f"{phone_number}@example.test",
+        first_name="Sprout",
+        is_member=False,
+        **extra,
+    )
+    JoinRequest.objects.create(
+        first_name="Sprout",
+        phone_number=phone_number,
+        email=user.email,
+        user=user,
+        status=JoinRequestStatus.TENTATIVE,
+    )
+    return user
 
 
 def _make_event(title: str, days_out: float, **extra) -> Event:
@@ -351,3 +369,57 @@ class TestSendWeeklyDigestCommand:
         text = fake_sender.send.call_args.kwargs["text"]
         assert "gus" in text
         assert "2 years" in text
+
+
+@pytest.mark.django_db
+class TestWeeklyDigestTentativeMembers:
+    def test_sends_to_tentative_member(self, fake_sender):
+        tentative = _make_tentative("+12025550270")
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_called_once()
+        assert fake_sender.send.call_args.kwargs["to"] == tentative.email
+
+    def test_skips_tentative_member_opted_out(self, fake_sender):
+        _make_tentative("+12025550271", weekly_digest_opt_out=True)
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_not_called()
+
+    def test_skips_paused_tentative_member(self, fake_sender):
+        _make_tentative("+12025550272", is_paused=True)
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_not_called()
+
+    def test_omits_veganniversaries_for_tentative_member(self, fake_sender, monkeypatch):
+        """Shoutouts link to member profiles, which a tentative member can't open."""
+        _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
+        member = _make_member(
+            "+12025550273",
+            first_name="Ada",
+            veganniversary_month=6,
+            veganniversary_year=2021,
+            veganniversary_shoutout_opt_in=True,
+        )
+        tentative = _make_tentative("+12025550274")
+        _make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        texts = {c.kwargs["to"]: c.kwargs["text"] for c in fake_sender.send.call_args_list}
+        assert "veganniversary" in texts[member.email]
+        assert "potluck" in texts[tentative.email]
+        assert "veganniversary" not in texts[tentative.email]
+
+    def test_skips_tentative_member_when_only_veganniversaries(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
+        member = _make_member(
+            "+12025550275",
+            first_name="Gus",
+            veganniversary_month=6,
+            veganniversary_year=2024,
+            veganniversary_shoutout_opt_in=True,
+        )
+        _make_tentative("+12025550276")
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_called_once()
+        assert fake_sender.send.call_args.kwargs["to"] == member.email

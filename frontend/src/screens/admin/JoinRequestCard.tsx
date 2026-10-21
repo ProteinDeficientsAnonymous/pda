@@ -122,15 +122,19 @@ export function JoinRequestCard({
           </Button>
         </div>
       ) : isTentative ? (
-        <TentativeActions
-          request={request}
-          busy={busy}
-          onApprove={() => {
-            onDecide('manually_approved');
-          }}
-        />
+        <>
+          <TentativeAttribution request={request} />
+          <TentativeActions
+            request={request}
+            busy={busy}
+            onApprove={() => {
+              onDecide('manually_approved');
+            }}
+          />
+        </>
       ) : (
         <>
+          <TentativeAttribution request={request} />
           <DecisionAttribution request={request} />
           {isRejected ? (
             <div className="mt-3">
@@ -219,6 +223,17 @@ function AttendedEventsNote({ events }: { events: JoinRequestAttendedEvent[] }) 
         ))}
       </ul>
     </div>
+  );
+}
+
+function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
+  if (!request.tentativeAt) return null;
+  const who = request.tentativeByName ?? 'an admin';
+  return (
+    <p className="text-muted mt-3 text-xs">
+      tentatively approved by {who.toLowerCase()} on{' '}
+      {format(new Date(request.tentativeAt), 'MMM d, h:mm a').toLowerCase()}
+    </p>
   );
 }
 
