@@ -21,13 +21,6 @@ from community._public_rsvp_shared import (
 from community._shared import logger
 from community.models import Event, JoinRequest, JoinRequestStatus, RSVPStatus
 
-_MEMBER_STATUS_KINDS: dict[str, str] = {
-    RSVPStatus.ATTENDING: "attending",
-    RSVPStatus.WAITLISTED: "waitlisted",
-    RSVPStatus.MAYBE: "maybe",
-    RSVPStatus.CANT_GO: "cant_go",
-}
-
 
 def _tentative_q() -> Exists:
     return Exists(
@@ -77,11 +70,10 @@ def _send_member_email(request, event: Event, user: User, kind: str, payment_pen
 
 
 def email_member_rsvp_status(request, event: Event, user: User, status: str) -> None:
-    """Email a member their new RSVP status. Best-effort; never raises."""
-    kind = _MEMBER_STATUS_KINDS.get(status)
-    if kind is None or not user.email:
+    """Email a member "you're in" when they become attending. Best-effort; never raises."""
+    if status != RSVPStatus.ATTENDING or not user.email:
         return
-    _send_member_email(request, event, user, kind)
+    _send_member_email(request, event, user, "attending")
 
 
 def email_host_set_rsvp_status(

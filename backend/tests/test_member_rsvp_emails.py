@@ -44,35 +44,25 @@ def _subjects(fake, to):
 
 @pytest.mark.django_db
 class TestMemberRsvpStatusEmail:
-    @pytest.mark.parametrize(
-        ("status", "subject"),
-        [
-            (RSVPStatus.ATTENDING, "you're in for picnic"),
-            (RSVPStatus.MAYBE, "you're a maybe for picnic"),
-            (RSVPStatus.CANT_GO, "you're not going to picnic"),
-        ],
-    )
-    def test_first_rsvp_emails_member(self, test_user, fake_email_sender, status, subject):
+    def test_going_emails_member(self, test_user, fake_email_sender):
         member = _member()
         event = _event(test_user)
 
-        assert _rsvp(Client(), event, member, status).status_code == 200
+        assert _rsvp(Client(), event, member, RSVPStatus.ATTENDING).status_code == 200
 
-        assert _subjects(fake_email_sender, "member@e.com") == [subject]
+        assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
         sent = fake_email_sender.send.call_args.kwargs
         assert f"/events/{event.slug or event.id}" in sent["text"]
 
-    def test_status_change_emails_member(self, test_user, fake_email_sender):
+    @pytest.mark.parametrize("status", [RSVPStatus.MAYBE, RSVPStatus.CANT_GO])
+    def test_maybe_or_cant_go_does_not_email(self, test_user, fake_email_sender, status):
         member = _member()
         event = _event(test_user)
         client = Client()
         _rsvp(client, event, member, RSVPStatus.ATTENDING)
-        _rsvp(client, event, member, RSVPStatus.CANT_GO)
+        _rsvp(client, event, member, status)
 
-        assert _subjects(fake_email_sender, "member@e.com") == [
-            "you're in for picnic",
-            "you're not going to picnic",
-        ]
+        assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
 
     def test_resave_same_status_does_not_email(self, test_user, fake_email_sender):
         member = _member()
@@ -83,14 +73,15 @@ class TestMemberRsvpStatusEmail:
 
         assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
 
-    def test_at_capacity_emails_waitlisted(self, test_user, fake_email_sender):
+    def test_landing_on_waitlist_does_not_email(self, test_user, fake_email_sender):
         member = _member()
         event = _event(test_user, max_attendees=1)
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
 
         _rsvp(Client(), event, member, RSVPStatus.ATTENDING)
 
-        assert _subjects(fake_email_sender, "member@e.com") == ["you're on the waitlist for picnic"]
+        assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.WAITLISTED
+        assert _subjects(fake_email_sender, "member@e.com") == []
 
     def test_member_without_email_is_skipped(self, test_user, fake_email_sender):
         member = _member(email=None)
@@ -107,14 +98,6 @@ class TestMemberRsvpStatusEmail:
 
         assert _rsvp(Client(), event, member, RSVPStatus.ATTENDING).status_code == 200
         assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
-
-    def test_cant_go_email_omits_location(self, test_user, fake_email_sender):
-        member = _member()
-        event = _event(test_user)
-
-        _rsvp(Client(), event, member, RSVPStatus.CANT_GO)
-
-        assert "the park" not in fake_email_sender.send.call_args.kwargs["text"]
 
 
 @pytest.mark.django_db
@@ -188,6 +171,15 @@ class TestHostSetRsvpEmail:
         assert _host_set(event, test_user, member, RSVPStatus.ATTENDING).status_code == 200
 
         assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
+
+    def test_host_setting_cant_go_does_not_email(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        member = _member()
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
+
+        _host_set(event, test_user, member, RSVPStatus.CANT_GO)
+
+        assert _subjects(fake_email_sender, "member@e.com") == []
 
     def test_host_resave_same_status_does_not_email(self, test_user, fake_email_sender):
         event = _event(test_user)

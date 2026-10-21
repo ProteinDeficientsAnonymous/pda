@@ -121,9 +121,6 @@ class MemberRsvpEmailDetails:
 
 _MEMBER_RSVP_SUBJECTS: dict[str, str] = {
     "attending": "you're in for {title}",
-    "waitlisted": "you're on the waitlist for {title}",
-    "maybe": "you're a maybe for {title}",
-    "cant_go": "you're not going to {title}",
     "promoted": "you're off the waitlist for {title}",
 }
 
@@ -137,7 +134,7 @@ def send_member_rsvp_status_email(
 ) -> SendResult:
     """Render and send a member's RSVP status email.
 
-    param kind(str): attending | waitlisted | maybe | cant_go | promoted
+    param kind(str): attending | promoted
     """
     context = {**asdict(details), "kind": kind, "payment_pending": payment_pending}
     html = render_to_string("emails/member_rsvp_status.html", context)
