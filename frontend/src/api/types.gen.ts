@@ -4283,6 +4283,16 @@ export interface components {
             /** Rejected By Name */
             rejected_by_name?: string | null;
             /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
+            /**
              * Rsvp Events
              * @default []
              */
@@ -4327,6 +4337,16 @@ export interface components {
         };
         /** JoinRequestStatusIn */
         JoinRequestStatusIn: {
+            /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
             /** Status */
             status: string;
         };

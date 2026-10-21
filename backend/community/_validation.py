@@ -203,6 +203,10 @@ class Code:
         SMS_CONSENT_REQUIRED = "join_request.sms_consent_required"
         GUIDELINES_CONSENT_REQUIRED = "join_request.guidelines_consent_required"
         INVALID_REJECTION_REASON = "join_request.invalid_rejection_reason"
+        REJECTION_NOTE_REQUIRED = "join_request.rejection_note_required"
+        REJECTION_NOTE_TOO_LONG = (
+            "join_request.rejection_note_too_long"  # params: { max_length: int }
+        )
 
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }

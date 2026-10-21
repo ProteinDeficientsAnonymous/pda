@@ -5,7 +5,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from community.models.choices import JoinFormQuestionType, JoinRequestStatus
+from community.models.choices import JoinFormQuestionType, JoinRequestStatus, RejectionReason
 
 
 class JoinFormQuestion(models.Model):
@@ -72,6 +72,11 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="rejected_join_requests",
     )
+    rejection_reason = models.CharField(
+        max_length=30, choices=RejectionReason.choices, blank=True, default=""
+    )
+    # Free text written by the vetter; required when rejection_reason is OTHER.
+    rejection_note = models.TextField(max_length=1000, blank=True, default="")
     # Set when the user checks the SMS-consent box on the join form. Required
     # at the API level, but stored as nullable so historical pre-consent rows
     # remain queryable. Used as proof-of-consent for Twilio toll-free

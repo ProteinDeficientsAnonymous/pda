@@ -889,6 +889,18 @@
         "name": "INVALID_REJECTION_REASON",
         "value": "join_request.invalid_rejection_reason",
         "params": []
+      },
+      {
+        "name": "REJECTION_NOTE_REQUIRED",
+        "value": "join_request.rejection_note_required",
+        "params": []
+      },
+      {
+        "name": "REJECTION_NOTE_TOO_LONG",
+        "value": "join_request.rejection_note_too_long",
+        "params": [
+          "max_length"
+        ]
       }
     ],
     "Photo": [

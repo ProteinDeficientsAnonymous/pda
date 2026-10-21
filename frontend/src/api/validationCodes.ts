@@ -472,6 +472,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'please read and confirm you agree to the guidelines and community agreements to submit';
     case Code.JoinRequest.InvalidRejectionReason:
       return 'pick a rejection reason from the list';
+    case Code.JoinRequest.RejectionNoteRequired:
+      return 'write a reason, or pick one from the list';
+    case Code.JoinRequest.RejectionNoteTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `reason must be at most ${String(max)} characters`
+        : 'reason is too long';
+    }
 
     // Photo
     case Code.Photo.TypeNotAllowed:

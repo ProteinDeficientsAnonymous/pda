@@ -4377,6 +4377,16 @@
             ],
             "title": "Rejected By Name"
           },
+          "rejection_note": {
+            "default": "",
+            "title": "Rejection Note",
+            "type": "string"
+          },
+          "rejection_reason": {
+            "default": "",
+            "title": "Rejection Reason",
+            "type": "string"
+          },
           "rsvp_events": {
             "default": [],
             "items": {
@@ -4485,6 +4495,16 @@
       },
       "JoinRequestStatusIn": {
         "properties": {
+          "rejection_note": {
+            "default": "",
+            "title": "Rejection Note",
+            "type": "string"
+          },
+          "rejection_reason": {
+            "default": "",
+            "title": "Rejection Reason",
+            "type": "string"
+          },
           "status": {
             "maxLength": 20,
             "title": "Status",

@@ -241,6 +241,21 @@ def send_join_approval_email(
     )
 
 
+def send_join_rejection_email(
+    *, sender: EmailSender, to: str, display_name: str, message_body: str
+) -> SendResult:
+    """Render and send the join-request rejection email."""
+    context = {"display_name": display_name or "", "message_body": message_body}
+    html = render_to_string("emails/join_rejection.html", context)
+    text = render_to_string("emails/join_rejection.txt", context)
+    return sender.send(
+        to=to,
+        subject="an update on your pda join request",
+        html=html,
+        text=text,
+    )
+
+
 @dataclass(frozen=True)
 class EventInviteEmailDetails:
     """Recipient + event details for the member event-invite email."""
