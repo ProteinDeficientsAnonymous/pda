@@ -69,6 +69,8 @@ interface WireSurveyFull {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   opens_at?: string | null;
   closes_at?: string | null;
   max_responses?: number | null;
@@ -101,6 +103,8 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     opensAt: w.opens_at ?? null,
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
@@ -149,6 +153,8 @@ export interface SurveyInput {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
@@ -166,6 +172,8 @@ export function useCreateSurvey() {
         visibility: input.visibility,
         is_active: input.isActive,
         one_response_per_user: input.oneResponsePerUser,
+        anonymous: input.anonymous,
+        confirmation_message: input.confirmationMessage,
         opens_at: input.opensAt,
         closes_at: input.closesAt,
         max_responses: input.maxResponses,
@@ -191,6 +199,9 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.isActive !== undefined) body.is_active = patch.isActive;
       if (patch.oneResponsePerUser !== undefined)
         body.one_response_per_user = patch.oneResponsePerUser;
+      if (patch.anonymous !== undefined) body.anonymous = patch.anonymous;
+      if (patch.confirmationMessage !== undefined)
+        body.confirmation_message = patch.confirmationMessage;
       if (patch.opensAt !== undefined) body.opens_at = patch.opensAt;
       if (patch.closesAt !== undefined) body.closes_at = patch.closesAt;
       if (patch.maxResponses !== undefined) body.max_responses = patch.maxResponses;
@@ -330,6 +341,18 @@ export function useSurveyResponses(surveyId: string | undefined) {
       }));
     },
     enabled: Boolean(surveyId),
+  });
+}
+
+export function useDeleteSurveyResponse(surveyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (responseId: string) => {
+      await apiClient.delete(`/api/community/surveys/${surveyId}/responses/${responseId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['surveys', 'admin'] });
+    },
   });
 }
 

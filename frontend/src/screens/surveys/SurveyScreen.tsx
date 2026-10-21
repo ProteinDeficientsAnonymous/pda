@@ -16,14 +16,23 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
   const { data: survey, isPending, isError } = useSurvey(slug);
+  // The submit that fills the cap refetches a capped survey; keep the form so its confirmation shows.
+  const [submitted, setSubmitted] = useState(false);
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
   // A finalized poll keeps rendering its result rather than a shut-door message.
-  if (status !== 'active' && survey.pollResult === null) {
+  if (status !== 'active' && survey.pollResult === null && !submitted) {
     return <SurveyUnavailable survey={survey} status={status} />;
   }
-  return <SurveyForm survey={survey} />;
+  return (
+    <SurveyForm
+      survey={survey}
+      onSubmitted={() => {
+        setSubmitted(true);
+      }}
+    />
+  );
 }
 
 const UNAVAILABLE_MESSAGE: Record<Exclude<SurveyStatus, 'active'>, string> = {
@@ -64,7 +73,7 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
   return out;
 }
 
-function SurveyForm({ survey }: { survey: Survey }) {
+function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
@@ -108,6 +117,7 @@ function SurveyForm({ survey }: { survey: Survey }) {
     }
     try {
       await submit.mutateAsync(payload);
+      onSubmitted();
     } catch (err) {
       setServerError(extractError(err));
       // Survey closed between load and submit — refetch so the closed state renders.
@@ -135,6 +145,12 @@ function SurveyForm({ survey }: { survey: Survey }) {
       <h1 className="mb-2 text-2xl font-medium tracking-tight">{survey.title}</h1>
       {survey.description ? (
         <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
+      ) : null}
+
+      {survey.anonymous ? (
+        <p className="text-foreground-secondary mb-6 text-sm">
+          responses are anonymous — your name isn't saved with your answers
+        </p>
       ) : null}
 
       {finalized ? (
@@ -169,7 +185,11 @@ function SurveyForm({ survey }: { survey: Survey }) {
           </Button>
         ) : null}
 
-        {submit.isSuccess && !readOnly ? <p className="text-success text-sm">saved ✓</p> : null}
+        {submit.isSuccess && !readOnly ? (
+          <p className="text-success text-sm whitespace-pre-wrap">
+            {survey.confirmationMessage ? survey.confirmationMessage.toLowerCase() : 'saved ✓'}
+          </p>
+        ) : null}
 
         {canStartFresh ? (
           <button

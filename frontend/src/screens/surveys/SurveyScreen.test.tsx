@@ -200,6 +200,77 @@ describe('SurveyScreen', () => {
   });
 });
 
+describe('SurveyScreen post-submit confirmation', () => {
+  async function submitWith(confirmationMessage: string) {
+    mockedGet.mockResolvedValue({
+      data: { ...baseWireSurvey, confirmation_message: confirmationMessage },
+    });
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        id: 'resp-1',
+        user_id: null,
+        user_name: null,
+        answers: {},
+        submitted_at: '2026-01-01T00:00:00Z',
+      },
+    });
+    renderScreen();
+    fireEvent.change(await screen.findByLabelText('thoughts'), {
+      target: { value: 'great job' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+  }
+
+  it('shows the survey confirmation message, lowercased, after a successful submit', async () => {
+    await submitWith('Thanks For Your Feedback!');
+    expect(await screen.findByText('thanks for your feedback!')).toBeInTheDocument();
+    expect(screen.queryByText('saved ✓')).not.toBeInTheDocument();
+  });
+
+  it('keeps the confirmation visible when the submit fills the response cap', async () => {
+    mockedGet
+      .mockResolvedValueOnce({
+        data: { ...baseWireSurvey, confirmation_message: 'thanks!', max_responses: 1 },
+      })
+      .mockResolvedValue({
+        data: {
+          ...baseWireSurvey,
+          confirmation_message: 'thanks!',
+          max_responses: 1,
+          response_count: 1,
+        },
+      });
+    mockedPost.mockResolvedValueOnce({
+      data: { id: 'r', user_id: null, user_name: null, answers: {}, submitted_at: '' },
+    });
+    renderScreen();
+    fireEvent.change(await screen.findByLabelText('thoughts'), { target: { value: 'hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    expect(await screen.findByText('thanks!')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockedGet).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('thanks!')).toBeInTheDocument();
+    expect(screen.queryByText(/reached its response limit/)).not.toBeInTheDocument();
+  });
+
+  it('tells participants an anonymous survey is anonymous', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...baseWireSurvey, anonymous: true } });
+    renderScreen();
+    expect(await screen.findByText(/responses are anonymous/)).toBeInTheDocument();
+  });
+
+  it('does not show the confirmation message before submitting', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: { ...baseWireSurvey, confirmation_message: 'thanks!' },
+    });
+    renderScreen();
+    await screen.findByRole('button', { name: 'submit' });
+    expect(screen.queryByText('thanks!')).not.toBeInTheDocument();
+  });
+});
+
 describe('SurveyScreen anonymous response token', () => {
   const respondedSurvey = {
     ...baseWireSurvey,

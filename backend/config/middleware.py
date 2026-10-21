@@ -1,6 +1,7 @@
 import logging
 import time
 
+from config.audit import is_request_anonymized
 from config.memory import (
     ensure_tracemalloc,
     media_path_calls,
@@ -56,6 +57,8 @@ class RequestLoggingMiddleware:
 
         user = getattr(request, "user", None)
         user_id = str(user.pk) if user and getattr(user, "is_authenticated", False) else None
+        if is_request_anonymized(request):
+            user_id = None
 
         extra = {
             "method": request.method,

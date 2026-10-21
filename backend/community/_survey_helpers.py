@@ -77,7 +77,9 @@ def _survey_out(
         poll_result = _poll_result_out(survey.poll_result)
     except DatetimePollResult.DoesNotExist:
         pass
-    existing = _find_my_response(survey, requesting_user, response_token)
+    # anonymous surveys never key on the member, so their row is found by token too
+    responder = None if survey.anonymous else requesting_user
+    existing = _find_my_response(survey, responder, response_token)
     my_response_id = str(existing.id) if existing else None
     my_answers = existing.answers if existing else None
     return SurveyOut(
@@ -88,6 +90,8 @@ def _survey_out(
         visibility=survey.visibility,
         is_active=survey.is_active,
         one_response_per_user=survey.one_response_per_user,
+        anonymous=survey.anonymous,
+        confirmation_message=survey.confirmation_message,
         opens_at=survey.opens_at,
         closes_at=survey.closes_at,
         max_responses=survey.max_responses,
@@ -126,6 +130,14 @@ def survey_is_open(survey: Survey, now: datetime | None = None, *, check_cap: bo
 def _validate_survey_window(opens_at: datetime | None, closes_at: datetime | None) -> None:
     if opens_at and closes_at and closes_at <= opens_at:
         raise_validation(Code.Survey.CLOSES_BEFORE_OPENS, field="closes_at", status_code=400)
+
+
+def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
+    # Flipping either way after collection would mislead respondents about who sees their name.
+    if "anonymous" not in updates or updates["anonymous"] == survey.anonymous:
+        return
+    if survey.responses.exists():
+        raise_validation(Code.Survey.ANONYMOUS_LOCKED, field="anonymous", status_code=400)
 
 
 def _apply_linked_event_update(updates: dict) -> dict:
@@ -192,7 +204,7 @@ def _tally_str_answer(
 
 
 def _tally_question(
-    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None
+    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None, include_voters: bool = True
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
@@ -204,7 +216,7 @@ def _tally_question(
         if not answer_data:
             continue
         answer = answer_data.get("answer")
-        voter = _voter_out(r.user, viewer) if r.user else None
+        voter = _voter_out(r.user, viewer) if r.user and include_voters else None
         if isinstance(answer, dict):
             _tally_dict_answer(answer, counts, voters, voter)
         elif isinstance(answer, str):

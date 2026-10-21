@@ -25,6 +25,8 @@ export interface Survey {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
@@ -58,6 +60,8 @@ interface WireSurvey {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   opens_at?: string | null;
   closes_at?: string | null;
   max_responses?: number | null;
@@ -92,6 +96,8 @@ function mapSurvey(w: WireSurvey): Survey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     opensAt: w.opens_at ?? null,
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,

@@ -4,7 +4,7 @@ import logging
 import secrets
 from uuid import UUID
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from django.db import transaction
@@ -92,8 +92,13 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
     # so the max_responses check-then-create can't race past the cap (issue #1465).
     with transaction.atomic():
         survey = _visible_survey_or_404(slug, auth_user, for_update=True)
+        # No responder on an anonymous survey; members dedupe by response token instead.
+        response_user = None if survey.anonymous else auth_user
+        if survey.anonymous:
+            # Audit rows and request log lines would re-link the submitter by timestamp.
+            mark_request_anonymized(request)
         existing = (
-            _find_my_response(survey, auth_user, response_token)
+            _find_my_response(survey, response_user, response_token)
             if survey.one_response_per_user
             else None
         )
@@ -102,7 +107,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
         questions = {str(q.id): q for q in survey.questions.all()}
         _validate_survey_answers(payload.answers, questions)
         answers = _build_survey_answers(payload.answers, questions)
-        user_name = visible_display_name(auth_user, auth_user) if auth_user else None
+        user_name = visible_display_name(auth_user, auth_user) if response_user else None
         target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
         if existing:
             existing.answers = answers
@@ -110,10 +115,10 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
             audit_log(logging.INFO, "survey_response_updated", request, target=target)
             return Status(200, _submit_out(existing, user_name))
         anonymous_token = None
-        if auth_user is None and survey.one_response_per_user:
+        if response_user is None and survey.one_response_per_user:
             anonymous_token = secrets.token_urlsafe(32)
         response = SurveyResponse.objects.create(
-            survey=survey, user=auth_user, answers=answers, anonymous_token=anonymous_token
+            survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
         audit_log(logging.INFO, "survey_response_submitted", request, target=target)
         return Status(201, _submit_out(response, user_name))
@@ -158,7 +163,10 @@ def get_survey_tallies(request, survey_id: UUID):
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     responses = list(survey.responses.select_related("user").all())
-    tallies = [_tally_question(q, responses, request.auth) for q in poll_questions]
+    tallies = [
+        _tally_question(q, responses, request.auth, include_voters=not survey.anonymous)
+        for q in poll_questions
+    ]
     return Status(200, tallies)
 
 

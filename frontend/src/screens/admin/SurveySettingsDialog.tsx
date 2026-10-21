@@ -28,6 +28,8 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
     slug: survey.slug,
     visibility: survey.visibility,
     oneResponsePerUser: survey.oneResponsePerUser,
+    anonymous: survey.anonymous,
+    confirmationMessage: survey.confirmationMessage,
     opensAt: survey.opensAt,
     closesAt: survey.closesAt,
     maxResponses: survey.maxResponses,
@@ -65,6 +67,7 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
           }}
           slugError={fieldErrors.slugError ?? undefined}
           linkedEventError={fieldErrors.linkedEventError ?? undefined}
+          anonymousLocked={survey.responseCount > 0}
         />
         {error ? (
           <p role="alert" className="text-destructive text-sm">

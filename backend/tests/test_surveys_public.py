@@ -1,9 +1,11 @@
 """Tests for public survey endpoints: tally authorization + submit rate limit."""
 
 import json
+import logging
 from datetime import timedelta
 
 import pytest
+from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import (
     DatetimePollResult,
@@ -317,3 +319,157 @@ class TestClosedSurvey:
         assert resp.status_code == 400
         assert_error_code(resp, Code.Survey.CLOSED)
         assert not SurveyResponse.objects.filter(survey=finalized_poll_survey).exists()
+
+
+# ---------------------------------------------------------------------------
+# Anonymous surveys (Issue 1466)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def middleware_caplog(caplog, monkeypatch):
+    monkeypatch.setattr(logging.getLogger("pda"), "propagate", True)
+    return caplog
+
+
+@pytest.fixture
+def anonymous_survey(db):
+    survey = Survey.objects.create(
+        title="Anonymous feedback",
+        slug="anon-feedback",
+        anonymous=True,
+        one_response_per_user=True,
+    )
+    SurveyQuestion.objects.create(
+        survey=survey,
+        label="Thoughts?",
+        field_type=SurveyQuestionType.TEXT,
+    )
+    return survey
+
+
+@pytest.mark.django_db
+class TestAnonymousSurveySubmit:
+    def test_authenticated_submit_stores_no_user(self, api_client, auth_headers, anonymous_survey):
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        response = api_client.post(
+            url,
+            data=json.dumps({"answers": {str(question.id): "great"}}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["user_id"] is None
+        stored = SurveyResponse.objects.get(survey=anonymous_survey)
+        assert stored.user_id is None
+
+    def test_submit_leaves_no_attributed_audit_row(
+        self, api_client, auth_headers, anonymous_survey, django_capture_on_commit_callbacks
+    ):
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        with django_capture_on_commit_callbacks(execute=True):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        entry = AuditLogEntry.objects.get(action="survey_response_submitted")
+        assert entry.actor_id is None
+        assert entry.actor_label == "anonymous"
+        assert entry.ip_address is None
+
+    def test_non_anonymous_submit_still_records_the_actor(
+        self,
+        api_client,
+        auth_headers,
+        test_user,
+        public_text_survey,
+        django_capture_on_commit_callbacks,
+    ):
+        question = public_text_survey.questions.first()
+        url = f"/api/community/surveys/view/{public_text_survey.slug}/respond/"
+        with django_capture_on_commit_callbacks(execute=True):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        entry = AuditLogEntry.objects.get(action="survey_response_submitted")
+        assert entry.actor_id == test_user.pk
+
+    def test_one_response_per_user_does_not_dedupe_anonymous(
+        self, api_client, auth_headers, anonymous_survey
+    ):
+        # anonymous=True never keys the upsert on the member, so without a
+        # response token every submit creates a new response.
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        for _ in range(2):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+            assert response.status_code == 201
+        assert SurveyResponse.objects.filter(survey=anonymous_survey).count() == 2
+
+    def test_get_survey_public_omits_my_response_for_anonymous(
+        self, api_client, auth_headers, anonymous_survey
+    ):
+        SurveyResponse.objects.create(survey=anonymous_survey, user=None, answers={})
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/"
+        response = api_client.get(url, **auth_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["my_response_id"] is None
+        assert body["my_answers"] is None
+
+    def test_request_log_line_drops_user_id(
+        self, api_client, auth_headers, anonymous_survey, middleware_caplog
+    ):
+        question = anonymous_survey.questions.first()
+        url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
+        with middleware_caplog.at_level(logging.INFO, logger="pda.middleware"):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        [record] = [r for r in middleware_caplog.records if r.name == "pda.middleware"]
+        assert record.user_id is None  # type: ignore[attr-defined]
+
+    def test_request_log_line_keeps_user_id_on_named_survey(
+        self, api_client, auth_headers, test_user, public_text_survey, middleware_caplog
+    ):
+        question = public_text_survey.questions.first()
+        url = f"/api/community/surveys/view/{public_text_survey.slug}/respond/"
+        with middleware_caplog.at_level(logging.INFO, logger="pda.middleware"):
+            response = api_client.post(
+                url,
+                data=json.dumps({"answers": {str(question.id): "great"}}),
+                content_type="application/json",
+                **auth_headers,
+            )
+        assert response.status_code == 201
+        [record] = [r for r in middleware_caplog.records if r.name == "pda.middleware"]
+        assert record.user_id == str(test_user.pk)  # type: ignore[attr-defined]
+
+    def test_tallies_omit_voters(self, api_client, survey_owner_headers, poll_survey):
+        poll_survey.anonymous = True
+        poll_survey.save(update_fields=["anonymous"])
+        response = api_client.get(
+            f"/api/community/surveys/{poll_survey.id}/tallies/", **survey_owner_headers
+        )
+        assert response.status_code == 200
+        [tally] = response.json()
+        assert tally["total_responses"] == 1
+        assert all(voters == [] for voters in tally["voters"].values())

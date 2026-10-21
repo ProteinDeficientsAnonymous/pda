@@ -275,3 +275,60 @@ class TestAnonymousResponseToken:
         assert listing.status_code == 200
         assert one_per_user_survey.responses.get().anonymous_token
         assert all("response_token" not in r for r in listing.json())
+
+
+@pytest.mark.django_db
+class TestAnonymousModeMemberToken:
+    @pytest.fixture
+    def anonymous_mode_survey(self, one_per_user_survey):
+        one_per_user_survey.anonymous = True
+        one_per_user_survey.save(update_fields=["anonymous"])
+        return one_per_user_survey
+
+    def test_member_dedupes_by_token_without_storing_user(
+        self, api_client, auth_headers, anonymous_mode_survey
+    ):
+        first = api_client.post(
+            _respond_url(anonymous_mode_survey),
+            data=_answers(anonymous_mode_survey, "first"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert first.status_code == 201
+        token = first.json()["response_token"]
+        assert token
+        assert first.json()["user_id"] is None
+        assert first.json()["user_name"] is None
+
+        view = api_client.get(
+            _view_url(anonymous_mode_survey), {"response_token": token}, **auth_headers
+        )
+        assert view.json()["my_response_id"] == first.json()["id"]
+
+        second = api_client.post(
+            _respond_url(anonymous_mode_survey) + f"?response_token={token}",
+            data=_answers(anonymous_mode_survey, "second"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert second.status_code == 200
+        assert second.json()["id"] == first.json()["id"]
+        row = anonymous_mode_survey.responses.get()
+        assert row.user_id is None
+        question_id = str(anonymous_mode_survey.questions.first().id)
+        assert row.answers[question_id]["answer"] == "second"
+
+    def test_member_does_not_match_their_named_row_once_anonymous(
+        self, api_client, auth_headers, test_user, anonymous_mode_survey
+    ):
+        SurveyResponse.objects.create(survey=anonymous_mode_survey, user=test_user, answers={})
+        view = api_client.get(_view_url(anonymous_mode_survey), **auth_headers)
+        assert view.json()["my_response_id"] is None
+        resp = api_client.post(
+            _respond_url(anonymous_mode_survey),
+            data=_answers(anonymous_mode_survey, "fresh"),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 201
+        assert anonymous_mode_survey.responses.filter(user__isnull=True).count() == 1
