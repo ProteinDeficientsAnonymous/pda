@@ -1,8 +1,18 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-don't forget to join the whatsapp! it's where we plan everything — events go up there first, rides get sorted, and it's the easiest way to actually meet people before you show up somewhere.
+wanted to send a little reminder that you can access our whatsapp community! we share community announcements there and you can also chat with community members and plan side quests
 
 {{ whatsapp_url }}
+
+just to give you a little rundown: we add people to the whatsapp community in a batch in the late morning - at that time, one of our vetters will welcome you and direct you to the intros channel, where you can drop a lil' introduction about yourself. things people tend to share are how long they’ve been vegan, what their hobbies are (sometimes you find connections to others in the group based on that), their jobs, but you can share whatever you like!
+
+here are a couple of things to know about our whatsapp community:
+
+there is only 1 group in the community that is not for chatting: side quests and hangouts. please take a look at the guidelines in the group info for that group before posting in there (and posting in there is encouraged).
+
+all of the other groups are made for chatting! if it ever feels too chatty or you’re overwhelmed with notifications, you can absolutely mute chitty chat (or any other group), or even leave it entirely. there is a link to a feedback survey that is permanently open in the community info on whatsapp. a link to our guidelines is also shared in there, or you can find them on our website:
+
+https://proteindeficientsanonymous.com/guidelines
 
 not a whatsapp person? let us know here and we'll stop emailing you about it:
 
