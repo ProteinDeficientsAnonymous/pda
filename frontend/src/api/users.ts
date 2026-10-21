@@ -4,6 +4,7 @@ import { normalizePermissions } from '@/models/permissions';
 import type { Birthday, Veganniversary } from '@/models/user';
 
 import { apiClient } from './client';
+import { memberAttendanceAnalyticsKey } from './memberAttendanceAnalytics';
 
 // --- Domain types (camelCase) ------------------------------------------------
 
@@ -226,6 +227,7 @@ export function useUpdateUser(userId: string) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: USERS_KEY });
+      void qc.invalidateQueries({ queryKey: memberAttendanceAnalyticsKey });
     },
   });
 }
