@@ -1,3 +1,10 @@
+# [0.138.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.137.1...v0.138.0) (2026-10-21)
+
+
+### Features
+
+* let event hosts change an event's slug via PATCH ([#1663](https://github.com/ProteinDeficientsAnonymous/pda/issues/1663)) ([6ef51b7](https://github.com/ProteinDeficientsAnonymous/pda/commit/6ef51b7b76b45b97a9d302302158018a3ed43d51))
+
 ## [0.137.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.137.0...v0.137.1) (2026-10-21)
 
 
