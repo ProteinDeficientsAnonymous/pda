@@ -17,7 +17,7 @@ interface Props {
 /** Shared answer field for surveys and join form questions. */
 export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
   const { label } = question;
-  const labelSuffix = question.required ? 'required' : 'optional';
+  const labelSuffix = question.required ? '· required' : undefined;
   const common = { label, labelSuffix, error, disabled: readOnly };
 
   switch (question.fieldType) {
@@ -153,7 +153,7 @@ function RadioGroup({
   disabled,
 }: {
   label: string;
-  labelSuffix: string;
+  labelSuffix: string | undefined;
   options: string[];
   value: string;
   onChange: (v: string) => void;
@@ -164,7 +164,7 @@ function RadioGroup({
     <fieldset className="flex flex-col gap-2">
       <legend className="text-foreground text-sm font-medium">
         {label}
-        <LabelSuffix>{labelSuffix}</LabelSuffix>
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       {options.map((o) => (
         <label key={o} className="flex items-center gap-2 text-sm">
@@ -196,7 +196,7 @@ function CheckboxGroup({
   disabled,
 }: {
   label: string;
-  labelSuffix: string;
+  labelSuffix: string | undefined;
   options: string[];
   value: string[];
   onChange: (v: string[]) => void;
@@ -211,7 +211,7 @@ function CheckboxGroup({
     <fieldset className="flex flex-col gap-2">
       <legend className="text-foreground text-sm font-medium">
         {label}
-        <LabelSuffix>{labelSuffix}</LabelSuffix>
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       {options.map((o) => (
         <label key={o} className="flex items-center gap-2 text-sm">
@@ -241,7 +241,7 @@ function StarRating({
   readOnly,
 }: {
   label: string;
-  labelSuffix: string;
+  labelSuffix: string | undefined;
   value: number;
   labels: string[];
   onChange: (n: number) => void;
@@ -252,7 +252,7 @@ function StarRating({
     <fieldset className="flex flex-col gap-2">
       <legend className="text-foreground text-sm font-medium">
         {label}
-        <LabelSuffix>{labelSuffix}</LabelSuffix>
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       <div role="radiogroup" aria-label={label} className="flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => {
@@ -293,7 +293,7 @@ function DatetimePoll({
   disabled,
 }: {
   label: string;
-  labelSuffix: string;
+  labelSuffix: string | undefined;
   options: string[];
   value: Record<string, string>;
   onChange: (v: Record<string, string>) => void;
@@ -312,7 +312,7 @@ function DatetimePoll({
     <fieldset className="flex flex-col gap-3">
       <legend className="text-foreground text-sm font-medium">
         {label}
-        <LabelSuffix>{labelSuffix}</LabelSuffix>
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       {options.map((option) => {
         const current = value[option];

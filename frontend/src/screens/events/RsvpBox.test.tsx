@@ -183,7 +183,7 @@ describe('RsvpBox', () => {
       />,
     );
     expect(screen.getByText('how are you getting there?')).toBeInTheDocument();
-    expect(screen.getByLabelText('anything else? optional')).toBeInTheDocument();
+    expect(screen.getByLabelText('anything else?')).toBeInTheDocument();
   });
 
   it('should keep status controls outside the questions/comment scroll region', () => {
@@ -231,7 +231,7 @@ describe('RsvpBox', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText('required', { selector: 'p' })).toBeInTheDocument();
     expect(
-      screen.getByRole('combobox', { name: 'how are you getting there? required' }),
+      screen.getByRole('combobox', { name: 'how are you getting there? · required' }),
     ).toHaveAttribute('aria-invalid', 'true');
   });
 
@@ -239,7 +239,7 @@ describe('RsvpBox', () => {
     const onConfirm = vi.fn();
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
     fireEvent.change(
-      screen.getByRole('combobox', { name: 'how are you getting there? required' }),
+      screen.getByRole('combobox', { name: 'how are you getting there? · required' }),
       {
         target: { value: 'driving' },
       },
