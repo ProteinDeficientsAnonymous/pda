@@ -311,9 +311,9 @@ class TestCheckInReportCsvEndpoint:
             f"/api/community/events/{stocked_event.id}/report.csv", **_auth(host_user)
         )
         assert response.status_code == 200
-        assert response["Content-Type"] == "text/csv"
+        assert response["Content-Type"] == "text/csv; charset=utf-8"
         assert "attachment" in response["Content-Disposition"]
-        body = response.content.decode()
+        body = response.content.decode("utf-8-sig")
         assert "name" in body.splitlines()[0]
 
     def test_column_selection_respected(self, api_client, stocked_event, host_user):
@@ -321,7 +321,7 @@ class TestCheckInReportCsvEndpoint:
             f"/api/community/events/{stocked_event.id}/report.csv?columns=name,attendance",
             **_auth(host_user),
         )
-        header = response.content.decode().splitlines()[0]
+        header = response.content.decode("utf-8-sig").splitlines()[0]
         assert header == "name,attendance"
 
     def test_unknown_column_rejected(self, api_client, stocked_event, host_user):
@@ -353,7 +353,7 @@ class TestCheckInReportCsvEndpoint:
         ).json()
         csv_body = api_client.get(
             f"/api/community/events/{past_event.id}/report.csv", **_auth(host_user)
-        ).content.decode()
+        ).content.decode("utf-8-sig")
         data_rows = [line for line in csv_body.splitlines()[1:] if line]
         report_total = (
             report["attended_count"]
@@ -375,6 +375,6 @@ class TestCheckInReportCsvEndpoint:
         response = api_client.get(
             f"/api/community/events/{past_event.id}/report.csv?columns=name", **_auth(host_user)
         )
-        body = response.content.decode()
+        body = response.content.decode("utf-8-sig")
         assert "'=HYPERLINK(1)" in body
         assert "\n=HYPERLINK(1)" not in body.replace("\r", "")

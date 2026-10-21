@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
+import { downloadFile } from './downloadFile';
 import {
   mapQuestion,
   type ShowIfCondition,
@@ -410,6 +411,54 @@ export function useSurveyPollTallies(surveyId: string | undefined) {
     },
     enabled: Boolean(surveyId),
   });
+}
+
+// --- per-question summaries (choice / boolean / rating) --------------------
+
+export interface SurveyQuestionSummary {
+  questionId: string;
+  fieldType: SurveyQuestionType;
+  counts: Record<string, number>;
+  answered: number;
+  mean: number | null;
+}
+
+interface WireQuestionSummary {
+  question_id: string;
+  field_type: SurveyQuestionType;
+  counts: Record<string, number>;
+  answered: number;
+  mean?: number | null;
+}
+
+function mapQuestionSummary(w: WireQuestionSummary): SurveyQuestionSummary {
+  return {
+    questionId: w.question_id,
+    fieldType: w.field_type,
+    counts: w.counts,
+    answered: w.answered,
+    mean: w.mean ?? null,
+  };
+}
+
+export function useSurveyQuestionSummaries(surveyId: string | undefined) {
+  return useQuery({
+    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireQuestionSummary[]>(
+        `/api/community/surveys/${surveyId ?? ''}/summary/`,
+      );
+      return data.map(mapQuestionSummary);
+    },
+    enabled: Boolean(surveyId),
+  });
+}
+
+export async function downloadSurveyResponsesCsv(surveyId: string, slug: string): Promise<void> {
+  await downloadFile(
+    `/api/community/surveys/${surveyId}/responses.csv`,
+    `survey-responses-${slug}.csv`,
+  );
 }
 
 export function useFinalizeSurveyPoll(surveyId: string) {

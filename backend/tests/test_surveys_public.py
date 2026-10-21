@@ -45,6 +45,20 @@ def survey_owner_headers(survey_owner):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
+def _headers_for(user) -> dict:
+    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def events_admin_headers(db):
+    host = User.objects.create_user(
+        phone_number="+12025557021", password="x", first_name="Events", last_name="Manager"
+    )
+    role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
+    host.roles.add(role)
+    return _headers_for(host)
+
+
 @pytest.fixture
 def poll_survey(db, survey_owner):
     survey = Survey.objects.create(
@@ -91,6 +105,13 @@ class TestSurveyTalliesAuthz:
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
         }
         response = api_client.get(self._url(poll_survey), **headers)
+        assert response.status_code == 200
+
+    def test_manage_events_can_still_read_tallies(
+        self, api_client, events_admin_headers, poll_survey
+    ):
+        # Tallies keep the broader host-level rule that /summary/ no longer shares.
+        response = api_client.get(self._url(poll_survey), **events_admin_headers)
         assert response.status_code == 200
 
     def test_other_member_cannot_read_tallies(self, api_client, auth_headers, poll_survey):

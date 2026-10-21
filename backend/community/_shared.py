@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code
 from django.contrib.auth.models import AnonymousUser
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
 from ninja_jwt.exceptions import AuthenticationFailed, TokenError
@@ -101,6 +101,21 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
+
+
+def csv_safe(value: str) -> str:
+    # Prefix a leading apostrophe so spreadsheet apps don't execute
+    # user-controlled text as formulas (CSV injection).
+    if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
+def csv_response(body: str, filename: str) -> HttpResponse:
+    # The BOM makes Excel decode as utf-8 instead of the system codepage.
+    response = HttpResponse("\ufeff" + body, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:

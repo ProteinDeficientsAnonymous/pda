@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from './client';
+import { downloadFile } from './downloadFile';
 
 export interface CheckInReportPerson {
   userId: string;
@@ -133,16 +134,9 @@ export function useCheckInReport(eventId: string | undefined) {
 }
 
 export async function downloadCheckInReportCsv(eventId: string, columns: string[]): Promise<void> {
-  const { data } = await apiClient.get<Blob>(`/api/community/events/${eventId}/report.csv`, {
-    params: { columns: columns.join(',') },
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(data);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `check-in-report-${eventId}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  await downloadFile(
+    `/api/community/events/${eventId}/report.csv`,
+    `check-in-report-${eventId}.csv`,
+    { columns: columns.join(',') },
+  );
 }

@@ -24,6 +24,45 @@ def _day_only(dt: datetime) -> datetime:
     return timezone.localtime(dt).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
+def _ordered_responses(survey: Survey) -> list[SurveyResponse]:
+    responses = list(survey.responses.select_related("user").all())
+    if survey.anonymous:
+        # Exact submit order would let someone who saw a member submit pick out their row.
+        responses.sort(key=lambda r: str(r.id))
+        responses.sort(key=lambda r: _day_only(r.submitted_at), reverse=True)
+    return responses
+
+
+def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
+    """Load a survey for an endpoint that exposes response data, gated on MANAGE_SURVEYS.
+
+    request(HttpRequest): the authenticated request.
+    survey_id(UUID): survey to load.
+    endpoint(str): operation name recorded in the permission-denied audit entry.
+    return(Survey): the survey, with questions prefetched.
+    """
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": endpoint,
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        return Survey.objects.prefetch_related("questions").get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+
+
 def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyResponseOut:
     """attribute=False masks the responder and exact submit time, for anonymous surveys."""
     show = attribute and r.user is not None
@@ -42,32 +81,9 @@ def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyRes
     auth=gated_jwt,
 )
 def list_survey_responses(request, survey_id: UUID):
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": "list_survey_responses",
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        survey = Survey.objects.get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    survey = _load_survey_for_responses(request, survey_id, "list_survey_responses")
     attribute = not survey.anonymous
-    responses = list(survey.responses.select_related("user").all())
-    if not attribute:
-        # Exact submit order would let someone who saw a member submit pick out their row.
-        responses.sort(key=lambda r: str(r.id))
-        responses.sort(key=lambda r: _day_only(r.submitted_at), reverse=True)
+    responses = _ordered_responses(survey)
     return Status(200, [_admin_response_out(r, request.auth, attribute) for r in responses])
 
 

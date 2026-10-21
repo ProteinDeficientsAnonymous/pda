@@ -1985,6 +1985,23 @@ export interface paths {
         patch: operations["community__surveys_update_survey_question"];
         trace?: never;
     };
+    "/api/community/surveys/{survey_id}/responses.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Responses Csv */
+        get: operations["community__survey_reports_get_survey_responses_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/surveys/{survey_id}/responses/": {
         parameters: {
             query?: never;
@@ -2014,6 +2031,23 @@ export interface paths {
         post?: never;
         /** Delete Survey Response */
         delete: operations["community__surveys_responses_delete_survey_response"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/surveys/{survey_id}/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Summary */
+        get: operations["community__survey_reports_get_survey_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4709,6 +4743,20 @@ export interface components {
             has_plus_one: boolean;
             /** Status */
             status: string;
+        };
+        /** QuestionSummaryOut */
+        QuestionSummaryOut: {
+            /** Answered */
+            answered: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            field_type: components["schemas"]["QuestionType"];
+            /** Mean */
+            mean?: number | null;
+            /** Question Id */
+            question_id: string;
         };
         /**
          * QuestionType
@@ -11570,6 +11618,37 @@ export interface operations {
             };
         };
     };
+    community__survey_reports_get_survey_responses_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__surveys_responses_list_survey_responses: {
         parameters: {
             query?: never;
@@ -11628,6 +11707,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__survey_reports_get_survey_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSummaryOut"][];
+                };
             };
             /** @description Forbidden */
             403: {
