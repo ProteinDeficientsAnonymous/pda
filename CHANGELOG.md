@@ -1,3 +1,10 @@
+## [0.129.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.0...v0.129.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **auth:** sanitize magic-login redirect ([#1538](https://github.com/ProteinDeficientsAnonymous/pda/issues/1538)) ([e54098f](https://github.com/ProteinDeficientsAnonymous/pda/commit/e54098fb9b5f36b9af9f86f795523fbf0e572366))
+
 # [0.129.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.128.0...v0.129.0) (2026-10-20)
 
 
