@@ -13,13 +13,13 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
+from users.models import User
 
 JOIN_REQUESTS_URL = "/api/community/join-requests/"
 
 
 @pytest.fixture
 def host_user(db):
-    from users.models import User
 
     return User.objects.create_user(phone_number="+12025551800", password="x", first_name="Host")
 
@@ -42,7 +42,6 @@ class TestJoinRequestAttendedEvents:
     def test_all_event_types_included_when_account_linked(
         self, api_client, vettor_headers, host_user
     ):
-        from users.models import User
 
         applicant = User.objects.create_user(
             phone_number="+16505551234", password="x", first_name="Guest", is_member=False
@@ -72,7 +71,6 @@ class TestJoinRequestAttendedEvents:
 
     def test_no_history_without_linked_account(self, api_client, vettor_headers, host_user):
         """A bare phone match to a guest row must not surface that guest's history."""
-        from users.models import User
 
         guest = User.objects.create_user(
             phone_number="+16505551234", password="x", first_name="Guest", is_member=False
@@ -96,7 +94,6 @@ class TestJoinRequestAttendedEvents:
 
     def test_two_guests_same_phone_not_attributed(self, api_client, vettor_headers, host_user):
         """Guest A's attendance must not appear on unlinked applicant B who shares A's phone."""
-        from users.models import User
 
         guest_a = User.objects.create_user(
             phone_number="+16505551234", password="x", first_name="GuestA", is_member=False
@@ -117,7 +114,6 @@ class TestJoinRequestAttendedEvents:
         assert row["attended_events"] == []
 
     def test_resolves_via_join_request_user_fk(self, api_client, vettor_headers, host_user):
-        from users.models import User
 
         member = User.objects.create_user(
             phone_number="+16505559999", password="x", first_name="Member", is_member=True
@@ -150,7 +146,6 @@ class TestJoinRequestAttendedEvents:
 
     def test_phone_fallback_excludes_members(self, api_client, vettor_headers, host_user):
         """A member sharing the phone number of a JoinRequest isn't a guest match."""
-        from users.models import User
 
         member = User.objects.create_user(
             phone_number="+16505551234", password="x", first_name="Member", is_member=True

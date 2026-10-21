@@ -13,6 +13,8 @@ from community.models import (
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from users.models import Role, User
+from users.permissions import PermissionKey
 
 MEMBERS_URL = "/api/community/events/attendance-analytics/members/"
 
@@ -24,7 +26,6 @@ def _auth(user):
 
 @pytest.fixture
 def member(db):
-    from users.models import User
 
     return User.objects.create_user(
         phone_number="+12025551900",
@@ -37,15 +38,12 @@ def member(db):
 
 @pytest.fixture
 def host_user(db):
-    from users.models import User
 
     return User.objects.create_user(phone_number="+12025551800", password="x", first_name="Host")
 
 
 @pytest.fixture
 def events_admin(db):
-    from users.models import Role, User
-    from users.permissions import PermissionKey
 
     admin = User.objects.create_user(phone_number="+12025551801", password="x", first_name="Admin")
     role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
@@ -174,7 +172,6 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["is_pause_candidate"] is True
 
     def test_pause_candidates_sorted_first(self, api_client, host_user, events_admin):
-        from users.models import User
 
         compliant = User.objects.create_user(
             phone_number="+12025552000", password="x", first_name="Compliant", is_member=True
@@ -195,7 +192,6 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
     def test_paused_member_included_and_labeled(self, api_client, host_user, events_admin):
-        from users.models import User
 
         paused = User.objects.create_user(
             phone_number="+12025552002",
@@ -210,7 +206,6 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["is_pause_candidate"] is False
 
     def test_archived_member_excluded(self, api_client, events_admin):
-        from users.models import User
 
         archived = User.objects.create_user(
             phone_number="+12025552003",
@@ -224,7 +219,6 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert str(archived.pk) not in ids
 
     def test_non_member_excluded(self, api_client, events_admin):
-        from users.models import User
 
         guest = User.objects.create_user(
             phone_number="+12025552004", password="x", first_name="Guest", is_member=False

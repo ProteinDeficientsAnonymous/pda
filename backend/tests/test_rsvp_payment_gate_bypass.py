@@ -2,7 +2,15 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import (
+    Event,
+    EventPoll,
+    EventRSVP,
+    PollAvailability,
+    PollOption,
+    PollVote,
+    RSVPStatus,
+)
 from django.utils import timezone
 
 from tests._asserts import assert_error_code
@@ -99,7 +107,6 @@ class TestPaidConfirmedOnUngatedStatus:
 @pytest.mark.django_db
 class TestPollFinalizeDoesNotBypassGate:
     def test_unpaid_yes_voter_is_skipped_not_seated(self, api_client, auth_headers, test_user):
-        from community.models import EventPoll, PollAvailability, PollOption, PollVote
 
         event = _paid_event(test_user, datetime_tbd=True)
         poll = EventPoll.objects.create(event=event, created_by=test_user)
@@ -118,7 +125,6 @@ class TestPollFinalizeDoesNotBypassGate:
     def test_yes_voter_with_existing_confirmation_keeps_it(
         self, api_client, auth_headers, test_user
     ):
-        from community.models import EventPoll, PollAvailability, PollOption, PollVote
 
         event = _paid_event(test_user, datetime_tbd=True)
         EventRSVP.objects.create(

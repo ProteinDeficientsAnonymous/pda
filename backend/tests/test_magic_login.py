@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from community._validation import Code
+from django.core.cache import caches
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import MagicLoginToken, User
@@ -14,7 +15,6 @@ from tests._asserts import assert_error_code
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
     # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import caches
 
     caches["ratelimit"].clear()
     yield
@@ -119,7 +119,6 @@ class TestMagicLogin:
     def test_replay_after_consume_is_rejected(self, api_client, test_user):
         """A second consume of an already-consumed token must fail (TOCTOU replay
         guard: fetch + used-check + mark-used run atomically under a row lock)."""
-        from users.models import MagicLoginToken
 
         magic = MagicLoginToken.create_for_user(test_user)
         first = api_client.get(f"/api/auth/magic-login/{magic.token}/")
@@ -129,7 +128,6 @@ class TestMagicLogin:
         assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
 
     def test_magic_login_rate_limited(self, api_client, test_user):
-        from django.core.cache import caches
 
         caches["ratelimit"].clear()
         # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
@@ -141,7 +139,6 @@ class TestMagicLogin:
         assert resp.json()["detail"][0]["code"] == "rate.limited"
 
     def test_rate_limit_survives_spoofed_xff(self, api_client, settings):
-        from django.core.cache import caches
 
         caches["ratelimit"].clear()
         # Railway puts exactly one trusted proxy in front of the app.

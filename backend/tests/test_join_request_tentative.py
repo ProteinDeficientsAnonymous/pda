@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from community._join_request_approval import _provision_tentative_user
 from community._validation import Code
 from community.models import (
     AttendanceStatus,
@@ -121,7 +122,6 @@ def open_official_event(db):
 
 
 def _tentative_user_with_rsvp(join_request, event, vettor):
-    from community._join_request_approval import _provision_tentative_user
 
     _provision_tentative_user(join_request, vettor)
     join_request.status = JoinRequestStatus.TENTATIVE
@@ -307,7 +307,6 @@ class TestTentativeRsvpEvents:
     def test_list_excludes_non_attending_rsvps(
         self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
     ):
-        from community._join_request_approval import _provision_tentative_user
 
         _provision_tentative_user(sample_join_request, vettor_user)
         sample_join_request.status = JoinRequestStatus.TENTATIVE

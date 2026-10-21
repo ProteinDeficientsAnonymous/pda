@@ -7,11 +7,22 @@ scoped NonMemberRsvpToken, and emails a confirmation with a /my-rsvps magic link
 Capacity / waitlist / robustness cases live in test_public_rsvp_capacity.py.
 """
 
+import uuid
 from unittest.mock import patch
 
 import pytest
 from community._validation import Code
-from community.models import EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.models import (
+    EventComment,
+    EventRSVP,
+    EventRsvpQuestion,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RsvpQuestionType,
+    RSVPStatus,
+)
+from notifications.models import Notification, NotificationType
 from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import (
@@ -247,7 +258,6 @@ class TestPublicRsvpEventGating:
         assert post(api_client, event).status_code == 404
 
     def test_nonexistent(self, api_client, fake_email_sender):
-        import uuid
 
         response = api_client.post(
             URL_TEMPLATE.format(event_id=uuid.uuid4()),
@@ -286,7 +296,6 @@ class TestPublicRsvpClosedStateParity:
         assert first_code(response) == Code.Event.RSVPS_CLOSED_PAST
 
     def test_missing_private_and_non_official_events_still_404(self, api_client, fake_email_sender):
-        import uuid
 
         missing = api_client.post(
             URL_TEMPLATE.format(event_id=uuid.uuid4()), payload(), content_type="application/json"
@@ -389,7 +398,6 @@ class TestPublicRsvpComment:
     ):
         response = post(api_client, official_event, comment="bringing snacks")
         assert response.status_code == 200
-        from community.models import EventComment
 
         user = User.objects.get(phone_number="+14155550123")
         comments = EventComment.objects.filter(event=official_event, author=user)
@@ -402,8 +410,6 @@ class TestPublicRsvpComment:
         """Can't Go is not available for first-time public RSVPs, but the endpoint
         must handle it gracefully if ever called directly: a decline-note notification
         is sent and no public comment is created."""
-        from community.models import EventComment
-        from notifications.models import Notification, NotificationType
 
         host = official_event.created_by
         resp = api_client.post(
@@ -425,7 +431,6 @@ class TestPublicRsvpComment:
             ).exists()
 
     def test_empty_comment_creates_nothing(self, api_client, official_event, fake_email_sender):
-        from community.models import EventComment
 
         response = post(api_client, official_event, comment="   ")
         assert response.status_code == 200
@@ -433,7 +438,6 @@ class TestPublicRsvpComment:
         assert not EventComment.objects.filter(event=official_event, author=user).exists()
 
     def test_no_comment_creates_nothing(self, api_client, official_event, fake_email_sender):
-        from community.models import EventComment
 
         response = post(api_client, official_event)
         assert response.status_code == 200
@@ -448,7 +452,6 @@ class TestPublicRsvpComment:
 @pytest.mark.django_db
 class TestPublicRsvpAnswers:
     def test_persists_required_answers(self, api_client, official_event, fake_email_sender):
-        from community.models import EventRsvpQuestion, RsvpQuestionType
 
         q = EventRsvpQuestion.objects.create(
             event=official_event,
@@ -468,7 +471,6 @@ class TestPublicRsvpAnswers:
         assert rsvp.questionnaire_responses[str(q.id)]["answer"] == "driving"
 
     def test_required_answer_missing_rejected(self, api_client, official_event, fake_email_sender):
-        from community.models import EventRsvpQuestion, RsvpQuestionType
 
         EventRsvpQuestion.objects.create(
             event=official_event,

@@ -11,6 +11,7 @@ Run via ``make dump-openapi`` (wrapped by ``make frontend-types``).
 import json
 from pathlib import Path
 
+from config.urls import api
 from django.core.management.base import BaseCommand
 
 OUTPUT_PATH = Path(__file__).resolve().parents[3] / "openapi_schema.json"
@@ -27,11 +28,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, check: bool = False, **options) -> None:
-        # Imported lazily so management-command discovery doesn't hit URL
-        # configuration (which can fail before the Django app registry is
-        # ready under some entry points).
-        from config.urls import api
-
         schema = api.get_openapi_schema()
         serialized = json.dumps(schema, indent=2, sort_keys=True) + "\n"
 

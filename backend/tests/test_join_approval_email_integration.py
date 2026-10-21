@@ -1,5 +1,11 @@
 import pytest
-from community.models import AttendanceStatus, JoinRequestStatus
+from community.models import (
+    AttendanceStatus,
+    JoinRequestStatus,
+    MemberPromotionEmailTemplate,
+    TentativeApprovalMessageTemplate,
+    WhatsAppLinkConfig,
+)
 from django.conf import settings
 from ninja_jwt.tokens import RefreshToken
 
@@ -101,7 +107,6 @@ class TestJoinApprovalEmail:
     def test_uses_editable_message_with_first_name_substitution(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionEmailTemplate
 
         template = MemberPromotionEmailTemplate.get()
         template.body = "hey ${FIRST_NAME} — you came through, you're in for real now"
@@ -130,7 +135,6 @@ class TestJoinApprovalEmail:
     def test_html_email_escapes_editable_message_body(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionEmailTemplate
 
         template = MemberPromotionEmailTemplate.get()
         template.body = "hi <script>alert(1)</script> & welcome"
@@ -160,10 +164,6 @@ class TestJoinApprovalEmail:
     def test_tentative_message_template_does_not_affect_promotion_email(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import (
-            MemberPromotionEmailTemplate,
-            TentativeApprovalMessageTemplate,
-        )
 
         tentative_template = TentativeApprovalMessageTemplate.get()
         tentative_template.body = "hi ${FIRST_NAME}, from ${SENDER_NAME} — you're tentatively in"
@@ -213,7 +213,6 @@ class TestJoinApprovalEmailWhatsAppLink:
     def test_whatsapp_link_placeholder_is_substituted(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionEmailTemplate, WhatsAppLinkConfig
 
         link_config = WhatsAppLinkConfig.get()
         link_config.link = "https://chat.whatsapp.com/abc123"
@@ -235,7 +234,6 @@ class TestJoinApprovalEmailWhatsAppLink:
     def test_whatsapp_link_renders_as_an_anchor_in_html(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionEmailTemplate, WhatsAppLinkConfig
 
         link_config = WhatsAppLinkConfig.get()
         link_config.link = "https://chat.whatsapp.com/abc123"
@@ -256,7 +254,6 @@ class TestJoinApprovalEmailWhatsAppLink:
     def test_unset_whatsapp_link_substitutes_empty(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionEmailTemplate
 
         template = MemberPromotionEmailTemplate.get()
         template.body = "join the group: ${WHATSAPP_LINK}"

@@ -1,6 +1,6 @@
 """Tests for the send_attendance_reminders management command."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 from unittest.mock import MagicMock
 
@@ -122,7 +122,6 @@ class TestSendAttendanceRemindersCommand:
     def test_sends_only_latest_milestone_when_multiple_crossed(self, fake_sender):
         """A member whose clock jumped past 10mo and 11mo (e.g. cron was down)
         gets exactly one email — the 11mo one — not two."""
-        from datetime import timedelta
 
         user = _make_member("+12025550119")
         floor = (datetime.now(tz=UTC) - timedelta(days=335)).date()

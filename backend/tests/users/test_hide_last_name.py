@@ -10,6 +10,8 @@ from community.models import (
     RSVPStatus,
 )
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification
+from notifications.service import notify_comment_reply
 from tests.conftest import future_iso
 from users.models import User
 from users.roles import Role
@@ -30,7 +32,6 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(admin_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -146,7 +147,6 @@ class TestSearchHidesLastName:
 @pytest.mark.django_db
 class TestMeHideLastName:
     def test_me_always_shows_own_last_name(self, api_client, hidden_user):
-        from ninja_jwt.tokens import RefreshToken
 
         refresh = RefreshToken.for_user(hidden_user)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -258,14 +258,12 @@ class TestCommentAuthorHidesLastName:
 @pytest.mark.django_db
 class TestNotificationHidesLastName:
     def test_comment_reply_notification_omits_last_name(self, test_user, hidden_user):
-        from notifications.models import Notification
 
         event = Event.objects.create(title="Notify Event", start_datetime=future_iso(days=10))
         parent = EventComment.objects.create(event=event, author=test_user, body="parent")
         reply = EventComment.objects.create(
             event=event, author=hidden_user, body="reply", parent=parent
         )
-        from notifications.service import notify_comment_reply
 
         notify_comment_reply(reply)
         note = Notification.objects.get(recipient_id=test_user.pk)

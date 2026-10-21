@@ -190,7 +190,6 @@ class TestNonMemberCannotHoldRole:
     role member-counts must reflect members only."""
 
     def _make_non_member(self):
-        from users.models import User
 
         # is_member=False overrides the conftest autouse default (is_member=True).
         return User.objects.create_user(

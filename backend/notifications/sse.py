@@ -4,11 +4,15 @@ import asyncio
 import json
 import logging
 
+import psycopg
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.db import transaction
 from django.http import JsonResponse, StreamingHttpResponse
+
+from notifications.models import SseTicket
 
 logger = logging.getLogger("pda")
 
@@ -24,10 +28,6 @@ def _consume_ticket(ticket_str: str) -> AbstractBaseUser | None:
     Row-locked (select_for_update) so concurrent connections can't both consume
     one ticket. Returns None for a missing/expired/used ticket.
     """
-    from django.db import transaction
-
-    from notifications.models import SseTicket
-
     with transaction.atomic():
         try:
             ticket = SseTicket.objects.select_for_update().get(token=ticket_str)
@@ -71,9 +71,6 @@ def _format_notify_for_user(channel: str, payload: str, user_id: str) -> str | N
 
 async def _sse_generator(user_id: str):
     """Async generator that yields SSE events for a single user."""
-    # lazy import: psycopg only needed for the postgres LISTEN path
-    import psycopg
-
     dsn = _build_async_dsn()
     try:
         async with await psycopg.AsyncConnection.connect(dsn, autocommit=True) as conn:

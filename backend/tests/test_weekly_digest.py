@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pytest
+from community.management.commands import send_weekly_digest as digest_command
 from community.models import Event, EventStatus, EventType, JoinRequest, JoinRequestStatus
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -94,7 +95,6 @@ class TestSendWeeklyDigestCommand:
 
     def test_uses_bulk_email_stream(self, fake_sender, monkeypatch):
         """The digest fans out to every member — it must not spend transactional quota."""
-        from community.management.commands import send_weekly_digest as digest_command
 
         spy = MagicMock(return_value=fake_sender)
         monkeypatch.setattr(digest_command, "get_email_sender", spy)
@@ -126,7 +126,6 @@ class TestSendWeeklyDigestCommand:
             call_command("send_weekly_digest", to="probe@example.com")
 
     def test_to_still_uses_bulk_stream(self, fake_sender, monkeypatch):
-        from community.management.commands import send_weekly_digest as digest_command
 
         spy = MagicMock(return_value=fake_sender)
         monkeypatch.setattr(digest_command, "get_email_sender", spy)

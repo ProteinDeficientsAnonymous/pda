@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 import pytest
 from community._event_viewer import resolve_event_viewer
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
+from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 
 from tests.conftest import future_iso
@@ -71,9 +74,6 @@ class TestResolveEventViewer:
     def test_expired_token_stays_locked(self, rf, event, non_member):
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
         token = NonMemberRsvpToken.issue(non_member)
-        from datetime import timedelta
-
-        from django.utils import timezone
 
         token.expires_at = timezone.now() - timedelta(days=1)
         token.save(update_fields=["expires_at"])

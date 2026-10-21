@@ -1,5 +1,5 @@
 import pytest
-from community.models import MemberPromotionEmailTemplate
+from community.models import MemberPromotionEmailTemplate, MemberPromotionMessageTemplate
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -103,7 +103,6 @@ class TestUpdateMemberPromotionEmail:
     def test_does_not_touch_the_sms_promotion_message(
         self, api_client, edit_promotion_email_headers
     ):
-        from community.models import MemberPromotionMessageTemplate
 
         api_client.patch(
             "/api/community/member-promotion-email/",

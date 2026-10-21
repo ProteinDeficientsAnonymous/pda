@@ -1,4 +1,5 @@
 import pytest
+from community._attendance_clock import last_qualifying_attendance_date
 from community.models import (
     AttendanceStatus,
     Event,
@@ -185,7 +186,6 @@ class TestLegacyEventCreation:
     def test_legacy_attendance_counts_toward_the_attendance_clock(
         self, api_client, members_admin, alice
     ):
-        from community._attendance_clock import last_qualifying_attendance_date
 
         _post(
             api_client,

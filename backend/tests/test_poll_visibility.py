@@ -1,7 +1,14 @@
 import json
 
 import pytest
-from community.models import Event, EventPoll, PageVisibility, PollOption
+from community.models import (
+    Event,
+    EventPoll,
+    PageVisibility,
+    PollAvailability,
+    PollOption,
+    PollVote,
+)
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
@@ -96,7 +103,6 @@ class TestGetPollVisibility:
         assert response.status_code == 200
 
     def test_anonymous_cannot_see_voter_identities_on_public_poll(self, api_client, db, test_user):
-        from community.models import PollAvailability, PollVote
 
         event = Event.objects.create(
             title="Public poll event",
@@ -136,7 +142,6 @@ class TestGetPollVisibility:
     def test_authenticated_can_see_voter_identities_on_public_poll(
         self, api_client, db, auth_headers, test_user
     ):
-        from community.models import PollAvailability, PollVote
 
         event = Event.objects.create(
             title="Public poll event",

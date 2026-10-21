@@ -15,6 +15,7 @@ from community._validation import ValidationException
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import ValidationError as NinjaValidationError
+from users._refresh_cookie import clear_refresh_cookie
 
 _GENERIC_FIELD_INVALID = "field_invalid"
 _GENERIC_FIELD_REQUIRED = "field_required"
@@ -31,10 +32,6 @@ def register_validation_handlers(api: NinjaAPI) -> None:
             status=exc.status_code,
         )
         if exc.clear_refresh_cookie:
-            # Lazy import to keep users/ out of config/ dependency graph for
-            # modules that don't need cookie-clearing.
-            from users._refresh_cookie import clear_refresh_cookie
-
             clear_refresh_cookie(response)
         return response
 

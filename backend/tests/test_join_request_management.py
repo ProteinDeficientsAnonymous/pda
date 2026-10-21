@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from community import _join_requests
 from community._validation import Code
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
@@ -160,7 +161,6 @@ class TestJoinRequestManagement:
     ):
         # The already-decided guard only closes the concurrent-approval race if
         # the row is locked before the check. Assert select_for_update() is used.
-        from community import _join_requests
 
         original = JoinRequest.objects.select_for_update
         called = False
