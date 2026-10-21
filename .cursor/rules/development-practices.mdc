@@ -5,8 +5,6 @@ alwaysApply: true
 
 ## Development Practices
 
-**No Obvious Comments:** Comments only for non-obvious logic, workarounds, or context.
-
 **Inclusive Language:** "master/slave" → "primary/replica", "blacklist/whitelist" → "blocklist/allowlist".
 
 ### Engineering Principles
