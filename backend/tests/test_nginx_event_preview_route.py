@@ -1,5 +1,4 @@
 import re
-import uuid
 from pathlib import Path
 
 import pytest
@@ -20,7 +19,7 @@ def _event_preview_location() -> re.Pattern[str]:
         "/events/vegan-potluck",
         "/events/vegan-potluck-2",
         "/events/event",
-        f"/events/{uuid.uuid4()}",
+        "/events/3f2b8c1e-9d4a-4e6b-8a7c-1b2d3e4f5a6b",
     ],
 )
 def test_unfurl_bots_reach_preview_for_slug_and_uuid_links(path):
