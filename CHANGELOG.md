@@ -1,3 +1,10 @@
+# [0.139.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.138.0...v0.139.0) (2026-10-21)
+
+
+### Features
+
+* **rsvp:** record pre_cancel_status on cancellation (1318, 1/3) ([#1665](https://github.com/ProteinDeficientsAnonymous/pda/issues/1665)) ([8307269](https://github.com/ProteinDeficientsAnonymous/pda/commit/8307269e183ad26c28ac22efca0379d7db4c753a))
+
 # [0.138.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.137.1...v0.138.0) (2026-10-21)
 
 
