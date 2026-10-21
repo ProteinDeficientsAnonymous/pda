@@ -1,4 +1,4 @@
-hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 {% if kind == "promoted" %}good news — a spot opened up and you're off the waitlist for {{ event_title|lower }} 🌱{% if payment_pending %}
 
@@ -13,5 +13,5 @@ view the event:
 {{ event_url }}
 
 — pda
-
+{% endautoescape %}
 {% include "emails/_no_reply_footer.txt" %}

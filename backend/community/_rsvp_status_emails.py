@@ -29,10 +29,21 @@ _MEMBER_STATUS_KINDS: dict[str, str] = {
 }
 
 
+def _tentative_q() -> Exists:
+    return Exists(
+        JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
+    )
+
+
+def _gets_member_emails(user: User) -> bool:
+    """Members and tentative members get member emails; public rsvpers get manage links."""
+    return user.is_member or User.objects.filter(pk=user.pk).filter(_tentative_q()).exists()
+
+
 def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
     return MemberRsvpEmailDetails(
         to=user.email or "",
-        display_name=user.full_name,
+        display_name=user.first_name,
         event_title=event.title,
         event_when=_format_event_when(event),
         event_location=event.location,
@@ -73,6 +84,14 @@ def email_member_rsvp_status(request, event: Event, user: User, status: str) -> 
     _send_member_email(request, event, user, kind)
 
 
+def email_host_set_rsvp_status(
+    request, event: Event, user: User, previous_status: str | None, status: str
+) -> None:
+    """Email a signed-in user whose RSVP a host changed. Public rsvpers aren't emailed."""
+    if status != previous_status and _gets_member_emails(user):
+        email_member_rsvp_status(request, event, user, status)
+
+
 def _email_promoted_non_member(request, event: Event, user: User, payment_pending: bool) -> None:
     try:
         token = NonMemberRsvpToken.issue_or_extend(user)
@@ -94,18 +113,13 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
     promoted = (
         User.objects.filter(id__in=promoted_user_ids)
         .exclude(email__isnull=True)
-        .annotate(
-            is_tentative=Exists(
-                JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-            )
-        )
+        .annotate(is_tentative=_tentative_q())
     )
     unpaid = _unpaid_user_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
         payment_pending = str(user.id) in unpaid
-        # Tentative members can sign in, so they get the member email, not a manage link.
         if user.is_member or user.is_tentative:
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:

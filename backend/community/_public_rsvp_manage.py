@@ -154,7 +154,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, created = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
             event.id,
             user,
             _RsvpApply(
@@ -181,7 +181,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     )
     sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(
-        event, user, rsvp_token.token, created=created, final_status=final_status
+        event, user, rsvp_token.token, created=previous_status is None, final_status=final_status
     )
     if email_error is not None:
         _log_email_failure(request, event, user, email_error)

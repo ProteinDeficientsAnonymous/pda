@@ -4,6 +4,7 @@ from django.test import Client
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.conftest import future_iso
 
 
@@ -134,3 +135,96 @@ class TestMemberWaitlistPromotionEmail:
         assert [p["subject"] for p in promoted] == ["you're off the waitlist for picnic"]
         assert f"/events/{event.slug or event.id}" in promoted[0]["text"]
         assert "my-rsvps?token=" not in promoted[0]["text"]
+
+    def test_promoted_unpaid_member_is_told_to_pay(self, test_user, fake_email_sender):
+        event = _event(
+            test_user, max_attendees=1, price="$10", venmo_link="https://venmo.com/u/host"
+        )
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        member = _member()
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
+
+        _rsvp(Client(), event, test_user, RSVPStatus.CANT_GO)
+
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == "member@e.com"
+        assert "your spot isn't confirmed until you pay" in sent["text"]
+
+    def test_capacity_increase_emails_promoted_member(self, test_user, fake_email_sender):
+        event = _event(test_user, max_attendees=1)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        member = _member()
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
+
+        Client().patch(
+            f"/api/community/events/{event.id}/",
+            {"max_attendees": 2},
+            content_type="application/json",
+            **_headers(test_user),
+        )
+
+        assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
+        assert _subjects(fake_email_sender, "member@e.com") == [
+            "you're off the waitlist for picnic"
+        ]
+
+
+def _host_set(event, host, guest, status):
+    return Client().post(
+        f"/api/community/events/{event.id}/rsvps/{guest.pk}/rsvp/",
+        {"status": status},
+        content_type="application/json",
+        **_headers(host),
+    )
+
+
+@pytest.mark.django_db
+class TestHostSetRsvpEmail:
+    def test_host_seating_waitlisted_member_emails_them(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        member = _member()
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
+
+        assert _host_set(event, test_user, member, RSVPStatus.ATTENDING).status_code == 200
+
+        assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
+
+    def test_host_resave_same_status_does_not_email(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        member = _member()
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
+
+        _host_set(event, test_user, member, RSVPStatus.ATTENDING)
+
+        assert _subjects(fake_email_sender, "member@e.com") == []
+
+    def test_host_set_tentative_member_gets_member_email(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        tentative = make_tentative_member("+14155550101", "tentative@e.com")
+
+        _host_set(event, test_user, tentative, RSVPStatus.ATTENDING)
+
+        assert _subjects(fake_email_sender, "tentative@e.com") == ["you're in for picnic"]
+
+    def test_host_set_public_rsvper_gets_no_member_email(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        non_member = make_non_member("+14155550102", "public@e.com")
+
+        _host_set(event, test_user, non_member, RSVPStatus.ATTENDING)
+
+        assert _subjects(fake_email_sender, "public@e.com") == []
+
+
+@pytest.mark.django_db
+def test_text_part_is_not_html_escaped(test_user, fake_email_sender):
+    member = _member()
+    event = _event(test_user)
+    event.title = "Leah's Potluck & Games"
+    event.location = "Joe's Place"
+    event.save()
+
+    _rsvp(Client(), event, member, RSVPStatus.ATTENDING)
+
+    text = fake_email_sender.send.call_args.kwargs["text"]
+    assert "leah's potluck & games" in text
+    assert "joe's place" in text

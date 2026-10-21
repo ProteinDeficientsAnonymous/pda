@@ -273,7 +273,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             email=normalized_email,
             phone=validated_phone,
         )
-        final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, _previous_status = _apply_rsvp_in_transaction(
             event.id,
             user,
             _RsvpApply(

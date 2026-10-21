@@ -234,12 +234,14 @@ class _RsvpApply:
     answers: dict[str, str] | None = None
 
 
-def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, list[str], bool]:
+def _apply_rsvp_in_transaction(
+    event_id, user, rsvp: _RsvpApply
+) -> tuple[str, list[str], str | None]:
     """Execute RSVP upsert inside a locked transaction.
 
-    Returns (final_status, promoted_user_ids, created). promoted_user_ids is the
+    Returns (final_status, promoted_user_ids, previous_status). promoted_user_ids is the
     list of users promoted off the waitlist by this change (empty unless a spot
-    freed); created is True when this call created the user's first RSVP row.
+    freed); previous_status is the status read under the lock, None if there was no row.
 
     Raises ValidationException on failure.
     """
@@ -255,7 +257,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
     _validate_rsvp_access(user, event)
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
-    created = existing is None
+    previous_status = existing.status if existing is not None else None
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     if not rsvp.paid_confirmed and requires_payment_gate(event, existing, rsvp.status):
@@ -275,7 +277,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
         new_confirmed_at=new_confirmed_at,
         answers_snapshot=answers_snapshot,
     ):
-        return final_status, [], False
+        return final_status, [], previous_status
 
     EventRSVP.objects.update_or_create(
         event=event,
@@ -294,7 +296,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids, created
+    return final_status, promoted_user_ids, previous_status
 
 
 @router.post(
@@ -312,12 +314,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        previous_status = (
-            EventRSVP.objects.filter(event_id=event_id, user=request.auth)
-            .values_list("status", flat=True)
-            .first()
-        )
-        final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
             event_id,
             request.auth,
             _RsvpApply(
