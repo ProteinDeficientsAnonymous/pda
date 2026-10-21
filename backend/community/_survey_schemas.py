@@ -129,6 +129,10 @@ class SurveyResponseOut(BaseModel):
     submitted_at: datetime
 
 
+class SurveySubmitOut(SurveyResponseOut):
+    response_token: str | None = None
+
+
 # str for standard question types (text, select, number, etc.)
 # dict[str, str] for availability answers (option -> "yes"|"maybe")
 TextAnswer = str

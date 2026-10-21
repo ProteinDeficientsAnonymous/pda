@@ -406,8 +406,8 @@ class TestAnonymousSurveySubmit:
     def test_one_response_per_user_does_not_dedupe_anonymous(
         self, api_client, auth_headers, anonymous_survey
     ):
-        # anonymous=True disables the one-per-user upsert since there's no
-        # user to key it on — every submit creates a new response.
+        # anonymous=True never keys the upsert on the member, so without a
+        # response token every submit creates a new response.
         question = anonymous_survey.questions.first()
         url = f"/api/community/surveys/view/{anonymous_survey.slug}/respond/"
         for _ in range(2):

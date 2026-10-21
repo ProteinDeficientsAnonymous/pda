@@ -2,7 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { eventCommentKeys } from '@/api/eventComments';
 import { mapEvent, type WireEvent } from '@/api/eventMapper';
-import { eventKeys, invalidateEventGuests } from '@/api/events';
+import {
+  eventKeys,
+  invalidateEventDetail,
+  invalidateEventGuests,
+  setEventDetailData,
+} from '@/api/events';
 import type { components } from '@/api/types.gen';
 import type { Event, RsvpInputStatus } from '@/models/event';
 
@@ -116,16 +121,16 @@ function useManageInvalidate(token: string) {
   const queryClient = useQueryClient();
   return (eventId: string) => {
     void queryClient.invalidateQueries({ queryKey: manageQueryKey(token) });
-    // The event-detail screen renders a token holder's rsvp + comments from
-    // these queries, not the manage list — refresh them so a returning
-    // non-member sees their own rsvp/comment without a reload (issue 1047).
-    void queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId, false, token) });
+    // Route param is the slug or the uuid; eventId here is always the uuid (issue 1404).
+    invalidateEventDetail(queryClient, eventId);
+    void queryClient.invalidateQueries({ queryKey: eventKeys.list(false) });
     void queryClient.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
     invalidateEventGuests(queryClient, eventId);
   };
 }
 
 export function useUpdatePublicMyRsvp(token: string) {
+  const queryClient = useQueryClient();
   const invalidate = useManageInvalidate(token);
   return useMutation({
     mutationFn: async ({
@@ -145,12 +150,15 @@ export function useUpdatePublicMyRsvp(token: string) {
           ? {}
           : { questionnaire_responses: questionnaireResponses }),
       };
-      const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
-        params: { token },
-      });
+      const { data } = await apiClient.post<Omit<PublicRsvpOut, 'event'> & { event: WireEvent }>(
+        `${MANAGE_BASE}${eventId}/`,
+        body,
+        { params: { token } },
+      );
       return data;
     },
-    onSuccess: (_data, { eventId }) => {
+    onSuccess: (data, { eventId }) => {
+      setEventDetailData(queryClient, mapEvent(data.event), false, token);
       invalidate(eventId);
     },
   });

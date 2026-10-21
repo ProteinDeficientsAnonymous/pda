@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0100_backfill_joinrequest_tentative"),
+        ("community", "0101_surveyresponse_anonymous_token"),
     ]
 
     operations = [
