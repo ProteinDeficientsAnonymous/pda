@@ -1,3 +1,38 @@
+# [0.137.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.3...v0.137.0) (2026-10-21)
+
+
+### Features
+
+* keep renamed-from event slugs resolving via EventSlugAlias ([#1662](https://github.com/ProteinDeficientsAnonymous/pda/issues/1662)) ([658daa9](https://github.com/ProteinDeficientsAnonymous/pda/commit/658daa92251c581497fa2f9c1ccd575aaea953d5))
+
+## [0.136.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.2...v0.136.3) (2026-10-21)
+
+
+### Bug Fixes
+
+* sort role list by name ([#1661](https://github.com/ProteinDeficientsAnonymous/pda/issues/1661)) ([dd2d0cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd2d0cb0c060f44f951e635703602546bed7dcfa))
+
+## [0.136.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.1...v0.136.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* og previews for public static pages, generic preview for hidden events (Issue 1215) ([#1219](https://github.com/ProteinDeficientsAnonymous/pda/issues/1219)) ([d96ce4c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d96ce4c342afa406dc2f64edfde0986f130b46d7))
+
+## [0.136.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.0...v0.136.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **nginx:** route unfurl bots to og preview for slug event links ([#1659](https://github.com/ProteinDeficientsAnonymous/pda/issues/1659)) ([91021be](https://github.com/ProteinDeficientsAnonymous/pda/commit/91021be12980bc323dc6c5b48371642a32dcac57))
+
+# [0.136.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.135.0...v0.136.0) (2026-10-21)
+
+
+### Features
+
+* **questions:** 1441 - mark required questions in the questionnaire ([#1448](https://github.com/ProteinDeficientsAnonymous/pda/issues/1448)) ([ad301bd](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad301bdc5dddf101a2bfb177c2de3b40c463e13d))
+
 # [0.135.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.134.1...v0.135.0) (2026-10-21)
 
 

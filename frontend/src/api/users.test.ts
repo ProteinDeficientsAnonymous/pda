@@ -223,7 +223,7 @@ describe('useCreateUser', () => {
 // ---------------------------------------------------------------------------
 
 describe('useUpdateUser', () => {
-  it('patches the user and invalidates the users query', async () => {
+  it('patches the user and invalidates the users and attendance analytics queries', async () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u1',
@@ -251,6 +251,7 @@ describe('useUpdateUser', () => {
       has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['member-attendance-analytics'] });
   });
 });
 

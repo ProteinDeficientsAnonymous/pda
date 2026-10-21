@@ -2,10 +2,26 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community.models import Document, Event, EventRSVP, JoinRequest, RSVPStatus, Survey
+from community._attendance_analytics import (
+    compute_member_stats,
+    is_compliant,
+    is_pause_candidate,
+    user_rsvps_for_attendance,
+)
+from community.models import (
+    AttendanceStatus,
+    Document,
+    Event,
+    EventRSVP,
+    JoinRequest,
+    RSVPStatus,
+    Survey,
+)
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
+from users.permissions import PermissionKey
 
 
 @pytest.mark.django_db
@@ -170,6 +186,38 @@ def test_e2e_seed_member_screens_events_use_month_end(capsys, monkeypatch):
     )
     assert out["calendar_date"] == "2026-10-31"
     assert "october 31" in out["digest_html"]
+
+
+@pytest.mark.django_db
+def test_e2e_seed_attendance_report_buckets_each_rsvp(capsys):
+    call_command("e2e_seed", "attendance-report")
+    out = json.loads(capsys.readouterr().out)
+    event = Event.objects.get(id=out["event_id"])
+    host = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    assert event.created_by == host
+    assert not host.roles.exists()
+    marks = {r.user.full_name: (r.status, r.attendance) for r in event.rsvps.select_related("user")}
+    assert marks == {
+        out["attended_name"]: (RSVPStatus.ATTENDING, AttendanceStatus.ATTENDED),
+        out["no_show_name"]: (RSVPStatus.ATTENDING, AttendanceStatus.DIDNT_GO),
+        out["canceled_name"]: (RSVPStatus.CANT_GO, AttendanceStatus.UNKNOWN),
+    }
+
+
+@pytest.mark.django_db
+def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
+    call_command("e2e_seed", "attendance-analytics")
+    out = json.loads(capsys.readouterr().out)
+    admin = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    assert admin.has_permission(PermissionKey.MANAGE_EVENTS)
+    assert admin.has_permission(PermissionKey.MANAGE_USERS)
+    members = User.objects.filter(first_name__icontains=out["search"])
+    stats = {
+        u.full_name.lower(): compute_member_stats(user_rsvps_for_attendance(u)) for u in members
+    }
+    assert is_compliant(stats[out["compliant_name"]])
+    assert is_pause_candidate(stats[out["at_risk_name"]])
+    assert out["at_risk_name"] > out["compliant_name"]
 
 
 @pytest.mark.django_db

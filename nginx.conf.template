@@ -56,16 +56,15 @@ server {
 
     # Event detail pages: link-unfurling scrapers (iMessage, Slack, WhatsApp,
     # Facebook, Twitter, etc.) don't run JS, so the SPA can't hand them OG tags.
-    # Route just those bots to Django's server-rendered preview; humans keep the
-    # SPA. Matched on the event UUID path only (Issue 652).
+    # Matches slug and legacy UUID links; add/mine/manage are SPA routes, not events.
     # Social link-unfurl bots (matched by $event_unfurl_bot) get Django's
     # server-rendered preview; humans get the SPA. NOT search-engine crawlers
     # (googlebot, bingbot, applebot) — the preview is noindex, so routing them
     # here would deindex real public event pages (Issue 652). The regex must be
-    # quoted: an unquoted {36} makes nginx mis-tokenize the block and refuse to
+    # quoted: an unquoted {n,m} makes nginx mis-tokenize the block and refuse to
     # start. proxy_pass lives in a named location because it is not allowed
     # inside an if inside a regex location.
-    location "~^/events/(?<event_uuid>[0-9a-fA-F-]{36})$" {
+    location "~^/events/(?!(?:add|mine|manage)$)(?<event_ref>[A-Za-z0-9_-]{1,80})$" {
         if ($event_unfurl_bot) {
             return 418;
         }
@@ -74,7 +73,24 @@ server {
     }
 
     location @event_preview {
-        proxy_pass http://127.0.0.1:8000/events/$event_uuid/preview/;
+        proxy_pass http://127.0.0.1:8000/events/$event_ref/preview/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Keep slugs in sync with _STATIC_PAGES in backend/config/og_preview.py.
+    location "~^/(?<page>|join|calendar|donate|faq|sms-policy|guidelines)$" {
+        if ($event_unfurl_bot) {
+            return 418;
+        }
+        error_page 418 = @static_page_preview;
+        try_files $uri /index.html;
+    }
+
+    location @static_page_preview {
+        proxy_pass http://127.0.0.1:8000/pages/$page/preview/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
