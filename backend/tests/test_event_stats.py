@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import pytest
 from community._event_helpers import _cancellations
-from community._event_rsvps import _resolve_cancelled_at
+from community._event_rsvps import _resolve_cancelled_at, _resolve_pre_cancel_status
 from community._rsvp_counts import (
     _attended_count,
     _didnt_go_count,
@@ -202,6 +202,40 @@ class TestResolveCancelledAt:
             cancelled_at=cancelled,
         )
         assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
+
+
+@pytest.mark.django_db
+class TestResolvePreCancelStatus:
+    def test_stamps_prior_status_on_transition_from_attending(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.ATTENDING
+
+    def test_stamps_prior_status_on_transition_from_maybe(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.MAYBE)
+        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
+
+    def test_none_for_brand_new_cant_go(self):
+        assert _resolve_pre_cancel_status(None, RSVPStatus.CANT_GO) is None
+
+    def test_clears_when_leaving_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            pre_cancel_status=RSVPStatus.ATTENDING,
+        )
+        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.ATTENDING) is None
+
+    def test_preserves_original_pre_cancel_status_when_still_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            pre_cancel_status=RSVPStatus.MAYBE,
+        )
+        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
 
 
 @pytest.mark.django_db

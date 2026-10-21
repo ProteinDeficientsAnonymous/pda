@@ -235,6 +235,9 @@ class EventRSVP(models.Model):
     )
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    pre_cancel_status = models.CharField(
+        max_length=20, choices=RSVPStatus.choices, null=True, blank=True
+    )
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
     # Set on joining the waitlist, cleared on leaving; hosts can renumber via the reorder endpoint.
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)

@@ -145,6 +145,17 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
+def _resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) -> str | None:
+    """Status before the first cant_go transition; cleared when leaving cant_go."""
+    if final_status != RSVPStatus.CANT_GO:
+        return None
+    if existing is None:
+        return None
+    if existing.status == RSVPStatus.CANT_GO:
+        return existing.pre_cancel_status
+    return existing.status
+
+
 def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> bool:
     """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go).
 
@@ -313,6 +324,7 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "pre_cancel_status": _resolve_pre_cancel_status(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
             "questionnaire_responses": answers_snapshot,
         },
