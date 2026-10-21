@@ -43,7 +43,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
-        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
+        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck agent-frontend-checks
 
 help:
 	@echo "Backend commands:"
@@ -316,7 +316,7 @@ agent-frontend-format-check:
 	cd frontend && pnpm exec oxfmt --check
 
 agent-frontend-test:
-	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
+	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only $(VITEST_ARGS)
 
 agent-frontend-e2e:
 	@cd frontend && pnpm test:e2e
@@ -339,6 +339,10 @@ agent-frontend-ci: parallel-agent-frontend
 # Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:
 	$(MAKE) -j5 agent-frontend-oxlint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
+
+# Everything but Vitest — CI runs this separately from the sharded test jobs.
+agent-frontend-checks:
+	$(MAKE) -j4 agent-frontend-oxlint agent-frontend-format-check agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:
