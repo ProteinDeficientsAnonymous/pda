@@ -29,7 +29,7 @@ from community._rsvp_counts import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, EventType, FeatureFlag, flag_enabled
+from community.models import AttendanceStatus, Event, EventType
 
 router = Router()
 
@@ -146,8 +146,6 @@ def member_attendance_analytics(request):
     ever) sort first so admins triage them without scrolling.
     """
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
-    if not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
 
     users = (

@@ -9,13 +9,10 @@ from community.models import (
     EventRSVP,
     EventStatus,
     EventType,
-    FeatureFlag,
     RSVPStatus,
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-
-from tests.conftest import set_flag
 
 
 def _auth(user):
@@ -172,7 +169,6 @@ class TestAttendanceReportEndpoint:
     def test_counts_match_check_in_report_with_plus_ones(
         self, api_client, host_user, members, events_admin
     ):
-        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
         event = _make_event(host_user, "Plus One Marks", days_ago=2)
         EventRSVP.objects.create(
             event=event,

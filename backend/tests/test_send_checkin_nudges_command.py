@@ -1,28 +1,11 @@
 import pytest
-from community.models import Event, EventStatus, EventType, FeatureFlag
+from community.models import Event, EventStatus, EventType
 from django.core.management import call_command
 from django.utils import timezone
-
-from tests.conftest import set_flag
-
-
-@pytest.mark.django_db
-def test_command_noop_when_flag_off(test_user, fake_email_sender, capsys):
-    Event.objects.create(
-        title="Club Meetup",
-        event_type=EventType.CLUB,
-        status=EventStatus.ACTIVE,
-        rsvp_enabled=True,
-        start_datetime=timezone.now(),
-        created_by=test_user,
-    )
-    call_command("send_checkin_nudges")
-    assert "Sent 0 check-in nudge(s)" in capsys.readouterr().out
 
 
 @pytest.mark.django_db
 def test_command_sends_when_flag_on(test_user, fake_email_sender, capsys):
-    set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
     event = Event.objects.create(
         title="Club Meetup",
         event_type=EventType.CLUB,

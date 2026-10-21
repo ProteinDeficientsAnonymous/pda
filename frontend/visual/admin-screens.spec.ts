@@ -27,9 +27,5 @@ test('admin screens', async ({ page }) => {
     screen('join-form', '/admin/join-form', { heading: 'join form' }),
     screen('docs', '/docs', { heading: 'docs' }),
     screen('doc', `/docs/${data.doc_id}`, { heading: 'house rules' }),
-    screen('feature-flags', '/admin/feature-flags', {
-      heading: 'feature flags',
-      text: 'environment: local',
-    }),
   ]);
 });

@@ -2,7 +2,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import FeatureFlagState, JoinFormQuestion, JoinRequest
+from community.models import JoinFormQuestion, JoinRequest
 from django.conf import settings as django_settings
 from django.core.cache import caches
 from django.db import DatabaseError, connections
@@ -258,8 +258,3 @@ def fake_email_sender(monkeypatch):
     )
     yield fake
     # monkeypatch auto-cleans up.
-
-
-def set_flag(flag: str, enabled: bool = True) -> None:
-    """Set a feature flag's DB override. update_or_create so repeat calls in one test work."""
-    FeatureFlagState.objects.update_or_create(key=flag, defaults={"enabled": enabled})
