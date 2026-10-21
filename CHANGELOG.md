@@ -1,3 +1,16 @@
+# [0.131.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.2...v0.131.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1608 - compare PR screenshots to the last Visual baseline ([#1633](https://github.com/ProteinDeficientsAnonymous/pda/issues/1633)) ([7dd4b5e](https://github.com/ProteinDeficientsAnonymous/pda/commit/7dd4b5ed19b039578110f0c6abee0ec277f157a1))
+* **calendar:** stop serving the feed to archived or paused members ([#1643](https://github.com/ProteinDeficientsAnonymous/pda/issues/1643)) ([91e5299](https://github.com/ProteinDeficientsAnonymous/pda/commit/91e529941618d2f9d5b14cdfb8dbe214cc96830a))
+
+
+### Features
+
+* **users:** release roles, rsvps, and co-host spots on archive ([#1644](https://github.com/ProteinDeficientsAnonymous/pda/issues/1644)) ([2fdc764](https://github.com/ProteinDeficientsAnonymous/pda/commit/2fdc764ff155e1a89f5c384311489ba342aa2757))
+
 ## [0.130.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.1...v0.130.2) (2026-10-21)
 
 
