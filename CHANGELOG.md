@@ -1,3 +1,10 @@
+## [0.129.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.1...v0.129.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1598 - remove event location from weekly digest email ([#1605](https://github.com/ProteinDeficientsAnonymous/pda/issues/1605)) ([5db6966](https://github.com/ProteinDeficientsAnonymous/pda/commit/5db6966f2f09597ba25a08ef80d573324db98702))
+
 ## [0.129.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.0...v0.129.1) (2026-10-21)
 
 
