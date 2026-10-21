@@ -18,7 +18,13 @@ from community._event_helpers import _can_see_invite_only
 from community._events import _enforce_event_read_visibility
 from community._shared import _authenticated_user, _gated, _optional_jwt
 from community._validation import ValidationException
-from community.models import Event, EventStatus, PageVisibility, RSVPStatus
+from community.models import (
+    DEFAULT_EVENT_DURATION,
+    Event,
+    EventStatus,
+    PageVisibility,
+    RSVPStatus,
+)
 
 router = Router()
 
@@ -196,7 +202,7 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
         vevent.add("dtstart", event.start_datetime)
         vevent.add(
             "dtend",
-            event.end_datetime or event.start_datetime + timedelta(hours=2),
+            event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION,
         )
     vevent.add("summary", event.title)
     target_url = request.build_absolute_uri(f"/events/{event.slug or event.id}")
