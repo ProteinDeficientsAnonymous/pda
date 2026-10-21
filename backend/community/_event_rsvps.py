@@ -92,6 +92,34 @@ def _resolve_rsvp_status(
     return RSVPStatus.WAITLISTED, has_plus_one
 
 
+def _keep_waitlist_place(event: Event, existing: EventRSVP | None, final_status: str) -> str:
+    """Keep a waitlisted row waitlisted when it re-saves "going" (e.g. to add a +1).
+
+    Only promote_from_waitlist seats people, in line order, so an edit can't
+    skip whoever is ahead.
+    """
+    if (
+        event.max_attendees is not None
+        and existing is not None
+        and existing.status == RSVPStatus.WAITLISTED
+        and final_status == RSVPStatus.ATTENDING
+    ):
+        return RSVPStatus.WAITLISTED
+    return final_status
+
+
+def _line_may_move(existing: EventRSVP | None, final_status: str, final_plus_one: bool) -> bool:
+    """Whether this change could let someone off the waitlist."""
+    if existing is None:
+        return False
+    if existing.status == RSVPStatus.WAITLISTED:
+        # Dropping a +1 or leaving the line can unblock whoever is behind.
+        return True
+    if existing.status != RSVPStatus.ATTENDING:
+        return False
+    return final_status != RSVPStatus.ATTENDING or (existing.has_plus_one and not final_plus_one)
+
+
 def _validate_rsvp_status(status: str) -> None:
     """Raise ValidationException if the requested RSVP status is invalid."""
     valid_statuses = {RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.CANT_GO}
@@ -264,10 +292,9 @@ def _apply_rsvp_in_transaction(
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
     final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
+    final_status = _keep_waitlist_place(event, existing, final_status)
     answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, rsvp.answers)
 
-    was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
-    had_plus_one = existing is not None and existing.has_plus_one
     new_confirmed_at = _resolve_paid_confirmed_at(existing, rsvp.paid_confirmed, final_status)
 
     if _rsvp_unchanged(
@@ -291,10 +318,8 @@ def _apply_rsvp_in_transaction(
         },
     )
 
-    spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
-        was_attending and had_plus_one and not final_plus_one
-    )
-    promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
+    line_may_move = _line_may_move(existing, final_status, final_plus_one)
+    promoted_user_ids = promote_from_waitlist(event) if line_may_move else []
 
     return final_status, promoted_user_ids, previous_status
 
