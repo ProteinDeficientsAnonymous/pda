@@ -3,7 +3,6 @@ import io
 from uuid import UUID
 
 from config.auth import gated_jwt
-from django.http import HttpResponse
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -19,7 +18,7 @@ from community._event_report_schemas import (
     ReportPlusOne,
 )
 from community._events import _can_edit_event
-from community._shared import ErrorOut
+from community._shared import ErrorOut, csv_response, csv_safe
 from community._validation import Code, raise_validation
 from community.models import AttendanceStatus, Event, RSVPStatus
 
@@ -142,21 +141,13 @@ def get_check_in_report(request, event_id: UUID):
     return Status(200, _build_report(event, request.auth))
 
 
-def _csv_safe(value: str) -> str:
-    # Prefix a leading apostrophe so spreadsheet apps don't execute
-    # attendee-controlled names/phones as formulas (CSV injection).
-    if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
-        return "'" + value
-    return value
-
-
 def _csv_row(
     rsvp, viewer, can_see_phones: bool, columns: list[str], is_plus_one_guest: bool = False
 ) -> list[str]:
     attendance = rsvp.plus_one_attendance if is_plus_one_guest else rsvp.attendance
     values = {
-        "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
-        "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
+        "name": csv_safe(visible_display_name(rsvp.user, viewer)),
+        "phone": csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
         "attendance": attendance,
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
@@ -203,6 +194,4 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
                 _csv_row(rsvp, request.auth, can_see_phones, selected, is_plus_one_guest=True)
             )
 
-    response = HttpResponse(buf.getvalue(), content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'
-    return response
+    return csv_response(buf.getvalue(), _report_csv_filename(event))

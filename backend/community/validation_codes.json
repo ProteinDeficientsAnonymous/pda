@@ -663,6 +663,16 @@
         "params": []
       },
       {
+        "name": "RESPONSE_NOT_FOUND",
+        "value": "survey.response_not_found",
+        "params": []
+      },
+      {
+        "name": "ANONYMOUS_LOCKED",
+        "value": "survey.anonymous_locked",
+        "params": []
+      },
+      {
         "name": "NO_DATETIME_POLL_QUESTION",
         "value": "survey.no_datetime_poll_question",
         "params": []
@@ -732,6 +742,51 @@
         "params": [
           "label",
           "value"
+        ]
+      },
+      {
+        "name": "CONDITION_QUESTION_NOT_FOUND",
+        "value": "survey.condition_question_not_found",
+        "params": []
+      },
+      {
+        "name": "CONDITION_QUESTION_NOT_EARLIER",
+        "value": "survey.condition_question_not_earlier",
+        "params": []
+      },
+      {
+        "name": "CONDITION_TYPE_NOT_SUPPORTED",
+        "value": "survey.condition_type_not_supported",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "CONDITION_OPERATOR_NOT_SUPPORTED",
+        "value": "survey.condition_operator_not_supported",
+        "params": [
+          "operator"
+        ]
+      },
+      {
+        "name": "CONDITION_VALUE_INVALID",
+        "value": "survey.condition_value_invalid",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "CONDITION_ORDER_CONFLICT",
+        "value": "survey.condition_order_conflict",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "CONDITION_SOURCE_IN_USE",
+        "value": "survey.condition_source_in_use",
+        "params": [
+          "label"
         ]
       }
     ],

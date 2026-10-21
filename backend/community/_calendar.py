@@ -18,7 +18,13 @@ from community._event_helpers import _can_see_invite_only
 from community._events import _enforce_event_read_visibility
 from community._shared import _authenticated_user, _gated, _optional_jwt
 from community._validation import ValidationException
-from community.models import Event, EventStatus, PageVisibility, RSVPStatus
+from community.models import (
+    DEFAULT_EVENT_DURATION,
+    Event,
+    EventStatus,
+    PageVisibility,
+    RSVPStatus,
+)
 
 router = Router()
 
@@ -109,18 +115,24 @@ def _feed_events(user: UserModel):
     return events
 
 
+def _feed_user(token: str):
+    user = UserModel.objects.filter(calendar_token=token).first()
+    # Ignore tokens that are empty strings (not yet generated)
+    if user is None or not user.calendar_token:
+        return None
+    # The feed carries member-only data, so it must stop when site access does.
+    if user.archived_at is not None or user.is_paused:
+        return None
+    return user
+
+
 @router.get("/calendar/feed/", auth=None)
 def calendar_feed(request, token: str = ""):
     if not token:
         return HttpResponse("Missing token.", status=403, content_type="text/plain")
 
-    try:
-        user = UserModel.objects.get(calendar_token=token)
-    except UserModel.DoesNotExist:
-        return HttpResponse("Invalid token.", status=403, content_type="text/plain")
-
-    # Ignore tokens that are empty strings (not yet generated)
-    if not user.calendar_token:
+    user = _feed_user(token)
+    if user is None:
         return HttpResponse("Invalid token.", status=403, content_type="text/plain")
 
     cal = icalendar.Calendar()
@@ -196,7 +208,7 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
         vevent.add("dtstart", event.start_datetime)
         vevent.add(
             "dtend",
-            event.end_datetime or event.start_datetime + timedelta(hours=2),
+            event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION,
         )
     vevent.add("summary", event.title)
     target_url = request.build_absolute_uri(f"/events/{event.slug or event.id}")

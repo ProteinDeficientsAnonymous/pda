@@ -872,6 +872,20 @@
         "title": "ConsentType",
         "type": "string"
       },
+      "DeleteAccountIn": {
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "DeleteAccountIn",
+        "type": "object"
+      },
       "DevTestEventIn": {
         "properties": {
           "allow_plus_ones": {
@@ -4745,6 +4759,17 @@
               }
             ],
             "title": "Weekly Digest Opt Out"
+          },
+          "whatsapp_reminder_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp Reminder Opt Out"
           }
         },
         "title": "MePatchIn",
@@ -5595,6 +5620,47 @@
         "title": "PublicRsvpStateOut",
         "type": "object"
       },
+      "QuestionSummaryOut": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "field_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "field_type",
+          "counts",
+          "answered"
+        ],
+        "title": "QuestionSummaryOut",
+        "type": "object"
+      },
       "QuestionType": {
         "description": "HTML-aligned question type catalog (wire values).",
         "enum": [
@@ -6001,6 +6067,66 @@
         "title": "RolePatchIn",
         "type": "object"
       },
+      "ShowIfIn": {
+        "properties": {
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfOperator"
+              }
+            ],
+            "default": "equals"
+          },
+          "question_id": {
+            "format": "uuid",
+            "title": "Question Id",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 300,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "value"
+        ],
+        "title": "ShowIfIn",
+        "type": "object"
+      },
+      "ShowIfOperator": {
+        "enum": [
+          "equals",
+          "not_equals",
+          "contains"
+        ],
+        "title": "ShowIfOperator",
+        "type": "string"
+      },
+      "ShowIfOut": {
+        "properties": {
+          "operator": {
+            "title": "Operator",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "operator",
+          "value"
+        ],
+        "title": "ShowIfOut",
+        "type": "object"
+      },
       "SseTicketOut": {
         "properties": {
           "ticket": {
@@ -6042,6 +6168,11 @@
       },
       "SurveyIn": {
         "properties": {
+          "anonymous": {
+            "default": false,
+            "title": "Anonymous",
+            "type": "boolean"
+          },
           "closes_at": {
             "anyOf": [
               {
@@ -6053,6 +6184,12 @@
               }
             ],
             "title": "Closes At"
+          },
+          "confirmation_message": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Confirmation Message",
+            "type": "string"
           },
           "description": {
             "default": "",
@@ -6221,6 +6358,11 @@
       },
       "SurveyOut": {
         "properties": {
+          "anonymous": {
+            "default": false,
+            "title": "Anonymous",
+            "type": "boolean"
+          },
           "closes_at": {
             "anyOf": [
               {
@@ -6232,6 +6374,11 @@
               }
             ],
             "title": "Closes At"
+          },
+          "confirmation_message": {
+            "default": "",
+            "title": "Confirmation Message",
+            "type": "string"
           },
           "created_at": {
             "format": "date-time",
@@ -6373,6 +6520,17 @@
       },
       "SurveyPatchIn": {
         "properties": {
+          "anonymous": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anonymous"
+          },
           "closes_at": {
             "anyOf": [
               {
@@ -6384,6 +6542,18 @@
               }
             ],
             "title": "Closes At"
+          },
+          "confirmation_message": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Message"
           },
           "description": {
             "anyOf": [
@@ -6521,6 +6691,16 @@
             "default": false,
             "title": "Required",
             "type": "boolean"
+          },
+          "show_if": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6573,6 +6753,16 @@
           "required": {
             "title": "Required",
             "type": "boolean"
+          },
+          "show_if": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShowIfOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6630,6 +6820,64 @@
           "submitted_at"
         ],
         "title": "SurveyResponseOut",
+        "type": "object"
+      },
+      "SurveySubmitOut": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "response_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Token"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          }
+        },
+        "required": [
+          "id",
+          "answers",
+          "submitted_at"
+        ],
+        "title": "SurveySubmitOut",
         "type": "object"
       },
       "TagIn": {
@@ -7080,6 +7328,11 @@
           "weekly_digest_opt_out": {
             "default": false,
             "title": "Weekly Digest Opt Out",
+            "type": "boolean"
+          },
+          "whatsapp_reminder_opt_out": {
+            "default": false,
+            "title": "Whatsapp Reminder Opt Out",
             "type": "boolean"
           }
         },
@@ -7945,6 +8198,56 @@
           }
         ],
         "summary": "Update Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me/delete/": {
+      "post": {
+        "operationId": "users__self_delete_delete_me",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Me",
         "tags": [
           "auth"
         ]
@@ -15298,6 +15601,16 @@
               "title": "Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15345,6 +15658,16 @@
               "title": "Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -15362,7 +15685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SurveyResponseOut"
+                  "$ref": "#/components/schemas/SurveySubmitOut"
                 }
               }
             },
@@ -15372,7 +15695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SurveyResponseOut"
+                  "$ref": "#/components/schemas/SurveySubmitOut"
                 }
               }
             },
@@ -15719,6 +16042,16 @@
             },
             "description": "Created"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -15790,6 +16123,16 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "403": {
             "content": {
@@ -15928,6 +16271,16 @@
             },
             "description": "OK"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -15960,9 +16313,57 @@
         ]
       }
     },
+    "/api/community/surveys/{survey_id}/responses.csv": {
+      "get": {
+        "operationId": "community__survey_reports_get_survey_responses_csv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Survey Responses Csv",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/surveys/{survey_id}/responses/": {
       "get": {
-        "operationId": "community__surveys_list_survey_responses",
+        "operationId": "community__surveys_responses_list_survey_responses",
         "parameters": [
           {
             "in": "path",
@@ -16017,6 +16418,129 @@
           }
         ],
         "summary": "List Survey Responses",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/surveys/{survey_id}/responses/{response_id}/": {
+      "delete": {
+        "operationId": "community__surveys_responses_delete_survey_response",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "response_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Response Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Survey Response",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/surveys/{survey_id}/summary/": {
+      "get": {
+        "operationId": "community__survey_reports_get_survey_summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionSummaryOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Survey Summary",
         "tags": [
           "community"
         ]

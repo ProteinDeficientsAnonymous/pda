@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -101,6 +101,47 @@ def send_rsvp_removed_email(
     return sender.send(
         to=details.to,
         subject=f"you've been removed from {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class MemberRsvpEmailDetails:
+    """Event + recipient details for the member RSVP status emails."""
+
+    to: str
+    display_name: str
+    event_title: str
+    event_when: str
+    event_location: str
+    event_links: list[str]
+    event_url: str
+
+
+_MEMBER_RSVP_SUBJECTS: dict[str, str] = {
+    "attending": "you're in for {title}",
+    "promoted": "you're off the waitlist for {title}",
+}
+
+
+def send_member_rsvp_status_email(
+    *,
+    sender: EmailSender,
+    details: MemberRsvpEmailDetails,
+    kind: str,
+    payment_pending: bool = False,
+) -> SendResult:
+    """Render and send a member's RSVP status email.
+
+    param kind(str): attending | promoted
+    """
+    context = {**asdict(details), "kind": kind, "payment_pending": payment_pending}
+    html = render_to_string("emails/member_rsvp_status.html", context)
+    text = render_to_string("emails/member_rsvp_status.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=_MEMBER_RSVP_SUBJECTS[kind].format(title=details.event_title.lower()),
         html=html,
         text=text,
     )
@@ -348,6 +389,34 @@ def send_event_blast_email(
     return sender.send(
         to=details.to,
         subject=details.subject,
+        html=html,
+        text=text,
+    )
+
+
+def send_whatsapp_join_reminder_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    whatsapp_url: str,
+    settings_url: str,
+) -> SendResult:
+    """Render and send the "you haven't joined the group chat yet" nudge.
+
+    ``settings_url`` points at the email preferences where they can opt out,
+    so the email always offers a way to stop receiving it.
+    """
+    context = {
+        "display_name": display_name or "",
+        "whatsapp_url": whatsapp_url,
+        "settings_url": settings_url,
+    }
+    html = render_to_string("emails/whatsapp_join_reminder.html", context)
+    text = render_to_string("emails/whatsapp_join_reminder.txt", context)
+    return sender.send(
+        to=to,
+        subject="don't forget to join the pda whatsapp",
         html=html,
         text=text,
     )

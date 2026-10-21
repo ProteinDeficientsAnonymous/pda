@@ -354,6 +354,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
+    case Code.Survey.ResponseNotFound:
+      return 'response not found';
+    case Code.Survey.AnonymousLocked:
+      return "anonymous can't be changed once a survey has responses";
     case Code.Survey.NoDatetimePollQuestion:
       return 'survey has no datetime poll question';
     case Code.Survey.WinningDatetimeNotInOptions:
@@ -393,6 +397,34 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return label
         ? `availability for "${label}" must be "yes" or "maybe"`
         : 'availability must be "yes" or "maybe"';
+    }
+    case Code.Survey.ConditionQuestionNotFound:
+      return 'the question this condition depends on no longer exists';
+    case Code.Survey.ConditionQuestionNotEarlier:
+      return 'a condition can only depend on an earlier question';
+    case Code.Survey.ConditionTypeNotSupported: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label
+        ? `"${label}" can't be used in a condition — pick a choice or yes/no question`
+        : "that question can't be used in a condition";
+    }
+    case Code.Survey.ConditionOperatorNotSupported:
+      return '"includes" only works with checkbox questions';
+    case Code.Survey.ConditionValueInvalid: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `pick one of the options from "${label}"` : 'pick a valid option';
+    }
+    case Code.Survey.ConditionOrderConflict: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label
+        ? `"${label}" must stay below the question its condition depends on`
+        : 'a question must stay below the question its condition depends on';
+    }
+    case Code.Survey.ConditionSourceInUse: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label
+        ? `this change would break the condition on ${label} — update or remove that condition first`
+        : 'this change would break a condition on a later question — update or remove it first';
     }
 
     // Join request

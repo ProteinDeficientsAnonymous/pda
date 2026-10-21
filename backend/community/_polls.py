@@ -14,7 +14,7 @@ from django.db.models import prefetch_related_objects
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import _is_admin, visible_display_name
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._event_helpers import broadcast_capacity_change
@@ -105,28 +105,22 @@ def _can_manage_poll(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-def _voter_out(user, viewer, viewer_is_admin: bool) -> VoterOut:
+def _voter_out(user, viewer) -> VoterOut:
     return VoterOut(
         user_id=str(user.pk),
-        name=visible_display_name(user, viewer, viewer_is_admin=viewer_is_admin),
+        name=visible_display_name(user, viewer),
         photo_url=media_path(user.profile_photo),
     )
 
 
-def _option_out(
-    option: PollOption, viewer=None, viewer_is_admin: bool = False
-) -> EventPollOptionOut:
+def _option_out(option: PollOption, viewer=None) -> EventPollOptionOut:
     votes = list(option.votes.all())
     counts = {a: sum(1 for v in votes if v.availability == a) for a in PollAvailability.VALID}
 
     def voters(availability: str) -> list[VoterOut]:
         if viewer is None:
             return []
-        return [
-            _voter_out(v.user, viewer, viewer_is_admin)
-            for v in votes
-            if v.availability == availability
-        ]
+        return [_voter_out(v.user, viewer) for v in votes if v.availability == availability]
 
     return EventPollOptionOut(
         id=str(option.id),
@@ -158,13 +152,12 @@ def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
         prefetch_related_objects([poll], "options__votes__user")
     options = list(poll.options.all())
     my_votes = _build_my_votes(options, auth_user) if is_authed else {}
-    viewer_is_admin = is_authed and _is_admin(auth_user)
     winning_option = poll.winning_option
     return EventPollOut(
         id=str(poll.id),
         event_id=str(poll.event_id),  # ty: ignore[unresolved-attribute]
         is_active=poll.is_active,
-        options=[_option_out(opt, auth_user, viewer_is_admin) for opt in options],
+        options=[_option_out(opt, auth_user) for opt in options],
         winning_option_id=str(winning_option.id) if winning_option else None,
         winning_datetime=winning_option.datetime if winning_option else None,
         finalized_by_id=str(poll.finalized_by_id) if poll.finalized_by_id else None,

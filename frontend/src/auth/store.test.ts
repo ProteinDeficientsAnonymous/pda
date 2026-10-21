@@ -21,6 +21,7 @@ vi.mock('@/api/auth', () => ({
   updateProfile: vi.fn(),
   uploadProfilePhoto: vi.fn(),
   deleteProfilePhoto: vi.fn(),
+  deleteAccount: vi.fn(),
 }));
 
 // Also mock the client so setAuthBridge (called at store module load) doesn't
@@ -251,6 +252,37 @@ describe('useAuthStore', () => {
       expect(status).toBe('unauthed');
       expect(user).toBeNull();
       expect(accessToken).toBeNull();
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('clears the session and cached queries once the server confirms', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      vi.mocked(authApi.deleteAccount).mockResolvedValueOnce(undefined);
+      const clearSpy = vi.spyOn(queryClient, 'clear');
+
+      await useAuthStore.getState().deleteAccount('secret');
+
+      expect(authApi.deleteAccount).toHaveBeenCalledExactlyOnceWith('secret');
+      expect(clearSpy).toHaveBeenCalledOnce();
+      const { status, user, accessToken } = useAuthStore.getState();
+      expect(status).toBe('unauthed');
+      expect(user).toBeNull();
+      expect(accessToken).toBeNull();
+    });
+
+    it('keeps the session when the server rejects the request', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      vi.mocked(authApi.deleteAccount).mockRejectedValueOnce(new Error('wrong password'));
+      const clearSpy = vi.spyOn(queryClient, 'clear');
+
+      await expect(useAuthStore.getState().deleteAccount('nope')).rejects.toThrow('wrong password');
+
+      expect(clearSpy).not.toHaveBeenCalled();
+      const { status, user, accessToken } = useAuthStore.getState();
+      expect(status).toBe('authed');
+      expect(user).toEqual(mockUser);
+      expect(accessToken).toBe('tok-abc');
     });
   });
 

@@ -58,6 +58,7 @@ interface WireUser {
   has_seen_veganniversary?: boolean;
   hide_last_name?: boolean;
   weekly_digest_opt_out?: boolean;
+  whatsapp_reminder_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
   calendar_feed_excluded_types?: EventTypeValue[];
@@ -125,6 +126,7 @@ function mapUser(u: WireUser): User {
     hasSeenVeganniversary: u.has_seen_veganniversary ?? false,
     hideLastName: u.hide_last_name ?? false,
     weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
+    whatsappReminderOptOut: u.whatsapp_reminder_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
     calendarFeedExcludedTypes: u.calendar_feed_excluded_types ?? [],
@@ -198,6 +200,10 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function deleteAccount(password: string): Promise<void> {
+  await apiClient.post('/api/auth/me/delete/', { password });
+}
+
 export async function fetchMe(): Promise<User> {
   const { data } = await apiClient.get<WireUser>('/api/auth/me/');
   return mapUser(data);
@@ -263,6 +269,7 @@ export interface ProfileUpdate {
   hasSeenVeganniversary?: boolean;
   hideLastName?: boolean;
   weeklyDigestOptOut?: boolean;
+  whatsappReminderOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
   calendarFeedExcludedTypes?: EventTypeValue[];
@@ -301,6 +308,8 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
     body.has_seen_veganniversary = patch.hasSeenVeganniversary;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
+  if (patch.whatsappReminderOptOut !== undefined)
+    body.whatsapp_reminder_opt_out = patch.whatsappReminderOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
   if (patch.calendarFeedExcludedTypes !== undefined)

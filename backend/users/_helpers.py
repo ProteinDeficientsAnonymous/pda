@@ -9,6 +9,7 @@ from typing import Protocol
 
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
+from django.db.models import prefetch_related_objects
 
 from users.models import (
     ADMIN_ENTERED_PHONE_REGION,
@@ -99,42 +100,33 @@ def _is_last_admin(user: User) -> bool:
 
 
 def _is_admin(user: User) -> bool:
-    """True if the user holds the built-in admin role."""
-    return user.roles.filter(name="admin", is_default=True).exists()
+    """True if the user holds the built-in admin role; prefetches roles once so name lists don't query per row."""
+    if "roles" not in getattr(user, "_prefetched_objects_cache", {}):
+        prefetch_related_objects([user], "roles")
+    return any(r.name == "admin" and r.is_default for r in user.roles.all())
+
+
+def _sees_full_name(target: User, viewer: User | None) -> bool:
+    """Admins and the target themself always see the full name; None viewer is anonymous."""
+    return viewer is not None and (target.id == viewer.id or _is_admin(viewer))
 
 
 def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
-    """Return (last_name, full_name) as they should appear to viewer.
-
-    Admins and the target themself always see the full name. Everyone else
-    sees first-name-only when target.hide_last_name is set. A None viewer
-    (anonymous/optional-auth) is treated as non-admin, non-self.
-    """
-    if viewer is not None and (target.id == viewer.id or _is_admin(viewer)):
-        return target.last_name, target.full_name
-    if target.hide_last_name:
+    """(last_name, full_name) as viewer should see them; see _sees_full_name."""
+    if target.hide_last_name and not _sees_full_name(target, viewer):
         return "", target.first_name.strip()
     return target.last_name, target.full_name
 
 
-def visible_display_name(
-    target: User, viewer: User | None, *, viewer_is_admin: bool | None = None
-) -> str:
+def visible_display_name(target: User, viewer: User | None) -> str:
     """Member-facing name honoring hide_last_name, falling back to phone.
 
     viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
-    Pass viewer_is_admin when rendering many names for one viewer to skip the per-call role query.
     When the last name is hidden we can only show first_name — full_name would
     leak the last name. The phone fallback is suppressed when show_phone is
     false so a nameless member's private number is never surfaced as their name.
     """
-    if viewer is None:
-        is_privileged = False
-    elif target.id == viewer.id:
-        is_privileged = True
-    else:
-        is_privileged = _is_admin(viewer) if viewer_is_admin is None else viewer_is_admin
-    if target.hide_last_name and not is_privileged:
+    if target.hide_last_name and not _sees_full_name(target, viewer):
         name = target.first_name.strip()
     else:
         name = target.full_name

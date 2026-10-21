@@ -27,6 +27,7 @@ def events(db):
     _event("spans start", WINDOW_START - day, WINDOW_START + day)
     _event("inside", WINDOW_START + 5 * day, WINDOW_START + 5 * day + timedelta(hours=2))
     _event("inside no end", WINDOW_START + 6 * day)
+    _event("no end, running at start", WINDOW_START - timedelta(hours=1))
     _event("after", WINDOW_END + day)
     _event("tbd", None, datetime_tbd=True)
     _event("partiful", WINDOW_START + 2 * day, is_partiful_import=True)
@@ -41,6 +42,7 @@ class TestListEventsWindow:
             "spans start",
             "inside",
             "inside no end",
+            "no end, running at start",
             "after",
             "tbd",
             "partiful",
@@ -49,11 +51,24 @@ class TestListEventsWindow:
 
     def test_window_keeps_overlapping_dated_events(self, api_client, events):
         titles = _titles(api_client, start=WINDOW_START.isoformat(), end=WINDOW_END.isoformat())
-        assert titles == {"spans start", "inside", "inside no end", "partiful", "legacy"}
+        assert titles == {
+            "spans start",
+            "inside",
+            "inside no end",
+            "no end, running at start",
+            "partiful",
+            "legacy",
+        }
 
     def test_start_only_keeps_everything_from_then_on(self, api_client, events):
         titles = _titles(api_client, start=WINDOW_START.isoformat(), include_imported="false")
-        assert titles == {"spans start", "inside", "inside no end", "after"}
+        assert titles == {
+            "spans start",
+            "inside",
+            "inside no end",
+            "no end, running at start",
+            "after",
+        }
 
     def test_include_imported_false_drops_partiful_and_legacy(self, api_client, events):
         titles = _titles(api_client, include_imported="false")

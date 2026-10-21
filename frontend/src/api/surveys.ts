@@ -2,10 +2,25 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import { QuestionType } from './questionTypes';
+import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage';
 
 /** Survey field types are the full catalog (`QuestionType`). */
 export type SurveyQuestionType = QuestionType;
 export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = QuestionType.Text;
+
+export const ShowIfOperator = {
+  Equals: 'equals',
+  NotEquals: 'not_equals',
+  Contains: 'contains',
+} as const;
+
+export type ShowIfOperator = (typeof ShowIfOperator)[keyof typeof ShowIfOperator];
+
+export interface ShowIfCondition {
+  questionId: string;
+  operator: ShowIfOperator;
+  value: string;
+}
 
 export interface SurveyQuestion {
   id: string;
@@ -14,6 +29,7 @@ export interface SurveyQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
+  showIf: ShowIfCondition | null;
 }
 
 export interface Survey {
@@ -24,6 +40,8 @@ export interface Survey {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
@@ -40,13 +58,38 @@ export interface Survey {
   } | null;
 }
 
-interface WireQuestion {
+export interface WireShowIf {
+  question_id: string;
+  operator: string;
+  value: string;
+}
+
+export interface WireQuestion {
   id: string;
   label: string;
   field_type: SurveyQuestionType;
   options?: string[];
   required?: boolean;
   display_order: number;
+  show_if?: WireShowIf | null;
+}
+
+export function mapQuestion(q: WireQuestion): SurveyQuestion {
+  return {
+    id: q.id,
+    label: q.label,
+    fieldType: q.field_type,
+    options: q.options ?? [],
+    required: q.required ?? false,
+    displayOrder: q.display_order,
+    showIf: q.show_if
+      ? {
+          questionId: q.show_if.question_id,
+          operator: q.show_if.operator as ShowIfOperator,
+          value: q.show_if.value,
+        }
+      : null,
+  };
 }
 
 interface WireSurvey {
@@ -57,6 +100,8 @@ interface WireSurvey {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   opens_at?: string | null;
   closes_at?: string | null;
   max_responses?: number | null;
@@ -79,6 +124,7 @@ interface WireSurveyResponse {
   user_name: string | null;
   answers: Record<string, string | Record<string, string>>;
   submitted_at: string;
+  response_token?: string | null;
 }
 
 function mapSurvey(w: WireSurvey): Survey {
@@ -90,21 +136,14 @@ function mapSurvey(w: WireSurvey): Survey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     opensAt: w.opens_at ?? null,
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
-    questions: (w.questions ?? [])
-      .map((q) => ({
-        id: q.id,
-        label: q.label,
-        fieldType: q.field_type,
-        options: q.options ?? [],
-        required: q.required ?? false,
-        displayOrder: q.display_order,
-      }))
-      .sort((a, b) => a.displayOrder - b.displayOrder),
+    questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
     pollResult: w.poll_result
@@ -118,12 +157,19 @@ function mapSurvey(w: WireSurvey): Survey {
   };
 }
 
+// read at request time, not in the query key, so post-submit invalidation picks up a new token
+function tokenParams(slug: string): { response_token: string } | undefined {
+  const token = getStoredSurveyToken(slug);
+  return token ? { response_token: token } : undefined;
+}
+
 export function useSurvey(slug: string | undefined) {
   return useQuery({
     queryKey: ['survey', slug ?? ''],
     queryFn: async () => {
       const { data } = await apiClient.get<WireSurvey>(
         `/api/community/surveys/view/${slug ?? ''}/`,
+        { params: tokenParams(slug ?? '') },
       );
       return mapSurvey(data);
     },
@@ -140,7 +186,9 @@ export function useSubmitSurvey(slug: string) {
       const { data } = await apiClient.post<WireSurveyResponse>(
         `/api/community/surveys/view/${slug}/respond/`,
         { answers },
+        { params: tokenParams(slug) },
       );
+      if (data.response_token) setStoredSurveyToken(slug, data.response_token);
       return data;
     },
     onSuccess: () => {

@@ -29,11 +29,7 @@ export function ConfirmDialog({
         <Button variant="secondary" onClick={onCancel}>
           {cancelLabel}
         </Button>
-        <Button
-          variant={destructive ? 'secondary' : 'primary'}
-          onClick={onConfirm}
-          className={destructive ? 'text-destructive border-destructive' : undefined}
-        >
+        <Button variant={destructive ? 'destructive' : 'primary'} onClick={onConfirm}>
           {confirmLabel}
         </Button>
       </div>

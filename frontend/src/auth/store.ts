@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create, type StoreApi } from 'zustand';
 
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
@@ -42,8 +42,14 @@ interface AuthState {
   deleteProfilePhoto: () => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   // Invoked by axios when a refresh fails — synchronous, no await.
   forceLogout: () => void;
+}
+
+function clearSession(set: StoreApi<AuthState>['setState']) {
+  queryClient.clear();
+  set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -147,13 +153,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async logout() {
     await authApi.logout();
-    queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
+    clearSession(set);
+  },
+
+  async deleteAccount(password) {
+    await authApi.deleteAccount(password);
+    clearSession(set);
   },
 
   forceLogout() {
-    queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
+    clearSession(set);
   },
 }));
 

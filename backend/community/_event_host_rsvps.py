@@ -25,7 +25,7 @@ from community._event_rsvps import (
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
 from community._events import _can_edit_event
-from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community._waitlist import promote_from_waitlist
@@ -36,7 +36,7 @@ router = Router()
 
 def _apply_host_rsvp_in_transaction(
     event_id, target_user, status: str, has_plus_one: bool, paid_confirmed: bool = False
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], str | None]:
     """Host-driven RSVP upsert; unlike _apply_rsvp_in_transaction, never subject to the payment gate."""
     event = (
         Event.objects.select_for_update()
@@ -52,6 +52,7 @@ def _apply_host_rsvp_in_transaction(
     final_status, final_plus_one = _resolve_rsvp_status(event, target_user, status, has_plus_one)
 
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
+    previous_status = getattr(existing, "status", None)
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
     new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
@@ -62,7 +63,7 @@ def _apply_host_rsvp_in_transaction(
         and existing.has_plus_one == final_plus_one
         and existing.paid_confirmed_at == new_confirmed_at
     ):
-        return final_status, []
+        return final_status, [], previous_status
 
     EventRSVP.objects.update_or_create(
         event=event,
@@ -80,7 +81,7 @@ def _apply_host_rsvp_in_transaction(
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids
+    return final_status, promoted_user_ids, previous_status
 
 
 @router.post(
@@ -110,7 +111,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     with transaction.atomic():
-        final_status, promoted_user_ids = _apply_host_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = _apply_host_rsvp_in_transaction(
             event_id, target_user, payload.status, payload.has_plus_one, payload.paid_confirmed
         )
 
@@ -132,7 +133,8 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -238,7 +240,7 @@ def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(204, None)
 
 
