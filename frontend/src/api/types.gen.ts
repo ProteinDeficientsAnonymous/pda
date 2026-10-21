@@ -3604,6 +3604,8 @@ export interface components {
             price?: string | null;
             /** Rsvp Enabled */
             rsvp_enabled?: boolean | null;
+            /** Slug */
+            slug?: string | null;
             /** Start Datetime */
             start_datetime?: string | null;
             /** Status */

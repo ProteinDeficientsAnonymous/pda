@@ -120,6 +120,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'the check-in report is available once the event has ended';
     case Code.Event.CheckInReportInvalidColumn:
       return "one of those csv columns isn't recognized";
+    case Code.Event.SlugInvalid:
+      return 'event url can only use lowercase letters, numbers, and dashes';
+    case Code.Event.SlugTaken:
+      return 'that event url is already taken — try another';
     case Code.Event.RsvpQuestionNotFound:
       return 'that rsvp question was not found';
     case Code.Event.RsvpQuestionDuplicate:

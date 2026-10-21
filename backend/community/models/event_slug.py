@@ -86,3 +86,13 @@ def build_event_slug(title: str, manager, exclude_pk=None, aliases=None) -> str:
     while f"{base}-{suffix}" in taken:
         suffix += 1
     return f"{base}-{suffix}"
+
+
+def rename_event_slug(event, new_slug: str) -> None:
+    """Point `event` at `new_slug`, keeping its old slug as an alias. Caller saves the event."""
+    if new_slug == event.slug:
+        return
+    EventSlugAlias.objects.filter(event=event, slug=new_slug).delete()
+    if event.slug:
+        EventSlugAlias.objects.create(event=event, slug=event.slug)
+    event.slug = new_slug

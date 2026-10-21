@@ -13,7 +13,8 @@ from community._event_helpers import (
 )
 from community._validation import Code, raise_validation
 from community._waitlist import promote_from_waitlist
-from community.models import Event, is_official_or_club
+from community.models import Event, EventSlugAlias, is_official_or_club
+from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -99,6 +100,24 @@ def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
 
 
+def _is_event_slug_taken(slug: str, event_pk) -> bool:
+    """True if `slug` is reserved, or is another event's current or renamed-from slug."""
+    if slug in RESERVED_EVENT_SLUGS:
+        return True
+    if Event.objects.filter(slug=slug).exclude(pk=event_pk).exists():
+        return True
+    return EventSlugAlias.objects.filter(slug=slug).exclude(event_id=event_pk).exists()
+
+
+def _apply_slug_update(event: Event, updates: dict) -> None:
+    new_slug = updates.pop("slug", None)
+    if new_slug is None or new_slug == event.slug:
+        return
+    if _is_event_slug_taken(new_slug, event.pk):
+        raise_validation(Code.Event.SLUG_TAKEN, field="slug", status_code=409)
+    rename_event_slug(event, new_slug)
+
+
 def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
     """Apply non-status field edits to an event. Raises ValidationException on failure."""
     if not updates:
@@ -111,6 +130,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())
+    _apply_slug_update(event, updates)
     if co_host_ids is not None:
         changed_fields.append("co_host_ids")
     if tag_ids is not None:
