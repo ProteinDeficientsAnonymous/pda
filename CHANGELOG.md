@@ -1,3 +1,11 @@
+## [0.129.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.4...v0.129.5) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1456 - stop a long question widening the page ([#1595](https://github.com/ProteinDeficientsAnonymous/pda/issues/1595)) ([7272320](https://github.com/ProteinDeficientsAnonymous/pda/commit/72723209b2390b4411c9f2bd7cf167d4f89ce5c2))
+* **auth:** apply account state on optional jwt routes ([#1540](https://github.com/ProteinDeficientsAnonymous/pda/issues/1540)) ([b9673e1](https://github.com/ProteinDeficientsAnonymous/pda/commit/b9673e178e3ae6c100978b19b4ffe4bb65185968))
+
 ## [0.129.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.3...v0.129.4) (2026-10-21)
 
 
