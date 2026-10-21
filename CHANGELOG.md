@@ -1,3 +1,10 @@
+## [0.133.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.133.0...v0.133.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **rsvp:** 1143 - email members on rsvp status changes ([#1507](https://github.com/ProteinDeficientsAnonymous/pda/issues/1507)) ([7ec3925](https://github.com/ProteinDeficientsAnonymous/pda/commit/7ec3925edbd0e2804a31055179fa1456c3878293))
+
 # [0.133.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.1...v0.133.0) (2026-10-21)
 
 
