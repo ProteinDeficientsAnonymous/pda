@@ -27,16 +27,12 @@ logger = logging.getLogger("pda.community.cohost_invite_helpers")
 
 
 def expire_stale_cohost_invites(event: Event) -> None:
-    """Flip PENDING invites to EXPIRED once the event has ended.
+    """Flip PENDING invites to EXPIRED once the event is past.
 
     Called from any read path that returns invite data so the UI never sees
     actionable invites for a past event.
-
-    TODO(#382): replace this lazy-on-read approach with a scheduled job that
-    sweeps stale invites once.
     """
-    end = event.end_datetime
-    if end is None or end >= timezone.now():
+    if not event.is_past:
         return
     EventCoHostInvite.objects.filter(event=event, status=CoHostInviteStatus.PENDING).update(
         status=CoHostInviteStatus.EXPIRED, decided_at=timezone.now()

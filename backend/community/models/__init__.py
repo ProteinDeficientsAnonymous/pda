@@ -37,6 +37,7 @@ from community.models.content import (
 )
 from community.models.document import DocFolder, Document
 from community.models.event import (
+    DEFAULT_EVENT_DURATION,
     Event,
     EventEmailBlast,
     EventFlag,
@@ -57,6 +58,7 @@ from community.models.survey import (
 from community.models.tag import EventTag
 
 __all__ = [
+    "DEFAULT_EVENT_DURATION",
     "AttendanceMilestone",
     "CONDITION_SOURCE_TYPES",
     "AttendanceReminder",

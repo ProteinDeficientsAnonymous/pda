@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from django.db import models
@@ -32,13 +33,17 @@ if TYPE_CHECKING:
 # Leaves room inside SlugField(max_length=80) for a "-<n>" dedupe suffix.
 SLUG_BASE_MAX = 70
 
+# How long an event with no end_datetime is treated as running; mirrors frontend DEFAULT_EVENT_DURATION_MS.
+DEFAULT_EVENT_DURATION = timedelta(hours=2)
+
 
 def _is_past_q(now, prefix: str = "") -> Q:
     """Queryset mirror of Event.is_past, over the field path at `prefix` (e.g. "event__")."""
     end = f"{prefix}end_datetime"
     start = f"{prefix}start_datetime"
     return Q(**{f"{prefix}datetime_tbd": False}) & (
-        Q(**{f"{end}__lt": now}) | Q(**{f"{end}__isnull": True, f"{start}__lt": now})
+        Q(**{f"{end}__lt": now})
+        | Q(**{f"{end}__isnull": True, f"{start}__lt": now - DEFAULT_EVENT_DURATION})
     )
 
 
@@ -231,10 +236,11 @@ class Event(models.Model):
         # standalone-invited card, the cohost-invite banner, and admin filters.
         if self.datetime_tbd:
             return False
-        cutoff = self.end_datetime or self.start_datetime
-        if cutoff is None:
+        if self.end_datetime is not None:
+            return self.end_datetime < timezone.now()
+        if self.start_datetime is None:
             return False
-        return cutoff < timezone.now()
+        return self.start_datetime + DEFAULT_EVENT_DURATION < timezone.now()
 
     @property
     def is_draft(self) -> bool:
