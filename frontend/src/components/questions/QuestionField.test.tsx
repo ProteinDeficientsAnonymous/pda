@@ -18,13 +18,24 @@ const base: SurveyQuestion = {
 describe('QuestionField', () => {
   it('renders a single-line text field for text type', () => {
     render(<QuestionField question={base} value="" onChange={vi.fn()} />);
-    expect(screen.getByRole('textbox', { name: 'notes' }).tagName).toBe('INPUT');
+    expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('INPUT');
   });
 
   it('renders a textarea for textarea type', () => {
     render(
       <QuestionField question={{ ...base, fieldType: 'textarea' }} value="" onChange={vi.fn()} />,
     );
-    expect(screen.getByRole('textbox', { name: 'notes' }).tagName).toBe('TEXTAREA');
+    expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('TEXTAREA');
+  });
+
+  it('marks required questions as required', () => {
+    render(<QuestionField question={base} value="" onChange={vi.fn()} />);
+    expect(screen.getByRole('textbox', { name: 'notes · required' })).toBeInTheDocument();
+  });
+
+  it('leaves optional questions unmarked', () => {
+    render(<QuestionField question={{ ...base, required: false }} value="" onChange={vi.fn()} />);
+    expect(screen.getByRole('textbox', { name: 'notes' })).toBeInTheDocument();
+    expect(screen.queryByText(/optional/)).not.toBeInTheDocument();
   });
 });

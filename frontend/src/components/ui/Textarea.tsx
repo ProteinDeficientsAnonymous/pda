@@ -1,15 +1,17 @@
 import { forwardRef, type TextareaHTMLAttributes } from 'react';
 
+import { LabelSuffix } from '@/components/ui/LabelSuffix';
 import { cn } from '@/utils/cn';
 
 interface Props extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
+  labelSuffix?: string | undefined;
   error?: string | undefined;
   hint?: string | undefined;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, Props>(function Textarea(
-  { label, error, hint, className, id, rows = 4, ...rest },
+  { label, labelSuffix, error, hint, className, id, rows = 4, ...rest },
   ref,
 ) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
@@ -18,6 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, Props>(function Textarea
     <div className="flex flex-col gap-1">
       <label htmlFor={inputId} className="text-foreground text-sm font-medium">
         {label}
+        {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </label>
       <textarea
         ref={ref}
