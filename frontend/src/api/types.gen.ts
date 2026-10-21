@@ -2517,8 +2517,11 @@ export interface components {
             cancelled_at: string;
             /** Days Before Event */
             days_before_event: number;
+            /** Declined Outright */
+            declined_outright: boolean;
             /** Name */
             name: string;
+            pre_cancel_status: components["schemas"]["RSVPStatus"] | null;
             /** User Id */
             user_id: string;
             /** Within 24H */

@@ -267,6 +267,8 @@ class CancellationOut(BaseModel):
     days_before_event: int
     within_24h: bool
     after_start: bool
+    pre_cancel_status: RSVPStatus | None
+    declined_outright: bool
 
 
 class EventStatsOut(BaseModel):
