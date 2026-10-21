@@ -1,8 +1,9 @@
 import pytest
-from community.models import Event, EventComment, EventRSVP, PageVisibility, RSVPStatus
+from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
+from users._helpers import visible_display_name, visible_name
 from users.models import User
 from users.roles import Role
 
@@ -32,7 +33,6 @@ def _make_events(count: int, viewer: User | None) -> None:
             title=f"Event {i}", start_datetime=future_iso(days=2 + i), created_by=creator
         )
         event.co_hosts.add(cohost)
-        EventComment.objects.create(event=event, author=cohost, body="hi")
         invite_only = Event.objects.create(
             title=f"Private {i}",
             start_datetime=future_iso(days=2 + i),
@@ -97,3 +97,13 @@ def test_event_detail_names_do_not_query_per_person(api_client, test_user, auth_
     with CaptureQueriesContext(connection) as large:
         assert api_client.get(url, **auth_headers).status_code == 200
     assert len(large) == len(small)
+
+
+@pytest.mark.django_db
+def test_visible_names_check_viewer_roles_once(test_user, django_assert_num_queries):
+    targets = [_user(f"+1415999{i:04d}", f"Hidden{i}", hide_last_name=True) for i in range(5)]
+    viewer = User.objects.get(pk=test_user.pk)
+    with django_assert_num_queries(1):
+        for target in targets:
+            visible_display_name(target, viewer)
+            visible_name(target, viewer)

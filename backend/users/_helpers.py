@@ -100,28 +100,19 @@ def _is_last_admin(user: User) -> bool:
 
 
 def _is_admin(user: User) -> bool:
-    """True if the user holds the built-in admin role."""
-    return user.roles.filter(name="admin", is_default=True).exists()
-
-
-def _viewer_is_admin(viewer: User) -> bool:
-    """_is_admin via the roles prefetch cache, loaded once so name lists don't query per row."""
-    if "roles" not in getattr(viewer, "_prefetched_objects_cache", {}):
-        prefetch_related_objects([viewer], "roles")
-    return any(r.name == "admin" and r.is_default for r in viewer.roles.all())
+    """True if the user holds the built-in admin role; prefetches roles once so name lists don't query per row."""
+    if "roles" not in getattr(user, "_prefetched_objects_cache", {}):
+        prefetch_related_objects([user], "roles")
+    return any(r.name == "admin" and r.is_default for r in user.roles.all())
 
 
 def _sees_full_name(target: User, viewer: User | None) -> bool:
     """Admins and the target themself always see the full name; None viewer is anonymous."""
-    return viewer is not None and (target.id == viewer.id or _viewer_is_admin(viewer))
+    return viewer is not None and (target.id == viewer.id or _is_admin(viewer))
 
 
 def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
-    """Return (last_name, full_name) as they should appear to viewer.
-
-    Everyone but admins and the target themself sees first-name-only when
-    target.hide_last_name is set.
-    """
+    """(last_name, full_name) as viewer should see them; see _sees_full_name."""
     if target.hide_last_name and not _sees_full_name(target, viewer):
         return "", target.first_name.strip()
     return target.last_name, target.full_name
