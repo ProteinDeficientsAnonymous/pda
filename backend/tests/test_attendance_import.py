@@ -339,6 +339,37 @@ class TestCommitEndpoint:
         assert event.title == "Legacy Mixer"
         assert EventRSVP.objects.filter(event=event, user=alice).exists()
 
+    def test_created_event_is_flagged_as_partiful_import(self, api_client, events_admin, alice):
+        response = api_client.post(
+            "/api/community/events/attendance-import/commit/",
+            {
+                "event_title": "Legacy Mixer",
+                "event_date": "2025-06-13",
+                "rows": [self._row(user_id=str(alice.id), checked_in=True)],
+            },
+            content_type="application/json",
+            **_auth(events_admin),
+        )
+        assert response.status_code == 200
+        event = Event.objects.get(id=response.json()["event_id"])
+        assert event.is_partiful_import is True
+
+    def test_existing_event_is_not_flagged_by_import(
+        self, api_client, events_admin, past_event, alice
+    ):
+        response = api_client.post(
+            "/api/community/events/attendance-import/commit/",
+            {
+                "event_id": str(past_event.id),
+                "rows": [self._row(user_id=str(alice.id), checked_in=True)],
+            },
+            content_type="application/json",
+            **_auth(events_admin),
+        )
+        assert response.status_code == 200
+        past_event.refresh_from_db()
+        assert past_event.is_partiful_import is False
+
     def test_defaults_to_community_event_type(self, api_client, events_admin, alice):
         response = api_client.post(
             "/api/community/events/attendance-import/commit/",

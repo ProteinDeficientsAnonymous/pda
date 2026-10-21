@@ -1,3 +1,5 @@
+import type { EventTypeValue } from './event';
+
 export const CalendarFeedScope = {
   All: 'all',
   Mine: 'mine',
@@ -18,6 +20,12 @@ export interface Birthday {
   year: number | null;
 }
 
+export interface Veganniversary {
+  month: number;
+  day: number | null;
+  year: number;
+}
+
 export interface User {
   id: string;
   phoneNumber: string;
@@ -29,6 +37,10 @@ export interface User {
   bio: string;
   pronouns: string;
   birthday: Birthday | null;
+  veganniversary: Veganniversary | null;
+  // False for a tentatively-approved applicant: signed in, but limited to
+  // official/club events until an in-person check-in promotes them.
+  isMember: boolean;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;
@@ -46,10 +58,14 @@ export interface User {
   showPhone: boolean;
   showEmail: boolean;
   showBirthday: boolean;
+  showVeganniversary: boolean;
+  veganniversaryShoutoutOptIn: boolean;
+  hasSeenVeganniversary: boolean;
   hideLastName: boolean;
   weeklyDigestOptOut: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
+  calendarFeedExcludedTypes: EventTypeValue[];
   profilePhotoUrl: string;
   photoUpdatedAt: string | null;
   roles: Role[];

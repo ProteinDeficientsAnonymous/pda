@@ -2,10 +2,6 @@ export function buildMagicLinkUrl(token: string): string {
   return `${window.location.origin}/magic-login/${token}`;
 }
 
-export function buildRsvpLinkUrl(token: string): string {
-  return `${window.location.origin}/my-rsvps?token=${token}`;
-}
-
 // Legacy hardcoded body — still used by member-create / bulk-create /
 // member-detail flows. The join-request approval flow uses the editable
 // template via renderWelcomeMessage instead.
@@ -19,20 +15,24 @@ export interface WelcomeMessageVars {
   name: string;
   senderName: string;
   magicLink?: string;
-  rsvpLink?: string;
   whatsappLink: string;
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
-  return template
-    .replaceAll('${FIRST_NAME}', vars.name)
-    .replaceAll('${SENDER_NAME}', vars.senderName)
-    .replaceAll('${MAGIC_LINK}', vars.magicLink ?? '')
-    .replaceAll('${RSVP_LINK}', vars.rsvpLink ?? '')
-    .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink);
+  return (
+    template
+      .replaceAll('${FIRST_NAME}', vars.name)
+      .replaceAll('${SENDER_NAME}', vars.senderName)
+      .replaceAll('${MAGIC_LINK}', vars.magicLink ?? '')
+      // Retired placeholder — swallow it so a template saved before it was
+      // dropped doesn't send the literal ${RSVP_LINK} text.
+      .replaceAll('${RSVP_LINK}', '')
+      .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink)
+  );
 }
 
-export function buildSmsHref(phoneNumber: string, body: string): string {
+export function buildSmsHref(phoneNumber: string, body?: string): string {
+  if (!body) return `sms:${phoneNumber}`;
   // iOS expects `&body=` after the number; Android/others use `?body=`.
   // Using the wrong separator on iOS causes Messages to show the raw URL
   // instead of opening a draft.
@@ -43,7 +43,8 @@ export function buildSmsHref(phoneNumber: string, body: string): string {
 
 // wa.me deeplink — works with personal WhatsApp; no business API needed.
 // Phone must be digits-only (E.164 minus the `+`).
-export function buildWhatsAppHref(phoneNumber: string, body: string): string {
+export function buildWhatsAppHref(phoneNumber: string, body?: string): string {
   const digits = phoneNumber.replace(/\D/g, '');
+  if (!body) return `https://wa.me/${digits}`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(body)}`;
 }

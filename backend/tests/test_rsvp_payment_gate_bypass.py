@@ -6,15 +6,10 @@ from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 
 from tests._asserts import assert_error_code
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 from tests.conftest import future_iso
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_payment_flag(True)
 
 
 def _paid_event(creator, **overrides) -> Event:

@@ -2,10 +2,10 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import FeatureFlagState, JoinFormQuestion, JoinRequest
+from community.models import JoinFormQuestion, JoinRequest
 from django.conf import settings as django_settings
 from django.core.cache import caches
-from django.db import DatabaseError
+from django.db import DatabaseError, connections
 from django.test import Client
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
@@ -35,6 +35,20 @@ def past_iso(days: int = 1) -> str:
 def pytest_configure() -> None:
     # Fast MD5 hasher for tests only — default PBKDF2 is ~600k iterations per create_user.
     django_settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_teardown(item, nextitem):
+    # transaction=True tests flush the whole DB in teardown — restore the seed-migration rows so later tests and --reuse-db runs see post-migration state.
+    yield
+    marker = item.get_closest_marker("django_db")
+    if marker is not None and marker.kwargs.get("transaction"):
+        blocker = item.funcargs.get("django_db_blocker")
+        with blocker.unblock():
+            for conn in connections.all():
+                contents = getattr(conn, "_test_serialized_contents", None)
+                if contents:
+                    conn.creation.deserialize_db_from_string(contents)
 
 
 @pytest.fixture(autouse=True)
@@ -236,13 +250,11 @@ def fake_email_sender(monkeypatch):
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
 
-    # Set the module-level cache directly. get_email_sender() returns
-    # whatever is in _cached_sender if it's not None.
-    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    # Prime every stream so the fixture serves transactional and bulk callers alike.
+    monkeypatch.setattr(
+        email_sender_module,
+        "_cached_senders",
+        dict.fromkeys(email_sender_module.EmailStream, fake),
+    )
     yield fake
     # monkeypatch auto-cleans up.
-
-
-def set_flag(flag: str, enabled: bool = True) -> None:
-    """Set a feature flag's DB override. update_or_create so repeat calls in one test work."""
-    FeatureFlagState.objects.update_or_create(key=flag, defaults={"enabled": enabled})

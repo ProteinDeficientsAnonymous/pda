@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -28,25 +29,28 @@ const baseUser = makeUser({
 
 describe('OnboardingProfileStep', () => {
   const updateProfile = vi.fn();
+  const acceptConsents = vi.fn();
   const onDone = vi.fn();
 
   function mockStore(user: User) {
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ user, updateProfile } as never),
+      selector({ user, updateProfile, acceptConsents } as never),
     );
   }
 
   beforeEach(() => {
     updateProfile.mockReset();
+    acceptConsents.mockReset();
     onDone.mockReset();
     updateProfile.mockResolvedValue(undefined);
+    acceptConsents.mockResolvedValue(undefined);
     mockStore(baseUser);
   });
 
-  it('skips without saving when "do this later" is clicked', async () => {
+  it('marks veganniversary seen without other fields when "do this later" is clicked', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /do this later/i }));
-    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -54,14 +58,31 @@ describe('OnboardingProfileStep', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.type(screen.getByLabelText(/^bio$/i), 'i love tofu');
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).toHaveBeenCalledWith({ bio: 'i love tofu' });
+    expect(updateProfile).toHaveBeenCalledWith({
+      bio: 'i love tofu',
+      hasSeenVeganniversary: true,
+    });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('finishes without calling updateProfile when bio and pronouns are left empty', async () => {
+  it('saves a filled veganniversary when done is clicked without save', async () => {
+    const user = userEvent.setup();
+    render(<OnboardingProfileStep onDone={onDone} />);
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '2020');
+    await user.click(screen.getByRole('button', { name: /^done$/i }));
+    expect(updateProfile).toHaveBeenCalledWith({
+      veganniversary: { month: 6, day: null, year: 2020 },
+      hasSeenVeganniversary: true,
+    });
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks veganniversary seen when bio and pronouns are left empty', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -69,7 +90,10 @@ describe('OnboardingProfileStep', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
-    expect(updateProfile).toHaveBeenCalledWith({ pronouns: 'they/them' });
+    expect(updateProfile).toHaveBeenCalledWith({
+      pronouns: 'they/them',
+      hasSeenVeganniversary: true,
+    });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -86,6 +110,34 @@ describe('OnboardingProfileStep', () => {
     expect(screen.getByRole('button', { name: /edit birthday/i })).toBeInTheDocument();
   });
 
+  it('shows a veganniversary field without the month/year hint until editing', async () => {
+    const user = userEvent.setup();
+    render(<OnboardingProfileStep onDone={onDone} />);
+    expect(screen.getByText(/^veganniversary$/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit veganniversary/i })).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /edit veganniversary/i }));
+    expect(
+      screen.getByText(
+        /the exact date isn't required, but please let us know at least the month and year/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows veganniversary privacy toggles in the privacy section', () => {
+    render(<OnboardingProfileStep onDone={onDone} />);
+    expect(
+      screen.getByRole('switch', { name: /show veganniversary on my profile/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('switch', { name: /show my name in veganniversary shout out emails/i }),
+    ).toBeChecked();
+  });
+
   it('shows the "photo added" confirmation once a profile photo exists', () => {
     mockStore({ ...baseUser, profilePhotoUrl: 'https://example.com/p.png' });
     render(<OnboardingProfileStep onDone={onDone} />);
@@ -95,5 +147,28 @@ describe('OnboardingProfileStep', () => {
   it('does not show the "photo added" confirmation when there is no photo', () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     expect(screen.queryByText(/photo added/i)).not.toBeInTheDocument();
+  });
+
+  it('should record guidelines consent before saving when consent is still required', async () => {
+    mockStore({ ...baseUser, needsGuidelinesConsent: true });
+    render(
+      <MemoryRouter>
+        <OnboardingProfileStep onDone={onDone} />
+      </MemoryRouter>,
+    );
+
+    const done = screen.getByRole('button', { name: /^done$/i });
+    expect(screen.getByRole('checkbox', { name: /community guidelines/i })).toBeInTheDocument();
+    expect(done).toBeDisabled();
+    expect(screen.getByRole('button', { name: /edit birthday/i })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    expect(await screen.findByRole('button', { name: /^done$/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /edit birthday/i })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
+
+    expect(acceptConsents).toHaveBeenCalledWith(['guidelines']);
+    expect(updateProfile).toHaveBeenCalledWith({ hasSeenVeganniversary: true });
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

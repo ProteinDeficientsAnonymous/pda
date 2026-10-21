@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { postAuthRedirect } from '@/models/user';
 
 import { AuthLayout } from './AuthLayout';
+import { safeRedirect } from './redirect';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
 type State = 'pending' | 'expired' | 'cross_user';
@@ -41,8 +42,7 @@ export default function MagicLoginScreen() {
           void navigate(gateTarget, { replace: true });
           return;
         }
-        const redirect = params.get('redirect');
-        void navigate(redirect ? decodeURIComponent(redirect) : '/calendar', { replace: true });
+        void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
         // 403 means the caller is already signed in as a different user. The

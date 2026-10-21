@@ -23,11 +23,13 @@ from community._rsvp_counts import (
     attendance_q,
     going_headcount_expr,
     no_show_q,
+    plus_one_attendance_q,
+    plus_one_no_show_q,
     reportable_events_q,
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, EventType, FeatureFlag, flag_enabled
+from community.models import AttendanceStatus, Event, EventType
 
 router = Router()
 
@@ -48,10 +50,19 @@ def attendance_report(request):
             attended_total=Count(
                 "rsvps", filter=attendance_q(AttendanceStatus.ATTENDED), distinct=True
             ),
+            plus_one_attended_total=Count(
+                "rsvps", filter=plus_one_attendance_q(AttendanceStatus.ATTENDED), distinct=True
+            ),
             no_show_total=Count("rsvps", filter=no_show_q(), distinct=True),
+            plus_one_no_show_total=Count("rsvps", filter=plus_one_no_show_q(), distinct=True),
             going_total=going_headcount_expr(),
         )
-        .filter(Q(attended_total__gt=0) | Q(no_show_total__gt=0))
+        .filter(
+            Q(attended_total__gt=0)
+            | Q(plus_one_attended_total__gt=0)
+            | Q(no_show_total__gt=0)
+            | Q(plus_one_no_show_total__gt=0)
+        )
         .order_by("-start_datetime")
     )
 
@@ -61,8 +72,8 @@ def attendance_report(request):
             title=e.title,
             event_type=e.event_type,
             start_datetime=e.start_datetime,
-            attended_count=e.attended_total,
-            no_show_count=e.no_show_total,
+            attended_count=e.attended_total + e.plus_one_attended_total,
+            no_show_count=e.no_show_total + e.plus_one_no_show_total,
             going_count=e.going_total,
         )
         for e in events
@@ -135,8 +146,6 @@ def member_attendance_analytics(request):
     ever) sort first so admins triage them without scrolling.
     """
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
-    if not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
 
     users = (

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type * as CropImage from '@/utils/cropImage';
 import { cropImage } from '@/utils/cropImage';
 
 import { ImageCropDialog } from './ImageCropDialog';
@@ -43,9 +44,13 @@ vi.mock('react-image-crop', () => ({
 }));
 
 // cropImage reaches into canvas APIs — stub it
-vi.mock('@/utils/cropImage', () => ({
-  cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
-}));
+vi.mock('@/utils/cropImage', async (importOriginal) => {
+  const actual = await importOriginal<typeof CropImage>();
+  return {
+    ...actual,
+    cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
+  };
+});
 
 // jsdom doesn't implement createObjectURL/revokeObjectURL
 beforeEach(() => {

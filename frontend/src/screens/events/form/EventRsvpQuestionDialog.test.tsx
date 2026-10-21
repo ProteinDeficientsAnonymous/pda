@@ -29,7 +29,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onClose = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={onClose} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'notes' } });
-    fireEvent.click(screen.getByLabelText('required'));
+    fireEvent.click(screen.getByRole('switch', { name: 'required' }));
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({

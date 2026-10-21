@@ -3,6 +3,7 @@ import logging
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.db.models import ProtectedError
 from django.utils import timezone
 from ninja.responses import Status
 
@@ -100,13 +101,15 @@ def hard_delete_user(request, user_id: str):
     if user.last_login is not None:
         raise_validation(Code.User.CANNOT_HARD_DELETE_LOGGED_IN, status_code=400)
     full_name = user.full_name
+    try:
+        user.delete()
+    except ProtectedError:
+        # last_login is not a complete guard: EventComment.author is PROTECT.
+        raise_validation(Code.User.CANNOT_HARD_DELETE_LOGGED_IN, status_code=400)
     audit_log(
         logging.WARNING,
         "user_hard_deleted",
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=user_id, details={"full_name": full_name}),
     )
-    # Safe because last_login is None: a never-logged-in user has authored no
-    # EventComments (author is on_delete=PROTECT), so the cascade can't raise.
-    user.delete()
     return Status(204, None)

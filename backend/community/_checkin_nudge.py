@@ -11,7 +11,7 @@ from notifications._email_helpers import CheckinReminderEmailDetails, send_check
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.models import Event, EventStatus, EventType, FeatureFlag, flag_enabled
+from community.models import Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -84,6 +84,4 @@ def send_checkin_nudge(event: Event) -> bool:
 
 def send_due_checkin_nudges() -> int:
     """Send + stamp every event currently due a check-in nudge. Returns the count sent."""
-    if not flag_enabled(FeatureFlag.HOST_ATTENDANCE_REPORT):
-        return 0
     return sum(send_checkin_nudge(event) for event in due_checkin_nudge_events(timezone.now()))

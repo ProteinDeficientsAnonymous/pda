@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { eventHostCount, spotsLeft } from '@/models/event';
-import { Feature } from '@/models/featureFlags';
 import { formatPrice } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { toCashAppPayUrl } from '@/utils/paymentHandle';
@@ -55,7 +53,12 @@ export function EventMemberSection({ event, token }: Props) {
       {showRsvp ? (
         <Card label="who's going">
           <CapacityNote event={event} />
-          <RsvpGuestList event={event} canSeeInvited={isHostOrEventManager} />
+          <RsvpGuestList
+            event={event}
+            canSeeInvited={isHostOrEventManager}
+            canReorderWaitlist={isHostOrEventManager && !event.isPast && !token}
+            {...(token ? { token } : {})}
+          />
           {canInvite || isHostOrEventManager ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}
@@ -139,7 +142,7 @@ export function LocationSection({ event }: { event: Event }) {
 
 export function LinksSection({ event }: { event: Event }) {
   const links = buildEventLinks(event);
-  const feedbackSurveys = event.surveySlugs.filter((s) => s !== event.datetimePollSlug);
+  const feedbackSurveys = event.linkedSurveys.filter((s) => s.slug !== event.datetimePollSlug);
 
   if (links.length === 0 && feedbackSurveys.length === 0) return null;
   return (
@@ -157,10 +160,13 @@ export function LinksSection({ event }: { event: Event }) {
             </a>
           </li>
         ))}
-        {feedbackSurveys.map((slug) => (
-          <li key={slug}>
-            <Link to={`/surveys/${slug}`} className="text-brand-700 hover:text-brand-900">
-              give feedback
+        {feedbackSurveys.map((survey) => (
+          <li key={survey.slug}>
+            <Link
+              to={`/surveys/${survey.slug}`}
+              className="text-brand-700 hover:text-brand-900 [overflow-wrap:anywhere] break-words"
+            >
+              {survey.title.toLowerCase()}
             </Link>
           </li>
         ))}
@@ -170,15 +176,14 @@ export function LinksSection({ event }: { event: Event }) {
 }
 
 export function CostSection({ event }: { event: Event }) {
-  const paymentPrefillOn = useFlag(Feature.EventPaymentConfirmation);
   const items: { label: string; url?: string }[] = [];
   if (event.price) items.push({ label: formatPrice(event.price) });
   if (event.venmoLink) items.push({ label: 'venmo', url: ensureHttps(event.venmoLink) });
   if (event.cashappLink) {
-    const url = paymentPrefillOn
-      ? toCashAppPayUrl(event.cashappLink, { price: event.price })
-      : ensureHttps(event.cashappLink);
-    items.push({ label: 'cashapp', url });
+    items.push({
+      label: 'cashapp',
+      url: toCashAppPayUrl(event.cashappLink, { price: event.price }),
+    });
   }
   if (event.zelleInfo) items.push({ label: `zelle: ${event.zelleInfo}` });
   if (items.length === 0) return null;

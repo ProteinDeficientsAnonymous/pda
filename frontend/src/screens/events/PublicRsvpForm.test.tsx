@@ -14,9 +14,6 @@ vi.mock('@/api/publicRsvp', () => ({
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
-const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
-vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
-
 const navigateMock = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof ReactRouterDom>();
@@ -54,8 +51,6 @@ describe('PublicRsvpForm', () => {
     });
     checkPhoneMutate.mockReset();
     navigateMock.mockReset();
-    mockUseFlag.mockReset();
-    mockUseFlag.mockReturnValue(true);
   });
 
   it('submits the correct payload shape', async () => {
@@ -436,8 +431,6 @@ describe('PublicRsvpForm payment confirmation gate', () => {
     });
     checkPhoneMutate.mockReset();
     navigateMock.mockReset();
-    mockUseFlag.mockReset();
-    mockUseFlag.mockReturnValue(true);
   });
 
   it('shows the payment step instead of submitting on a paid event', async () => {
@@ -489,14 +482,6 @@ describe('PublicRsvpForm payment confirmation gate', () => {
 
   it('skips the payment step on a free event', async () => {
     renderForm(makeEvent());
-    await fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
-    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
-  });
-
-  it('skips the payment step when the flag is off', async () => {
-    mockUseFlag.mockReturnValue(false);
-    renderForm(paidEvent);
     await fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await waitFor(() => expect(submitMutate).toHaveBeenCalled());

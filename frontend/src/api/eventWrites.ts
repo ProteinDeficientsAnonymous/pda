@@ -15,7 +15,7 @@ import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/
 import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys, setEventDetailData } from './events';
+import { eventKeys, invalidateEventGuests, setEventDetailData } from './events';
 import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
@@ -173,6 +173,7 @@ export function useInviteToEvent(eventId: string) {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
+      invalidateEventGuests(qc, event.id);
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'invite-to-event', eventId });
@@ -196,6 +197,7 @@ export function useUpdateEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Draft) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'update-event', eventId });
@@ -220,6 +222,7 @@ export function useCancelEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Cancelled) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'cancel-event', eventId });
@@ -241,6 +244,8 @@ export function useDeleteEvent(eventId: string) {
     onSuccess: (event) => {
       setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Draft) });
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed, EventStatusEnum.Cancelled) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'delete-event', eventId });
@@ -258,7 +263,8 @@ export function useUploadEventPhoto() {
   return useMutation({
     mutationFn: async ({ eventId, blob }: { eventId: string; blob: Blob }) => {
       const formData = new FormData();
-      formData.append('photo', blob, 'event.png');
+      const ext = (blob.type.split('/')[1] ?? 'jpg').replace('jpeg', 'jpg');
+      formData.append('photo', blob, `event.${ext}`);
       const { data } = await apiClient.post<WireEvent>(
         `/api/community/events/${eventId}/photo/`,
         formData,

@@ -179,6 +179,41 @@ describe('EventDetailScreen', () => {
     expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
   });
 
+  describe('tentative member rsvp gate', () => {
+    const TENTATIVE_USER = makeUser({ ...AUTHED_USER, isMember: false });
+
+    function renderAs(user: User, eventType: string) {
+      useAuthStore.setState({ status: 'authed', user, accessToken: 'tok' });
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, eventType, rsvpEnabled: true, isPast: false },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+      renderScreen();
+    }
+
+    it('swaps the rsvp button for an unlock note on community events', () => {
+      renderAs(TENTATIVE_USER, EventType.Community);
+      expect(screen.queryByTestId('rsvp-section')).not.toBeInTheDocument();
+      expect(
+        screen.getByText(/attend an official or club event to unlock rsvps/i),
+      ).toBeInTheDocument();
+    });
+
+    it.each([EventType.Official, EventType.Club])('lets them rsvp to %s events', (type) => {
+      renderAs(TENTATIVE_USER, type);
+      expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+      expect(
+        screen.queryByText(/attend an official or club event to unlock rsvps/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it('full members still get the rsvp button on community events', () => {
+      renderAs(AUTHED_USER, EventType.Community);
+      expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+    });
+  });
+
   describe('token-scoped rsvp viewer', () => {
     it('renders the public-rsvp section when rsvp_token is present and the event comes back unlocked', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
@@ -280,9 +315,9 @@ describe('EventDetailScreen', () => {
   });
 
   describe('error states', () => {
-    function mockError(status: number) {
+    function mockError(status: number, data?: unknown) {
       const err = new AxiosError('boom');
-      err.response = { status } as AxiosResponse;
+      err.response = { status, data } as AxiosResponse;
       mockUseEvent.mockReturnValue({
         data: undefined,
         isPending: false,
@@ -290,6 +325,44 @@ describe('EventDetailScreen', () => {
         error: err,
       } as unknown as ReturnType<typeof useEvent>);
     }
+
+    it('shows a friendly draft notice for the draft-visibility 403, while a normal load still renders the event', () => {
+      mockError(403, {
+        detail: [
+          { code: 'event.perm_denied', field: null, params: { action: 'view_draft_event' } },
+        ],
+      });
+      const first = renderScreen('ev1');
+
+      expect(screen.getByText('this event is currently in draft mode')).toBeInTheDocument();
+      expect(screen.queryByText(/you don't have permission/i)).not.toBeInTheDocument();
+      first.unmount();
+
+      mockUseEvent.mockReturnValue({
+        data: BASE_EVENT,
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+      renderScreen('ev1');
+
+      expect(screen.getByRole('heading', { name: /test event/i })).toBeInTheDocument();
+    });
+
+    it('keeps the generic permission message for other 403s', () => {
+      mockError(403, {
+        detail: [
+          {
+            code: 'event.perm_denied',
+            field: null,
+            params: { action: 'view_invite_only_event' },
+          },
+        ],
+      });
+      renderScreen('ev1');
+
+      expect(screen.queryByText('this event is currently in draft mode')).not.toBeInTheDocument();
+      expect(screen.getByText(/you don't have permission/i)).toBeInTheDocument();
+    });
 
     it('prompts an unauthenticated visitor to log in on 404 instead of a dead end', () => {
       mockError(404);

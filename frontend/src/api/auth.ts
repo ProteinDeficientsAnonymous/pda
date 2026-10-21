@@ -2,8 +2,9 @@ import { useMutation } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 
 import type { ConsentTypeValue } from '@/models/consent';
+import type { EventTypeValue } from '@/models/event';
 import { normalizePermissions } from '@/models/permissions';
-import type { Birthday, Role, User } from '@/models/user';
+import type { Birthday, Role, User, Veganniversary } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 
 import { apiClient, authClient, getCurrentAccessToken } from './client';
@@ -23,6 +24,12 @@ interface WireBirthday {
   year: number | null;
 }
 
+interface WireVeganniversary {
+  month: number;
+  day: number | null;
+  year: number;
+}
+
 interface WireUser {
   id: string;
   phone_number: string;
@@ -34,6 +41,8 @@ interface WireUser {
   bio?: string;
   pronouns?: string;
   birthday?: WireBirthday | null;
+  veganniversary?: WireVeganniversary | null;
+  is_member?: boolean;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -44,10 +53,14 @@ interface WireUser {
   show_phone?: boolean;
   show_email?: boolean;
   show_birthday?: boolean;
+  show_veganniversary?: boolean;
+  veganniversary_shoutout_opt_in?: boolean;
+  has_seen_veganniversary?: boolean;
   hide_last_name?: boolean;
   weekly_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
+  calendar_feed_excluded_types?: EventTypeValue[];
   profile_photo_url?: string;
   photo_updated_at?: string | null;
   roles: WireRole[];
@@ -78,6 +91,11 @@ function mapBirthday(b: WireBirthday | null | undefined): Birthday | null {
   return { month: b.month, day: b.day, year: b.year };
 }
 
+function mapVeganniversary(v: WireVeganniversary | null | undefined): Veganniversary | null {
+  if (!v) return null;
+  return { month: v.month, day: v.day, year: v.year };
+}
+
 function mapUser(u: WireUser): User {
   return {
     id: u.id,
@@ -90,6 +108,8 @@ function mapUser(u: WireUser): User {
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
     birthday: mapBirthday(u.birthday),
+    veganniversary: mapVeganniversary(u.veganniversary),
+    isMember: u.is_member ?? true,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -100,10 +120,14 @@ function mapUser(u: WireUser): User {
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
+    showVeganniversary: u.show_veganniversary ?? true,
+    veganniversaryShoutoutOptIn: u.veganniversary_shoutout_opt_in ?? true,
+    hasSeenVeganniversary: u.has_seen_veganniversary ?? false,
     hideLastName: u.hide_last_name ?? false,
     weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
+    calendarFeedExcludedTypes: u.calendar_feed_excluded_types ?? [],
     profilePhotoUrl: u.profile_photo_url ?? '',
     photoUpdatedAt: u.photo_updated_at ?? null,
     roles: u.roles.map(mapRole),
@@ -135,20 +159,31 @@ export async function magicLogin(token: string): Promise<{ access: string; user:
   return { access: data.access, user };
 }
 
-async function tryRestoreSession(): Promise<{ access: string; user: User } | null> {
+// Hears the refreshed access token before /me resolves, or null once the visitor is known to be anonymous.
+export type SessionTokenListener = (token: string | null) => void;
+
+async function tryRestoreSession(
+  onSessionToken?: SessionTokenListener,
+): Promise<{ access: string; user: User } | null> {
   const { data } = await authClient.post<AccessOut>('/api/auth/refresh/', {});
+  onSessionToken?.(data.access);
   const user = await fetchMeWithToken(data.access);
   return { access: data.access, user };
 }
 
-export async function restoreSession(): Promise<{ access: string; user: User } | null> {
+export async function restoreSession(
+  onSessionToken?: SessionTokenListener,
+): Promise<{ access: string; user: User } | null> {
   // Retry once unless it's a real 401 — avoids re-login on a transient 5xx.
   try {
-    return await tryRestoreSession();
+    return await tryRestoreSession(onSessionToken);
   } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 401) return null;
+    if (isAxiosError(err) && err.response?.status === 401) {
+      onSessionToken?.(null);
+      return null;
+    }
     try {
-      return await tryRestoreSession();
+      return await tryRestoreSession(onSessionToken);
     } catch {
       return null;
     }
@@ -219,13 +254,18 @@ export interface ProfileUpdate {
   pronouns?: string;
   // null clears the stored birthday; a Birthday sets it (year is optional).
   birthday?: Birthday | null;
+  veganniversary?: Veganniversary | null;
   showPhone?: boolean;
   showEmail?: boolean;
   showBirthday?: boolean;
+  showVeganniversary?: boolean;
+  veganniversaryShoutoutOptIn?: boolean;
+  hasSeenVeganniversary?: boolean;
   hideLastName?: boolean;
   weeklyDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
+  calendarFeedExcludedTypes?: EventTypeValue[];
 }
 
 export async function updateProfile(patch: ProfileUpdate): Promise<User> {
@@ -242,13 +282,29 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
       ? { month: patch.birthday.month, day: patch.birthday.day, year: patch.birthday.year }
       : null;
   }
+  if (patch.veganniversary !== undefined) {
+    body.veganniversary = patch.veganniversary
+      ? {
+          month: patch.veganniversary.month,
+          day: patch.veganniversary.day,
+          year: patch.veganniversary.year,
+        }
+      : null;
+  }
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;
+  if (patch.showVeganniversary !== undefined) body.show_veganniversary = patch.showVeganniversary;
+  if (patch.veganniversaryShoutoutOptIn !== undefined)
+    body.veganniversary_shoutout_opt_in = patch.veganniversaryShoutoutOptIn;
+  if (patch.hasSeenVeganniversary !== undefined)
+    body.has_seen_veganniversary = patch.hasSeenVeganniversary;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
+  if (patch.calendarFeedExcludedTypes !== undefined)
+    body.calendar_feed_excluded_types = patch.calendarFeedExcludedTypes;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);
   return mapUser(data);
 }

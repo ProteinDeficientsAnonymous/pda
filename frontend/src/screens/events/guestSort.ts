@@ -12,6 +12,8 @@ const AVATAR_TIERS: { status: RsvpServerStatusValue; isMember: boolean }[] = [
   { status: RsvpServerStatus.Maybe, isMember: false },
 ];
 
+export const PREVIEW_LIMIT = 5;
+
 export function previewGuests(guests: EventGuest[], limit: number): EventGuest[] {
   return AVATAR_TIERS.flatMap((tier) =>
     guests.filter((g) => g.status === tier.status && g.isMember === tier.isMember),

@@ -3,8 +3,9 @@ from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
 from community._validation import Code, raise_validation
+from community.models.choices import EventType
 from config.media_proxy import media_path
-from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 
 from users._consents import ConsentType
 from users.models import User
@@ -37,20 +38,13 @@ def _empty_str_to_none(v: str | None) -> str | None:
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
-_DAYS_IN_MONTH = {
-    1: 31,
-    2: 29,  # allow Feb 29 regardless of year, since the year may be unknown
-    3: 31,
-    4: 30,
-    5: 31,
-    6: 30,
-    7: 31,
-    8: 31,
-    9: 30,
-    10: 31,
-    11: 30,
-    12: 31,
-}
+def _require_real_day(month: int | None, day: int, code: str, year: int | None = None) -> None:
+    if month is None:
+        return
+    try:
+        date(year if year is not None else 2000, month, day)
+    except ValueError:
+        raise_validation(code, field="day")
 
 
 class BirthdayOut(BaseModel):
@@ -72,13 +66,38 @@ class BirthdayIn(BaseModel):
     day: int = Field(ge=1, le=31)
     year: int | None = Field(default=None, ge=1900, le=date.today().year)
 
-    @field_validator("day")
-    @classmethod
-    def _validate_day(cls, day: int, info) -> int:
-        month = info.data.get("month")
-        if month is not None and day > _DAYS_IN_MONTH[month]:
-            raise_validation(Code.User.INVALID_BIRTHDAY, field="day")
-        return day
+    @model_validator(mode="after")
+    def _validate_day(self) -> "BirthdayIn":
+        _require_real_day(self.month, self.day, Code.User.INVALID_BIRTHDAY, self.year)
+        return self
+
+
+class VeganniversaryOut(BaseModel):
+    month: int
+    day: int | None = None
+    year: int
+
+    @staticmethod
+    def from_user(user: User) -> "VeganniversaryOut | None":
+        if user.veganniversary_month is None or user.veganniversary_year is None:
+            return None
+        return VeganniversaryOut(
+            month=user.veganniversary_month,
+            day=user.veganniversary_day,
+            year=user.veganniversary_year,
+        )
+
+
+class VeganniversaryIn(BaseModel):
+    month: int = Field(ge=1, le=12)
+    day: int | None = Field(default=None, ge=1, le=31)
+    year: int = Field(ge=1900, le=date.today().year)
+
+    @model_validator(mode="after")
+    def _validate_day(self) -> "VeganniversaryIn":
+        if self.day is not None:
+            _require_real_day(self.month, self.day, Code.User.INVALID_VEGANNIVERSARY, self.year)
+        return self
 
 
 class LoginIn(BaseModel):
@@ -124,6 +143,7 @@ class UserOut(BaseModel):
     bio: str = ""
     pronouns: str = ""
     birthday: BirthdayOut | None = None
+    veganniversary: VeganniversaryOut | None = None
     is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
@@ -136,17 +156,23 @@ class UserOut(BaseModel):
     show_phone: bool = True
     show_email: bool = True
     show_birthday: bool = True
+    show_veganniversary: bool = True
+    veganniversary_shoutout_opt_in: bool = True
+    has_seen_veganniversary: bool = False
     hide_last_name: bool = False
     weekly_digest_opt_out: bool = False
     is_paused: bool = False
+    has_joined_whatsapp: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
     has_logged_in: bool = True
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
+    calendar_feed_excluded_types: list[str] = []
     # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
+    attended_count: int = 0
     date_joined: datetime
     roles: list[RoleOut]
 
@@ -163,6 +189,7 @@ class UserOut(BaseModel):
             bio=user.bio or "",
             pronouns=user.pronouns or "",
             birthday=BirthdayOut.from_user(user),
+            veganniversary=VeganniversaryOut.from_user(user),
             is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
@@ -175,14 +202,24 @@ class UserOut(BaseModel):
             show_phone=user.show_phone,
             show_email=user.show_email,
             show_birthday=user.show_birthday,
+            show_veganniversary=user.show_veganniversary,
+            veganniversary_shoutout_opt_in=user.veganniversary_shoutout_opt_in,
+            has_seen_veganniversary=user.has_seen_veganniversary,
             hide_last_name=user.hide_last_name,
             weekly_digest_opt_out=user.weekly_digest_opt_out,
             is_paused=user.is_paused,
+            has_joined_whatsapp=user.has_joined_whatsapp,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
+            calendar_feed_excluded_types=(
+                user.calendar_feed_excluded_types
+                if isinstance(user.calendar_feed_excluded_types, list)
+                else []
+            ),
             last_attended=getattr(user, "last_attended", None),
+            attended_count=getattr(user, "attended_count", 0),
             date_joined=user.date_joined,
             roles=[
                 RoleOut(
@@ -196,6 +233,13 @@ class UserOut(BaseModel):
         )
 
 
+class MemberAttendedEventOut(BaseModel):
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    event_type: str
+
+
 class MemberProfileOut(BaseModel):
     id: str
     first_name: str = ""
@@ -207,6 +251,7 @@ class MemberProfileOut(BaseModel):
     bio: str = ""
     pronouns: str = ""
     birthday: BirthdayOut | None = None
+    veganniversary: VeganniversaryOut | None = None
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
@@ -262,6 +307,7 @@ class UserPatchIn(BaseModel):
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
+    has_joined_whatsapp: bool | None = None
 
 
 class MePatchIn(BaseModel):
@@ -272,14 +318,26 @@ class MePatchIn(BaseModel):
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
     birthday: BirthdayIn | None = None
+    veganniversary: VeganniversaryIn | None = None
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
     show_birthday: bool | None = None
+    show_veganniversary: bool | None = None
+    veganniversary_shoutout_opt_in: bool | None = None
+    has_seen_veganniversary: bool | None = None
     hide_last_name: bool | None = None
     weekly_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
+    calendar_feed_excluded_types: (
+        list[Literal[EventType.OFFICIAL, EventType.COMMUNITY, EventType.CLUB]] | None
+    ) = None
+
+    @field_validator("calendar_feed_excluded_types")
+    @classmethod
+    def _dedupe_excluded_types(cls, v: list[str] | None) -> list[str] | None:
+        return sorted(set(v)) if v is not None else None
 
 
 class ChangePasswordIn(BaseModel):

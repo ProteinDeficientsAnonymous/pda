@@ -7,7 +7,7 @@ import type { RsvpStatus } from '@/models/event';
 import { apiClient } from './client';
 import { eventCommentKeys } from './eventComments';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { eventKeys, invalidateEventGuests } from './events';
 import { eventStatsKeys } from './eventStats';
 
 type RsvpInput = (typeof RsvpStatus)[keyof typeof RsvpStatus];
@@ -34,9 +34,9 @@ function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAut
     { queryKey: eventKeys.all, predicate: (query) => isDetailQueryForEvent(query.queryKey, event) },
     () => event,
   );
-  // Also patch the list cache if we've got it. The list endpoint returns
-  // fewer fields than detail, so we merge conservatively.
-  qc.setQueryData<Event[] | undefined>(eventKeys.list(isAuthed), (prev) => {
+  // Also patch the list caches (full list and each calendar range) if we've got
+  // them. The list endpoint returns fewer fields than detail, so we merge conservatively.
+  qc.setQueriesData<Event[] | undefined>({ queryKey: eventKeys.list(isAuthed) }, (prev) => {
     if (!prev) return prev;
     return prev.map((e) => (e.id === event.id ? { ...e, ...event } : e));
   });
@@ -70,6 +70,7 @@ export function useSetRsvp() {
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(event.id) });
       // can_post on the comments list depends on RSVP existence — refresh it.
       void qc.invalidateQueries({ queryKey: eventCommentKeys.list(event.id) });
+      invalidateEventGuests(qc, event.id);
     },
   });
 }
@@ -95,6 +96,7 @@ export function useRemoveRsvp() {
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
       // can_post on the comments list depends on RSVP existence — refresh it.
       void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+      invalidateEventGuests(qc, eventId);
     },
   });
 }

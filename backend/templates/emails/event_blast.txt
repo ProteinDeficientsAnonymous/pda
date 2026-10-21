@@ -2,6 +2,10 @@ an update about {{ event_title|lower }}
 
 {% autoescape off %}{{ message }}{% endautoescape %}
 
+view the event:
+
+{{ event_url }}
+
 you're receiving this because you rsvp'd to this event on pda.
 
 — pda

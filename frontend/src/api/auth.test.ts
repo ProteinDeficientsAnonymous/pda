@@ -57,6 +57,28 @@ describe('restoreSession', () => {
     expect(result?.access).toBe('tok-2');
   });
 
+  it('hands over the refreshed token before /me resolves', async () => {
+    const seen: (string | null)[] = [];
+    authMock.onPost('/api/auth/refresh/').reply(200, { access: 'tok-3' });
+    authMock.onGet('/api/auth/me/').reply(() => {
+      expect(seen).toEqual(['tok-3']);
+      return [200, wireUser];
+    });
+
+    await restoreSession((token) => seen.push(token));
+
+    expect(seen).toEqual(['tok-3']);
+  });
+
+  it('reports an anonymous visitor as a null token on a real 401', async () => {
+    authMock.onPost('/api/auth/refresh/').reply(401, { detail: 'invalid' });
+    const seen: (string | null)[] = [];
+
+    await restoreSession((token) => seen.push(token));
+
+    expect(seen).toEqual([null]);
+  });
+
   it('gives up and returns null after two transient failures', async () => {
     let calls = 0;
     authMock.onPost('/api/auth/refresh/').reply(() => {

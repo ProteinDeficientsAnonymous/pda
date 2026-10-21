@@ -1,13 +1,17 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { useFeatureFlags } from '@/api/featureFlags';
+import type { SessionTokenListener } from '@/api/auth';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
+import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
-import type { FeatureFlagKey } from '@/models/featureFlags';
+import { isTentativeMember } from '@/models/event';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
+import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
 import { useAuthStore } from './store';
 
 // Policy pages the consent screen links to must stay reachable while the consent
@@ -23,7 +27,13 @@ const CONSENT_POLICY_PATHS = new Set(CONSENT_REGISTRY.map((c) => c.linkTo.toLowe
 // and burn single-use tokens.
 // ----------------------------------------------------------------------------
 
-export function AuthBoot({ children }: { children: ReactNode }) {
+export function AuthBoot({
+  children,
+  onSessionToken,
+}: {
+  children: ReactNode;
+  onSessionToken?: SessionTokenListener;
+}) {
   const status = useAuthStore((s) => s.status);
   const restore = useAuthStore((s) => s.restoreSession);
   // Subscribe to the store's boot latch — set once the initial restore
@@ -32,14 +42,24 @@ export function AuthBoot({ children }: { children: ReactNode }) {
   // loading UX and re-mounting them mid-request would re-fire their effects
   // and burn single-use tokens.
   const booted = useAuthStore((s) => s.booted);
+  // Always false in production.
+  const [devLoginPending, setDevLoginPending] = useState(devAutoLoginConfigured);
 
   useEffect(() => {
     if (status === 'idle') {
-      void restore();
+      void restore(onSessionToken)
+        .then(attemptDevAutoLogin)
+        .finally(() => {
+          setDevLoginPending(false);
+        });
     }
-  }, [status, restore]);
+  }, [status, restore, onSessionToken]);
 
   if (!booted && (status === 'idle' || status === 'loading')) {
+    return <BootSpinner />;
+  }
+  // Otherwise local dev flashes the login screen before the credentials land.
+  if (devLoginPending) {
     return <BootSpinner />;
   }
   return <>{children}</>;
@@ -105,6 +125,7 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
@@ -131,26 +152,23 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 }
 
 // ----------------------------------------------------------------------------
-// RequireFlag — authed + feature flag check. Fail-closed: a flag that is off
-// or missing redirects to /calendar. While the flags query is still loading,
-// renders a spinner instead of redirecting, so a flag that resolves true
-// doesn't briefly bounce the user away first.
+// RequireMember — authed + full membership. A tentatively-approved user is
+// signed in but not vetted, so these screens 403 server-side. Explain the gate
+// rather than redirecting: they get in by showing up to an event in person.
 // ----------------------------------------------------------------------------
 
-export function RequireFlag({ flag }: { flag: FeatureFlagKey }) {
+export function RequireMember({ unlocks }: { unlocks: string }) {
+  const user = useAuthStore((s) => s.user);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const location = useLocation();
-  const { data: flags, isPending } = useFeatureFlags();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
-  if (isPending) {
-    return <BootSpinner />;
-  }
-  if (!(flags?.[flag] ?? false)) {
-    return <Navigate to="/calendar" replace />;
+  if (isTentativeMember(user)) {
+    return <MembersOnlyNotice unlocks={unlocks} />;
   }
   return <Outlet />;
 }

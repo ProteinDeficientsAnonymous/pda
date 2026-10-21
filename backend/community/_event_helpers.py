@@ -7,7 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
-from notifications.service import broadcast_event_update, create_waitlist_promoted_notifications
+from notifications.service import broadcast_event_update
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -17,26 +17,27 @@ from community._event_rsvp_answers import (
     can_see_guest_questionnaire_responses,
     find_my_questionnaire_responses,
 )
-from community._event_rsvp_serialize import event_rsvp_question_out
-from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
+from community._event_rsvp_serialize import event_rsvp_question_out, with_guest_photos
+from community._event_schemas import CancellationOut, EventOut, EventSurveyOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
-    _attending_headcount_db,
+    _guest_rsvp_count,
     _waitlisted_count,
 )
-from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
+from community._rsvp_payment import can_see_payment_details
 from community._shared import _authenticated_user, _gated
+from community._survey_helpers import survey_is_open
 from community._validation import Code, raise_validation
+from community._waitlist import waitlist_sort_key
 from community.models import (
     Event,
     EventRSVP,
     EventTag,
     EventType,
-    FeatureFlag,
     PageVisibility,
     RSVPStatus,
     SurveyQuestionType,
-    flag_enabled,
+    is_official_or_club,
 )
 
 if TYPE_CHECKING:
@@ -84,6 +85,13 @@ _GUEST_LIST_STATUS_ORDER = {
 }
 
 
+def _guest_list_sort_key(rsvp: EventRSVP) -> tuple:
+    status_rank = _GUEST_LIST_STATUS_ORDER.get(rsvp.status, 99)
+    if rsvp.status == RSVPStatus.WAITLISTED:
+        return (status_rank, waitlist_sort_key(rsvp))
+    return (status_rank, ())
+
+
 def _build_guest_list(
     rsvps,
     can_see_phones: bool,
@@ -92,9 +100,8 @@ def _build_guest_list(
     *,
     include_questionnaire_responses: bool = False,
 ) -> list[RSVPGuestOut]:
-    """Build guest list ordered going > maybe > can't go > waitlisted, with optional phone,
-    payment-status, and answer visibility."""
-    ordered_rsvps = sorted(rsvps, key=lambda r: _GUEST_LIST_STATUS_ORDER.get(r.status, 99))
+    """Build guest list ordered going > maybe > can't go > waitlisted."""
+    ordered_rsvps = sorted(rsvps, key=_guest_list_sort_key)
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -102,7 +109,6 @@ def _build_guest_list(
             status=r.status,
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
-            photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             plus_one_attendance=r.plus_one_attendance,
@@ -161,49 +167,6 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     return rows
 
 
-def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | None:
-    """Return the oldest waitlisted RSVP that still fits under max_attendees, if any."""
-    oldest = (
-        EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
-        .order_by("created_at")
-        .first()
-    )
-    if not oldest:
-        return None
-    if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
-        return None
-    return oldest
-
-
-def promote_from_waitlist(event: Event) -> list[str]:
-    """Promote oldest waitlisted users to attending (FIFO by created_at).
-
-    Must be called inside a transaction.atomic() block with the event row locked.
-    Returns the list of promoted user ids so callers that need to follow up per
-    promoted user (e.g. emailing promoted non-members) can do so after commit.
-    """
-    if event.max_attendees is None:
-        return []
-    promoted_user_ids: list[str] = []
-    unpaid_user_ids: list[str] = []
-    needs_payment = payment_enforced_for_event(event)
-    while True:
-        headcount = _attending_headcount_db(event)
-        if headcount >= event.max_attendees:
-            break
-        oldest = _next_promotable_waitlist_rsvp(event, headcount)
-        if oldest is None:
-            break
-        oldest.status = RSVPStatus.ATTENDING
-        oldest.save(update_fields=["status", "updated_at"])
-        promoted_user_ids.append(str(oldest.user_id))
-        if needs_payment and oldest.paid_confirmed_at is None:
-            unpaid_user_ids.append(str(oldest.user_id))
-    if promoted_user_ids:
-        create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
-    return promoted_user_ids
-
-
 def _has_attendees(event: Event) -> bool:
     """Return True if the event has any invited users or attending RSVPs."""
     if event.invited_users.exists():
@@ -230,26 +193,23 @@ def _can_see_invited(
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
-_INACTIVE_RSVP_STATUSES = {RSVPStatus.CANT_GO, RSVPStatus.REMOVED}
-
-
 def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str | None) -> bool:
-    """Hosts, event managers, and active RSVPs can see the guest list.
+    """Hosts, event managers, and RSVP'd members can see the guest list.
 
-    A cancelled (CANT_GO) or host-removed (REMOVED) RSVP row still exists, so
-    my_rsvp_status is checked against active statuses rather than just None.
+    Host-removed (REMOVED) RSVP rows still exist, so presence alone is not enough.
+    Can't-go still counts as RSVP'd — those viewers can see who is going.
     """
     if requesting_user is None:
         return False
     if viewer_is_cohost or requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
+    return my_rsvp_status is not None and my_rsvp_status != RSVPStatus.REMOVED
 
 
 def _can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
-    """Check if user can see an invite-only event (using prefetched sets)."""
+    """Invite-only visibility from already-loaded id sets (calendar feed)."""
     if user is None:
         return False
     if created_by_id is not None and str(user.pk) == str(created_by_id):
@@ -295,16 +255,53 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
     return poll_survey
 
 
-def _resolve_comment_count(event: Event) -> int:
-    """Read the annotated comment_count, falling back to a per-event count query."""
-    annotated = getattr(event, "comment_count", None)
+def _annotated_or(event: Event, attr: str, fallback):
+    """Use an annotated value when present, including 0."""
+    annotated = getattr(event, attr, None)
     if annotated is not None:
         return annotated
-    return event.comments.filter(deleted_at__isnull=True).count()
+    return fallback()
+
+
+def _viewer_rsvp_rows(event: Event, auth_user) -> list:
+    cached = getattr(event, "_viewer_rsvps", None)
+    if cached is not None:
+        return cached
+    if auth_user is None:
+        return []
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        return [r for r in event.rsvps.all() if r.user_id == auth_user.pk]
+    return list(event.rsvps.filter(user=auth_user))
+
+
+def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
+    """Load every RSVP only when the viewer can see guests or questionnaire responses."""
+    viewer_rsvps = _viewer_rsvp_rows(event, auth_user)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(viewer_rsvps, auth_user)
+    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
+    if not (can_see_guests or responses_visible):
+        return viewer_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        all_rsvps = list(event.rsvps.all())
+    else:
+        all_rsvps = list(event.rsvps.select_related("user").all())
+    return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
+
+
+def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
+    if not _can_see_invited(auth_user, creator, co_host_ids):
+        return [], 0
+    responded_user_ids = {rsvp.user_id for rsvp in rsvps}
+    invited = [user for user in event.invited_users.all() if user.pk not in responded_user_ids]
+    return invited, len(invited)
 
 
 def _iso_or_none(value) -> str | None:
     return value.isoformat() if value else None
+
+
+def _float_or_none(value) -> float | None:
+    return float(value) if value is not None else None
 
 
 def _event_out(event: Event, requesting_user=None) -> EventOut:
@@ -315,20 +312,19 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     show_payment_details = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
     viewer_is_cohost = is_cohost(auth_user, co_host_ids)
-    payment_status_visible = viewer_is_cohost and flag_enabled(
-        FeatureFlag.EVENT_PAYMENT_CONFIRMATION
+    can_manage = viewer_is_cohost or (
+        auth_user is not None and auth_user.has_permission(PermissionKey.MANAGE_EVENTS)
     )
+    payment_status_visible = can_manage
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled or responses_visible else []
-    all_invited = list(event.invited_users.all())
-    invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
+    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
+        event, auth_user, viewer_is_cohost, responses_visible
+    )
+    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
 
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
-    comment_count = _resolve_comment_count(event)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
-    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -336,9 +332,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         description=event.description,
         start_datetime=event.start_datetime,
         end_datetime=event.end_datetime,
-        location=event.location,
-        latitude=float(event.latitude) if event.latitude is not None else None,
-        longitude=float(event.longitude) if event.longitude is not None else None,
+        location=_gated(event.location, "", is_authed),
+        latitude=_gated(_float_or_none(event.latitude), None, is_authed),
+        longitude=_gated(_float_or_none(event.longitude), None, is_authed),
         whatsapp_link=_gated(event.whatsapp_link, "", is_authed),
         partiful_link=_gated(event.partiful_link, "", is_authed),
         other_link=_gated(event.other_link, "", is_authed),
@@ -350,26 +346,32 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
-        attending_count=_attending_headcount(event),
-        waitlisted_count=_waitlisted_count(event),
-        invited_count=len(all_invited),
-        comment_count=comment_count,
+        attending_count=_annotated_or(
+            event, "attending_count", lambda: _attending_headcount(event)
+        ),
+        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
+        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
+        invited_count=invited_count,
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator, auth_user),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=_gated(
-            _build_guest_list(
-                all_rsvps,
-                viewer_is_cohost,
-                auth_user,
-                payment_status_visible,
-                include_questionnaire_responses=responses_visible,
+        guests=with_guest_photos(
+            (
+                _build_guest_list(
+                    all_rsvps,
+                    viewer_is_cohost,
+                    auth_user,
+                    payment_status_visible,
+                    include_questionnaire_responses=responses_visible,
+                )
+                if can_see_guests
+                else []
             ),
-            [],
-            can_see_guests,
+            all_rsvps,
+            all_photos=False,
         ),
         my_rsvp=my_rsvp_status,
         my_questionnaire_responses=find_my_questionnaire_responses(all_rsvps, auth_user),
@@ -379,7 +381,11 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         visibility=event.visibility,
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
-        survey_slugs=list(event.surveys.filter(is_active=True).values_list("slug", flat=True)),
+        linked_surveys=[
+            EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
+            for s in event.surveys.all()
+            if survey_is_open(s)
+        ],
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
@@ -388,6 +394,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invite_permission=event.invite_permission,
         is_past=event.is_past,
         status=event.status,
+        is_partiful_import=event.is_partiful_import,
+        is_legacy=event.is_legacy,
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),
@@ -404,8 +412,6 @@ def _can_edit_event(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
-
 # Event types that require an explicit permission to tag. Community events need
 # none. Maps type → the permission that gates it.
 _TYPE_TAG_PERMISSIONS = {
@@ -416,7 +422,7 @@ _TYPE_TAG_PERMISSIONS = {
 
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
-    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+    return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
 
 
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:

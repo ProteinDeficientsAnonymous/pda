@@ -15,7 +15,6 @@ from community._event_helpers import (
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
-    promote_from_waitlist,
 )
 from community._event_rsvps import (
     _resolve_cancelled_at,
@@ -29,6 +28,7 @@ from community._events import _can_edit_event
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
+from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 
 router = Router()

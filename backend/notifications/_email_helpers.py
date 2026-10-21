@@ -1,8 +1,17 @@
 from dataclasses import dataclass
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from notifications.email_sender import EmailSender, SendResult
+
+_ET = ZoneInfo("America/New_York")
+
+
+def format_eastern_datetime(dt: datetime) -> str:
+    return timezone.localtime(dt, _ET).strftime("%A, %B %d at %I:%M %p").replace(" 0", " ")
 
 
 @dataclass(frozen=True)
@@ -155,17 +164,19 @@ def send_join_approval_email(
     to: str,
     display_name: str,
     message_body: str,
-    magic_link_url: str,
+    login_url: str,
 ) -> SendResult:
     """Render and send the "you're a full member now" join-approval email.
 
-    ``message_body`` is the UI-editable confirmation text (tentative-approval
-    message template) with ``${FIRST_NAME}`` substituted by the caller.
+    ``message_body`` is the UI-editable confirmation text (member promotion
+    email template) with its placeholders substituted by the caller. The
+    recipient already has an account by this point, so this links to the
+    normal login page rather than carrying a one-time token.
     """
     context = {
         "display_name": display_name or "",
         "message_body": message_body,
-        "magic_link_url": magic_link_url,
+        "login_url": login_url,
     }
     html = render_to_string("emails/join_approval.html", context)
     text = render_to_string("emails/join_approval.txt", context)
@@ -279,22 +290,25 @@ def send_checkin_reminder_email(
     )
 
 
-def send_weekly_digest_email(
+def send_weekly_digest_email(  # noqa: PLR0913
     *,
     sender: EmailSender,
     to: str,
     display_name: str,
     events: list[dict],
     urls: dict[str, str],
+    veganniversaries: list[dict] | None = None,
 ) -> SendResult:
     """Render and send the weekly "what's coming up" digest to one member.
 
-    param events(list[dict]): upcoming events, each with title/when/location/url keys
-    param urls(dict[str, str]): calendar_url and settings_url for the email footer/CTA
+    param events(list[dict]): upcoming events, each with title/when/url keys
+    param urls: calendar_url and settings_url
+    param veganniversaries: year-grouped shout-out people, or empty
     """
     context = {
         "display_name": display_name or "",
         "events": events,
+        "veganniversaries": veganniversaries or [],
         **urls,
     }
     html = render_to_string("emails/weekly_digest.html", context)
@@ -307,24 +321,33 @@ def send_weekly_digest_email(
     )
 
 
+@dataclass(frozen=True)
+class EventBlastEmailDetails:
+    """Recipient + event details for a host email-blast message."""
+
+    to: str
+    event_title: str
+    event_url: str
+    subject: str
+    message: str
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,
-    to: str,
-    event_title: str,
-    subject: str,
-    message: str,
+    details: EventBlastEmailDetails,
 ) -> SendResult:
     """Render and send one event email-blast message to a single recipient."""
     context = {
-        "event_title": event_title,
-        "message": message,
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+        "message": details.message,
     }
     html = render_to_string("emails/event_blast.html", context)
     text = render_to_string("emails/event_blast.txt", context)
     return sender.send(
-        to=to,
-        subject=subject,
+        to=details.to,
+        subject=details.subject,
         html=html,
         text=text,
     )

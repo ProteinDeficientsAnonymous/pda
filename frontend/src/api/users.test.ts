@@ -10,6 +10,7 @@ import {
   useArchiveUser,
   useBulkCreateUsers,
   useCreateUser,
+  useMemberAttendedEvents,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
   useUpdateUser,
@@ -63,6 +64,7 @@ describe('useUsers', () => {
           is_paused: false,
           needs_onboarding: false,
           login_link_requested: false,
+          attended_count: 4,
           roles: [
             {
               id: 'r1',
@@ -89,6 +91,7 @@ describe('useUsers', () => {
     expect(member?.email).toBe('ada@example.com');
     expect(member?.showPhone).toBe(true);
     expect(member?.showEmail).toBe(false);
+    expect(member?.attendedCount).toBe(4);
     expect(member?.roles[0]).toEqual({
       id: 'r1',
       name: 'member',
@@ -234,12 +237,18 @@ describe('useUpdateUser', () => {
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: makeWrapper(qc) });
 
-    await result.current.mutateAsync({ firstName: 'Ada', lastName: 'Lovelace', isPaused: false });
+    await result.current.mutateAsync({
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      isPaused: false,
+      hasJoinedWhatsapp: true,
+    });
 
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u1/', {
       first_name: 'Ada',
       last_name: 'Lovelace',
       is_paused: false,
+      has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
   });
@@ -319,6 +328,36 @@ describe('useSendMemberMagicLink', () => {
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/users/u9/magic-link/');
     expect(out.magicLinkToken).toBe('tok-abc');
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
+  });
+});
+
+describe('useMemberAttendedEvents', () => {
+  it('fetches and maps the member attended events', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          event_id: 'e1',
+          title: 'Potluck',
+          start_datetime: '2026-05-02T18:00:00Z',
+          event_type: 'official',
+        },
+        { event_id: 'e2', title: 'Tbd', start_datetime: null, event_type: 'community' },
+      ],
+    });
+    const { result } = renderHook(() => useMemberAttendedEvents('u9'), {
+      wrapper: makeWrapper(makeQc()),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/u9/attended-events/');
+    expect(result.current.data).toEqual([
+      {
+        eventId: 'e1',
+        title: 'Potluck',
+        startDatetime: new Date('2026-05-02T18:00:00Z'),
+        eventType: 'official',
+      },
+      { eventId: 'e2', title: 'Tbd', startDatetime: null, eventType: 'community' },
+    ]);
   });
 });
 

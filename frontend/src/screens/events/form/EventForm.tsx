@@ -21,7 +21,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventHostCount, eventPath, EventType } from '@/models/event';
+import { type Event, eventHostCount, eventPath, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
@@ -258,11 +258,24 @@ export function EventForm({ existing }: Props) {
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         void submit('active');
+      }}
+      onKeyDown={(e) => {
+        // Enter must never implicitly submit (#1496) — saving is button-only; nested dialog forms and IME composition keep their defaults (old WebKit marks composition with keyCode 229 while reporting isComposing: false).
+        const target = e.target as Element;
+        if (
+          e.key === 'Enter' &&
+          // oxlint-disable-next-line typescript/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
+          !(e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) &&
+          target.closest('form') === e.currentTarget &&
+          target.matches('input, select')
+        )
+          e.preventDefault();
       }}
       className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4"
     >
@@ -281,7 +294,7 @@ export function EventForm({ existing }: Props) {
         </div>
       </div>
 
-      <div className="flex w-full flex-col gap-4 lg:max-w-3xl lg:flex-1">
+      <div className="flex w-full min-w-0 flex-col gap-4 lg:max-w-3xl lg:flex-1">
         <EventFormBasics
           values={values}
           onChange={patch}
@@ -326,9 +339,7 @@ export function EventForm({ existing }: Props) {
             values={values}
             onChange={patch}
             errors={errors}
-            typeLocked={
-              values.eventType === EventType.Official || values.eventType === EventType.Club
-            }
+            typeLocked={isOfficialOrClub(values.eventType)}
           />
         </CollapsibleCard>
 

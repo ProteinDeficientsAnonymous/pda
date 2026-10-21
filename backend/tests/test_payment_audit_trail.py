@@ -3,7 +3,7 @@ from audit.models import AuditLogEntry, AuditTargetType
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 from tests._public_rsvp_helpers import make_official_event
 from tests._public_rsvp_helpers import payload as public_payload
 from tests._public_rsvp_helpers import url as public_url
@@ -11,11 +11,6 @@ from tests._public_rsvp_helpers import url as public_url
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 HOST_RSVP_URL = "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/"
 PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_payment_flag(True)
 
 
 @pytest.fixture

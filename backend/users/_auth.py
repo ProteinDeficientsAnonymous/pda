@@ -1,7 +1,9 @@
 """Authentication endpoints (login, token refresh, me)."""
 
 import logging
+import time
 
+from community._image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
@@ -40,6 +42,7 @@ from users.schemas import (
     OnboardingIn,
     TokenOut,
     UserOut,
+    VeganniversaryIn,
 )
 
 logger = logging.getLogger("pda.auth")
@@ -89,6 +92,8 @@ def login(request, payload: LoginIn, response: HttpResponse):
             target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    user.last_login = timezone.now()
+    user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(user)
     request.auth = user
     set_refresh_cookie(response, str(refresh))
@@ -143,10 +148,14 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "show_phone",
     "show_email",
     "show_birthday",
+    "show_veganniversary",
+    "veganniversary_shoutout_opt_in",
+    "has_seen_veganniversary",
     "hide_last_name",
     "weekly_digest_opt_out",
     "week_start",
     "calendar_feed_scope",
+    "calendar_feed_excluded_types",
 )
 # Passthrough fields that also get whitespace-stripped.
 _ME_PATCH_STRIPPED_FIELDS = ("bio", "pronouns", "nickname")
@@ -156,6 +165,27 @@ def _apply_birthday(user, birthday: BirthdayIn | None) -> None:
     user.birthday_month = birthday.month if birthday else None
     user.birthday_day = birthday.day if birthday else None
     user.birthday_year = birthday.year if birthday else None
+
+
+def _apply_veganniversary(user, veganniversary: VeganniversaryIn | None) -> None:
+    user.veganniversary_month = veganniversary.month if veganniversary else None
+    user.veganniversary_day = veganniversary.day if veganniversary else None
+    user.veganniversary_year = veganniversary.year if veganniversary else None
+
+
+_ME_PATCH_COLUMN_GROUPS = {
+    "birthday": ("birthday_month", "birthday_day", "birthday_year"),
+    "veganniversary": ("veganniversary_month", "veganniversary_day", "veganniversary_year"),
+}
+
+
+def _save_me_patch(user, changed: list[str]) -> None:
+    """Write only the patched columns so a second in-flight save cannot restore them."""
+    fields: list[str] = []
+    for name in changed:
+        fields.extend(_ME_PATCH_COLUMN_GROUPS.get(name, (name,)))
+    if fields:
+        user.save(update_fields=fields)
 
 
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
@@ -185,6 +215,9 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if "birthday" in payload.model_fields_set:
         _apply_birthday(user, payload.birthday)
         changed.append("birthday")
+    if "veganniversary" in payload.model_fields_set:
+        _apply_veganniversary(user, payload.veganniversary)
+        changed.append("veganniversary")
     return changed
 
 
@@ -192,7 +225,8 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
-    user.save()
+    _save_me_patch(user, changed)
+    user = User.objects.prefetch_related("roles").get(pk=user.pk)
     if changed:
         audit_log(
             logging.INFO,
@@ -205,7 +239,8 @@ def update_me(request, payload: MePatchIn):
     return Status(200, UserOut.from_user(user))
 
 
-@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=gated_jwt)
+@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut, 429: ErrorOut}, auth=gated_jwt)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
     if photo.content_type not in _ALLOWED_IMAGE_TYPES:
         raise_validation(
@@ -222,13 +257,11 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
             max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
         )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    if user.profile_photo:
-        user.profile_photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
-    user.photo_updated_at = timezone.now()
-    user.save(update_fields=["profile_photo", "photo_updated_at"])
+    try:
+        body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
+    except UnsafeImageError:
+        raise_validation(Code.Photo.UNSAFE, field="photo", status_code=400)
+    commit_photo(user, "profile_photo", f"{user.pk}_{int(time.time())}.{ext}", body)
     audit_log(
         logging.INFO,
         "profile_photo_uploaded",

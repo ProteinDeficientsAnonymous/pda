@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
-import { extractApiError, getApiStatus } from '@/api/apiErrors';
+import { extractApiError, getApiStatus, getErrorParams } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { canManageEvent, canPublicRsvp, eventPath } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
@@ -21,11 +23,6 @@ import { EventTagChips } from './EventTagChips';
 import { MyRsvpSection } from './MyRsvpSection';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
-
-function photoSrc(url: string, updatedAt: string | null): string {
-  if (!updatedAt) return url;
-  return `${url}?v=${encodeURIComponent(updatedAt)}`;
-}
 
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -58,6 +55,17 @@ export default function EventDetailScreen() {
 
   if (isPending) return <ContentLoading />;
   if (isError) {
+    // A stale link to an unpublished event gets a friendly state, not a
+    // permission wall — applies to anonymous viewers too (hosts/co-hosts/
+    // managers load the draft fine and never hit this branch).
+    if (isDraftVisibilityRejection(error)) {
+      return (
+        <ForbiddenNotice
+          message="this event is currently in draft mode"
+          subtext="check back later — the host may publish it soon"
+        />
+      );
+    }
     const status = getApiStatus(error);
     if (status === 403) {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
@@ -149,7 +157,7 @@ export default function EventDetailScreen() {
 
   const photo = (
     <img
-      src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
+      src={cacheBustMediaUrl(event.photoUrl, event.photoUpdatedAt)}
       alt=""
       className="mx-auto block max-h-[70vh] w-full max-w-md rounded-lg object-contain"
       loading="lazy"
@@ -172,6 +180,16 @@ export default function EventDetailScreen() {
       </div>
     </main>
   );
+}
+
+// True when the backend rejected the fetch with the draft-visibility 403:
+// `_enforce_event_read_visibility` only raises event.perm_denied with
+// action=view_draft_event when the event IS a draft and the viewer isn't a
+// host/co-host/manager (or pending cohost), so the action implies draft state
+// — no separate status fetch is needed to know the event is unpublished.
+function isDraftVisibilityRejection(err: unknown): boolean {
+  if (getApiStatus(err) !== 403) return false;
+  return getErrorParams(err, Code.Event.PermDenied)?.action === 'view_draft_event';
 }
 
 // Hides the normal datetime line while a poll is active (no start time yet).
@@ -255,8 +273,19 @@ function MemberRsvpControl({
   const user = useAuthStore((s) => s.user);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp, rsvpLocked } = eventMemberSectionFlags(event, isAuthed ? user : null);
+  const { showRsvp, rsvpLocked, membershipBlocksRsvp } = eventMemberSectionFlags(
+    event,
+    isAuthed ? user : null,
+  );
   if (!showRsvp) return null;
+  if (membershipBlocksRsvp) {
+    if (rsvpLocked) return null;
+    return (
+      <p className="text-muted text-center text-sm">
+        attend an official or club event to unlock rsvps 🌱
+      </p>
+    );
+  }
 
   return (
     <MyRsvpSection
@@ -296,7 +325,8 @@ function LoginOrJoinSection({ event }: { event: Event }) {
       </div>
       <p className="text-foreground-tertiary mt-4 text-sm">
         if you're not a member yet, look for the official events in blue on the calendar — once
-        you've come to one of those, you'll be able to sign up for all of the events on here!
+        you've come to one of those and filled out your join request, you'll be able to sign up for
+        all of the events on here!
       </p>
     </section>
   );

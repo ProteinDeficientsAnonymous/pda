@@ -60,6 +60,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'end time must be after the start time';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
+    case Code.Event.OfficialNoPlusOnes:
+      return "official and club events can't allow +1s";
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -76,6 +78,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "events with no invited users or rsvps can't be cancelled — delete instead";
     case Code.Event.InvalidStatusTransition:
       return 'invalid status change';
+    case Code.Event.HasRsvps:
+      return "can't send this event back to draft — people have already rsvp'd";
+    case Code.Event.PastCannotBeUnpublished:
+      return "past events can't go back to draft";
     case Code.Event.CancelBeforeDelete:
       return 'cancel this event before deleting it';
     case Code.Event.RsvpInvalidStatus:
@@ -94,6 +100,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.WaitlistOrderStale:
+      return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.RsvpCouldNotBeCreated:
@@ -326,12 +334,18 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
       return "that's not a valid birthday";
+    case Code.User.InvalidVeganniversary:
+      return "that's not a valid veganniversary";
 
     // Survey
     case Code.Survey.NotFound:
       return 'survey not found';
+    case Code.Survey.Closed:
+      return 'this survey is closed — responses are no longer accepted';
     case Code.Survey.SlugAlreadyExists:
       return 'a survey with that slug already exists';
+    case Code.Survey.ClosesBeforeOpens:
+      return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
     case Code.Survey.NoDatetimePollQuestion:
@@ -388,6 +402,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'that number is already in the community — try logging in instead';
     case Code.JoinRequest.PhoneAlreadyPending:
       return "a request for this number is already pending — we'll be in touch soon";
+    case Code.JoinRequest.PhoneAlreadyTentative:
+      return 'you already have an account — try logging in instead';
     case Code.JoinRequest.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -420,6 +436,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       const maxMb = typeof err.params?.max_mb === 'number' ? err.params.max_mb : null;
       return maxMb !== null ? `photo must be under ${String(maxMb)} mb` : 'photo is too large';
     }
+    case Code.Photo.Unsafe:
+      return "that photo can't be processed — try a smaller image";
 
     // Attendance import
     case Code.AttendanceImport.CsvEmpty:
@@ -433,6 +451,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
 
+    // Attendance mark
+    case Code.AttendanceMark.EventOrTitleRequired:
+      return 'pick an existing event or give the new event a name and date';
+    case Code.AttendanceMark.InvalidEventType:
+      return 'pick official, club, or community for the new event';
+    case Code.AttendanceMark.NoMembersSelected:
+      return 'pick at least one member to mark attended';
+
     // Permission / rate
     case Code.Perm.Denied:
       return "you don't have permission to do that";
@@ -444,8 +470,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'members only';
     case Code.Page.VisibilityInvalid:
       return 'invalid visibility setting';
-    case Code.FeatureFlag.NotFound:
-      return 'feature flag not found';
     case Code.DevTools.NotFound:
       return "couldn't find that — try refreshing";
     case Code.Docs.FolderNotFound:
@@ -505,6 +529,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return max !== null
         ? `member promotion message must be at most ${String(max)} characters`
         : 'member promotion message is too long';
+    }
+
+    // Member promotion email
+    case Code.MemberPromotionEmail.BodyRequired:
+      return 'member promotion email body is required';
+    case Code.MemberPromotionEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `member promotion email must be at most ${String(max)} characters`
+        : 'member promotion email is too long';
     }
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)

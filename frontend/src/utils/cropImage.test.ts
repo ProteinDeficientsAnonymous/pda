@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cropImage } from './cropImage';
+import { cropImage, IMAGE_OP_TIMEOUT_MS, JPEG_QUALITY, JPEG_TYPE } from './cropImage';
 
 const AREA = { x: 0, y: 0, width: 100, height: 100 };
 
@@ -41,17 +41,18 @@ describe('cropImage', () => {
 
     const promise = cropImage(new Blob(['x']), AREA);
     const assertion = expect(promise).rejects.toThrow(/timed out processing image/i);
-    await vi.advanceTimersByTimeAsync(15000);
+    await vi.advanceTimersByTimeAsync(IMAGE_OP_TIMEOUT_MS);
     await assertion;
   });
 
   it('resolves with the blob when toBlob succeeds', async () => {
     stubImageThatLoads();
-    const out = new Blob(['png'], { type: 'image/png' });
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => {
+    const out = new Blob(['jpg'], { type: JPEG_TYPE });
+    const toBlob = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => {
       cb(out);
     });
 
     await expect(cropImage(new Blob(['x']), AREA)).resolves.toBe(out);
+    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), JPEG_TYPE, JPEG_QUALITY);
   });
 });

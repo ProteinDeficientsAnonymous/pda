@@ -4,6 +4,8 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { PhotoLibraryDialog } from '@/components/PhotoLibraryDialog';
 import { cn } from '@/utils/cn';
+import { EVENT_MAX_EDGE } from '@/utils/cropImage';
+import { cacheBustMediaUrl } from '@/utils/mediaUrl';
 
 interface Props {
   photoUrl: string;
@@ -19,11 +21,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const displayUrl = photoUrl
-    ? photoUpdatedAt
-      ? `${photoUrl}?v=${encodeURIComponent(photoUpdatedAt)}`
-      : photoUrl
-    : '';
+  const displayUrl = cacheBustMediaUrl(photoUrl, photoUpdatedAt);
   const hasPhoto = Boolean(displayUrl);
   const locked = (disabled ?? false) || busy;
 
@@ -111,7 +109,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         <ImageCropDialog
           file={cropFile}
           shape="rect"
-          outputSize={1200}
+          outputSize={EVENT_MAX_EDGE}
           onCancel={() => {
             setCropFile(null);
           }}

@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
@@ -13,9 +12,6 @@ import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
 const HOST_ID = 'host-user';
 
-vi.mock('@/api/featureFlags', () => ({
-  useFlag: vi.fn(),
-}));
 vi.mock('./EmailBlastDialog', () => ({
   EmailBlastDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="email-blast-dialog" /> : null,
@@ -53,7 +49,6 @@ beforeEach(() => {
 
 describe('EventDetailKebabMenu', () => {
   it('shows an edit item for a co-host, linking to the edit route', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     useAuthStore.setState({
       status: 'authed',
       user: makeUser({ id: HOST_ID }),
@@ -67,7 +62,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item for a member who is not a host', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     useAuthStore.setState({
       status: 'authed',
       user: makeUser({ id: 'regular-user' }),
@@ -80,7 +74,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item once the edit window has closed', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     useAuthStore.setState({
       status: 'authed',
       user: makeUser({ id: HOST_ID }),
@@ -100,7 +93,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('shows a check-in item linking to the attendance route', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu();
     await openMenu();
 
@@ -109,23 +101,13 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides check-in report when the event has not ended', async () => {
-    vi.mocked(useFlag).mockReturnValue(true);
     renderMenu({ eventHasEnded: false });
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: /check-in report/i })).not.toBeInTheDocument();
   });
 
-  it('hides check-in report when the flag is off', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
-    renderMenu({ eventHasEnded: true });
-    await openMenu();
-
-    expect(screen.queryByRole('menuitem', { name: /check-in report/i })).not.toBeInTheDocument();
-  });
-
-  it('shows check-in report when the event ended and the flag is on', async () => {
-    vi.mocked(useFlag).mockReturnValue(true);
+  it('shows check-in report when the event ended', async () => {
     renderMenu({ eventHasEnded: true });
     await openMenu();
 
@@ -134,7 +116,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('shows "manage rsvps" for a host on a future event', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ eventHasEnded: false, canManageRsvps: true });
     await openMenu();
 
@@ -142,8 +123,7 @@ describe('EventDetailKebabMenu', () => {
     expect(manageRsvps).toHaveAttribute('href', '/events/ev1/manage-rsvps');
   });
 
-  it('hides rsvp management once the event has ended without question history', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
+  it('hides rsvp management and question responses on a past event without questions', async () => {
     renderMenu({ eventHasEnded: true, canManageRsvps: true });
     await openMenu();
 
@@ -151,8 +131,7 @@ describe('EventDetailKebabMenu', () => {
     expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
-  it('keeps "manage rsvps" label on past events with questions', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
+  it('shows "question responses" instead of "manage rsvps" on a past event with questions', async () => {
     renderMenu({
       eventHasEnded: true,
       canManageRsvps: true,
@@ -170,14 +149,36 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
+    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toHaveAttribute(
       'href',
-      '/events/ev1/manage-rsvps',
+      '/events/ev1/responses',
     );
   });
 
-  it('keeps "manage rsvps" when only saved answer history remains', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
+  it('shows both items on a future event with questions', async () => {
+    renderMenu({
+      eventHasEnded: false,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toBeInTheDocument();
+  });
+
+  it('shows "question responses" when only saved answer history remains', async () => {
     renderMenu({
       eventHasEnded: true,
       canManageRsvps: true,
@@ -194,14 +195,10 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toHaveAttribute(
-      'href',
-      '/events/ev1/manage-rsvps',
-    );
+    expect(screen.getByRole('menuitem', { name: 'question responses' })).toBeInTheDocument();
   });
 
-  it('hides "manage rsvps" when only declined snapshots remain', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
+  it('hides "question responses" when only declined snapshots remain', async () => {
     renderMenu({
       eventHasEnded: true,
       canManageRsvps: true,
@@ -219,11 +216,10 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
   it('hides "manage rsvps" when the viewer cannot manage rsvps', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ eventHasEnded: false, canManageRsvps: false });
     await openMenu();
 
@@ -231,7 +227,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('shows email blast and group text for a published event with guests', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu();
     await openMenu();
 
@@ -240,7 +235,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides email blast for a draft event but keeps group text', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ event: { status: EventStatus.Draft } });
     await openMenu();
 
@@ -249,7 +243,6 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides email blast when there are no guests', async () => {
-    vi.mocked(useFlag).mockReturnValue(false);
     renderMenu({ event: { guests: [] } });
     await openMenu();
 

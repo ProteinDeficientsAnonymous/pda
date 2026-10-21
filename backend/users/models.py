@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import phonenumbers
 from community._validation import Code, raise_validation
+from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -86,6 +87,20 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
+    def active_tentative_members(self):
+        """Signed-in tentative applicants, filtered like ``active_members``."""
+        return (
+            self.get_queryset()
+            .filter(
+                is_member=False,
+                join_requests__status=JoinRequestStatus.TENTATIVE,
+                is_active=True,
+                is_paused=False,
+                archived_at__isnull=True,
+            )
+            .distinct()
+        )
+
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
         return self.members().filter(roles__id__in=Role.ids_with_permission(key)).distinct()
@@ -129,6 +144,12 @@ class User(AbstractUser):
     birthday_month = models.PositiveSmallIntegerField(null=True, blank=True)
     birthday_day = models.PositiveSmallIntegerField(null=True, blank=True)
     birthday_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    veganniversary_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    veganniversary_day = models.PositiveSmallIntegerField(null=True, blank=True)
+    veganniversary_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    show_veganniversary = models.BooleanField(default=True)
+    veganniversary_shoutout_opt_in = models.BooleanField(default=True)
+    has_seen_veganniversary = models.BooleanField(default=False)
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     show_phone = models.BooleanField(default=True)
@@ -137,6 +158,7 @@ class User(AbstractUser):
     hide_last_name = models.BooleanField(default=False)
     weekly_digest_opt_out = models.BooleanField(default=False)
     is_paused = models.BooleanField(default=False)
+    has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
@@ -147,6 +169,7 @@ class User(AbstractUser):
         choices=CalendarFeedScope.CHOICES,
         default=CalendarFeedScope.ALL,
     )
+    calendar_feed_excluded_types = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

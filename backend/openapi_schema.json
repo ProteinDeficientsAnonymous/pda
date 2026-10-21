@@ -76,17 +76,6 @@
             "title": "Phone Number",
             "type": "string"
           },
-          "rsvp_link_token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rsvp Link Token"
-          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -242,6 +231,98 @@
           "attendance"
         ],
         "title": "AttendanceIn",
+        "type": "object"
+      },
+      "AttendanceMarkIn": {
+        "properties": {
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "user_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceMarkIn",
+        "type": "object"
+      },
+      "AttendanceMarkOut": {
+        "properties": {
+          "created_count": {
+            "title": "Created Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "updated_count": {
+            "title": "Updated Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_title",
+          "created_count",
+          "updated_count",
+          "skipped_count"
+        ],
+        "title": "AttendanceMarkOut",
         "type": "object"
       },
       "AttendanceReportOut": {
@@ -895,11 +976,25 @@
             "title": "Non Member Going Count",
             "type": "integer"
           },
+          "optional_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Optional Question Count",
+            "type": "integer"
+          },
           "price": {
             "default": "",
             "maxLength": 300,
             "title": "Price",
             "type": "string"
+          },
+          "required_question_count": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Required Question Count",
+            "type": "integer"
           },
           "rsvp_enabled": {
             "default": true,
@@ -917,6 +1012,13 @@
             "maxLength": 20,
             "title": "Visibility",
             "type": "string"
+          },
+          "waitlisted_count": {
+            "default": 0,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Waitlisted Count",
+            "type": "integer"
           },
           "zelle_info": {
             "default": "",
@@ -1643,6 +1745,44 @@
         "title": "EventFlagStatusIn",
         "type": "object"
       },
+      "EventGuestsOut": {
+        "properties": {
+          "guests": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RSVPGuestOut"
+            },
+            "title": "Guests",
+            "type": "array"
+          },
+          "invited_user_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Ids",
+            "type": "array"
+          },
+          "invited_user_names": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Names",
+            "type": "array"
+          },
+          "invited_user_photo_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited User Photo Urls",
+            "type": "array"
+          }
+        },
+        "title": "EventGuestsOut",
+        "type": "object"
+      },
       "EventIn": {
         "properties": {
           "allow_plus_ones": {
@@ -1872,11 +2012,6 @@
             "title": "Co Host Photo Urls",
             "type": "array"
           },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
-          },
           "created_by_id": {
             "anyOf": [
               {
@@ -1943,6 +2078,16 @@
             "default": 0,
             "title": "Invited Count",
             "type": "integer"
+          },
+          "is_legacy": {
+            "default": false,
+            "title": "Is Legacy",
+            "type": "boolean"
+          },
+          "is_partiful_import": {
+            "default": false,
+            "title": "Is Partiful Import",
+            "type": "boolean"
           },
           "is_past": {
             "default": false,
@@ -2173,11 +2318,6 @@
             "title": "Co Host Photo Urls",
             "type": "array"
           },
-          "comment_count": {
-            "default": 0,
-            "title": "Comment Count",
-            "type": "integer"
-          },
           "created_by_id": {
             "anyOf": [
               {
@@ -2242,6 +2382,11 @@
             "title": "Event Type",
             "type": "string"
           },
+          "guest_rsvp_count": {
+            "default": 0,
+            "title": "Guest Rsvp Count",
+            "type": "integer"
+          },
           "guests": {
             "default": [],
             "items": {
@@ -2293,6 +2438,16 @@
             "title": "Invited User Photo Urls",
             "type": "array"
           },
+          "is_legacy": {
+            "default": false,
+            "title": "Is Legacy",
+            "type": "boolean"
+          },
+          "is_partiful_import": {
+            "default": false,
+            "title": "Is Partiful Import",
+            "type": "boolean"
+          },
           "is_past": {
             "default": false,
             "title": "Is Past",
@@ -2308,6 +2463,14 @@
               }
             ],
             "title": "Latitude"
+          },
+          "linked_surveys": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventSurveyOut"
+            },
+            "title": "Linked Surveys",
+            "type": "array"
           },
           "location": {
             "title": "Location",
@@ -2441,14 +2604,6 @@
             "default": "active",
             "title": "Status",
             "type": "string"
-          },
-          "survey_slugs": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Survey Slugs",
-            "type": "array"
           },
           "tags": {
             "default": [],
@@ -3272,33 +3427,27 @@
         "title": "EventStatsOut",
         "type": "object"
       },
-      "FeatureFlagPatchIn": {
+      "EventSurveyOut": {
         "properties": {
-          "enabled": {
-            "title": "Enabled",
-            "type": "boolean"
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
         "required": [
-          "enabled"
+          "id",
+          "title",
+          "slug"
         ],
-        "title": "FeatureFlagPatchIn",
-        "type": "object"
-      },
-      "FeatureFlagsOut": {
-        "properties": {
-          "flags": {
-            "additionalProperties": {
-              "type": "boolean"
-            },
-            "title": "Flags",
-            "type": "object"
-          }
-        },
-        "required": [
-          "flags"
-        ],
-        "title": "FeatureFlagsOut",
+        "title": "EventSurveyOut",
         "type": "object"
       },
       "FeedbackIn": {
@@ -4174,6 +4323,11 @@
             "title": "Previously Archived",
             "type": "boolean"
           },
+          "previously_rejected": {
+            "default": false,
+            "title": "Previously Rejected",
+            "type": "boolean"
+          },
           "rejected_at": {
             "anyOf": [
               {
@@ -4214,6 +4368,29 @@
             "title": "Submitted At",
             "type": "string"
           },
+          "tentative_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative At"
+          },
+          "tentative_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tentative By Name"
+          },
           "upcoming_club_count": {
             "default": 0,
             "title": "Upcoming Club Count",
@@ -4223,6 +4400,11 @@
             "default": 0,
             "title": "Upcoming Official Count",
             "type": "integer"
+          },
+          "user_has_joined_whatsapp": {
+            "default": false,
+            "title": "User Has Joined Whatsapp",
+            "type": "boolean"
           },
           "user_id": {
             "anyOf": [
@@ -4346,6 +4528,25 @@
               }
             ]
           },
+          "calendar_feed_excluded_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "official",
+                    "community",
+                    "club"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Feed Excluded Types"
+          },
           "calendar_feed_scope": {
             "anyOf": [
               {
@@ -4384,6 +4585,17 @@
               }
             ],
             "title": "First Name"
+          },
+          "has_seen_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Seen Veganniversary"
           },
           "hide_last_name": {
             "anyOf": [
@@ -4475,6 +4687,38 @@
               }
             ],
             "title": "Show Phone"
+          },
+          "show_veganniversary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Veganniversary"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Veganniversary Shoutout Opt In"
           },
           "week_start": {
             "anyOf": [
@@ -4602,6 +4846,41 @@
         "title": "MemberAttendanceRowOut",
         "type": "object"
       },
+      "MemberAttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "MemberAttendedEventOut",
+        "type": "object"
+      },
       "MemberDirectoryOut": {
         "properties": {
           "email": {
@@ -4709,6 +4988,16 @@
             "default": "",
             "title": "Pronouns",
             "type": "string"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4716,6 +5005,42 @@
           "phone_number"
         ],
         "title": "MemberProfileOut",
+        "type": "object"
+      },
+      "MemberPromotionEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberPromotionEmailOut",
+        "type": "object"
+      },
+      "MemberPromotionEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberPromotionEmailPatchIn",
         "type": "object"
       },
       "MemberPromotionMessageOut": {
@@ -5340,6 +5665,7 @@
           },
           "photo_url": {
             "default": "",
+            "description": "Empty on event detail when unsigned.",
             "title": "Photo Url",
             "type": "string"
           },
@@ -5716,6 +6042,18 @@
       },
       "SurveyIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -5738,10 +6076,34 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "maxLength": 100,
@@ -5769,6 +6131,18 @@
       },
       "SurveyListOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -5792,6 +6166,29 @@
               }
             ],
             "title": "Linked Event Id"
+          },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "response_count": {
             "default": 0,
@@ -5824,6 +6221,18 @@
       },
       "SurveyOut": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -5863,6 +6272,17 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "my_answers": {
             "anyOf": [
               {
@@ -5890,6 +6310,18 @@
             "default": false,
             "title": "One Response Per User",
             "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "poll_result": {
             "anyOf": [
@@ -5941,6 +6373,18 @@
       },
       "SurveyPatchIn": {
         "properties": {
+          "closes_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "description": {
             "anyOf": [
               {
@@ -5975,6 +6419,18 @@
             ],
             "title": "Linked Event Id"
           },
+          "max_responses": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Responses"
+          },
           "one_response_per_user": {
             "anyOf": [
               {
@@ -5985,6 +6441,18 @@
               }
             ],
             "title": "One Response Per User"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
           },
           "slug": {
             "anyOf": [
@@ -6393,6 +6861,11 @@
       },
       "UserOut": {
         "properties": {
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
           "bio": {
             "default": "",
             "title": "Bio",
@@ -6407,6 +6880,14 @@
                 "type": "null"
               }
             ]
+          },
+          "calendar_feed_excluded_types": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Calendar Feed Excluded Types",
+            "type": "array"
           },
           "calendar_feed_scope": {
             "default": "all",
@@ -6433,9 +6914,19 @@
             "title": "Full Name",
             "type": "string"
           },
+          "has_joined_whatsapp": {
+            "default": false,
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
           "has_logged_in": {
             "default": true,
             "title": "Has Logged In",
+            "type": "boolean"
+          },
+          "has_seen_veganniversary": {
+            "default": false,
+            "title": "Has Seen Veganniversary",
             "type": "boolean"
           },
           "hide_last_name": {
@@ -6561,6 +7052,26 @@
             "title": "Show Phone",
             "type": "boolean"
           },
+          "show_veganniversary": {
+            "default": true,
+            "title": "Show Veganniversary",
+            "type": "boolean"
+          },
+          "veganniversary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VeganniversaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "veganniversary_shoutout_opt_in": {
+            "default": true,
+            "title": "Veganniversary Shoutout Opt In",
+            "type": "boolean"
+          },
           "week_start": {
             "default": "sunday",
             "title": "Week Start",
@@ -6606,6 +7117,17 @@
               }
             ],
             "title": "First Name"
+          },
+          "has_joined_whatsapp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Joined Whatsapp"
           },
           "is_paused": {
             "anyOf": [
@@ -6695,6 +7217,70 @@
         "title": "UserSearchOut",
         "type": "object"
       },
+      "VeganniversaryIn": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "maximum": 31,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "maximum": 2026,
+            "minimum": 1900,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryIn",
+        "type": "object"
+      },
+      "VeganniversaryOut": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ],
+        "title": "VeganniversaryOut",
+        "type": "object"
+      },
       "VersionOut": {
         "properties": {
           "commit_sha": {
@@ -6739,6 +7325,23 @@
           "photo_url"
         ],
         "title": "VoterOut",
+        "type": "object"
+      },
+      "WaitlistOrderIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "WaitlistOrderIn",
         "type": "object"
       },
       "WelcomeTemplateOut": {
@@ -7417,6 +8020,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -7747,7 +8360,7 @@
     },
     "/api/auth/users/directory/": {
       "get": {
-        "description": "Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.",
+        "description": "Members-only directory. Respects each user's show_phone/show_email/show_birthday flags.",
         "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {
@@ -7764,6 +8377,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           }
         },
         "security": [
@@ -7964,6 +8587,67 @@
         ]
       }
     },
+    "/api/auth/users/{user_id}/attended-events/": {
+      "get": {
+        "operationId": "users__management_list_member_attended_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Member Attended Events",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/{user_id}/hard/": {
       "delete": {
         "description": "Permanently remove a member who has never logged in.\n\nUnlike ``delete_user`` (which soft-archives via ``archived_at``), this row is\ngone for good. Restricted to never-logged-in accounts \u2014 an approved entry the\nperson never actually claimed \u2014 so a real member's data is never destroyed.",
@@ -8106,6 +8790,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {
@@ -9244,6 +9938,7 @@
     },
     "/api/community/events/": {
       "get": {
+        "description": "start/end bound a calendar window; include_imported=false drops partiful/legacy rows.",
         "operationId": "community__events_list_events",
         "parameters": [
           {
@@ -9254,6 +9949,50 @@
               "default": "active",
               "title": "Status",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_imported",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Imported",
+              "type": "boolean"
             }
           }
         ],
@@ -9621,6 +10360,83 @@
         ]
       }
     },
+    "/api/community/events/attendance-mark/": {
+      "post": {
+        "operationId": "community__attendance_mark_mark_attendance",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceMarkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceMarkOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Mark Attendance",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/attendance-report/": {
       "get": {
         "description": "Per-event attendance summary, newest first, for events with any mark.",
@@ -9661,6 +10477,7 @@
     },
     "/api/community/events/{event_id}/": {
       "get": {
+        "description": "Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest.",
         "operationId": "community__events_get_event",
         "parameters": [
           {
@@ -10788,6 +11605,64 @@
           }
         ],
         "summary": "Flag Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/guests/": {
+      "get": {
+        "description": "Full signed guest and invited photos, same visibility as event detail.",
+        "operationId": "community__events_get_event_guests",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventGuestsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Guests",
         "tags": [
           "community"
         ]
@@ -12528,6 +13403,95 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/waitlist/order/": {
+      "put": {
+        "description": "Let an event host/co-host/manager set the waitlist order (Issue 1553).",
+        "operationId": "community__event_waitlist_order_reorder_waitlist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitlistOrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Reorder Waitlist",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/faq/": {
       "get": {
         "operationId": "community__guidelines_get_faq",
@@ -12590,95 +13554,6 @@
           }
         ],
         "summary": "Update Faq",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/feature-flags/": {
-      "get": {
-        "operationId": "community__feature_flags_get_feature_flags",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeatureFlagsOut"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Get Feature Flags",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/feature-flags/{key}/": {
-      "patch": {
-        "operationId": "community__feature_flags_update_feature_flag",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "key",
-            "required": true,
-            "schema": {
-              "title": "Key",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FeatureFlagPatchIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeatureFlagsOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Update Feature Flag",
         "tags": [
           "community"
         ]
@@ -13583,6 +14458,88 @@
           }
         ],
         "summary": "Unreject Join Request",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-promotion-email/": {
+      "get": {
+        "operationId": "community__member_promotion_email_get_member_promotion_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Promotion Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__member_promotion_email_update_member_promotion_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPromotionEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Promotion Email",
         "tags": [
           "community"
         ]

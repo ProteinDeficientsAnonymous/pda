@@ -65,10 +65,14 @@ def _any_in_past(dts: list[datetime]) -> bool:
     return any(dt < cutoff for dt in dts)
 
 
-def _validate_poll_options(dts: list[datetime], *, require_at_least_one: bool) -> None:
+def _validate_poll_options(
+    dts: list[datetime], *, require_at_least_one: bool, require_at_least_two: bool = False
+) -> None:
     """Raise ValidationException if the poll options are invalid."""
     if require_at_least_one and len(dts) < 1:
         raise_validation(Code.Poll.OPTIONS_REQUIRED, status_code=400)
+    if require_at_least_two and len(dts) < 2:
+        raise_validation(Code.Poll.MIN_TWO_OPTIONS, status_code=400)
     if _any_in_past(dts):
         raise_validation(Code.Poll.OPTIONS_MUST_BE_FUTURE, status_code=400)
 
@@ -181,7 +185,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if hasattr(event, "poll"):
         raise_validation(Code.Poll.EVENT_ALREADY_HAS_POLL, status_code=400)
-    _validate_poll_options(payload.options, require_at_least_one=True)
+    _validate_poll_options(payload.options, require_at_least_one=True, require_at_least_two=True)
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
         with _duplicate_option_time_guard():

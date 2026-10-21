@@ -272,13 +272,14 @@ describe('MembersScreen', () => {
           id: 'm1',
           fullName: 'Ada Lovelace',
           lastAttendedAt: new Date('2026-03-15T18:00:00Z'),
+          attendedCount: 3,
         }),
       ],
     });
 
     renderScreen();
 
-    expect(screen.getByText(/last attended mar 15, 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 events attended · last attended mar 15, 2026/i)).toBeInTheDocument();
   });
 
   it('shows "never attended" for a member with no attendance', () => {
@@ -403,6 +404,33 @@ describe('MembersScreen', () => {
     await user.click(screen.getByRole('checkbox', { name: 'organizer' }));
 
     expect(screen.getByText('1 of 3 users')).toBeInTheDocument();
+  });
+
+  it('filters to users who never attended and are not in whatsapp', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Lovelace',
+          lastAttendedAt: new Date('2026-01-05T00:00:00Z'),
+          hasJoinedWhatsapp: true,
+        }),
+        makeMember({ id: 'm2', fullName: 'Grace Hopper', hasJoinedWhatsapp: true }),
+        makeMember({ id: 'm3', fullName: 'Alan Turing' }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /everyone/i }));
+    await user.click(screen.getByRole('checkbox', { name: 'never attended an event' }));
+
+    expect(screen.getByText('2 of 3 users')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: 'not in whatsapp' }));
+
+    expect(screen.getByText('1 of 3 users')).toBeInTheDocument();
+    expect(screen.getByText('Alan Turing')).toBeInTheDocument();
   });
 
   it('shows single user count without "of" format', () => {

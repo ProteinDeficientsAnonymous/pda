@@ -7,6 +7,7 @@ import { useRoles } from '@/api/roles';
 import {
   type Member,
   useArchiveUser,
+  useMemberAttendedEvents,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
   useUpdateUser,
@@ -19,6 +20,7 @@ import MemberDetailScreen from './MemberDetailScreen';
 vi.mock('@/api/users', () => ({
   useUsers: vi.fn(),
   useArchiveUser: vi.fn(),
+  useMemberAttendedEvents: vi.fn(),
   useSendMemberMagicLink: vi.fn(),
   useUpdateMemberRoles: vi.fn(),
   useUpdateUser: vi.fn(),
@@ -42,12 +44,25 @@ const member: Member = {
   isMember: true,
   isSuperuser: false,
   isPaused: false,
+  hasJoinedWhatsapp: false,
   needsOnboarding: false,
   loginLinkRequested: false,
   lastAttendedAt: null,
+  attendedCount: 0,
   dateJoined: new Date('2026-01-01T00:00:00Z'),
   roles: [],
 };
+
+function mockAttendedEvents(
+  data: ReturnType<typeof useMemberAttendedEvents>['data'] = [],
+  state: { isPending?: boolean; isError?: boolean } = {},
+) {
+  vi.mocked(useMemberAttendedEvents).mockReturnValue({
+    data,
+    isPending: state.isPending ?? false,
+    isError: state.isError ?? false,
+  } as unknown as ReturnType<typeof useMemberAttendedEvents>);
+}
 
 function renderScreen() {
   return render(
@@ -63,6 +78,7 @@ describe('MemberDetailScreen edit form', () => {
   const updateMutateAsync = vi.fn();
 
   beforeEach(() => {
+    mockAttendedEvents();
     updateMutateAsync.mockReset();
     updateMutateAsync.mockResolvedValue(member);
 
@@ -125,6 +141,12 @@ describe('MemberDetailScreen edit form', () => {
     });
   });
 
+  it('toggles joined whatsapp directly from the detail page', async () => {
+    renderScreen();
+    await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
+    expect(updateMutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
+  });
+
   it('does not patch name fields when unchanged', async () => {
     renderScreen();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
@@ -141,6 +163,7 @@ describe('MemberDetailScreen roles section admin lock', () => {
   });
 
   beforeEach(() => {
+    mockAttendedEvents();
     vi.mocked(useUsers).mockReturnValue({
       data: [member],
       isPending: false,
@@ -214,5 +237,66 @@ describe('MemberDetailScreen roles section admin lock', () => {
 
     renderScreen();
     expect(screen.getByRole('checkbox')).not.toBeDisabled();
+  });
+});
+
+describe('MemberDetailScreen events attended', () => {
+  beforeEach(() => {
+    vi.mocked(useUsers).mockReturnValue({
+      data: [member],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    vi.mocked(useRoles).mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoles>);
+    for (const hook of [
+      useArchiveUser,
+      useSendMemberMagicLink,
+      useUpdateMemberRoles,
+      useUpdateUser,
+    ]) {
+      vi.mocked(hook).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as never);
+    }
+  });
+
+  it('lists attended events with a count and links to each event', () => {
+    mockAttendedEvents([
+      {
+        eventId: 'e2',
+        title: 'Potluck Picnic',
+        startDatetime: new Date('2026-05-02T18:00:00Z'),
+        eventType: 'official',
+      },
+      {
+        eventId: 'e1',
+        title: 'Book Club',
+        startDatetime: new Date('2026-03-15T18:00:00Z'),
+        eventType: 'community',
+      },
+    ]);
+
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: '2 events attended' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'potluck picnic' })).toHaveAttribute(
+      'href',
+      '/events/e2',
+    );
+    expect(screen.getByText(/mar 15, 2026 · community/)).toBeInTheDocument();
+  });
+
+  it('shows an empty state when the member never attended', () => {
+    mockAttendedEvents([]);
+    renderScreen();
+    expect(screen.getByText('no events attended yet')).toBeInTheDocument();
+  });
+
+  it('shows an error message when the history fails to load', () => {
+    mockAttendedEvents(undefined, { isError: true });
+    renderScreen();
+    expect(screen.getByText("couldn't load events attended")).toBeInTheDocument();
   });
 });

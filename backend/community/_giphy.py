@@ -10,6 +10,7 @@ from ninja import Query, Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
+from community._event_schemas import _MAX_EVENT_PHOTO_SIZE
 from community._shared import ErrorOut
 
 logger = logging.getLogger("pda")
@@ -38,19 +39,38 @@ class GiphySearchOut(BaseModel):
     results: list[GiphyResult]
 
 
+def _prefer_webp(webp_url: str, webp_size: int, gif_size: int) -> bool:
+    if not webp_url or webp_size <= 0 or webp_size > _MAX_EVENT_PHOTO_SIZE:
+        return False
+    return not gif_size or webp_size <= gif_size
+
+
+def _full_gif_url(images: dict) -> str:
+    gif = images.get("downsized_large") or images.get("original") or {}
+    original = images.get("original") or {}
+    gif_url, gif_size = gif.get("url") or "", int(gif.get("size") or 0)
+    webp_url, webp_size = original.get("webp") or "", int(original.get("webp_size") or 0)
+    if _prefer_webp(webp_url, webp_size, gif_size):
+        return webp_url
+    if gif_url and (not gif_size or gif_size <= _MAX_EVENT_PHOTO_SIZE):
+        return gif_url
+    return ""
+
+
 def _parse_gif(gif: dict) -> GiphyResult | None:
-    images = gif.get("images", {})
-    preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
-    # downsized_large caps at ~8 MB (still animated) so we stay under the 10 MB
-    # event-photo limit; fall back to the uncapped original if it's missing.
-    full = images.get("downsized_large") or images.get("original") or {}
-    if not preview.get("url") or not full.get("url"):
+    try:
+        images = gif.get("images", {})
+        preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
+        full_url = _full_gif_url(images)
+    except (TypeError, ValueError):
+        return None
+    if not preview.get("url") or not full_url:
         return None
     return GiphyResult(
         id=gif.get("id", ""),
         title=gif.get("title", ""),
         preview_url=preview["url"],
-        original_url=full["url"],
+        original_url=full_url,
         source="gif",
     )
 

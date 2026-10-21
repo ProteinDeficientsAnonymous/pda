@@ -3,7 +3,14 @@
 from datetime import timedelta
 
 import pytest
-from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, EventType, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    RSVPStatus,
+)
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 
@@ -158,6 +165,64 @@ class TestAttendanceReportEndpoint:
         row = response.json()["events"][0]
         # 2 attending rsvps, one with a +1 → headcount 3, matching event detail.
         assert row["going_count"] == 3
+
+    def test_counts_match_check_in_report_with_plus_ones(
+        self, api_client, host_user, members, events_admin
+    ):
+        event = _make_event(host_user, "Plus One Marks", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=members[1],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.DIDNT_GO,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=members[2],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.DIDNT_GO,
+            has_plus_one=False,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+
+        row = api_client.get(
+            "/api/community/events/attendance-report/", **_auth(events_admin)
+        ).json()["events"][0]
+        report = api_client.get(
+            f"/api/community/events/{event.id}/report/", **_auth(events_admin)
+        ).json()
+        assert row["attended_count"] == 3
+        assert row["no_show_count"] == 2
+        assert row["attended_count"] == report["attended_count"]
+        assert row["no_show_count"] == report["no_show_count"]
+
+    def test_event_with_only_plus_one_marked_is_listed(
+        self, api_client, host_user, members, events_admin
+    ):
+        event = _make_event(host_user, "Guest Only", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+
+        rows = api_client.get(
+            "/api/community/events/attendance-report/", **_auth(events_admin)
+        ).json()["events"]
+        assert len(rows) == 1
+        assert rows[0]["attended_count"] == 1
 
     def test_excludes_draft_events(self, api_client, host_user, members, events_admin):
         draft = _make_event(host_user, "Draft Event", days_ago=3)
@@ -350,3 +415,85 @@ class TestLastAttendedOnMemberList:
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))
         assert row["last_attended"] is None
+
+
+@pytest.mark.django_db
+class TestAttendedCountOnMemberList:
+    def test_counts_attended_reportable_events(
+        self, api_client, host_user, members, manage_users_headers
+    ):
+        for title, attendance in [
+            ("A", AttendanceStatus.ATTENDED),
+            ("B", AttendanceStatus.ATTENDED),
+            ("C", AttendanceStatus.DIDNT_GO),
+        ]:
+            EventRSVP.objects.create(
+                event=_make_event(host_user, title, days_ago=3),
+                user=members[0],
+                status=RSVPStatus.ATTENDING,
+                attendance=attendance,
+            )
+        cancelled = _make_event(host_user, "Cancelled", days_ago=3)
+        EventRSVP.objects.create(
+            event=cancelled,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        Event.objects.filter(pk=cancelled.pk).update(status=EventStatus.CANCELLED)
+
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        rows = {r["id"]: r for r in response.json()}
+        assert rows[str(members[0].pk)]["attended_count"] == 2
+        assert rows[str(members[1].pk)]["attended_count"] == 0
+
+
+@pytest.mark.django_db
+class TestMemberAttendedEvents:
+    def _url(self, user):
+        return f"/api/auth/users/{user.pk}/attended-events/"
+
+    def test_lists_attended_events_newest_first(
+        self, api_client, host_user, members, manage_users_headers
+    ):
+        older = _make_event(host_user, "Older", days_ago=20)
+        newer = _make_event(host_user, "Newer", days_ago=5, event_type=EventType.OFFICIAL)
+        skipped = _make_event(host_user, "Skipped", days_ago=10)
+        deleted = _make_event(host_user, "Deleted", days_ago=1)
+        for event in (older, newer, deleted):
+            EventRSVP.objects.create(
+                event=event,
+                user=members[0],
+                status=RSVPStatus.ATTENDING,
+                attendance=AttendanceStatus.ATTENDED,
+            )
+        EventRSVP.objects.create(
+            event=skipped,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+        Event.objects.filter(pk=deleted.pk).update(status=EventStatus.DELETED)
+
+        response = api_client.get(self._url(members[0]), **manage_users_headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert [e["title"] for e in body] == ["Newer", "Older"]
+        assert body[0]["event_id"] == str(newer.pk)
+        assert body[0]["event_type"] == EventType.OFFICIAL
+
+    def test_empty_when_never_attended(self, api_client, members, manage_users_headers):
+        response = api_client.get(self._url(members[0]), **manage_users_headers)
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_requires_manage_users(self, api_client, members, events_admin):
+        response = api_client.get(self._url(members[0]), **_auth(events_admin))
+        assert response.status_code == 403
+
+    def test_unknown_user_404(self, api_client, manage_users_headers):
+        response = api_client.get(
+            "/api/auth/users/00000000-0000-0000-0000-000000000000/attended-events/",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404

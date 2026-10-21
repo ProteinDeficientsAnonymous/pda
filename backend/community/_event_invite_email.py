@@ -2,8 +2,11 @@ import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
-from django.utils import timezone
-from notifications._email_helpers import EventInviteEmailDetails, send_event_invite_email
+from notifications._email_helpers import (
+    EventInviteEmailDetails,
+    format_eastern_datetime,
+    send_event_invite_email,
+)
 from notifications.email_sender import get_email_sender
 from users._helpers import visible_display_name
 from users.models import User as UserModel
@@ -15,8 +18,7 @@ from community.models import Event
 def _format_event_when(event: Event) -> str:
     if event.datetime_tbd or event.start_datetime is None:
         return ""
-    local = timezone.localtime(event.start_datetime)
-    return local.strftime("%A, %B %d at %I:%M %p").replace(" 0", " ")
+    return format_eastern_datetime(event.start_datetime)
 
 
 def email_invited_members(request, event: Event, new_user_ids: list[str], inviter) -> None:

@@ -219,6 +219,25 @@ class TestEmailBlastSending:
             assert isinstance(to, str)
             assert "," not in to
 
+    def test_uses_bulk_email_stream(
+        self, api_client, event_with_attendees, host_headers, fake_email_sender, monkeypatch
+    ):
+        """A blast fans out to every rsvp — it must not spend transactional quota."""
+        from unittest.mock import MagicMock
+
+        from community import _event_blasts
+        from notifications.email_sender import EmailStream
+
+        spy = MagicMock(return_value=fake_email_sender)
+        monkeypatch.setattr(_event_blasts, "get_email_sender", spy)
+        api_client.post(
+            BLAST_URL.format(event_id=event_with_attendees.id),
+            _payload(),
+            content_type="application/json",
+            **host_headers,
+        )
+        assert spy.call_args.args[0] is EmailStream.BULK
+
     def test_audience_narrowing_filter(
         self, api_client, event_with_attendees, host_headers, fake_email_sender
     ):
@@ -247,6 +266,21 @@ class TestEmailBlastSending:
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Event.BLAST_INVALID_AUDIENCE)
+
+    def test_email_includes_event_link(
+        self, api_client, event_with_attendees, host_headers, fake_email_sender, settings
+    ):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        api_client.post(
+            BLAST_URL.format(event_id=event_with_attendees.id),
+            _payload(),
+            content_type="application/json",
+            **host_headers,
+        )
+        event_url = f"https://pda.example.com/events/{event_with_attendees.slug}"
+        first_call = fake_email_sender.send.call_args_list[0]
+        assert event_url in first_call.kwargs["text"]
+        assert event_url in first_call.kwargs["html"]
 
     def test_plaintext_body_preserves_special_characters(
         self, api_client, event_with_attendees, host_headers, fake_email_sender

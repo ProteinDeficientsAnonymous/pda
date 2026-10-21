@@ -7,7 +7,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -29,18 +29,16 @@ from community.models import (
     AttendanceStatus,
     EventRSVP,
     EventType,
-    FeatureFlag,
     JoinRequest,
     JoinRequestStatus,
     RSVPStatus,
-    flag_enabled,
 )
 
 router = Router()
 
-# Approved members stay visible in the join requests list for this many days
-# after they complete onboarding, so admins can confirm someone logged in.
-APPROVED_GRACE_DAYS = 3
+# Approved/tentative members stay in the join requests list until they've been
+# onboarded this many days AND are marked as having joined the whatsapp.
+APPROVED_GRACE_DAYS = 7
 
 
 class JoinRequestAnswerOut(BaseModel):
@@ -74,11 +72,17 @@ class JoinRequestOut(BaseModel):
     status: str
     user_id: str | None = None
     previously_archived: bool = False
+    # A prior request from this number was rejected — rejected applicants may
+    # re-apply, so vettors need the history on the fresh request.
+    previously_rejected: bool = False
+    tentative_at: datetime | None = None
+    tentative_by_name: str | None = None
     approved_at: datetime | None = None
     approved_by_name: str | None = None
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     onboarded_at: datetime | None = None
+    user_has_joined_whatsapp: bool = False
     # Prior engagement of the linked (non-member) user, so admins can gauge
     # involvement before approving. "attended" = host-marked ATTENDED;
     # "upcoming" = ATTENDING on a future event. All 0 when no user is attached.
@@ -87,7 +91,7 @@ class JoinRequestOut(BaseModel):
     upcoming_official_count: int = 0
     upcoming_club_count: int = 0
     rsvp_events: list[JoinRequestRsvpOut] = []
-    # all-event-types attended history for vetting, gated on the analytics flag
+    # all-event-types attended history for vetting
     attended_events: list[JoinRequestAttendedEventOut] = []
 
 
@@ -102,7 +106,6 @@ class ApproveJoinRequestOut(BaseModel):
     phone_number: str
     status: str
     magic_link_token: str | None = None
-    rsvp_link_token: str | None = None
     user_id: str | None = None
 
 
@@ -187,8 +190,8 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
 
 
 def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
-    """All-event-types attendance history for vetting, gated on the analytics flag."""
-    if user is None or not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
+    """All-event-types attendance history for vetting."""
+    if user is None:
         return []
     return [
         JoinRequestAttendedEventOut(
@@ -209,6 +212,11 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     phone_user = User.objects.filter(phone_number=jr.phone_number).first()
     user = jr.user or phone_user
     previously_archived = phone_user is not None and phone_user.archived_at is not None
+    previously_rejected = (
+        JoinRequest.objects.filter(phone_number=jr.phone_number, status=JoinRequestStatus.REJECTED)
+        .exclude(pk=jr.pk)
+        .exists()
+    )
     breakdown = _rsvp_breakdown(user)
     return JoinRequestOut(
         id=str(jr.id),
@@ -222,11 +230,15 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         status=jr.status,
         user_id=str(user.id) if user else None,
         previously_archived=previously_archived,
+        previously_rejected=previously_rejected,
+        tentative_at=jr.tentative_at,
+        tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         onboarded_at=user.onboarded_at if user else None,
+        user_has_joined_whatsapp=user.has_joined_whatsapp if user else False,
         attended_official_count=breakdown.attended_official,
         attended_club_count=breakdown.attended_club,
         upcoming_official_count=breakdown.upcoming_official,
@@ -256,20 +268,19 @@ def list_join_requests(request):
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
-    expired_phones = User.objects.filter(
-        needs_onboarding=False, onboarded_at__lt=cutoff
-    ).values_list("phone_number", flat=True)
     # Legacy users onboarded before onboarded_at existed have it as null;
-    # treat them as already-expired so they don't linger in the list forever.
-    legacy_onboarded_phones = User.objects.filter(
-        needs_onboarding=False, onboarded_at__isnull=True
+    # treat them as past the grace window.
+    expired_phones = User.objects.filter(
+        Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True),
+        needs_onboarding=False,
+        has_joined_whatsapp=True,
     ).values_list("phone_number", flat=True)
     join_requests = (
         JoinRequest.objects.exclude(
-            status=JoinRequestStatus.APPROVED,
-            phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
+            status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
+            phone_number__in=expired_phones,
         )
-        .select_related("user", "approved_by", "rejected_by")
+        .select_related("user", "tentative_by", "approved_by", "rejected_by")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
@@ -280,7 +291,10 @@ def list_join_requests(request):
 def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     now = timezone.now()
     join_request.status = status
-    if status == JoinRequestStatus.APPROVED:
+    if status == JoinRequestStatus.TENTATIVE:
+        join_request.tentative_at = now
+        join_request.tentative_by = actor
+    elif status == JoinRequestStatus.APPROVED:
         join_request.approved_at = now
         join_request.approved_by = actor
     elif status == JoinRequestStatus.REJECTED:
@@ -298,12 +312,11 @@ _DECISION_ACTIONS = {
 
 def _apply_status_transition(
     id: UUID, status: str, actor
-) -> tuple[JoinRequest, str | None, str | None, bool, bool]:
+) -> tuple[JoinRequest, str | None, bool, bool]:
     """Stamp + provision inside one locked transaction.
 
-    Returns ``(join_request, magic_token, rsvp_link_token, user_created,
-    promoted_from_tentative)``. select_for_update() serializes concurrent
-    approvals so only one provisions.
+    Returns ``(join_request, magic_token, user_created, promoted_from_tentative)``.
+    select_for_update() serializes concurrent approvals so only one provisions.
     """
     with transaction.atomic():
         try:
@@ -319,12 +332,14 @@ def _apply_status_transition(
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         _stamp_decision(join_request, status, actor)
         if status == JoinRequestStatus.TENTATIVE:
-            _, rsvp_link_token = _provision_tentative_user(join_request, actor)
-            return join_request, None, rsvp_link_token, False, False
+            _, magic_token = _provision_tentative_user(join_request, actor)
+            return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = _provision_approved_user(join_request, actor)
-            return join_request, magic_token, None, user_created, was_tentative
-    return join_request, None, None, False, False
+            magic_token, user_created = _provision_approved_user(
+                join_request, actor, was_tentative=was_tentative
+            )
+            return join_request, magic_token, user_created, was_tentative
+    return join_request, None, False, False
 
 
 @router.patch(
@@ -369,7 +384,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
-    join_request, magic_token, rsvp_link_token, user_created, promoted = _apply_status_transition(
+    join_request, magic_token, user_created, promoted = _apply_status_transition(
         id, payload.status, request.auth
     )
 
@@ -378,7 +393,6 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             to=join_request.email,
             display_name=join_request.full_name,
             first_name=join_request.first_name,
-            magic_token=magic_token,
         )
 
     action = _DECISION_ACTIONS[payload.status]
@@ -408,7 +422,6 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             phone_number=join_request.phone_number,
             status=join_request.status,
             magic_link_token=magic_token,
-            rsvp_link_token=rsvp_link_token,
             user_id=str(approved_user.id) if approved_user else None,
         ),
     )

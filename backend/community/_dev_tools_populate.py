@@ -3,7 +3,8 @@ from dataclasses import dataclass
 
 from users.models import User
 
-from community.models import EventCoHostInvite, EventRSVP, RSVPStatus
+from community._dev_tools_content import pick_question_templates, random_answer
+from community.models import EventCoHostInvite, EventRSVP, EventRsvpQuestion, RSVPStatus
 from community.models.choices import CoHostInviteStatus
 
 
@@ -13,6 +14,7 @@ class RsvpCounts:
     non_member_going: int
     maybe: int
     cant_go: int
+    waitlisted: int
     max_attendees: int | None
 
 
@@ -130,7 +132,7 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
     rows = []
     member_counts = {
         RSVPStatus.ATTENDING: member_attending,
-        RSVPStatus.WAITLISTED: member_waitlisted,
+        RSVPStatus.WAITLISTED: member_waitlisted + counts.waitlisted,
         RSVPStatus.MAYBE: counts.maybe,
         RSVPStatus.CANT_GO: counts.cant_go,
     }
@@ -146,6 +148,11 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
         for user in pick_filler_users(count, is_member=False, exclude_ids=exclude_ids):
             rows.append(EventRSVP(event=event, user=user, status=status))
 
+    # bulk_create skips EventRSVP.save(), which normally assigns waitlist positions.
+    waitlisted_rows = [row for row in rows if row.status == RSVPStatus.WAITLISTED]
+    for position, row in enumerate(waitlisted_rows, start=1):
+        row.waitlist_position = position
+
     EventRSVP.objects.bulk_create(rows)
 
 
@@ -154,3 +161,37 @@ def populate_invited_users(event, *, count: int) -> None:
     exclude_ids |= set(event.rsvps.values_list("user_id", flat=True))
     users = pick_filler_users(count, is_member=True, exclude_ids=exclude_ids)
     event.invited_users.add(*users)
+
+
+def populate_rsvp_questions(event, *, required_count: int, optional_count: int) -> None:
+    """Going + waitlisted guests answer every required question and ~half the optional ones."""
+    total = required_count + optional_count
+    if total == 0:
+        return
+    required_flags = [True] * required_count + [False] * optional_count
+    secrets.SystemRandom().shuffle(required_flags)
+    templates = pick_question_templates(total)
+    questions = EventRsvpQuestion.objects.bulk_create(
+        [
+            EventRsvpQuestion(
+                event=event,
+                label=template.label,
+                field_type=template.field_type,
+                options=list(template.options),
+                required=required,
+                display_order=order,
+            )
+            for order, (template, required) in enumerate(
+                zip(templates, required_flags, strict=True)
+            )
+        ]
+    )
+
+    rsvps = list(event.rsvps.filter(status__in=[RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED]))
+    for rsvp in rsvps:
+        rsvp.questionnaire_responses = {
+            str(question.id): {"label": question.label, "answer": random_answer(template)}
+            for question, template in zip(questions, templates, strict=True)
+            if question.required or secrets.randbelow(2)
+        }
+    EventRSVP.objects.bulk_update(rsvps, ["questionnaire_responses"])

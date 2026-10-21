@@ -184,6 +184,16 @@ function EventRow({ event }: { event: Event }) {
             official
           </span>
         ) : null}
+        {event.isPartifulImport ? (
+          <span className="bg-surface-dim text-foreground-secondary rounded-full px-2 py-0.5">
+            partiful import · not on calendar
+          </span>
+        ) : null}
+        {event.isLegacy ? (
+          <span className="bg-surface-dim text-foreground-secondary rounded-full px-2 py-0.5">
+            legacy · not on calendar
+          </span>
+        ) : null}
         {event.eventType === EventType.Club ? (
           <span
             className="rounded-full px-2 py-0.5"

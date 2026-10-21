@@ -13,12 +13,15 @@ export const Code = {
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
     OfficialMustBePublic: 'event.official_must_be_public',
+    OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
     AuthRequired: 'event.auth_required',
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
     NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
+    HasRsvps: 'event.has_rsvps',
+    PastCannotBeUnpublished: 'event.past_cannot_be_unpublished',
     InvalidStatusTransition: 'event.invalid_status_transition',
     CancelBeforeDelete: 'event.cancel_before_delete',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
@@ -29,6 +32,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
@@ -144,10 +148,13 @@ export const Code = {
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
+    InvalidVeganniversary: 'user.invalid_veganniversary',
   },
   Survey: {
     NotFound: 'survey.not_found',
+    Closed: 'survey.closed',
     SlugAlreadyExists: 'survey.slug_already_exists',
+    ClosesBeforeOpens: 'survey.closes_before_opens',
     QuestionNotFound: 'survey.question_not_found',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
@@ -168,6 +175,7 @@ export const Code = {
     AlreadyMember: 'join_request.already_member',
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
     PhoneAlreadyPending: 'join_request.phone_already_pending',
+    PhoneAlreadyTentative: 'join_request.phone_already_tentative',
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
@@ -180,6 +188,7 @@ export const Code = {
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
     TooLarge: 'photo.too_large',
+    Unsafe: 'photo.unsafe',
   },
   AttendanceImport: {
     CsvEmpty: 'attendance_import.csv_empty',
@@ -187,6 +196,11 @@ export const Code = {
     EventOrTitleRequired: 'attendance_import.event_or_title_required',
     InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
+  },
+  AttendanceMark: {
+    EventOrTitleRequired: 'attendance_mark.event_or_title_required',
+    InvalidEventType: 'attendance_mark.invalid_event_type',
+    NoMembersSelected: 'attendance_mark.no_members_selected',
   },
   Perm: {
     Denied: 'perm.denied',
@@ -197,9 +211,6 @@ export const Code = {
   Page: {
     MembersOnly: 'page.members_only',
     VisibilityInvalid: 'page.visibility_invalid',
-  },
-  FeatureFlag: {
-    NotFound: 'feature_flag.not_found',
   },
   DevTools: {
     NotFound: 'dev_tools.not_found',
@@ -240,6 +251,10 @@ export const Code = {
     BodyRequired: 'member_promotion_message.body_required',
     BodyTooLong: 'member_promotion_message.body_too_long',
   },
+  MemberPromotionEmail: {
+    BodyRequired: 'member_promotion_email.body_required',
+    BodyTooLong: 'member_promotion_email.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -249,12 +264,15 @@ export type ValidationCode =
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
   | 'event.official_must_be_public'
+  | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
   | 'event.auth_required'
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
   | 'event.no_attendees_cannot_be_cancelled'
+  | 'event.has_rsvps'
+  | 'event.past_cannot_be_unpublished'
   | 'event.invalid_status_transition'
   | 'event.cancel_before_delete'
   | 'event.flag_already_flagged'
@@ -265,6 +283,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
@@ -354,8 +373,11 @@ export type ValidationCode =
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
+  | 'user.invalid_veganniversary'
   | 'survey.not_found'
+  | 'survey.closed'
   | 'survey.slug_already_exists'
+  | 'survey.closes_before_opens'
   | 'survey.question_not_found'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
@@ -374,6 +396,7 @@ export type ValidationCode =
   | 'join_request.already_member'
   | 'join_request.phone_already_invited'
   | 'join_request.phone_already_pending'
+  | 'join_request.phone_already_tentative'
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
@@ -384,16 +407,19 @@ export type ValidationCode =
   | 'join_request.guidelines_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
+  | 'photo.unsafe'
   | 'attendance_import.csv_empty'
   | 'attendance_import.csv_malformed'
   | 'attendance_import.event_or_title_required'
   | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
+  | 'attendance_mark.event_or_title_required'
+  | 'attendance_mark.invalid_event_type'
+  | 'attendance_mark.no_members_selected'
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
   | 'page.visibility_invalid'
-  | 'feature_flag.not_found'
   | 'dev_tools.not_found'
   | 'docs.folder_not_found'
   | 'docs.parent_folder_not_found'
@@ -414,7 +440,9 @@ export type ValidationCode =
   | 'tentative_approval_message.body_required'
   | 'tentative_approval_message.body_too_long'
   | 'member_promotion_message.body_required'
-  | 'member_promotion_message.body_too_long';
+  | 'member_promotion_message.body_too_long'
+  | 'member_promotion_email.body_required'
+  | 'member_promotion_email.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -423,12 +451,15 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
   'event.official_must_be_public': [],
+  'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
   'event.auth_required': [],
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
   'event.no_attendees_cannot_be_cancelled': [],
+  'event.has_rsvps': [],
+  'event.past_cannot_be_unpublished': [],
   'event.invalid_status_transition': [],
   'event.cancel_before_delete': [],
   'event.flag_already_flagged': [],
@@ -439,6 +470,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
@@ -528,8 +560,11 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
+  'user.invalid_veganniversary': [],
   'survey.not_found': [],
+  'survey.closed': [],
   'survey.slug_already_exists': [],
+  'survey.closes_before_opens': [],
   'survey.question_not_found': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],
@@ -548,6 +583,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.already_member': [],
   'join_request.phone_already_invited': [],
   'join_request.phone_already_pending': [],
+  'join_request.phone_already_tentative': [],
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
@@ -558,16 +594,19 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.guidelines_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
+  'photo.unsafe': [],
   'attendance_import.csv_empty': [],
   'attendance_import.csv_malformed': [],
   'attendance_import.event_or_title_required': [],
   'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
+  'attendance_mark.event_or_title_required': [],
+  'attendance_mark.invalid_event_type': [],
+  'attendance_mark.no_members_selected': [],
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],
   'page.visibility_invalid': ['allowed'],
-  'feature_flag.not_found': [],
   'dev_tools.not_found': [],
   'docs.folder_not_found': [],
   'docs.parent_folder_not_found': [],
@@ -589,4 +628,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tentative_approval_message.body_too_long': ['max_length'],
   'member_promotion_message.body_required': [],
   'member_promotion_message.body_too_long': ['max_length'],
+  'member_promotion_email.body_required': [],
+  'member_promotion_email.body_too_long': ['max_length'],
 };

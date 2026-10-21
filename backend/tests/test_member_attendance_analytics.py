@@ -9,13 +9,10 @@ from community.models import (
     EventRSVP,
     EventStatus,
     EventType,
-    FeatureFlag,
     RSVPStatus,
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-
-from tests.conftest import set_flag
 
 MEMBERS_URL = "/api/community/events/attendance-analytics/members/"
 
@@ -23,11 +20,6 @@ MEMBERS_URL = "/api/community/events/attendance-analytics/members/"
 def _auth(user):
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
-@pytest.fixture
-def flag_on(db):
-    set_flag(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS)
 
 
 @pytest.fixture
@@ -76,21 +68,15 @@ def _make_event(host_user, title, days_ago, event_type=EventType.CLUB):
 
 @pytest.mark.django_db
 class TestMemberAttendanceAnalyticsEndpoint:
-    def test_requires_flag(self, api_client, events_admin, member):
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
-        assert response.status_code == 403
-
-    def test_requires_manage_events_permission(self, api_client, flag_on, member):
+    def test_requires_manage_events_permission(self, api_client, member):
         response = api_client.get(MEMBERS_URL, **_auth(member))
         assert response.status_code == 403
 
-    def test_unauthenticated_rejected(self, api_client, flag_on):
+    def test_unauthenticated_rejected(self, api_client):
         response = api_client.get(MEMBERS_URL)
         assert response.status_code == 401
 
-    def test_qualifying_count_and_last_date(
-        self, api_client, flag_on, host_user, member, events_admin
-    ):
+    def test_qualifying_count_and_last_date(self, api_client, host_user, member, events_admin):
         older = _make_event(host_user, "Older Club", days_ago=100, event_type=EventType.CLUB)
         newer = _make_event(host_user, "Newer Official", days_ago=10, event_type=EventType.OFFICIAL)
         for ev in (older, newer):
@@ -109,7 +95,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["compliant"] is True
 
     def test_community_event_never_counts_as_qualifying(
-        self, api_client, flag_on, host_user, member, events_admin
+        self, api_client, host_user, member, events_admin
     ):
         community_event = _make_event(
             host_user, "Community Hang", days_ago=5, event_type=EventType.COMMUNITY
@@ -128,7 +114,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["compliant"] is False
 
     def test_outside_12mo_window_excluded_from_count(
-        self, api_client, flag_on, host_user, member, events_admin
+        self, api_client, host_user, member, events_admin
     ):
         old_event = _make_event(host_user, "Ancient Club", days_ago=400, event_type=EventType.CLUB)
         EventRSVP.objects.create(
@@ -145,7 +131,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["last_qualifying_at"] is not None
         assert row["is_pause_candidate"] is True
 
-    def test_didnt_go_and_cancel_counts(self, api_client, flag_on, host_user, member, events_admin):
+    def test_didnt_go_and_cancel_counts(self, api_client, host_user, member, events_admin):
         event = _make_event(host_user, "No Show Event", days_ago=5)
         EventRSVP.objects.create(
             event=event,
@@ -167,7 +153,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["cancel_count"] == 1
 
     def test_didnt_go_count_regardless_of_later_status_change(
-        self, api_client, flag_on, host_user, member, events_admin
+        self, api_client, host_user, member, events_admin
     ):
         event = _make_event(host_user, "Flipped Event", days_ago=5)
         EventRSVP.objects.create(
@@ -181,15 +167,13 @@ class TestMemberAttendanceAnalyticsEndpoint:
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
 
-    def test_never_attended_is_pause_candidate(
-        self, api_client, flag_on, host_user, member, events_admin
-    ):
+    def test_never_attended_is_pause_candidate(self, api_client, host_user, member, events_admin):
         response = api_client.get(MEMBERS_URL, **_auth(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["last_qualifying_at"] is None
         assert row["is_pause_candidate"] is True
 
-    def test_pause_candidates_sorted_first(self, api_client, flag_on, host_user, events_admin):
+    def test_pause_candidates_sorted_first(self, api_client, host_user, events_admin):
         from users.models import User
 
         compliant = User.objects.create_user(
@@ -210,7 +194,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         ids = [r["user_id"] for r in response.json()["members"]]
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
-    def test_paused_member_included_and_labeled(self, api_client, flag_on, host_user, events_admin):
+    def test_paused_member_included_and_labeled(self, api_client, host_user, events_admin):
         from users.models import User
 
         paused = User.objects.create_user(
@@ -225,7 +209,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert row["is_paused"] is True
         assert row["is_pause_candidate"] is False
 
-    def test_archived_member_excluded(self, api_client, flag_on, events_admin):
+    def test_archived_member_excluded(self, api_client, events_admin):
         from users.models import User
 
         archived = User.objects.create_user(
@@ -239,7 +223,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         ids = [r["user_id"] for r in response.json()["members"]]
         assert str(archived.pk) not in ids
 
-    def test_non_member_excluded(self, api_client, flag_on, events_admin):
+    def test_non_member_excluded(self, api_client, events_admin):
         from users.models import User
 
         guest = User.objects.create_user(
@@ -250,7 +234,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert str(guest.pk) not in ids
 
     def test_attended_mark_counts_regardless_of_later_status_change(
-        self, api_client, flag_on, host_user, member, events_admin
+        self, api_client, host_user, member, events_admin
     ):
         event = _make_event(host_user, "Flipped Event", days_ago=2)
         EventRSVP.objects.create(

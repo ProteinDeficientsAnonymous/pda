@@ -50,6 +50,7 @@ export interface WireEvent {
   attending_count?: number;
   waitlisted_count?: number;
   invited_count?: number;
+  guest_rsvp_count?: number;
 
   datetime_tbd?: boolean;
   has_poll?: boolean;
@@ -75,7 +76,7 @@ export interface WireEvent {
     display_order?: number;
   }[];
   viewer_user_id?: string | null;
-  survey_slugs?: string[];
+  linked_surveys?: { id: string; title: string; slug: string }[];
   invited_user_ids?: string[];
   invited_user_names?: string[];
   invited_user_photo_urls?: string[];
@@ -93,6 +94,8 @@ export interface WireEvent {
 
   is_past?: boolean;
   status?: string;
+  is_partiful_import?: boolean;
+  is_legacy?: boolean;
 }
 
 interface WireTag {
@@ -183,6 +186,7 @@ export function mapEvent(e: WireEvent): Event {
     attendingCount: e.attending_count ?? 0,
     waitlistedCount: e.waitlisted_count ?? 0,
     invitedCount: e.invited_count ?? 0,
+    guestRsvpCount: e.guest_rsvp_count ?? 0,
 
     datetimeTbd: e.datetime_tbd ?? false,
     hasPoll: e.has_poll ?? false,
@@ -201,7 +205,7 @@ export function mapEvent(e: WireEvent): Event {
     myQuestionnaireResponses: mapQuestionnaireResponses(e.my_questionnaire_responses),
     rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
     viewerUserId: e.viewer_user_id ?? null,
-    surveySlugs: e.survey_slugs ?? [],
+    linkedSurveys: e.linked_surveys ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],
     invitedUserPhotoUrls: e.invited_user_photo_urls ?? [],
@@ -219,5 +223,41 @@ export function mapEvent(e: WireEvent): Event {
 
     isPast: e.is_past ?? false,
     status: e.status ?? 'active',
+    isPartifulImport: e.is_partiful_import ?? false,
+    isLegacy: e.is_legacy ?? false,
+  };
+}
+
+export interface WireEventGuests {
+  guests?: WireGuest[];
+  invited_user_ids?: string[];
+  invited_user_names?: string[];
+  invited_user_photo_urls?: string[];
+}
+
+export function mapEventGuests(
+  w: WireEventGuests,
+): Pick<Event, 'guests' | 'invitedUserIds' | 'invitedUserNames' | 'invitedUserPhotoUrls'> {
+  return {
+    guests: (w.guests ?? []).map(mapGuest),
+    invitedUserIds: w.invited_user_ids ?? [],
+    invitedUserNames: w.invited_user_names ?? [],
+    invitedUserPhotoUrls: w.invited_user_photo_urls ?? [],
+  };
+}
+
+/** Keep the live guest list; fill photoUrl from /guests/. Invited photos stay on event detail. */
+export function mergeEventGuestPhotos(
+  event: Event,
+  photos: Pick<Event, 'guests'> | undefined,
+): Event {
+  if (!photos) return event;
+  const photoById = new Map(photos.guests.map((g) => [g.userId, g.photoUrl]));
+  return {
+    ...event,
+    guests: event.guests.map((g) => {
+      const photoUrl = photoById.get(g.userId);
+      return photoUrl !== undefined ? { ...g, photoUrl } : g;
+    }),
   };
 }

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -142,6 +142,30 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
+  it('does not offer the waitlist when editing an attending rsvp at capacity', () => {
+    renderSection(
+      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Attending }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /RSVP/i });
+    expect(within(dialog).queryByText('join the waitlist')).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'save' })).toBeInTheDocument();
+  });
+
+  it('offers the waitlist when a maybe switches to going at capacity', () => {
+    renderSection(
+      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Maybe }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /RSVP/i });
+    expect(within(dialog).getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+  });
+
   it('removes the RSVP when "remove rsvp" is tapped in the edit box', async () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
 
@@ -253,6 +277,22 @@ describe('MyRsvpSection — leave waitlist error handling (issue #633)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
+  });
+});
+
+describe('MyRsvpSection — rsvp submit error', () => {
+  it('shows the error inside the rsvp dialog, not on the page', async () => {
+    setRsvpMutate.mockRejectedValue(new Error('boom'));
+    renderSection(makeEvent({ myRsvp: null }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+
+    const dialog = screen.getByRole('dialog', { name: /rsvp/i });
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      /couldn't update your rsvp/i,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 });
 

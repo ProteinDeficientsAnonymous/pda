@@ -11,6 +11,12 @@ export const EventType = {
   Club: 'club',
 } as const;
 
+export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
+
+export function isOfficialOrClub(type: string): boolean {
+  return type === EventType.Official || type === EventType.Club;
+}
+
 export const EventVisibility = {
   Public: 'public',
   MembersOnly: 'members_only',
@@ -76,6 +82,12 @@ export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof Atten
 export interface EventTag {
   id: string;
   name: string;
+  slug: string;
+}
+
+export interface EventLinkedSurvey {
+  id: string;
+  title: string;
   slug: string;
 }
 
@@ -154,6 +166,9 @@ export interface Event {
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
+  /** RSVP rows from outside the current co-hosts.
+   *  0 means the API allows unpublishing back to draft. */
+  guestRsvpCount: number;
 
   datetimeTbd: boolean;
   hasPoll: boolean;
@@ -173,7 +188,7 @@ export interface Event {
   myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
-  surveySlugs: string[];
+  linkedSurveys: EventLinkedSurvey[];
   invitedUserIds: string[];
   invitedUserNames: string[];
   invitedUserPhotoUrls: string[];
@@ -192,6 +207,8 @@ export interface Event {
 
   isPast: boolean;
   status: string;
+  isPartifulImport: boolean;
+  isLegacy: boolean;
 }
 
 export interface PendingCohostInvite {
@@ -214,6 +231,18 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   if (!user) return false;
   if (isHosting(event, user.id)) return true;
   return hasPermission(user, Permission.ManageEvents);
+}
+
+// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
+const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
+
+export function canTentativeMemberRsvp(event: Event): boolean {
+  return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
+}
+
+// Mirrors backend is_tentative_member: only tentative applicants sign in without membership.
+export function isTentativeMember(user: Pick<User, 'isMember'> | null | undefined): boolean {
+  return user?.isMember === false;
 }
 
 export function canPublicRsvp(event: Event): boolean {

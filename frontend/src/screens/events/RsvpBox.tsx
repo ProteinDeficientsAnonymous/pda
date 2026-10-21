@@ -34,6 +34,7 @@ interface Props {
   allowComment?: boolean;
   atCapacity?: boolean;
   busy?: boolean;
+  error?: string | null;
   questions?: readonly RsvpQuestionDraft[];
   initialAnswers?: Readonly<Record<string, RsvpAnswerValue | undefined>>;
   onConfirm: (args: ConfirmArgs) => void;
@@ -51,6 +52,7 @@ export function RsvpBox({
   allowComment,
   atCapacity = false,
   busy = false,
+  error = null,
   questions = [],
   initialAnswers = {},
   onConfirm,
@@ -179,6 +181,12 @@ export function RsvpBox({
 
               {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
             </div>
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="text-destructive shrink-0 text-sm">
+              {error}
+            </p>
           ) : null}
 
           <div className="border-border flex shrink-0 items-center justify-between gap-2 border-t pt-3">

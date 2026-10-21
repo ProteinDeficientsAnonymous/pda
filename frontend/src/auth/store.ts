@@ -2,7 +2,9 @@ import { create } from 'zustand';
 
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
+import { eventKeys } from '@/api/events';
 import { queryClient } from '@/api/queryClient';
+import { clearStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import type { ConsentTypeValue } from '@/models/consent';
 import type { User } from '@/models/user';
 
@@ -21,7 +23,7 @@ interface AuthState {
   profileStepActive: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
   magicLogin: (token: string) => Promise<void>;
-  restoreSession: () => Promise<void>;
+  restoreSession: (onSessionToken?: authApi.SessionTokenListener) => Promise<void>;
   completeOnboarding: (payload: {
     newPassword: string;
     firstName?: string | undefined;
@@ -56,6 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { access, user } = await authApi.login(phoneNumber, password);
       queryClient.clear();
+      clearStoredRsvpToken();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
       set({ status: 'unauthed', user: null, accessToken: null });
@@ -69,6 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { access, user } = await authApi.magicLogin(token);
       queryClient.clear();
+      clearStoredRsvpToken();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
       // Preserve the existing session on failure. If the caller was already
@@ -84,10 +88,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  async restoreSession() {
+  async restoreSession(onSessionToken) {
     set({ status: 'loading' });
-    const result = await authApi.restoreSession();
+    const result = await authApi.restoreSession(onSessionToken);
     if (result) {
+      clearStoredRsvpToken();
       set({ status: 'authed', user: result.user, accessToken: result.access, booted: true });
     } else {
       set({ status: 'unauthed', user: null, accessToken: null, booted: true });
@@ -98,6 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { startProfileStep: shouldStartProfileStep, ...apiPayload } = payload;
     const user = await authApi.completeOnboarding(apiPayload);
     set(shouldStartProfileStep ? { user, profileStepActive: true } : { user });
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   finishProfileStep() {
@@ -107,10 +113,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async acceptConsents(consentTypes) {
     const user = await authApi.acceptConsents(consentTypes);
     set({ user });
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   async changePassword(current, next) {
     await authApi.changePassword(current, next);
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   async updateProfile(patch) {

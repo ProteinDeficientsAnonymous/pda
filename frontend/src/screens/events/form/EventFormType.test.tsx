@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
+import { EventType, EventVisibility } from '@/models/event';
 
 import { EventFormType } from './EventFormType';
 
@@ -31,52 +32,79 @@ describe('EventFormType', () => {
     expect(screen.queryByText('make it a pda club event')).not.toBeInTheDocument();
   });
 
-  it('official toggle sets official type and forces public visibility', async () => {
+  it('official toggle sets official type, forces public visibility, and turns off +1s', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ visibility: 'members_only' })}
+        values={values({ visibility: EventVisibility.MembersOnly })}
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'official', visibility: 'public' });
+    expect(onChange).toHaveBeenCalledWith({
+      eventType: EventType.Official,
+      visibility: EventVisibility.Public,
+      allowPlusOnes: false,
+      cashappLink: '$pdanyc',
+    });
   });
 
-  it('club toggle sets club type and forces public visibility', async () => {
+  it('club toggle sets club type, forces public visibility, and turns off +1s', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ visibility: 'members_only' })}
+        values={values({ visibility: EventVisibility.MembersOnly })}
         onChange={onChange}
         canTagOfficial={false}
         canTagClub
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'club', visibility: 'public' });
+    expect(onChange).toHaveBeenCalledWith({
+      eventType: EventType.Club,
+      visibility: EventVisibility.Public,
+      allowPlusOnes: false,
+    });
   });
 
-  it('turning a type off reverts to community without forcing visibility', async () => {
+  it('official toggle does not overwrite existing cashapp link', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
-        values={values({ eventType: 'official' })}
+        values={values({ visibility: EventVisibility.MembersOnly, cashappLink: '@existinghandle' })}
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'community' });
+    expect(onChange).toHaveBeenCalledWith({
+      eventType: EventType.Official,
+      visibility: EventVisibility.Public,
+      allowPlusOnes: false,
+    });
+  });
+
+  it('turning a type off reverts to community without forcing visibility or +1s', async () => {
+    const onChange = vi.fn();
+    render(
+      <EventFormType
+        values={values({ eventType: EventType.Official })}
+        onChange={onChange}
+        canTagOfficial
+        canTagClub={false}
+      />,
+    );
+    await userEvent.click(screen.getByRole('switch'));
+    expect(onChange).toHaveBeenCalledWith({ eventType: EventType.Community });
   });
 
   it('with both permissions, the club toggle is off while official is selected', () => {
     render(
       <EventFormType
-        values={values({ eventType: 'official' })}
+        values={values({ eventType: EventType.Official })}
         onChange={vi.fn()}
         canTagOfficial
         canTagClub

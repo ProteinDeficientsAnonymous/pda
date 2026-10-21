@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import httpx
 import pytest
+from community._giphy import _full_gif_url, _parse_gif
 
 _URL = "/api/community/giphy/search/"
 
@@ -109,27 +110,6 @@ class TestImageSearch:
             ]
         }
 
-    def test_gif_prefers_downsized_large_over_original(self, api_client, auth_headers, settings):
-        settings.GIPHY_API_KEY = "giphy-key"
-        settings.PEXELS_API_KEY = ""
-        payload = {
-            "data": [
-                {
-                    "id": "big",
-                    "title": "party",
-                    "images": {
-                        "fixed_width": {"url": "https://example.com/big-small.gif"},
-                        "downsized_large": {"url": "https://example.com/big-large.gif"},
-                        "original": {"url": "https://example.com/big.gif"},
-                    },
-                }
-            ]
-        }
-        with patch("community._giphy.httpx.get", side_effect=_by_url(gif_payload=payload)):
-            response = api_client.get(f"{_URL}?q=party", **auth_headers)
-        assert response.status_code == 200
-        assert response.json()["results"][0]["original_url"] == "https://example.com/big-large.gif"
-
     def test_works_with_only_pexels_key(self, api_client, auth_headers, settings):
         settings.GIPHY_API_KEY = ""
         settings.PEXELS_API_KEY = "pexels-key"
@@ -184,6 +164,73 @@ class TestImageSearch:
             else:
                 limits["gif"] = params["limit"]
         assert limits == {"gif": 6, "photo": 3}
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "images, expected",
+    [
+        (
+            {
+                "downsized_large": {"url": "https://example.com/large.gif"},
+                "original": {"url": "https://example.com/orig.gif"},
+            },
+            "https://example.com/large.gif",
+        ),
+        (
+            {
+                "downsized_large": {"url": "https://example.com/large.gif", "size": "8000000"},
+                "original": {
+                    "url": "https://example.com/orig.gif",
+                    "webp": "https://example.com/orig.webp",
+                    "webp_size": "1200000",
+                },
+            },
+            "https://example.com/orig.webp",
+        ),
+        (
+            {
+                "downsized_large": {"url": "https://example.com/large.gif", "size": "1500000"},
+                "original": {
+                    "url": "https://example.com/orig.gif",
+                    "webp": "https://example.com/orig.webp",
+                    "webp_size": "4000000",
+                },
+            },
+            "https://example.com/large.gif",
+        ),
+        (
+            {
+                "downsized_large": {"url": "https://example.com/large.gif", "size": "12000000"},
+                "original": {
+                    "url": "https://example.com/orig.gif",
+                    "webp": "https://example.com/orig.webp",
+                    "webp_size": "11000000",
+                },
+            },
+            "",
+        ),
+    ],
+)
+def test_full_gif_url(images, expected):
+    assert _full_gif_url(images) == expected
+
+
+@pytest.mark.unit
+def test_parse_gif_drops_malformed_size():
+    assert (
+        _parse_gif(
+            {
+                "id": "bad",
+                "title": "party",
+                "images": {
+                    "fixed_width": {"url": "https://example.com/small.gif"},
+                    "downsized_large": {"url": "https://example.com/large.gif", "size": "1.2MB"},
+                },
+            }
+        )
+        is None
+    )
 
 
 def _query_terms(mock_get) -> set[str]:

@@ -55,7 +55,7 @@ export default function JoinRequestsScreen() {
     fullName: string;
     firstName: string;
     phoneNumber: string;
-    rsvpLinkToken: string | null;
+    magicLinkToken: string | null;
   } | null>(null);
   const [memberPromotionMessageFor, setMemberPromotionMessageFor] = useState<{
     fullName: string;
@@ -104,7 +104,7 @@ export default function JoinRequestsScreen() {
           fullName: result.fullName,
           firstName: result.firstName,
           phoneNumber: result.phoneNumber,
-          rsvpLinkToken: result.rsvpLinkToken,
+          magicLinkToken: result.magicLinkToken,
         });
       }
     } catch (err) {
@@ -238,7 +238,7 @@ export default function JoinRequestsScreen() {
           fullName={tentativeMessageFor.fullName}
           firstName={tentativeMessageFor.firstName}
           phoneNumber={tentativeMessageFor.phoneNumber}
-          rsvpLinkToken={tentativeMessageFor.rsvpLinkToken}
+          magicLinkToken={tentativeMessageFor.magicLinkToken}
         />
       ) : null}
       {memberPromotionMessageFor ? (
@@ -250,7 +250,6 @@ export default function JoinRequestsScreen() {
           fullName={memberPromotionMessageFor.fullName}
           firstName={memberPromotionMessageFor.firstName}
           phoneNumber={memberPromotionMessageFor.phoneNumber}
-          magicLinkToken={memberPromotionMessageFor.magicLinkToken}
         />
       ) : null}
       {confirmElement}
@@ -262,8 +261,8 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
   if (filter === Filter.APPROVED) {
     return (
       <p className="text-muted mb-3 text-xs">
-        sorted newest first — approved members show here until 3 days after their first login, then
-        this tab clears them out automatically
+        sorted newest first — approved members stay here until it's been 7 days since their first
+        login and they're marked as joined the whatsapp
       </p>
     );
   }
@@ -284,18 +283,18 @@ const DECISION_CONFIRM_PROPS: Record<
   { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
 > = {
   [JoinRequestStatus.APPROVED]: {
-    title: 'approve request',
-    confirmLabel: 'approve',
-    destructive: false,
+    title: 'skip tentative and fully approve?',
+    confirmLabel: 'yes, fully approve',
+    destructive: true,
     message: (name) =>
-      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+      `heads up: this is the legacy direct-approval flow — it skips tentative approval entirely.\n\n${name} becomes a full member right away and gets a login link. this cannot be undone.\n\nif they haven't come to an event yet, cancel and use "tentatively approve" instead.`,
   },
   manually_approved: {
     title: 'approve request',
     confirmLabel: 'approve',
     destructive: false,
     message: (name) =>
-      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+      `approve ${name} as a full member? this cannot be undone — you can't un-approve someone.`,
   },
   [JoinRequestStatus.TENTATIVE]: {
     title: 'tentatively approve request',
@@ -308,8 +307,7 @@ const DECISION_CONFIRM_PROPS: Record<
     title: 'reject request',
     confirmLabel: 'reject',
     destructive: true,
-    message: (name) =>
-      `reject ${name}? once you reject someone you can't un-reject them — are you sure?`,
+    message: (name) => `reject ${name}? are you sure? you can un-reject them later.`,
   },
 };
 
@@ -324,7 +322,8 @@ function confirmPropsForDecision(status: Decision, name: string) {
 }
 
 function sortKey(request: JoinRequestSummary): number {
-  const stamp = request.approvedAt ?? request.rejectedAt ?? request.submittedAt;
+  const stamp =
+    request.approvedAt ?? request.rejectedAt ?? request.tentativeAt ?? request.submittedAt;
   return new Date(stamp).getTime();
 }
 

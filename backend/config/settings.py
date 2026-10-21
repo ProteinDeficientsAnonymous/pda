@@ -74,11 +74,15 @@ AUTH_USER_MODEL = "users.User"
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
+# Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.
 CACHES = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
     "ratelimit": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
+        # Django default is 300. ~80 B2 objects today + short-lived rl: keys;
+        # 2k is ~10× photos plus rate-limit room before a cull.
+        "OPTIONS": {"MAX_ENTRIES": 2_000},
     },
 }
 
@@ -127,6 +131,8 @@ if os.environ.get("B2_KEY_ID"):
             "bucket_name": os.environ["B2_BUCKET_NAME"],
             "endpoint_url": os.environ["B2_ENDPOINT_URL"],
             "region_name": os.environ.get("B2_REGION", "us-west-004"),
+            # 7d: covers cached API payloads / OG scrapers without minting forever.
+            "querystring_expire": 60 * 60 * 24 * 7,
         },
     }
 
@@ -230,6 +236,13 @@ RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")
 
 if IS_PRODUCTION and RESEND_API_KEY and not RESEND_FROM_EMAIL:
     raise ValueError("RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured")
+
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+BREVO_FROM_EMAIL = os.environ.get("BREVO_FROM_EMAIL", "")
+BREVO_FROM_NAME = os.environ.get("BREVO_FROM_NAME", "pda")
+
+if IS_PRODUCTION and BREVO_API_KEY and not BREVO_FROM_EMAIL:
+    raise ValueError("BREVO_FROM_EMAIL must be set when BREVO_API_KEY is configured")
 
 # Frontend URL used to construct magic-login links in transactional emails.
 # In production, set to the public app URL (e.g. https://pda.example.com).

@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
 import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
+import { useUpdateUser } from '@/api/users';
 import { makeRequest } from '@/test/fixtures';
 
 import JoinRequestsScreen from './JoinRequestsScreen';
@@ -22,10 +23,16 @@ vi.mock('@/api/join', async (importOriginal) => {
   };
 });
 
+vi.mock('@/api/users', () => ({
+  useUpdateUser: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+}));
+
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
@@ -52,6 +59,36 @@ function mockResult(data: JoinRequestSummary[]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('JoinRequestsScreen whatsapp toggle', () => {
+  it('flips joined whatsapp for an approved request with a linked user', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useUpdateUser).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateUser>);
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.APPROVED,
+        approvedAt: '2026-01-10T00:00:00Z',
+        userId: 'u1',
+      }),
+    ]);
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
+
+    await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
+
+    expect(useUpdateUser).toHaveBeenCalledWith('u1');
+    expect(mutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
+  });
+
+  it('does not show the toggle for pending requests', () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING })]);
+    renderScreen();
+    expect(screen.queryByRole('switch', { name: /joined whatsapp/i })).not.toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestsScreen sort', () => {
@@ -271,13 +308,24 @@ describe('JoinRequestsScreen pending actions', () => {
     expect(screen.getByRole('button', { name: 'reject' })).toBeInTheDocument();
   });
 
+  it('should confirm the named applicant without claiming reject is irreversible', async () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING, fullName: 'Ada Lovelace' })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'reject' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/reject ada lovelace\?/i)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/can't un-reject/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/you can un-reject them later/i)).toBeInTheDocument();
+  });
+
   it('calls decide with tentative status when tentatively approve is confirmed', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       fullName: 'Ada Lovelace',
       firstName: 'Ada',
       phoneNumber: '+16505550001',
-      magicLinkToken: null,
-      rsvpLinkToken: 'rsvp-tok',
+      magicLinkToken: 'magic-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
@@ -301,8 +349,7 @@ describe('JoinRequestsScreen pending actions', () => {
       fullName: 'Ada Lovelace',
       firstName: 'Ada',
       phoneNumber: '+16505550001',
-      magicLinkToken: null,
-      rsvpLinkToken: 'rsvp-tok',
+      magicLinkToken: 'magic-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
@@ -322,6 +369,21 @@ describe('JoinRequestsScreen pending actions', () => {
 });
 
 describe('JoinRequestsScreen tentative section', () => {
+  it('shows who tentatively approved the request and when', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.TENTATIVE,
+        tentativeAt: '2026-03-01T18:00:00Z',
+        tentativeByName: 'Sam Vettor',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+  });
+
   it('shows a manually approve button for tentative requests', async () => {
     mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
 
@@ -356,6 +418,30 @@ describe('JoinRequestsScreen tentative section', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
 
     expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
+  });
+
+  it('warns that direct approve is the legacy flow and cannot be undone', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-pending', status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'approve' }));
+    const confirmDialog = screen.getByRole('dialog');
+
+    expect(within(confirmDialog).getByText(/legacy direct-approval flow/i)).toBeInTheDocument();
+    expect(within(confirmDialog).getByText(/cannot be undone/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      within(confirmDialog).getByRole('button', { name: 'yes, fully approve' }),
+    );
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-pending',
+      status: JoinRequestStatus.APPROVED,
+    });
   });
 
   it('calls decide with approved status when manually approve is clicked', async () => {

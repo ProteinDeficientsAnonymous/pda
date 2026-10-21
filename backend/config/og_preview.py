@@ -16,9 +16,11 @@ _PREVIEWABLE_STATUSES = frozenset({EventStatus.ACTIVE, EventStatus.CANCELLED})
 
 
 def _absolute(path: str) -> str:
-    """Turn a root-relative path into an absolute URL under the public app origin."""
+    """Absolute URL under FRONTEND_BASE_URL; pass through existing http(s) URLs."""
     if not path:
         return ""
+    if path.startswith(("http://", "https://")):
+        return path
     return f"{settings.FRONTEND_BASE_URL.rstrip('/')}{path}"
 
 

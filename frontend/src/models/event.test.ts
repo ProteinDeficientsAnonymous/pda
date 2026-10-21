@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 import {
   eventClass,
   EventStatus,
   EventType,
   EventVisibility,
+  isTentativeMember,
   myRsvpLabel,
   RsvpServerStatus,
   spotsLeft,
@@ -106,5 +107,19 @@ describe('myRsvpLabel', () => {
 
   it('returns null for an unrecognized status', () => {
     expect(myRsvpLabel(makeEvent({ myRsvp: 'bogus' }))).toBeNull();
+  });
+});
+
+describe('isTentativeMember', () => {
+  it('is true for a signed-in non-member', () => {
+    expect(isTentativeMember(makeUser({ isMember: false }))).toBe(true);
+  });
+
+  it('is false for a member', () => {
+    expect(isTentativeMember(makeUser())).toBe(false);
+  });
+
+  it('is false when signed out', () => {
+    expect(isTentativeMember(null)).toBe(false);
   });
 });

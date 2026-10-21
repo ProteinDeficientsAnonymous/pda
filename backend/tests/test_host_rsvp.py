@@ -42,6 +42,13 @@ def guest(db):
 
 
 @pytest.fixture
+def non_member(db):
+    return User.objects.create_user(
+        phone_number="+12025559105", first_name="Walkin", is_member=False
+    )
+
+
+@pytest.fixture
 def other_member(db):
     return User.objects.create_user(phone_number="+12025559104", password="x", first_name="Other")
 
@@ -86,6 +93,20 @@ class TestSetGuestRsvp:
         assert EventRSVP.objects.filter(
             event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING
         ).exists()
+
+    def test_host_changes_non_member_rsvp(self, api_client, host_rsvp_event, host_user, non_member):
+        EventRSVP.objects.create(
+            event=host_rsvp_event, user=non_member, status=RSVPStatus.ATTENDING
+        )
+        response = api_client.post(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{non_member.pk}/rsvp/",
+            {"status": RSVPStatus.CANT_GO},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=non_member)
+        assert rsvp.status == RSVPStatus.CANT_GO
 
     def test_cohost_can_change_guest_rsvp(self, api_client, host_rsvp_event, cohost_user, guest):
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
@@ -250,6 +271,17 @@ class TestRemoveGuestRsvp:
         )
         assert response.status_code == 204
         assert not EventRSVP.objects.filter(event=host_rsvp_event, user=guest).exists()
+
+    def test_host_removes_non_member_rsvp(self, api_client, host_rsvp_event, host_user, non_member):
+        EventRSVP.objects.create(
+            event=host_rsvp_event, user=non_member, status=RSVPStatus.ATTENDING
+        )
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{non_member.pk}/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 204
+        assert not EventRSVP.objects.filter(event=host_rsvp_event, user=non_member).exists()
 
     def test_cohost_can_remove_guest_rsvp(self, api_client, host_rsvp_event, cohost_user, guest):
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)

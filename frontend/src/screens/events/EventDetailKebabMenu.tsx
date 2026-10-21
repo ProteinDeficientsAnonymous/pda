@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
-import { Feature } from '@/models/featureFlags';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { canEditEvent } from './eventEditGate';
 import { GroupTextDialog } from './GroupTextDialog';
-import { hasSavedQuestionnaireResponses } from './rsvpQuestions';
+import { hasQuestionHistory } from './rsvpQuestions';
 
 interface Props {
   event: Event;
@@ -24,12 +22,10 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const [emailBlastOpen, setEmailBlastOpen] = useState(false);
   const [groupTextOpen, setGroupTextOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const user = useAuthStore((s) => s.user);
-  const showCheckInReport = eventHasEnded && reportFlagOn;
-  const hasQuestionHistory =
-    event.rsvpQuestions.length > 0 || hasSavedQuestionnaireResponses(event);
-  const showManageRsvps = canManageRsvps && (!eventHasEnded || hasQuestionHistory);
+  const showCheckInReport = eventHasEnded;
+  const showManageRsvps = canManageRsvps && !eventHasEnded;
+  const showQuestionResponses = canManageRsvps && hasQuestionHistory(event);
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
   const showEdit = canEditEvent(event, user);
 
@@ -88,6 +84,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               }}
             >
               manage rsvps
+            </MenuLink>
+          ) : null}
+          {showQuestionResponses ? (
+            <MenuLink
+              to={`/events/${eventId}/responses`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              question responses
             </MenuLink>
           ) : null}
           <MenuLink

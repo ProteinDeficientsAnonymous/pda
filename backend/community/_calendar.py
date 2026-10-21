@@ -64,6 +64,51 @@ def generate_calendar_token(request):
     )
 
 
+def _feed_events(user: UserModel):
+    """Events for a member's subscription feed, after scope and type filters.
+
+    user(UserModel): the feed's subscriber
+    return(QuerySet): active, non-TBD events from the last 30 days onward
+    """
+    cutoff = timezone.now() - timedelta(days=30)
+    events = (
+        Event.objects.filter(
+            start_datetime__gte=cutoff,
+            datetime_tbd=False,
+            status=EventStatus.ACTIVE,
+            is_partiful_import=False,
+            is_legacy=False,
+        )
+        .select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users")
+        .order_by("start_datetime")
+    )
+
+    mine = (
+        Q(created_by=user)
+        | Q(co_hosts=user)
+        | Q(invited_users=user)
+        | Q(
+            rsvps__user=user,
+            rsvps__status__in=[RSVPStatus.ATTENDING, RSVPStatus.MAYBE],
+        )
+    )
+
+    # own events bypass the type filter
+    excluded_types = (
+        user.calendar_feed_excluded_types
+        if isinstance(user.calendar_feed_excluded_types, list)
+        else []
+    )
+    if excluded_types:
+        events = events.exclude(Q(event_type__in=excluded_types) & ~mine).distinct()
+
+    if user.calendar_feed_scope == CalendarFeedScope.MINE:
+        events = events.filter(mine).distinct()
+
+    return events
+
+
 @router.get("/calendar/feed/", auth=None)
 def calendar_feed(request, token: str = ""):
     if not token:
@@ -83,30 +128,7 @@ def calendar_feed(request, token: str = ""):
     cal.add("version", "2.0")
     cal.add("x-wr-calname", "PDA Events")
 
-    cutoff = timezone.now() - timedelta(days=30)
-    events = (
-        Event.objects.filter(
-            start_datetime__gte=cutoff,
-            datetime_tbd=False,
-            status=EventStatus.ACTIVE,
-        )
-        .select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users")
-        .order_by("start_datetime")
-    )
-
-    if user.calendar_feed_scope == CalendarFeedScope.MINE:
-        events = events.filter(
-            Q(created_by=user)
-            | Q(co_hosts=user)
-            | Q(invited_users=user)
-            | Q(
-                rsvps__user=user,
-                rsvps__status__in=[RSVPStatus.ATTENDING, RSVPStatus.MAYBE],
-            )
-        ).distinct()
-
-    for event in events:
+    for event in _feed_events(user):
         if event.visibility == PageVisibility.INVITE_ONLY:
             co_host_ids = {str(c.id) for c in event.co_hosts.all()}
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
@@ -181,8 +203,9 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
     desc = _event_ics_description(event, target_url, is_authed)
     if desc:
         vevent.add("description", desc)
-    if event.location:
-        vevent.add("location", event.location)
+    location = _gated(event.location, "", is_authed)
+    if location:
+        vevent.add("location", location)
     return vevent
 
 

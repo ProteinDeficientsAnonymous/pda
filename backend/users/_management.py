@@ -6,7 +6,7 @@ import re
 from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
-from community.models import AttendanceStatus
+from community.models import AttendanceStatus, EventRSVP
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -32,6 +32,7 @@ from users.schemas import (
     BulkUserCreateOut,
     BulkUserResult,
     ErrorOut,
+    MemberAttendedEventOut,
     UserCreateIn,
     UserCreateOut,
     UserOut,
@@ -273,11 +274,61 @@ def list_users(request, include_non_members: bool = False):
             last_attended=dj_models.Max(
                 "event_rsvps__event__start_datetime",
                 filter=attended & reportable,
-            )
+            ),
+            attended_count=dj_models.Count(
+                "event_rsvps__event",
+                filter=attended & reportable,
+                distinct=True,
+            ),
         )
         .order_by("phone_number")
     )
     return Status(200, [UserOut.from_user(u) for u in users])
+
+
+@router.get(
+    "/users/{user_id}/attended-events/",
+    response={200: list[MemberAttendedEventOut], 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def list_member_attended_events(request, user_id: str):
+    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=user_id,
+                details={
+                    "endpoint": "list_member_attended_events",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="list_member_attended_events")
+    if not User.objects.filter(pk=user_id, archived_at__isnull=True).exists():
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+    rsvps = (
+        EventRSVP.objects.filter(
+            reportable_events_q(), user_id=user_id, attendance=AttendanceStatus.ATTENDED
+        )
+        .select_related("event")
+        .order_by("-event__start_datetime")
+    )
+    return Status(
+        200,
+        [
+            MemberAttendedEventOut(
+                event_id=str(r.event.id),
+                title=r.event.title,
+                start_datetime=r.event.start_datetime,
+                event_type=r.event.event_type,
+            )
+            for r in rsvps
+        ],
+    )
 
 
 @router.patch(
@@ -337,7 +388,7 @@ def _audit_user_update(
 
     changed = [
         f
-        for f in ("phone_number", "first_name", "last_name", "email")
+        for f in ("phone_number", "first_name", "last_name", "email", "has_joined_whatsapp")
         if getattr(payload, f, None) is not None
     ]
     if changed:
@@ -377,6 +428,8 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     _validate_pause_change(user, payload.is_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
+    if payload.has_joined_whatsapp is not None:
+        user.has_joined_whatsapp = payload.has_joined_whatsapp
 
 
 @router.patch(

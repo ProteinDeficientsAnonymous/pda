@@ -67,6 +67,18 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.is_paused is True
 
+    def test_update_user_has_joined_whatsapp(self, api_client, manage_users_headers, other_user):
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/",
+            {"has_joined_whatsapp": True},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["has_joined_whatsapp"] is True
+        other_user.refresh_from_db()
+        assert other_user.has_joined_whatsapp is True
+
     def test_pause_strips_non_member_roles(
         self, api_client, manage_users_headers, other_user, caplog
     ):
