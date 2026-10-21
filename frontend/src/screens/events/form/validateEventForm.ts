@@ -1,15 +1,23 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { DESCRIPTION_MAX_LENGTH } from '@/screens/events/form/EventFormDetails';
+import { eventSlugError } from '@/screens/events/form/eventSlug';
 
 type Errors = Partial<Record<keyof EventFormValues, string>>;
 
 export function validateEventForm(
   values: EventFormValues,
   originalStartDatetime?: string | null,
+  originalSlug?: string,
 ): Errors {
   const errors: Errors = {};
   if (!values.title.trim()) errors.title = 'required';
   else if (values.title.length > 200) errors.title = 'under 200 chars';
+
+  // Only edit has a slug to change, and an untouched one is never re-sent.
+  if (originalSlug !== undefined && values.slug !== originalSlug) {
+    const slugError = eventSlugError(values.slug);
+    if (slugError) errors.slug = slugError;
+  }
 
   if (values.description.length > DESCRIPTION_MAX_LENGTH) errors.description = 'too long';
   if (values.location.length > 300) errors.location = 'under 300 chars';
