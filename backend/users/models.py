@@ -8,6 +8,7 @@ from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -17,6 +18,8 @@ from users.roles import Role  # noqa: F401 — re-exported so Django discovers i
 # Fallback for bare digits only — a number with an explicit country code is unaffected.
 ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
+
+HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:

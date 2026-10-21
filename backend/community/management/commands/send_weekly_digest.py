@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
-from users.models import User
+from users.models import HAS_EMAIL, User
 
 from community.models import Event, EventStatus, EventType
 
@@ -44,7 +44,7 @@ def veganniversary_groups(*, now, users) -> list[dict]:
 
 
 def _with_email(users):
-    return users.filter(email__isnull=False, weekly_digest_opt_out=False).exclude(email="")
+    return users.filter(HAS_EMAIL, weekly_digest_opt_out=False)
 
 
 class Command(BaseCommand):
