@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,7 +9,9 @@ import {
   downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
   type SurveyQuestionSummary,
+  type SurveyResponseAdmin,
   useAdminSurvey,
+  useDeleteSurveyResponse,
   useFinalizeSurveyPoll,
   useSurveyPollTallies,
   useSurveyQuestionSummaries,
@@ -17,6 +19,7 @@ import {
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyResponsesScreen() {
@@ -41,6 +44,23 @@ export default function SurveyResponsesScreen() {
   const summaries = useSurveyQuestionSummaries(
     summarizedQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
   );
+  const deleteResponse = useDeleteSurveyResponse(surveyId);
+  const { confirm, element: confirmElement } = useConfirm();
+
+  async function askDeleteResponse(response: SurveyResponseAdmin) {
+    const ok = await confirm({
+      title: 'delete response',
+      message: "delete this response? this can't be undone.",
+      confirmLabel: 'delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    deleteResponse.mutate(response.id, {
+      onError: (err) => {
+        toast.error(extractApiErrorOr(err, "couldn't delete that response — try again"));
+      },
+    });
+  }
 
   if (survey.isPending || responses.isPending) return <ContentLoading />;
   if (survey.isError || responses.isError) {
@@ -120,6 +140,9 @@ export default function SurveyResponsesScreen() {
                     {q.label}
                   </th>
                 ))}
+                <th className="px-3 py-2">
+                  <span className="sr-only">actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -127,19 +150,31 @@ export default function SurveyResponsesScreen() {
                 <tr key={r.id} className="border-border border-t align-top">
                   <td className="text-foreground px-3 py-2">{r.userName ?? '—'}</td>
                   <td className="text-muted px-3 py-2 text-xs">
-                    {format(new Date(r.submittedAt), 'MMM d, yyyy h:mm a').toLowerCase()}
+                    {formatSubmittedAt(r.submittedAt, survey.data.anonymous)}
                   </td>
                   {survey.data.questions.map((q) => (
                     <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
                       {renderAnswer(r.answers[q.id])}
                     </td>
                   ))}
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        void askDeleteResponse(r);
+                      }}
+                    >
+                      delete
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {confirmElement}
     </ContentContainer>
   );
 }
@@ -287,6 +322,12 @@ function TalliesTables({
       ))}
     </div>
   );
+}
+
+function formatSubmittedAt(iso: string, anonymous: boolean): string {
+  // Anonymous surveys get a server-local date only; its yyyy-mm-dd prefix is that day.
+  if (anonymous) return format(parseISO(iso.slice(0, 10)), 'MMM d, yyyy').toLowerCase();
+  return format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
 }
 
 function formatOptionLabel(iso: string): string {

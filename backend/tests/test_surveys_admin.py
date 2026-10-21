@@ -3,7 +3,7 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from community import _surveys
+from community import _surveys, _surveys_responses
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
@@ -53,6 +53,7 @@ def survey(db, surveys_admin):
 def audit_spy(monkeypatch):
     spy = MagicMock()
     monkeypatch.setattr(_surveys, "audit_log", spy)
+    monkeypatch.setattr(_surveys_responses, "audit_log", spy)
     return spy
 
 
@@ -350,12 +351,13 @@ def _denied_calls(survey_id, question_id):
         ("delete_survey_question", "delete", f"{base}/questions/{question_id}/", None),
         ("reorder_survey_questions", "put", f"{base}/questions/order/", {"question_ids": []}),
         ("list_survey_responses", "get", f"{base}/responses/", None),
+        ("delete_survey_response", "delete", f"{base}/responses/{MISSING_ID}/", None),
     ]
 
 
 @pytest.mark.django_db
 class TestManageSurveysPermission:
-    @pytest.mark.parametrize("index", range(10))
+    @pytest.mark.parametrize("index", range(11))
     def test_plain_member_denied_and_audited(
         self, api_client, auth_headers, survey, audit_spy, index
     ):

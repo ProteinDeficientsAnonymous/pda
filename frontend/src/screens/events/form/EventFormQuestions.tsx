@@ -59,7 +59,9 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
             <article className="border-border bg-surface flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border p-3">
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline text-sm font-medium">
-                  <span className="min-w-0 truncate">{q.label}</span>
+                  <span className="min-w-0 truncate" title={q.label}>
+                    {q.label}
+                  </span>
                   {q.required ? (
                     <span className="text-muted ms-1 shrink-0 text-xs">· required</span>
                   ) : null}

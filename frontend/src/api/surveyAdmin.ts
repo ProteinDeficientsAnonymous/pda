@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import { downloadFile } from './downloadFile';
-import type { SurveyQuestion, SurveyQuestionType } from './surveys';
+import {
+  mapQuestion,
+  type ShowIfCondition,
+  type SurveyQuestion,
+  type SurveyQuestionType,
+  type WireQuestion,
+} from './surveys';
 
 export interface SurveySummary {
   id: string;
@@ -70,19 +76,14 @@ interface WireSurveyFull {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   opens_at?: string | null;
   closes_at?: string | null;
   max_responses?: number | null;
   response_count?: number;
   linked_event_id?: string | null;
-  questions?: {
-    id: string;
-    label: string;
-    field_type: SurveyQuestionType;
-    options?: string[];
-    required?: boolean;
-    display_order: number;
-  }[];
+  questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
   poll_result?: {
@@ -102,21 +103,14 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     opensAt: w.opens_at ?? null,
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
-    questions: (w.questions ?? [])
-      .map((q) => ({
-        id: q.id,
-        label: q.label,
-        fieldType: q.field_type,
-        options: q.options ?? [],
-        required: q.required ?? false,
-        displayOrder: q.display_order,
-      }))
-      .sort((a, b) => a.displayOrder - b.displayOrder),
+    questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
     pollResult: w.poll_result
@@ -150,6 +144,8 @@ export interface SurveyInput {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
@@ -167,6 +163,8 @@ export function useCreateSurvey() {
         visibility: input.visibility,
         is_active: input.isActive,
         one_response_per_user: input.oneResponsePerUser,
+        anonymous: input.anonymous,
+        confirmation_message: input.confirmationMessage,
         opens_at: input.opensAt,
         closes_at: input.closesAt,
         max_responses: input.maxResponses,
@@ -192,6 +190,9 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.isActive !== undefined) body.is_active = patch.isActive;
       if (patch.oneResponsePerUser !== undefined)
         body.one_response_per_user = patch.oneResponsePerUser;
+      if (patch.anonymous !== undefined) body.anonymous = patch.anonymous;
+      if (patch.confirmationMessage !== undefined)
+        body.confirmation_message = patch.confirmationMessage;
       if (patch.opensAt !== undefined) body.opens_at = patch.opensAt;
       if (patch.closesAt !== undefined) body.closes_at = patch.closesAt;
       if (patch.maxResponses !== undefined) body.max_responses = patch.maxResponses;
@@ -226,6 +227,23 @@ export interface SurveyQuestionInput {
   fieldType: SurveyQuestionType;
   options: string[];
   required: boolean;
+  showIf: ShowIfCondition | null;
+}
+
+function questionBody(input: SurveyQuestionInput) {
+  return {
+    label: input.label,
+    field_type: input.fieldType,
+    options: input.options,
+    required: input.required,
+    show_if: input.showIf
+      ? {
+          question_id: input.showIf.questionId,
+          operator: input.showIf.operator,
+          value: input.showIf.value,
+        }
+      : null,
+  };
 }
 
 export function useCreateSurveyQuestion(surveyId: string) {
@@ -234,12 +252,7 @@ export function useCreateSurveyQuestion(surveyId: string) {
     mutationFn: async (input: SurveyQuestionInput) => {
       const { data } = await apiClient.post<SurveyQuestion>(
         `/api/community/surveys/${surveyId}/questions/`,
-        {
-          label: input.label,
-          field_type: input.fieldType,
-          options: input.options,
-          required: input.required,
-        },
+        questionBody(input),
       );
       return data;
     },
@@ -253,15 +266,10 @@ export function useUpdateSurveyQuestion(surveyId: string, questionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SurveyQuestionInput) => {
-      // PATCH has PUT semantics — always send all four fields.
+      // PATCH has PUT semantics — always send every field.
       const { data } = await apiClient.patch<SurveyQuestion>(
         `/api/community/surveys/${surveyId}/questions/${questionId}/`,
-        {
-          label: input.label,
-          field_type: input.fieldType,
-          options: input.options,
-          required: input.required,
-        },
+        questionBody(input),
       );
       return data;
     },
@@ -331,6 +339,18 @@ export function useSurveyResponses(surveyId: string | undefined) {
       }));
     },
     enabled: Boolean(surveyId),
+  });
+}
+
+export function useDeleteSurveyResponse(surveyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (responseId: string) => {
+      await apiClient.delete(`/api/community/surveys/${surveyId}/responses/${responseId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['surveys', 'admin'] });
+    },
   });
 }
 
@@ -462,4 +482,5 @@ export function useFinalizeSurveyPoll(surveyId: string) {
 
 // Re-export survey types for convenience so admin screens don't need to
 // import from two places.
-export type { Survey, SurveyQuestion, SurveyQuestionType } from './surveys';
+export type { ShowIfCondition, Survey, SurveyQuestion, SurveyQuestionType } from './surveys';
+export { ShowIfOperator } from './surveys';

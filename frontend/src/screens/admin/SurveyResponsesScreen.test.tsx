@@ -23,6 +23,7 @@ vi.mock('@/api/surveyAdmin', () => ({
   useSurveyPollTallies: vi.fn(),
   useSurveyQuestionSummaries: vi.fn(),
   useFinalizeSurveyPoll: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useDeleteSurveyResponse: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   downloadSurveyResponsesCsv: vi.fn(),
 }));
 

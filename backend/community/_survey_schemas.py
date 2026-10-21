@@ -1,11 +1,24 @@
 """Pydantic schemas for survey endpoints."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from community._field_limits import FieldLimit
-from community.models import SurveyQuestionType, SurveyVisibility
+from community.models import ShowIfOperator, SurveyQuestionType, SurveyVisibility
+
+
+class ShowIfIn(BaseModel):
+    question_id: UUID
+    operator: ShowIfOperator = ShowIfOperator.EQUALS
+    value: str = Field(max_length=FieldLimit.SHORT_TEXT)
+
+
+class ShowIfOut(BaseModel):
+    question_id: str
+    operator: str
+    value: str
 
 
 class SurveyQuestionOut(BaseModel):
@@ -15,6 +28,7 @@ class SurveyQuestionOut(BaseModel):
     options: list[str] = []
     required: bool
     display_order: int
+    show_if: ShowIfOut | None = None
 
 
 class PollResultOut(BaseModel):
@@ -53,6 +67,8 @@ class SurveyOut(BaseModel):
     visibility: str
     is_active: bool
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = ""
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
@@ -87,6 +103,8 @@ class SurveyIn(BaseModel):
     visibility: str = Field(default=SurveyVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     is_active: bool = True
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = Field(default="", max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE)
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
@@ -100,6 +118,10 @@ class SurveyPatchIn(BaseModel):
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     is_active: bool | None = None
     one_response_per_user: bool | None = None
+    anonymous: bool | None = None
+    confirmation_message: str | None = Field(
+        default=None, max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE
+    )
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
@@ -115,6 +137,7 @@ class SurveyQuestionIn(BaseModel):
     field_type: SurveyQuestionType = SurveyQuestionType.TEXT
     options: list[str] = []
     required: bool = False
+    show_if: ShowIfIn | None = None
 
 
 class SurveyQuestionOrderIn(BaseModel):
@@ -127,6 +150,10 @@ class SurveyResponseOut(BaseModel):
     user_name: str | None = None
     answers: dict
     submitted_at: datetime
+
+
+class SurveySubmitOut(SurveyResponseOut):
+    response_token: str | None = None
 
 
 # str for standard question types (text, select, number, etc.)

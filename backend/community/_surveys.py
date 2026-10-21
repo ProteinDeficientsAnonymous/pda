@@ -1,20 +1,29 @@
-"""Survey CRUD, questions, and response endpoints."""
+"""Survey CRUD and question endpoints."""
 
 import logging
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.db import transaction
+from django.db.models import Max
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
+from community._survey_conditions import (
+    assert_edit_keeps_conditions,
+    assert_order_keeps_dependencies,
+    clear_dependent_conditions,
+    resolve_question_order,
+    validate_show_if,
+)
 from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
     _survey_question_out,
+    _validate_anonymous_change,
     _validate_survey_window,
 )
 from community._survey_schemas import (
@@ -25,7 +34,6 @@ from community._survey_schemas import (
     SurveyQuestionIn,
     SurveyQuestionOrderIn,
     SurveyQuestionOut,
-    SurveyResponseOut,
 )
 from community._validation import Code, raise_validation
 from community.models import (
@@ -118,6 +126,8 @@ def create_survey(request, payload: SurveyIn):
         visibility=payload.visibility,
         is_active=payload.is_active,
         one_response_per_user=payload.one_response_per_user,
+        anonymous=payload.anonymous,
+        confirmation_message=payload.confirmation_message,
         opens_at=payload.opens_at,
         closes_at=payload.closes_at,
         max_responses=payload.max_responses,
@@ -201,6 +211,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     _validate_survey_window(
         updates.get("opens_at", survey.opens_at), updates.get("closes_at", survey.closes_at)
     )
+    _validate_anonymous_change(survey, updates)
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
@@ -261,7 +272,7 @@ def delete_survey(request, survey_id: UUID):
 
 @router.post(
     "/surveys/{survey_id}/questions/",
-    response={201: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={201: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
@@ -285,7 +296,10 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    max_order = survey.questions.count()
+    # count() ties with an existing order whenever a delete left a gap.
+    top_order = survey.questions.aggregate(top=Max("display_order"))["top"]
+    max_order = 0 if top_order is None else top_order + 1
+    show_if = validate_show_if(payload.show_if, survey_id=survey_id, display_order=max_order)
     q = SurveyQuestion.objects.create(
         survey=survey,
         label=payload.label,
@@ -293,6 +307,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         options=payload.options,
         required=payload.required,
         display_order=max_order,
+        show_if=show_if,
     )
     audit_log(
         logging.INFO,
@@ -309,7 +324,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
 
 @router.put(
     "/surveys/{survey_id}/questions/order/",
-    response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
+    response={200: list[SurveyQuestionOut], 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
@@ -333,8 +348,12 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    for idx, qid in enumerate(payload.question_ids):
-        SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
+    ordered_ids = resolve_question_order(existing, payload.question_ids)
+    assert_order_keeps_dependencies(existing, ordered_ids)
+    with transaction.atomic():
+        for idx, qid in enumerate(ordered_ids):
+            SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
     audit_log(
         logging.INFO,
         "survey_questions_reordered",
@@ -348,7 +367,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
 # Order must precede /{question_id}/ below: Django matches by registration order and would 405.
 @router.patch(
     "/surveys/{survey_id}/questions/{question_id}/",
-    response={200: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
@@ -376,6 +395,10 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.field_type = payload.field_type
     q.options = payload.options
     q.required = payload.required
+    q.show_if = validate_show_if(
+        payload.show_if, survey_id=survey_id, display_order=q.display_order
+    )
+    assert_edit_keeps_conditions(survey_id, q)
     q.save()
     audit_log(
         logging.INFO,
@@ -416,7 +439,9 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
         raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
-    q.delete()
+    with transaction.atomic():
+        clear_dependent_conditions(survey_id, question_id)
+        q.delete()
     audit_log(
         logging.INFO,
         "survey_question_deleted",
@@ -428,59 +453,3 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         ),
     )
     return Status(204, None)
-
-
-# -- Survey responses (admin) --
-
-
-def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
-    """Load a survey for an endpoint that exposes response data, gated on MANAGE_SURVEYS.
-
-    request(HttpRequest): the authenticated request.
-    survey_id(UUID): survey to load.
-    endpoint(str): operation name recorded in the permission-denied audit entry.
-    return(Survey): the survey, with questions prefetched.
-    """
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": endpoint,
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        return Survey.objects.prefetch_related("questions").get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-
-
-@router.get(
-    "/surveys/{survey_id}/responses/",
-    response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def list_survey_responses(request, survey_id: UUID):
-    survey = _load_survey_for_responses(request, survey_id, "list_survey_responses")
-    responses = survey.responses.select_related("user").all()
-    return Status(
-        200,
-        [
-            SurveyResponseOut(
-                id=str(r.id),
-                user_id=str(r.user_id) if r.user_id else None,
-                user_name=visible_display_name(r.user, request.auth) if r.user else None,
-                answers=r.answers,
-                submitted_at=r.submitted_at,
-            )
-            for r in responses
-        ],
-    )

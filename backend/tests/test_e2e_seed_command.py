@@ -99,6 +99,9 @@ def test_e2e_seed_member_screens_fixed_copy(capsys):
     assert "see the full calendar" in out["digest_html"]
     event = Event.objects.get(slug="potluck")
     assert event.title == "potluck"
+    question = event.rsvp_questions.get()
+    assert len(question.label) > 200
+    assert question.required is True
     assert event.location == "the park"
     assert out["event_id"] == str(event.id)
     assert EventRSVP.objects.filter(event=event, user=seed).exists()

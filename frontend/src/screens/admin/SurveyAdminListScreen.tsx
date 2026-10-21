@@ -166,6 +166,8 @@ function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
     visibility: 'members_only',
     isActive: true,
     oneResponsePerUser: false,
+    anonymous: false,
+    confirmationMessage: '',
     opensAt: null,
     closesAt: null,
     maxResponses: null,

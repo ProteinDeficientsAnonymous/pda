@@ -133,7 +133,7 @@ describe('EventManageRsvpsPanel', () => {
     );
   });
 
-  it('does not show edit controls for non-member guests', () => {
+  it('lets the host remove a non-member guest', () => {
     renderPanel(
       makeEvent({
         guests: [
@@ -146,7 +146,32 @@ describe('EventManageRsvpsPanel', () => {
         ],
       }),
     );
-    expect(screen.queryByRole('button', { name: /remove walkin/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/\(not a member\)/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /remove walkin/i }));
+    expect(removeGuestRsvpMutate).toHaveBeenCalledWith(
+      { userId: 'u1' },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it("lets the host change a non-member guest's status", () => {
+    renderPanel(
+      makeEvent({
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Walkin',
+            status: RsvpServerStatus.Attending,
+            isMember: false,
+          }),
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(setGuestRsvpMutate).toHaveBeenCalledWith(
+      { userId: 'u1', status: 'maybe', hasPlusOne: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it('shows an empty state with no guests', () => {
