@@ -302,6 +302,15 @@ describe('RsvpBox payment confirmation gate', () => {
     );
   });
 
+  it('skips the payment step when joining the waitlist', async () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} event={paidEvent} mode="create" atCapacity onConfirm={onConfirm} />);
+    const confirmButton = screen.getAllByRole('button', { name: /^join the waitlist$/i }).at(-1);
+    if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
+    await userEvent.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalledWith(expect.not.objectContaining({ paidConfirmed: true }));
+  });
+
   it('skips the payment step for maybe', async () => {
     const onConfirm = vi.fn();
     render(

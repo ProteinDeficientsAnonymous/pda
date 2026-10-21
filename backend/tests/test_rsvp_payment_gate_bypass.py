@@ -2,6 +2,7 @@
 
 import pytest
 from community._validation import Code
+from community._waitlist import promote_from_waitlist
 from community.models import (
     Event,
     EventPoll,
@@ -11,7 +12,9 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
+from django.db import transaction
 from django.utils import timezone
+from notifications.models import Notification
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
@@ -26,7 +29,7 @@ def _paid_event(creator, **overrides) -> Event:
 
 @pytest.mark.django_db
 class TestWaitlistPromotionBypass:
-    def test_unconfirmed_attending_at_capacity_is_rejected_before_waitlisting(
+    def test_unconfirmed_attending_at_capacity_joins_the_waitlist_unpaid(
         self, api_client, auth_headers, test_user, django_user_model
     ):
         event = _paid_event(test_user, max_attendees=1)
@@ -41,9 +44,48 @@ class TestWaitlistPromotionBypass:
             content_type="application/json",
             **auth_headers,
         )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=test_user)
+        assert rsvp.status == RSVPStatus.WAITLISTED
+        assert rsvp.paid_confirmed_at is None
+
+    def test_unpaid_waitlister_is_promoted_and_told_to_pay(
+        self, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user, max_attendees=1)
+        seated = django_user_model.objects.create_user(
+            phone_number="+14155550111", first_name="Seated", is_member=True
+        )
+        seat = EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
+        api_client.post(
+            RSVP_URL.format(event_id=event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+
+        seat.delete()
+        with transaction.atomic():
+            promote_from_waitlist(Event.objects.select_for_update().get(id=event.id))
+
+        assert EventRSVP.objects.get(event=event, user=test_user).status == RSVPStatus.ATTENDING
+        note = Notification.objects.get(recipient=test_user, event=event)
+        assert "isn't confirmed until you pay" in note.message
+
+    def test_promoted_unpaid_attendee_is_gated_on_next_write(
+        self, api_client, auth_headers, test_user
+    ):
+        event = _paid_event(test_user, max_attendees=1)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+
+        response = api_client.post(
+            RSVP_URL.format(event_id=event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
         assert response.status_code == 400
         assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
-        assert not EventRSVP.objects.filter(event=event, user=test_user).exists()
 
 
 @pytest.mark.django_db

@@ -73,7 +73,7 @@ export function RsvpBox({
     ...initialAnswers,
   }));
   const [questionErrors, setQuestionErrors] = useState<Record<string, string | undefined>>({});
-  const needsPaymentFor = usePaymentGate(event);
+  const needsPaymentFor = usePaymentGate(event, atCapacity);
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;

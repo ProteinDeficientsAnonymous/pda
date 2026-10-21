@@ -1,9 +1,10 @@
 import { type Event, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 import { eventRequiresPaymentConfirmation } from '@/utils/eventCost';
 
-export function usePaymentGate(event: Event) {
+export function usePaymentGate(event: Event, goingWouldWaitlist: boolean) {
   return (status: RsvpInputStatus) =>
     eventRequiresPaymentConfirmation(event) &&
     status === RsvpStatus.Attending &&
+    !goingWouldWaitlist &&
     !event.myPaidConfirmed;
 }
