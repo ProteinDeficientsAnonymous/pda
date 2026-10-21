@@ -48,6 +48,7 @@ from community.models.event import (
     parse_event_ref,
 )
 from community.models.join_form import JoinFormQuestion, JoinRequest
+from community.models.login_reminder import LoginReminder
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
     DatetimePollResult,
@@ -106,6 +107,7 @@ __all__ = [
     "parse_event_ref",
     "JoinFormQuestion",
     "JoinRequest",
+    "LoginReminder",
     "EventComment",
     "EventCommentReaction",
     "ReactionEmoji",

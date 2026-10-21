@@ -5,7 +5,6 @@ from datetime import timedelta
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -13,7 +12,7 @@ from notifications._email_helpers import send_magic_login_email
 from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
-from users._helpers import _create_magic_token
+from users._helpers import _create_magic_token, _magic_login_url
 from users.models import (
     PUBLIC_FORM_PHONE_REGION,
     MagicLoginToken,
@@ -178,12 +177,11 @@ def _try_email_delivery(*, request, user, magic_token) -> bool:
     if not user.email:
         return False
     try:
-        magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
         send_result = send_magic_login_email(
             sender=get_email_sender(),
             to=user.email,
             display_name=user.full_name or "",
-            magic_link_url=magic_link_url,
+            magic_link_url=_magic_login_url(magic_token),
         )
         if send_result.success:
             audit_log(

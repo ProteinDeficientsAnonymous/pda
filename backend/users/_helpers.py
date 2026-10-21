@@ -9,6 +9,7 @@ from typing import Protocol
 
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
+from django.conf import settings
 from django.db.models import prefetch_related_objects
 
 from users.models import (
@@ -87,6 +88,10 @@ def _create_magic_token(
         user, requires_password_reset=requires_password_reset, source=source
     )
     return str(magic.token)
+
+
+def _magic_login_url(token: str) -> str:
+    return f"{settings.FRONTEND_BASE_URL}/magic-login/{token}"
 
 
 def _is_last_admin(user: User) -> bool:

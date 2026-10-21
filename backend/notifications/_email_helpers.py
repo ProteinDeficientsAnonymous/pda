@@ -173,14 +173,26 @@ def send_rsvp_manage_link_email(
     )
 
 
+@dataclass(frozen=True)
+class LoginLinkEmail:
+    """An emails/ template (extending magic_login) and its subject line."""
+
+    template: str
+    subject: str
+
+
+MAGIC_LOGIN_EMAIL = LoginLinkEmail("magic_login", "your pda login link")
+
+
 def send_magic_login_email(
     *,
     sender: EmailSender,
     to: str,
     display_name: str,
     magic_link_url: str,
+    email: LoginLinkEmail = MAGIC_LOGIN_EMAIL,
 ) -> SendResult:
-    """Render and send the magic-login email.
+    """Render and send a magic-login email.
 
     Recipient validation (RFC-validity + header-injection guard) happens at the
     `EmailSender.send()` boundary, so every email type is protected uniformly.
@@ -189,11 +201,11 @@ def send_magic_login_email(
         "display_name": display_name or "",
         "magic_link_url": magic_link_url,
     }
-    html = render_to_string("emails/magic_login.html", context)
-    text = render_to_string("emails/magic_login.txt", context)
+    html = render_to_string(f"emails/{email.template}.html", context)
+    text = render_to_string(f"emails/{email.template}.txt", context)
     return sender.send(
         to=to,
-        subject="your pda login link",
+        subject=email.subject,
         html=html,
         text=text,
     )
