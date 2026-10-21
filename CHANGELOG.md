@@ -1,3 +1,10 @@
+# [0.135.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.134.1...v0.135.0) (2026-10-21)
+
+
+### Features
+
+* **digest:** weekly login reminder for members who haven't finished setup ([#1656](https://github.com/ProteinDeficientsAnonymous/pda/issues/1656)) ([ee20df4](https://github.com/ProteinDeficientsAnonymous/pda/commit/ee20df401bcd8860aeb30eec77221c12c446ba8d))
+
 ## [0.134.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.134.0...v0.134.1) (2026-10-21)
 
 
