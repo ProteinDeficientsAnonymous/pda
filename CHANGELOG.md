@@ -1,3 +1,10 @@
+# [0.137.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.3...v0.137.0) (2026-10-21)
+
+
+### Features
+
+* keep renamed-from event slugs resolving via EventSlugAlias ([#1662](https://github.com/ProteinDeficientsAnonymous/pda/issues/1662)) ([658daa9](https://github.com/ProteinDeficientsAnonymous/pda/commit/658daa92251c581497fa2f9c1ccd575aaea953d5))
+
 ## [0.136.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.2...v0.136.3) (2026-10-21)
 
 
