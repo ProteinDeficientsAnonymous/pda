@@ -25,7 +25,13 @@ from community._tentative_member_access import (
     is_tentative_member,
     tentative_member_event_q,
 )
-from community.models import Event, EventRSVP, EventStatus, PageVisibility
+from community.models import (
+    DEFAULT_EVENT_DURATION,
+    Event,
+    EventRSVP,
+    EventStatus,
+    PageVisibility,
+)
 
 
 def _list_rsvp_prefetch(auth_user):
@@ -104,7 +110,8 @@ def _filter_window(events, start: datetime | None, end: datetime | None, include
     if start is not None:
         start = _aware(start)
         events = events.filter(
-            Q(end_datetime__gte=start) | Q(end_datetime__isnull=True, start_datetime__gte=start)
+            Q(end_datetime__gte=start)
+            | Q(end_datetime__isnull=True, start_datetime__gte=start - DEFAULT_EVENT_DURATION)
         )
     if end is not None:
         events = events.filter(start_datetime__lt=_aware(end))
