@@ -2501,6 +2501,8 @@ export interface components {
             name: string;
             /** User Id */
             user_id: string;
+            /** Within 24H */
+            within_24h: boolean;
         };
         /** ChangePasswordIn */
         ChangePasswordIn: {

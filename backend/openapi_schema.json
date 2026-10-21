@@ -641,13 +641,18 @@
           "user_id": {
             "title": "User Id",
             "type": "string"
+          },
+          "within_24h": {
+            "title": "Within 24H",
+            "type": "boolean"
           }
         },
         "required": [
           "user_id",
           "name",
           "cancelled_at",
-          "days_before_event"
+          "days_before_event",
+          "within_24h"
         ],
         "title": "CancellationOut",
         "type": "object"

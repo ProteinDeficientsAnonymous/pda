@@ -121,6 +121,7 @@ export interface EventCancellation {
   name: string;
   cancelledAt: Date;
   daysBeforeEvent: number;
+  within24h: boolean;
 }
 
 export interface EventStats {
