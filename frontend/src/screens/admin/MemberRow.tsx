@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import type { Member } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 
+import { attendedCountLabel } from './attendedCountLabel';
+
 export function MemberRow({ member }: { member: Member }) {
   const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
 
@@ -61,7 +63,7 @@ function MemberRowBody({ member, initials }: { member: Member; initials: string 
           )}
           <p className="text-foreground-tertiary/80 truncate text-xs">
             {member.lastAttendedAt
-              ? `last attended ${format(member.lastAttendedAt, 'MMM d, yyyy').toLowerCase()}`
+              ? `${attendedCountLabel(member.attendedCount)} · last attended ${format(member.lastAttendedAt, 'MMM d, yyyy').toLowerCase()}`
               : 'never attended'}
           </p>
         </div>

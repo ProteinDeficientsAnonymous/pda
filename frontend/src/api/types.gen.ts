@@ -307,6 +307,23 @@ export interface paths {
         patch: operations["users__management_update_user"];
         trace?: never;
     };
+    "/api/auth/users/{user_id}/attended-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Member Attended Events */
+        get: operations["users__management_list_member_attended_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/hard/": {
         parameters: {
             query?: never;
@@ -4375,6 +4392,17 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** MemberAttendedEventOut */
+        MemberAttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
             /**
@@ -5206,6 +5234,11 @@ export interface components {
         };
         /** UserOut */
         UserOut: {
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
             /**
              * Bio
              * @default
@@ -6338,6 +6371,46 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__management_list_member_attended_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
