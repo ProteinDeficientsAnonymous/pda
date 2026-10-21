@@ -1,3 +1,10 @@
+## [0.129.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.5...v0.129.6) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1404 - refresh public rsvp without reload ([#1592](https://github.com/ProteinDeficientsAnonymous/pda/issues/1592)) ([61d7c68](https://github.com/ProteinDeficientsAnonymous/pda/commit/61d7c68e3674d92e90729bd7a325298122039849))
+
 ## [0.129.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.4...v0.129.5) (2026-10-21)
 
 
