@@ -1,3 +1,12 @@
+# [0.133.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.1...v0.133.0) (2026-10-21)
+
+
+### Features
+
+* **notifications:** 1468 - add whatsapp join reminder model and schedule ([#1646](https://github.com/ProteinDeficientsAnonymous/pda/issues/1646)) ([bc12763](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc1276344c54f845912fbadb9035f017a91414ab))
+* **notifications:** 1468 - send whatsapp join reminder emails daily ([#1480](https://github.com/ProteinDeficientsAnonymous/pda/issues/1480)) ([35986f5](https://github.com/ProteinDeficientsAnonymous/pda/commit/35986f52cbb7c644d950f44a738f4296ea0dfa43))
+* **settings:** 1468 - let members opt out of whatsapp join reminders ([#1645](https://github.com/ProteinDeficientsAnonymous/pda/issues/1645)) ([763586d](https://github.com/ProteinDeficientsAnonymous/pda/commit/763586d35b20bc7e9365932e6ac4f7c90dc3c426))
+
 ## [0.132.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.0...v0.132.1) (2026-10-21)
 
 
