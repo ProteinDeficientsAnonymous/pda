@@ -2010,7 +2010,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Responses Csv */
-        get: operations["community__surveys_get_survey_responses_csv"];
+        get: operations["community__survey_reports_get_survey_responses_csv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2044,7 +2044,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Summary */
-        get: operations["community__surveys_public_get_survey_summary"];
+        get: operations["community__survey_reports_get_survey_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -11535,7 +11535,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_get_survey_responses_csv: {
+    community__survey_reports_get_survey_responses_csv: {
         parameters: {
             query?: never;
             header?: never;
@@ -11606,7 +11606,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_public_get_survey_summary: {
+    community__survey_reports_get_survey_summary: {
         parameters: {
             query?: never;
             header?: never;

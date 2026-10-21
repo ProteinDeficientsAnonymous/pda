@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
+import { downloadFile } from './downloadFile';
 import type { SurveyQuestion, SurveyQuestionType } from './surveys';
 
 export interface SurveySummary {
@@ -433,18 +434,11 @@ export function useSurveyQuestionSummaries(surveyId: string | undefined) {
   });
 }
 
-export async function downloadSurveyResponsesCsv(surveyId: string): Promise<void> {
-  const { data } = await apiClient.get<Blob>(`/api/community/surveys/${surveyId}/responses.csv`, {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(data);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `survey-responses-${surveyId}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+export async function downloadSurveyResponsesCsv(surveyId: string, slug: string): Promise<void> {
+  await downloadFile(
+    `/api/community/surveys/${surveyId}/responses.csv`,
+    `survey-responses-${slug}.csv`,
+  );
 }
 
 export function useFinalizeSurveyPoll(surveyId: string) {

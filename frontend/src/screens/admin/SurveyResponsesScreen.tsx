@@ -63,7 +63,11 @@ export default function SurveyResponsesScreen() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DownloadCsvButton surveyId={surveyId} disabled={responses.data.length === 0} />
+          <DownloadCsvButton
+            surveyId={surveyId}
+            slug={survey.data.slug}
+            disabled={responses.data.length === 0}
+          />
           <Link
             to={`/admin/surveys/${surveyId}`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
@@ -148,13 +152,21 @@ const SUMMARIZED_TYPES = new Set<string>([
   QuestionType.Rating,
 ]);
 
-function DownloadCsvButton({ surveyId, disabled }: { surveyId: string; disabled: boolean }) {
+function DownloadCsvButton({
+  surveyId,
+  slug,
+  disabled,
+}: {
+  surveyId: string;
+  slug: string;
+  disabled: boolean;
+}) {
   const [busy, setBusy] = useState(false);
 
   async function onClick() {
     setBusy(true);
     try {
-      await downloadSurveyResponsesCsv(surveyId);
+      await downloadSurveyResponsesCsv(surveyId, slug);
     } catch {
       toast.error("couldn't download csv");
     } finally {
@@ -175,8 +187,7 @@ function DownloadCsvButton({ surveyId, disabled }: { surveyId: string; disabled:
 }
 
 function orderedCounts(counts: Record<string, number>, options: string[]): [string, number][] {
-  // js enumerates integer-like object keys numerically, which silently reorders
-  // options like "2024"/"2023" away from the order the api sent them in.
+  // js enumerates integer-like keys numerically, which would reorder options like "2024"/"2023".
   const known = options.filter((o) => o in counts);
   const rest = Object.keys(counts).filter((o) => !known.includes(o));
   return [...known, ...rest].map((o): [string, number] => [o, counts[o] ?? 0]);

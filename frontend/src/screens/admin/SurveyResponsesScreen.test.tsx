@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock('sonner', () => ({ toast: { error: toastError, success: vi.fn() } }));
+
 import {
   downloadSurveyResponsesCsv,
   useAdminSurvey,
@@ -83,7 +86,7 @@ function setup({
   responseCount?: number;
 } = {}) {
   mockSurvey.mockReturnValue(
-    mockQuery({ id: 'srv-1', title: 'feedback', questions, pollResult: null }),
+    mockQuery({ id: 'srv-1', title: 'feedback', slug: 'feedback', questions, pollResult: null }),
   );
   mockResponses.mockReturnValue(
     mockQuery(
@@ -219,13 +222,46 @@ describe('SurveyResponsesScreen summaries', () => {
     setup({ summaryState: { isPending: true, isSuccess: false, data: undefined } });
     expect(screen.getByText('loading summaries…')).toBeInTheDocument();
   });
+
+  it('should show an error message when summaries fail to load', () => {
+    setup({ summaryState: { isError: true, isSuccess: false, data: undefined } });
+    expect(screen.getByText("couldn't load summaries")).toBeInTheDocument();
+  });
+
+  it('should bucket answers outside the current options after the known ones', () => {
+    setup({
+      summaries: [
+        {
+          questionId: 'q-colour',
+          fieldType: 'radio',
+          counts: { red: 1, blue: 0, green: 1 },
+          answered: 2,
+          mean: null,
+        },
+      ],
+    });
+    const colour = screen.getByText('colour').closest('div')!;
+    const options = within(colour)
+      .getAllByRole('row')
+      .slice(1)
+      .map((tr) => tr.firstElementChild?.textContent);
+    expect(options).toEqual(['red', 'blue', 'green']);
+  });
 });
 
 describe('SurveyResponsesScreen csv download', () => {
   it('should request the csv when the button is clicked', async () => {
     setup();
     await userEvent.click(screen.getByRole('button', { name: 'download csv' }));
-    expect(mockDownload).toHaveBeenCalledWith('srv-1');
+    expect(mockDownload).toHaveBeenCalledWith('srv-1', 'feedback');
+  });
+
+  it('should toast when the download fails', async () => {
+    mockDownload.mockRejectedValueOnce(new Error('boom'));
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'download csv' }));
+    expect(toastError).toHaveBeenCalledWith("couldn't download csv");
+    expect(screen.getByRole('button', { name: 'download csv' })).toBeEnabled();
   });
 
   it('should disable the button when there are no responses', () => {
