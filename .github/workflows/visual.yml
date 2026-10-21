@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # contents: write pushes the ci__screenshots branch the comment's images live on.
-# pull-requests: write posts the diff comment. actions: read downloads the
-# baseline artifact from the last main run.
+# pull-requests: write posts the diff comment. actions: read lists Visual runs
+# and downloads the baseline artifact from main.
 permissions:
   contents: write
   pull-requests: write
@@ -45,6 +45,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+
+      # The merge-base is often a [skip ci] release commit, which never uploaded
+      # a screenshots artifact. reg-actions then treats every image as new.
+      - name: Resolve screenshot baseline
+        id: baseline
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 scripts/screenshot_baseline.py
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -97,6 +108,7 @@ jobs:
           image-directory-path: frontend/screenshots
           artifact-name: screenshots
           branch: ci__screenshots
+          target-hash: ${{ steps.baseline.outputs.sha }}
           comment-mode: changes
           outdated-comment-action: update
           enable-antialias: true
