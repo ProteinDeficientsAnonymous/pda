@@ -7,6 +7,7 @@ from community._question_answers import (
     assert_single_choice_member,
     is_answer_empty,
 )
+from community._survey_conditions import visible_question_ids
 from community._validation import Code, raise_validation
 from community.models import PollAvailability, SurveyQuestion, SurveyQuestionType
 
@@ -127,7 +128,10 @@ def _validate_survey_answers(
     questions: dict[str, SurveyQuestion],
 ) -> None:
     """Raise ValidationException if any answer fails validation."""
+    visible = visible_question_ids(questions, answers)
     for q_id, q in questions.items():
+        if q_id not in visible:
+            continue
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):
             if q.required:
@@ -145,7 +149,10 @@ def _build_survey_answers(
     questions: dict[str, SurveyQuestion],
 ) -> dict:
     result = {}
+    visible = visible_question_ids(questions, answers)
     for q_id, q in questions.items():
+        if q_id not in visible:
+            continue
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):
             continue

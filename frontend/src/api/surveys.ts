@@ -8,6 +8,20 @@ import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage
 export type SurveyQuestionType = QuestionType;
 export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = QuestionType.Text;
 
+export const ShowIfOperator = {
+  Equals: 'equals',
+  NotEquals: 'not_equals',
+  Contains: 'contains',
+} as const;
+
+export type ShowIfOperator = (typeof ShowIfOperator)[keyof typeof ShowIfOperator];
+
+export interface ShowIfCondition {
+  questionId: string;
+  operator: ShowIfOperator;
+  value: string;
+}
+
 export interface SurveyQuestion {
   id: string;
   label: string;
@@ -15,6 +29,7 @@ export interface SurveyQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
+  showIf: ShowIfCondition | null;
 }
 
 export interface Survey {
@@ -43,13 +58,38 @@ export interface Survey {
   } | null;
 }
 
-interface WireQuestion {
+export interface WireShowIf {
+  question_id: string;
+  operator: string;
+  value: string;
+}
+
+export interface WireQuestion {
   id: string;
   label: string;
   field_type: SurveyQuestionType;
   options?: string[];
   required?: boolean;
   display_order: number;
+  show_if?: WireShowIf | null;
+}
+
+export function mapQuestion(q: WireQuestion): SurveyQuestion {
+  return {
+    id: q.id,
+    label: q.label,
+    fieldType: q.field_type,
+    options: q.options ?? [],
+    required: q.required ?? false,
+    displayOrder: q.display_order,
+    showIf: q.show_if
+      ? {
+          questionId: q.show_if.question_id,
+          operator: q.show_if.operator as ShowIfOperator,
+          value: q.show_if.value,
+        }
+      : null,
+  };
 }
 
 interface WireSurvey {
@@ -103,16 +143,7 @@ function mapSurvey(w: WireSurvey): Survey {
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
-    questions: (w.questions ?? [])
-      .map((q) => ({
-        id: q.id,
-        label: q.label,
-        fieldType: q.field_type,
-        options: q.options ?? [],
-        required: q.required ?? false,
-        displayOrder: q.display_order,
-      }))
-      .sort((a, b) => a.displayOrder - b.displayOrder),
+    questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
     pollResult: w.poll_result

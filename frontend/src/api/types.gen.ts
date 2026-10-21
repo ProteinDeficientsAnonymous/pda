@@ -4878,6 +4878,32 @@ export interface components {
             /** Permissions */
             permissions?: string[] | null;
         };
+        /** ShowIfIn */
+        ShowIfIn: {
+            /** @default equals */
+            operator: components["schemas"]["ShowIfOperator"];
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * ShowIfOperator
+         * @enum {string}
+         */
+        ShowIfOperator: "equals" | "not_equals" | "contains";
+        /** ShowIfOut */
+        ShowIfOut: {
+            /** Operator */
+            operator: string;
+            /** Question Id */
+            question_id: string;
+            /** Value */
+            value: string;
+        };
         /** SseTicketOut */
         SseTicketOut: {
             /** Ticket */
@@ -5073,6 +5099,7 @@ export interface components {
              * @default false
              */
             required: boolean;
+            show_if?: components["schemas"]["ShowIfIn"] | null;
         };
         /** SurveyQuestionOrderIn */
         SurveyQuestionOrderIn: {
@@ -5095,6 +5122,7 @@ export interface components {
             options: string[];
             /** Required */
             required: boolean;
+            show_if?: components["schemas"]["ShowIfOut"] | null;
         };
         /** SurveyResponseOut */
         SurveyResponseOut: {
@@ -11367,6 +11395,15 @@ export interface operations {
                     "application/json": components["schemas"]["SurveyQuestionOut"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -11409,6 +11446,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyQuestionOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */
@@ -11493,6 +11539,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyQuestionOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */

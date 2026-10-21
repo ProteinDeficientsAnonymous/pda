@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   type SurveyQuestion,
   useAdminSurvey,
@@ -40,9 +41,15 @@ export default function SurveyBuilderScreen() {
   }
 
   async function askDelete(q: SurveyQuestion) {
+    const dependents = currentSurvey.questions
+      .filter((other) => other.showIf?.questionId === q.id)
+      .map((other) => `"${other.label}"`);
+    const conditionNote = dependents.length
+      ? ` ${dependents.join(', ')} will lose ${dependents.length === 1 ? 'its condition' : 'their conditions'} and always show.`
+      : '';
     const ok = await confirm({
       title: 'delete question',
-      message: `delete "${q.label}"? this also deletes responses to it.`,
+      message: `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
       confirmLabel: 'delete',
       destructive: true,
     });
@@ -114,6 +121,12 @@ export default function SurveyBuilderScreen() {
           </Button>
         </div>
 
+        {reorder.isError ? (
+          <p role="alert" className="text-destructive mb-2 text-sm">
+            {extractApiErrorOr(reorder.error, "couldn't reorder questions — try again")}
+          </p>
+        ) : null}
+
         {currentSurvey.questions.length === 0 ? (
           <p className="text-muted text-sm">no questions yet</p>
         ) : (
@@ -133,6 +146,7 @@ export default function SurveyBuilderScreen() {
                   <p className="text-muted text-xs">
                     {q.fieldType}
                     {q.options.length > 0 ? ` · ${String(q.options.length)} options` : ''}
+                    {q.showIf ? ' · conditional' : ''}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -165,6 +179,7 @@ export default function SurveyBuilderScreen() {
         onClose={() => {
           setCreating(false);
         }}
+        questions={currentSurvey.questions}
       />
       <SurveyQuestionDialog
         surveyId={surveyId}
@@ -172,6 +187,7 @@ export default function SurveyBuilderScreen() {
         onClose={() => {
           setEditing(null);
         }}
+        questions={currentSurvey.questions}
         existing={editing ?? undefined}
       />
       <SurveySettingsDialog

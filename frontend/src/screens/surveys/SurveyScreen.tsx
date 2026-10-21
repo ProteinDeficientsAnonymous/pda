@@ -9,6 +9,7 @@ import { clearStoredSurveyToken, getStoredSurveyToken } from '@/api/surveyTokenS
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import { QuestionField } from '@/components/questions/QuestionField';
+import { visibleQuestionIds } from '@/components/questions/questionVisibility';
 import { Button } from '@/components/ui/Button';
 import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -87,9 +88,12 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
   const finalized = survey.pollResult !== null;
   const readOnly = finalized;
 
+  const visible = visibleQuestionIds(survey.questions, answers);
+  const shownQuestions = survey.questions.filter((q) => visible.has(q.id));
+
   function validate(): boolean {
     const next: Record<string, string> = {};
-    for (const q of survey.questions) {
+    for (const q of shownQuestions) {
       if (!q.required) continue;
       const a = answers[q.id];
       if (a === undefined) {
@@ -111,6 +115,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
     // Strip empties before submit to match Flutter behavior.
     const payload: Record<string, AnswerValue> = {};
     for (const [qid, val] of Object.entries(answers)) {
+      if (!visible.has(qid)) continue;
       if (typeof val === 'string' && !val.trim()) continue;
       if (typeof val === 'object' && Object.keys(val).length === 0) continue;
       payload[qid] = val;
@@ -160,7 +165,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
       ) : null}
 
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5" noValidate>
-        {survey.questions.map((q) => (
+        {shownQuestions.map((q) => (
           <QuestionField
             key={q.id}
             question={q}
