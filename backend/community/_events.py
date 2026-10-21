@@ -69,9 +69,7 @@ from community.models import (
     Event,
     EventRsvpQuestion,
     EventStatus,
-    FeatureFlag,
     PageVisibility,
-    flag_enabled,
     is_official_or_club,
     parse_event_ref,
 )
@@ -180,9 +178,7 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
     auth_user = _authenticated_user(requesting_user)
     co_host_ids = {str(u.id) for u in co_hosts}
     viewer_is_cohost = is_cohost(auth_user, co_host_ids)
-    payment_status_visible = viewer_is_cohost and flag_enabled(
-        FeatureFlag.EVENT_PAYMENT_CONFIRMATION
-    )
+    payment_status_visible = viewer_is_cohost
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
     all_rsvps, _status, _paid, can_see_guests = _event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible

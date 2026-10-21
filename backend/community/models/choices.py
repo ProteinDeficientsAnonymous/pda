@@ -127,18 +127,3 @@ class FeedbackType(models.TextChoices):
     BUG = "bug", "Bug"
     FEATURE_REQUEST = "feature request", "Feature request"
     IMPROVEMENT = "improvement", "Improvement"
-
-
-class FeatureFlag(models.TextChoices):
-    """Registry of feature flags; pair each member with a default in FLAG_DEFAULTS."""
-
-    HOST_ATTENDANCE_REPORT = "host_attendance_report", "Host attendance report"
-    ADMIN_ATTENDANCE_ANALYTICS = "admin_attendance_analytics", "Admin attendance analytics"
-    EVENT_PAYMENT_CONFIRMATION = "event_payment_confirmation", "Event payment confirmation"
-
-
-FLAG_DEFAULTS: dict[str, bool] = {
-    FeatureFlag.HOST_ATTENDANCE_REPORT: False,
-    FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS: False,
-    FeatureFlag.EVENT_PAYMENT_CONFIRMATION: False,
-}

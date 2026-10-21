@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { type SyntheticEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,6 +8,7 @@ import { useRoles } from '@/api/roles';
 import {
   type Member,
   useArchiveUser,
+  useMemberAttendedEvents,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
   useUpdateUser,
@@ -21,6 +23,8 @@ import { ADMIN_ROLE_NAME, isAdmin } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
+
+import { attendedCountLabel } from './attendedCountLabel';
 
 export default function MemberDetailScreen() {
   const { id = '' } = useParams<{ id: string }>();
@@ -100,6 +104,8 @@ function MemberDetailView({ member }: { member: Member }) {
           <p className="text-foreground text-sm whitespace-pre-wrap">{member.bio}</p>
         </section>
       ) : null}
+
+      <MemberAttendedEventsSection memberId={member.id} />
 
       {editing ? (
         <MemberEditForm
@@ -285,6 +291,41 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
         resets password flow for this member and generates a one-time login url for you to send
         them.
       </p>
+    </section>
+  );
+}
+
+function MemberAttendedEventsSection({ memberId }: { memberId: string }) {
+  const { data: events = [], isPending, isError } = useMemberAttendedEvents(memberId);
+
+  let body;
+  if (isPending) body = <p className="text-muted text-sm">loading events…</p>;
+  else if (isError) body = <p className="text-muted text-sm">couldn't load events attended</p>;
+  else if (events.length === 0) body = <p className="text-muted text-sm">no events attended yet</p>;
+  else
+    body = (
+      <ul className="flex flex-col gap-1 text-sm">
+        {events.map((e) => (
+          <li key={e.eventId} className="flex flex-wrap items-baseline justify-between gap-x-2">
+            <Link to={`/events/${e.eventId}`} className="text-foreground hover:underline">
+              {e.title.toLowerCase()}
+            </Link>
+            <span className="text-foreground-tertiary text-xs">
+              {e.startDatetime ? format(e.startDatetime, 'MMM d, yyyy').toLowerCase() : 'date tbd'}
+              {' · '}
+              {e.eventType}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+
+  return (
+    <section className="border-border bg-surface mb-6 rounded-lg border p-4">
+      <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">
+        {isPending || isError ? 'events attended' : attendedCountLabel(events.length)}
+      </h2>
+      {body}
     </section>
   );
 }

@@ -13,14 +13,7 @@ from django.utils import timezone
 from tests._payment_helpers import (
     build_eligible_event,
     build_paid_event,
-    set_payment_flag,
 )
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    """Flag-OFF behavior is covered by test_payment_confirmation_flag_off.py."""
-    set_payment_flag(True)
 
 
 class TestEventRequiresPaymentConfirmation:
@@ -82,10 +75,6 @@ class TestRequiresPaymentGate:
         free = build_paid_event(price="", venmo_link="")
         assert requires_payment_gate(free, None, RSVPStatus.ATTENDING) is False
 
-    def test_flag_off_never_gates(self):
-        set_payment_flag(False)
-        assert requires_payment_gate(build_paid_event(), None, RSVPStatus.ATTENDING) is False
-
 
 @pytest.mark.django_db
 class TestPaymentEnforcedForEvent:
@@ -94,10 +83,6 @@ class TestPaymentEnforcedForEvent:
 
     def test_free_event_does_not(self):
         assert payment_enforced_for_event(build_paid_event(price="")) is False
-
-    def test_flag_off_does_not(self):
-        set_payment_flag(False)
-        assert payment_enforced_for_event(build_paid_event()) is False
 
 
 @pytest.mark.django_db
@@ -115,12 +100,6 @@ class TestCanSeePaymentDetails:
     def test_anon_does_not_see_on_free_event(self):
         free = build_eligible_event(price="", venmo_link="")
         assert can_see_payment_details(free, is_authed=False) is False
-
-    def test_visibility_does_not_depend_on_the_gate_flag(self):
-        """The flag governs whether payment is enforced, not who may see the cost."""
-        set_payment_flag(False)
-        assert can_see_payment_details(build_eligible_event(), is_authed=False) is True
-        assert can_see_payment_details(build_eligible_event(), is_authed=True) is True
 
     def test_needs_no_query(self, django_assert_num_queries):
         with django_assert_num_queries(0):

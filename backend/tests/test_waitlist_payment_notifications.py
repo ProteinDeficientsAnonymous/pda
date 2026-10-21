@@ -5,14 +5,9 @@ from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_payment_flag(True)
 
 
 def _paid_event(creator, **overrides) -> Event:

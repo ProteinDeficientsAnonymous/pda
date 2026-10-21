@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { type EventAttendanceRow, useAttendanceReport } from '@/api/attendanceReport';
-import { useFlag } from '@/api/featureFlags';
 import { Button } from '@/components/ui/Button';
-import { Feature } from '@/models/featureFlags';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
@@ -15,7 +13,6 @@ import { MemberAttendanceTab } from './MemberAttendanceTab';
 type Tab = 'events' | 'members';
 
 export default function AttendanceReportScreen() {
-  const membersTabEnabled = useFlag(Feature.AdminAttendanceAnalytics);
   const [tab, setTab] = useState<Tab>('events');
   const [importOpen, setImportOpen] = useState(false);
 
@@ -42,32 +39,30 @@ export default function AttendanceReportScreen() {
         }}
       />
 
-      {membersTabEnabled ? (
-        <div
-          role="tablist"
-          aria-label="attendance view"
-          className="border-border-strong bg-surface mb-4 flex w-full max-w-xs rounded-full border p-1"
+      <div
+        role="tablist"
+        aria-label="attendance view"
+        className="border-border-strong bg-surface mb-4 flex w-full max-w-xs rounded-full border p-1"
+      >
+        <TabButton
+          active={tab === 'events'}
+          onClick={() => {
+            setTab('events');
+          }}
         >
-          <TabButton
-            active={tab === 'events'}
-            onClick={() => {
-              setTab('events');
-            }}
-          >
-            events
-          </TabButton>
-          <TabButton
-            active={tab === 'members'}
-            onClick={() => {
-              setTab('members');
-            }}
-          >
-            members
-          </TabButton>
-        </div>
-      ) : null}
+          events
+        </TabButton>
+        <TabButton
+          active={tab === 'members'}
+          onClick={() => {
+            setTab('members');
+          }}
+        >
+          members
+        </TabButton>
+      </div>
 
-      {tab === 'members' && membersTabEnabled ? <MemberAttendanceTab /> : <EventsTab />}
+      {tab === 'members' ? <MemberAttendanceTab /> : <EventsTab />}
     </ContentContainer>
   );
 }
@@ -99,7 +94,6 @@ function TabButton({
 
 function EventsTab() {
   const { data, isPending, isError } = useAttendanceReport();
-  const reportEnabled = useFlag(Feature.HostAttendanceReport);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load attendance — try refreshing" />;
@@ -113,7 +107,7 @@ function EventsTab() {
       <ul className="flex flex-col gap-2">
         {data.events.map((row) => (
           <li key={row.eventId}>
-            <AttendanceRow row={row} linkable={reportEnabled} />
+            <AttendanceRow row={row} />
           </li>
         ))}
       </ul>
@@ -121,7 +115,7 @@ function EventsTab() {
   );
 }
 
-function AttendanceRow({ row, linkable }: { row: EventAttendanceRow; linkable: boolean }) {
+function AttendanceRow({ row }: { row: EventAttendanceRow }) {
   const content = (
     <>
       <div className="min-w-0 flex-1">
@@ -138,14 +132,6 @@ function AttendanceRow({ row, linkable }: { row: EventAttendanceRow; linkable: b
       </div>
     </>
   );
-
-  if (!linkable) {
-    return (
-      <div className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
-        {content}
-      </div>
-    );
-  }
 
   return (
     <Link

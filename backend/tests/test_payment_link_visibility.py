@@ -2,16 +2,9 @@
 
 import pytest
 from community.models import Event, EventType
-from django.db import connection
-from django.test.utils import CaptureQueriesContext
 
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 from tests._public_rsvp_helpers import make_official_event
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_payment_flag(True)
 
 
 def _paid_event(creator, **overrides) -> Event:
@@ -119,39 +112,18 @@ class TestListSerializerPaymentParity:
 
 
 @pytest.mark.django_db
-class TestPaymentLinkVisibilityIgnoresTheGateFlag:
-    """EVENT_PAYMENT_CONFIRMATION governs whether payment is enforced, not who
-    may see the cost — visibility must be identical either way."""
-
+class TestPaymentLinkVisibility:
     def _venmo(self, api_client, event, **headers):
         return api_client.get(f"/api/community/events/{event.id}/", **headers).json()["venmo_link"]
 
-    @pytest.mark.parametrize("flag", [True, False])
-    def test_anon_sees_payment_links_on_an_eligible_event(self, api_client, test_user, flag):
-        set_payment_flag(flag)
+    def test_anon_sees_payment_links_on_an_eligible_event(self, api_client, test_user):
         event = _paid_event(test_user, event_type=EventType.OFFICIAL)
         assert self._venmo(api_client, event) == "https://venmo.com/u/host"
 
-    @pytest.mark.parametrize("flag", [True, False])
-    def test_anon_does_not_see_them_on_an_ineligible_event(self, api_client, test_user, flag):
-        set_payment_flag(flag)
+    def test_anon_does_not_see_them_on_an_ineligible_event(self, api_client, test_user):
         event = _paid_event(test_user, event_type=EventType.COMMUNITY)
         assert self._venmo(api_client, event) == ""
 
-    @pytest.mark.parametrize("flag", [True, False])
-    def test_member_always_sees_them(self, api_client, auth_headers, test_user, flag):
-        set_payment_flag(flag)
+    def test_member_always_sees_them(self, api_client, auth_headers, test_user):
         event = _paid_event(test_user)
         assert self._venmo(api_client, event, **auth_headers) == "https://venmo.com/u/host"
-
-
-@pytest.mark.django_db
-class TestListEndpointFlagQueryCount:
-    def test_payment_visibility_costs_no_flag_query(self, api_client, test_user):
-        """can_see_payment_details reads no flag, so listing events must not
-        query FeatureFlagState once per event — or at all."""
-        for _ in range(6):
-            _paid_event(test_user, event_type=EventType.OFFICIAL)
-        with CaptureQueriesContext(connection) as ctx:
-            assert api_client.get("/api/community/events/").status_code == 200
-        assert not [q for q in ctx.captured_queries if "featureflagstate" in q["sql"].lower()]
