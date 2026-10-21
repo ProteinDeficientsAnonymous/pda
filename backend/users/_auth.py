@@ -153,6 +153,7 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "has_seen_veganniversary",
     "hide_last_name",
     "weekly_digest_opt_out",
+    "whatsapp_reminder_opt_out",
     "week_start",
     "calendar_feed_scope",
     "calendar_feed_excluded_types",
