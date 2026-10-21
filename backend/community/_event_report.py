@@ -1,13 +1,12 @@
 import csv
 import io
-from dataclasses import dataclass
 from uuid import UUID
 
 from config.auth import gated_jwt
 from django.http import HttpResponse
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import _is_admin, visible_display_name
+from users._helpers import visible_display_name
 
 from community._event_helpers import is_cohost, load_event_with_stats_prefetch
 from community._event_report_schemas import (
@@ -44,26 +43,13 @@ def _report_rsvps(event: Event):
     return [r for r in event.rsvps.all() if r.status != RSVPStatus.REMOVED]
 
 
-@dataclass(frozen=True)
-class _ReportViewer:
-    user: object
-    is_admin: bool
-    can_see_phones: bool
-
-    def name_of(self, rsvp) -> str:
-        return visible_display_name(rsvp.user, self.user, self.is_admin)
-
-
-def _report_viewer(event: Event, user) -> _ReportViewer:
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-    return _ReportViewer(user, _is_admin(user), is_cohost(user, co_host_ids))
-
-
-def _person(rsvp, viewer: _ReportViewer, is_plus_one_guest: bool = False) -> CheckInReportPersonOut:
+def _person(
+    rsvp, viewer, can_see_phones: bool, is_plus_one_guest: bool = False
+) -> CheckInReportPersonOut:
     return CheckInReportPersonOut(
         user_id=str(rsvp.user_id),
-        name=viewer.name_of(rsvp),
-        phone=rsvp.user.phone_number if viewer.can_see_phones else None,
+        name=visible_display_name(rsvp.user, viewer),
+        phone=rsvp.user.phone_number if can_see_phones else None,
         is_member=rsvp.user.is_member,
         is_plus_one_guest=is_plus_one_guest,
     )
@@ -112,8 +98,9 @@ def _classify_rsvp(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict
         )
 
 
-def _build_report(event: Event, user) -> CheckInReportOut:
-    viewer = _report_viewer(event, user)
+def _build_report(event: Event, viewer) -> CheckInReportOut:
+    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    can_see_phones = is_cohost(viewer, co_host_ids)
 
     buckets = {
         ReportBucket.ATTENDED: [],
@@ -123,8 +110,12 @@ def _build_report(event: Event, user) -> CheckInReportOut:
         ReportBucket.UNMARKED: [],
     }
     for rsvp in _report_rsvps(event):
-        person = _person(rsvp, viewer)
-        plus_one = _person(rsvp, viewer, is_plus_one_guest=True) if rsvp.has_plus_one else None
+        person = _person(rsvp, viewer, can_see_phones)
+        plus_one = (
+            _person(rsvp, viewer, can_see_phones, is_plus_one_guest=True)
+            if rsvp.has_plus_one
+            else None
+        )
         _classify_rsvp(rsvp, person, plus_one, buckets)
 
     return CheckInReportOut(
@@ -160,12 +151,12 @@ def _csv_safe(value: str) -> str:
 
 
 def _csv_row(
-    rsvp, viewer: _ReportViewer, columns: list[str], is_plus_one_guest: bool = False
+    rsvp, viewer, can_see_phones: bool, columns: list[str], is_plus_one_guest: bool = False
 ) -> list[str]:
     attendance = rsvp.plus_one_attendance if is_plus_one_guest else rsvp.attendance
     values = {
-        "name": _csv_safe(viewer.name_of(rsvp)),
-        "phone": _csv_safe((rsvp.user.phone_number or "") if viewer.can_see_phones else ""),
+        "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
+        "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
         "attendance": attendance,
         "cancelled_at": rsvp.cancelled_at.isoformat() if rsvp.cancelled_at else "",
@@ -199,15 +190,18 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     event = _load_and_authorize(request, event_id)
     selected = _parse_columns(columns)
 
-    viewer = _report_viewer(event, request.auth)
+    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    can_see_phones = is_cohost(request.auth, co_host_ids)
 
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(selected)
     for rsvp in _report_rsvps(event):
-        writer.writerow(_csv_row(rsvp, viewer, selected))
+        writer.writerow(_csv_row(rsvp, request.auth, can_see_phones, selected))
         if rsvp.has_plus_one:
-            writer.writerow(_csv_row(rsvp, viewer, selected, is_plus_one_guest=True))
+            writer.writerow(
+                _csv_row(rsvp, request.auth, can_see_phones, selected, is_plus_one_guest=True)
+            )
 
     response = HttpResponse(buf.getvalue(), content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'

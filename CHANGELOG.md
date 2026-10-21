@@ -1,3 +1,10 @@
+## [0.130.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.1...v0.130.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* **events:** memoize admin check in display names (Issue 1600) ([#1613](https://github.com/ProteinDeficientsAnonymous/pda/issues/1613)) ([e9169fc](https://github.com/ProteinDeficientsAnonymous/pda/commit/e9169fc3e5b515121af6763b34daa64a9176ce96))
+
 ## [0.130.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.0...v0.130.1) (2026-10-21)
 
 

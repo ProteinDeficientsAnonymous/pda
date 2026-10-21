@@ -4,9 +4,9 @@ from community._validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import ProtectedError
-from django.utils import timezone
 from ninja.responses import Status
 
+from users._archive import archive_user
 from users._helpers import _is_last_admin
 from users._management import router as management_router
 from users.models import User
@@ -50,14 +50,16 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    full_name = user.full_name
-    user.archived_at = timezone.now()
-    user.save(update_fields=["archived_at"])
+    removed_role_ids = archive_user(request, user)
     audit_log(
         logging.WARNING,
         "user_archived",
         request,
-        target=AuditTarget(type=AuditTargetType.USER, id=user_id, details={"full_name": full_name}),
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=user_id,
+            details={"full_name": user.full_name, "removed_role_ids": removed_role_ids},
+        ),
     )
     return Status(204, None)
 
