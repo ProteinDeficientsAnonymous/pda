@@ -44,7 +44,8 @@ export function EventHostSection({
     })
     .map((row) => ({ userId: row.id, name: row.name, photoUrl: row.photoUrl }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
-  const pending = event.pendingCohostInvites;
+  // past events: invites stay PENDING until the expiry sweep runs, so don't show them as actionable
+  const pending = event.isPast ? [] : event.pendingCohostInvites;
 
   async function removeCohost(host: HostRow) {
     const isSelf = host.userId === viewerId;
