@@ -42,6 +42,7 @@ interface AuthState {
   deleteProfilePhoto: () => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   // Invoked by axios when a refresh fails — synchronous, no await.
   forceLogout: () => void;
 }
@@ -149,6 +150,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await authApi.logout();
     queryClient.clear();
     set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
+  },
+
+  async deleteAccount(password) {
+    await authApi.deleteAccount(password);
+    get().forceLogout();
   },
 
   forceLogout() {
