@@ -8,9 +8,6 @@ import { makeEvent, makePaidEvent } from '@/test/fixtures';
 import { RsvpBox } from './RsvpBox';
 import type { RsvpQuestionDraft } from './rsvpQuestions';
 
-const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
-vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
-
 const base = {
   open: true,
   initialStatus: RsvpStatus.Attending,
@@ -302,14 +299,6 @@ describe('RsvpBox payment confirmation gate', () => {
   it('skips the payment step on a free event', async () => {
     const onConfirm = vi.fn();
     render(<RsvpBox {...base} mode="create" onConfirm={onConfirm} />);
-    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
-    expect(onConfirm).toHaveBeenCalledOnce();
-  });
-
-  it('skips the payment step when the flag is off', async () => {
-    mockUseFlag.mockReturnValueOnce(false);
-    const onConfirm = vi.fn();
-    render(<RsvpBox {...base} event={paidEvent} mode="create" onConfirm={onConfirm} />);
     await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });

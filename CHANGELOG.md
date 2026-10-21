@@ -1,3 +1,10 @@
+# [0.130.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.6...v0.130.0) (2026-10-21)
+
+
+### Features
+
+* 1622 - show events attended on admin member pages ([#1631](https://github.com/ProteinDeficientsAnonymous/pda/issues/1631)) ([29e67fa](https://github.com/ProteinDeficientsAnonymous/pda/commit/29e67fa571342a3d3274bf0aeaa9e554d30ccbf7))
+
 ## [0.129.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.5...v0.129.6) (2026-10-21)
 
 

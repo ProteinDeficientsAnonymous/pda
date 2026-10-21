@@ -9,20 +9,12 @@ from community.models import (
     EventRSVP,
     EventStatus,
     EventType,
-    FeatureFlag,
     JoinRequest,
     RSVPStatus,
 )
 from django.utils import timezone
 
-from tests.conftest import set_flag
-
 JOIN_REQUESTS_URL = "/api/community/join-requests/"
-
-
-@pytest.fixture
-def flag_on(db):
-    set_flag(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS)
 
 
 @pytest.fixture
@@ -47,32 +39,8 @@ def _make_event(host_user, title, days_ago, event_type):
 
 @pytest.mark.django_db
 class TestJoinRequestAttendedEvents:
-    def test_empty_when_flag_off(self, api_client, vettor_headers, host_user):
-        from users.models import User
-
-        guest = User.objects.create_user(
-            phone_number="+16505551234", password="x", first_name="Guest", is_member=False
-        )
-        event = _make_event(
-            host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
-        )
-        EventRSVP.objects.create(
-            event=event,
-            user=guest,
-            status=RSVPStatus.ATTENDING,
-            attendance=AttendanceStatus.ATTENDED,
-        )
-        JoinRequest.objects.create(
-            first_name="Sprout", last_name="Seedling", phone_number="+16505551234"
-        )
-
-        response = api_client.get(JOIN_REQUESTS_URL, **vettor_headers)
-        assert response.status_code == 200
-        row = response.json()[0]
-        assert row["attended_events"] == []
-
     def test_all_event_types_included_when_account_linked(
-        self, api_client, vettor_headers, flag_on, host_user
+        self, api_client, vettor_headers, host_user
     ):
         from users.models import User
 
@@ -102,9 +70,7 @@ class TestJoinRequestAttendedEvents:
         titles = {e["title"]: e["event_type"] for e in row["attended_events"]}
         assert titles == {"Community Meetup": "community", "Club Night": "club"}
 
-    def test_no_history_without_linked_account(
-        self, api_client, vettor_headers, flag_on, host_user
-    ):
+    def test_no_history_without_linked_account(self, api_client, vettor_headers, host_user):
         """A bare phone match to a guest row must not surface that guest's history."""
         from users.models import User
 
@@ -128,9 +94,7 @@ class TestJoinRequestAttendedEvents:
         row = response.json()[0]
         assert row["attended_events"] == []
 
-    def test_two_guests_same_phone_not_attributed(
-        self, api_client, vettor_headers, flag_on, host_user
-    ):
+    def test_two_guests_same_phone_not_attributed(self, api_client, vettor_headers, host_user):
         """Guest A's attendance must not appear on unlinked applicant B who shares A's phone."""
         from users.models import User
 
@@ -152,9 +116,7 @@ class TestJoinRequestAttendedEvents:
         row = response.json()[0]
         assert row["attended_events"] == []
 
-    def test_resolves_via_join_request_user_fk(
-        self, api_client, vettor_headers, flag_on, host_user
-    ):
+    def test_resolves_via_join_request_user_fk(self, api_client, vettor_headers, host_user):
         from users.models import User
 
         member = User.objects.create_user(
@@ -178,7 +140,7 @@ class TestJoinRequestAttendedEvents:
         row = next(r for r in response.json() if r["id"] == str(jr.id))
         assert [e["title"] for e in row["attended_events"]] == ["Official Gala"]
 
-    def test_empty_when_no_match(self, api_client, vettor_headers, flag_on):
+    def test_empty_when_no_match(self, api_client, vettor_headers):
         JoinRequest.objects.create(
             first_name="Nomatch", last_name="Person", phone_number="+16505550001"
         )
@@ -186,7 +148,7 @@ class TestJoinRequestAttendedEvents:
         row = response.json()[0]
         assert row["attended_events"] == []
 
-    def test_phone_fallback_excludes_members(self, api_client, vettor_headers, flag_on, host_user):
+    def test_phone_fallback_excludes_members(self, api_client, vettor_headers, host_user):
         """A member sharing the phone number of a JoinRequest isn't a guest match."""
         from users.models import User
 

@@ -8,7 +8,7 @@ from notifications.email_sender import get_email_sender
 from users.models import User
 
 from community._attendance_clock import compute_anchor, latest_due_milestone
-from community.models import AttendanceReminder, FeatureFlag, flag_enabled
+from community.models import AttendanceReminder
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,6 @@ class Command(BaseCommand):
     help = "Send 10/11/11.5/12-month attendance-reminder emails to active members."
 
     def handle(self, *args, **options):
-        if not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
-            return
-
         today = timezone.now().date()
         calendar_url = f"{settings.FRONTEND_BASE_URL}/calendar"
         sender = get_email_sender()

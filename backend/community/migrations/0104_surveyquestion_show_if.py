@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0102_survey_anonymous_confirmation_message"),
+        ("community", "0103_survey_anonymous_confirmation_message"),
     ]
 
     operations = [
