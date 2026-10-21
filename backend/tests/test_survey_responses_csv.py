@@ -7,6 +7,8 @@ import pytest
 from community._shared import csv_safe
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -199,6 +201,29 @@ class TestSurveyResponsesCsvIdentityAndInjection:
         survey = self._survey_with_answer(surveys_admin, responder, label="Notes", answer="hi")
         rows = _rows(api_client.get(_url(survey), **admin_headers))
         assert rows[1][0] == "'=Ada"
+
+
+def _add_hidden_name_responses(survey, start, count):
+    for i in range(start, start + count):
+        user = User.objects.create_user(
+            phone_number=f"+1202555{7100 + i}", password="x", first_name=f"R{i}", last_name="X"
+        )
+        user.hide_last_name = True
+        user.save(update_fields=["hide_last_name"])
+        SurveyResponse.objects.create(survey=survey, user=user, answers={})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("suffix", ["responses.csv", "responses/"])
+def test_query_count_does_not_grow_with_responses(api_client, admin_headers, csv_survey, suffix):
+    url = f"/api/community/surveys/{csv_survey.id}/{suffix}"
+    _add_hidden_name_responses(csv_survey, 0, 2)
+    with CaptureQueriesContext(connection) as small:
+        assert api_client.get(url, **admin_headers).status_code == 200
+    _add_hidden_name_responses(csv_survey, 2, 4)
+    with CaptureQueriesContext(connection) as large:
+        assert api_client.get(url, **admin_headers).status_code == 200
+    assert len(large) == len(small)
 
 
 @pytest.mark.parametrize("prefix", ["=", "+", "-", "@", "\t", "\r"])

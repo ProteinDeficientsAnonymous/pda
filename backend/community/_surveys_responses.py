@@ -9,7 +9,7 @@ from config.auth import gated_jwt
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import visible_display_name
+from users._helpers import _is_admin, visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -63,13 +63,15 @@ def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Surve
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
 
-def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyResponseOut:
+def _admin_response_out(
+    r: SurveyResponse, viewer, attribute: bool, viewer_is_admin: bool
+) -> SurveyResponseOut:
     """attribute=False masks the responder and exact submit time, for anonymous surveys."""
     show = attribute and r.user is not None
     return SurveyResponseOut(
         id=str(r.id),
         user_id=str(r.user_id) if show else None,
-        user_name=visible_display_name(r.user, viewer) if show else None,
+        user_name=visible_display_name(r.user, viewer, viewer_is_admin) if show else None,
         answers=r.answers,
         submitted_at=r.submitted_at if attribute else _day_only(r.submitted_at),
     )
@@ -84,7 +86,11 @@ def list_survey_responses(request, survey_id: UUID):
     survey = _load_survey_for_responses(request, survey_id, "list_survey_responses")
     attribute = not survey.anonymous
     responses = _ordered_responses(survey)
-    return Status(200, [_admin_response_out(r, request.auth, attribute) for r in responses])
+    viewer_is_admin = _is_admin(request.auth)
+    return Status(
+        200,
+        [_admin_response_out(r, request.auth, attribute, viewer_is_admin) for r in responses],
+    )
 
 
 @router.delete(

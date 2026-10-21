@@ -117,7 +117,17 @@ def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
     return target.last_name, target.full_name
 
 
-def visible_display_name(target: User, viewer: User | None) -> str:
+def _sees_full_name(target: User, viewer: User | None, viewer_is_admin: bool | None) -> bool:
+    if viewer is None:
+        return False
+    if target.id == viewer.id:
+        return True
+    return _is_admin(viewer) if viewer_is_admin is None else viewer_is_admin
+
+
+def visible_display_name(
+    target: User, viewer: User | None, viewer_is_admin: bool | None = None
+) -> str:
     """Member-facing name honoring hide_last_name, falling back to phone.
 
     viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
@@ -125,8 +135,7 @@ def visible_display_name(target: User, viewer: User | None) -> str:
     leak the last name. The phone fallback is suppressed when show_phone is
     false so a nameless member's private number is never surfaced as their name.
     """
-    is_privileged = viewer is not None and (target.id == viewer.id or _is_admin(viewer))
-    if target.hide_last_name and not is_privileged:
+    if target.hide_last_name and not _sees_full_name(target, viewer, viewer_is_admin):
         name = target.first_name.strip()
     else:
         name = target.full_name

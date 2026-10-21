@@ -194,7 +194,7 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(options).toEqual(['2024', '2023', '2022']);
   });
 
-  it('should not render the summaries section when no question is summarizable', () => {
+  it('should not render the summaries section when the server returns no summaries', () => {
     mockSurvey.mockReturnValue(
       mockQuery({
         id: 'srv-1',
@@ -219,9 +219,9 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(screen.queryByText('question summaries')).not.toBeInTheDocument();
   });
 
-  it('should show a fallback while summaries are loading', () => {
+  it('should hold the summaries section back while summaries are loading', () => {
     setup({ summaryState: { isPending: true, isSuccess: false, data: undefined } });
-    expect(screen.getByText('loading summaries…')).toBeInTheDocument();
+    expect(screen.queryByText('question summaries')).not.toBeInTheDocument();
   });
 
   it('should show an error message when summaries fail to load', () => {

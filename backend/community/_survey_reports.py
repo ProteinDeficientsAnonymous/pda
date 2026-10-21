@@ -6,7 +6,7 @@ from uuid import UUID
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import visible_display_name
+from users._helpers import _is_admin, visible_display_name
 
 from community._shared import ErrorOut, csv_response, csv_safe
 from community._survey_schemas import QuestionSummaryOut
@@ -95,10 +95,10 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
     return csv_safe(text)
 
 
-def _csv_row_prefix(r: SurveyResponse, anonymous: bool, viewer) -> list[str]:
+def _csv_row_prefix(r: SurveyResponse, anonymous: bool, viewer, viewer_is_admin: bool) -> list[str]:
     if anonymous:
         return [_day_only(r.submitted_at).isoformat()]
-    name = visible_display_name(r.user, viewer) if r.user else ""
+    name = visible_display_name(r.user, viewer, viewer_is_admin) if r.user else ""
     return [csv_safe(name), r.submitted_at.isoformat()]
 
 
@@ -128,9 +128,10 @@ def get_survey_responses_csv(request, survey_id: UUID):
     writer.writerow(
         ["submitted_at", *labels] if survey.anonymous else ["submitted_by", "submitted_at", *labels]
     )
+    viewer_is_admin = _is_admin(request.auth)
     for r in _ordered_responses(survey):
         cells = [
             _csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
         ]
-        writer.writerow(_csv_row_prefix(r, survey.anonymous, request.auth) + cells)
+        writer.writerow(_csv_row_prefix(r, survey.anonymous, request.auth, viewer_is_admin) + cells)
     return csv_response(buf.getvalue(), f"survey-responses-{survey.slug}.csv")

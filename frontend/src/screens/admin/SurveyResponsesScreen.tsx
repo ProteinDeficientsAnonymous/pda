@@ -4,7 +4,6 @@ import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
@@ -33,17 +32,10 @@ export default function SurveyResponsesScreen() {
     return survey.data.questions.filter((q) => q.fieldType === 'datetime_poll');
   }, [survey.data]);
 
-  const summarizedQuestions = useMemo(() => {
-    if (!survey.data) return [];
-    return survey.data.questions.filter((q) => SUMMARIZED_TYPES.has(q.fieldType));
-  }, [survey.data]);
-
   const tallies = useSurveyPollTallies(
     datetimeQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
   );
-  const summaries = useSurveyQuestionSummaries(
-    summarizedQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
-  );
+  const summaries = useSurveyQuestionSummaries(survey.isSuccess ? surveyId : undefined);
   const deleteResponse = useDeleteSurveyResponse(surveyId);
   const { confirm, element: confirmElement } = useConfirm();
 
@@ -113,15 +105,13 @@ export default function SurveyResponsesScreen() {
         </section>
       ) : null}
 
-      {summarizedQuestions.length > 0 ? (
+      {summaries.isError || (summaries.data?.length ?? 0) > 0 ? (
         <section className="mb-8">
           <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">question summaries</h2>
-          {summaries.isPending ? (
-            <p className="text-muted text-sm">loading summaries…</p>
-          ) : summaries.isError ? (
+          {summaries.isError ? (
             <p className="text-muted text-sm">couldn't load summaries</p>
           ) : (
-            <QuestionSummaries questions={survey.data.questions} rows={summaries.data} />
+            <QuestionSummaries questions={survey.data.questions} rows={summaries.data ?? []} />
           )}
         </section>
       ) : null}
@@ -178,14 +168,6 @@ export default function SurveyResponsesScreen() {
     </ContentContainer>
   );
 }
-
-const SUMMARIZED_TYPES = new Set<string>([
-  QuestionType.Radio,
-  QuestionType.Select,
-  QuestionType.Checkbox,
-  QuestionType.Boolean,
-  QuestionType.Rating,
-]);
 
 function DownloadCsvButton({
   surveyId,
