@@ -92,4 +92,23 @@ describe('EventForm slug', () => {
     });
     expect(updateEvent.mock.calls[0]![0]).not.toHaveProperty('slug');
   });
+
+  it('shows a taken slug from the server under the field', async () => {
+    updateEvent.mockRejectedValue(
+      Object.assign(new Error('Request failed with status code 409'), {
+        isAxiosError: true,
+        response: { status: 409, data: { detail: [{ code: 'event.slug_taken', field: 'slug' }] } },
+      }),
+    );
+    renderForm();
+    const field = screen.getByLabelText('event url');
+    fireEvent.change(field, { target: { value: 'vegan-potluck' } });
+    fireEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(field).toHaveAttribute('aria-invalid', 'true');
+    });
+    expect(field).toHaveAccessibleDescription('that event url is already taken — try another');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });

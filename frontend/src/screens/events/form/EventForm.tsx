@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
+import { getErrorParams, getFieldError, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
 import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import {
@@ -135,6 +135,17 @@ export function EventForm({ existing }: Props) {
     setValues((v) => ({ ...v, ...p }));
   }
 
+  function showFieldErrors(errs: Partial<Record<keyof EventFormValues, string>>) {
+    setErrors(errs);
+    // Let the sections open first (via forceOpen), then scroll to the
+    // first invalid field.
+    requestAnimationFrame(() => {
+      const firstInvalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      firstInvalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      firstInvalid?.focus();
+    });
+  }
+
   async function submit(nextStatus: 'active' | 'draft') {
     setServerError(null);
     const timeLocked = !!existing?.hasPoll && !existing.startDatetime;
@@ -150,14 +161,7 @@ export function EventForm({ existing }: Props) {
       existing?.slug,
     );
     if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      // Let the sections open first (via forceOpen), then scroll to the
-      // first invalid field.
-      requestAnimationFrame(() => {
-        const firstInvalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
-        firstInvalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        firstInvalid?.focus();
-      });
+      showFieldErrors(errs);
       return;
     }
     setErrors({});
@@ -230,7 +234,9 @@ export function EventForm({ existing }: Props) {
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(eventPath(created));
     } catch (err) {
-      setServerError(extractEventError(err));
+      const slugError = getFieldError(err, 'slug');
+      if (slugError) showFieldErrors({ slug: slugError });
+      else setServerError(extractEventError(err));
     }
   }
 

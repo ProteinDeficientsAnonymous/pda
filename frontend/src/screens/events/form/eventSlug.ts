@@ -17,7 +17,7 @@ export function eventSlugError(slug: string): string | undefined {
     return `under ${String(EVENT_SLUG_MAX_LENGTH)} chars`;
   }
   if (!EVENT_SLUG_PATTERN.test(slug) || UUID_PATTERN.test(slug)) {
-    return 'use lowercase letters, numbers, and dashes — start and end with a letter or number';
+    return 'use letters, numbers, and dashes — start and end with a letter or number';
   }
   return undefined;
 }
