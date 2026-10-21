@@ -3,7 +3,7 @@ import re
 from urllib.parse import urlparse
 
 from django.contrib.auth.models import AnonymousUser
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
 from ninja_jwt.exceptions import AuthenticationFailed, TokenError
@@ -78,6 +78,13 @@ def csv_safe(value: str) -> str:
     if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
         return "'" + value
     return value
+
+
+def csv_response(body: str, filename: str) -> HttpResponse:
+    # The BOM makes Excel decode as utf-8 instead of the system codepage.
+    response = HttpResponse("\ufeff" + body, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:

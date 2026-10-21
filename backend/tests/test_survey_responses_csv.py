@@ -79,7 +79,7 @@ def _url(survey):
 
 
 def _rows(response) -> list[list[str]]:
-    return list(csv.reader(io.StringIO(response.content.decode())))
+    return list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
 
 
 @pytest.mark.django_db
@@ -89,9 +89,10 @@ class TestSurveyResponsesCsv:
     ):
         response = api_client.get(_url(csv_survey), **admin_headers)
         assert response.status_code == 200
-        assert response["Content-Type"] == "text/csv"
+        assert response["Content-Type"] == "text/csv; charset=utf-8"
+        assert response.content.startswith("\ufeff".encode())
         assert response["Content-Disposition"] == (
-            f'attachment; filename="survey-responses-{csv_survey.id}.csv"'
+            f'attachment; filename="survey-responses-{csv_survey.slug}.csv"'
         )
         rows = _rows(response)
         assert rows[0] == ["submitted_by", "submitted_at", "Notes", "Toppings", "When"]
@@ -158,7 +159,7 @@ class TestSurveyResponsesCsvIdentityAndInjection:
             surveys_admin, responder, label='=HYPERLINK("http://evil")', answer="@SUM(1)"
         )
         rows = _rows(api_client.get(_url(survey), **admin_headers))
-        assert rows[0][2] == "'=HYPERLINK(\"http://evil\")"
+        assert rows[0][2] == '\'=HYPERLINK("http://evil")'
         assert rows[1][0] == "'=Ada Lovelace"
         assert rows[1][2] == "'@SUM(1)"
 
@@ -171,6 +172,24 @@ class TestSurveyResponsesCsvIdentityAndInjection:
         )
         rows = _rows(api_client.get(_url(survey), **admin_headers))
         assert rows[1][2] == f"'{prefix}cmd"
+
+    @pytest.mark.parametrize("answer", ["-5", "+2.5", "42"])
+    def test_number_answers_stay_numeric(
+        self, api_client, admin_headers, surveys_admin, responder, answer
+    ):
+        survey = self._survey_with_answer(surveys_admin, responder, label="Count", answer=answer)
+        survey.questions.update(field_type=SurveyQuestionType.NUMBER)
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[1][2] == answer
+
+    def test_non_ascii_survives_utf8_decoding(
+        self, api_client, admin_headers, surveys_admin, responder
+    ):
+        survey = self._survey_with_answer(
+            surveys_admin, responder, label="Notes", answer="crème 🌱"
+        )
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[1][2] == "crème 🌱"
 
     def test_hidden_last_name_is_not_exported(
         self, api_client, admin_headers, surveys_admin, responder

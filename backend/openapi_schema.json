@@ -16020,7 +16020,7 @@
     },
     "/api/community/surveys/{survey_id}/responses.csv": {
       "get": {
-        "operationId": "community__surveys_get_survey_responses_csv",
+        "operationId": "community__survey_reports_get_survey_responses_csv",
         "parameters": [
           {
             "in": "path",
@@ -16130,7 +16130,7 @@
     },
     "/api/community/surveys/{survey_id}/summary/": {
       "get": {
-        "operationId": "community__surveys_public_get_survey_summary",
+        "operationId": "community__survey_reports_get_survey_summary",
         "parameters": [
           {
             "in": "path",

@@ -3,7 +3,6 @@ import io
 from uuid import UUID
 
 from config.auth import gated_jwt
-from django.http import HttpResponse
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -19,7 +18,7 @@ from community._event_report_schemas import (
     ReportPlusOne,
 )
 from community._events import _can_edit_event
-from community._shared import ErrorOut, csv_safe
+from community._shared import ErrorOut, csv_response, csv_safe
 from community._validation import Code, raise_validation
 from community.models import AttendanceStatus, Event, FeatureFlag, RSVPStatus, flag_enabled
 
@@ -197,6 +196,4 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
                 _csv_row(rsvp, request.auth, can_see_phones, selected, is_plus_one_guest=True)
             )
 
-    response = HttpResponse(buf.getvalue(), content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'
-    return response
+    return csv_response(buf.getvalue(), _report_csv_filename(event))
