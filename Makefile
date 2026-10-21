@@ -39,7 +39,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
-        dump-codes generate-codes check-codes dump-openapi frontend-types-check \
+        dump-codes generate-codes check-codes cursor-rules dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
@@ -83,6 +83,7 @@ help:
 	@echo "  make dump-openapi         Dump NinjaAPI OpenAPI schema to openapi_schema.json"
 	@echo "  make generate-codes       Regen frontend validationCodes.gen.ts"
 	@echo "  make check-codes          Fail if any generated artifact is stale (CI)"
+	@echo "  make cursor-rules         Regen .cursor/rules/claude-rule-*.mdc from .claude/rules"
 	@echo ""
 	@echo "Workflow commands:"
 	@echo "  make dev              Run Django + Vite concurrently (default)"
@@ -248,6 +249,11 @@ check-codes:
 	cd backend && uv run python manage.py dump_validation_codes --check
 	node frontend/scripts/generate-validation-codes.mjs --check
 	cd backend && uv run python manage.py dump_openapi_schema --check
+	python3 scripts/sync_cursor_rules.py --check
+
+# Regenerate .cursor/rules/claude-rule-*.mdc from .claude/rules/ paths frontmatter.
+cursor-rules:
+	python3 scripts/sync_cursor_rules.py
 
 # Verify frontend/src/api/types.gen.ts is in sync with backend/openapi_schema.json.
 # Wired into parallel-frontend / parallel-agent-frontend so it runs where
@@ -333,6 +339,7 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py dump_validation_codes --check
 	node frontend/scripts/generate-validation-codes.mjs --check
 	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py dump_openapi_schema --check
+	python3 scripts/sync_cursor_rules.py --check
 
 agent-frontend-ci: parallel-agent-frontend
 

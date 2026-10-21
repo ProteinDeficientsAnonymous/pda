@@ -4,6 +4,7 @@ paths:
   - "**/config/urls.py"
   - "**/models.py"
   - "**/schemas.py"
+  - "**/_*_schemas.py"
   - "**/api.py"
   - "**/admin.py"
   - "**/management/**"
@@ -119,33 +120,28 @@ urlpatterns = [
 
 ```python
 from ninja import Router
+from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
+
+from community._validation import Code, raise_validation
 
 router = Router()
 
 @router.post("/", auth=JWTAuth(), response={201: ListingOut, 400: ErrorOut})
 def create_listing(request, data: ListingIn):
     if error:
-        return 400, {"detail": "Error message"}
+        raise_validation(Code.Url.INVALID, field="link")
     listing = Listing.objects.create(user=request.auth, **data.dict())
-    return 201, ListingOut.from_model(listing)
+    return Status(201, ListingOut.from_model(listing))
 ```
 
 - `response=` declares all possible status codes
-- Return tuple: `(status_code, data)`
+- Return `Status(status_code, data)` for success
 - `request.auth` is the authenticated User (from JWTAuth)
 
-### Error Schema (Standard)
+### Errors
 
-```python
-class ErrorOut(Schema):
-    detail: str
-
-class MessageOut(Schema):
-    message: str
-```
-
-Always use `{"detail": "..."}` for errors, `{"message": "..."}` for success messages.
+Raise errors with `raise_validation(Code.<Area>.<NAME>, field=..., status_code=...)` from `community/_validation.py`. Never return `{"detail": "..."}` or build `ErrorOut(detail=...)`: the frontend maps error codes, not free text. New codes go in the `Code` catalog; `make check-codes` keeps the frontend copy in sync.
 
 ### Permission Pattern
 
@@ -154,8 +150,8 @@ def _get_owned_resource(request, resource_id: UUID):
     """Reusable ownership check helper."""
     resource = get_object_or_404(MyModel, id=resource_id)
     if resource.user_id != request.auth.id:
-        return None, (403, {"detail": "Permission denied"})
-    return resource, None
+        raise_validation(Code.Perm.DENIED, status_code=403)
+    return resource
 ```
 
 ### Route Ordering (Critical)
