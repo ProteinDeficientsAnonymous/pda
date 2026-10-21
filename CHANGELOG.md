@@ -1,3 +1,10 @@
+## [0.136.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.2...v0.136.3) (2026-10-21)
+
+
+### Bug Fixes
+
+* sort role list by name ([#1661](https://github.com/ProteinDeficientsAnonymous/pda/issues/1661)) ([dd2d0cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd2d0cb0c060f44f951e635703602546bed7dcfa))
+
 ## [0.136.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.1...v0.136.2) (2026-10-21)
 
 
