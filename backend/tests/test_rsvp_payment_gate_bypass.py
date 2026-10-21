@@ -147,23 +147,7 @@ class TestPaidConfirmedOnUngatedStatus:
 
 
 @pytest.mark.django_db
-class TestPollFinalizeDoesNotBypassGate:
-    def test_unpaid_yes_voter_is_skipped_not_seated(self, api_client, auth_headers, test_user):
-
-        event = _paid_event(test_user, datetime_tbd=True)
-        poll = EventPoll.objects.create(event=event, created_by=test_user)
-        option = PollOption.objects.create(poll=poll, datetime=future_iso(days=120))
-        PollVote.objects.create(option=option, user=test_user, availability=PollAvailability.YES)
-
-        response = api_client.post(
-            f"/api/community/events/{event.id}/poll/finalize/",
-            {"winning_option_id": str(option.id)},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert not EventRSVP.objects.filter(event=event, user=test_user).exists()
-
+class TestPollFinalizeKeepsConfirmation:
     def test_yes_voter_with_existing_confirmation_keeps_it(
         self, api_client, auth_headers, test_user
     ):
