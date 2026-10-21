@@ -198,11 +198,22 @@ class TestHostSetRsvpEmail:
 
         assert _subjects(fake_email_sender, "tentative@e.com") == ["you're in for picnic"]
 
-    def test_host_set_public_rsvper_gets_no_member_email(self, test_user, fake_email_sender):
+    def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user)
         non_member = make_non_member("+14155550102", "public@e.com")
+        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.WAITLISTED)
 
         _host_set(event, test_user, non_member, RSVPStatus.ATTENDING)
+
+        assert _subjects(fake_email_sender, "public@e.com") == ["you're in for picnic"]
+        assert "/my-rsvps?token=" in fake_email_sender.send.call_args.kwargs["text"]
+
+    def test_host_set_public_rsvper_cant_go_does_not_email(self, test_user, fake_email_sender):
+        event = _event(test_user)
+        non_member = make_non_member("+14155550102", "public@e.com")
+        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+
+        _host_set(event, test_user, non_member, RSVPStatus.CANT_GO)
 
         assert _subjects(fake_email_sender, "public@e.com") == []
 

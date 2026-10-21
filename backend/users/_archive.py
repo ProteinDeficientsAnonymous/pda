@@ -1,5 +1,5 @@
 from community._event_helpers import broadcast_capacity_change
-from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_status_emails import email_promoted_users
 from community._waitlist import promote_from_waitlist
 from community.models import (
     CoHostInviteStatus,
@@ -58,7 +58,7 @@ def _release_upcoming_rsvps(request, user: User) -> None:
         promoted_user_ids = promote_from_waitlist(event)
         broadcast_capacity_change(event.id)
         transaction.on_commit(
-            lambda e=event, ids=promoted_user_ids: _email_promoted_non_members(request, e, ids)
+            lambda e=event, ids=promoted_user_ids: email_promoted_users(request, e, ids)
         )
 
 

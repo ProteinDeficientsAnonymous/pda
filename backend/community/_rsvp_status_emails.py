@@ -1,14 +1,17 @@
 import logging
+from collections.abc import Callable
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from django.db.models import Exists, OuterRef
 from notifications._email_helpers import (
     MemberRsvpEmailDetails,
+    RsvpEmailDetails,
     send_member_rsvp_status_email,
+    send_rsvp_confirmation_email,
     send_rsvp_waitlist_promoted_email,
 )
-from notifications.email_sender import get_email_sender
+from notifications.email_sender import SendResult, get_email_sender
 from users.models import NonMemberRsvpToken, User
 
 from community._public_rsvp_shared import (
@@ -76,26 +79,46 @@ def email_member_rsvp_status(request, event: Event, user: User, status: str) -> 
     _send_member_email(request, event, user, "attending")
 
 
-def email_host_set_rsvp_status(
-    request, event: Event, user: User, previous_status: str | None, status: str
+def _email_non_member(
+    request, event: Event, user: User, send: Callable[[RsvpEmailDetails], SendResult]
 ) -> None:
-    """Email a signed-in user whose RSVP a host changed. Public rsvpers aren't emailed."""
-    if status != previous_status and _gets_member_emails(user):
-        email_member_rsvp_status(request, event, user, status)
-
-
-def _email_promoted_non_member(request, event: Event, user: User, payment_pending: bool) -> None:
     try:
         token = NonMemberRsvpToken.issue_or_extend(user)
-        result = send_rsvp_waitlist_promoted_email(
-            sender=get_email_sender(),
-            details=_email_details(event, user, token.token),
-            payment_pending=payment_pending,
-        )
+        result = send(_email_details(event, user, token.token))
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
     except Exception as exc:
         _log_email_failure(request, event, user, exc)
+
+
+def email_host_set_rsvp_status(
+    request, event: Event, user: User, previous_status: str | None, status: str
+) -> None:
+    """Email a guest "you're in" when a host sets them to attending. Best-effort; never raises."""
+    if status == previous_status or status != RSVPStatus.ATTENDING or not user.email:
+        return
+    if _gets_member_emails(user):
+        _send_member_email(request, event, user, "attending")
+        return
+    _email_non_member(
+        request,
+        event,
+        user,
+        lambda details: send_rsvp_confirmation_email(
+            sender=get_email_sender(), details=details, waitlisted=False
+        ),
+    )
+
+
+def _email_promoted_non_member(request, event: Event, user: User, payment_pending: bool) -> None:
+    _email_non_member(
+        request,
+        event,
+        user,
+        lambda details: send_rsvp_waitlist_promoted_email(
+            sender=get_email_sender(), details=details, payment_pending=payment_pending
+        ),
+    )
 
 
 def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) -> None:
