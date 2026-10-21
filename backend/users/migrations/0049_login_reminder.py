@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("users", "0047_remove_manage_feature_flags_permission"),
+        ("users", "0048_user_whatsapp_reminder_opt_out"),
     ]
 
     operations = [

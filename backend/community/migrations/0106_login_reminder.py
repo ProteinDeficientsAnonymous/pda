@@ -9,7 +9,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0104_surveyquestion_show_if"),
+        ("community", "0105_whatsappjoinreminder"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
