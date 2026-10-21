@@ -88,17 +88,6 @@ def build_event_slug(title: str, manager, exclude_pk=None, aliases=None) -> str:
     return f"{base}-{suffix}"
 
 
-def is_event_slug_taken(slug: str, event_pk) -> bool:
-    """True if `slug` is reserved, or is another event's current or renamed-from slug."""
-    from community.models.event import Event
-
-    if slug in RESERVED_EVENT_SLUGS:
-        return True
-    if Event.objects.filter(slug=slug).exclude(pk=event_pk).exists():
-        return True
-    return EventSlugAlias.objects.filter(slug=slug).exclude(event_id=event_pk).exists()
-
-
 def rename_event_slug(event, new_slug: str) -> None:
     """Point `event` at `new_slug`, keeping its old slug as an alias. Caller saves the event."""
     if new_slug == event.slug:
