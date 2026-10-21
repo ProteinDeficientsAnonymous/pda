@@ -215,7 +215,7 @@ describe('SurveyScreen post-submit confirmation', () => {
       },
     });
     renderScreen();
-    fireEvent.change(await screen.findByLabelText('thoughts'), {
+    fireEvent.change(await screen.findByLabelText('thoughts · required'), {
       target: { value: 'great job' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
@@ -244,7 +244,9 @@ describe('SurveyScreen post-submit confirmation', () => {
       data: { id: 'r', user_id: null, user_name: null, answers: {}, submitted_at: '' },
     });
     renderScreen();
-    fireEvent.change(await screen.findByLabelText('thoughts'), { target: { value: 'hi' } });
+    fireEvent.change(await screen.findByLabelText('thoughts · required'), {
+      target: { value: 'hi' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     expect(await screen.findByText('thanks!')).toBeInTheDocument();
@@ -326,7 +328,9 @@ describe('SurveyScreen anonymous response token', () => {
     });
     renderScreen();
 
-    fireEvent.change(await screen.findByLabelText('thoughts'), { target: { value: 'hi' } });
+    fireEvent.change(await screen.findByLabelText('thoughts · required'), {
+      target: { value: 'hi' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
@@ -343,7 +347,7 @@ describe('SurveyScreen anonymous response token', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'not you? start a new response' }));
 
     expect(getStoredSurveyToken('feedback')).toBeNull();
-    expect(screen.getByLabelText('thoughts')).toHaveValue('');
+    expect(screen.getByLabelText('thoughts · required')).toHaveValue('');
     expect(await screen.findByRole('button', { name: 'submit' })).toBeInTheDocument();
   });
 
