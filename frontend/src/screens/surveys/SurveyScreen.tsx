@@ -5,7 +5,9 @@ import { useParams } from 'react-router-dom';
 
 import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
+import { clearStoredSurveyToken, getStoredSurveyToken } from '@/api/surveyTokenStorage';
 import { Code } from '@/api/validationCodes';
+import { useAuthStore } from '@/auth/store';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
 import { type SurveyStatus, surveyStatus } from '@/models/survey';
@@ -65,6 +67,7 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
 function SurveyForm({ survey }: { survey: Survey }) {
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
   // Lazy init so the user's prior response loads exactly once when the form
   // mounts. Subsequent server updates (e.g. poll finalized) re-render the
   // parent but preserve what the user is currently typing.
@@ -115,6 +118,17 @@ function SurveyForm({ survey }: { survey: Survey }) {
   }
 
   const submitLabel = survey.myResponseId ? 'update response' : 'submit';
+  const canStartFresh =
+    !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
+
+  function startNewResponse() {
+    clearStoredSurveyToken(survey.slug);
+    setAnswers({});
+    setErrors({});
+    setServerError(null);
+    submit.reset();
+    void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
+  }
 
   return (
     <ContentContainer>
@@ -156,6 +170,16 @@ function SurveyForm({ survey }: { survey: Survey }) {
         ) : null}
 
         {submit.isSuccess && !readOnly ? <p className="text-success text-sm">saved ✓</p> : null}
+
+        {canStartFresh ? (
+          <button
+            type="button"
+            onClick={startNewResponse}
+            className="text-foreground-tertiary self-start text-sm underline"
+          >
+            not you? start a new response
+          </button>
+        ) : null}
       </form>
     </ContentContainer>
   );

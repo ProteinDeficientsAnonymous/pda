@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenStorage';
 
 import SurveyScreen from './SurveyScreen';
 
@@ -81,9 +82,11 @@ describe('SurveyScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
-      expect(mockedPost).toHaveBeenCalledWith('/api/community/surveys/view/feedback/respond/', {
-        answers: { q1: 'great job' },
-      });
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'great job' } },
+        { params: undefined },
+      );
     });
     expect(await screen.findByText('saved ✓')).toBeInTheDocument();
   });
@@ -194,5 +197,92 @@ describe('SurveyScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('this survey is closed');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['survey', 'feedback'] });
+  });
+});
+
+describe('SurveyScreen anonymous response token', () => {
+  const respondedSurvey = {
+    ...baseWireSurvey,
+    one_response_per_user: true,
+    my_response_id: 'resp-1',
+    my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('sends the stored token when loading and submitting', async () => {
+    setStoredSurveyToken('feedback', 'tok-1');
+    mockedGet.mockResolvedValue({ data: respondedSurvey });
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        id: 'resp-1',
+        user_id: null,
+        user_name: null,
+        answers: {},
+        submitted_at: '2026-01-01T00:00:00Z',
+        response_token: 'tok-1',
+      },
+    });
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'update response' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'previous answer' } },
+        { params: { response_token: 'tok-1' } },
+      );
+    });
+    expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/view/feedback/', {
+      params: { response_token: 'tok-1' },
+    });
+  });
+
+  it('stores a token returned by the submit', async () => {
+    mockedGet.mockResolvedValue({ data: { ...baseWireSurvey, one_response_per_user: true } });
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        id: 'resp-1',
+        user_id: null,
+        user_name: null,
+        answers: {},
+        submitted_at: '2026-01-01T00:00:00Z',
+        response_token: 'fresh-token',
+      },
+    });
+    renderScreen();
+
+    fireEvent.change(await screen.findByLabelText('thoughts'), { target: { value: 'hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(getStoredSurveyToken('feedback')).toBe('fresh-token');
+    });
+  });
+
+  it('lets a visitor drop the stored token and start a new response', async () => {
+    setStoredSurveyToken('feedback', 'tok-1');
+    mockedGet.mockResolvedValueOnce({ data: respondedSurvey });
+    mockedGet.mockResolvedValue({ data: { ...baseWireSurvey, one_response_per_user: true } });
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'not you? start a new response' }));
+
+    expect(getStoredSurveyToken('feedback')).toBeNull();
+    expect(screen.getByLabelText('thoughts')).toHaveValue('');
+    expect(await screen.findByRole('button', { name: 'submit' })).toBeInTheDocument();
+  });
+
+  it('hides the start-fresh action without a stored token', async () => {
+    mockedGet.mockResolvedValueOnce({ data: respondedSurvey });
+    renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'not you? start a new response' }),
+    ).not.toBeInTheDocument();
   });
 });

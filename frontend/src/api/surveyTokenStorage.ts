@@ -19,3 +19,11 @@ export function setStoredSurveyToken(slug: string, token: string): void {
     // storage unavailable (private mode / blocked) — the survey still submits, just without dedupe
   }
 }
+
+export function clearStoredSurveyToken(slug: string): void {
+  try {
+    localStorage.removeItem(key(slug));
+  } catch {
+    // storage unavailable — nothing to clear
+  }
+}

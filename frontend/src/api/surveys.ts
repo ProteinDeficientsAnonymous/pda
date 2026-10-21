@@ -120,9 +120,7 @@ function mapSurvey(w: WireSurvey): Survey {
   };
 }
 
-// The anonymous response token lets a returning visitor see and update their
-// own response on a one-response-per-user survey. Read at request time (not in
-// the query key) so the post-submit invalidation picks up a freshly issued token.
+// read at request time, not in the query key, so post-submit invalidation picks up a new token
 function tokenParams(slug: string): { response_token: string } | undefined {
   const token = getStoredSurveyToken(slug);
   return token ? { response_token: token } : undefined;

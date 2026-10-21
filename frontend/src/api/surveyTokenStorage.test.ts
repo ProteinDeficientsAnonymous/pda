@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage';
+import {
+  clearStoredSurveyToken,
+  getStoredSurveyToken,
+  setStoredSurveyToken,
+} from './surveyTokenStorage';
 
 describe('surveyTokenStorage', () => {
   it('returns null when nothing is stored for the slug', () => {
@@ -18,5 +22,13 @@ describe('surveyTokenStorage', () => {
     setStoredSurveyToken('a', 'old');
     setStoredSurveyToken('a', 'new');
     expect(getStoredSurveyToken('a')).toBe('new');
+  });
+
+  it('clears only the given slug', () => {
+    setStoredSurveyToken('a', 'tok-a');
+    setStoredSurveyToken('b', 'tok-b');
+    clearStoredSurveyToken('a');
+    expect(getStoredSurveyToken('a')).toBeNull();
+    expect(getStoredSurveyToken('b')).toBe('tok-b');
   });
 });
