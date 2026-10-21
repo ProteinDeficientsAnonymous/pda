@@ -1,3 +1,10 @@
+## [0.137.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.137.0...v0.137.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **events:** let waitlisted members edit rsvp and add +1 (Issue 1289) ([#1358](https://github.com/ProteinDeficientsAnonymous/pda/issues/1358)) ([1ef57b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ef57b2309328c4914b538a547bde0f9efba7899))
+
 # [0.137.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.3...v0.137.0) (2026-10-21)
 
 
