@@ -175,6 +175,14 @@ class TestRoleManagementAPI:
         popular = next(r for r in response.json() if r["name"] == "popular")
         assert popular["user_count"] == 1
 
+    def test_list_roles_sorted_by_name(self, api_client, manage_users_headers):
+        for name in ["zeta", "mu", "beta", "omega", "kappa", "delta"]:
+            Role.objects.create(name=name, permissions=[])
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        assert response.status_code == 200
+        names = [r["name"] for r in response.json()]
+        assert names == sorted(names)
+
 
 @pytest.mark.django_db
 class TestNonMemberCannotHoldRole:
