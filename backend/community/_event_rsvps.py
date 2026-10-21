@@ -25,9 +25,9 @@ from community._event_helpers import (
 from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
-from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import _attending_headcount_db
 from community._rsvp_payment import requires_payment_gate
+from community._rsvp_status_emails import email_member_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._tentative_member_access import (
     enforce_tentative_member_write_access,
@@ -234,12 +234,14 @@ class _RsvpApply:
     answers: dict[str, str] | None = None
 
 
-def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, list[str], bool]:
+def _apply_rsvp_in_transaction(
+    event_id, user, rsvp: _RsvpApply
+) -> tuple[str, list[str], str | None]:
     """Execute RSVP upsert inside a locked transaction.
 
-    Returns (final_status, promoted_user_ids, created). promoted_user_ids is the
+    Returns (final_status, promoted_user_ids, previous_status). promoted_user_ids is the
     list of users promoted off the waitlist by this change (empty unless a spot
-    freed); created is True when this call created the user's first RSVP row.
+    freed); previous_status is the status read under the lock, None if there was no row.
 
     Raises ValidationException on failure.
     """
@@ -255,7 +257,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
     _validate_rsvp_access(user, event)
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
-    created = existing is None
+    previous_status = existing.status if existing is not None else None
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     if not rsvp.paid_confirmed and requires_payment_gate(event, existing, rsvp.status):
@@ -275,7 +277,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
         new_confirmed_at=new_confirmed_at,
         answers_snapshot=answers_snapshot,
     ):
-        return final_status, [], False
+        return final_status, [], previous_status
 
     EventRSVP.objects.update_or_create(
         event=event,
@@ -294,7 +296,7 @@ def _apply_rsvp_in_transaction(event_id, user, rsvp: _RsvpApply) -> tuple[str, l
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids, created
+    return final_status, promoted_user_ids, previous_status
 
 
 @router.post(
@@ -312,7 +314,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
             event_id,
             request.auth,
             _RsvpApply(
@@ -345,7 +347,9 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         notify_rsvp_status_changed(event, request.auth, final_status)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    if final_status != previous_status:
+        email_member_rsvp_status(request, event, request.auth, final_status)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -370,7 +374,7 @@ def delete_rsvp(request, event_id: UUID):
         request,
         target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
     )
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(204, None)
 
 

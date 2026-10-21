@@ -15,7 +15,7 @@ from community._event_helpers import (
 )
 from community._event_schemas import EventOut, WaitlistOrderIn
 from community._events import _can_edit_event
-from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community._waitlist import promote_from_waitlist
@@ -60,7 +60,7 @@ def reorder_waitlist(request, event_id: UUID, payload: WaitlistOrderIn):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    _email_promoted_non_members(request, event, promoted_user_ids)
+    email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 

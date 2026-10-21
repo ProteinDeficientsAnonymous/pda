@@ -47,6 +47,23 @@ class TestArchiveUser:
         waiting.refresh_from_db()
         assert waiting.status == RSVPStatus.ATTENDING
 
+    def test_emails_promoted_member(
+        self, rf, member, other_user, fake_email_sender, django_capture_on_commit_callbacks
+    ):
+        other_user.email = "other@e.com"
+        other_user.save(update_fields=["email"])
+        event = _event(other_user, max_attendees=1)
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=other_user, status=RSVPStatus.WAITLISTED)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            archive_user(rf.get("/"), member)
+
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == "other@e.com"
+        assert sent["subject"] == "you're off the waitlist for potluck"
+        assert "/my-rsvps" not in sent["text"]
+
     @pytest.mark.parametrize("status", [RSVPStatus.MAYBE, RSVPStatus.WAITLISTED])
     def test_releases_non_attending_holds(self, rf, member, other_user, status):
         event = _event(other_user)
