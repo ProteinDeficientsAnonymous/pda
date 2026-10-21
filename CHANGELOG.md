@@ -1,3 +1,10 @@
+# [0.134.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.133.1...v0.134.0) (2026-10-21)
+
+
+### Features
+
+* **users:** let members delete their own account ([#1654](https://github.com/ProteinDeficientsAnonymous/pda/issues/1654)) ([3fb49a8](https://github.com/ProteinDeficientsAnonymous/pda/commit/3fb49a8cdd71fc07110e89178e28ab338da9457b))
+
 ## [0.133.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.133.0...v0.133.1) (2026-10-21)
 
 
