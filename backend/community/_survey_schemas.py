@@ -59,6 +59,8 @@ class SurveyOut(BaseModel):
     visibility: str
     is_active: bool
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = ""
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
@@ -93,6 +95,8 @@ class SurveyIn(BaseModel):
     visibility: str = Field(default=SurveyVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     is_active: bool = True
     one_response_per_user: bool = False
+    anonymous: bool = False
+    confirmation_message: str = Field(default="", max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE)
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
@@ -106,6 +110,10 @@ class SurveyPatchIn(BaseModel):
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     is_active: bool | None = None
     one_response_per_user: bool | None = None
+    anonymous: bool | None = None
+    confirmation_message: str | None = Field(
+        default=None, max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE
+    )
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
@@ -134,6 +142,10 @@ class SurveyResponseOut(BaseModel):
     user_name: str | None = None
     answers: dict
     submitted_at: datetime
+
+
+class SurveySubmitOut(SurveyResponseOut):
+    response_token: str | None = None
 
 
 # str for standard question types (text, select, number, etc.)

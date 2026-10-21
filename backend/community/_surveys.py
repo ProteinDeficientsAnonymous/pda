@@ -1,4 +1,4 @@
-"""Survey CRUD, questions, and response endpoints."""
+"""Survey CRUD and question endpoints."""
 
 import logging
 from uuid import UUID
@@ -9,7 +9,6 @@ from django.db import transaction
 from django.db.models import Max
 from ninja import Router
 from ninja.responses import Status
-from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -24,6 +23,7 @@ from community._survey_helpers import (
     _apply_linked_event_update,
     _survey_out,
     _survey_question_out,
+    _validate_anonymous_change,
     _validate_survey_window,
 )
 from community._survey_schemas import (
@@ -34,7 +34,6 @@ from community._survey_schemas import (
     SurveyQuestionIn,
     SurveyQuestionOrderIn,
     SurveyQuestionOut,
-    SurveyResponseOut,
 )
 from community._validation import Code, raise_validation
 from community.models import (
@@ -127,6 +126,8 @@ def create_survey(request, payload: SurveyIn):
         visibility=payload.visibility,
         is_active=payload.is_active,
         one_response_per_user=payload.one_response_per_user,
+        anonymous=payload.anonymous,
+        confirmation_message=payload.confirmation_message,
         opens_at=payload.opens_at,
         closes_at=payload.closes_at,
         max_responses=payload.max_responses,
@@ -210,6 +211,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     _validate_survey_window(
         updates.get("opens_at", survey.opens_at), updates.get("closes_at", survey.closes_at)
     )
+    _validate_anonymous_change(survey, updates)
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
@@ -451,48 +453,3 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         ),
     )
     return Status(204, None)
-
-
-# -- Survey responses (admin) --
-
-
-@router.get(
-    "/surveys/{survey_id}/responses/",
-    response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def list_survey_responses(request, survey_id: UUID):
-    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={
-                    "endpoint": "list_survey_responses",
-                    "required_permission": PermissionKey.MANAGE_SURVEYS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    try:
-        survey = Survey.objects.get(id=survey_id)
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    responses = survey.responses.select_related("user").all()
-    return Status(
-        200,
-        [
-            SurveyResponseOut(
-                id=str(r.id),
-                user_id=str(r.user_id) if r.user_id else None,
-                user_name=visible_display_name(r.user, request.auth) if r.user else None,
-                answers=r.answers,
-                submitted_at=r.submitted_at,
-            )
-            for r in responses
-        ],
-    )

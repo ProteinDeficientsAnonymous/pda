@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import { QuestionType } from './questionTypes';
+import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage';
 
 /** Survey field types are the full catalog (`QuestionType`). */
 export type SurveyQuestionType = QuestionType;
@@ -39,6 +40,8 @@ export interface Survey {
   visibility: string;
   isActive: boolean;
   oneResponsePerUser: boolean;
+  anonymous: boolean;
+  confirmationMessage: string;
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
@@ -97,6 +100,8 @@ interface WireSurvey {
   visibility: string;
   is_active: boolean;
   one_response_per_user?: boolean;
+  anonymous?: boolean;
+  confirmation_message?: string;
   opens_at?: string | null;
   closes_at?: string | null;
   max_responses?: number | null;
@@ -119,6 +124,7 @@ interface WireSurveyResponse {
   user_name: string | null;
   answers: Record<string, string | Record<string, string>>;
   submitted_at: string;
+  response_token?: string | null;
 }
 
 function mapSurvey(w: WireSurvey): Survey {
@@ -130,6 +136,8 @@ function mapSurvey(w: WireSurvey): Survey {
     visibility: w.visibility,
     isActive: w.is_active,
     oneResponsePerUser: w.one_response_per_user ?? false,
+    anonymous: w.anonymous ?? false,
+    confirmationMessage: w.confirmation_message ?? '',
     opensAt: w.opens_at ?? null,
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
@@ -149,12 +157,19 @@ function mapSurvey(w: WireSurvey): Survey {
   };
 }
 
+// read at request time, not in the query key, so post-submit invalidation picks up a new token
+function tokenParams(slug: string): { response_token: string } | undefined {
+  const token = getStoredSurveyToken(slug);
+  return token ? { response_token: token } : undefined;
+}
+
 export function useSurvey(slug: string | undefined) {
   return useQuery({
     queryKey: ['survey', slug ?? ''],
     queryFn: async () => {
       const { data } = await apiClient.get<WireSurvey>(
         `/api/community/surveys/view/${slug ?? ''}/`,
+        { params: tokenParams(slug ?? '') },
       );
       return mapSurvey(data);
     },
@@ -171,7 +186,9 @@ export function useSubmitSurvey(slug: string) {
       const { data } = await apiClient.post<WireSurveyResponse>(
         `/api/community/surveys/view/${slug}/respond/`,
         { answers },
+        { params: tokenParams(slug) },
       );
+      if (data.response_token) setStoredSurveyToken(slug, data.response_token);
       return data;
     },
     onSuccess: () => {

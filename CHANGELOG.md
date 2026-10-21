@@ -1,3 +1,26 @@
+## [0.129.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.5...v0.129.6) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1404 - refresh public rsvp without reload ([#1592](https://github.com/ProteinDeficientsAnonymous/pda/issues/1592)) ([61d7c68](https://github.com/ProteinDeficientsAnonymous/pda/commit/61d7c68e3674d92e90729bd7a325298122039849))
+
+## [0.129.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.4...v0.129.5) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1456 - stop a long question widening the page ([#1595](https://github.com/ProteinDeficientsAnonymous/pda/issues/1595)) ([7272320](https://github.com/ProteinDeficientsAnonymous/pda/commit/72723209b2390b4411c9f2bd7cf167d4f89ce5c2))
+* **auth:** apply account state on optional jwt routes ([#1540](https://github.com/ProteinDeficientsAnonymous/pda/issues/1540)) ([b9673e1](https://github.com/ProteinDeficientsAnonymous/pda/commit/b9673e178e3ae6c100978b19b4ffe4bb65185968))
+
+## [0.129.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.3...v0.129.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1624 - count plus-ones in admin attendance counts ([#1630](https://github.com/ProteinDeficientsAnonymous/pda/issues/1630)) ([b959d1b](https://github.com/ProteinDeficientsAnonymous/pda/commit/b959d1b8c12464550229fe0e5a02409560a0bbd2))
+* 1625 - can't remove a non-member from rsvp list ([#1629](https://github.com/ProteinDeficientsAnonymous/pda/issues/1629)) ([c36b9d7](https://github.com/ProteinDeficientsAnonymous/pda/commit/c36b9d751b264b57087cfbc7e80935205d453192))
+
 ## [0.129.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.2...v0.129.3) (2026-10-21)
 
 

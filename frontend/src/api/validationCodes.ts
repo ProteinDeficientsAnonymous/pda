@@ -348,6 +348,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'closes at must be after opens at';
     case Code.Survey.QuestionNotFound:
       return 'question not found';
+    case Code.Survey.ResponseNotFound:
+      return 'response not found';
+    case Code.Survey.AnonymousLocked:
+      return "anonymous can't be changed once a survey has responses";
     case Code.Survey.NoDatetimePollQuestion:
       return 'survey has no datetime poll question';
     case Code.Survey.WinningDatetimeNotInOptions:

@@ -41,6 +41,8 @@ const survey: Survey = {
   myResponseId: null,
   myAnswers: null,
   pollResult: null,
+  anonymous: false,
+  confirmationMessage: '',
   questions: [
     {
       id: 'diet',

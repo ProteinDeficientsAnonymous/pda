@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
+import { eventKeys } from '@/api/events';
 import { queryClient } from '@/api/queryClient';
 import { clearStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import type { ConsentTypeValue } from '@/models/consent';
@@ -102,6 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { startProfileStep: shouldStartProfileStep, ...apiPayload } = payload;
     const user = await authApi.completeOnboarding(apiPayload);
     set(shouldStartProfileStep ? { user, profileStepActive: true } : { user });
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   finishProfileStep() {
@@ -111,10 +113,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async acceptConsents(consentTypes) {
     const user = await authApi.acceptConsents(consentTypes);
     set({ user });
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   async changePassword(current, next) {
     await authApi.changePassword(current, next);
+    void queryClient.invalidateQueries({ queryKey: eventKeys.all });
   },
 
   async updateProfile(patch) {

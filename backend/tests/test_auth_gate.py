@@ -5,10 +5,20 @@ password, pause, archive). GatedJWTAuth re-checks on every protected request and
 403s, except for the allowlist a pending user needs to resolve their state.
 """
 
+from datetime import timedelta
+
 import pytest
+from community.models import (
+    Event,
+    EventComment,
+    EventRSVP,
+    RSVPStatus,
+)
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
 
 def _headers(user):
@@ -160,3 +170,182 @@ class TestGatedJWTAuth:
         resp = api_client.get("/api/notifications/", **_headers(user))
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.password_reset_required"
+
+    @pytest.mark.parametrize("block", ["archived", "paused"])
+    def test_hard_block_rejects_me(self, api_client, block):
+        user = User.objects.create_user(
+            phone_number="+12025550330" if block == "archived" else "+12025550331",
+            password="pass",
+            first_name="Hard",
+            last_name="Block",
+        )
+        headers = _headers(user)
+        _block_user(user, block)
+
+        resp = api_client.get("/api/auth/me/", **headers)
+        assert resp.status_code == 403
+        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+
+    @pytest.mark.parametrize("block", ["archived", "paused"])
+    def test_hard_block_rejects_complete_onboarding_while_onboarding_pending(
+        self, api_client, block
+    ):
+        user = User.objects.create_user(
+            phone_number="+12025550332" if block == "archived" else "+12025550333",
+            password="pass",
+            first_name="Hard",
+            last_name="Onboard",
+            email="hard-archive@example.com" if block == "archived" else "hard-pause@example.com",
+            needs_onboarding=True,
+        )
+        headers = _headers(user)
+        _block_user(user, block)
+
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "FreshPass123!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 403, resp.content
+        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+
+
+_BLOCK_CODES = {
+    "paused": "auth.account_paused",
+    "archived": "auth.account_archived",
+    "needs_password_reset": "auth.password_reset_required",
+    "needs_onboarding": "auth.onboarding_required",
+    "needs_guidelines_consent": "auth.guidelines_consent_required",
+}
+
+_BLOCK_PHONES = {
+    "paused": "+12025550321",
+    "archived": "+12025550322",
+    "needs_password_reset": "+12025550323",
+    "needs_onboarding": "+12025550326",
+    "needs_guidelines_consent": "+12025550327",
+}
+
+
+def _block_user(user, block: str) -> None:
+    if block == "paused":
+        user.is_paused = True
+        user.save(update_fields=["is_paused"])
+        return
+    if block == "archived":
+        user.archived_at = timezone.now()
+        user.save(update_fields=["archived_at"])
+        return
+    if block == "needs_onboarding":
+        user.needs_onboarding = True
+        user.save(update_fields=["needs_onboarding"])
+        return
+    if block == "needs_guidelines_consent":
+        user.guidelines_consent_at = None
+        user.save(update_fields=["guidelines_consent_at"])
+        return
+    user.needs_password_reset = True
+    user.save(update_fields=["needs_password_reset"])
+
+
+def _public_event(creator):
+    return Event.objects.create(
+        title="Optional gate",
+        start_datetime=timezone.now() + timedelta(days=7),
+        whatsapp_link="https://chat.whatsapp.com/abc",
+        created_by=creator,
+    )
+
+
+def _rsvp_viewer(phone: str, event):
+    viewer = User.objects.create_user(phone_number=phone, password="pass", first_name="Viewer")
+    EventRSVP.objects.create(event=event, user=viewer, status=RSVPStatus.ATTENDING)
+    return viewer
+
+
+@pytest.mark.django_db
+class TestOptionalJWTAccountState:
+    @pytest.mark.parametrize(
+        "block",
+        [
+            "paused",
+            "archived",
+            "needs_password_reset",
+            "needs_onboarding",
+            "needs_guidelines_consent",
+        ],
+    )
+    def test_event_detail_blocked_token_matches_logged_out(self, api_client, test_user, block):
+        event = _public_event(test_user)
+        viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
+        headers = _headers(viewer)
+        _block_user(viewer, block)
+
+        url = f"/api/community/events/{event.id}/"
+        anon = api_client.get(url)
+        blocked = api_client.get(url, **headers)
+
+        assert anon.status_code == 200
+        assert blocked.status_code == 200
+        assert blocked.json()["whatsapp_link"] == ""
+        assert blocked.json()["guests"] == []
+        assert blocked.json() == anon.json()
+
+    @pytest.mark.parametrize(
+        "block",
+        [
+            "paused",
+            "archived",
+            "needs_password_reset",
+            "needs_onboarding",
+            "needs_guidelines_consent",
+        ],
+    )
+    def test_comment_post_blocked_token_forbidden(self, api_client, test_user, block):
+        event = _public_event(test_user)
+        viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
+        headers = _headers(viewer)
+        _block_user(viewer, block)
+
+        resp = api_client.post(
+            f"/api/community/events/{event.id}/comments/",
+            data={"body": "should not land"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 403
+        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert not EventComment.objects.filter(event=event).exists()
+
+    def test_archived_manage_events_delete_comment_forbidden(self, api_client, test_user):
+        event = _public_event(test_user)
+        comment = EventComment.objects.create(event=event, author=test_user, body="keep me")
+        manager = User.objects.create_user(
+            phone_number="+12025550324", password="pass", first_name="Archived", last_name="Manager"
+        )
+        role = Role.objects.create(
+            name="optional_jwt_event_manager", permissions=[PermissionKey.MANAGE_EVENTS]
+        )
+        manager.roles.add(role)
+        headers = _headers(manager)
+        _block_user(manager, "archived")
+
+        resp = api_client.delete(
+            f"/api/community/events/{event.id}/comments/{comment.id}/",
+            **headers,
+        )
+        assert resp.status_code == 403
+        assert resp.json()["detail"][0]["code"] == "auth.account_archived"
+        comment.refresh_from_db()
+        assert comment.deleted_at is None
+
+    def test_active_rsvp_event_detail_shows_member_fields(self, api_client, test_user):
+        event = _public_event(test_user)
+        viewer = _rsvp_viewer("+12025550325", event)
+
+        resp = api_client.get(f"/api/community/events/{event.id}/", **_headers(viewer))
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["whatsapp_link"] == "https://chat.whatsapp.com/abc"
+        assert any(guest["user_id"] == str(viewer.id) for guest in body["guests"])

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,7 @@ vi.mock('@/api/client', () => ({
 }));
 
 const mockedGet = vi.mocked(apiClient.get);
+const mockedDelete = vi.mocked(apiClient.delete);
 
 function renderScreen(surveyId = 'srv-1') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -93,5 +95,31 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByRole('columnheader', { name: 'mood' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'flavors' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'availability' })).toBeInTheDocument();
+  });
+});
+
+describe('SurveyResponsesScreen delete action', () => {
+  it('deletes a response when confirmed', async () => {
+    mockedDelete.mockResolvedValue({ data: null });
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole('button', { name: 'delete' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'delete' }));
+
+    await waitFor(() => {
+      expect(mockedDelete).toHaveBeenCalledWith('/api/community/surveys/srv-1/responses/r1/');
+    });
+  });
+
+  it('does not delete a response when cancelled', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole('button', { name: 'delete' }));
+    await user.click(screen.getByRole('button', { name: 'cancel' }));
+
+    expect(mockedDelete).not.toHaveBeenCalled();
   });
 });

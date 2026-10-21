@@ -1,9 +1,10 @@
 """Public survey response and poll tally endpoints."""
 
 import logging
+import secrets
 from uuid import UUID
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from django.db import transaction
@@ -13,8 +14,9 @@ from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
+    _find_my_response,
     _has_finalize_permission,
-    _response_out,
+    _submit_out,
     _survey_out,
     _tally_question,
     survey_is_open,
@@ -24,7 +26,7 @@ from community._survey_schemas import (
     PollResultsOut,
     SurveyAnswersIn,
     SurveyOut,
-    SurveyResponseOut,
+    SurveySubmitOut,
 )
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community._validation import Code, raise_validation
@@ -53,28 +55,30 @@ def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) ->
     return survey
 
 
-def _existing_response(survey: Survey, auth_user) -> SurveyResponse | None:
-    if not survey.one_response_per_user or auth_user is None:
-        return None
-    return SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
-
-
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
-def get_survey_public(request, slug: str):
+def get_survey_public(request, slug: str, response_token: str = ""):
     auth_user = _authenticated_user(request.auth)
     survey = _visible_survey_or_404(slug, auth_user)
-    return Status(200, _survey_out(survey, include_questions=True, requesting_user=auth_user))
+    return Status(
+        200,
+        _survey_out(
+            survey,
+            include_questions=True,
+            requesting_user=auth_user,
+            response_token=response_token,
+        ),
+    )
 
 
 @router.post(
     "/surveys/view/{slug}/respond/",
     response={
-        200: SurveyResponseOut,
-        201: SurveyResponseOut,
+        200: SurveySubmitOut,
+        201: SurveySubmitOut,
         400: ErrorOut,
         404: ErrorOut,
         429: ErrorOut,
@@ -82,41 +86,42 @@ def get_survey_public(request, slug: str):
     auth=_optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
-def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
+def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, response_token: str = ""):
     auth_user = _authenticated_user(request.auth)
     # select_for_update() serializes concurrent submits against the same survey row,
     # so the max_responses check-then-create can't race past the cap (issue #1465).
     with transaction.atomic():
         survey = _visible_survey_or_404(slug, auth_user, for_update=True)
-        existing = _existing_response(survey, auth_user)
+        # No responder on an anonymous survey; members dedupe by response token instead.
+        response_user = None if survey.anonymous else auth_user
+        if survey.anonymous:
+            # Audit rows and request log lines would re-link the submitter by timestamp.
+            mark_request_anonymized(request)
+        existing = (
+            _find_my_response(survey, response_user, response_token)
+            if survey.one_response_per_user
+            else None
+        )
         if not survey_is_open(survey, check_cap=existing is None):
             raise_validation(Code.Survey.CLOSED, status_code=400)
         questions = {str(q.id): q for q in survey.questions.all()}
         _validate_survey_answers(payload.answers, questions)
         answers = _build_survey_answers(payload.answers, questions)
-        user_name = visible_display_name(auth_user, auth_user) if auth_user else None
+        user_name = visible_display_name(auth_user, auth_user) if response_user else None
+        target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
         if existing:
             existing.answers = answers
             existing.save(update_fields=["answers"])
-            audit_log(
-                logging.INFO,
-                "survey_response_updated",
-                request,
-                target=AuditTarget(
-                    type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
-                ),
-            )
-            return Status(200, _response_out(existing, user_name))
-        response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
-        audit_log(
-            logging.INFO,
-            "survey_response_submitted",
-            request,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
-            ),
+            audit_log(logging.INFO, "survey_response_updated", request, target=target)
+            return Status(200, _submit_out(existing, user_name))
+        anonymous_token = None
+        if response_user is None and survey.one_response_per_user:
+            anonymous_token = secrets.token_urlsafe(32)
+        response = SurveyResponse.objects.create(
+            survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
-        return Status(201, _response_out(response, user_name))
+        audit_log(logging.INFO, "survey_response_submitted", request, target=target)
+        return Status(201, _submit_out(response, user_name))
 
 
 @router.get(
@@ -158,7 +163,10 @@ def get_survey_tallies(request, survey_id: UUID):
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     responses = list(survey.responses.select_related("user").all())
-    tallies = [_tally_question(q, responses, request.auth) for q in poll_questions]
+    tallies = [
+        _tally_question(q, responses, request.auth, include_voters=not survey.anonymous)
+        for q in poll_questions
+    ]
     return Status(200, tallies)
 
 
