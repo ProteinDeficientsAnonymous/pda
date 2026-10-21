@@ -1,3 +1,10 @@
+# [0.140.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.139.0...v0.140.0) (2026-10-21)
+
+
+### Features
+
+* add an event url field to the event edit form ([#1664](https://github.com/ProteinDeficientsAnonymous/pda/issues/1664)) ([a376559](https://github.com/ProteinDeficientsAnonymous/pda/commit/a3765593e194594026db89d5349a43654bc93085))
+
 # [0.139.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.138.0...v0.139.0) (2026-10-21)
 
 
