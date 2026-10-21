@@ -172,6 +172,7 @@ class UserOut(BaseModel):
     calendar_feed_excluded_types: list[str] = []
     # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
+    attended_count: int = 0
     date_joined: datetime
     roles: list[RoleOut]
 
@@ -218,6 +219,7 @@ class UserOut(BaseModel):
                 else []
             ),
             last_attended=getattr(user, "last_attended", None),
+            attended_count=getattr(user, "attended_count", 0),
             date_joined=user.date_joined,
             roles=[
                 RoleOut(
@@ -229,6 +231,13 @@ class UserOut(BaseModel):
                 for r in user.roles.all()
             ],
         )
+
+
+class MemberAttendedEventOut(BaseModel):
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    event_type: str
 
 
 class MemberProfileOut(BaseModel):

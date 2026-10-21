@@ -4,12 +4,10 @@ from community._checkin_nudge import (
     send_checkin_nudge,
     send_due_checkin_nudges,
 )
-from community.models import Event, EventStatus, EventType, FeatureFlag
+from community.models import Event, EventStatus, EventType
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users.models import User
-
-from tests.conftest import set_flag
 
 
 def _make_event(**kwargs):
@@ -149,17 +147,7 @@ class TestSendCheckinNudge:
 
 @pytest.mark.django_db
 class TestSendDueCheckinNudges:
-    def test_noop_when_flag_off(self, test_user, fake_email_sender, db):
-        _make_event(created_by=test_user)
-        assert send_due_checkin_nudges() == 0
-        fake_email_sender.send.assert_not_called()
-        assert (
-            Notification.objects.filter(notification_type=NotificationType.CHECKIN_NUDGE).count()
-            == 0
-        )
-
     def test_sends_and_stamps_when_flag_on(self, test_user, fake_email_sender, db):
-        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
         event = _make_event(created_by=test_user)
 
         count = send_due_checkin_nudges()
@@ -169,7 +157,6 @@ class TestSendDueCheckinNudges:
         assert event.checkin_nudge_sent_at is not None
 
     def test_idempotent_across_runs(self, test_user, fake_email_sender, db):
-        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
         _make_event(created_by=test_user)
 
         assert send_due_checkin_nudges() == 1

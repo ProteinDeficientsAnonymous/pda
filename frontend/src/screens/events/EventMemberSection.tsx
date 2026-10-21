@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useFlag } from '@/api/featureFlags';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { eventHostCount, spotsLeft } from '@/models/event';
-import { Feature } from '@/models/featureFlags';
 import { formatPrice } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { toCashAppPayUrl } from '@/utils/paymentHandle';
@@ -178,15 +176,14 @@ export function LinksSection({ event }: { event: Event }) {
 }
 
 export function CostSection({ event }: { event: Event }) {
-  const paymentPrefillOn = useFlag(Feature.EventPaymentConfirmation);
   const items: { label: string; url?: string }[] = [];
   if (event.price) items.push({ label: formatPrice(event.price) });
   if (event.venmoLink) items.push({ label: 'venmo', url: ensureHttps(event.venmoLink) });
   if (event.cashappLink) {
-    const url = paymentPrefillOn
-      ? toCashAppPayUrl(event.cashappLink, { price: event.price })
-      : ensureHttps(event.cashappLink);
-    items.push({ label: 'cashapp', url });
+    items.push({
+      label: 'cashapp',
+      url: toCashAppPayUrl(event.cashappLink, { price: event.price }),
+    });
   }
   if (event.zelleInfo) items.push({ label: `zelle: ${event.zelleInfo}` });
   if (items.length === 0) return null;
