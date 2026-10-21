@@ -4846,6 +4846,41 @@
         "title": "MemberAttendanceRowOut",
         "type": "object"
       },
+      "MemberAttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "MemberAttendedEventOut",
+        "type": "object"
+      },
       "MemberDirectoryOut": {
         "properties": {
           "email": {
@@ -6826,6 +6861,11 @@
       },
       "UserOut": {
         "properties": {
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
           "bio": {
             "default": "",
             "title": "Bio",
@@ -8542,6 +8582,67 @@
           }
         ],
         "summary": "Update User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/{user_id}/attended-events/": {
+      "get": {
+        "operationId": "users__management_list_member_attended_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Member Attended Events",
         "tags": [
           "auth"
         ]

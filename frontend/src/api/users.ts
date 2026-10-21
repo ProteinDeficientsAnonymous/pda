@@ -33,6 +33,7 @@ export interface Member {
   loginLinkRequested: boolean;
   // Most recent event the member was checked in as attended. null if never.
   lastAttendedAt: Date | null;
+  attendedCount: number;
   dateJoined: Date;
   roles: MemberRole[];
 }
@@ -64,6 +65,7 @@ interface WireMember {
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
   last_attended?: string | null;
+  attended_count?: number;
   date_joined: string;
   roles: WireRole[];
 }
@@ -96,6 +98,7 @@ function fromWire(w: WireMember): Member {
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
     lastAttendedAt: w.last_attended ? new Date(w.last_attended) : null,
+    attendedCount: w.attended_count ?? 0,
     dateJoined: new Date(w.date_joined),
     roles: w.roles.map(mapRole),
   };
@@ -113,6 +116,38 @@ export function useUsers(includeNonMembers = false) {
       const { data } = await apiClient.get<WireMember[]>('/api/auth/users/', config);
       return data.map(fromWire);
     },
+  });
+}
+
+export interface MemberAttendedEvent {
+  eventId: string;
+  title: string;
+  startDatetime: Date | null;
+  eventType: string;
+}
+
+interface WireMemberAttendedEvent {
+  event_id: string;
+  title: string;
+  start_datetime?: string | null;
+  event_type: string;
+}
+
+export function useMemberAttendedEvents(userId: string) {
+  return useQuery({
+    queryKey: [...USERS_KEY, userId, 'attended-events'] as const,
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireMemberAttendedEvent[]>(
+        `/api/auth/users/${userId}/attended-events/`,
+      );
+      return data.map((e): MemberAttendedEvent => ({
+        eventId: e.event_id,
+        title: e.title,
+        startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,
+        eventType: e.event_type,
+      }));
+    },
+    enabled: userId !== '',
   });
 }
 

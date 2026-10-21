@@ -272,13 +272,14 @@ describe('MembersScreen', () => {
           id: 'm1',
           fullName: 'Ada Lovelace',
           lastAttendedAt: new Date('2026-03-15T18:00:00Z'),
+          attendedCount: 3,
         }),
       ],
     });
 
     renderScreen();
 
-    expect(screen.getByText(/last attended mar 15, 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 events attended · last attended mar 15, 2026/i)).toBeInTheDocument();
   });
 
   it('shows "never attended" for a member with no attendance', () => {
