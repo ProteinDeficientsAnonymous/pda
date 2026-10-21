@@ -129,6 +129,10 @@ def calendar_feed(request, token: str = ""):
     if not user.calendar_token:
         return HttpResponse("Invalid token.", status=403, content_type="text/plain")
 
+    # The feed carries member-only data, so it must stop when site access does.
+    if user.archived_at is not None or user.is_paused:
+        return HttpResponse("Invalid token.", status=403, content_type="text/plain")
+
     cal = icalendar.Calendar()
     cal.add("prodid", "-//PDA//PDA Calendar//EN")
     cal.add("version", "2.0")
