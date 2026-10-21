@@ -2889,6 +2889,18 @@
             ],
             "title": "Rsvp Enabled"
           },
+          "slug": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
           "start_datetime": {
             "anyOf": [
               {

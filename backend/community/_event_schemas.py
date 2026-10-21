@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, WithJsonSchema, field_validator, model_validator
 
 from community._event_field_validators import (
+    _validate_event_slug,
     _validate_generic_url,
     _validate_max_attendees,
     _validate_partiful_url,
@@ -22,6 +23,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from community.models.event_slug import SLUG_MAX
 
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
@@ -370,6 +372,7 @@ class EventIn(BaseModel):
 
 class EventPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    slug: str | None = Field(default=None, max_length=SLUG_MAX)
     description: str | None = Field(default=None, max_length=FieldLimit.EVENT_DESCRIPTION)
     start_datetime: datetime | None = None
     end_datetime: datetime | None = None
@@ -395,6 +398,11 @@ class EventPatchIn(BaseModel):
     status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     notify_attendees: bool | None = None
     force: bool | None = None
+
+    @field_validator("slug", mode="after")
+    @classmethod
+    def validate_slug(cls, v: str | None) -> str | None:
+        return None if v is None else _validate_event_slug(v)
 
     @field_validator("whatsapp_link", mode="before")
     @classmethod

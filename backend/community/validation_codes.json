@@ -238,6 +238,16 @@
         "params": [
           "column"
         ]
+      },
+      {
+        "name": "SLUG_INVALID",
+        "value": "event.slug_invalid",
+        "params": []
+      },
+      {
+        "name": "SLUG_TAKEN",
+        "value": "event.slug_taken",
+        "params": []
       }
     ],
     "Poll": [

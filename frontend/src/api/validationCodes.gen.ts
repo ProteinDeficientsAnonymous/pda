@@ -52,6 +52,8 @@ export const Code = {
     PaymentConfirmationRequired: 'event.payment_confirmation_required',
     CheckInReportNotYetAvailable: 'event.check_in_report_not_yet_available',
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
+    SlugInvalid: 'event.slug_invalid',
+    SlugTaken: 'event.slug_taken',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -313,6 +315,8 @@ export type ValidationCode =
   | 'event.payment_confirmation_required'
   | 'event.check_in_report_not_yet_available'
   | 'event.check_in_report_invalid_column'
+  | 'event.slug_invalid'
+  | 'event.slug_taken'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -510,6 +514,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.payment_confirmation_required': [],
   'event.check_in_report_not_yet_available': [],
   'event.check_in_report_invalid_column': ['column'],
+  'event.slug_invalid': [],
+  'event.slug_taken': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],

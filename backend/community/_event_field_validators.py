@@ -5,9 +5,11 @@ import phonenumbers
 
 from community._shared import require_url_path
 from community._validation import Code, raise_validation
+from community.models.event_slug import parse_event_ref
 
 # Loose email check for free-text Zelle — EmailStr/DNS is overkill here.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+_EVENT_SLUG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$")
 
 
 def _looks_like_email(s: str) -> bool:
@@ -43,6 +45,14 @@ def _validate_max_attendees(v: int | None) -> int | None:
             field="max_attendees",
         )
     return v
+
+
+def _validate_event_slug(v: str) -> str:
+    slug = v.strip().lower()
+    # A UUID-shaped slug would be routed as an event id and never match by slug.
+    if not _EVENT_SLUG_RE.match(slug) or parse_event_ref(slug).event_id is not None:
+        raise_validation(Code.Event.SLUG_INVALID, field="slug")
+    return slug
 
 
 def _normalize_url(url: str) -> str:

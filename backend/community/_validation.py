@@ -52,6 +52,8 @@ class Code:
         CHECK_IN_REPORT_INVALID_COLUMN = (
             "event.check_in_report_invalid_column"  # params: { column: str }
         )
+        SLUG_INVALID = "event.slug_invalid"
+        SLUG_TAKEN = "event.slug_taken"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
