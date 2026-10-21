@@ -31,7 +31,10 @@ jobs:
           POSTGRES_DB: pda
         ports:
           - 5432:5432
+        # tmpfs data dir: every xdist worker migrates its own test DB, and
+        # transaction tests TRUNCATE every table — both fsync-bound on disk.
         options: >-
+          --tmpfs /var/lib/postgresql/data
           --health-cmd pg_isready
           --health-interval 5s
           --health-timeout 3s
@@ -55,8 +58,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      # Static checks run alongside pytest; -O keeps each target's output together.
       - name: Run backend CI
-        run: make agent-backend-ci
+        run: make -j --keep-going --output-sync=target agent-backend-ci
 
       # agent-lint auto-fixes with ruff; fail if anything was reformatted so
       # contributors format locally instead of relying on CI to silently fix.
