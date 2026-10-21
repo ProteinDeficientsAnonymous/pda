@@ -92,8 +92,4 @@ Use hyphenated prefixes: `feat-slug`, `fix-slug`, `chore-slug` — not `feat/slu
 
 1. **STEP 0 RULE**: Before ANY structural refactor on a file >300 LOC, first remove all dead props, unused exports, unused imports, and debug logs. Commit this cleanup separately.
 
-2. **FILE READ BUDGET**: Each file read is capped at 2,000 lines. For files over 500 LOC, use offset and limit parameters to read in chunks.
-
-3. **TOOL RESULT BLINDNESS**: Tool results over 50,000 characters are silently truncated. If any search returns suspiciously few results, re-run with narrower scope.
-
-4. **NO SEMANTIC SEARCH**: You have grep, not an AST. When renaming or changing any function/type/variable, search separately for: direct calls, type-level references, string literals, dynamic imports, re-exports, and test files/mocks.
+2. **RENAMES**: When renaming or changing any function/type/variable, search separately for: direct calls, type-level references, string literals, dynamic imports, re-exports, and test files/mocks.
