@@ -24,8 +24,8 @@ from community.models import (
     JoinFormQuestion,
     JoinRequest,
     PageVisibility,
-    RSVPStatus,
     RsvpQuestionType,
+    RSVPStatus,
     Survey,
 )
 from community.models.feature_flag import FeatureFlagState
