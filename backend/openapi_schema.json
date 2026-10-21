@@ -14712,7 +14712,7 @@
     },
     "/api/community/join-requests/{id}/unreject/": {
       "patch": {
-        "operationId": "community__join_requests_unreject_join_request",
+        "operationId": "community__join_request_unreject_unreject_join_request",
         "parameters": [
           {
             "in": "path",
