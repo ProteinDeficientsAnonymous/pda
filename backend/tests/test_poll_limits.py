@@ -1,4 +1,5 @@
 import json
+from itertools import count
 
 import pytest
 from community._polls import MAX_POLL_OPTIONS
@@ -11,6 +12,8 @@ from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
+
+_phone_suffix = count(9000)
 
 
 @pytest.fixture
@@ -26,7 +29,7 @@ def _make_poll(event, creator, option_count: int, voter_count: int) -> EventPoll
     poll = EventPoll.objects.create(event=event, created_by=creator)
     voters = [
         User.objects.create_user(
-            phone_number=f"+1202555{event.id.int % 100:02d}{i:02d}",
+            phone_number=f"+1202555{next(_phone_suffix):04d}",
             password="pass",
             first_name=f"Voter{i}",
             last_name=f"Hidden{i}",
