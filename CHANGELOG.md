@@ -1,3 +1,10 @@
+## [0.134.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.134.0...v0.134.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1305 - cap poll options and bound poll query count ([#1401](https://github.com/ProteinDeficientsAnonymous/pda/issues/1401)) ([ed494be](https://github.com/ProteinDeficientsAnonymous/pda/commit/ed494be039e657d9786036e2f43315eb28c65e51))
+
 # [0.134.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.133.1...v0.134.0) (2026-10-21)
 
 
