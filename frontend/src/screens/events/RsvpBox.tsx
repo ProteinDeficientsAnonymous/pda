@@ -31,6 +31,8 @@ interface Props {
   initialStatus: RsvpInputStatus;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
+  // Shown in place of the +1 button when allowPlusOnes is false, so the missing option isn't silent.
+  plusOneNote?: string | null;
   allowComment?: boolean;
   atCapacity?: boolean;
   // Already in line: "going" keeps their place rather than joining the waitlist.
@@ -51,6 +53,7 @@ export function RsvpBox({
   initialStatus,
   initialHasPlusOne,
   allowPlusOnes,
+  plusOneNote = null,
   allowComment,
   atCapacity = false,
   onWaitlist = false,
@@ -159,6 +162,9 @@ export function RsvpBox({
                   {hasPlusOne ? 'remove +1' : 'add +1'}
                 </Button>
               </div>
+            ) : null}
+            {!showPlusOne && plusOneNote ? (
+              <p className="text-muted text-center text-sm">{plusOneNote}</p>
             ) : null}
           </div>
 

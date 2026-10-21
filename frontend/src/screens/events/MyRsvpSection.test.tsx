@@ -222,6 +222,14 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
   });
 
+  it("says why there's no +1 when the event doesn't allow them (Issue 1289)", () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted, allowPlusOnes: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+
+    expect(screen.getByText("this event doesn't allow +1s")).toBeInTheDocument();
+  });
+
   it('says "save", not "join the waitlist", when already waitlisted on a full event', () => {
     renderSection(
       makeEvent({
@@ -345,23 +353,21 @@ describe('MyRsvpSection — rsvp submit error', () => {
 });
 
 describe('MyRsvpSection — token-holding viewer (Issue 854)', () => {
-  it('shows the +1 toggle as "remove +1" using viewerUserId, not useAuthStore (no logged-in user)', () => {
+  it('explains that +1s are for members instead of offering a toggle the backend ignores', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Attending,
+        allowPlusOnes: true,
         viewerUserId: 'non-member-1',
-        guests: [
-          makeGuest({ userId: 'non-member-1', name: 'Non Member', hasPlusOne: true }),
-          makeGuest({ userId: 'user-other', name: 'Other', hasPlusOne: false }),
-        ],
       }),
       'tok-abc',
     );
 
     fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
 
-    expect(screen.getByRole('button', { name: /^remove \+1$/i })).toBeInTheDocument();
+    expect(screen.getByText('+1s are for members only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+1$/i })).not.toBeInTheDocument();
   });
 });
 

@@ -145,6 +145,25 @@ describe('RsvpBox', () => {
     expect(screen.queryByRole('button', { name: /\+1/i })).not.toBeInTheDocument();
   });
 
+  it('shows the +1 note in place of the button', () => {
+    render(
+      <RsvpBox
+        {...base}
+        mode="edit"
+        allowPlusOnes={false}
+        plusOneNote="this event doesn't allow +1s"
+        onConfirm={() => {}}
+      />,
+    );
+    expect(screen.getByText("this event doesn't allow +1s")).toBeInTheDocument();
+  });
+
+  it('ignores the +1 note when +1s are allowed', () => {
+    render(<RsvpBox {...base} mode="edit" plusOneNote="unused" onConfirm={() => {}} />);
+    expect(screen.queryByText('unused')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^add \+1$/i })).toBeInTheDocument();
+  });
+
   it('shows the comment field in edit mode when allowComment is true', () => {
     render(<RsvpBox {...base} mode="edit" allowComment onConfirm={() => {}} />);
     expect(screen.getByRole('textbox')).toBeInTheDocument();
