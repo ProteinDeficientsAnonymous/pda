@@ -47,6 +47,18 @@ export interface SeedScenarioMap {
     survey_id: string;
     doc_id: string;
   };
+  'attendance-report': {
+    event_id: string;
+    event_title: string;
+    host_phone: string;
+    host_password: string;
+  };
+  'attendance-analytics': {
+    admin_phone: string;
+    admin_password: string;
+    compliant_name: string;
+    at_risk_name: string;
+  };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;

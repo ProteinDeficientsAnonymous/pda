@@ -1,14 +1,12 @@
 import calendar
 import json
-import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from django.core.cache import caches
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications._email_helpers import format_eastern_datetime
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
@@ -29,54 +27,15 @@ from community.models import (
     Survey,
 )
 
-E2E_PASSWORD = "e2e-test-pass-123"
-
-
-def _random_phone() -> str:
-    return "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
-
-
-def _random_event(scenario: str, **overrides) -> Event:
-    base = {
-        "title": f"E2E {scenario} {secrets.token_hex(4)}",
-        "start_datetime": timezone.now() + timedelta(days=30),
-        "event_type": EventType.OFFICIAL,
-        "visibility": PageVisibility.PUBLIC,
-        "status": EventStatus.ACTIVE,
-        "rsvp_enabled": True,
-        "location": f"secret loft {secrets.token_hex(3)}",
-    }
-    base.update(overrides)
-    return Event.objects.create(**base)
-
-
-def _member_user(phone: str) -> User:
-    user = User.objects.create_user(
-        phone_number=phone,
-        first_name="E2E",
-        last_name="Member",
-        email=f"{phone.lstrip('+')}@example.com",
-        is_member=True,
-        has_seen_veganniversary=True,
-        password=E2E_PASSWORD,
-    )
-    return user
-
-
-def _non_member_user(phone: str) -> User:
-    # create_user with no password calls set_password(None) → unusable password.
-    return User.objects.create_user(
-        phone_number=phone,
-        first_name="E2E",
-        last_name="Guest",
-        email=f"{phone.lstrip('+')}@example.com",
-        is_member=False,
-    )
-
-
-def _access_token(user: User) -> str:
-    refresh = RefreshToken.for_user(user)
-    return str(refresh.access_token)  # type: ignore[attr-defined]
+from ._e2e_attendance import _seed_attendance_analytics, _seed_attendance_report
+from ._e2e_common import (
+    E2E_PASSWORD,
+    _access_token,
+    _member_user,
+    _non_member_user,
+    _random_event,
+    _random_phone,
+)
 
 
 def _seed_member() -> dict:
@@ -399,6 +358,8 @@ SCENARIOS = {
     "comments": _seed_comments,
     "my-rsvps": _seed_my_rsvps,
     "live-updates": _seed_live_updates,
+    "attendance-report": _seed_attendance_report,
+    "attendance-analytics": _seed_attendance_analytics,
 }
 
 
