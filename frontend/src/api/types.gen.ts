@@ -1985,6 +1985,23 @@ export interface paths {
         patch: operations["community__surveys_update_survey_question"];
         trace?: never;
     };
+    "/api/community/surveys/{survey_id}/responses.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Responses Csv */
+        get: operations["community__survey_reports_get_survey_responses_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/surveys/{survey_id}/responses/": {
         parameters: {
             query?: never;
@@ -1993,7 +2010,41 @@ export interface paths {
             cookie?: never;
         };
         /** List Survey Responses */
-        get: operations["community__surveys_list_survey_responses"];
+        get: operations["community__surveys_responses_list_survey_responses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/surveys/{survey_id}/responses/{response_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Survey Response */
+        delete: operations["community__surveys_responses_delete_survey_response"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/surveys/{survey_id}/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Survey Summary */
+        get: operations["community__survey_reports_get_survey_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4289,6 +4340,8 @@ export interface components {
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
             weekly_digest_opt_out?: boolean | null;
+            /** Whatsapp Reminder Opt Out */
+            whatsapp_reminder_opt_out?: boolean | null;
         };
         /** MemberAttendanceAnalyticsOut */
         MemberAttendanceAnalyticsOut: {
@@ -4693,6 +4746,20 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** QuestionSummaryOut */
+        QuestionSummaryOut: {
+            /** Answered */
+            answered: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            field_type: components["schemas"]["QuestionType"];
+            /** Mean */
+            mean?: number | null;
+            /** Question Id */
+            question_id: string;
+        };
         /**
          * QuestionType
          * @description HTML-aligned question type catalog (wire values).
@@ -4861,6 +4928,32 @@ export interface components {
             /** Permissions */
             permissions?: string[] | null;
         };
+        /** ShowIfIn */
+        ShowIfIn: {
+            /** @default equals */
+            operator: components["schemas"]["ShowIfOperator"];
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * ShowIfOperator
+         * @enum {string}
+         */
+        ShowIfOperator: "equals" | "not_equals" | "contains";
+        /** ShowIfOut */
+        ShowIfOut: {
+            /** Operator */
+            operator: string;
+            /** Question Id */
+            question_id: string;
+            /** Value */
+            value: string;
+        };
         /** SseTicketOut */
         SseTicketOut: {
             /** Ticket */
@@ -4877,8 +4970,18 @@ export interface components {
         };
         /** SurveyIn */
         SurveyIn: {
+            /**
+             * Anonymous
+             * @default false
+             */
+            anonymous: boolean;
             /** Closes At */
             closes_at?: string | null;
+            /**
+             * Confirmation Message
+             * @default
+             */
+            confirmation_message: string;
             /**
              * Description
              * @default
@@ -4943,8 +5046,18 @@ export interface components {
         };
         /** SurveyOut */
         SurveyOut: {
+            /**
+             * Anonymous
+             * @default false
+             */
+            anonymous: boolean;
             /** Closes At */
             closes_at?: string | null;
+            /**
+             * Confirmation Message
+             * @default
+             */
+            confirmation_message: string;
             /**
              * Created At
              * Format: date-time
@@ -4995,8 +5108,12 @@ export interface components {
         };
         /** SurveyPatchIn */
         SurveyPatchIn: {
+            /** Anonymous */
+            anonymous?: boolean | null;
             /** Closes At */
             closes_at?: string | null;
+            /** Confirmation Message */
+            confirmation_message?: string | null;
             /** Description */
             description?: string | null;
             /** Is Active */
@@ -5032,6 +5149,7 @@ export interface components {
              * @default false
              */
             required: boolean;
+            show_if?: components["schemas"]["ShowIfIn"] | null;
         };
         /** SurveyQuestionOrderIn */
         SurveyQuestionOrderIn: {
@@ -5054,6 +5172,7 @@ export interface components {
             options: string[];
             /** Required */
             required: boolean;
+            show_if?: components["schemas"]["ShowIfOut"] | null;
         };
         /** SurveyResponseOut */
         SurveyResponseOut: {
@@ -5063,6 +5182,26 @@ export interface components {
             };
             /** Id */
             id: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+        };
+        /** SurveySubmitOut */
+        SurveySubmitOut: {
+            /** Answers */
+            answers: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Response Token */
+            response_token?: string | null;
             /**
              * Submitted At
              * Format: date-time
@@ -5360,6 +5499,11 @@ export interface components {
              * @default false
              */
             weekly_digest_opt_out: boolean;
+            /**
+             * Whatsapp Reminder Opt Out
+             * @default false
+             */
+            whatsapp_reminder_opt_out: boolean;
         };
         /** UserPatchIn */
         UserPatchIn: {
@@ -11003,7 +11147,9 @@ export interface operations {
     };
     community__surveys_public_get_survey_public: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -11034,7 +11180,9 @@ export interface operations {
     };
     community__surveys_public_submit_survey_response: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -11053,7 +11201,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SurveyResponseOut"];
+                    "application/json": components["schemas"]["SurveySubmitOut"];
                 };
             };
             /** @description Created */
@@ -11062,7 +11210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SurveyResponseOut"];
+                    "application/json": components["schemas"]["SurveySubmitOut"];
                 };
             };
             /** @description Bad Request */
@@ -11302,6 +11450,15 @@ export interface operations {
                     "application/json": components["schemas"]["SurveyQuestionOut"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -11344,6 +11501,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyQuestionOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */
@@ -11430,6 +11596,15 @@ export interface operations {
                     "application/json": components["schemas"]["SurveyQuestionOut"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -11450,7 +11625,38 @@ export interface operations {
             };
         };
     };
-    community__surveys_list_survey_responses: {
+    community__survey_reports_get_survey_responses_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__surveys_responses_list_survey_responses: {
         parameters: {
             query?: never;
             header?: never;
@@ -11468,6 +11674,85 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyResponseOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__surveys_responses_delete_survey_response: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+                response_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__survey_reports_get_survey_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSummaryOut"][];
                 };
             };
             /** @description Forbidden */

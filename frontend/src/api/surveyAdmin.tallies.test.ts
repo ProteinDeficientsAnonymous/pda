@@ -6,7 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 
-import { useFinalizeSurveyPoll, useSurveyPollTallies } from './surveyAdmin';
+import {
+  useFinalizeSurveyPoll,
+  useSurveyPollTallies,
+  useSurveyQuestionSummaries,
+} from './surveyAdmin';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -95,5 +99,43 @@ describe('useFinalizeSurveyPoll', () => {
         }),
       );
     });
+  });
+});
+
+describe('useSurveyQuestionSummaries', () => {
+  it('should map wire summary rows', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          question_id: 'q1',
+          field_type: 'rating',
+          counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
+          answered: 2,
+          mean: 3.5,
+        },
+        { question_id: 'q2', field_type: 'radio', counts: { red: 1 }, answered: 1 },
+      ],
+    });
+    const qc = makeQc();
+    const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1'), {
+      wrapper: makeWrapper(qc),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/');
+    const [rating, radio] = result.current.data!;
+    expect(rating).toEqual({
+      questionId: 'q1',
+      fieldType: 'rating',
+      counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
+      answered: 2,
+      mean: 3.5,
+    });
+    expect(radio!.mean).toBeNull();
+  });
+
+  it('should not fetch without a survey id', () => {
+    const qc = makeQc();
+    renderHook(() => useSurveyQuestionSummaries(undefined), { wrapper: makeWrapper(qc) });
+    expect(mockedGet).not.toHaveBeenCalled();
   });
 });

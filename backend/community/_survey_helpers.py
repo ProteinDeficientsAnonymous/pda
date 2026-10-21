@@ -12,7 +12,7 @@ from community._survey_schemas import (
     PollResultsOut,
     SurveyOut,
     SurveyQuestionOut,
-    SurveyResponseOut,
+    SurveySubmitOut,
     VoterOut,
 )
 from community._validation import Code, raise_validation
@@ -34,6 +34,7 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
         options=q.options or [],
         required=q.required,
         display_order=q.display_order,
+        show_if=q.show_if,
     )
 
 
@@ -46,10 +47,28 @@ def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
     )
 
 
+_MAX_ANONYMOUS_TOKEN_LENGTH = 64
+
+
+def _find_my_response(
+    survey: Survey, requesting_user, response_token: str
+) -> SurveyResponse | None:
+    if requesting_user is not None:
+        return survey.responses.filter(user=requesting_user).first()
+    # only dedupe surveys reuse a row on submit
+    if not survey.one_response_per_user:
+        return None
+    # minted tokens are 43 chars; skip the query for anything longer
+    if not response_token or len(response_token) > _MAX_ANONYMOUS_TOKEN_LENGTH:
+        return None
+    return survey.responses.filter(user__isnull=True, anonymous_token=response_token).first()
+
+
 def _survey_out(
     survey: Survey,
     include_questions: bool = False,
     requesting_user=None,
+    response_token: str = "",
 ) -> SurveyOut:
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
@@ -59,13 +78,11 @@ def _survey_out(
         poll_result = _poll_result_out(survey.poll_result)
     except DatetimePollResult.DoesNotExist:
         pass
-    my_response_id = None
-    my_answers = None
-    if requesting_user is not None:
-        existing = survey.responses.filter(user=requesting_user).first()
-        if existing:
-            my_response_id = str(existing.id)
-            my_answers = existing.answers
+    # anonymous surveys never key on the member, so their row is found by token too
+    responder = None if survey.anonymous else requesting_user
+    existing = _find_my_response(survey, responder, response_token)
+    my_response_id = str(existing.id) if existing else None
+    my_answers = existing.answers if existing else None
     return SurveyOut(
         id=str(survey.id),
         title=survey.title,
@@ -74,6 +91,8 @@ def _survey_out(
         visibility=survey.visibility,
         is_active=survey.is_active,
         one_response_per_user=survey.one_response_per_user,
+        anonymous=survey.anonymous,
+        confirmation_message=survey.confirmation_message,
         opens_at=survey.opens_at,
         closes_at=survey.closes_at,
         max_responses=survey.max_responses,
@@ -114,6 +133,14 @@ def _validate_survey_window(opens_at: datetime | None, closes_at: datetime | Non
         raise_validation(Code.Survey.CLOSES_BEFORE_OPENS, field="closes_at", status_code=400)
 
 
+def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
+    # Flipping either way after collection would mislead respondents about who sees their name.
+    if "anonymous" not in updates or updates["anonymous"] == survey.anonymous:
+        return
+    if survey.responses.exists():
+        raise_validation(Code.Survey.ANONYMOUS_LOCKED, field="anonymous", status_code=400)
+
+
 def _apply_linked_event_update(updates: dict) -> dict:
     """Resolve linked_event_id → linked_event object in update dict.
 
@@ -130,13 +157,15 @@ def _apply_linked_event_update(updates: dict) -> dict:
     return updates
 
 
-def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResponseOut:
-    return SurveyResponseOut(
+def _submit_out(response: SurveyResponse, user_name: str | None) -> SurveySubmitOut:
+    token = response.anonymous_token if response.user_id is None else None
+    return SurveySubmitOut(
         id=str(response.id),
         user_id=str(response.user_id) if response.user_id else None,
         user_name=user_name,
         answers=response.answers,
         submitted_at=response.submitted_at,
+        response_token=token,
     )
 
 
@@ -176,7 +205,7 @@ def _tally_str_answer(
 
 
 def _tally_question(
-    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None
+    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None, include_voters: bool = True
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
@@ -188,7 +217,7 @@ def _tally_question(
         if not answer_data:
             continue
         answer = answer_data.get("answer")
-        voter = _voter_out(r.user, viewer) if r.user else None
+        voter = _voter_out(r.user, viewer) if r.user and include_voters else None
         if isinstance(answer, dict):
             _tally_dict_answer(answer, counts, voters, voter)
         elif isinstance(answer, str):

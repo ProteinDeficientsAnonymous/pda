@@ -1,5 +1,8 @@
+import { useState } from 'react';
+
 import { QuestionType } from '@/api/questionTypes';
 import {
+  type ShowIfCondition,
   type SurveyQuestion,
   type SurveyQuestionInput,
   type SurveyQuestionType,
@@ -10,10 +13,13 @@ import { DEFAULT_SURVEY_QUESTION_TYPE } from '@/api/surveys';
 import { QuestionAuthorDialog } from '@/components/questions/QuestionAuthorDialog';
 import { QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 
+import { SurveyConditionPicker } from './SurveyConditionPicker';
+
 interface Props {
   surveyId: string;
   open: boolean;
   onClose: () => void;
+  questions: SurveyQuestion[];
   existing?: SurveyQuestion | undefined;
 }
 
@@ -22,9 +28,10 @@ export function SurveyQuestionDialog(props: Props) {
   return <SurveyQuestionDialogBody key={props.existing?.id ?? 'new'} {...props} />;
 }
 
-function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) {
+function SurveyQuestionDialogBody({ surveyId, open, onClose, questions, existing }: Props) {
   const create = useCreateSurveyQuestion(surveyId);
   const update = useUpdateSurveyQuestion(surveyId, existing?.id ?? '');
+  const [showIf, setShowIf] = useState<ShowIfCondition | null>(() => existing?.showIf ?? null);
   const busy = create.isPending || update.isPending;
 
   return (
@@ -46,6 +53,14 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
             ? 'ISO-8601 datetime values'
             : undefined
       }
+      extraFields={
+        <SurveyConditionPicker
+          questions={questions}
+          editing={existing}
+          value={showIf}
+          onChange={setShowIf}
+        />
+      }
       busy={busy}
       onSave={async (values) => {
         const input: SurveyQuestionInput = {
@@ -53,6 +68,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
           fieldType: values.fieldType,
           options: values.options,
           required: values.required,
+          showIf,
         };
         if (existing) await update.mutateAsync(input);
         else await create.mutateAsync(input);

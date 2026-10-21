@@ -1,3 +1,42 @@
+# [0.133.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.1...v0.133.0) (2026-10-21)
+
+
+### Features
+
+* **notifications:** 1468 - add whatsapp join reminder model and schedule ([#1646](https://github.com/ProteinDeficientsAnonymous/pda/issues/1646)) ([bc12763](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc1276344c54f845912fbadb9035f017a91414ab))
+* **notifications:** 1468 - send whatsapp join reminder emails daily ([#1480](https://github.com/ProteinDeficientsAnonymous/pda/issues/1480)) ([35986f5](https://github.com/ProteinDeficientsAnonymous/pda/commit/35986f52cbb7c644d950f44a738f4296ea0dfa43))
+* **settings:** 1468 - let members opt out of whatsapp join reminders ([#1645](https://github.com/ProteinDeficientsAnonymous/pda/issues/1645)) ([763586d](https://github.com/ProteinDeficientsAnonymous/pda/commit/763586d35b20bc7e9365932e6ac4f7c90dc3c426))
+
+## [0.132.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.0...v0.132.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **calendar:** split feed token check to pass the complexity gate ([#1651](https://github.com/ProteinDeficientsAnonymous/pda/issues/1651)) ([9a651e7](https://github.com/ProteinDeficientsAnonymous/pda/commit/9a651e7f3ca0b981fd1ba8eea958f514df315e31))
+
+# [0.132.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.131.0...v0.132.0) (2026-10-21)
+
+
+### Features
+
+* **surveys:** anonymous mode, response delete, confirmation message ([#1477](https://github.com/ProteinDeficientsAnonymous/pda/issues/1477)) ([cf0a8be](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf0a8be098b78077edb7dd93038bc8bcd2efb6fe))
+* **surveys:** conditional questions via show_if (Issue 1464) ([#1475](https://github.com/ProteinDeficientsAnonymous/pda/issues/1475)) ([2366654](https://github.com/ProteinDeficientsAnonymous/pda/commit/23666540b093502d21747c4ad1d2692033a6ed9a))
+* **surveys:** dedupe anonymous responses with a response token (Issue 1461) ([#1470](https://github.com/ProteinDeficientsAnonymous/pda/issues/1470)) ([3a702aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a702aaaaddc68ffb962cb2488e48afe657db5c0))
+* **surveys:** per-question result summaries and csv export (Issue 1462) ([#1479](https://github.com/ProteinDeficientsAnonymous/pda/issues/1479)) ([3cd83db](https://github.com/ProteinDeficientsAnonymous/pda/commit/3cd83db70fe626d8af2bcf24990fdfa1ef6e33e3))
+
+# [0.131.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.2...v0.131.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* 1608 - compare PR screenshots to the last Visual baseline ([#1633](https://github.com/ProteinDeficientsAnonymous/pda/issues/1633)) ([7dd4b5e](https://github.com/ProteinDeficientsAnonymous/pda/commit/7dd4b5ed19b039578110f0c6abee0ec277f157a1))
+* **calendar:** stop serving the feed to archived or paused members ([#1643](https://github.com/ProteinDeficientsAnonymous/pda/issues/1643)) ([91e5299](https://github.com/ProteinDeficientsAnonymous/pda/commit/91e529941618d2f9d5b14cdfb8dbe214cc96830a))
+
+
+### Features
+
+* **users:** release roles, rsvps, and co-host spots on archive ([#1644](https://github.com/ProteinDeficientsAnonymous/pda/issues/1644)) ([2fdc764](https://github.com/ProteinDeficientsAnonymous/pda/commit/2fdc764ff155e1a89f5c384311489ba342aa2757))
+
 ## [0.130.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.1...v0.130.2) (2026-10-21)
 
 

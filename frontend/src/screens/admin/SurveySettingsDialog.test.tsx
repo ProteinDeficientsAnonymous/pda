@@ -27,6 +27,8 @@ const survey: Survey = {
   visibility: 'members_only',
   isActive: true,
   oneResponsePerUser: false,
+  anonymous: false,
+  confirmationMessage: '',
   opensAt: null,
   closesAt: null,
   maxResponses: null,
@@ -78,6 +80,8 @@ describe('SurveySettingsDialog', () => {
         slug: 'old-slug',
         visibility: 'public',
         oneResponsePerUser: true,
+        anonymous: false,
+        confirmationMessage: '',
         opensAt: null,
         closesAt: null,
         maxResponses: null,
@@ -157,5 +161,29 @@ describe('SurveySettingsDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('title and slug are required');
     expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('saves anonymous and confirmation message edits', async () => {
+    renderDialog();
+    await userEvent.click(screen.getByLabelText(/anonymous responses/));
+    await userEvent.type(screen.getByLabelText('confirmation message (optional)'), 'thanks!');
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ anonymous: true, confirmationMessage: 'thanks!' }),
+      );
+    });
+  });
+
+  it('disables one response per user while anonymous is checked', async () => {
+    renderDialog();
+    await userEvent.click(screen.getByLabelText(/anonymous responses/));
+    expect(screen.getByLabelText(/one response per user/)).toBeDisabled();
+  });
+
+  it('locks the anonymous toggle once the survey has responses', () => {
+    renderDialog({ responseCount: 3 });
+    expect(screen.getByLabelText(/anonymous responses/)).toBeDisabled();
   });
 });

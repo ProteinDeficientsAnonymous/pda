@@ -15,6 +15,7 @@ interface Props {
   onChange: (patch: Partial<SurveyFormValues>) => void;
   slugError?: string | undefined;
   linkedEventError?: string | undefined;
+  anonymousLocked?: boolean;
 }
 
 const VISIBILITY_OPTIONS = [
@@ -22,7 +23,13 @@ const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'public' },
 ];
 
-export function SurveyFields({ values, onChange, slugError, linkedEventError }: Props) {
+export function SurveyFields({
+  values,
+  onChange,
+  slugError,
+  linkedEventError,
+  anonymousLocked = false,
+}: Props) {
   return (
     <>
       <TextField
@@ -70,13 +77,45 @@ export function SurveyFields({ values, onChange, slugError, linkedEventError }: 
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={values.oneResponsePerUser}
+          checked={values.oneResponsePerUser && !values.anonymous}
+          disabled={values.anonymous}
           onChange={(e) => {
             onChange({ oneResponsePerUser: e.target.checked });
           }}
         />
-        <span>one response per user</span>
+        <span>
+          one response per user
+          {values.anonymous ? (
+            <span className="text-muted"> — not enforced on anonymous surveys</span>
+          ) : null}
+        </span>
       </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={values.anonymous}
+          disabled={anonymousLocked}
+          onChange={(e) => {
+            onChange({ anonymous: e.target.checked });
+          }}
+        />
+        <span>
+          anonymous responses
+          {anonymousLocked ? (
+            <span className="text-muted"> — locked once responses come in</span>
+          ) : null}
+        </span>
+      </label>
+      <Textarea
+        label="confirmation message (optional)"
+        value={values.confirmationMessage}
+        onChange={(e) => {
+          onChange({ confirmationMessage: e.target.value });
+        }}
+        hint="shown to the participant after they submit"
+        rows={2}
+        maxLength={1000}
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <DateTimePicker
           label="opens at"

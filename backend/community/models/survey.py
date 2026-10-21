@@ -23,6 +23,8 @@ class Survey(models.Model):
     )
     is_active = models.BooleanField(default=True)
     one_response_per_user = models.BooleanField(default=False)
+    anonymous = models.BooleanField(default=False)
+    confirmation_message = models.TextField(blank=True, default="", max_length=1000)
     opens_at = models.DateTimeField(null=True, blank=True)
     closes_at = models.DateTimeField(null=True, blank=True)
     max_responses = models.PositiveIntegerField(null=True, blank=True)
@@ -69,6 +71,8 @@ class SurveyQuestion(models.Model):
     options = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
+    # {question_id, operator, value}; None means always shown.
+    show_if = models.JSONField(null=True, blank=True, default=None)
 
     class Meta:
         app_label = "community"
@@ -91,6 +95,7 @@ class SurveyResponse(models.Model):
         related_name="survey_responses",
     )
     answers = models.JSONField(default=dict, blank=True)
+    anonymous_token = models.CharField(max_length=64, null=True, blank=True, unique=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
