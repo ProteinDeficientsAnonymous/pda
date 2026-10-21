@@ -7,7 +7,11 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import (
+    make_non_member,
+    make_official_event,
+    make_tentative_member,
+)
 
 
 @pytest.fixture
@@ -172,3 +176,60 @@ class TestNonMemberRemovalOnIneligibleEvent:
 
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.ATTENDING
+
+
+def _emails_to(fake_email_sender, to):
+    return [c for c in fake_email_sender.send.call_args_list if c.kwargs["to"] == to]
+
+
+@pytest.mark.django_db
+class TestTentativeMemberOnIneligibleEvent:
+    def test_tentative_member_kept_when_event_stays_official(
+        self, api_client, manage_events_headers, fake_email_sender
+    ):
+        event = make_official_event()
+        tentative = make_tentative_member("+14155559020", "tentative@e.com")
+        non_member = make_non_member("+14155559021", "public@e.com")
+        for user in (tentative, non_member):
+            EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
+
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"rsvp_enabled": False, "force": True},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=event, user=tentative).status == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.REMOVED
+        assert _emails_to(fake_email_sender, "tentative@e.com") == []
+
+    def test_tentative_member_not_counted_toward_removal_conflict(
+        self, api_client, manage_events_headers, fake_email_sender
+    ):
+        event = make_official_event()
+        tentative = make_tentative_member("+14155559022", "tentative2@e.com")
+        EventRSVP.objects.create(event=event, user=tentative, status=RSVPStatus.ATTENDING)
+
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"rsvp_enabled": False},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+
+        assert response.status_code == 200
+
+    def test_tentative_member_removed_from_community_event_without_email(
+        self, api_client, manage_events_headers, fake_email_sender
+    ):
+        event = make_official_event()
+        tentative = make_tentative_member("+14155559023", "tentative3@e.com")
+        EventRSVP.objects.create(event=event, user=tentative, status=RSVPStatus.ATTENDING)
+
+        response = _patch_official_off(api_client, event, manage_events_headers, force=True)
+
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=event, user=tentative).status == RSVPStatus.REMOVED
+        assert _emails_to(fake_email_sender, "tentative3@e.com") == []

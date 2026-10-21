@@ -1,10 +1,12 @@
 """Admin survey response listing and deletion endpoints."""
 
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -18,15 +20,19 @@ from community.models import Survey, SurveyResponse
 router = Router()
 
 
+def _day_only(dt: datetime) -> datetime:
+    return timezone.localtime(dt).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyResponseOut:
-    """attribute=False masks the responder, for anonymous surveys."""
+    """attribute=False masks the responder and exact submit time, for anonymous surveys."""
     show = attribute and r.user is not None
     return SurveyResponseOut(
         id=str(r.id),
         user_id=str(r.user_id) if show else None,
         user_name=visible_display_name(r.user, viewer) if show else None,
         answers=r.answers,
-        submitted_at=r.submitted_at,
+        submitted_at=r.submitted_at if attribute else _day_only(r.submitted_at),
     )
 
 
@@ -56,10 +62,12 @@ def list_survey_responses(request, survey_id: UUID):
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    responses = survey.responses.select_related("user").all()
-    # A survey flipped to anonymous still holds the user FK on responses collected
-    # before the flip — never hand those identities back out.
     attribute = not survey.anonymous
+    responses = list(survey.responses.select_related("user").all())
+    if not attribute:
+        # Exact submit order would let someone who saw a member submit pick out their row.
+        responses.sort(key=lambda r: str(r.id))
+        responses.sort(key=lambda r: _day_only(r.submitted_at), reverse=True)
     return Status(200, [_admin_response_out(r, request.auth, attribute) for r in responses])
 
 

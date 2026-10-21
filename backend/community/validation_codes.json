@@ -32,6 +32,11 @@
         "params": []
       },
       {
+        "name": "OFFICIAL_NO_PLUS_ONES",
+        "value": "event.official_no_plus_ones",
+        "params": []
+      },
+      {
         "name": "INVALID_CREATE_STATUS",
         "value": "event.invalid_create_status",
         "params": []
@@ -59,6 +64,16 @@
       {
         "name": "NO_ATTENDEES_CANNOT_BE_CANCELLED",
         "value": "event.no_attendees_cannot_be_cancelled",
+        "params": []
+      },
+      {
+        "name": "HAS_RSVPS",
+        "value": "event.has_rsvps",
+        "params": []
+      },
+      {
+        "name": "PAST_CANNOT_BE_UNPUBLISHED",
+        "value": "event.past_cannot_be_unpublished",
         "params": []
       },
       {
@@ -109,6 +124,11 @@
       {
         "name": "RSVP_NOT_FOUND",
         "value": "event.rsvp_not_found",
+        "params": []
+      },
+      {
+        "name": "WAITLIST_ORDER_STALE",
+        "value": "event.waitlist_order_stale",
         "params": []
       },
       {
@@ -602,6 +622,11 @@
         "name": "INVALID_BIRTHDAY",
         "value": "user.invalid_birthday",
         "params": []
+      },
+      {
+        "name": "INVALID_VEGANNIVERSARY",
+        "value": "user.invalid_veganniversary",
+        "params": []
       }
     ],
     "Survey": [
@@ -611,8 +636,18 @@
         "params": []
       },
       {
+        "name": "CLOSED",
+        "value": "survey.closed",
+        "params": []
+      },
+      {
         "name": "SLUG_ALREADY_EXISTS",
         "value": "survey.slug_already_exists",
+        "params": []
+      },
+      {
+        "name": "CLOSES_BEFORE_OPENS",
+        "value": "survey.closes_before_opens",
         "params": []
       },
       {
@@ -623,6 +658,11 @@
       {
         "name": "RESPONSE_NOT_FOUND",
         "value": "survey.response_not_found",
+        "params": []
+      },
+      {
+        "name": "ANONYMOUS_LOCKED",
+        "value": "survey.anonymous_locked",
         "params": []
       },
       {
@@ -730,6 +770,11 @@
         "params": []
       },
       {
+        "name": "PHONE_ALREADY_TENTATIVE",
+        "value": "join_request.phone_already_tentative",
+        "params": []
+      },
+      {
         "name": "ANSWER_REQUIRED",
         "value": "join_request.answer_required",
         "params": [
@@ -827,6 +872,23 @@
         "params": [
           "row_index"
         ]
+      }
+    ],
+    "AttendanceMark": [
+      {
+        "name": "EVENT_OR_TITLE_REQUIRED",
+        "value": "attendance_mark.event_or_title_required",
+        "params": []
+      },
+      {
+        "name": "INVALID_EVENT_TYPE",
+        "value": "attendance_mark.invalid_event_type",
+        "params": []
+      },
+      {
+        "name": "NO_MEMBERS_SELECTED",
+        "value": "attendance_mark.no_members_selected",
+        "params": []
       }
     ],
     "Perm": [
@@ -990,6 +1052,20 @@
       {
         "name": "BODY_TOO_LONG",
         "value": "member_promotion_message.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
+    "MemberPromotionEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "member_promotion_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "member_promotion_email.body_too_long",
         "params": [
           "max_length"
         ]

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -118,7 +118,7 @@ export default function SurveyResponsesScreen() {
                 <tr key={r.id} className="border-border border-t align-top">
                   <td className="text-foreground px-3 py-2">{r.userName ?? '—'}</td>
                   <td className="text-muted px-3 py-2 text-xs">
-                    {format(new Date(r.submittedAt), 'MMM d, yyyy h:mm a').toLowerCase()}
+                    {formatSubmittedAt(r.submittedAt, survey.data.anonymous)}
                   </td>
                   {survey.data.questions.map((q) => (
                     <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
@@ -191,6 +191,12 @@ function TalliesTables({
       ))}
     </div>
   );
+}
+
+function formatSubmittedAt(iso: string, anonymous: boolean): string {
+  // Anonymous surveys get a server-local date only; its yyyy-mm-dd prefix is that day.
+  if (anonymous) return format(parseISO(iso.slice(0, 10)), 'MMM d, yyyy').toLowerCase();
+  return format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
 }
 
 function formatOptionLabel(iso: string): string {

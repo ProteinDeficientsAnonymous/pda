@@ -9,6 +9,9 @@ export interface SurveySummary {
   slug: string;
   visibility: string;
   isActive: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+  maxResponses: number | null;
   linkedEventId: string | null;
   createdAt: string;
   responseCount: number;
@@ -20,6 +23,9 @@ interface WireSummary {
   slug: string;
   visibility: string;
   is_active: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+  max_responses: number | null;
   linked_event_id: string | null;
   created_at: string;
   response_count: number;
@@ -32,6 +38,9 @@ function mapSummary(w: WireSummary): SurveySummary {
     slug: w.slug,
     visibility: w.visibility,
     isActive: w.is_active,
+    opensAt: w.opens_at,
+    closesAt: w.closes_at,
+    maxResponses: w.max_responses,
     linkedEventId: w.linked_event_id,
     createdAt: w.created_at,
     responseCount: w.response_count,
@@ -62,6 +71,11 @@ interface WireSurveyFull {
   one_response_per_user?: boolean;
   anonymous?: boolean;
   confirmation_message?: string;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  max_responses?: number | null;
+  response_count?: number;
+  linked_event_id?: string | null;
   questions?: {
     id: string;
     label: string;
@@ -91,6 +105,11 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     oneResponsePerUser: w.one_response_per_user ?? false,
     anonymous: w.anonymous ?? false,
     confirmationMessage: w.confirmation_message ?? '',
+    opensAt: w.opens_at ?? null,
+    closesAt: w.closes_at ?? null,
+    maxResponses: w.max_responses ?? null,
+    responseCount: w.response_count ?? 0,
+    linkedEventId: w.linked_event_id ?? null,
     questions: (w.questions ?? [])
       .map((q) => ({
         id: q.id,
@@ -136,6 +155,9 @@ export interface SurveyInput {
   oneResponsePerUser: boolean;
   anonymous: boolean;
   confirmationMessage: string;
+  opensAt: string | null;
+  closesAt: string | null;
+  maxResponses: number | null;
   linkedEventId: string | null;
 }
 
@@ -152,6 +174,9 @@ export function useCreateSurvey() {
         one_response_per_user: input.oneResponsePerUser,
         anonymous: input.anonymous,
         confirmation_message: input.confirmationMessage,
+        opens_at: input.opensAt,
+        closes_at: input.closesAt,
+        max_responses: input.maxResponses,
         linked_event_id: input.linkedEventId,
       });
       return mapSurveyFull(data);
@@ -177,6 +202,9 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.anonymous !== undefined) body.anonymous = patch.anonymous;
       if (patch.confirmationMessage !== undefined)
         body.confirmation_message = patch.confirmationMessage;
+      if (patch.opensAt !== undefined) body.opens_at = patch.opensAt;
+      if (patch.closesAt !== undefined) body.closes_at = patch.closesAt;
+      if (patch.maxResponses !== undefined) body.max_responses = patch.maxResponses;
       if (patch.linkedEventId !== undefined) body.linked_event_id = patch.linkedEventId;
       const { data } = await apiClient.patch<WireSurveyFull>(
         `/api/community/surveys/${surveyId}/`,
@@ -323,7 +351,7 @@ export function useDeleteSurveyResponse(surveyId: string) {
       await apiClient.delete(`/api/community/surveys/${surveyId}/responses/${responseId}/`);
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['surveys', 'admin', surveyId, 'responses'] });
+      void qc.invalidateQueries({ queryKey: ['surveys', 'admin'] });
     },
   });
 }

@@ -261,7 +261,7 @@ export interface paths {
         };
         /**
          * List Member Directory
-         * @description Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.
+         * @description Members-only directory. Respects each user's show_phone/show_email/show_birthday flags.
          */
         get: operations["users__members_list_member_directory"];
         put?: never;
@@ -650,7 +650,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Events */
+        /**
+         * List Events
+         * @description start/end bound a calendar window; include_imported=false drops partiful/legacy rows.
+         */
         get: operations["community__events_list_events"];
         put?: never;
         /** Create Event */
@@ -729,6 +732,23 @@ export interface paths {
         put?: never;
         /** Preview Attendance Import */
         post: operations["community__attendance_import_preview_attendance_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-mark/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Attendance */
+        post: operations["community__attendance_mark_mark_attendance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1305,6 +1325,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/waitlist/order/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder Waitlist
+         * @description Let an event host/co-host/manager set the waitlist order (Issue 1553).
+         */
+        put: operations["community__event_waitlist_order_reorder_waitlist"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/faq/": {
         parameters: {
             query?: never;
@@ -1612,6 +1652,24 @@ export interface paths {
         head?: never;
         /** Unreject Join Request */
         patch: operations["community__join_requests_unreject_join_request"];
+        trace?: never;
+    };
+    "/api/community/member-promotion-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Promotion Email */
+        get: operations["community__member_promotion_email_get_member_promotion_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Member Promotion Email */
+        patch: operations["community__member_promotion_email_update_member_promotion_email"];
         trace?: never;
     };
     "/api/community/member-promotion-message/": {
@@ -2194,8 +2252,6 @@ export interface components {
             magic_link_token?: string | null;
             /** Phone Number */
             phone_number: string;
-            /** Rsvp Link Token */
-            rsvp_link_token?: string | null;
             /** Status */
             status: string;
             /** User Id */
@@ -2248,6 +2304,35 @@ export interface components {
              * @default false
              */
             for_plus_one: boolean;
+        };
+        /** AttendanceMarkIn */
+        AttendanceMarkIn: {
+            /** Event Date */
+            event_date?: string | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Title */
+            event_title?: string | null;
+            /** Event Type */
+            event_type?: string | null;
+            /**
+             * User Ids
+             * @default []
+             */
+            user_ids: string[];
+        };
+        /** AttendanceMarkOut */
+        AttendanceMarkOut: {
+            /** Created Count */
+            created_count: number;
+            /** Event Id */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Updated Count */
+            updated_count: number;
         };
         /** AttendanceReportOut */
         AttendanceReportOut: {
@@ -2580,10 +2665,20 @@ export interface components {
              */
             non_member_going_count: number;
             /**
+             * Optional Question Count
+             * @default 0
+             */
+            optional_question_count: number;
+            /**
              * Price
              * @default
              */
             price: string;
+            /**
+             * Required Question Count
+             * @default 0
+             */
+            required_question_count: number;
             /**
              * Rsvp Enabled
              * @default true
@@ -2599,6 +2694,11 @@ export interface components {
              * @default public
              */
             visibility: string;
+            /**
+             * Waitlisted Count
+             * @default 0
+             */
+            waitlisted_count: number;
             /**
              * Zelle Info
              * @default
@@ -3059,11 +3159,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
@@ -3099,6 +3194,11 @@ export interface components {
              * @default 0
              */
             invited_count: number;
+            /**
+             * Is Legacy
+             * @default false
+             */
+            is_legacy: boolean;
             /**
              * Is Partiful Import
              * @default false
@@ -3232,11 +3332,6 @@ export interface components {
              * @default []
              */
             co_host_photo_urls: string[];
-            /**
-             * Comment Count
-             * @default 0
-             */
-            comment_count: number;
             /** Created By Id */
             created_by_id?: string | null;
             /** Created By Name */
@@ -3262,6 +3357,11 @@ export interface components {
              * @default community
              */
             event_type: string;
+            /**
+             * Guest Rsvp Count
+             * @default 0
+             */
+            guest_rsvp_count: number;
             /**
              * Guests
              * @default []
@@ -3300,6 +3400,11 @@ export interface components {
              */
             invited_user_photo_urls: string[];
             /**
+             * Is Legacy
+             * @default false
+             */
+            is_legacy: boolean;
+            /**
              * Is Partiful Import
              * @default false
              */
@@ -3311,6 +3416,11 @@ export interface components {
             is_past: boolean;
             /** Latitude */
             latitude?: number | null;
+            /**
+             * Linked Surveys
+             * @default []
+             */
+            linked_surveys: components["schemas"]["EventSurveyOut"][];
             /** Location */
             location: string;
             /** Longitude */
@@ -3382,11 +3492,6 @@ export interface components {
              * @default active
              */
             status: string;
-            /**
-             * Survey Slugs
-             * @default []
-             */
-            survey_slugs: string[];
             /**
              * Tags
              * @default []
@@ -3701,6 +3806,15 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
+        };
+        /** EventSurveyOut */
+        EventSurveyOut: {
+            /** Id */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
         };
         /** FeatureFlagPatchIn */
         FeatureFlagPatchIn: {
@@ -4112,6 +4226,11 @@ export interface components {
              * @default false
              */
             previously_archived: boolean;
+            /**
+             * Previously Rejected
+             * @default false
+             */
+            previously_rejected: boolean;
             /** Rejected At */
             rejected_at?: string | null;
             /** Rejected By Name */
@@ -4128,6 +4247,10 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+            /** Tentative At */
+            tentative_at?: string | null;
+            /** Tentative By Name */
+            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
@@ -4185,6 +4308,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Has Seen Veganniversary */
+            has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
             /** Last Name */
@@ -4201,6 +4326,11 @@ export interface components {
             show_email?: boolean | null;
             /** Show Phone */
             show_phone?: boolean | null;
+            /** Show Veganniversary */
+            show_veganniversary?: boolean | null;
+            veganniversary?: components["schemas"]["VeganniversaryIn"] | null;
+            /** Veganniversary Shoutout Opt In */
+            veganniversary_shoutout_opt_in?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
             /** Weekly Digest Opt Out */
@@ -4349,6 +4479,22 @@ export interface components {
              * @default
              */
             pronouns: string;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
+        };
+        /** MemberPromotionEmailOut */
+        MemberPromotionEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberPromotionEmailPatchIn */
+        MemberPromotionEmailPatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** MemberPromotionMessageOut */
         MemberPromotionMessageOut: {
@@ -4771,6 +4917,8 @@ export interface components {
              * @default false
              */
             anonymous: boolean;
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Confirmation Message
              * @default
@@ -4788,11 +4936,15 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /**
              * One Response Per User
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug: string;
             /** Title */
@@ -4805,6 +4957,8 @@ export interface components {
         };
         /** SurveyListOut */
         SurveyListOut: {
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4816,6 +4970,10 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
+            /** Opens At */
+            opens_at?: string | null;
             /**
              * Response Count
              * @default 0
@@ -4835,6 +4993,8 @@ export interface components {
              * @default false
              */
             anonymous: boolean;
+            /** Closes At */
+            closes_at?: string | null;
             /**
              * Confirmation Message
              * @default
@@ -4855,6 +5015,8 @@ export interface components {
             is_active: boolean;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** My Answers */
             my_answers?: {
                 [key: string]: unknown;
@@ -4866,6 +5028,8 @@ export interface components {
              * @default false
              */
             one_response_per_user: boolean;
+            /** Opens At */
+            opens_at?: string | null;
             poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
@@ -4888,6 +5052,8 @@ export interface components {
         SurveyPatchIn: {
             /** Anonymous */
             anonymous?: boolean | null;
+            /** Closes At */
+            closes_at?: string | null;
             /** Confirmation Message */
             confirmation_message?: string | null;
             /** Description */
@@ -4896,8 +5062,12 @@ export interface components {
             is_active?: boolean | null;
             /** Linked Event Id */
             linked_event_id?: string | null;
+            /** Max Responses */
+            max_responses?: number | null;
             /** One Response Per User */
             one_response_per_user?: boolean | null;
+            /** Opens At */
+            opens_at?: string | null;
             /** Slug */
             slug?: string | null;
             /** Title */
@@ -5124,6 +5294,11 @@ export interface components {
              */
             has_logged_in: boolean;
             /**
+             * Has Seen Veganniversary
+             * @default false
+             */
+            has_seen_veganniversary: boolean;
+            /**
              * Hide Last Name
              * @default false
              */
@@ -5219,6 +5394,17 @@ export interface components {
              */
             show_phone: boolean;
             /**
+             * Show Veganniversary
+             * @default true
+             */
+            show_veganniversary: boolean;
+            veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
+            /**
+             * Veganniversary Shoutout Opt In
+             * @default true
+             */
+            veganniversary_shoutout_opt_in: boolean;
+            /**
              * Week Start
              * @default sunday
              */
@@ -5271,6 +5457,24 @@ export interface components {
             /** Phone Number */
             phone_number: string;
         };
+        /** VeganniversaryIn */
+        VeganniversaryIn: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
+        };
+        /** VeganniversaryOut */
+        VeganniversaryOut: {
+            /** Day */
+            day?: number | null;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
+        };
         /** VersionOut */
         VersionOut: {
             /** Commit Sha */
@@ -5288,6 +5492,11 @@ export interface components {
             photo_url: string;
             /** User Id */
             user_id: string;
+        };
+        /** WaitlistOrderIn */
+        WaitlistOrderIn: {
+            /** User Ids */
+            user_ids: string[];
         };
         /** WelcomeTemplateOut */
         WelcomeTemplateOut: {
@@ -6037,6 +6246,15 @@ export interface operations {
                     "application/json": components["schemas"]["MemberDirectoryOut"][];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     users__management_search_users: {
@@ -6275,6 +6493,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberProfileOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Not Found */
@@ -7083,6 +7310,9 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string;
+                start?: string | null;
+                end?: string | null;
+                include_imported?: boolean;
             };
             header?: never;
             path?: never;
@@ -7322,6 +7552,66 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_mark_mark_attendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceMarkIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceMarkOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9368,6 +9658,68 @@ export interface operations {
             };
         };
     };
+    community__event_waitlist_order_reorder_waitlist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistOrderIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__guidelines_get_faq: {
         parameters: {
             query?: never;
@@ -10114,6 +10466,68 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_email_get_member_promotion_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_email_update_member_promotion_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberPromotionEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

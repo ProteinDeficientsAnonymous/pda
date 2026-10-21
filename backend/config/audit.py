@@ -9,7 +9,24 @@ from django.db import transaction
 
 from config.ratelimit import client_ip
 
-__all__ = ["AuditTarget", "AuditTargetType", "audit_log"]
+__all__ = [
+    "AuditTarget",
+    "AuditTargetType",
+    "audit_log",
+    "is_request_anonymized",
+    "mark_request_anonymized",
+]
+
+_ANONYMIZED_ATTR = "pda_anonymized"
+
+
+def mark_request_anonymized(request) -> None:
+    """Drop the actor from this request's audit rows and request log line."""
+    setattr(request, _ANONYMIZED_ATTR, True)
+
+
+def is_request_anonymized(request) -> bool:
+    return getattr(request, _ANONYMIZED_ATTR, False)
 
 
 class AuditTarget(NamedTuple):
@@ -38,6 +55,15 @@ def _persist(**fields) -> None:
         _audit_logger.exception("audit_persist_failed", extra={"action": fields.get("action")})
 
 
+def _actor_and_ip(request):
+    # "anon" fails _valid_ip, so an anonymized entry persists no IP either.
+    if is_request_anonymized(request):
+        return None, "anon"
+    user = getattr(request, "auth", None)
+    # Spoof-resistant client IP (rightmost-untrusted hop); see config/ratelimit.py.
+    return (user if user and hasattr(user, "pk") else None), client_ip(request)
+
+
 def audit_log(
     level: int,
     action: str,
@@ -45,7 +71,6 @@ def audit_log(
     target: AuditTarget | None = None,
     *,
     persist: bool = True,
-    anonymize_actor: bool = False,
 ) -> None:
     """Emit a structured audit log entry.
 
@@ -55,20 +80,15 @@ def audit_log(
         request: the Django/Ninja HttpRequest (used for actor and IP)
         target: AuditTarget(type, id, details) for the affected object
         persist: write a row to the audit table; False for console-only noise
-        anonymize_actor: drop actor and IP, for actions that must stay unattributable
     """
     target_type, target_id, details = target or AuditTarget()
-    user = None if anonymize_actor else getattr(request, "auth", None)
-    if user and hasattr(user, "pk"):
+    user, ip_address = _actor_and_ip(request)
+    if user:
         actor_id = str(user.pk)
         actor_name = getattr(user, "full_name", None) or str(user)
     else:
         actor_id = "anonymous"
         actor_name = "anonymous"
-
-    # Spoof-resistant client IP (rightmost-untrusted hop); see config/ratelimit.py.
-    # "anon" fails _valid_ip, so an anonymized entry persists no IP either.
-    ip_address = "anon" if anonymize_actor else client_ip(request)
 
     _audit_logger.log(
         level,
@@ -92,7 +112,7 @@ def audit_log(
 
     fields = {
         "action": action,
-        "actor": user if user and hasattr(user, "pk") else None,
+        "actor": user,
         "actor_label": actor_name,
         "target_type": target_type,
         "target_id": target_id,

@@ -26,6 +26,11 @@ export interface Survey {
   oneResponsePerUser: boolean;
   anonymous: boolean;
   confirmationMessage: string;
+  opensAt: string | null;
+  closesAt: string | null;
+  maxResponses: number | null;
+  responseCount: number;
+  linkedEventId: string | null;
   questions: SurveyQuestion[];
   myResponseId: string | null;
   myAnswers: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -56,6 +61,11 @@ interface WireSurvey {
   one_response_per_user?: boolean;
   anonymous?: boolean;
   confirmation_message?: string;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  max_responses?: number | null;
+  response_count?: number;
+  linked_event_id?: string | null;
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -86,6 +96,11 @@ function mapSurvey(w: WireSurvey): Survey {
     oneResponsePerUser: w.one_response_per_user ?? false,
     anonymous: w.anonymous ?? false,
     confirmationMessage: w.confirmation_message ?? '',
+    opensAt: w.opens_at ?? null,
+    closesAt: w.closes_at ?? null,
+    maxResponses: w.max_responses ?? null,
+    responseCount: w.response_count ?? 0,
+    linkedEventId: w.linked_event_id ?? null,
     questions: (w.questions ?? [])
       .map((q) => ({
         id: q.id,

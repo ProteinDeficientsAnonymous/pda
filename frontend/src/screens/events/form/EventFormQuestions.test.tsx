@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { SyntheticEvent } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +12,14 @@ const sample: RsvpQuestionDraft = {
   fieldType: 'textarea',
   options: [],
   required: true,
+};
+
+const secondQuestion: RsvpQuestionDraft = {
+  id: 'q2',
+  label: 'dietary needs?',
+  fieldType: 'textarea',
+  options: [],
+  required: false,
 };
 
 describe('EventFormQuestions', () => {
@@ -55,6 +64,44 @@ describe('EventFormQuestions', () => {
     expect(label).toHaveClass('truncate');
     expect(label).not.toContainElement(marker);
     expect(marker).toHaveClass('shrink-0');
+    expect(label.closest('article')).toHaveClass('min-w-0');
+    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+  });
+
+  it('reorders loaded questions with the keyboard drag control', async () => {
+    const onQuestionsChange = vi.fn();
+    const rect = (top: number): DOMRect =>
+      ({
+        bottom: top + 50,
+        height: 50,
+        left: 0,
+        right: 300,
+        top,
+        width: 300,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        return rect(this.textContent?.includes(secondQuestion.label) ? 60 : 0);
+      });
+    render(
+      <EventFormQuestions
+        rsvpEnabled
+        questions={[sample, secondQuestion]}
+        onQuestionsChange={onQuestionsChange}
+      />,
+    );
+
+    const firstDragControl = screen.getAllByRole('button', { name: 'drag to reorder' })[0]!;
+    firstDragControl.focus();
+    await userEvent.keyboard('[Space][ArrowDown][Space]');
+
+    expect(onQuestionsChange).toHaveBeenCalledWith([secondQuestion, sample]);
+    rectSpy.mockRestore();
   });
 
   it('removes a question when delete is clicked', () => {

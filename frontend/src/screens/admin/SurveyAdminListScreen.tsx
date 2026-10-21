@@ -13,12 +13,14 @@ import {
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
+import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
+
+import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
+import { SurveyFields } from './SurveyFields';
+import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
@@ -82,6 +84,20 @@ export default function SurveyAdminListScreen() {
   );
 }
 
+const STATUS_LABEL: Record<SurveyStatus, string> = {
+  active: 'active',
+  scheduled: 'scheduled',
+  capped: 'at capacity',
+  closed: 'closed',
+};
+
+const STATUS_CLASS: Record<SurveyStatus, string> = {
+  active: 'bg-success-subtle text-success',
+  scheduled: 'bg-warning-subtle text-warning',
+  capped: 'bg-warning-subtle text-warning',
+  closed: 'bg-surface-raised text-foreground-secondary',
+};
+
 function SurveyRow({
   survey,
   onDelete,
@@ -105,15 +121,11 @@ function SurveyRow({
       </div>
       <div className="flex gap-1">
         <span
-          className={cn(
-            'rounded-full px-2 py-0.5 text-xs',
-            survey.isActive
-              ? 'bg-success-subtle text-success'
-              : 'bg-surface-raised text-foreground-secondary',
-          )}
+          className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_CLASS[surveyStatus(survey)])}
         >
-          {survey.isActive ? 'active' : 'closed'}
+          {STATUS_LABEL[surveyStatus(survey)]}
         </span>
+        <SurveyCopyLinkButton slug={survey.slug} className="h-9 px-3" />
         <Link
           to={`/admin/surveys/${survey.id}/responses`}
           className="text-foreground-secondary hover:bg-surface-dim inline-flex h-9 items-center rounded-md px-3 text-sm"
@@ -133,7 +145,18 @@ function SurveyRow({
   );
 }
 
-function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface CreateSurveyDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+// Remount on open so the form starts empty — the parent keeps this mounted while closed.
+function CreateSurveyDialog(props: CreateSurveyDialogProps) {
+  if (!props.open) return null;
+  return <CreateSurveyDialogBody {...props} />;
+}
+
+function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
   const create = useCreateSurvey();
   const navigate = useNavigate();
   const [values, setValues] = useState<SurveyInput>({
@@ -145,13 +168,18 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
     oneResponsePerUser: false,
     anonymous: false,
     confirmationMessage: '',
+    opensAt: null,
+    closesAt: null,
+    maxResponses: null,
     linkedEventId: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const fieldErrors = useSurveyFieldErrors();
 
   async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
+    fieldErrors.reset();
     if (!values.title.trim() || !values.slug.trim()) {
       setError('title and slug are required');
       return;
@@ -161,79 +189,21 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
       onClose();
       void navigate(`/admin/surveys/${created.id}`);
     } catch (err) {
-      setError(extractError(err));
+      if (!fieldErrors.capture(err)) setError(extractError(err));
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} title="new survey">
       <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-        <TextField
-          label="title"
-          value={values.title}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, title: e.target.value }));
+        <SurveyFields
+          values={values}
+          onChange={(patch) => {
+            setValues((v) => ({ ...v, ...patch }));
+            fieldErrors.clearFor(patch);
           }}
-          maxLength={200}
-        />
-        <TextField
-          label="slug"
-          value={values.slug}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, slug: e.target.value }));
-          }}
-          hint="short url segment — /surveys/:slug"
-          maxLength={100}
-        />
-        <Textarea
-          label="description (optional)"
-          value={values.description}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, description: e.target.value }));
-          }}
-          rows={3}
-          maxLength={2000}
-        />
-        <Select
-          label="visibility"
-          value={values.visibility}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, visibility: e.target.value }));
-          }}
-          options={[
-            { value: 'members_only', label: 'members only' },
-            { value: 'public', label: 'public' },
-          ]}
-        />
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={values.oneResponsePerUser}
-            onChange={(e) => {
-              setValues((v) => ({ ...v, oneResponsePerUser: e.target.checked }));
-            }}
-          />
-          <span>one response per user</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={values.anonymous}
-            onChange={(e) => {
-              setValues((v) => ({ ...v, anonymous: e.target.checked }));
-            }}
-          />
-          <span>anonymous responses</span>
-        </label>
-        <Textarea
-          label="confirmation message (optional)"
-          value={values.confirmationMessage}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, confirmationMessage: e.target.value }));
-          }}
-          hint="shown to the participant after they submit"
-          rows={2}
-          maxLength={1000}
+          slugError={fieldErrors.slugError ?? undefined}
+          linkedEventError={fieldErrors.linkedEventError ?? undefined}
         />
         {error ? (
           <p role="alert" className="text-destructive text-sm">

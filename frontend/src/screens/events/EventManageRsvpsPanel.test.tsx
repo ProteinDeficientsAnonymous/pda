@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,10 +12,42 @@ import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
 const setGuestRsvpMutate = vi.hoisted(() => vi.fn());
 const removeGuestRsvpMutate = vi.hoisted(() => vi.fn());
 const setGuestPaymentMutate = vi.hoisted(() => vi.fn());
+const reorderWaitlistMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/eventStats', () => ({
   useSetGuestRsvp: () => ({ mutate: setGuestRsvpMutate, isPending: false }),
   useRemoveGuestRsvp: () => ({ mutate: removeGuestRsvpMutate, isPending: false }),
   useSetGuestPayment: () => ({ mutate: setGuestPaymentMutate, isPending: false }),
+  useReorderWaitlist: () => ({ mutate: reorderWaitlistMutate, isPending: false }),
+}));
+vi.mock('@/components/SortableList', () => ({
+  SortableList: ({
+    items,
+    onReorder,
+    renderItem,
+    ariaLabel,
+  }: {
+    items: { id: string }[];
+    onReorder: (ids: string[]) => void;
+    renderItem: (item: { id: string }) => ReactNode;
+    ariaLabel?: string;
+  }) => (
+    <div>
+      <ul aria-label={ariaLabel}>
+        {items.map((item) => (
+          <li key={item.id}>{renderItem(item)}</li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        onClick={() => {
+          const ids = items.map((i) => i.id);
+          onReorder([...ids.slice(-1), ...ids.slice(0, -1)]);
+        }}
+      >
+        mock drop: move last to top
+      </button>
+    </div>
+  ),
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/api/userSearch', () => ({
@@ -36,6 +69,7 @@ beforeEach(() => {
   setGuestRsvpMutate.mockReset();
   removeGuestRsvpMutate.mockReset();
   setGuestPaymentMutate.mockReset();
+  reorderWaitlistMutate.mockReset();
   vi.mocked(toast.error).mockReset();
 });
 
@@ -229,5 +263,38 @@ describe('EventManageRsvpsPanel', () => {
       }),
     );
     expect(screen.getByRole('button', { name: /^✓ paid$/i })).toBeInTheDocument();
+  });
+
+  describe('waitlist order', () => {
+    const waitlistEvent = () =>
+      makeEvent({
+        guests: [
+          makeGuest({ userId: 'u0', name: 'Pat', status: RsvpServerStatus.Attending }),
+          makeGuest({ userId: 'w1', name: 'Alex', status: RsvpServerStatus.Waitlisted }),
+          makeGuest({ userId: 'w2', name: 'Sam', status: RsvpServerStatus.Waitlisted }),
+          makeGuest({
+            userId: 'w3',
+            name: 'Jo',
+            status: RsvpServerStatus.Waitlisted,
+            isMember: false,
+          }),
+        ],
+      });
+
+    it('reorders the waitlist on drop', () => {
+      renderPanel(waitlistEvent());
+      const list = screen.getByRole('list', { name: 'waitlisted order' });
+      expect(list).toHaveTextContent(/Alex.*Sam.*Jo/);
+      fireEvent.click(screen.getByRole('button', { name: 'mock drop: move last to top' }));
+      expect(reorderWaitlistMutate).toHaveBeenCalledWith(
+        { userIds: ['w3', 'w1', 'w2'] },
+        expect.objectContaining({ onError: expect.any(Function) }),
+      );
+    });
+
+    it('only makes the waitlist draggable', () => {
+      renderPanel(waitlistEvent());
+      expect(screen.getAllByRole('list', { name: /order$/ })).toHaveLength(1);
+    });
   });
 });

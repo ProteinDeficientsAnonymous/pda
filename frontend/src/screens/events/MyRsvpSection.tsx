@@ -67,6 +67,8 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
+  // An attending member already holds a seat — re-saving "going" keeps it.
+  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
 
   async function confirmRsvp(args: {
     status: RsvpInputStatus;
@@ -146,17 +148,19 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           busy={busy}
           locked={locked}
           onOpenCreate={(status) => {
+            setError(null);
             setBox({ mode: 'create', initialStatus: status });
           }}
           onOpenEdit={() => {
             if (!myInputStatus) return;
+            setError(null);
             setBox({ mode: 'edit', initialStatus: myInputStatus });
           }}
         />
       )}
 
       <SpotsLeft event={event} />
-      {error ? (
+      {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
@@ -172,8 +176,9 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={atCapacity}
+          atCapacity={goingWouldWaitlist}
           busy={busy}
+          error={error}
           questions={event.rsvpQuestions}
           initialAnswers={Object.fromEntries(
             Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
@@ -181,6 +186,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
+            setError(null);
             setBox(null);
           }}
         />

@@ -8,6 +8,7 @@ from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -62,6 +63,8 @@ class JoinRequestIn(BaseModel):
 
 
 class CheckPhoneStatus(StrEnum):
+    # "member" means "this number can sign in" — full members and tentatively
+    # approved applicants both have an account, so both get the password step.
     MEMBER = "member"
     PENDING = "pending"
     UNKNOWN = "unknown"
@@ -154,6 +157,9 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
       - ALREADY_MEMBER (409) when the match is an active member — they should
         sign in, not re-apply.
       - PHONE_ALREADY_PENDING (400) when a pending request already exists.
+      - PHONE_ALREADY_TENTATIVE (400) when a tentative request already exists —
+        they have an account and should sign in. A rejected request is the only
+        decided state that lets someone re-apply.
 
     Returns ``(matched_user, email_claimed)``: the non-member User to attach
     (or None), and whether the submitted email is already held by a *different*
@@ -175,10 +181,16 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 
     if matched and matched.is_member:
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
-    if JoinRequest.objects.filter(
-        phone_number=validated_phone, status=JoinRequestStatus.PENDING
-    ).exists():
+    live_statuses = set(
+        JoinRequest.objects.filter(
+            phone_number=validated_phone,
+            status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+        ).values_list("status", flat=True)
+    )
+    if JoinRequestStatus.PENDING in live_statuses:
         raise_validation(Code.JoinRequest.PHONE_ALREADY_PENDING, status_code=400)
+    if JoinRequestStatus.TENTATIVE in live_statuses:
+        raise_validation(Code.JoinRequest.PHONE_ALREADY_TENTATIVE, status_code=400)
 
     # The unique-email constraint ignores archived_at, so check across ALL rows
     # (archived included) — an archived account keeps its email and would still
@@ -280,9 +292,11 @@ def check_phone(request, payload: CheckPhoneIn):
         normalized = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
-    if User.objects.filter(
-        phone_number=normalized, is_member=True, archived_at__isnull=True
-    ).exists():
+    if (
+        User.objects.filter(phone_number=normalized, archived_at__isnull=True)
+        .filter(Q(is_member=True) | Q(join_requests__status=JoinRequestStatus.TENTATIVE))
+        .exists()
+    ):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING

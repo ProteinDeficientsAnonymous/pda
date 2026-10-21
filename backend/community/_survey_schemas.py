@@ -47,6 +47,9 @@ class SurveyOut(BaseModel):
     one_response_per_user: bool = False
     anonymous: bool = False
     confirmation_message: str = ""
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+    max_responses: int | None = None
     linked_event_id: str | None = None
     created_by_id: str | None = None
     created_at: datetime
@@ -63,6 +66,9 @@ class SurveyListOut(BaseModel):
     slug: str
     visibility: str
     is_active: bool
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+    max_responses: int | None = None
     linked_event_id: str | None = None
     created_at: datetime
     response_count: int = 0
@@ -77,6 +83,9 @@ class SurveyIn(BaseModel):
     one_response_per_user: bool = False
     anonymous: bool = False
     confirmation_message: str = Field(default="", max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE)
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+    max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
 
 
@@ -91,6 +100,9 @@ class SurveyPatchIn(BaseModel):
     confirmation_message: str | None = Field(
         default=None, max_length=FieldLimit.SURVEY_CONFIRMATION_MESSAGE
     )
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+    max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
 
 

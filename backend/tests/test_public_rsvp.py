@@ -59,6 +59,8 @@ class TestPublicRsvpHappyPath:
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "sam@example.com"
         assert "you're in" in sent["subject"]
+        assert "hi sam —" in sent["text"]
+        assert "green" not in sent["text"]
         token = NonMemberRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
 

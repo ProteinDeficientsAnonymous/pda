@@ -3,6 +3,8 @@ import { enUS } from 'date-fns/locale/en-US';
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 
+import { useToday } from '@/hooks/useToday';
+
 interface Props {
   label: string;
   value: string | null;
@@ -25,6 +27,7 @@ export function DatePicker({ label, value, onChange, disabled, error }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
+  const today = useToday();
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +88,7 @@ export function DatePicker({ label, value, onChange, disabled, error }: Props) {
               onChange(dateToIso(day));
               setOpen(false);
             }}
-            defaultMonth={selectedDate ?? new Date()}
+            defaultMonth={selectedDate ?? today}
             locale={enUS}
           />
         </div>

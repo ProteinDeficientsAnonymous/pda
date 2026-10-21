@@ -1,6 +1,9 @@
 """Helper functions for survey output serialization and tally logic."""
 
+from datetime import datetime
+
 from config.media_proxy import media_path
+from django.utils import timezone
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -73,6 +76,9 @@ def _survey_out(
         one_response_per_user=survey.one_response_per_user,
         anonymous=survey.anonymous,
         confirmation_message=survey.confirmation_message,
+        opens_at=survey.opens_at,
+        closes_at=survey.closes_at,
+        max_responses=survey.max_responses,
         linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
@@ -82,6 +88,40 @@ def _survey_out(
         my_response_id=my_response_id,
         my_answers=my_answers,
     )
+
+
+def survey_at_cap(survey: Survey) -> bool:
+    if survey.max_responses is None:
+        return False
+    return survey.responses.count() >= survey.max_responses
+
+
+def survey_is_open(survey: Survey, now: datetime | None = None, *, check_cap: bool = True) -> bool:
+    """Whether the survey accepts responses right now.
+
+    check_cap(bool): skip the response cap — for a user updating their own response.
+    """
+    now = now or timezone.now()
+    if not survey.is_active:
+        return False
+    if survey.opens_at and now < survey.opens_at:
+        return False
+    if survey.closes_at and now >= survey.closes_at:
+        return False
+    return not (check_cap and survey_at_cap(survey))
+
+
+def _validate_survey_window(opens_at: datetime | None, closes_at: datetime | None) -> None:
+    if opens_at and closes_at and closes_at <= opens_at:
+        raise_validation(Code.Survey.CLOSES_BEFORE_OPENS, field="closes_at", status_code=400)
+
+
+def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
+    # Flipping either way after collection would mislead respondents about who sees their name.
+    if "anonymous" not in updates or updates["anonymous"] == survey.anonymous:
+        return
+    if survey.responses.exists():
+        raise_validation(Code.Survey.ANONYMOUS_LOCKED, field="anonymous", status_code=400)
 
 
 def _apply_linked_event_update(updates: dict) -> dict:
