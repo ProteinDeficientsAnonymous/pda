@@ -64,6 +64,7 @@ export const Code = {
     AlreadyFinalized: 'poll.already_finalized',
     WinningOptionNotFound: 'poll.winning_option_not_found',
     MinTwoOptions: 'poll.min_two_options',
+    TooManyOptions: 'poll.too_many_options',
     InvalidAvailability: 'poll.invalid_availability',
   },
   Tag: {
@@ -322,6 +323,7 @@ export type ValidationCode =
   | 'poll.already_finalized'
   | 'poll.winning_option_not_found'
   | 'poll.min_two_options'
+  | 'poll.too_many_options'
   | 'poll.invalid_availability'
   | 'tag.not_found'
   | 'tag.name_required'
@@ -518,6 +520,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'poll.already_finalized': [],
   'poll.winning_option_not_found': [],
   'poll.min_two_options': [],
+  'poll.too_many_options': ['max'],
   'poll.invalid_availability': [],
   'tag.not_found': [],
   'tag.name_required': [],

@@ -292,6 +292,13 @@
         "params": []
       },
       {
+        "name": "TOO_MANY_OPTIONS",
+        "value": "poll.too_many_options",
+        "params": [
+          "max"
+        ]
+      },
+      {
         "name": "INVALID_AVAILABILITY",
         "value": "poll.invalid_availability",
         "params": []

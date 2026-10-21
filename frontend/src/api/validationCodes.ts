@@ -168,6 +168,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'winning option not found in this poll';
     case Code.Poll.MinTwoOptions:
       return 'a poll must have at least 2 options';
+    case Code.Poll.TooManyOptions: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null
+        ? `a poll can have at most ${String(max)} options`
+        : 'too many poll options';
+    }
     case Code.Poll.InvalidAvailability:
       return 'availability must be "yes", "maybe", or "no"';
 
