@@ -1,3 +1,10 @@
+## [0.132.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.132.0...v0.132.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **calendar:** split feed token check to pass the complexity gate ([#1651](https://github.com/ProteinDeficientsAnonymous/pda/issues/1651)) ([9a651e7](https://github.com/ProteinDeficientsAnonymous/pda/commit/9a651e7f3ca0b981fd1ba8eea958f514df315e31))
+
 # [0.132.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.131.0...v0.132.0) (2026-10-21)
 
 
