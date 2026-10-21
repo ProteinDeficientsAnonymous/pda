@@ -294,7 +294,7 @@ export function EventForm({ existing }: Props) {
         </div>
       </div>
 
-      <div className="flex w-full flex-col gap-4 lg:max-w-3xl lg:flex-1">
+      <div className="flex w-full min-w-0 flex-col gap-4 lg:max-w-3xl lg:flex-1">
         <EventFormBasics
           values={values}
           onChange={patch}
