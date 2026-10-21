@@ -13,6 +13,8 @@ from community.models import (
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from users.models import Role, User
+from users.permissions import PermissionKey
 
 
 def _auth(user):
@@ -22,7 +24,6 @@ def _auth(user):
 
 @pytest.fixture
 def members(db):
-    from users.models import User
 
     return [
         User.objects.create_user(
@@ -37,7 +38,6 @@ def members(db):
 
 @pytest.fixture
 def host_user(db):
-    from users.models import User
 
     return User.objects.create_user(
         phone_number="+12025551800",
@@ -49,8 +49,6 @@ def host_user(db):
 
 @pytest.fixture
 def events_admin(db):
-    from users.models import Role, User
-    from users.permissions import PermissionKey
 
     admin = User.objects.create_user(
         phone_number="+12025551801",

@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from config import gunicorn_conf
+from config.gunicorn_conf import post_fork, worker_max_age_seconds
 from config.media_proxy import media_path, preload_media_storage
 from config.memory import gunicorn_argv, media_path_calls, memory_profile_enabled, rss_kb, snapshot
 from config.middleware import RequestLoggingMiddleware
@@ -174,7 +176,6 @@ class TestMemorySnapshotView:
 @pytest.mark.unit
 class TestGunicornConf:
     def test_recycles_worker_every_2000_requests(self):
-        from config import gunicorn_conf
 
         assert gunicorn_conf.max_requests == 2000
         assert gunicorn_conf.max_requests_jitter == 200
@@ -182,13 +183,11 @@ class TestGunicornConf:
 
     def test_worker_max_age_defaults_to_30_minutes(self, monkeypatch):
         monkeypatch.delenv("PDA_WORKER_MAX_AGE", raising=False)
-        from config.gunicorn_conf import worker_max_age_seconds
 
         assert worker_max_age_seconds() == 1800
 
     def test_worker_max_age_zero_disables_recycle(self, monkeypatch):
         monkeypatch.setenv("PDA_WORKER_MAX_AGE", "0")
-        from config.gunicorn_conf import worker_max_age_seconds
 
         assert worker_max_age_seconds() == 0
 
@@ -210,7 +209,6 @@ class TestGunicornConf:
                 self._target()
 
         monkeypatch.setattr("config.gunicorn_conf.threading.Thread", ImmediateThread)
-        from config.gunicorn_conf import post_fork
 
         post_fork(
             SimpleNamespace(log=SimpleNamespace(info=lambda *a, **k: None)), SimpleNamespace()
@@ -230,7 +228,6 @@ class TestGunicornConf:
                 started.append(True)
 
         monkeypatch.setattr("config.gunicorn_conf.threading.Thread", TrackingThread)
-        from config.gunicorn_conf import post_fork
 
         post_fork(
             SimpleNamespace(log=SimpleNamespace(info=lambda *a, **k: None)), SimpleNamespace()

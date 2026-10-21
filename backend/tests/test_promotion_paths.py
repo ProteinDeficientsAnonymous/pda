@@ -1,11 +1,14 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
+from community._join_request_approval import _promote_tentative_member
+from community._validation import ValidationException
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 
+from tests._public_rsvp_helpers import make_official_event, payload, url
 from tests.conftest import future_iso
 from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
 
@@ -148,8 +151,6 @@ class TestPromoteTentativeMember:
 
     def test_a_nameless_tentative_user_is_rejected(self, sample_join_request):
         """Issue 733 — no approval path may produce a member with no first name."""
-        from community._join_request_approval import _promote_tentative_member
-        from community._validation import ValidationException
 
         user = User.objects.create_user(
             phone_number="+12025551901", first_name="Temp", is_member=False
@@ -213,7 +214,6 @@ class TestTentativeMemberRsvpsViaPublicForm:
     def test_public_rsvp_resolves_to_the_existing_tentative_user(
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
-        from tests._public_rsvp_helpers import make_official_event, payload, url
 
         tentative_user = _tentative_user_with_rsvp(
             sample_join_request, open_official_event, vettor_user
@@ -241,7 +241,6 @@ class TestTentativeMemberRsvpsViaPublicForm:
     def test_checkin_on_the_publicly_rsvpd_event_still_takes_the_tentative_path(
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
-        from tests._public_rsvp_helpers import make_official_event, payload, url
 
         tentative_user = _tentative_user_with_rsvp(
             sample_join_request, open_official_event, vettor_user

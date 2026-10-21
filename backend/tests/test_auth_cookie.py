@@ -5,6 +5,7 @@ Covers: cookie set on login/magic-login, refresh via cookie, logout clears cooki
 """
 
 import pytest
+from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
 from users._refresh_cookie import REFRESH_COOKIE_NAME
 from users.models import MagicLoginToken
@@ -13,7 +14,6 @@ from users.models import MagicLoginToken
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
     # login / magic-login are rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import caches
 
     caches["ratelimit"].clear()
     yield
@@ -23,7 +23,6 @@ def _clear_rate_limit_cache():
 @pytest.mark.django_db
 class TestLoginRateLimit:
     def test_login_rate_limited_after_five_attempts(self, api_client, test_user):
-        from django.core.cache import caches
 
         caches["ratelimit"].clear()
         for _ in range(5):

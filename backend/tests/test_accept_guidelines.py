@@ -1,6 +1,7 @@
 """Tests for POST /api/auth/accept-consents/."""
 
 import pytest
+from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.roles import Role
@@ -64,7 +65,6 @@ class TestAcceptConsents:
         assert user.guidelines_consent_at == first
 
     def test_accepts_multiple_consent_types_together(self, api_client):
-        from users.models import User
 
         user = User.objects.create_user(
             phone_number="+12025550405", password="pass", first_name="SmsConsenter", last_name=""
@@ -84,7 +84,6 @@ class TestAcceptConsents:
         assert user.sms_consent_at is not None
 
     def test_unlisted_consent_type_is_left_null(self, api_client):
-        from users.models import User
 
         user = User.objects.create_user(
             phone_number="+12025550406", password="pass", first_name="GuidelinesOnly", last_name=""
@@ -101,8 +100,6 @@ class TestAcceptConsents:
         assert user.sms_consent_at is None
 
     def test_never_overwrites_existing_consent(self, api_client):
-        from django.utils import timezone
-        from users.models import User
 
         user = User.objects.create_user(
             phone_number="+12025550407", password="pass", first_name="AlreadySms", last_name=""
@@ -119,7 +116,6 @@ class TestAcceptConsents:
         assert user.sms_consent_at == original
 
     def test_unknown_consent_type_is_rejected(self, api_client):
-        from users.models import User
 
         user = User.objects.create_user(
             phone_number="+12025550408", password="pass", first_name="BadType", last_name=""

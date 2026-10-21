@@ -1,11 +1,20 @@
 from datetime import timedelta
 
 import pytest
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventType,
+    JoinRequest,
+    JoinRequestStatus,
+    RSVPStatus,
+)
 from django.utils import timezone
+from users.models import NonMemberRsvpToken, User
 
 
 def _non_member(phone, email=""):
-    from users.models import User
 
     return User.objects.create_user(
         phone_number=phone,
@@ -16,7 +25,6 @@ def _non_member(phone, email=""):
 
 
 def _official_event():
-    from community.models import Event, EventType
 
     return Event.objects.create(
         title="Potluck",
@@ -26,7 +34,6 @@ def _official_event():
 
 
 def _community_event():
-    from community.models import Event, EventType
 
     return Event.objects.create(
         title="Hangout",
@@ -36,7 +43,6 @@ def _community_event():
 
 
 def _event(event_type, *, past=False):
-    from community.models import Event
 
     offset = timedelta(days=-7 if past else 7)
     return Event.objects.create(
@@ -65,7 +71,6 @@ def _submit(api_client, why_join_id, phone, email):
 @pytest.mark.django_db
 class TestSubmissionMemberMatch:
     def test_member_phone_match_returns_already_member(self, api_client, why_join_id):
-        from users.models import User
 
         User.objects.create_user(phone_number="+12025551401", first_name="Member", is_member=True)
         resp = _submit(api_client, why_join_id, "+12025551401", "fresh@example.com")
@@ -73,7 +78,6 @@ class TestSubmissionMemberMatch:
         assert resp.json()["detail"][0]["code"] == "join_request.already_member"
 
     def test_member_email_match_returns_already_member(self, api_client, why_join_id):
-        from users.models import User
 
         User.objects.create_user(
             phone_number="+12025551402",
@@ -89,7 +93,6 @@ class TestSubmissionMemberMatch:
 @pytest.mark.django_db
 class TestSubmissionNonMemberAttach:
     def test_phone_match_attaches_to_existing_user(self, api_client, why_join_id):
-        from community.models import JoinRequest
 
         existing = _non_member("+12025551410", email="rsvper@example.com")
         resp = _submit(api_client, why_join_id, "+12025551410", "rsvper@example.com")
@@ -98,7 +101,6 @@ class TestSubmissionNonMemberAttach:
         assert jr.user_id == existing.id
 
     def test_email_match_attaches_to_existing_user(self, api_client, why_join_id):
-        from community.models import JoinRequest
 
         existing = _non_member("+12025551411", email="byemail@example.com")
         resp = _submit(api_client, why_join_id, "+12025551412", "byemail@example.com")
@@ -119,7 +121,6 @@ class TestSubmissionNonMemberAttach:
         assert existing.email == "original@example.com"
 
     def test_no_match_creates_unlinked_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
 
         resp = _submit(api_client, why_join_id, "+12025551415", "brandnew@example.com")
         assert resp.status_code == 201
@@ -153,7 +154,6 @@ class TestSubmissionNonMemberAttach:
 @pytest.mark.django_db
 class TestApprovalPromotesNonMember:
     def _approve(self, api_client, vettor_headers, jr_id):
-        from community.models import JoinRequestStatus
 
         return api_client.patch(
             f"/api/community/join-requests/{jr_id}/",
@@ -163,8 +163,6 @@ class TestApprovalPromotesNonMember:
         )
 
     def test_promotes_in_place_without_new_user(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
-        from users.models import User
 
         existing = _non_member("+12025551420", email="promote@example.com")
         jr = JoinRequest.objects.create(
@@ -187,8 +185,6 @@ class TestApprovalPromotesNonMember:
         assert resp.json()["user_id"] == str(existing.id)
 
     def test_revokes_outstanding_rsvp_tokens(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
-        from users.models import NonMemberRsvpToken
 
         existing = _non_member("+12025551421", email="tokens@example.com")
         token = NonMemberRsvpToken.issue(existing)
@@ -205,7 +201,6 @@ class TestApprovalPromotesNonMember:
         assert token.revoked_at is not None
 
     def test_prior_rsvps_carry_to_promoted_member(self, api_client, vettor_headers):
-        from community.models import EventRSVP, JoinRequest, JoinRequestStatus, RSVPStatus
 
         existing = _non_member("+12025551422", email="rsvps@example.com")
         event = _official_event()
@@ -223,8 +218,6 @@ class TestApprovalPromotesNonMember:
         assert rsvp.user_id == existing.id  # still attributed, now a member
 
     def test_deleted_user_falls_back_to_create_new(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
-        from users.models import User
 
         existing = _non_member("+12025551423", email="ghost@example.com")
         jr = JoinRequest.objects.create(
@@ -250,7 +243,6 @@ class TestRsvpBreakdown:
         return {r["id"]: r for r in resp.json()}[str(jr_id)]
 
     def _rsvp(self, event, user, *, attendance=None):
-        from community.models import AttendanceStatus, EventRSVP, RSVPStatus
 
         return EventRSVP.objects.create(
             event=event,
@@ -260,7 +252,6 @@ class TestRsvpBreakdown:
         )
 
     def test_buckets_split_by_attendance_and_type(self, api_client, vettor_headers):
-        from community.models import AttendanceStatus, EventType, JoinRequest, JoinRequestStatus
 
         existing = _non_member("+12025551430", email="counter@example.com")
         # attended = host-marked ATTENDED, regardless of time.
@@ -290,13 +281,6 @@ class TestRsvpBreakdown:
         assert row["upcoming_club_count"] == 2
 
     def test_community_and_non_attending_excluded(self, api_client, vettor_headers):
-        from community.models import (
-            EventRSVP,
-            EventType,
-            JoinRequest,
-            JoinRequestStatus,
-            RSVPStatus,
-        )
 
         existing = _non_member("+12025551433", email="excl@example.com")
         # community type isn't a bucket; MAYBE isn't ATTENDING; a past unmarked
@@ -320,7 +304,6 @@ class TestRsvpBreakdown:
         assert row["upcoming_club_count"] == 0
 
     def test_zero_when_no_attached_user(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
 
         jr = JoinRequest.objects.create(
             first_name="Unlinked",
@@ -334,7 +317,6 @@ class TestRsvpBreakdown:
     def test_email_matched_link_reports_user_id_and_counts(self, api_client, vettor_headers):
         # Linked by email, so the user's phone differs from the request's. user_id
         # and the rsvp counts must both resolve to the linked user (consistency).
-        from community.models import EventType, JoinRequest, JoinRequestStatus
 
         existing = _non_member("+12025551432", email="emailmatch@example.com")
         self._rsvp(_event(EventType.OFFICIAL), existing)

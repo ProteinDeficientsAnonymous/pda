@@ -76,14 +76,12 @@ class TestListSerializerPaymentParity:
         return next(item for item in body if item["id"] == str(event.id))
 
     def test_anon_sees_payment_links_in_list_for_eligible_event(self, api_client, test_user):
-        from community.models import EventType
 
         event = _paid_event(test_user, event_type=EventType.OFFICIAL)
         row = self._find(self._list(api_client), event)
         assert row["venmo_link"] == "https://venmo.com/u/host"
 
     def test_list_and_detail_agree_for_anon(self, api_client, test_user):
-        from community.models import EventType
 
         event = _paid_event(test_user, event_type=EventType.OFFICIAL)
         row = self._find(self._list(api_client), event)
@@ -93,14 +91,12 @@ class TestListSerializerPaymentParity:
     def test_anon_does_not_see_payment_links_in_list_for_community_event(
         self, api_client, test_user
     ):
-        from community.models import EventType
 
         event = _paid_event(test_user, event_type=EventType.COMMUNITY)
         row = self._find(self._list(api_client), event)
         assert row["venmo_link"] == ""
 
     def test_anon_still_does_not_see_other_links_in_list(self, api_client, test_user):
-        from community.models import EventType
 
         event = _paid_event(
             test_user,

@@ -3,6 +3,7 @@ import json
 import pytest
 from community.models import Event, EventStatus
 from ninja_jwt.tokens import RefreshToken
+from notifications.email_sender import SendResult
 from users.models import User
 
 from tests.conftest import future_iso
@@ -74,7 +75,6 @@ class TestCohostInviteEmail:
         assert response_data["id"]
 
     def test_does_not_crash_when_send_fails(self, api_client, creator, fake_email_sender):
-        from notifications.email_sender import SendResult
 
         fake_email_sender.send.side_effect = Exception("smtp exploded")
         invitee = _make_user("+12025550114", "Invitee", email="invitee2@example.com")

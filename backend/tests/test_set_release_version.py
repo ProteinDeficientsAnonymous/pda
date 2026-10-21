@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -62,7 +63,6 @@ def test_package_json_preserves_trailing_newline(tmp_path):
 
 
 def test_pyproject_version_handles_single_quotes_and_no_spaces(tmp_path):
-    import tomllib
 
     p = tmp_path / "pyproject.toml"
     p.write_text("[project]\nname = 'pda'\nversion='0.1.0'\n")

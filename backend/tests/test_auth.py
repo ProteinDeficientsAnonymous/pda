@@ -2,6 +2,7 @@
 
 import pytest
 from community._validation import Code
+from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
@@ -16,7 +17,6 @@ from tests._asserts import assert_error_code
 def _clear_rate_limit_cache():
     # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
     # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
-    from django.core.cache import caches
 
     caches["ratelimit"].clear()
     yield

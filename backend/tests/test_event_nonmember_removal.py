@@ -2,6 +2,7 @@ import pytest
 from community._validation import Code
 from community.models import EventRSVP, EventType, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
+from notifications.email_sender import SendResult
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -113,7 +114,6 @@ class TestNonMemberRemovalOnIneligibleEvent:
     def test_email_failure_does_not_roll_back_removal(
         self, api_client, manage_events_headers, fake_email_sender
     ):
-        from notifications.email_sender import SendResult
 
         fake_email_sender.send.return_value = SendResult(success=False, error="boom")
         event = make_official_event()

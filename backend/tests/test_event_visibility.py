@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventType, PageVisibility
+from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -360,7 +360,6 @@ class TestTextRecipients:
         return event
 
     def test_creator_gets_phones_grouped_by_status(self, api_client):
-        from community.models import EventRSVP, RSVPStatus
 
         creator = self._make_user("+12025550240", "Creator40")
         going = self._make_user("+12025550241", "Going40")

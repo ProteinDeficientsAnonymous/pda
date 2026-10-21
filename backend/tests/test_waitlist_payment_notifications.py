@@ -4,6 +4,7 @@ import pytest
 from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
+from notifications.models import Notification
 
 from tests._payment_helpers import create_paid_event
 
@@ -17,7 +18,6 @@ def _paid_event(creator, **overrides) -> Event:
 @pytest.mark.django_db
 class TestWaitlistPromotionPaymentMessaging:
     def test_promotion_notification_warns_about_payment(self, test_user, django_user_model):
-        from notifications.models import Notification
 
         event = _paid_event(test_user, max_attendees=1)
         waiting = django_user_model.objects.create_user(
@@ -30,7 +30,6 @@ class TestWaitlistPromotionPaymentMessaging:
         assert "isn't confirmed until you pay" in message
 
     def test_free_event_promotion_keeps_the_plain_message(self, test_user, django_user_model):
-        from notifications.models import Notification
 
         event = _paid_event(test_user, max_attendees=1, price="", venmo_link="")
         waiting = django_user_model.objects.create_user(
@@ -43,7 +42,6 @@ class TestWaitlistPromotionPaymentMessaging:
         assert "pay" not in message
 
     def test_already_paid_promoted_user_is_not_told_to_pay(self, test_user, django_user_model):
-        from notifications.models import Notification
 
         event = _paid_event(test_user, max_attendees=1)
         paid = django_user_model.objects.create_user(
@@ -61,7 +59,6 @@ class TestWaitlistPromotionPaymentMessaging:
         assert "isn't confirmed until you pay" not in message
 
     def test_mixed_promotion_tells_only_the_unpaid_user_to_pay(self, test_user, django_user_model):
-        from notifications.models import Notification
 
         event = _paid_event(test_user, max_attendees=2)
         paid = django_user_model.objects.create_user(

@@ -1,8 +1,13 @@
 import logging
+from unittest.mock import MagicMock
 
 import pytest
+from community import _event_blasts
 from community._validation import Code
 from community.models import Event, EventEmailBlast, EventRSVP, RSVPStatus
+from ninja_jwt.tokens import RefreshToken
+from notifications.email_sender import EmailStream, SendResult
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -14,7 +19,6 @@ BLAST_URL = "/api/community/events/{event_id}/email-blast/"
 
 @pytest.fixture
 def host_user(db):
-    from users.models import User
 
     return User.objects.create_user(
         phone_number="+14155550199",
@@ -27,7 +31,6 @@ def host_user(db):
 
 @pytest.fixture
 def host_headers(host_user):
-    from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(host_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -35,7 +38,6 @@ def host_headers(host_user):
 
 @pytest.fixture
 def other_user(db):
-    from users.models import User
 
     return User.objects.create_user(
         phone_number="+14155550200",
@@ -48,7 +50,6 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(other_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -63,7 +64,6 @@ def event_with_attendees(db, host_user):
     - maybe_member: has email
     - cant_go_member: has email
     """
-    from users.models import User
 
     event = Event.objects.create(
         title="Potluck in the Park",
@@ -158,8 +158,6 @@ class TestEmailBlastAuth:
     def test_manage_events_permission_can_send(
         self, api_client, event_with_attendees, fake_email_sender
     ):
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
 
         manager = User.objects.create_user(
             phone_number="+14155550400",
@@ -223,10 +221,6 @@ class TestEmailBlastSending:
         self, api_client, event_with_attendees, host_headers, fake_email_sender, monkeypatch
     ):
         """A blast fans out to every rsvp — it must not spend transactional quota."""
-        from unittest.mock import MagicMock
-
-        from community import _event_blasts
-        from notifications.email_sender import EmailStream
 
         spy = MagicMock(return_value=fake_email_sender)
         monkeypatch.setattr(_event_blasts, "get_email_sender", spy)
@@ -322,7 +316,6 @@ class TestEmailBlastSending:
     def test_one_send_failure_does_not_abort_batch(
         self, api_client, event_with_attendees, host_headers, fake_email_sender
     ):
-        from notifications.email_sender import SendResult
 
         # First recipient fails, the rest succeed.
         fake_email_sender.send.side_effect = [
@@ -346,7 +339,6 @@ class TestEmailBlastSending:
     def test_send_exception_counts_as_failure(
         self, api_client, event_with_attendees, host_headers, fake_email_sender
     ):
-        from notifications.email_sender import SendResult
 
         fake_email_sender.send.side_effect = [
             RuntimeError("smtp blew up"),

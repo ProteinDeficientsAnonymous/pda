@@ -1,5 +1,11 @@
 import pytest
+from community._join_request_approval import _provision_approved_user
+from community._validation import ValidationException
+from community.models.join_form import JoinRequest
+from django.utils import timezone
+from users._name_parsing import parse_display_name
 from users.models import User
+from users.schemas import UserOut
 
 
 @pytest.mark.django_db
@@ -49,7 +55,6 @@ class TestBackfillParsing:
     """The backfill logic (parse_display_name) applied to representative names."""
 
     def test_backfill_maps_existing_names(self):
-        from users._name_parsing import parse_display_name
 
         u = User.objects.create_user(phone_number="+15551230100", first_name="x")
         u.first_name, u.last_name = parse_display_name("Grace Hopper")
@@ -62,7 +67,6 @@ class TestBackfillParsing:
 @pytest.mark.django_db
 class TestJoinRequestNames:
     def test_join_request_full_name(self):
-        from community.models.join_form import JoinRequest
 
         jr = JoinRequest.objects.create(
             first_name="Ada", last_name="Lovelace", phone_number="+15551239999"
@@ -135,7 +139,6 @@ class TestPatchMeNameFields:
 @pytest.mark.django_db
 class TestUserOutSchema:
     def test_user_out_includes_name_fields(self):
-        from users.schemas import UserOut
 
         u = User.objects.create_user(
             phone_number="+15551230200", first_name="Ada", last_name="Lovelace"
@@ -149,8 +152,6 @@ class TestUserOutSchema:
 @pytest.mark.django_db
 class TestApprovalCopiesNames:
     def test_new_user_gets_first_last_from_join_request(self, manage_users_user):
-        from community._join_request_approval import _provision_approved_user
-        from community.models.join_form import JoinRequest
 
         jr = JoinRequest.objects.create(
             first_name="Grace", last_name="Hopper", phone_number="+12025551212"
@@ -162,18 +163,12 @@ class TestApprovalCopiesNames:
         assert u.full_name == "Grace Hopper"
 
     def test_nameless_request_rejected_on_create(self, manage_users_user):
-        from community._join_request_approval import _provision_approved_user
-        from community._validation import ValidationException
-        from community.models.join_form import JoinRequest
 
         jr = JoinRequest.objects.create(phone_number="+12025551214")
         with pytest.raises(ValidationException):
             _provision_approved_user(jr, manage_users_user, was_tentative=False)
 
     def test_nameless_request_rejected_on_promote(self, manage_users_user):
-        from community._join_request_approval import _provision_approved_user
-        from community._validation import ValidationException
-        from community.models.join_form import JoinRequest
 
         non_member = User.objects.create_user(
             phone_number="+12025551215", first_name="Prior", is_member=False
@@ -185,10 +180,6 @@ class TestApprovalCopiesNames:
             _provision_approved_user(jr, manage_users_user, was_tentative=False)
 
     def test_nameless_request_rejected_on_reactivate(self, manage_users_user):
-        from community._join_request_approval import _provision_approved_user
-        from community._validation import ValidationException
-        from community.models.join_form import JoinRequest
-        from django.utils import timezone
 
         archived = User.objects.create_user(phone_number="+12025551216", first_name="Prior")
         archived.archived_at = timezone.now()

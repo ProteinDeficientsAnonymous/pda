@@ -3,8 +3,10 @@
 from datetime import timedelta
 
 import pytest
+from django.core.cache import caches
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import SseTicket
 from notifications.sse import _format_notify_for_user
 
 
@@ -31,7 +33,6 @@ def _auth_headers(user) -> dict:
 
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
-    from django.core.cache import caches
 
     caches["ratelimit"].clear()
     yield
@@ -50,7 +51,6 @@ class TestSseTicketMint:
         assert response.json()["ticket"]
 
     def test_minted_ticket_is_bound_to_user(self, test_user, api_client):
-        from notifications.models import SseTicket
 
         response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
         token = response.json()["ticket"]
@@ -80,14 +80,12 @@ class TestSseStreamAuth:
     def test_valid_ticket_does_not_get_401(self, test_user, api_client):
         """A valid ticket passes auth — endpoint may return 200 (streaming) or
         fail for infra reasons (PG connect), but must not return 401."""
-        from notifications.models import SseTicket
 
         ticket = SseTicket.mint_for_user(test_user)
         response = api_client.get(f"/api/notifications/stream/?ticket={ticket.token}")
         assert response.status_code != 401
 
     def test_ticket_is_single_use(self, test_user, api_client):
-        from notifications.models import SseTicket
 
         ticket = SseTicket.mint_for_user(test_user)
         first = api_client.get(f"/api/notifications/stream/?ticket={ticket.token}")
@@ -100,7 +98,6 @@ class TestSseStreamAuth:
         assert second.json()["detail"] == "invalid ticket"
 
     def test_expired_ticket_returns_401(self, test_user, api_client):
-        from notifications.models import SseTicket
 
         ticket = SseTicket.objects.create(
             token="expired-ticket-token",

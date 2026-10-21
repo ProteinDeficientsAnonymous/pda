@@ -1,7 +1,11 @@
 """Tests for the rendered-HTML sanitizer (`sanitize_content_html`)."""
 
+import json
+
 import pytest
+from community._delta_html import delta_to_html
 from community._html_sanitize import sanitize_content_html
+from community._prosemirror_html import prosemirror_to_html
 
 
 class TestSchemeStripping:
@@ -216,9 +220,6 @@ class TestRendererRoundTrip:
     """Feeds real renderer output through the sanitizer to catch allowlist drift."""
 
     def test_prosemirror_full_document_survives(self):
-        import json
-
-        from community._prosemirror_html import prosemirror_to_html
 
         pm = json.dumps(
             {
@@ -273,9 +274,6 @@ class TestRendererRoundTrip:
         assert 'target="_blank"' in result
 
     def test_delta_document_survives(self):
-        import json
-
-        from community._delta_html import delta_to_html
 
         delta = json.dumps(
             [
