@@ -7,11 +7,13 @@ import {
   useWelcomeTemplate,
   useWhatsAppLink,
 } from '@/api/content';
+import { useRejectionEmail } from '@/api/rejectionEmail';
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { MemberPromotionEmailEditorDialog } from './MemberPromotionEmailEditorDialog';
 import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
+import { RejectionEmailEditorDialog } from './RejectionEmailEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
@@ -21,12 +23,14 @@ export function JoinRequestMessageEditors() {
   const [tentativeOpen, setTentativeOpen] = useState(false);
   const [memberPromotionOpen, setMemberPromotionOpen] = useState(false);
   const [promotionEmailOpen, setPromotionEmailOpen] = useState(false);
+  const [rejectionEmailOpen, setRejectionEmailOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
   const memberPromotionQ = useMemberPromotionMessage();
   const promotionEmailQ = useMemberPromotionEmail();
+  const rejectionEmailQ = useRejectionEmail();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -59,6 +63,12 @@ export function JoinRequestMessageEditors() {
           label="edit member promotion email"
           onClick={() => {
             setPromotionEmailOpen(true);
+          }}
+        />
+        <EditorTrigger
+          label="edit rejection email"
+          onClick={() => {
+            setRejectionEmailOpen(true);
           }}
         />
         <EditorTrigger
@@ -95,6 +105,13 @@ export function JoinRequestMessageEditors() {
           setPromotionEmailOpen(false);
         }}
         template={promotionEmailQ.data ?? null}
+      />
+      <RejectionEmailEditorDialog
+        open={rejectionEmailOpen}
+        onClose={() => {
+          setRejectionEmailOpen(false);
+        }}
+        template={rejectionEmailQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}
