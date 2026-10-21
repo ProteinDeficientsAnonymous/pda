@@ -1,3 +1,13 @@
+# [0.132.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.131.0...v0.132.0) (2026-10-21)
+
+
+### Features
+
+* **surveys:** anonymous mode, response delete, confirmation message ([#1477](https://github.com/ProteinDeficientsAnonymous/pda/issues/1477)) ([cf0a8be](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf0a8be098b78077edb7dd93038bc8bcd2efb6fe))
+* **surveys:** conditional questions via show_if (Issue 1464) ([#1475](https://github.com/ProteinDeficientsAnonymous/pda/issues/1475)) ([2366654](https://github.com/ProteinDeficientsAnonymous/pda/commit/23666540b093502d21747c4ad1d2692033a6ed9a))
+* **surveys:** dedupe anonymous responses with a response token (Issue 1461) ([#1470](https://github.com/ProteinDeficientsAnonymous/pda/issues/1470)) ([3a702aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a702aaaaddc68ffb962cb2488e48afe657db5c0))
+* **surveys:** per-question result summaries and csv export (Issue 1462) ([#1479](https://github.com/ProteinDeficientsAnonymous/pda/issues/1479)) ([3cd83db](https://github.com/ProteinDeficientsAnonymous/pda/commit/3cd83db70fe626d8af2bcf24990fdfa1ef6e33e3))
+
 # [0.131.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.130.2...v0.131.0) (2026-10-21)
 
 
