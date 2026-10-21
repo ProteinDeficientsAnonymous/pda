@@ -5,7 +5,7 @@ from django.db.models import Count, Exists, Max, OuterRef, Q, QuerySet
 from django.utils import timezone
 from notifications._email_helpers import LoginLinkEmail, send_magic_login_email
 from notifications.email_sender import EmailSender
-from users._helpers import _create_magic_token, _magic_login_url
+from users._helpers import _magic_login_url
 from users.models import HAS_EMAIL, MagicLoginToken, MagicLoginTokenSource, User
 
 from community.models import LoginReminder
@@ -61,23 +61,23 @@ def _claim(user: User, now: datetime) -> LoginReminder | None:
 
 
 def _send_reminder(sender: EmailSender, user: User, reminder: LoginReminder) -> bool:
-    token = _create_magic_token(user, source=MagicLoginTokenSource.REMINDER)
+    link = MagicLoginToken.create_for_user(user, source=MagicLoginTokenSource.REMINDER)
     result = send_magic_login_email(
         sender=sender,
         to=user.email,
         display_name=user.first_name,
-        magic_link_url=_magic_login_url(token),
+        magic_link_url=_magic_login_url(str(link.token)),
         email=_REMINDER_EMAIL,
     )
-    reminder_links = MagicLoginToken.objects.filter(
-        user=user, used=False, source=MagicLoginTokenSource.REMINDER
-    )
     if not result.success:
-        reminder_links.filter(token=token).update(used=True)
+        link.used = True
+        link.save(update_fields=["used"])
         reminder.delete()
         return False
     # Only earlier reminder links: admin-texted links must keep working.
-    reminder_links.exclude(token=token).update(used=True)
+    MagicLoginToken.objects.filter(
+        user=user, used=False, source=MagicLoginTokenSource.REMINDER
+    ).exclude(pk=link.pk).update(used=True)
     return True
 
 
