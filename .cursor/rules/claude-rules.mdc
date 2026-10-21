@@ -1,0 +1,21 @@
+---
+description: Team rules from .claude/rules, which Cursor does not load on its own
+alwaysApply: true
+---
+
+Cursor doesn't load `.claude/rules/` or run `.claude/hooks/`, so the always-on ones are summarized here:
+
+- Never merge a PR or push to `main` without explicit approval in this conversation; use a branch and PR.
+- No `Co-Authored-By` trailers in commits.
+- No banner comments at the top of source files (shebangs, license headers, lint pragmas, generated markers, and module docstrings are fine). Details: `no-top-of-file-comments.md`.
+
+Before editing files that match these globs, read the rule in `.claude/rules/`:
+
+- `backend/**/*.py`, `Makefile`, `pyproject.toml` → `complexity.md`
+- `**/*.{py,ts,tsx,js,jsx}` → `file-size.md`
+- `**/*.{py,ts,tsx}` → `prefer-types-over-strings.md`
+- `**/*.{tsx,jsx,css,scss}`, `frontend/**` → `ui-copy-tone.md`, `color-blind-friendly.md`
+- `**/api.py`, `**/schemas.py`, `**/_*.py` → `rate-limiting-and-input-validation.md`
+- `**/models.py`, `**/schemas.py`, `**/api.py`, `**/admin.py`, `**/settings.py`, `**/urls.py`, `**/management/**`, tests → `standards-django-ninja.md`
+- `**/package.json`, `**/pyproject.toml`, `**/requirements*.txt` → `package-versions.md`
+- `.github/**`, opening PRs or issues → `pull-requests.md`, `github-issues.md`
