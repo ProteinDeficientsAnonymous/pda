@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
-from django.db.models import Exists, Max, OuterRef, Q, QuerySet
+from django.db import transaction
+from django.db.models import Count, Exists, Max, OuterRef, Q, QuerySet
 from django.utils import timezone
 from notifications._email_helpers import LoginLinkEmail, send_magic_login_email
 from notifications.email_sender import EmailSender
@@ -9,35 +10,57 @@ from users.models import HAS_EMAIL, MagicLoginToken, MagicLoginTokenSource, User
 
 from community.models import LoginReminder
 
-# Under a week so a drifting weekly cron still sends, but a same-week rerun doesn't.
-_REMINDER_GAP = timedelta(days=6)
+# Gaps sit just under a week / four weeks so a drifting weekly cron still sends, but a rerun doesn't.
+_WEEKLY_GAP = timedelta(days=6)
+_MONTHLY_GAP = timedelta(days=27)
+_WEEKLY_REMINDERS = 4
 
-# last_login covers members from before onboarded_at existed, whose resets re-flag needs_onboarding.
-_NOT_SET_UP = Q(needs_onboarding=True, onboarded_at__isnull=True, last_login__isnull=True)
+# Members created before onboarded_at existed never got it set, so their resets re-flag needs_onboarding.
+_ONBOARDED_AT_TRACKED_SINCE = datetime(2026, 4, 26, tzinfo=UTC)
+_NOT_SET_UP = Q(needs_onboarding=True, onboarded_at__isnull=True) & (
+    Q(last_login__isnull=True) | Q(created_at__gte=_ONBOARDED_AT_TRACKED_SINCE)
+)
 
 _REMINDER_EMAIL = LoginLinkEmail("login_reminder", "finish setting up your pda account")
 
 
-def _not_reminded_since(qs: QuerySet, cutoff: datetime) -> QuerySet:
+def _due_for_reminder(qs: QuerySet, now: datetime) -> QuerySet:
     recent_admin_link = MagicLoginToken.objects.filter(
-        user=OuterRef("pk"), used=False, created_at__gte=cutoff
+        user=OuterRef("pk"), used=False, created_at__gte=now - _WEEKLY_GAP
     ).exclude(source=MagicLoginTokenSource.REMINDER)
     return (
-        qs.filter(_NOT_SET_UP)
+        qs.filter(_NOT_SET_UP, HAS_EMAIL)
         .exclude(Exists(recent_admin_link))
-        .annotate(last_reminded_at=Max("login_reminders__sent_at"))
-        .filter(Q(last_reminded_at__isnull=True) | Q(last_reminded_at__lt=cutoff))
+        .annotate(
+            reminder_count=Count("login_reminders", distinct=True),
+            last_reminded_at=Max("login_reminders__sent_at"),
+        )
+        .filter(
+            Q(last_reminded_at__isnull=True)
+            | Q(reminder_count__lt=_WEEKLY_REMINDERS, last_reminded_at__lt=now - _WEEKLY_GAP)
+            | Q(last_reminded_at__lt=now - _MONTHLY_GAP)
+        )
     )
 
 
-def _users_to_remind(cutoff: datetime) -> list[User]:
+def _users_to_remind(now: datetime) -> list[User]:
     return [
-        *_not_reminded_since(User.objects.active_members(), cutoff).filter(HAS_EMAIL),
-        *_not_reminded_since(User.objects.active_tentative_members(), cutoff).filter(HAS_EMAIL),
+        user
+        for qs in (User.objects.active_members(), User.objects.active_tentative_members())
+        for user in _due_for_reminder(qs, now)
     ]
 
 
-def _send_reminder(sender: EmailSender, user: User) -> bool:
+def _claim(user: User, now: datetime) -> LoginReminder | None:
+    # Recording before sending, under a row lock, stops an overlapping run from double-sending.
+    with transaction.atomic():
+        User.objects.select_for_update().filter(pk=user.pk).first()
+        if not _due_for_reminder(User.objects.filter(pk=user.pk), now).exists():
+            return None
+        return LoginReminder.objects.create(user=user)
+
+
+def _send_reminder(sender: EmailSender, user: User, reminder: LoginReminder) -> bool:
     token = _create_magic_token(user, source=MagicLoginTokenSource.REMINDER)
     result = send_magic_login_email(
         sender=sender,
@@ -51,10 +74,10 @@ def _send_reminder(sender: EmailSender, user: User) -> bool:
     )
     if not result.success:
         reminder_links.filter(token=token).update(used=True)
+        reminder.delete()
         return False
     # Only earlier reminder links: admin-texted links must keep working.
     reminder_links.exclude(token=token).update(used=True)
-    LoginReminder.objects.create(user=user)
     return True
 
 
@@ -63,10 +86,13 @@ def send_login_reminders(sender: EmailSender) -> tuple[int, int]:
 
     return(tuple[int, int]): (sent, failed) counts
     """
-    cutoff = timezone.now() - _REMINDER_GAP
+    now = timezone.now()
     sent = failed = 0
-    for user in _users_to_remind(cutoff):
-        if _send_reminder(sender, user):
+    for user in _users_to_remind(now):
+        reminder = _claim(user, now)
+        if reminder is None:
+            continue
+        if _send_reminder(sender, user, reminder):
             sent += 1
         else:
             failed += 1

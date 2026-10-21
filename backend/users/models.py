@@ -228,9 +228,7 @@ class User(AbstractUser):
 
 
 class MagicLoginTokenSource(models.TextChoices):
-    # SELF_SERVICE tokens are the only ones the self-service login-link cooldown
-    # counts; admin generation, onboarding and resend are ADMIN, and the weekly
-    # login reminder is REMINDER, so neither suppresses a user's own login-link email.
+    # Only SELF_SERVICE counts toward the self-service login-link cooldown.
     SELF_SERVICE = "self_service", "Self-service"
     ADMIN = "admin", "Admin"
     REMINDER = "reminder", "Reminder"

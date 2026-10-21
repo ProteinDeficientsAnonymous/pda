@@ -1,10 +1,11 @@
 """Tests for the weekly login reminder sent before the weekly digest."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
+from community import _login_reminder as login_reminder
 from community.management.commands import send_weekly_digest as digest_command
 from community.models import Event, EventType, JoinRequest, JoinRequestStatus, LoginReminder
 from django.core.management import call_command
@@ -153,9 +154,20 @@ class TestWeeklyLoginReminder:
         assert _reminder_calls(fake_email_sender) == []
 
     def test_skips_legacy_member_mid_password_reset(self, fake_email_sender):
-        _make_pending_member("+12025550318", last_login=timezone.now() - timedelta(days=90))
+        user = _make_pending_member("+12025550318", last_login=timezone.now() - timedelta(days=90))
+        User.objects.filter(pk=user.pk).update(created_at=datetime(2026, 1, 1, tzinfo=UTC))
         call_command("send_weekly_digest")
         assert _reminder_calls(fake_email_sender) == []
+
+    def test_reminds_member_who_opened_a_link_but_never_finished_setup(
+        self, api_client, fake_email_sender
+    ):
+        _make_pending_member("+12025550319")
+        _run_weekly(1)
+        token = _token_in(_reminder_calls(fake_email_sender)[0])
+        assert api_client.get(f"/api/auth/magic-login/{token}/").status_code == 200
+        call_command("send_weekly_digest")
+        assert len(_reminder_calls(fake_email_sender)) == 2
 
     def test_failed_send_keeps_earlier_links_and_burns_its_own(self, fake_email_sender):
         user = _make_pending_member("+12025550308")
@@ -211,6 +223,29 @@ class TestWeeklyLoginReminder:
             call_command("send_weekly_digest")
         assert len(_reminder_calls(fake_email_sender)) == 1
 
+    def test_sends_the_digest_even_when_reminders_fail(self, fake_email_sender, monkeypatch):
+        _make_pending_member("+12025550320")
+        _make_event()
+        User.objects.create(phone_number="+12025550321", email="m@example.test", is_member=True)
+
+        def fail(**_kwargs):
+            raise RuntimeError("reminder template broke")
+
+        monkeypatch.setattr(login_reminder, "send_magic_login_email", fail)
+        err = StringIO()
+        call_command("send_weekly_digest", stderr=err)
+        assert "Login reminders failed" in err.getvalue()
+        assert _reminder_calls(fake_email_sender) == []
+        assert fake_email_sender.send.call_count == 2
+
+    def test_overlapping_run_does_not_send_twice(self, fake_email_sender):
+        user = _make_pending_member("+12025550322")
+        now = timezone.now()
+        stale_list = login_reminder._users_to_remind(now)
+        call_command("send_weekly_digest")
+        assert login_reminder._claim(stale_list[0], now) is None
+        assert LoginReminder.objects.filter(user=user).count() == 1
+
     def test_uses_the_transactional_sender(self, monkeypatch):
         transactional, bulk = MagicMock(), MagicMock()
         transactional.send.return_value = SendResult(success=True, provider_message_id="ok")
@@ -227,13 +262,19 @@ class TestWeeklyLoginReminder:
 
 @pytest.mark.django_db
 class TestOngoingReminders:
-    def test_keeps_reminding_weekly_without_archiving(self, fake_email_sender):
+    def test_reminds_weekly_four_times_then_monthly_without_archiving(self, fake_email_sender):
         user = _make_pending_member("+12025550401")
-        _run_weekly(6)
+        _run_weekly(4)
+        assert len(_reminder_calls(fake_email_sender)) == 4
+        _run_weekly(3)
+        assert len(_reminder_calls(fake_email_sender)) == 4
+        _run_weekly(1)
+        assert len(_reminder_calls(fake_email_sender)) == 5
+        _run_weekly(4)
+        assert len(_reminder_calls(fake_email_sender)) == 6
         user.refresh_from_db()
         assert user.archived_at is None
         assert not user.is_paused
-        assert len(_reminder_calls(fake_email_sender)) == 6
 
     def test_stops_once_member_finishes_setup(self, fake_email_sender):
         user = _make_pending_member("+12025550402")

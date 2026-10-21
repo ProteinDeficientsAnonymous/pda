@@ -98,7 +98,12 @@ class Command(BaseCommand):
         self._send_digest(options)
 
     def _send_login_reminders(self) -> None:
-        sent, failed = send_login_reminders(get_email_sender())
+        try:
+            sent, failed = send_login_reminders(get_email_sender())
+        except Exception:
+            logger.exception("send_weekly_digest: login reminders failed")
+            self.stderr.write(self.style.ERROR("Login reminders failed; sending digest anyway."))
+            return
         logger.info("send_weekly_digest: sent %d login reminder(s), %d failed", sent, failed)
         style = self.style.WARNING if failed else self.style.SUCCESS
         self.stdout.write(style(f"Sent {sent} login reminder(s); {failed} failed."))
