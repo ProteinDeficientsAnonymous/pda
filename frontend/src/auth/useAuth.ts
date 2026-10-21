@@ -1,6 +1,6 @@
 import {
-  hasAnyAdminPermission as checkAdmin,
   hasPermission as check,
+  hasAnyAdminPermission as checkAdmin,
   type PermissionKey,
 } from '@/models/permissions';
 

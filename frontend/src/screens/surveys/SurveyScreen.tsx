@@ -1,12 +1,15 @@
+import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
+import { Code } from '@/api/validationCodes';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { visibleQuestionIds } from '@/components/questions/questionVisibility';
 import { Button } from '@/components/ui/Button';
+import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyScreen() {
@@ -14,7 +17,41 @@ export default function SurveyScreen() {
   const { data: survey, isPending, isError } = useSurvey(slug);
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
+  const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
+  // A finalized poll keeps rendering its result rather than a shut-door message.
+  if (status !== 'active' && survey.pollResult === null) {
+    return <SurveyUnavailable survey={survey} status={status} />;
+  }
   return <SurveyForm survey={survey} />;
+}
+
+const UNAVAILABLE_MESSAGE: Record<Exclude<SurveyStatus, 'active'>, string> = {
+  scheduled: "this survey isn't open yet — check back when it opens",
+  capped: 'this survey has reached its response limit',
+  closed: 'this survey is closed — responses are no longer accepted',
+};
+
+function SurveyUnavailable({
+  survey,
+  status,
+}: {
+  survey: Survey;
+  status: Exclude<SurveyStatus, 'active'>;
+}) {
+  return (
+    <ContentContainer>
+      <h1 className="mb-2 text-2xl font-medium tracking-tight">{survey.title}</h1>
+      {survey.description ? (
+        <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
+      ) : null}
+      <p
+        role="status"
+        className="bg-surface-dim text-foreground-secondary rounded-md px-3 py-2 text-sm"
+      >
+        {UNAVAILABLE_MESSAGE[status]}
+      </p>
+    </ContentContainer>
+  );
 }
 
 function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
@@ -27,6 +64,7 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
 }
 
 function SurveyForm({ survey }: { survey: Survey }) {
+  const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
   // Lazy init so the user's prior response loads exactly once when the form
   // mounts. Subsequent server updates (e.g. poll finalized) re-render the
@@ -74,6 +112,10 @@ function SurveyForm({ survey }: { survey: Survey }) {
       await submit.mutateAsync(payload);
     } catch (err) {
       setServerError(extractError(err));
+      // Survey closed between load and submit — refetch so the closed state renders.
+      if (hasErrorCode(err, Code.Survey.Closed)) {
+        void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
+      }
     }
   }
 

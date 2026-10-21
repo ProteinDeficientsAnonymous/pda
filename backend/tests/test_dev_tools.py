@@ -1,4 +1,5 @@
 import pytest
+from community._event_rsvp_answers import build_rsvp_answers
 from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
@@ -79,8 +80,20 @@ class TestCreateDevTestEvent:
         )
         assert response.status_code == 401
 
-    def test_404s_without_manage_events_permission(self, api_client, auth_headers, monkeypatch):
+    def test_any_authed_user_can_create_without_permissions(
+        self, api_client, auth_headers, monkeypatch
+    ):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
+
+    def test_404s_on_production_without_permissions(self, api_client, auth_headers, monkeypatch):
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
         response = api_client.post(
             "/api/community/dev/test-events/",
             data={},
@@ -170,6 +183,31 @@ class TestCreateDevTestEvent:
         event = Event.objects.get(id=response.json()["id"])
         assert event.visibility == PageVisibility.PUBLIC
 
+    @pytest.mark.parametrize("type_flag", ["is_official", "is_club"])
+    def test_official_and_club_force_plus_ones_off(
+        self, api_client, dev_tools_headers, monkeypatch, type_flag
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={type_flag: True, "allow_plus_ones": True},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.allow_plus_ones is False
+
+    def test_community_keeps_plus_ones(self, api_client, dev_tools_headers, monkeypatch):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"allow_plus_ones": True},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.allow_plus_ones is True
+
     def test_max_attendees_below_going_count_creates_waitlist(
         self, api_client, dev_tools_headers, monkeypatch
     ):
@@ -182,7 +220,105 @@ class TestCreateDevTestEvent:
         )
         event = Event.objects.get(id=response.json()["id"])
         assert event.rsvps.filter(status=RSVPStatus.ATTENDING).count() == 2
-        assert event.rsvps.filter(status=RSVPStatus.WAITLISTED).count() == 3
+        positions = event.rsvps.filter(status=RSVPStatus.WAITLISTED).values_list(
+            "waitlist_position", flat=True
+        )
+        assert sorted(positions) == [1, 2, 3]
+
+    def test_waitlisted_count_caps_unlimited_event_at_going(
+        self, api_client, dev_tools_headers, monkeypatch
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"going_count": 2, "waitlisted_count": 3},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.max_attendees == 2
+        assert event.rsvps.filter(status=RSVPStatus.ATTENDING).count() == 2
+        positions = event.rsvps.filter(status=RSVPStatus.WAITLISTED).values_list(
+            "waitlist_position", flat=True
+        )
+        assert sorted(positions) == [1, 2, 3]
+
+    def test_waitlisted_count_stacks_on_capacity_overflow(
+        self, api_client, dev_tools_headers, monkeypatch
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"going_count": 4, "max_attendees": 2, "waitlisted_count": 2},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.max_attendees == 2
+        positions = event.rsvps.filter(status=RSVPStatus.WAITLISTED).values_list(
+            "waitlist_position", flat=True
+        )
+        assert sorted(positions) == [1, 2, 3, 4]
+
+    def test_questions_mix_required_and_optional_with_guest_answers(
+        self, api_client, dev_tools_headers, monkeypatch
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={
+                "required_question_count": 3,
+                "optional_question_count": 2,
+                "going_count": 3,
+                "waitlisted_count": 2,
+                "maybe_count": 2,
+                "cant_go_count": 0,
+            },
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        questions = list(event.rsvp_questions.all())
+        assert len(questions) == 5
+        assert sum(q.required for q in questions) == 3
+        required_ids = {str(q.id) for q in questions if q.required}
+
+        answering = event.rsvps.filter(status__in=[RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED])
+        assert answering.count() == 5
+        for rsvp in answering:
+            responses = rsvp.questionnaire_responses
+            assert required_ids <= responses.keys()
+            raw = {qid: snapshot["answer"] for qid, snapshot in responses.items()}
+            assert build_rsvp_answers(questions, raw, require_answers=True) == responses
+        for rsvp in event.rsvps.filter(status=RSVPStatus.MAYBE):
+            assert rsvp.questionnaire_responses == {}
+
+    def test_question_labels_stay_unique_past_template_pool(
+        self, api_client, dev_tools_headers, monkeypatch
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"required_question_count": 10, "optional_question_count": 10},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        labels = list(event.rsvp_questions.values_list("label", flat=True))
+        assert len(labels) == 20
+        assert len(set(labels)) == 20
+
+    def test_no_questions_by_default(self, api_client, dev_tools_headers, monkeypatch):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        assert not event.rsvp_questions.exists()
+        assert event.max_attendees is None
 
     def test_attendee_counts_create_distinct_filler_users(
         self, api_client, dev_tools_headers, monkeypatch

@@ -23,7 +23,7 @@ class TestSingleEventIcs:
         content = resp.content.decode()
         assert "BEGIN:VCALENDAR" in content
         assert "Picnic in the Park" in content
-        assert "Prospect Park" in content
+        assert "Prospect Park" not in content
 
     def test_returns_404_for_nonexistent_event(self, api_client):
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
@@ -53,6 +53,7 @@ class TestSingleEventIcs:
         event = Event.objects.create(
             title="Linked Picnic",
             description="Bring hummus!",
+            location="Prospect Park",
             start_datetime=timezone.now(),
             whatsapp_link="https://chat.whatsapp.com/secret",
             partiful_link="https://partiful.com/e/secret",
@@ -63,6 +64,7 @@ class TestSingleEventIcs:
         resp = api_client.get(f"/api/community/events/{event.id}/ics/", **auth_headers)
         assert resp.status_code == 200
         content = resp.content.decode().replace("\r\n ", "")
+        assert "Prospect Park" in content
         assert "WhatsApp: https://chat.whatsapp.com/secret" in content
         assert "Partiful: https://partiful.com/e/secret" in content
         assert "Link: https://example.com/secret" in content

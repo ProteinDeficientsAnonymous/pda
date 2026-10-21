@@ -1,6 +1,7 @@
 from ninja import Router
 
 from community._attendance_import import router as attendance_import_router
+from community._attendance_mark import router as attendance_mark_router
 from community._attendance_report import router as attendance_report_router
 from community._calendar import router as calendar_router
 from community._dev_tools import router as dev_tools_router
@@ -26,6 +27,7 @@ from community._event_rsvp_questions import router as event_rsvp_questions_route
 from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
 from community._event_tags import router as event_tags_router
+from community._event_waitlist_order import router as event_waitlist_order_router
 from community._events import router as events_router
 from community._feature_flags import router as feature_flags_router
 from community._feedback import router as feedback_router
@@ -38,6 +40,9 @@ from community._join_request_resend import router as join_request_resend_router
 from community._join_request_submit import router as join_request_submit_router
 from community._join_requests import router as join_requests_router
 from community._login_link import router as login_link_router
+from community._member_promotion_email import (
+    router as member_promotion_email_router,
+)
 from community._member_promotion_message import (
     router as member_promotion_message_router,
 )
@@ -69,12 +74,14 @@ router.add_router("", feedback_router)
 # Mount before events_router so literal /events/attendance-* routes resolve before its /events/{event_id}/ param route.
 router.add_router("", attendance_report_router)
 router.add_router("", attendance_import_router)
+router.add_router("", attendance_mark_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
 router.add_router("", event_host_rsvps_router)
+router.add_router("", event_waitlist_order_router)
 router.add_router("", event_report_router)
 router.add_router("", public_rsvp_submit_router)
 # Mount resend before manage so the literal `/public/my-rsvps/resend/` route
@@ -90,6 +97,7 @@ router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
 router.add_router("", member_promotion_message_router)
+router.add_router("", member_promotion_email_router)
 router.add_router("", whatsapp_link_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)

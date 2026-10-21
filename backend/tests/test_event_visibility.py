@@ -91,6 +91,30 @@ class TestEventVisibility:
         assert authed_event["whatsapp_link"] == "https://chat.whatsapp.com/abc"
         assert authed_event["partiful_link"] == "https://partiful.com/e/abc"
 
+    def test_events_hide_location_from_anonymous(self, api_client, auth_headers, test_user):
+        event = Event.objects.create(
+            title="A",
+            start_datetime=timezone.now(),
+            location="18 Willow House",
+            latitude="40.712776",
+            longitude="-74.005974",
+            created_by=test_user,
+        )
+        eid = str(event.id)
+
+        def pick(path, **headers):
+            body = api_client.get(path, **headers).json()
+            body = next(row for row in body if row["id"] == eid) if isinstance(body, list) else body
+            return body["location"], body["latitude"], body["longitude"]
+
+        for path in ("/api/community/events/", f"/api/community/events/{eid}/"):
+            assert pick(path) == ("", None, None)
+            location, latitude, longitude = pick(path, **auth_headers)
+            assert location == "18 Willow House"
+            assert (latitude, longitude) == pytest.approx((40.712776, -74.005974))
+        ics = api_client.get(f"/api/community/events/{eid}/ics/").content
+        assert b"18 Willow House" not in ics and b"LOCATION" not in ics
+
 
 @pytest.mark.django_db
 class TestInviteOnlyVisibility:
@@ -314,21 +338,13 @@ class TestTextRecipients:
     phones; they are not on the shared event payload."""
 
     def _make_user(self, phone, name):
-        from users.models import User
-
         return User.objects.create_user(phone_number=phone, password="pass123", first_name=name)
 
     def _auth_headers(self, user):
-        from ninja_jwt.tokens import RefreshToken
-
         refresh = RefreshToken.for_user(user)
         return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
     def _make_event(self, creator, co_host=None, invited_user=None):
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         future = timezone.now() + timedelta(days=7)
         event = Event.objects.create(
             title="Group Text Event",

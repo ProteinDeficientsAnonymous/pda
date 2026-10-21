@@ -118,6 +118,24 @@ def _not_marked_count(event: Event) -> int:
     )
 
 
+def _host_crew_ids(event: Event) -> list:
+    """Current co-host ids. The creator is one until they step down."""
+    return [u.pk for u in event.co_hosts.all()]
+
+
+def _guest_rsvp_count(event: Event) -> int:
+    """RSVP rows from users outside the current co-hosts.
+
+    Exactly `_unpublish_event`'s guard predicate: 0 ⇔ unpublish allowed
+    (modulo the past guard). Any status counts — even can't-go. Reuses the
+    prefetched rsvp cache when present so EventOut serialization stays query-free.
+    """
+    host_ids = set(_host_crew_ids(event))
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        return sum(1 for r in event.rsvps.all() if r.user_id not in host_ids)
+    return EventRSVP.objects.filter(event=event).exclude(user_id__in=host_ids).count()
+
+
 def _attending_headcount(event: Event) -> int:
     """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
     return sum(

@@ -51,7 +51,6 @@ USERS_TESTS: frozenset[str] = frozenset(
 
 NOTIFICATIONS_TESTS: frozenset[str] = frozenset(
     {
-        "tests/test_notifications.py",
         "tests/test_in_app_notifications.py",
         "tests/test_sse.py",
     }
@@ -85,15 +84,12 @@ COMMUNITY_TESTS: frozenset[str] = frozenset(
         "tests/test_image_compress.py",
         "tests/test_compress_existing_photos.py",
         "tests/test_prosemirror_html.py",
-        "tests/test_delta_html.py",
-        "tests/test_cohost_notifications.py",
     }
 )
 
 CONFIG_TESTS: frozenset[str] = frozenset(
     {
         "tests/test_settings.py",
-        "tests/test_cache_headers.py",
         "tests/test_logging.py",
         "tests/test_api.py",
         "tests/test_sse.py",

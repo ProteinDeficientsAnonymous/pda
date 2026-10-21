@@ -15,6 +15,10 @@ class EventType(models.TextChoices):
     CLUB = "club", "Club"
 
 
+def is_official_or_club(event_type: str) -> bool:
+    return event_type in (EventType.OFFICIAL, EventType.CLUB)
+
+
 class EventStatus(models.TextChoices):
     DRAFT = "draft", "Draft"
     ACTIVE = "active", "Active"

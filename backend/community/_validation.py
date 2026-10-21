@@ -11,12 +11,15 @@ class Code:
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
+        OFFICIAL_NO_PLUS_ONES = "event.official_no_plus_ones"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
         AUTH_REQUIRED = "event.auth_required"
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"
         NO_ATTENDEES_CANNOT_BE_CANCELLED = "event.no_attendees_cannot_be_cancelled"
+        HAS_RSVPS = "event.has_rsvps"
+        PAST_CANNOT_BE_UNPUBLISHED = "event.past_cannot_be_unpublished"
         INVALID_STATUS_TRANSITION = "event.invalid_status_transition"
         CANCEL_BEFORE_DELETE = "event.cancel_before_delete"
         FLAG_ALREADY_FLAGGED = "event.flag_already_flagged"
@@ -27,6 +30,7 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
+        WAITLIST_ORDER_STALE = "event.waitlist_order_stale"
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
@@ -144,10 +148,13 @@ class Code:
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
+        INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
 
     class Survey:
         NOT_FOUND = "survey.not_found"
+        CLOSED = "survey.closed"
         SLUG_ALREADY_EXISTS = "survey.slug_already_exists"
+        CLOSES_BEFORE_OPENS = "survey.closes_before_opens"
         QUESTION_NOT_FOUND = "survey.question_not_found"
         NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
         WINNING_DATETIME_NOT_IN_OPTIONS = "survey.winning_datetime_not_in_options"
@@ -180,6 +187,7 @@ class Code:
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
         PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
+        PHONE_ALREADY_TENTATIVE = "join_request.phone_already_tentative"
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
         ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
         ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }
@@ -200,6 +208,11 @@ class Code:
         EVENT_OR_TITLE_REQUIRED = "attendance_import.event_or_title_required"
         INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
         AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
+
+    class AttendanceMark:
+        EVENT_OR_TITLE_REQUIRED = "attendance_mark.event_or_title_required"
+        INVALID_EVENT_TYPE = "attendance_mark.invalid_event_type"
+        NO_MEMBERS_SELECTED = "attendance_mark.no_members_selected"
 
     class Perm:
         DENIED = "perm.denied"  # params: { action?: str }
@@ -252,6 +265,10 @@ class Code:
     class MemberPromotionMessage:
         BODY_REQUIRED = "member_promotion_message.body_required"
         BODY_TOO_LONG = "member_promotion_message.body_too_long"  # params: { max_length: int }
+
+    class MemberPromotionEmail:
+        BODY_REQUIRED = "member_promotion_email.body_required"
+        BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
 
 
 class ValidationException(Exception):

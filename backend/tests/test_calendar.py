@@ -215,6 +215,34 @@ class TestCalendarFeedScope:
         resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
         assert "Imported Backfill" not in resp.content.decode()
 
+    def test_all_mode_excludes_legacy_events(self, api_client, auth_headers, test_user):
+        token = self._token_for(api_client, auth_headers)
+
+        Event.objects.create(
+            title="Legacy Potluck",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+            is_legacy=True,
+        )
+
+        resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
+        assert "Legacy Potluck" not in resp.content.decode()
+
+    def test_mine_mode_excludes_legacy_events(self, api_client, auth_headers, test_user):
+        test_user.calendar_feed_scope = CalendarFeedScope.MINE
+        test_user.save(update_fields=["calendar_feed_scope"])
+        token = self._token_for(api_client, auth_headers)
+
+        Event.objects.create(
+            title="Legacy Potluck",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+            is_legacy=True,
+        )
+
+        resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
+        assert "Legacy Potluck" not in resp.content.decode()
+
     def test_mine_mode_includes_creator_cohost_invited_and_rsvps(
         self, api_client, auth_headers, test_user
     ):

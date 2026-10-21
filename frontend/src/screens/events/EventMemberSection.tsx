@@ -58,6 +58,7 @@ export function EventMemberSection({ event, token }: Props) {
           <RsvpGuestList
             event={event}
             canSeeInvited={isHostOrEventManager}
+            canReorderWaitlist={isHostOrEventManager && !event.isPast && !token}
             {...(token ? { token } : {})}
           />
           {canInvite || isHostOrEventManager ? (
@@ -143,7 +144,7 @@ export function LocationSection({ event }: { event: Event }) {
 
 export function LinksSection({ event }: { event: Event }) {
   const links = buildEventLinks(event);
-  const feedbackSurveys = event.surveySlugs.filter((s) => s !== event.datetimePollSlug);
+  const feedbackSurveys = event.linkedSurveys.filter((s) => s.slug !== event.datetimePollSlug);
 
   if (links.length === 0 && feedbackSurveys.length === 0) return null;
   return (
@@ -161,10 +162,13 @@ export function LinksSection({ event }: { event: Event }) {
             </a>
           </li>
         ))}
-        {feedbackSurveys.map((slug) => (
-          <li key={slug}>
-            <Link to={`/surveys/${slug}`} className="text-brand-700 hover:text-brand-900">
-              give feedback
+        {feedbackSurveys.map((survey) => (
+          <li key={survey.slug}>
+            <Link
+              to={`/surveys/${survey.slug}`}
+              className="text-brand-700 hover:text-brand-900 [overflow-wrap:anywhere] break-words"
+            >
+              {survey.title.toLowerCase()}
             </Link>
           </li>
         ))}
