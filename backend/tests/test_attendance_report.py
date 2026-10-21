@@ -3,9 +3,19 @@
 from datetime import timedelta
 
 import pytest
-from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, EventType, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    FeatureFlag,
+    RSVPStatus,
+)
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+
+from tests.conftest import set_flag
 
 
 def _auth(user):
@@ -158,6 +168,65 @@ class TestAttendanceReportEndpoint:
         row = response.json()["events"][0]
         # 2 attending rsvps, one with a +1 → headcount 3, matching event detail.
         assert row["going_count"] == 3
+
+    def test_counts_match_check_in_report_with_plus_ones(
+        self, api_client, host_user, members, events_admin
+    ):
+        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
+        event = _make_event(host_user, "Plus One Marks", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=members[1],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.DIDNT_GO,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=members[2],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.DIDNT_GO,
+            has_plus_one=False,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+
+        row = api_client.get(
+            "/api/community/events/attendance-report/", **_auth(events_admin)
+        ).json()["events"][0]
+        report = api_client.get(
+            f"/api/community/events/{event.id}/report/", **_auth(events_admin)
+        ).json()
+        assert row["attended_count"] == 3
+        assert row["no_show_count"] == 2
+        assert row["attended_count"] == report["attended_count"]
+        assert row["no_show_count"] == report["no_show_count"]
+
+    def test_event_with_only_plus_one_marked_is_listed(
+        self, api_client, host_user, members, events_admin
+    ):
+        event = _make_event(host_user, "Guest Only", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+            plus_one_attendance=AttendanceStatus.ATTENDED,
+        )
+
+        rows = api_client.get(
+            "/api/community/events/attendance-report/", **_auth(events_admin)
+        ).json()["events"]
+        assert len(rows) == 1
+        assert rows[0]["attended_count"] == 1
 
     def test_excludes_draft_events(self, api_client, host_user, members, events_admin):
         draft = _make_event(host_user, "Draft Event", days_ago=3)
