@@ -6,18 +6,9 @@ from community.models import (
     Event,
     EventStatus,
     EventType,
-    FeatureFlag,
     PageVisibility,
 )
 from django.utils import timezone
-
-from tests.conftest import set_flag
-
-FLAG = FeatureFlag.EVENT_PAYMENT_CONFIRMATION
-
-
-def set_payment_flag(enabled: bool = True) -> None:
-    set_flag(FLAG, enabled)
 
 
 def _paid_defaults(**overrides) -> dict:

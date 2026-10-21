@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 
 import pytest
 from community.models import Document, Event, EventRSVP, JoinRequest, Survey
-from community.models.feature_flag import FeatureFlagState
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from users.models import NonMemberRsvpToken, User
@@ -130,7 +129,6 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
     casey = User.objects.get(phone_number="+17025550009")
     assert casey.guidelines_consent_at is None
     assert out["consent_phone"] == casey.phone_number
-    assert FeatureFlagState.objects.get(key="host_attendance_report").enabled is True
     survey = Survey.objects.get(slug="potluck-feedback")
     assert survey.created_at == datetime(2026, 6, 1, 18, 0, tzinfo=UTC)
     assert out["survey_id"] == str(survey.id)

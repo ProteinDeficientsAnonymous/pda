@@ -7,25 +7,16 @@ from community.models import (
     AttendanceStatus,
     Event,
     EventRSVP,
-    FeatureFlag,
-    FeatureFlagState,
     RSVPStatus,
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-from tests.conftest import set_flag
-
 
 def _auth(user):
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
 
 
 @pytest.fixture
@@ -196,15 +187,6 @@ class TestCheckInReportEndpoint:
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.check_in_report_not_yet_available"
 
-    def test_flag_off_not_found(self, api_client, stocked_event, host_user):
-        FeatureFlagState.objects.filter(key=FeatureFlag.HOST_ATTENDANCE_REPORT).update(
-            enabled=False
-        )
-        response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(host_user)
-        )
-        assert response.status_code == 404
-
     def test_maybe_and_waitlisted_land_in_unmarked(
         self, api_client, past_event, members, host_user
     ):
@@ -361,15 +343,6 @@ class TestCheckInReportCsvEndpoint:
             f"/api/community/events/{future_event.id}/report.csv", **_auth(host_user)
         )
         assert response.status_code == 400
-
-    def test_flag_off_not_found(self, api_client, stocked_event, host_user):
-        FeatureFlagState.objects.filter(key=FeatureFlag.HOST_ATTENDANCE_REPORT).update(
-            enabled=False
-        )
-        response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report.csv", **_auth(host_user)
-        )
-        assert response.status_code == 404
 
     def test_csv_matches_report_row_count(self, api_client, past_event, members, host_user):
         EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.ATTENDING)

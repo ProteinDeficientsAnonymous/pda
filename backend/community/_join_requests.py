@@ -29,11 +29,9 @@ from community.models import (
     AttendanceStatus,
     EventRSVP,
     EventType,
-    FeatureFlag,
     JoinRequest,
     JoinRequestStatus,
     RSVPStatus,
-    flag_enabled,
 )
 
 router = Router()
@@ -93,7 +91,7 @@ class JoinRequestOut(BaseModel):
     upcoming_official_count: int = 0
     upcoming_club_count: int = 0
     rsvp_events: list[JoinRequestRsvpOut] = []
-    # all-event-types attended history for vetting, gated on the analytics flag
+    # all-event-types attended history for vetting
     attended_events: list[JoinRequestAttendedEventOut] = []
 
 
@@ -192,8 +190,8 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
 
 
 def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
-    """All-event-types attendance history for vetting, gated on the analytics flag."""
-    if user is None or not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
+    """All-event-types attendance history for vetting."""
+    if user is None:
         return []
     return [
         JoinRequestAttendedEventOut(

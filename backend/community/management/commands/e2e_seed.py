@@ -26,7 +26,6 @@ from community.models import (
     RSVPStatus,
     Survey,
 )
-from community.models.feature_flag import FeatureFlagState
 
 E2E_PASSWORD = "e2e-test-pass-123"
 
@@ -325,10 +324,6 @@ def _seed_member_screens() -> dict:
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
         password=E2E_PASSWORD,
-    )
-    FeatureFlagState.objects.update_or_create(
-        key="host_attendance_report",
-        defaults={"enabled": True},
     )
     survey = Survey.objects.create(
         title="potluck feedback",

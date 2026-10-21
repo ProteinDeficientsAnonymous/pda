@@ -5,18 +5,12 @@ from django.utils import timezone
 from users.models import NonMemberRsvpToken
 
 from tests._asserts import assert_error_code
-from tests._payment_helpers import create_paid_event, set_payment_flag
+from tests._payment_helpers import create_paid_event
 from tests._public_rsvp_helpers import make_non_member, make_official_event
 from tests._public_rsvp_helpers import payload as public_payload
 from tests._public_rsvp_helpers import url as public_url
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
-
-
-@pytest.fixture(autouse=True)
-def _flag_on(db):
-    """Flag-OFF behavior is covered by test_payment_confirmation_flag_off.py."""
-    set_payment_flag(True)
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-from community.models import Event, EventRSVP, FeatureFlag, RSVPStatus, flag_enabled
+from community.models import Event, EventRSVP, RSVPStatus
 
 
 def event_requires_payment_confirmation(event: Event) -> bool:
@@ -16,9 +16,7 @@ def can_see_payment_details(event: Event, is_authed: bool) -> bool:
 
 
 def payment_enforced_for_event(event: Event) -> bool:
-    return flag_enabled(
-        FeatureFlag.EVENT_PAYMENT_CONFIRMATION
-    ) and event_requires_payment_confirmation(event)
+    return event_requires_payment_confirmation(event)
 
 
 def requires_payment_gate(event: Event, existing: EventRSVP | None, requested_status: str) -> bool:
