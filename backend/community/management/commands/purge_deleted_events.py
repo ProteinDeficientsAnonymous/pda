@@ -1,7 +1,7 @@
 """Management command to permanently delete soft-deleted events older than 30 days.
 
 Schedule this via Railway cron (or any scheduler) to run daily, e.g.:
-  python manage.py hard_delete_old_events
+  python manage.py purge_deleted_events
 """
 
 import logging
@@ -22,5 +22,5 @@ class Command(BaseCommand):
         cutoff = timezone.now() - timedelta(days=30)
         qs = Event.objects.filter(status=EventStatus.DELETED, deleted_at__lt=cutoff)
         count, _ = qs.delete()
-        logger.info("hard_delete_old_events: permanently deleted %d event(s)", count)
+        logger.info("purge_deleted_events: permanently deleted %d event(s)", count)
         self.stdout.write(self.style.SUCCESS(f"Deleted {count} event(s)."))
