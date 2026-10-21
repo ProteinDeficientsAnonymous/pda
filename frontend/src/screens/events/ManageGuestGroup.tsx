@@ -109,28 +109,14 @@ function GuestRow({
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
 
-  if (!guest.isMember) {
-    return (
-      <div className="border-border flex items-center justify-between gap-2 rounded-md border p-2 opacity-60">
-        <span className="text-foreground text-sm">{guest.name} (not a member)</span>
-        {onTogglePaid ? (
-          <PaidBadge
-            paidConfirmed={guest.paidConfirmed}
-            isPending={isPending}
-            onToggle={() => {
-              onTogglePaid(guest.userId, !guest.paidConfirmed);
-            }}
-          />
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="border-border flex flex-col gap-2 rounded-md border p-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-foreground text-sm">{guest.name}</span>
+          <span className="text-foreground text-sm">
+            {guest.name}
+            {guest.isMember ? null : <span className="text-muted"> (not a member)</span>}
+          </span>
           {onTogglePaid ? (
             <PaidBadge
               paidConfirmed={guest.paidConfirmed}
