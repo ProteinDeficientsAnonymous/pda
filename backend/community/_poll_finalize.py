@@ -15,8 +15,13 @@ def _yes_votes(winning_option: PollOption) -> list:
 def _seat_or_skip(event: Event, user, existing: EventRSVP | None) -> None:
     if existing is not None and existing.status == RSVPStatus.CANT_GO:
         return
+    # The host is seating voters, not the voter claiming a spot, so there's no one to ask to pay yet.
     try:
-        _apply_rsvp_in_transaction(event.id, user, _RsvpApply(status=RSVPStatus.ATTENDING))
+        _apply_rsvp_in_transaction(
+            event.id,
+            user,
+            _RsvpApply(status=RSVPStatus.ATTENDING, enforce_payment_gate=False),
+        )
     except ValidationException:
         pass
 

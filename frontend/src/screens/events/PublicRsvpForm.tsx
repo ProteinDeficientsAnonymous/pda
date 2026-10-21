@@ -101,7 +101,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const submitErrorRef = useRef<HTMLDivElement | null>(null);
-  const needsPaymentFor = usePaymentGate(event, atCapacity);
+  const needsPaymentFor = usePaymentGate(event);
 
   useEffect(() => {
     if (!submitError) return;
@@ -167,7 +167,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
 
   function handleSubmitClick() {
     if (!status || !validate()) return;
-    if (needsPaymentFor(status)) {
+    if (needsPaymentFor(status, false)) {
       setShowPayment(true);
       return;
     }

@@ -271,6 +271,14 @@ export function spotsLeft(e: Event): number | null {
   return Math.max(0, e.maxAttendees - e.attendingCount);
 }
 
+// Mirrors the backend: a held seat or place in line is kept; a party that doesn't fit is waitlisted whole.
+export function goingWouldWaitlist(e: Event, hasPlusOne: boolean): boolean {
+  if (e.myRsvp === RsvpServerStatus.Attending) return false;
+  const left = spotsLeft(e);
+  if (left !== null && e.myRsvp === RsvpServerStatus.Waitlisted) return true;
+  return left !== null && left < (hasPlusOne ? 2 : 1);
+}
+
 export function myRsvpLabel(e: Event): string | null {
   switch (e.myRsvp) {
     case RsvpServerStatus.Attending:

@@ -271,6 +271,7 @@ class _RsvpApply:
     has_plus_one: bool = False
     paid_confirmed: bool = False
     answers: dict[str, str] | None = None
+    enforce_payment_gate: bool = True
 
 
 def _apply_rsvp_in_transaction(
@@ -301,7 +302,11 @@ def _apply_rsvp_in_transaction(
     final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
     final_status = _keep_waitlist_place(event, existing, final_status)
     # Joining the waitlist is free; promotion asks the guest to pay.
-    if not rsvp.paid_confirmed and requires_payment_gate(event, existing, final_status):
+    if (
+        rsvp.enforce_payment_gate
+        and not rsvp.paid_confirmed
+        and requires_payment_gate(event, existing, final_status)
+    ):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
     answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, rsvp.answers)
 

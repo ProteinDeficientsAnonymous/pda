@@ -13,6 +13,7 @@ from community.models import (
 )
 from users.models import User
 
+from tests._payment_helpers import create_paid_event
 from tests.conftest import future_iso
 
 
@@ -140,3 +141,36 @@ class TestFinalizeSeating:
 
         _finalize(api_client, auth_headers, rsvp_event, option)
         assert not EventRSVP.objects.filter(event=rsvp_event, user=other_user).exists()
+
+
+def _paid_poll(creator, **overrides):
+    event = create_paid_event(created_by=creator, datetime_tbd=True, **overrides)
+    poll = EventPoll.objects.create(event=event, created_by=creator)
+    option = PollOption.objects.create(poll=poll, datetime=future_iso(days=120), display_order=0)
+    return event, option
+
+
+@pytest.mark.django_db
+class TestFinalizeSeatingPaidEvent:
+    def test_seats_unpaid_yes_voter_when_there_is_room(
+        self, api_client, auth_headers, test_user, other_user
+    ):
+        event, option = _paid_poll(test_user, max_attendees=5)
+        _vote_yes(option, other_user)
+
+        assert _finalize(api_client, auth_headers, event, option).status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=other_user)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        assert rsvp.paid_confirmed_at is None
+
+    def test_waitlists_unpaid_yes_voter_when_full(
+        self, api_client, auth_headers, test_user, other_user
+    ):
+        event, option = _paid_poll(test_user, max_attendees=1)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        _vote_yes(option, other_user)
+
+        assert _finalize(api_client, auth_headers, event, option).status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=other_user)
+        assert rsvp.status == RSVPStatus.WAITLISTED
+        assert rsvp.paid_confirmed_at is None
