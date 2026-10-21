@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0091_eventrsvp_plus_one_attendance_and_more"),
+        ("community", "0101_delete_featureflagstate"),
     ]
 
     operations = [
