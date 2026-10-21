@@ -17,7 +17,7 @@ class Command(BaseCommand):
     help = "Send 10/11/11.5/12-month attendance-reminder emails to active members."
 
     def handle(self, *args, **options):
-        today = timezone.localtime(timezone.now(), settings.LOCAL_DAY_TZ).date()
+        today = timezone.now().date()
         calendar_url = f"{settings.FRONTEND_BASE_URL}/calendar"
         sender = get_email_sender()
         sent_count = 0
