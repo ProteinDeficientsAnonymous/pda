@@ -1,3 +1,10 @@
+# [0.136.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.135.0...v0.136.0) (2026-10-21)
+
+
+### Features
+
+* **questions:** 1441 - mark required questions in the questionnaire ([#1448](https://github.com/ProteinDeficientsAnonymous/pda/issues/1448)) ([ad301bd](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad301bdc5dddf101a2bfb177c2de3b40c463e13d))
+
 # [0.135.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.134.1...v0.135.0) (2026-10-21)
 
 
