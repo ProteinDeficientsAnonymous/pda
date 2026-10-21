@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { BrowserContext } from '@playwright/test';
 
 export interface SeedScenarioMap {
   member: {
@@ -50,12 +51,14 @@ export interface SeedScenarioMap {
   'attendance-report': {
     event_id: string;
     event_title: string;
-    host_phone: string;
-    host_password: string;
+    refresh_token: string;
+    attended_name: string;
+    no_show_name: string;
+    canceled_name: string;
   };
   'attendance-analytics': {
-    admin_phone: string;
-    admin_password: string;
+    refresh_token: string;
+    search: string;
     compliant_name: string;
     at_risk_name: string;
   };
@@ -66,6 +69,7 @@ export type SeedScenario = keyof SeedScenarioMap;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
 const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
+const BASE_URL = 'http://localhost:3000';
 
 function resolveDatabaseUrl(): string {
   // falls back to per-worktree postgres (make dev-pg) when DATABASE_URL is unset locally
@@ -85,4 +89,11 @@ export function seed<S extends SeedScenario>(scenario: S): SeedScenarioMap[S] {
     env: { ...process.env, DATABASE_URL: resolveDatabaseUrl() },
   });
   return JSON.parse(output.trim()) as SeedScenarioMap[S];
+}
+
+// Logs in via the refresh cookie the SPA boots from — UI login is capped at 5/min per IP.
+export async function signInWithToken(context: BrowserContext, refreshToken: string) {
+  await context.addCookies([
+    { name: 'refresh_token', value: refreshToken, url: BASE_URL, httpOnly: true, sameSite: 'Lax' },
+  ]);
 }
