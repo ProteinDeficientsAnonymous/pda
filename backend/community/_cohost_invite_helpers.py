@@ -1,5 +1,5 @@
 """Co-host invite helpers — diffing user input against existing invites,
-plus lazy-on-read expiration of pending invites past the event end.
+plus batch expiration of pending invites past the event end.
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from notifications._email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
 from notifications.email_sender import get_email_sender
@@ -26,21 +27,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger("pda.community.cohost_invite_helpers")
 
 
-def expire_stale_cohost_invites(event: Event) -> None:
-    """Flip PENDING invites to EXPIRED once the event has ended.
-
-    Called from any read path that returns invite data so the UI never sees
-    actionable invites for a past event.
-
-    TODO(#382): replace this lazy-on-read approach with a scheduled job that
-    sweeps stale invites once.
-    """
-    end = event.end_datetime
-    if end is None or end >= timezone.now():
-        return
-    EventCoHostInvite.objects.filter(event=event, status=CoHostInviteStatus.PENDING).update(
-        status=CoHostInviteStatus.EXPIRED, decided_at=timezone.now()
+def expire_stale_cohost_invites() -> int:
+    """Flip every PENDING invite on a past event to EXPIRED; return the count."""
+    # mirrors Event.is_past (TBD never past; end_datetime else start_datetime) so null-end events still expire
+    now = timezone.now()
+    is_past = Q(event__end_datetime__lt=now) | Q(
+        event__end_datetime__isnull=True, event__start_datetime__lt=now
     )
+    return EventCoHostInvite.objects.filter(
+        is_past,
+        status=CoHostInviteStatus.PENDING,
+        event__datetime_tbd=False,
+    ).update(status=CoHostInviteStatus.EXPIRED, decided_at=now)
 
 
 _ACTIVE_OR_PENDING = (CoHostInviteStatus.PENDING, CoHostInviteStatus.ACCEPTED)
@@ -227,11 +225,7 @@ def send_cohost_invite_emails(
 
 
 def get_pending_invites_for_event(event: Event) -> list[EventCoHostInvite]:
-    """Return the event's pending invites after running lazy expiration.
-
-    Caller must have already verified the viewer is allowed to see them.
-    """
-    expire_stale_cohost_invites(event)
+    """Return the event's pending invites. Caller must have already verified the viewer may see them."""
     return list(
         EventCoHostInvite.objects.filter(
             event=event, status=CoHostInviteStatus.PENDING
@@ -243,7 +237,6 @@ def get_my_pending_invite(event: Event, user) -> EventCoHostInvite | None:
     """Return the requesting user's PENDING invite for this event, or None."""
     if user is None:
         return None
-    expire_stale_cohost_invites(event)
     return EventCoHostInvite.objects.filter(
         event=event, user=user, status=CoHostInviteStatus.PENDING
     ).first()
@@ -257,7 +250,6 @@ def has_pending_cohost_invite(event: Event, user) -> bool:
     """
     if user is None:
         return False
-    expire_stale_cohost_invites(event)
     return EventCoHostInvite.objects.filter(
         event=event, user=user, status=CoHostInviteStatus.PENDING
     ).exists()
