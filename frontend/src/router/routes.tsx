@@ -5,12 +5,10 @@ import {
   EmailGate,
   OnboardingGate,
   RequireAuth,
-  RequireFlag,
   RequireMember,
   RequirePermission,
 } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
-import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
 import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
@@ -62,7 +60,6 @@ const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminS
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
-const FeatureFlags = lazyWithRetry(() => import('@/screens/admin/FeatureFlagsScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -138,7 +135,7 @@ export const router = createBrowserRouter([
               },
 
               {
-                element: <RequireFlag flag={Feature.HostAttendanceReport} />,
+                element: <RequireAuth />,
                 children: [{ path: '/events/:id/report', element: el(<EventCheckInReport />) }],
               },
 
@@ -187,10 +184,6 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
                 ],
-              },
-              {
-                element: <RequirePermission perm={Permission.ManageFeatureFlags} />,
-                children: [{ path: '/admin/feature-flags', element: el(<FeatureFlags />) }],
               },
 
               // ---- catch-all ----

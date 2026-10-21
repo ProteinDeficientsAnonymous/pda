@@ -17,14 +17,14 @@ function renderHub() {
 }
 
 describe('AdminHubScreen', () => {
-  it('shows the feature flags tile for a permitted user', () => {
+  it('shows the docs tile for a permitted user', () => {
     const user = makeUser({
       roles: [
         {
           id: 'r1',
-          name: 'flags-admin',
+          name: 'docs-admin',
           isDefault: true,
-          permissions: [Permission.ManageFeatureFlags],
+          permissions: [Permission.ManageDocuments],
         },
       ],
     });
@@ -32,15 +32,15 @@ describe('AdminHubScreen', () => {
 
     renderHub();
 
-    expect(screen.getByText('feature flags')).toBeInTheDocument();
+    expect(screen.getByText('docs')).toBeInTheDocument();
   });
 
-  it('hides the feature flags tile for a user without the permission', () => {
+  it('hides the docs tile for a user without the permission', () => {
     const user = makeUser({ roles: [] });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     renderHub();
 
-    expect(screen.queryByText('feature flags')).not.toBeInTheDocument();
+    expect(screen.queryByText('docs')).not.toBeInTheDocument();
   });
 });
