@@ -58,7 +58,7 @@ describe('SurveyScreen', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'submit' }));
 
-    expect(await screen.findByText('required')).toBeInTheDocument();
+    expect(await screen.findByText('required', { selector: 'p' })).toBeInTheDocument();
     expect(mockedPost).not.toHaveBeenCalled();
   });
 
@@ -76,7 +76,7 @@ describe('SurveyScreen', () => {
     });
     renderScreen();
 
-    fireEvent.change(await screen.findByLabelText('thoughts'), {
+    fireEvent.change(await screen.findByLabelText('thoughts required'), {
       target: { value: 'great job' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
@@ -102,7 +102,7 @@ describe('SurveyScreen', () => {
     renderScreen();
 
     expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
-    expect(screen.getByLabelText('thoughts')).toHaveValue('previous answer');
+    expect(screen.getByLabelText('thoughts required')).toHaveValue('previous answer');
   });
 
   it('renders a closed state instead of the form for an inactive survey', async () => {
@@ -113,7 +113,7 @@ describe('SurveyScreen', () => {
     expect(screen.getByRole('heading', { name: 'feedback survey' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('thoughts')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('thoughts required')).not.toBeInTheDocument();
   });
 
   it('renders a scheduled state for a survey that has not opened yet', async () => {
@@ -190,7 +190,7 @@ describe('SurveyScreen', () => {
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
     renderScreen('feedback', qc);
 
-    fireEvent.change(await screen.findByLabelText('thoughts'), {
+    fireEvent.change(await screen.findByLabelText('thoughts required'), {
       target: { value: 'too late' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
