@@ -49,8 +49,12 @@ export function DeleteAccountSection() {
       <Dialog open={open} onClose={close} title="delete your account?">
         <div className="flex flex-col gap-3 text-sm">
           <p className="font-medium">
-            you'll lose access right away, your upcoming rsvps and co-host spots are released, and
-            you'll be removed from the pda whatsapp group.
+            you'll lose access right away and your upcoming rsvps are released — an admin will
+            remove you from the pda whatsapp group.
+          </p>
+          <p>
+            you'll step down as co-host on events that have another host — events you host alone
+            stay listed under you, so hand them off first.
           </p>
           <p>
             your profile is hidden, not erased. ask an admin if you want your data removed, or send
@@ -76,8 +80,7 @@ export function DeleteAccountSection() {
             cancel
           </Button>
           <Button
-            variant="secondary"
-            className="text-destructive border-destructive"
+            variant="destructive"
             onClick={() => void onDelete()}
             disabled={deleting || !password}
           >
