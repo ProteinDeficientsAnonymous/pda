@@ -1,3 +1,10 @@
+## [0.136.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.136.0...v0.136.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **nginx:** route unfurl bots to og preview for slug event links ([#1659](https://github.com/ProteinDeficientsAnonymous/pda/issues/1659)) ([91021be](https://github.com/ProteinDeficientsAnonymous/pda/commit/91021be12980bc323dc6c5b48371642a32dcac57))
+
 # [0.136.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.135.0...v0.136.0) (2026-10-21)
 
 
