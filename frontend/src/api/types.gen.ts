@@ -5073,6 +5073,26 @@ export interface components {
             /** User Name */
             user_name?: string | null;
         };
+        /** SurveySubmitOut */
+        SurveySubmitOut: {
+            /** Answers */
+            answers: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Response Token */
+            response_token?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+        };
         /** TagIn */
         TagIn: {
             /** Name */
@@ -11003,7 +11023,9 @@ export interface operations {
     };
     community__surveys_public_get_survey_public: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -11034,7 +11056,9 @@ export interface operations {
     };
     community__surveys_public_submit_survey_response: {
         parameters: {
-            query?: never;
+            query?: {
+                response_token?: string;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -11053,7 +11077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SurveyResponseOut"];
+                    "application/json": components["schemas"]["SurveySubmitOut"];
                 };
             };
             /** @description Created */
@@ -11062,7 +11086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SurveyResponseOut"];
+                    "application/json": components["schemas"]["SurveySubmitOut"];
                 };
             };
             /** @description Bad Request */

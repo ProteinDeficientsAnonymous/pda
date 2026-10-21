@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import { QuestionType } from './questionTypes';
+import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage';
 
 /** Survey field types are the full catalog (`QuestionType`). */
 export type SurveyQuestionType = QuestionType;
@@ -79,6 +80,7 @@ interface WireSurveyResponse {
   user_name: string | null;
   answers: Record<string, string | Record<string, string>>;
   submitted_at: string;
+  response_token?: string | null;
 }
 
 function mapSurvey(w: WireSurvey): Survey {
@@ -118,12 +120,19 @@ function mapSurvey(w: WireSurvey): Survey {
   };
 }
 
+// read at request time, not in the query key, so post-submit invalidation picks up a new token
+function tokenParams(slug: string): { response_token: string } | undefined {
+  const token = getStoredSurveyToken(slug);
+  return token ? { response_token: token } : undefined;
+}
+
 export function useSurvey(slug: string | undefined) {
   return useQuery({
     queryKey: ['survey', slug ?? ''],
     queryFn: async () => {
       const { data } = await apiClient.get<WireSurvey>(
         `/api/community/surveys/view/${slug ?? ''}/`,
+        { params: tokenParams(slug ?? '') },
       );
       return mapSurvey(data);
     },
@@ -140,7 +149,9 @@ export function useSubmitSurvey(slug: string) {
       const { data } = await apiClient.post<WireSurveyResponse>(
         `/api/community/surveys/view/${slug}/respond/`,
         { answers },
+        { params: tokenParams(slug) },
       );
+      if (data.response_token) setStoredSurveyToken(slug, data.response_token);
       return data;
     },
     onSuccess: () => {

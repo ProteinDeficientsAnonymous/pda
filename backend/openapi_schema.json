@@ -6632,6 +6632,64 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "SurveySubmitOut": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "response_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Token"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          }
+        },
+        "required": [
+          "id",
+          "answers",
+          "submitted_at"
+        ],
+        "title": "SurveySubmitOut",
+        "type": "object"
+      },
       "TagIn": {
         "properties": {
           "name": {
@@ -15298,6 +15356,16 @@
               "title": "Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15345,6 +15413,16 @@
               "title": "Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Response Token",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -15362,7 +15440,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SurveyResponseOut"
+                  "$ref": "#/components/schemas/SurveySubmitOut"
                 }
               }
             },
@@ -15372,7 +15450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SurveyResponseOut"
+                  "$ref": "#/components/schemas/SurveySubmitOut"
                 }
               }
             },
