@@ -202,6 +202,7 @@ class Code:
         ALREADY_LOGGED_IN = "join_request.already_logged_in"
         SMS_CONSENT_REQUIRED = "join_request.sms_consent_required"
         GUIDELINES_CONSENT_REQUIRED = "join_request.guidelines_consent_required"
+        INVALID_REJECTION_REASON = "join_request.invalid_rejection_reason"
 
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
@@ -272,6 +273,12 @@ class Code:
     class MemberPromotionEmail:
         BODY_REQUIRED = "member_promotion_email.body_required"
         BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
+
+    class RejectionEmail:
+        BODY_REQUIRED = "rejection_email.body_required"
+        BODY_TOO_LONG = "rejection_email.body_too_long"  # params: { max_length: int }
+        REASON_TEXT_REQUIRED = "rejection_email.reason_text_required"
+        REASON_TEXT_TOO_LONG = "rejection_email.reason_text_too_long"  # params: { max_length: int }
 
 
 class ValidationException(Exception):

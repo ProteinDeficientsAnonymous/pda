@@ -52,6 +52,7 @@ from community._polls import router as polls_router
 from community._public_rsvp_manage import router as public_rsvp_manage_router
 from community._public_rsvp_resend import router as public_rsvp_resend_router
 from community._public_rsvp_submit import router as public_rsvp_submit_router
+from community._rejection_email import router as rejection_email_router
 from community._survey_reports import router as survey_reports_router
 from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
@@ -101,6 +102,7 @@ router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
 router.add_router("", member_promotion_message_router)
 router.add_router("", member_promotion_email_router)
+router.add_router("", rejection_email_router)
 router.add_router("", whatsapp_link_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)

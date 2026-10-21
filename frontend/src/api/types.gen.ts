@@ -1807,6 +1807,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/rejection-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rejection Email */
+        get: operations["community__rejection_email_get_rejection_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Rejection Email */
+        patch: operations["community__rejection_email_update_rejection_email"];
+        trace?: never;
+    };
     "/api/community/request-login-link/": {
         parameters: {
             query?: never;
@@ -4877,6 +4895,29 @@ export interface components {
             photo_url: string;
             /** User Id */
             user_id: string;
+        };
+        /** RejectionEmailOut */
+        RejectionEmailOut: {
+            /** Body */
+            body: string;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RejectionEmailPatchIn */
+        RejectionEmailPatchIn: {
+            /** Body */
+            body?: string | null;
+            /** Reasons */
+            reasons?: {
+                [key: string]: string;
+            } | null;
         };
         /** ReorderIn */
         ReorderIn: {
@@ -11096,6 +11137,68 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__rejection_email_get_rejection_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RejectionEmailOut"];
+                };
+            };
+        };
+    };
+    community__rejection_email_update_rejection_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectionEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RejectionEmailOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

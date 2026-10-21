@@ -470,6 +470,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'please agree to receive sms about events to submit';
     case Code.JoinRequest.GuidelinesConsentRequired:
       return 'please read and confirm you agree to the guidelines and community agreements to submit';
+    case Code.JoinRequest.InvalidRejectionReason:
+      return 'pick a rejection reason from the list';
 
     // Photo
     case Code.Photo.TypeNotAllowed:
@@ -581,6 +583,24 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return max !== null
         ? `member promotion email must be at most ${String(max)} characters`
         : 'member promotion email is too long';
+    }
+
+    // Rejection email
+    case Code.RejectionEmail.BodyRequired:
+      return 'rejection email body is required';
+    case Code.RejectionEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `rejection email must be at most ${String(max)} characters`
+        : 'rejection email is too long';
+    }
+    case Code.RejectionEmail.ReasonTextRequired:
+      return 'each reason needs email text';
+    case Code.RejectionEmail.ReasonTextTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `reason text must be at most ${String(max)} characters`
+        : 'reason text is too long';
     }
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)

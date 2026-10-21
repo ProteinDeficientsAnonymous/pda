@@ -48,6 +48,13 @@ class JoinRequestStatus(models.TextChoices):
     REJECTED = "rejected", "Rejected"
 
 
+class RejectionReason(models.TextChoices):
+    VEGETARIAN = "vegetarian", "person is vegetarian"
+    NOT_VEGAN = "not_vegan", "person is not vegan (not vegetarian)"
+    QUESTIONS_NOT_ANSWERED = "questions_not_answered", "questions not answered"
+    OTHER = "other", "other"
+
+
 class SurveyVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"

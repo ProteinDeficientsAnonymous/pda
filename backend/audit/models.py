@@ -19,6 +19,7 @@ class AuditTargetType(models.TextChoices):
     JOIN_REQUEST = "join_request", "Join request"
     MEMBER_PROMOTION_EMAIL = "member_promotion_email", "Member promotion email"
     MEMBER_PROMOTION_MESSAGE = "member_promotion_message", "Member promotion message"
+    REJECTION_EMAIL = "rejection_email", "Rejection email"
     ROLE = "role", "Role"
     SURVEY = "survey", "Survey"
     SURVEY_QUESTION = "survey_question", "Survey question"

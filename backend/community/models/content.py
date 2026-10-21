@@ -207,6 +207,59 @@ class MemberPromotionEmailTemplate(models.Model):
         return obj
 
 
+class RejectionEmailTemplate(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Body of the email sent automatically when a join request is rejected, plus
+    the email text for each preset rejection reason. ${FIRST_NAME} and
+    ${REASON} are substituted server-side; ${REASON} is blank when none is given.
+    """
+
+    body = models.TextField(
+        default=(
+            "thank you so much for your interest in pda. after reviewing your request, "
+            "we aren't able to welcome you into the community right now.\n\n"
+            "${REASON}"
+        ),
+        max_length=4000,
+    )
+    vegetarian_text = models.TextField(
+        default=(
+            "pda is a community for vegans, and from your answers it sounds like you're "
+            "vegetarian right now. you're welcome to apply again once you're vegan 🌱"
+        ),
+        max_length=1000,
+    )
+    not_vegan_text = models.TextField(
+        default=(
+            "pda is a community for vegans, and from your answers it sounds like you "
+            "aren't vegan right now. you're welcome to apply again once you are 🌱"
+        ),
+        max_length=1000,
+    )
+    questions_not_answered_text = models.TextField(
+        default=(
+            "some of the questions on the join form weren't answered, so we couldn't "
+            "review your request. you're welcome to apply again with full answers."
+        ),
+        max_length=1000,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Rejection Email Template"
+        verbose_name_plural = "Rejection Email Template"
+
+    def __str__(self) -> str:
+        return "Rejection Email Template"
+
+    @classmethod
+    def get(cls) -> "RejectionEmailTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class WhatsAppLinkConfig(models.Model):
     """Singleton — only one row ever exists (pk=1).
 
