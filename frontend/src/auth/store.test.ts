@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as authApi from '@/api/auth';
+import { eventKeys } from '@/api/events';
+import { queryClient } from '@/api/queryClient';
 import { getStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { makeUser } from '@/test/fixtures';
 
@@ -14,6 +16,7 @@ vi.mock('@/api/auth', () => ({
   logout: vi.fn(),
   fetchMe: vi.fn(),
   completeOnboarding: vi.fn(),
+  acceptConsents: vi.fn(),
   changePassword: vi.fn(),
   updateProfile: vi.fn(),
   uploadProfilePhoto: vi.fn(),
@@ -183,6 +186,16 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().profileStepActive).toBe(false);
     });
 
+    it('drops cached events so member fields refetch', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser });
+      vi.mocked(authApi.completeOnboarding).mockResolvedValueOnce(mockUser);
+      const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+      await useAuthStore.getState().completeOnboarding({ newPassword: 'abcd1234ABCD!' });
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.all });
+    });
+
     it('sets user and profileStepActive atomically in one update when startProfileStep is requested', async () => {
       // Regression: completeOnboarding() and startProfileStep() as two separate
       // store updates left a render in between with needsOnboarding=false AND
@@ -199,6 +212,30 @@ describe('useAuthStore', () => {
 
       expect(useAuthStore.getState().user).toEqual(updated);
       expect(useAuthStore.getState().profileStepActive).toBe(true);
+    });
+  });
+
+  describe('acceptConsents', () => {
+    it('drops cached events so member fields refetch', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser });
+      vi.mocked(authApi.acceptConsents).mockResolvedValueOnce(mockUser);
+      const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+      await useAuthStore.getState().acceptConsents(['guidelines']);
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.all });
+    });
+  });
+
+  describe('changePassword', () => {
+    it('drops cached events so member fields refetch', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser });
+      vi.mocked(authApi.changePassword).mockResolvedValueOnce(undefined);
+      const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+      await useAuthStore.getState().changePassword('old', 'new');
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: eventKeys.all });
     });
   });
 

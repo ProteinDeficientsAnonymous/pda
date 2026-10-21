@@ -62,6 +62,7 @@ describe('EventFormQuestions', () => {
     const label = screen.getByText(longLabel);
     const marker = screen.getByText(/required/);
     expect(label).toHaveClass('truncate');
+    expect(label).toHaveAttribute('title', longLabel);
     expect(label).not.toContainElement(marker);
     expect(marker).toHaveClass('shrink-0');
     expect(label.closest('article')).toHaveClass('min-w-0');
