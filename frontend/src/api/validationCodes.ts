@@ -121,7 +121,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Event.CheckInReportInvalidColumn:
       return "one of those csv columns isn't recognized";
     case Code.Event.SlugInvalid:
-      return 'event url can only use lowercase letters, numbers, and dashes';
+      return 'event url can only use letters, numbers, and dashes — start and end with a letter or number';
     case Code.Event.SlugTaken:
       return 'that event url is already taken — try another';
     case Code.Event.RsvpQuestionNotFound:

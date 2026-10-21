@@ -8,6 +8,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
   const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h from now
   return {
     title: 'Vegan Potluck',
+    slug: 'vegan-potluck',
     description: '',
     location: '',
     latitude: null,
@@ -166,6 +167,33 @@ describe('validateEventForm', () => {
     it('accepts null maxAttendees (= unlimited, user cleared the field)', () => {
       const errors = validateEventForm(validValues({ maxAttendees: null }));
       expect(errors.maxAttendees).toBeUndefined();
+    });
+  });
+
+  describe('slug', () => {
+    it('is not validated on create', () => {
+      expect(validateEventForm(validValues({ slug: '' })).slug).toBeUndefined();
+    });
+
+    it('skips an unchanged legacy slug', () => {
+      const legacy = 'old_-slug';
+      expect(validateEventForm(validValues({ slug: legacy }), null, legacy).slug).toBeUndefined();
+    });
+
+    it('requires a slug on edit', () => {
+      expect(validateEventForm(validValues({ slug: '' }), null, 'potluck').slug).toBe('required');
+    });
+
+    it.each(['-leading', 'trailing-', '762f5f57-6519-4a67-9b71-226df2e8d89c'])(
+      'rejects %s',
+      (slug) => {
+        expect(validateEventForm(validValues({ slug }), null, 'potluck').slug).toBeDefined();
+      },
+    );
+
+    it('accepts a valid new slug', () => {
+      const errors = validateEventForm(validValues({ slug: 'summer-potluck' }), null, 'potluck');
+      expect(errors.slug).toBeUndefined();
     });
   });
 });

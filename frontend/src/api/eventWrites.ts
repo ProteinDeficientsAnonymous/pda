@@ -24,6 +24,7 @@ export type EventStatus = (typeof EventStatusEnum)[keyof typeof EventStatusEnum]
 
 export interface EventFormValues {
   title: string;
+  slug: string;
   description: string;
   location: string;
   latitude: number | null;
@@ -68,6 +69,7 @@ type WireFieldMap = { [K in keyof EventFormValues]?: WireField<K> };
 
 const FIELD_TO_WIRE: WireFieldMap = {
   title: ['title', (v) => v],
+  slug: ['slug', (v) => v],
   description: ['description', (v) => v],
   eventType: ['event_type', (v) => v],
   visibility: ['visibility', (v) => v],
@@ -135,6 +137,8 @@ export function useCreateEvent() {
   return useMutation({
     mutationFn: async ({ rsvpQuestions = [], ...values }: CreateEventValues) => {
       const body = toWireBody(values);
+      // Create always derives the slug from the title; hosts change it from edit.
+      delete body.slug;
       body.rsvp_questions = rsvpQuestions.map((question) => ({
         label: question.label,
         field_type: question.fieldType,
@@ -293,6 +297,7 @@ export function extractEventError(err: unknown): string {
 export function emptyEventFormValues(): EventFormValues {
   return {
     title: '',
+    slug: '',
     description: '',
     location: '',
     latitude: null,
@@ -352,6 +357,7 @@ export function eventToFormValues(e: Event): EventFormValues {
   const visibility = coerceEnum(e.visibility, FORM_VISIBILITIES, EventVisibility.Public);
   return {
     title: e.title,
+    slug: e.slug,
     description: e.description,
     location: e.location,
     latitude: e.latitude,

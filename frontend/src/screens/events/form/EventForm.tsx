@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
+import { getErrorParams, getFieldError, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
 import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import {
@@ -34,6 +34,7 @@ import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
 import { EventFormPhoto } from './EventFormPhoto';
 import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
+import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
 import { validateEventForm } from './validateEventForm';
 
@@ -45,6 +46,7 @@ interface Props {
 // errors — keeping it in one place makes it easy to audit which fields
 // surface where.
 const DETAILS_FIELDS: readonly (keyof EventFormValues)[] = [
+  'slug',
   'description',
   'visibility',
   'eventType',
@@ -94,6 +96,7 @@ export function EventForm({ existing }: Props) {
       ? validateEventForm(
           eventToFormValues(existing),
           existing.startDatetime ? existing.startDatetime.toISOString() : null,
+          existing.slug,
         )
       : {},
   );
@@ -132,6 +135,17 @@ export function EventForm({ existing }: Props) {
     setValues((v) => ({ ...v, ...p }));
   }
 
+  function showFieldErrors(errs: Partial<Record<keyof EventFormValues, string>>) {
+    setErrors(errs);
+    // Let the sections open first (via forceOpen), then scroll to the
+    // first invalid field.
+    requestAnimationFrame(() => {
+      const firstInvalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      firstInvalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      firstInvalid?.focus();
+    });
+  }
+
   async function submit(nextStatus: 'active' | 'draft') {
     setServerError(null);
     const timeLocked = !!existing?.hasPoll && !existing.startDatetime;
@@ -144,42 +158,28 @@ export function EventForm({ existing }: Props) {
     const errs = validateEventForm(
       merged,
       existing?.startDatetime ? existing.startDatetime.toISOString() : undefined,
+      existing?.slug,
     );
     if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      // Let the sections open first (via forceOpen), then scroll to the
-      // first invalid field.
-      requestAnimationFrame(() => {
-        const firstInvalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
-        firstInvalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        firstInvalid?.focus();
-      });
+      showFieldErrors(errs);
       return;
     }
     setErrors({});
     try {
       if (existing) {
-        // While a poll is active, the poll owns the time. Send a Partial
-        // that omits start/end/tbd so useUpdateEvent's undefined-filter drops
-        // them from the PATCH body (backend rejects those edits).
+        // While a poll is active, the poll owns the time, so start/end/tbd are
+        // omitted (backend rejects those edits).
         // On edit, omit coHostIds so the backend preserves existing invites/co-hosts.
-        const patchBody: Partial<EventFormValues> = timeLocked
-          ? (() => {
-              const {
-                startDatetime: _s,
-                endDatetime: _e,
-                datetimeTbd: _t,
-                coHostIds: _c,
-                ...rest
-              } = merged;
-              return rest;
-            })()
-          : (() => {
-              const { coHostIds: _c, ...rest } = merged;
-              return rest;
-            })();
+        // An unchanged slug is omitted so legacy slugs that fail today's format still save.
+        const { coHostIds: _c, slug, startDatetime, endDatetime, datetimeTbd, ...rest } = merged;
+        const patchBody: Partial<EventFormValues> = {
+          ...rest,
+          ...(timeLocked ? {} : { startDatetime, endDatetime, datetimeTbd }),
+          ...(slug === existing.slug ? {} : { slug }),
+        };
+        let saved: Event;
         try {
-          await update.mutateAsync(patchBody);
+          saved = await update.mutateAsync(patchBody);
         } catch (err) {
           if (!hasErrorCode(err, Code.Event.WouldRemoveNonMembers)) throw err;
           const count = getErrorParams(err, Code.Event.WouldRemoveNonMembers)?.count;
@@ -194,7 +194,7 @@ export function EventForm({ existing }: Props) {
             destructive: true,
           });
           if (!ok) return;
-          await update.mutateAsync({ ...patchBody, force: true });
+          saved = await update.mutateAsync({ ...patchBody, force: true });
         }
         try {
           const synced = await syncEventRsvpQuestions(
@@ -209,7 +209,7 @@ export function EventForm({ existing }: Props) {
           return;
         }
         if (nextStatus === 'draft') toast.success('saved draft');
-        void navigate(eventPath(existing));
+        void navigate(eventPath(saved));
         return;
       }
       const created = await create.mutateAsync({ ...merged, rsvpQuestions });
@@ -234,7 +234,9 @@ export function EventForm({ existing }: Props) {
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(eventPath(created));
     } catch (err) {
-      setServerError(extractEventError(err));
+      const slugError = getFieldError(err, 'slug');
+      if (slugError) showFieldErrors({ slug: slugError });
+      else setServerError(extractEventError(err));
     }
   }
 
@@ -335,12 +337,17 @@ export function EventForm({ existing }: Props) {
           error={hasAnyError(errors, DETAILS_FIELDS) ? 'needs attention' : undefined}
           forceOpen={hasAnyError(errors, DETAILS_FIELDS)}
         >
-          <EventFormDetails
-            values={values}
-            onChange={patch}
-            errors={errors}
-            typeLocked={isOfficialOrClub(values.eventType)}
-          />
+          <div className="flex flex-col gap-4">
+            {existing ? (
+              <EventFormSlug slug={values.slug} onChange={patch} error={errors.slug} />
+            ) : null}
+            <EventFormDetails
+              values={values}
+              onChange={patch}
+              errors={errors}
+              typeLocked={isOfficialOrClub(values.eventType)}
+            />
+          </div>
         </CollapsibleCard>
 
         <CollapsibleCard
