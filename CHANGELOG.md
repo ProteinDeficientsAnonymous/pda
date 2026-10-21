@@ -1,3 +1,10 @@
+## [0.129.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.2...v0.129.3) (2026-10-21)
+
+
+### Performance Improvements
+
+* **calendar:** preload calendar chunk during auth boot (Issue 1600) ([#1618](https://github.com/ProteinDeficientsAnonymous/pda/issues/1618)) ([71e9ef1](https://github.com/ProteinDeficientsAnonymous/pda/commit/71e9ef133d501b9c8498c23be31b2b283c95089a))
+
 ## [0.129.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.129.1...v0.129.2) (2026-10-21)
 
 
