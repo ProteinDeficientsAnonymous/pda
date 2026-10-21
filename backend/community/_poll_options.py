@@ -13,6 +13,7 @@ from ninja.responses import Status
 from community._event_poll_schemas import EventPollOut, PollOptionIn
 from community._polls import (
     _can_manage_poll,
+    _check_option_cap,
     _duplicate_option_time_guard,
     _poll_out,
     _validate_poll_options,
@@ -61,6 +62,7 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     with transaction.atomic():
         _, poll = _get_active_poll(request.auth, event_id)
         next_order = poll.options.count()
+        _check_option_cap(next_order + 1)
         with _duplicate_option_time_guard():
             PollOption.objects.create(
                 poll=poll, datetime=payload.datetime, display_order=next_order
