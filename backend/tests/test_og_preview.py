@@ -1,5 +1,6 @@
 import io
 import uuid
+from pathlib import Path
 
 import pytest
 from community.models import Event, EventStatus, PageVisibility
@@ -18,6 +19,13 @@ def _make_test_image(fmt="JPEG", filename="test.jpg", content_type="image/jpeg")
 
 def _preview_url(event_id) -> str:
     return f"/events/{event_id}/preview/"
+
+
+def _assert_site_preview(response, hidden_title: str) -> None:
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert '<meta property="og:title" content="pda"' in html
+    assert hidden_title not in html
 
 
 @pytest.fixture
@@ -83,7 +91,7 @@ class TestEventOgPreview:
             status=EventStatus.ACTIVE,
         )
         response = api_client.get(_preview_url(event.id))
-        assert response.status_code == 404
+        _assert_site_preview(response, "Secret Members Event")
 
     def test_invite_only_event_is_hidden(self, api_client, db):
         event = Event.objects.create(
@@ -93,7 +101,7 @@ class TestEventOgPreview:
             status=EventStatus.ACTIVE,
         )
         response = api_client.get(_preview_url(event.id))
-        assert response.status_code == 404
+        _assert_site_preview(response, "Invite Only Event")
 
     def test_cancelled_public_event_still_previews(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
@@ -116,11 +124,21 @@ class TestEventOgPreview:
             status=EventStatus.DRAFT,
         )
         response = api_client.get(_preview_url(event.id))
-        assert response.status_code == 404
+        _assert_site_preview(response, "Draft Event")
 
-    def test_missing_event_returns_404(self, api_client, db):
+    def test_missing_event_gets_site_preview(self, api_client, db, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        response = api_client.get(_preview_url("mine"))
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="pda"' in html
+        assert '<meta property="og:url" content="https://pda.example.com/events/mine"' in html
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+
+    def test_missing_uuid_gets_site_preview(self, api_client, db):
         response = api_client.get(_preview_url(uuid.uuid4()))
-        assert response.status_code == 404
+        assert response.status_code == 200
 
     def test_description_is_truncated(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
@@ -180,10 +198,7 @@ class TestStaticPageOgPreview:
         html = response.content.decode()
         assert '<meta property="og:title" content="faq · pda"' in html
         assert '<meta property="og:url" content="https://pda.example.com/faq"' in html
-        assert (
-            '<meta property="og:image" content="https://pda.example.com/static/og/pda-logo.png"'
-            in html
-        )
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
 
     def test_home_renders_bare_title(self, api_client, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
@@ -197,3 +212,7 @@ class TestStaticPageOgPreview:
     def test_unknown_page_returns_404(self, api_client):
         response = api_client.get("/pages/not-a-real-page/preview/")
         assert response.status_code == 404
+
+    def test_logo_is_served_by_frontend(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        assert (repo_root / "frontend" / "public" / "og" / "pda-logo.png").is_file()

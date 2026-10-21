@@ -2,7 +2,6 @@ from community.models import Event, EventStatus, PageVisibility, parse_event_ref
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
-from django.templatetags.static import static
 
 from config.media_proxy import media_path
 
@@ -15,11 +14,10 @@ _OG_DESCRIPTION_MAX = 200
 # still viewable (and shareable), so they get a preview too.
 _PREVIEWABLE_STATUSES = frozenset({EventStatus.ACTIVE, EventStatus.CANCELLED})
 
-_LOGO_IMAGE = "og/pda-logo.png"
+# Served by nginx from frontend/public — Django static() would need a build-time manifest.
+_LOGO_PATH = "/og/pda-logo.png"
 
-# Static (non-event) public pages, keyed by their SPA slug. Only routes
-# reachable without login belong here — anything behind the EmailGate is
-# invisible to anonymous scrapers anyway (see frontend/src/router/routes.tsx).
+# Keep in sync with the static-page location regex in nginx.conf.template.
 _STATIC_PAGES = {
     "": ("pda", "vegan collective liberation community"),
     "join": ("join pda", "vegan collective liberation community"),
@@ -47,38 +45,49 @@ def _truncate(text: str, limit: int) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
-def event_og_preview(request, event_id: str):
-    """Render OG/Twitter meta tags for a PUBLIC event so link scrapers can unfurl it.
-
-    Only public, non-draft, non-deleted events are previewed — mirroring what an
-    anonymous user may see. Anything else 404s so member-only details never leak.
-    """
-    try:
-        event = Event.objects.get(parse_event_ref(event_id).as_q())
-    except Event.DoesNotExist:
-        raise Http404
-
-    is_previewable = (
-        event.visibility == PageVisibility.PUBLIC and event.status in _PREVIEWABLE_STATUSES
-    )
-    if not is_previewable:
-        raise Http404
-
-    url = _absolute(f"/events/{event.slug or event.id}")
-    image = _absolute(media_path(event.photo))
-
+def _render_preview(request, *, title: str, description: str, url: str, image: str):
     response = render(
         request,
         "og/event_preview.html",
-        {
-            "title": event.title,
-            "description": _truncate(event.description, _OG_DESCRIPTION_MAX),
-            "url": url,
-            "image": image,
-        },
+        {"title": title, "description": description, "url": url, "image": image},
     )
     response["X-Robots-Tag"] = "noindex"
     return response
+
+
+def _site_preview(request, path: str):
+    title, description = _STATIC_PAGES[""]
+    return _render_preview(
+        request,
+        title=title,
+        description=description,
+        url=_absolute(path),
+        image=_absolute(_LOGO_PATH),
+    )
+
+
+def event_og_preview(request, event_id: str):
+    """Render OG/Twitter meta tags for a PUBLIC event so link scrapers can unfurl it.
+
+    Anything an anonymous user can't open gets the generic site preview, so
+    member-only details never leak and hidden events look identical to missing ones.
+    """
+    event = Event.objects.filter(parse_event_ref(event_id).as_q()).first()
+    is_previewable = (
+        event is not None
+        and event.visibility == PageVisibility.PUBLIC
+        and event.status in _PREVIEWABLE_STATUSES
+    )
+    if not is_previewable:
+        return _site_preview(request, f"/events/{event_id}")
+
+    return _render_preview(
+        request,
+        title=event.title,
+        description=_truncate(event.description, _OG_DESCRIPTION_MAX),
+        url=_absolute(f"/events/{event.slug or event.id}"),
+        image=_absolute(media_path(event.photo)),
+    )
 
 
 def static_page_og_preview(request, page: str):
@@ -87,15 +96,10 @@ def static_page_og_preview(request, page: str):
     except KeyError:
         raise Http404
 
-    response = render(
+    return _render_preview(
         request,
-        "og/event_preview.html",
-        {
-            "title": title,
-            "description": description,
-            "url": _absolute(f"/{page}"),
-            "image": _absolute(static(_LOGO_IMAGE)),
-        },
+        title=title,
+        description=description,
+        url=_absolute(f"/{page}"),
+        image=_absolute(_LOGO_PATH),
     )
-    response["X-Robots-Tag"] = "noindex"
-    return response
