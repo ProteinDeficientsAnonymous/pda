@@ -126,6 +126,14 @@ class TestCalendarFeed:
         resp = api_client.get("/api/community/calendar/feed/")
         assert resp.status_code == 403
 
+    @pytest.mark.parametrize("field,value", [("archived_at", timezone.now()), ("is_paused", True)])
+    def test_feed_rejects_blocked_account(self, api_client, auth_headers, test_user, field, value):
+        token = api_client.post("/api/community/calendar/token/", **auth_headers).json()["token"]
+        setattr(test_user, field, value)
+        test_user.save(update_fields=[field])
+        resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
+        assert resp.status_code == 403
+
 
 @pytest.mark.django_db
 class TestCalendarFeedScope:
