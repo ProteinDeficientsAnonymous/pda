@@ -221,6 +221,31 @@ def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
 
 
 @pytest.mark.django_db
+def test_e2e_seed_waitlist_screens_is_rerunnable(capsys):
+    call_command("e2e_seed", "waitlist-screens")
+    capsys.readouterr()
+    call_command("e2e_seed", "waitlist-screens")
+    out = json.loads(capsys.readouterr().out)
+    event = Event.objects.get(slug="supper")
+    assert event.max_attendees == 1
+    assert event.allow_plus_ones is True
+    wren = User.objects.get(phone_number=out["wren_phone"])
+    assert wren.check_password(out["password"])
+    rsvp = EventRSVP.objects.get(event=event, user=wren)
+    assert rsvp.status == RSVPStatus.WAITLISTED
+    guest = NonMemberRsvpToken.resolve_user(out["guest_token"])
+    assert guest is not None
+    assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.WAITLISTED
+
+
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
+    call_command("e2e_seed", "waitlist-screens")
+    call_command("e2e_seed", "member-screens")
+    assert not Event.objects.filter(slug="supper").exists()
+
+
+@pytest.mark.django_db
 def test_e2e_seed_unknown_scenario():
     with pytest.raises(CommandError):
         call_command("e2e_seed", "not-a-real-scenario")

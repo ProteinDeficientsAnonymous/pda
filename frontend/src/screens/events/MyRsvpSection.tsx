@@ -69,6 +69,8 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const atCapacity = spotsLeft(event) === 0;
   // An attending member already holds a seat — re-saving "going" keeps it.
   const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
+  // Token holders are non-members, and the public rsvp endpoints never save a +1 for them.
+  const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
   async function confirmRsvp(args: {
     status: RsvpInputStatus;
@@ -140,7 +142,14 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {!locked && onWaitlist ? (
-        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
+        <WaitlistView
+          onEdit={() => {
+            setError(null);
+            setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
+          }}
+          onLeave={() => void leaveWaitlist()}
+          busy={busy}
+        />
       ) : (
         <RsvpControls
           myInputStatus={myInputStatus}
@@ -174,9 +183,11 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           event={event}
           initialStatus={box.initialStatus}
           initialHasPlusOne={hasPlusOne}
-          allowPlusOnes={event.allowPlusOnes}
+          allowPlusOnes={plusOneNote === null}
+          plusOneNote={plusOneNote}
           allowComment={Boolean(token) || box.mode === 'create'}
           atCapacity={goingWouldWaitlist}
+          onWaitlist={onWaitlist}
           busy={busy}
           error={error}
           questions={event.rsvpQuestions}
@@ -250,15 +261,34 @@ function RsvpControls({
   );
 }
 
-function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean }) {
+function plusOneUnavailableReason(allowPlusOnes: boolean, isNonMember: boolean): string | null {
+  if (!allowPlusOnes) return "this event doesn't allow +1s";
+  if (isNonMember) return '+1s are for members only';
+  return null;
+}
+
+function WaitlistView({
+  onEdit,
+  onLeave,
+  busy,
+}: {
+  onEdit: () => void;
+  onLeave: () => void;
+  busy: boolean;
+}) {
   return (
     <div className="bg-warning-subtle flex items-center justify-between gap-3 rounded-lg px-4 py-3">
       <span role="status" className="text-warning text-sm font-medium">
         you're on the waitlist
       </span>
-      <Button variant="ghost" onClick={onLeave} disabled={busy}>
-        leave waitlist
-      </Button>
+      <div className="flex gap-1">
+        <Button variant="ghost" onClick={onEdit} disabled={busy}>
+          edit
+        </Button>
+        <Button variant="ghost" onClick={onLeave} disabled={busy}>
+          leave waitlist
+        </Button>
+      </div>
     </div>
   );
 }

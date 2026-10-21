@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import { type Event, RsvpServerStatus } from '@/models/event';
+import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { makeEvent as makeBaseEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { MyRsvpSection } from './MyRsvpSection';
@@ -175,7 +175,7 @@ describe('MyRsvpSection — after RSVPing', () => {
     expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
   });
 
-  it('shows only "leave waitlist" when on the waitlist (no pills, no status line, no edit button)', () => {
+  it('shows the waitlist banner with edit and leave buttons (no pills, no status line)', () => {
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Waitlisted,
@@ -184,10 +184,65 @@ describe('MyRsvpSection — after RSVPing', () => {
     );
 
     expect(screen.getByText("you're on the waitlist")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'edit' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'leave waitlist' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
     expect(screen.queryByText("you're going")).not.toBeInTheDocument();
+  });
+
+  it('lets a waitlisted member open the edit dialog and toggle +1 (Issue 1289)', () => {
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Waitlisted,
+        guests: [makeGuest({ userId: 'user-me', name: 'Me', status: RsvpServerStatus.Waitlisted })],
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+    const dialog = screen.getByRole('dialog', { name: /RSVP/i });
+    expect(
+      within(dialog).getByRole('button', { name: 'stay on the waitlist' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^add \+1$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    // Sends "going"; the backend keeps a waitlisted row in line.
+    expect(setRsvpMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Attending, hasPlusOne: true }),
+    );
+  });
+
+  it('leaves the waitlist in one tap', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
+
+    expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
+  });
+
+  it("says why there's no +1 when the event doesn't allow them (Issue 1289)", () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted, allowPlusOnes: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+
+    expect(screen.getByText("this event doesn't allow +1s")).toBeInTheDocument();
+  });
+
+  it('says "save", not "join the waitlist", when already waitlisted on a full event', () => {
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Waitlisted,
+        maxAttendees: 2,
+        attendingCount: 2,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^join the waitlist$/i })).not.toBeInTheDocument();
   });
 });
 
@@ -217,11 +272,11 @@ describe('MyRsvpSection — locked (past event)', () => {
     expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
   });
 
-  it('shows nothing and no "leave waitlist" action for a locked waitlist entry', () => {
+  it('shows nothing and no edit action for a locked waitlist entry', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }), undefined, true);
 
     expect(screen.queryByText(/waitlist/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'leave waitlist' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
   });
 
   it('never opens the RSVP box when locked', () => {
@@ -274,7 +329,8 @@ describe('MyRsvpSection — leave waitlist error handling (issue #633)', () => {
     removeRsvpMutate.mockRejectedValue(new Error('boom'));
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
+    fireEvent.click(screen.getByRole('button', { name: 'edit' }));
+    fireEvent.click(screen.getByRole('button', { name: /remove rsvp/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
   });
@@ -297,23 +353,21 @@ describe('MyRsvpSection — rsvp submit error', () => {
 });
 
 describe('MyRsvpSection — token-holding viewer (Issue 854)', () => {
-  it('shows the +1 toggle as "remove +1" using viewerUserId, not useAuthStore (no logged-in user)', () => {
+  it('explains that +1s are for members instead of offering a toggle the backend ignores', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Attending,
+        allowPlusOnes: true,
         viewerUserId: 'non-member-1',
-        guests: [
-          makeGuest({ userId: 'non-member-1', name: 'Non Member', hasPlusOne: true }),
-          makeGuest({ userId: 'user-other', name: 'Other', hasPlusOne: false }),
-        ],
       }),
       'tok-abc',
     );
 
     fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
 
-    expect(screen.getByRole('button', { name: /^remove \+1$/i })).toBeInTheDocument();
+    expect(screen.getByText('+1s are for members only')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+1$/i })).not.toBeInTheDocument();
   });
 });
 

@@ -31,8 +31,12 @@ interface Props {
   initialStatus: RsvpInputStatus;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
+  // Shown in place of the +1 button when allowPlusOnes is false, so the missing option isn't silent.
+  plusOneNote?: string | null;
   allowComment?: boolean;
   atCapacity?: boolean;
+  // Already in line: "going" keeps their place rather than joining the waitlist.
+  onWaitlist?: boolean;
   busy?: boolean;
   error?: string | null;
   questions?: readonly RsvpQuestionDraft[];
@@ -49,8 +53,10 @@ export function RsvpBox({
   initialStatus,
   initialHasPlusOne,
   allowPlusOnes,
+  plusOneNote = null,
   allowComment,
   atCapacity = false,
+  onWaitlist = false,
   busy = false,
   error = null,
   questions = [],
@@ -71,7 +77,7 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
+  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity && !onWaitlist;
   const showQuestions = questions.length > 0 && rsvpQuestionsApplyToStatus(status);
 
   function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
@@ -137,7 +143,9 @@ export function RsvpBox({
               onSelect={setStatus}
               disabled={busy}
               labelFor={(s, defaultLabel) =>
-                s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+                s === RsvpStatus.Attending
+                  ? attendingLabel(onWaitlist, atCapacity, defaultLabel)
+                  : defaultLabel
               }
             />
 
@@ -154,6 +162,9 @@ export function RsvpBox({
                   {hasPlusOne ? 'remove +1' : 'add +1'}
                 </Button>
               </div>
+            ) : null}
+            {!showPlusOne && plusOneNote ? (
+              <p className="text-muted text-center text-sm">{plusOneNote}</p>
             ) : null}
           </div>
 
@@ -210,6 +221,12 @@ export function RsvpBox({
       )}
     </Dialog>
   );
+}
+
+function attendingLabel(onWaitlist: boolean, atCapacity: boolean, defaultLabel: string): string {
+  if (onWaitlist) return 'stay on the waitlist';
+  if (atCapacity) return 'join the waitlist';
+  return defaultLabel;
 }
 
 function confirmLabel(mode: 'create' | 'edit', joiningWaitlist: boolean): string {

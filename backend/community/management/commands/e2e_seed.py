@@ -142,6 +142,8 @@ _SCREEN_EMAILS = (
     "sam@example.com",
 )
 _RECORD_AT = datetime(2026, 6, 1, 18, 0, tzinfo=UTC)
+_WAITLIST_PHONES = ("+17025550010", "+17025550011", "+17025550012")
+_WAITLIST_AT = datetime(2030, 6, 14, 22, 0, tzinfo=UTC)
 _SCREEN_SLUGS = ("potluck", "hike", "picnic")
 _CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
 
@@ -181,7 +183,9 @@ def _seed_member_screens() -> dict:
     DocFolder.objects.filter(name="guides").delete()
     JoinRequest.objects.filter(phone_number="+17025550007").delete()
     JoinFormQuestion.objects.filter(label="how did you hear about us?").delete()
-    User.objects.filter(phone_number__in=_SCREEN_PHONES).delete()
+    # waitlist-screens runs after the other visual specs; clear it so reruns match CI.
+    Event.objects.filter(slug="supper").delete()
+    User.objects.filter(phone_number__in=_SCREEN_PHONES + _WAITLIST_PHONES).delete()
     User.objects.filter(email__in=_SCREEN_EMAILS).delete()
     seed = _screen_user(
         phone_number="+17025550002",
@@ -349,6 +353,57 @@ def _seed_member_screens() -> dict:
     }
 
 
+def _seed_waitlist_screens() -> dict:
+    if "django_cache" in connection.introspection.table_names():
+        caches["ratelimit"].clear()
+    Event.objects.filter(slug="supper").delete()
+    User.objects.filter(phone_number__in=_WAITLIST_PHONES).delete()
+    User.objects.filter(email__in=("hollis@pda.test", "wren@pda.test")).delete()
+    host = _screen_user(
+        phone_number="+17025550010",
+        first_name="Hollis",
+        last_name="Host",
+        email="hollis@pda.test",
+        has_seen_veganniversary=True,
+    )
+    wren = _screen_user(
+        phone_number="+17025550011",
+        first_name="Wren",
+        last_name="Waitlist",
+        email="wren@pda.test",
+        has_seen_veganniversary=True,
+    )
+    guest = User.objects.create_user(
+        phone_number="+17025550012",
+        first_name="Pat",
+        last_name="Guest",
+        email=None,
+        is_member=False,
+    )
+    event = Event.objects.create(
+        title="supper club",
+        slug="supper",
+        description="six seats, one long table.",
+        start_datetime=_WAITLIST_AT,
+        location="the kitchen",
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        status=EventStatus.ACTIVE,
+        rsvp_enabled=True,
+        allow_plus_ones=True,
+        max_attendees=1,
+        created_by=host,
+    )
+    EventRSVP.objects.create(event=event, user=host, status=RSVPStatus.ATTENDING)
+    EventRSVP.objects.create(event=event, user=wren, status=RSVPStatus.WAITLISTED)
+    EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.WAITLISTED)
+    return {
+        "password": E2E_PASSWORD,
+        "wren_phone": wren.phone_number,
+        "guest_token": NonMemberRsvpToken.issue_or_extend(guest).token,
+    }
+
+
 SCENARIOS = {
     "member": _seed_member,
     "member-screens": _seed_member_screens,
@@ -360,6 +415,7 @@ SCENARIOS = {
     "live-updates": _seed_live_updates,
     "attendance-report": _seed_attendance_report,
     "attendance-analytics": _seed_attendance_analytics,
+    "waitlist-screens": _seed_waitlist_screens,
 }
 
 

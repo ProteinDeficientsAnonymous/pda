@@ -62,6 +62,7 @@ export interface SeedScenarioMap {
     compliant_name: string;
     at_risk_name: string;
   };
+  'waitlist-screens': { password: string; wren_phone: string; guest_token: string };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;
