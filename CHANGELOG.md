@@ -1,3 +1,10 @@
+# [0.144.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.143.0...v0.144.0) (2026-10-22)
+
+
+### Features
+
+* 1551 - pick a rejection reason when rejecting ([#1676](https://github.com/ProteinDeficientsAnonymous/pda/issues/1676)) ([f5b82da](https://github.com/ProteinDeficientsAnonymous/pda/commit/f5b82da0a2931d43eb6361a555678a241094992c))
+
 # [0.143.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.142.0...v0.143.0) (2026-10-22)
 
 
