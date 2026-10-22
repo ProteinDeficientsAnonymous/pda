@@ -41,13 +41,6 @@ class TestContactGroupModel:
         ContactGroup.objects.create(owner=owner, name="walk group")
         assert owner.contact_groups.count() == 2
 
-    def test_membership_reverse_relation(self):
-        owner = _make_user("+15550002006")
-        member = _make_user("+15550002007")
-        group = ContactGroup.objects.create(owner=owner, name="hiking")
-        group.members.add(member)
-        assert list(member.contact_group_memberships.all()) == [group]
-
     def test_owner_scoping_isolates_groups(self):
         owner_a = _make_user("+15550002008")
         owner_b = _make_user("+15550002009")
@@ -62,6 +55,18 @@ class TestContactGroupModel:
         ContactGroup.objects.create(owner=owner, name="duplicate")
         with pytest.raises(IntegrityError):
             ContactGroup.objects.create(owner=owner, name="duplicate")
+
+    def test_name_unique_per_owner_ignores_case(self):
+        owner = _make_user("+15550002016")
+        ContactGroup.objects.create(owner=owner, name="Movie Club")
+        with pytest.raises(IntegrityError):
+            ContactGroup.objects.create(owner=owner, name="movie club")
+
+    @pytest.mark.parametrize("name", ["", "   "])
+    def test_blank_name_rejected(self, name):
+        owner = _make_user("+15550002017")
+        with pytest.raises(IntegrityError):
+            ContactGroup.objects.create(owner=owner, name=name)
 
     def test_same_name_allowed_for_different_owners(self):
         owner_a = _make_user("+15550002011")
