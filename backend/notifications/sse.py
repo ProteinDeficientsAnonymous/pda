@@ -80,7 +80,7 @@ async def _sse_generator(user_id: str):
             yield "event: connected\ndata: {}\n\n"
 
             # A timeout must not cancel notifies(): that closes the generator and ends the stream.
-            while True:
+            while not conn.closed:
                 async with aclosing(conn.notifies(timeout=_HEARTBEAT_INTERVAL)) as notifies:
                     async for notify in notifies:
                         frame = _format_notify_for_user(notify.channel, notify.payload, user_id)
