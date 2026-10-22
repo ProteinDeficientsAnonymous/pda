@@ -37,5 +37,10 @@ class ContactGroup(models.Model):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        # str.strip() covers tabs/newlines, which the DB's TRIM check doesn't
+        self.name = self.name.strip()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.name

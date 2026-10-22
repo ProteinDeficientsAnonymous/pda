@@ -62,11 +62,19 @@ class TestContactGroupModel:
         with pytest.raises(IntegrityError):
             ContactGroup.objects.create(owner=owner, name="movie club")
 
-    @pytest.mark.parametrize("name", ["", "   "])
+    @pytest.mark.parametrize("name", ["", "   ", "\t\n"])
     def test_blank_name_rejected(self, name):
         owner = _make_user("+15550002017")
         with pytest.raises(IntegrityError):
             ContactGroup.objects.create(owner=owner, name=name)
+
+    def test_name_is_stripped(self):
+        owner = _make_user("+15550002018")
+        group = ContactGroup.objects.create(owner=owner, name="  movie club\n")
+        group.refresh_from_db()
+        assert group.name == "movie club"
+        with pytest.raises(IntegrityError):
+            ContactGroup.objects.create(owner=owner, name="movie club")
 
     def test_same_name_allowed_for_different_owners(self):
         owner_a = _make_user("+15550002011")
