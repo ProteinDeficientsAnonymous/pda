@@ -18,6 +18,7 @@ endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
 from community._validation import Code, ValidationException
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
 from users.models import User
@@ -82,3 +83,15 @@ class GatedJWTAuth(JWTAuth):
 # Single shared instance — import and pass as ``auth=gated_jwt`` everywhere a
 # protected endpoint previously used ``auth=JWTAuth()``.
 gated_jwt = GatedJWTAuth()
+
+
+class GatedJWTOrAnonymousAuth(GatedJWTAuth):
+    """Anonymous only with no Authorization header; a sent token stays fully gated (401/403)."""
+
+    def __call__(self, request: HttpRequest):
+        if "HTTP_AUTHORIZATION" not in request.META:
+            return AnonymousUser()
+        return super().__call__(request)
+
+
+gated_jwt_or_anonymous = GatedJWTOrAnonymousAuth()
