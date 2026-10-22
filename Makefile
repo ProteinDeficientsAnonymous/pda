@@ -34,6 +34,12 @@ endif
 # supervisor exports this var; a bare local `make agent-test` also benefits from the
 # gentler default. `$$` defers expansion to the recipe shell so the env var is read.
 AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
+AGENT_PYTEST_EXTRA =
+# CI runner is dedicated: use every core; worksteal rebalances the slow transaction-test tail
+ifdef CI
+AGENT_XDIST_N = auto
+AGENT_PYTEST_EXTRA = --dist worksteal --durations=15
+endif
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
@@ -282,18 +288,18 @@ agent-check: $(AGENT_DB_ENSURE)
 
 agent-test: $(AGENT_DB_ENSURE)
 	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest tests/ \
-		-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings
+		-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings $(AGENT_PYTEST_EXTRA)
 
 agent-test-since: $(AGENT_DB_ENSURE)
 	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
 	if [ "$$affected" = "__FULL__" ]; then \
 		cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest tests/ \
-			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings $(AGENT_PYTEST_EXTRA); \
 	elif [ -z "$$affected" ]; then \
 		echo "No affected backend tests inferred; skipping pytest."; \
 	else \
 		cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
-			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings $(AGENT_PYTEST_EXTRA); \
 	fi
 
 agent-typecheck: $(AGENT_DB_ENSURE)

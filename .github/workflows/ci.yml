@@ -31,7 +31,9 @@ jobs:
           POSTGRES_DB: pda
         ports:
           - 5432:5432
+        # tmpfs: per-worker test DB migrations and TRUNCATEs are fsync-bound on disk
         options: >-
+          --tmpfs /var/lib/postgresql/data
           --health-cmd pg_isready
           --health-interval 5s
           --health-timeout 3s
@@ -55,8 +57,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      # lint first so ruff's rewrites don't race pytest/ty; -Oline keeps pytest output live
       - name: Run backend CI
-        run: make agent-backend-ci
+        run: make agent-lint && make -j --keep-going --output-sync=line agent-backend-ci
 
       # agent-lint auto-fixes with ruff; fail if anything was reformatted so
       # contributors format locally instead of relying on CI to silently fix.
