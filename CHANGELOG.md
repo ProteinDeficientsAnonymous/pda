@@ -1,3 +1,10 @@
+# [0.141.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.140.0...v0.141.0) (2026-10-22)
+
+
+### Features
+
+* 1551 - add editable rejection email template ([#1673](https://github.com/ProteinDeficientsAnonymous/pda/issues/1673)) ([cb0c883](https://github.com/ProteinDeficientsAnonymous/pda/commit/cb0c883daf5b193f99e5116f20750679ec51b64b))
+
 # [0.140.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.139.0...v0.140.0) (2026-10-21)
 
 
