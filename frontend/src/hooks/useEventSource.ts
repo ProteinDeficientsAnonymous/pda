@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { refreshAccessToken } from '@/api/client';
-import { fetchSseTicket } from '@/api/notifications';
+import { fetchSseTicket, type SseEventScope } from '@/api/notifications';
 import { API_BASE_URL } from '@/config/env';
 
 import { isRateLimitError, normalBackoffDelay, rateLimitBackoffDelay } from './sseBackoff';
@@ -10,12 +10,22 @@ type Handler = (event: MessageEvent<string>) => void;
 
 interface Options {
   url: string;
+  // Null means "not authed yet, don't connect" unless `eventScope` is set.
   token: string | null;
+  eventScope?: SseEventScope | null;
   events: Record<string, Handler>;
   onStatusChange?: (connected: boolean) => void;
 }
 
-export function useEventSource({ url, token, events, onStatusChange }: Options): void {
+export function useEventSource({
+  url,
+  token,
+  eventScope = null,
+  events,
+  onStatusChange,
+}: Options): void {
+  const scopeEventId = eventScope?.eventId;
+  const scopeToken = eventScope?.token;
   // Keep the latest handlers in a ref so we don't tear down the connection
   // every time the caller passes new function identities.
   const eventsRef = useRef(events);
@@ -26,7 +36,9 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
   });
 
   useEffect(() => {
-    if (!token) return;
+    const scope =
+      !token && scopeEventId && scopeToken ? { eventId: scopeEventId, token: scopeToken } : null;
+    if (!token && !scope) return;
 
     let es: EventSource | null = null;
     let retry = 0;
@@ -34,7 +46,17 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
     // Holder object so async callbacks read the latest value after cleanup mutates it.
     const state = { closed: false };
 
+    function scheduleBackoffReconnect() {
+      retry += 1;
+      reconnectTimer = window.setTimeout(() => void connect(), normalBackoffDelay(retry));
+    }
+
     function scheduleReconnect() {
+      // No session to refresh — a refresh 401 here would force a logout and clear the query cache.
+      if (scope) {
+        scheduleBackoffReconnect();
+        return;
+      }
       // EventSource can't see the response status, so we can't tell a 401 from
       // a network blip. Try a refresh — if it succeeds the store token changes
       // and React reruns this effect with the fresh token. If it fails (session
@@ -43,8 +65,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
       void refreshAccessToken().then((next) => {
         if (state.closed) return;
         if (next && next !== token) return; // outer effect reruns with new token
-        retry += 1;
-        reconnectTimer = window.setTimeout(() => void connect(), normalBackoffDelay(retry));
+        scheduleBackoffReconnect();
       });
     }
 
@@ -77,7 +98,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
       try {
         // Mint a fresh single-use ticket. If this fails the session may be gone
         // or the backend is down — back off and retry like any other error.
-        ticket = await fetchSseTicket();
+        ticket = await fetchSseTicket(scope ?? undefined);
       } catch (err) {
         if (state.closed) return;
         if (isRateLimitError(err)) {
@@ -101,5 +122,5 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
       es?.close();
       onStatusChangeRef.current?.(false);
     };
-  }, [url, token]);
+  }, [url, token, scopeEventId, scopeToken]);
 }
