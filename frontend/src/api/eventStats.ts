@@ -19,14 +19,10 @@ import {
   invalidateEventGuests,
   setEventDetailData,
 } from './events';
+import type { components } from './types.gen';
 import { USERS_KEY } from './users';
 
-interface WireCancellation {
-  user_id: string;
-  name: string;
-  cancelled_at: string;
-  days_before_event: number;
-}
+type WireCancellation = components['schemas']['CancellationOut'];
 
 interface WireStats {
   going_count: number;
@@ -46,6 +42,8 @@ function mapCancellation(w: WireCancellation): EventCancellation {
     name: w.name,
     cancelledAt: new Date(w.cancelled_at),
     daysBeforeEvent: w.days_before_event,
+    within24h: w.within_24h,
+    afterStart: w.after_start,
   };
 }
 

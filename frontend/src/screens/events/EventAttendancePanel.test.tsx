@@ -45,6 +45,8 @@ const BASE_STATS: EventStats = {
       name: 'bob',
       cancelledAt: new Date('2026-05-29T12:00:00Z'),
       daysBeforeEvent: 3,
+      within24h: false,
+      afterStart: false,
     },
   ],
 };
@@ -210,6 +212,42 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText(/cancelled 3 days before/i)).toBeInTheDocument();
   });
 
+  it.each([
+    { daysBeforeEvent: 1, within24h: true, afterStart: false, label: /cancelled within 24 hours/i },
+    { daysBeforeEvent: 1, within24h: false, afterStart: false, label: /cancelled 1 day before/i },
+    { daysBeforeEvent: 0, within24h: false, afterStart: false, label: /cancelled same day/i },
+    { daysBeforeEvent: 0, within24h: false, afterStart: true, label: /cancelled after start/i },
+    {
+      daysBeforeEvent: -1,
+      within24h: false,
+      afterStart: true,
+      label: /cancelled 1 day after start/i,
+    },
+    {
+      daysBeforeEvent: -2,
+      within24h: false,
+      afterStart: true,
+      label: /cancelled 2 days after start/i,
+    },
+  ])('labels lead time $label', ({ daysBeforeEvent, within24h, afterStart, label }) => {
+    const stats: EventStats = {
+      ...BASE_STATS,
+      cancellations: [
+        {
+          userId: 'lastminute',
+          name: 'lastminute larry',
+          cancelledAt: new Date('2026-06-04T13:00:00Z'),
+          daysBeforeEvent,
+          within24h,
+          afterStart,
+        },
+      ],
+    };
+    mockStats(stats);
+    renderPanel(BASE_EVENT);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
   it('filters cancellations by "within N days" when host enters a value', () => {
     const stats: EventStats = {
       ...BASE_STATS,
@@ -219,12 +257,16 @@ describe('EventAttendancePanel', () => {
           name: 'early bird',
           cancelledAt: new Date('2026-05-20T00:00:00Z'),
           daysBeforeEvent: 12,
+          within24h: false,
+          afterStart: false,
         },
         {
           userId: 'late',
           name: 'late one',
           cancelledAt: new Date('2026-05-31T00:00:00Z'),
           daysBeforeEvent: 1,
+          within24h: false,
+          afterStart: false,
         },
       ],
     };

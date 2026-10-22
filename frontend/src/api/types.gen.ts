@@ -2508,6 +2508,8 @@ export interface components {
         };
         /** CancellationOut */
         CancellationOut: {
+            /** After Start */
+            after_start: boolean;
             /**
              * Cancelled At
              * Format: date-time
@@ -2519,6 +2521,8 @@ export interface components {
             name: string;
             /** User Id */
             user_id: string;
+            /** Within 24H */
+            within_24h: boolean;
         };
         /** ChangePasswordIn */
         ChangePasswordIn: {
