@@ -35,8 +35,7 @@ endif
 # gentler default. `$$` defers expansion to the recipe shell so the env var is read.
 AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
 AGENT_PYTEST_EXTRA =
-# A CI runner is dedicated to one job, so use every core; worksteal rebalances the
-# slow tail (race/transaction tests) instead of leaving it queued on one worker.
+# CI runner is dedicated: use every core; worksteal rebalances the slow transaction-test tail
 ifdef CI
 AGENT_XDIST_N = auto
 AGENT_PYTEST_EXTRA = --dist worksteal --durations=15
