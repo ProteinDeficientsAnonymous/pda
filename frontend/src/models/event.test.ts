@@ -7,6 +7,7 @@ import {
   EventStatus,
   EventType,
   EventVisibility,
+  goingWouldWaitlist,
   isTentativeMember,
   myRsvpLabel,
   RsvpServerStatus,
@@ -90,6 +91,22 @@ describe('spotsLeft', () => {
 
   it('clamps to 0 when over capacity (waitlist overflow)', () => {
     expect(spotsLeft(makeEvent({ maxAttendees: 10, attendingCount: 13 }))).toBe(0);
+  });
+});
+
+describe('goingWouldWaitlist', () => {
+  it('keeps a waitlisted rsvp in line even with spots open', () => {
+    const event = makeEvent({
+      maxAttendees: 10,
+      attendingCount: 3,
+      myRsvp: RsvpServerStatus.Waitlisted,
+    });
+    expect(goingWouldWaitlist(event, false)).toBe(true);
+  });
+
+  it('never waitlists on an uncapped event', () => {
+    const event = makeEvent({ maxAttendees: null, myRsvp: RsvpServerStatus.Waitlisted });
+    expect(goingWouldWaitlist(event, true)).toBe(false);
   });
 });
 

@@ -36,6 +36,15 @@ describe('usePaymentGate', () => {
     expect(result.current(RsvpStatus.Attending, false)).toBe(true);
   });
 
+  it('does not gate a waitlister keeping their place while spots are open', () => {
+    const { result } = renderHook(() =>
+      usePaymentGate(
+        makePaidEvent({ maxAttendees: 5, attendingCount: 1, myRsvp: RsvpServerStatus.Waitlisted }),
+      ),
+    );
+    expect(result.current(RsvpStatus.Attending, false)).toBe(false);
+  });
+
   it('does not gate maybe', () => {
     const { result } = renderHook(() => usePaymentGate(makePaidEvent()));
     expect(result.current(RsvpStatus.Maybe, false)).toBe(false);
