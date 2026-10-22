@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from contextlib import aclosing
 
 import psycopg
 from asgiref.sync import sync_to_async
@@ -78,17 +79,14 @@ async def _sse_generator(user_id: str):
             await conn.execute(f"LISTEN {_EVENT_UPDATES_CHANNEL}")
             yield "event: connected\ndata: {}\n\n"
 
-            gen = conn.notifies().__aiter__()
-            while True:
-                try:
-                    notify = await asyncio.wait_for(gen.__anext__(), timeout=_HEARTBEAT_INTERVAL)
-                    frame = _format_notify_for_user(notify.channel, notify.payload, user_id)
-                    if frame is not None:
-                        yield frame
-                except TimeoutError:
-                    yield ": heartbeat\n\n"
-                except StopAsyncIteration:
-                    break
+            # A timeout must not cancel notifies(): that closes the generator and ends the stream.
+            while not conn.closed:
+                async with aclosing(conn.notifies(timeout=_HEARTBEAT_INTERVAL)) as notifies:
+                    async for notify in notifies:
+                        frame = _format_notify_for_user(notify.channel, notify.payload, user_id)
+                        if frame is not None:
+                            yield frame
+                yield ": heartbeat\n\n"
     except asyncio.CancelledError:
         return
     except Exception:
