@@ -2490,6 +2490,8 @@ export interface components {
         };
         /** CancellationOut */
         CancellationOut: {
+            /** After Start */
+            after_start: boolean;
             /**
              * Cancelled At
              * Format: date-time

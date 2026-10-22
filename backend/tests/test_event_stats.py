@@ -174,14 +174,11 @@ class TestCancellations:
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
 
-    def _cancel_at_existing(self, event, rsvp, **fields):
-        EventRSVP.objects.filter(pk=rsvp.pk).update(**fields)
+    def _cancel_at(self, event, user, cancelled_at):
+        rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
+        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         return _cancellations(event)[0]
-
-    def _cancel_at(self, event, user, cancelled_at, **fields):
-        rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
-        return self._cancel_at_existing(event, rsvp, cancelled_at=cancelled_at, **fields)
 
     def _event_at(self, host_user, start):
         return Event.objects.create(
@@ -193,6 +190,7 @@ class TestCancellations:
         row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 15, 0, 1, tzinfo=ET))
         assert row.days_before_event == 0
         assert row.within_24h is True
+        assert row.after_start is False
 
     def test_prior_local_day_under_24h_is_one_day_and_within_24h(self, host_user, members):
         event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
@@ -212,6 +210,14 @@ class TestCancellations:
         )
         assert row.days_before_event == -1
         assert row.within_24h is False
+        assert row.after_start is True
+
+    def test_same_day_cancel_after_start_is_flagged(self, host_user, members):
+        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+        row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 15, 10, 0, tzinfo=ET))
+        assert row.days_before_event == 0
+        assert row.within_24h is False
+        assert row.after_start is True
 
 
 @pytest.mark.django_db

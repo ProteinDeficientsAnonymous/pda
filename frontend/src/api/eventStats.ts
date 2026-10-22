@@ -43,6 +43,7 @@ function mapCancellation(w: WireCancellation): EventCancellation {
     cancelledAt: new Date(w.cancelled_at),
     daysBeforeEvent: w.days_before_event,
     within24h: w.within_24h,
+    afterStart: w.after_start,
   };
 }
 

@@ -266,6 +266,7 @@ class CancellationOut(BaseModel):
     cancelled_at: datetime
     days_before_event: int
     within_24h: bool
+    after_start: bool
 
 
 class EventStatsOut(BaseModel):

@@ -625,6 +625,10 @@
       },
       "CancellationOut": {
         "properties": {
+          "after_start": {
+            "title": "After Start",
+            "type": "boolean"
+          },
           "cancelled_at": {
             "format": "date-time",
             "title": "Cancelled At",
@@ -652,7 +656,8 @@
           "name",
           "cancelled_at",
           "days_before_event",
-          "within_24h"
+          "within_24h",
+          "after_start"
         ],
         "title": "CancellationOut",
         "type": "object"

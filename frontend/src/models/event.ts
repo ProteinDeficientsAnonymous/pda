@@ -122,6 +122,7 @@ export interface EventCancellation {
   cancelledAt: Date;
   daysBeforeEvent: number;
   within24h: boolean;
+  afterStart: boolean;
 }
 
 export interface EventStats {

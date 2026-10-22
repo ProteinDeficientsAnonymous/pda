@@ -145,7 +145,7 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
-    """Currently-CANT_GO RSVPs with lead time in local calendar days, plus a raw-24h flag."""
+    """Currently-CANT_GO RSVPs with lead time in local calendar days, plus raw-24h and after-start flags."""
     if event.start_datetime is None:
         return []
     start_date = timezone.localtime(event.start_datetime, settings.COMMUNITY_TZ).date()
@@ -163,6 +163,7 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
                 cancelled_at=cancelled_at,
                 days_before_event=(start_date - cancelled_date).days,
                 within_24h=timedelta(0) <= notice < timedelta(hours=24),
+                after_start=notice < timedelta(0),
             )
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)

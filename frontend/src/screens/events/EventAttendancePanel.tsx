@@ -153,9 +153,14 @@ function pluralDays(n: number): string {
   return n === 1 ? '1 day' : `${String(n)} days`;
 }
 
-function formatLeadTime({ daysBeforeEvent: days, within24h }: EventCancellation): string {
+function formatLeadTime({
+  daysBeforeEvent: days,
+  within24h,
+  afterStart,
+}: EventCancellation): string {
   if (within24h) return 'cancelled within 24 hours';
-  if (days === 0) return 'cancelled after start';
-  if (days < 0) return `cancelled ${pluralDays(-days)} after start`;
+  if (afterStart && days < 0) return `cancelled ${pluralDays(-days)} after start`;
+  if (afterStart) return 'cancelled after start';
+  if (days === 0) return 'cancelled same day';
   return `cancelled ${pluralDays(days)} before`;
 }
