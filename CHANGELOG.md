@@ -1,3 +1,10 @@
+# [0.142.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.141.1...v0.142.0) (2026-10-22)
+
+
+### Features
+
+* 1551 - email applicants on rejection with an optional reason ([#1674](https://github.com/ProteinDeficientsAnonymous/pda/issues/1674)) ([f629f1d](https://github.com/ProteinDeficientsAnonymous/pda/commit/f629f1dd5bfc3ffc5853e10c6302556072f65c05))
+
 ## [0.141.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.141.0...v0.141.1) (2026-10-22)
 
 
