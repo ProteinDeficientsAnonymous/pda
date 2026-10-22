@@ -7,6 +7,7 @@ import {
   type JoinRequestSummary,
   type RsvpBreakdown,
 } from '@/api/join';
+import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
@@ -253,13 +254,25 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
   if (request.status === JoinRequestStatus.REJECTED && request.rejectedAt) {
     const who = request.rejectedByName ?? 'an admin';
     return (
-      <p className="text-muted mt-3 text-xs">
-        rejected by {who.toLowerCase()} on{' '}
-        {format(new Date(request.rejectedAt), 'MMM d, h:mm a').toLowerCase()}
-      </p>
+      <>
+        <p className="text-muted mt-3 text-xs">
+          rejected by {who.toLowerCase()} on{' '}
+          {format(new Date(request.rejectedAt), 'MMM d, h:mm a').toLowerCase()}
+        </p>
+        <RejectionReasonLine request={request} />
+      </>
     );
   }
   return null;
+}
+
+function RejectionReasonLine({ request }: { request: JoinRequestSummary }) {
+  if (!request.rejectionReason) return null;
+  const text =
+    request.rejectionReason === RejectionReason.OTHER
+      ? request.rejectionNote
+      : REJECTION_REASON_LABELS[request.rejectionReason];
+  return <p className="text-muted mt-1 text-xs whitespace-pre-wrap">reason: {text}</p>;
 }
 
 function LoginStatus({ onboardedAt }: { onboardedAt: string | null }) {

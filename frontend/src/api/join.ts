@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { hasErrorCode } from './apiErrors';
 import { apiClient } from './client';
+import type { RejectionReason } from './rejectionEmail';
 import type { components } from './types.gen';
 import { Code } from './validationCodes.gen';
 
@@ -154,6 +155,8 @@ export interface JoinRequestSummary {
   approvedByName: string | null;
   rejectedAt: string | null;
   rejectedByName: string | null;
+  rejectionReason: RejectionReason | null;
+  rejectionNote: string;
   onboardedAt: string | null;
   userHasJoinedWhatsapp: boolean;
   rsvpBreakdown: RsvpBreakdown;
@@ -197,6 +200,8 @@ interface WireJoinRequest {
   approved_by_name?: string | null;
   rejected_at?: string | null;
   rejected_by_name?: string | null;
+  rejection_reason?: RejectionReason | '';
+  rejection_note?: string;
   onboarded_at?: string | null;
   user_has_joined_whatsapp?: boolean;
   attended_official_count?: number;
@@ -229,6 +234,8 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     approvedByName: w.approved_by_name ?? null,
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
+    rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
+    rejectionNote: w.rejection_note ?? '',
     onboardedAt: w.onboarded_at ?? null,
     userHasJoinedWhatsapp: w.user_has_joined_whatsapp ?? false,
     rsvpBreakdown: {
@@ -379,10 +386,16 @@ export function useDecideJoinRequest() {
         | typeof JoinRequestStatus.APPROVED
         | typeof JoinRequestStatus.TENTATIVE
         | typeof JoinRequestStatus.REJECTED;
+      rejectionReason?: RejectionReason | null;
+      rejectionNote?: string;
     }) => {
       const { data } = await apiClient.patch<WireDecision>(
         `/api/community/join-requests/${args.id}/`,
-        { status: args.status },
+        {
+          status: args.status,
+          rejection_reason: args.rejectionReason ?? '',
+          rejection_note: args.rejectionNote ?? '',
+        },
       );
       return {
         id: data.id,
