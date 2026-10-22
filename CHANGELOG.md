@@ -1,3 +1,10 @@
+## [0.141.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.141.0...v0.141.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **rsvp:** cancellation lead time in ET days + within-24h label (1318, 2/3) ([#1666](https://github.com/ProteinDeficientsAnonymous/pda/issues/1666)) ([7d66818](https://github.com/ProteinDeficientsAnonymous/pda/commit/7d66818facd42be8d827a47fee0fb69b5d57619d))
+
 # [0.141.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.140.0...v0.141.0) (2026-10-22)
 
 
