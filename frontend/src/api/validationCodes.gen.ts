@@ -196,6 +196,7 @@ export const Code = {
     AlreadyLoggedIn: 'join_request.already_logged_in',
     SmsConsentRequired: 'join_request.sms_consent_required',
     GuidelinesConsentRequired: 'join_request.guidelines_consent_required',
+    InvalidRejectionReason: 'join_request.invalid_rejection_reason',
   },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
@@ -266,6 +267,12 @@ export const Code = {
   MemberPromotionEmail: {
     BodyRequired: 'member_promotion_email.body_required',
     BodyTooLong: 'member_promotion_email.body_too_long',
+  },
+  RejectionEmail: {
+    BodyRequired: 'rejection_email.body_required',
+    BodyTooLong: 'rejection_email.body_too_long',
+    ReasonTextRequired: 'rejection_email.reason_text_required',
+    ReasonTextTooLong: 'rejection_email.reason_text_too_long',
   },
 } as const;
 
@@ -429,6 +436,7 @@ export type ValidationCode =
   | 'join_request.already_logged_in'
   | 'join_request.sms_consent_required'
   | 'join_request.guidelines_consent_required'
+  | 'join_request.invalid_rejection_reason'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
   | 'photo.unsafe'
@@ -466,7 +474,11 @@ export type ValidationCode =
   | 'member_promotion_message.body_required'
   | 'member_promotion_message.body_too_long'
   | 'member_promotion_email.body_required'
-  | 'member_promotion_email.body_too_long';
+  | 'member_promotion_email.body_too_long'
+  | 'rejection_email.body_required'
+  | 'rejection_email.body_too_long'
+  | 'rejection_email.reason_text_required'
+  | 'rejection_email.reason_text_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -628,6 +640,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.already_logged_in': [],
   'join_request.sms_consent_required': [],
   'join_request.guidelines_consent_required': [],
+  'join_request.invalid_rejection_reason': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
   'photo.unsafe': [],
@@ -666,4 +679,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'member_promotion_message.body_too_long': ['max_length'],
   'member_promotion_email.body_required': [],
   'member_promotion_email.body_too_long': ['max_length'],
+  'rejection_email.body_required': [],
+  'rejection_email.body_too_long': ['max_length'],
+  'rejection_email.reason_text_required': [],
+  'rejection_email.reason_text_too_long': ['max_length'],
 };

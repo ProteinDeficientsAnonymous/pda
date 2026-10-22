@@ -884,6 +884,11 @@
         "name": "GUIDELINES_CONSENT_REQUIRED",
         "value": "join_request.guidelines_consent_required",
         "params": []
+      },
+      {
+        "name": "INVALID_REJECTION_REASON",
+        "value": "join_request.invalid_rejection_reason",
+        "params": []
       }
     ],
     "Photo": [
@@ -1121,6 +1126,32 @@
       {
         "name": "BODY_TOO_LONG",
         "value": "member_promotion_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
+    "RejectionEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "rejection_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "rejection_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      },
+      {
+        "name": "REASON_TEXT_REQUIRED",
+        "value": "rejection_email.reason_text_required",
+        "params": []
+      },
+      {
+        "name": "REASON_TEXT_TOO_LONG",
+        "value": "rejection_email.reason_text_too_long",
         "params": [
           "max_length"
         ]
