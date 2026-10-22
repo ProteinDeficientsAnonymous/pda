@@ -1,3 +1,10 @@
+# [0.145.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.144.0...v0.145.0) (2026-10-22)
+
+
+### Features
+
+* **rsvp:** show pre-cancel rsvp status on cancellations (1318, 3/3) ([#1667](https://github.com/ProteinDeficientsAnonymous/pda/issues/1667)) ([8b7e4b0](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b7e4b0d4bc6d8c2aed628ee5379fb9ff397d915))
+
 # [0.144.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.143.0...v0.144.0) (2026-10-22)
 
 
