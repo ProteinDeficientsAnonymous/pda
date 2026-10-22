@@ -29,13 +29,26 @@ New fields on `User` (one migration, no backfill; everyone paused today stays a 
 
 No backend change. The frontend label for `is_paused` becomes "guidelines violation pause". If a user is under both kinds, the guidelines pause wins because `GatedJWTAuth` and login block them outright.
 
+## who counts as a tentative member
+
+The code has two layers, and an attendance-paused member has to land on the tentative side of both:
+
+- **Access:** `community/_tentative_member_access.py` treats any signed-in user with `not user.is_member` as tentative (`is_tentative_member`, `event_viewer_for`, `enforce_tentative_member_write_access`). Setting `is_member=False` covers this layer with no change. Login only blocks `is_paused` and `archived_at`, so they can still sign in.
+- **Tentative vs public RSVPer:** several places tell a tentative member apart from a public (token) RSVPer by a `TENTATIVE` join request. An attendance-paused member has an `APPROVED` join request, or none for older accounts, so today these would treat them as a public RSVPer:
+  - `ineligible_non_member_rsvps` and `email_removed_non_members` (`community/_event_nonmember_removal.py`)
+  - `_tentative_q` / `_gets_member_emails` (`community/_rsvp_status_emails.py`)
+  - `check_phone` (`community/_join_request_submit.py`)
+  - `User.objects.active_tentative_members()` (`users/models.py`), used by the weekly digest and login reminders
+
+These switch to one shared definition of a signed-in non-member: `is_member=False` and either a `TENTATIVE` join request or `attendance_paused_at` set. Tracked in #1686.
+
 ## attendance pause
 
 ### shared step: `community/_attendance_pause.py`
 
 Manual and auto pause both go through these two functions.
 
-**`attendance_pause_impact(user) -> PauseImpact`**: read-only, with no side effects and no emails. It looks at upcoming events (`start_datetime > now`, status `ACTIVE` or `DRAFT`) where the user is RSVP'd (going/maybe/waitlisted) or in `co_hosts`, and sorts each into a bucket:
+**`attendance_pause_impact(user) -> PauseImpact`**: read-only, with no side effects and no emails. It looks at upcoming events (`upcoming_events_q` in `users/_archive.py`: status `DRAFT` or `ACTIVE` and not past) where the user holds an RSVP (`ATTENDING`, `MAYBE` or `WAITLISTED`) or is in `co_hosts`, and sorts each into a bucket:
 
 | role | official or club event | any other event |
 |---|---|---|
@@ -45,22 +58,21 @@ Manual and auto pause both go through these two functions.
 
 `co_hosts` is the only source of truth for who hosts an event. `created_by` is an audit field and isn't touched.
 
-**`apply_attendance_pause(user, actor) -> PauseImpact`**: one transaction:
+**`apply_attendance_pause(user, actor) -> PauseImpact`**: one transaction. `users/_archive.py` (self-delete) already releases a user's upcoming RSVPs and steps them down as co-host; factor its helpers to take an event filter and reuse them here rather than writing a second copy.
 
 1. Compute the impact.
-2. For each of `removed_rsvps`: delete the RSVP, then `promote_from_waitlist(event)`.
-3. For each of `removed_hosting`: remove the user from `co_hosts`.
-4. For each of `drafted_events`:
-   - remove the user from `co_hosts`
+2. For each of `removed_rsvps`: same as `_release_upcoming_rsvps`. Set the RSVP to `CANT_GO` with `cancelled_at`, run `promote_from_waitlist(event)` and `broadcast_capacity_change` if they were attending, and email promoted users after commit.
+3. For each of `removed_hosting`: same as `_step_down_as_cohost`. Remove the user from `co_hosts`, set their accepted `EventCoHostInvite` to `REMOVED`, and `broadcast_cohost_change`.
+4. Rescind any `PENDING` co-host invites to them on events that aren't official/club.
+5. For each of `drafted_events`:
+   - remove the user from `co_hosts` and set their accepted invite to `REMOVED`
    - set `status=DRAFT`
    - collect the guests (RSVP'd users other than the paused member), then delete all RSVPs
-5. On the user: `attendance_paused_at=now`, `is_member=False`, `has_joined_whatsapp=False`, and remove all roles, including the member role.
-6. Audit log `user_attendance_paused` with removed role ids, removed RSVP event ids, removed hosting event ids, drafted event ids.
-7. After commit, notify the guests of each drafted event: an in-app notification (new `NotificationType.EVENT_UNPUBLISHED`) plus an email that the event was unpublished. A failed send doesn't undo the pause.
+6. On the user: strip non-member roles (`_strip_non_member_roles`), remove the member role, then set `attendance_paused_at=now`, `is_member=False` and `has_joined_whatsapp=False`.
+7. Audit log `user_attendance_paused` with removed role ids, removed RSVP event ids, removed hosting event ids, drafted event ids.
+8. After commit, notify the guests of each drafted event: an in-app notification (new `NotificationType.EVENT_UNPUBLISHED`) plus an email that the event was unpublished. A failed send doesn't undo the pause.
 
-The same guards as the guidelines pause apply: you can't pause yourself or an admin.
-
-Setting `is_member=False` puts them under every existing tentative-member check (`community/_tentative_member_access.py`) with no further change. Those checks only look at `not user.is_member`.
+The same guards as the guidelines pause apply (`_validate_pause_change` in `users/_management.py`): you can't pause yourself or an admin.
 
 `has_joined_whatsapp=False` because paused members are removed from the WhatsApp community. That way the restored list (below) keeps them until an admin re-adds them.
 
@@ -80,7 +92,7 @@ The ACTIVE → DRAFT move is done directly by this service. It isn't added as a 
 
 PATCH with `attendance_paused: false`:
 - clears `attendance_paused_at`
-- sets `is_member=True` and gives back the member role
+- sets `is_member=True` and saves, then calls `_grant_membership` (the `reject_role_for_non_member` signal rejects a role on a non-member, so the order matters)
 - audit log `user_attendance_unpaused`
 
 It's silent: no email, no notification, `restored_at` isn't set, and they don't appear in the restored list. Drafted events stay drafts, and removed RSVPs or host spots aren't put back.
@@ -93,48 +105,54 @@ The runner finds members with `qualifying_count_12mo < 2` who aren't already pau
 - **Otherwise:** call `apply_attendance_pause(user, actor=None)`.
 - **After the run:** send admins with `approve_join_requests` the list of people paused in this run, so they can remove them from WhatsApp.
 
+The attendance report's `is_pause_candidate` (`community/_attendance_analytics.py`) is `qualifying_count_12mo == 0` today. It moves to `< 2` with this work.
+
 ## check-in: promote or restore
 
-`_apply_attendance_mark` (`community/_event_host_actions.py`) calls a single entry point in place of `_maybe_promote_tentative`:
+Today `_apply_attendance_mark` (`community/_event_host_actions.py`) returns early for a non-`ATTENDED` mark or a +1, then returns `_maybe_promote_tentative(user, event, actor) -> bool`, and the caller sends `send_join_approval` when it's true. That call becomes a single entry point:
 
 **`_maybe_promote_non_member(user, event, actor) -> NonMemberOutcome | None`** (`community/_join_request_approval.py`):
 
-1. Shared checks: the mark is `ATTENDED`, it's for the member and not their +1 (the caller already returns early for `for_plus_one`), and the event is `OFFICIAL` or `CLUB`.
+1. Shared check: the event is `OFFICIAL` or `CLUB` (`is_official_or_club`). The caller has already filtered to an `ATTENDED` mark for the member, not their +1. (#1609 locks +1s off official/club events, so a +1 mark on a qualifying event shouldn't happen anyway.)
 2. Route:
-   - if `user.attendance_paused_at` is set → `_restore_attendance_paused(user, actor)`. It restores only if `qualifying_count_12mo >= 2`, counting this check-in, and otherwise returns `None`.
-   - else, if the user has a `TENTATIVE` join request → `_promote_tentative(user, event, actor)`. This is today's behavior, renamed.
+   - if `user.attendance_paused_at` is set → `_restore_attendance_paused(user, actor, event)`. It restores only if `qualifying_count_12mo >= 2`, counting this check-in, and otherwise returns `None`.
+   - else, if the user has a `TENTATIVE` join request → today's `_maybe_promote_tentative` body (`_promote_tentative_member`, then stamp the join request `APPROVED`).
 3. Return `PROMOTED`, `RESTORED` or `None`.
 
 Checking attendance-paused first means a paused member can never take the one-check-in path.
 
 `_restore_attendance_paused`, in the attendance-mark transaction:
-- clears `attendance_paused_at`, sets `restored_at=now` and `is_member=True`, and clears `attendance_grace_notified_at`
-- gives back the member role (`_grant_membership`); other roles aren't restored
+- clears `attendance_paused_at`, sets `restored_at=now` and `is_member=True`, clears `attendance_grace_notified_at`, and saves
+- then `_grant_membership` gives back the member role and revokes any scoped RSVP tokens; other roles aren't restored
 - audit log `user_attendance_restored`, with actor and event id
 
 The caller acts on the outcome after commit:
 - `PROMOTED` → `send_join_approval` (unchanged).
 - `RESTORED` →
-  - `send_member_restored` email, using the new editable `MemberRestoredEmailTemplate`. It's a singleton like `MemberPromotionEmailTemplate` and supports `{FIRST_NAME}` and `{WHATSAPP_LINK}`, with a default along the lines of "your membership has been restored".
+  - `send_member_restored` email, using the new editable `MemberRestoredEmailTemplate`. It's a singleton in `community/models/content.py` like `MemberPromotionEmailTemplate` and supports `{FIRST_NAME}` and `{WHATSAPP_LINK}`, with a default along the lines of "your membership has been restored".
   - `create_member_restored_notifications(user)` to everyone with `APPROVE_JOIN_REQUESTS` (new `NotificationType.MEMBER_RESTORED`): "{name} was restored to membership".
 
 A failed send doesn't undo the restore.
 
+## join requests list
+
+The list (`community/_join_requests.py`) drops `APPROVED` and `TENTATIVE` rows once the user is past 7 days from `onboarded_at` **and** `has_joined_whatsapp` is true (#1511). Because the pause sets `has_joined_whatsapp=False`, a paused member's old approved row would come back on the approved tab. Exclude users with `attendance_paused_at` or `restored_at` set from those rows; the restored tab covers them.
+
 ## restored list
 
-`GET /users/restored/` is gated by `APPROVE_JOIN_REQUESTS`. It returns users with `restored_at` set, newest first, minus anyone who meets the clearing rule from PR #1511: it's been at least 7 days since `restored_at` **and** `has_joined_whatsapp` is true.
+`GET /users/restored/` is gated by `APPROVE_JOIN_REQUESTS`. It returns users with `restored_at` set, newest first, minus anyone who meets the #1511 rule measured from restore: it's been at least 7 days since `restored_at` **and** `has_joined_whatsapp` is true.
 
 Each row has: id, name, `restored_at`, `has_joined_whatsapp`, and the last 2 qualifying events (title and date).
 
 ## frontend
 
-- **Member edit form:** the "pause account" toggle becomes two toggles, "guidelines violation pause" (`is_paused`) and "event rqmt pause". Both are disabled for admins, as today.
+- **Member edit form** (`screens/admin/MemberDetailScreen.tsx`): the "pause account" toggle becomes two toggles, "guidelines violation pause" (`is_paused`) and "event rqmt pause". Both are disabled for admins, as today.
   - Turning on event rqmt pause fetches the preview and shows the confirm dialog when anything is affected.
-- **Member row and detail badges:** "paused · guidelines" or "paused · event rqmt".
-- **Join requests page:** a "restored" tab after rejected. Each row shows name, restored date, the last 2 events, and the existing `JoinRequestWhatsappToggle`.
+- **Member row and detail badges** (`MemberRow.tsx`, `MemberDetailScreen.tsx`): "paused · guidelines" or "paused · event rqmt".
+- **Join requests page** (`JoinRequestsScreen.tsx`): a "restored" tab after rejected. Each row shows name, restored date, the last 2 events, and the existing `JoinRequestWhatsappToggle`.
   - The hint reads: "restored members stay here until it's been 7 days since they were restored and they're marked as joined the whatsapp".
-- **Message editors:** add the restored email template, and the grace email template once auto-pause lands.
-- **Notifications:** render `member_restored` and `event_unpublished`.
+- **Message editors** (`JoinRequestMessageEditors.tsx`): add a restored email editor dialog like `MemberPromotionEmailEditorDialog.tsx`, and the grace email template once auto-pause lands.
+- **Notifications:** add `member_restored` and `event_unpublished` to `models/notification.ts`.
 - All text is lowercase.
 
 ## API changes
@@ -144,19 +162,22 @@ Each row has: id, name, `restored_at`, `has_joined_whatsapp`, and the last 2 qua
 - `GET /users/{id}/attendance-pause-preview/`
 - `GET /users/restored/`
 - GET/PATCH for the restored email template, the same shape as the member promotion email endpoints.
+- New `NotificationType` values need a migration altering the choices (like `notifications/migrations/0018`) and creators in `notifications/service.py`.
 - Run `make frontend-types` after.
 
 ## testing
 
 - **Impact sorting:** for each row of the bucket table, cover official/club vs other events, RSVP vs co-host vs only co-host, and past events excluded.
 - **Apply:**
-  - removed RSVPs run waitlist promotion
+  - removed RSVPs become `CANT_GO` and run waitlist promotion when they were attending
+  - pending co-host invites on other events are rescinded
   - an only-hosted event becomes a draft with no RSVPs and its guests are notified
   - an official/club RSVP or hosting role is untouched
   - user fields, roles and `has_joined_whatsapp` are set
   - audit log written
   - a failed notification doesn't undo the pause
 - **Access:** an attendance-paused user can log in and RSVP to official/club events and is blocked elsewhere. A guidelines-paused user is still fully blocked.
+- **Tentative definition:** an attendance-paused user without a `TENTATIVE` join request keeps official/club RSVPs when an event loses public-RSVP eligibility, gets member RSVP emails, is a member to `check_phone`, and is in the digest and login reminders.
 - **Check-in:**
   - attendance-paused with 1 qualifying event: no restore
   - attendance-paused reaching 2: restored, email sent, approvers notified, `restored_at` set
@@ -165,6 +186,7 @@ Each row has: id, name, `restored_at`, `has_joined_whatsapp`, and the last 2 qua
   - tentative applicant: still promoted after 1 check-in
   - attendance-paused user who also has a stale tentative join request: not promoted on 1
 - **Manual unpause:** silent restore; not in the restored list.
+- **Join requests list:** a paused or restored member's approved row doesn't come back on the approved tab.
 - **Restored list:** sort order, the 7-day + WhatsApp clearing rule, the last 2 events, and the permission gate.
 - **Frontend:** toggles, preview dialog (shown and skipped), badges, restored tab.
 
