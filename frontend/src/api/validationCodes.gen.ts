@@ -197,6 +197,8 @@ export const Code = {
     SmsConsentRequired: 'join_request.sms_consent_required',
     GuidelinesConsentRequired: 'join_request.guidelines_consent_required',
     InvalidRejectionReason: 'join_request.invalid_rejection_reason',
+    RejectionNoteRequired: 'join_request.rejection_note_required',
+    RejectionNoteTooLong: 'join_request.rejection_note_too_long',
   },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
@@ -437,6 +439,8 @@ export type ValidationCode =
   | 'join_request.sms_consent_required'
   | 'join_request.guidelines_consent_required'
   | 'join_request.invalid_rejection_reason'
+  | 'join_request.rejection_note_required'
+  | 'join_request.rejection_note_too_long'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
   | 'photo.unsafe'
@@ -641,6 +645,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.sms_consent_required': [],
   'join_request.guidelines_consent_required': [],
   'join_request.invalid_rejection_reason': [],
+  'join_request.rejection_note_required': [],
+  'join_request.rejection_note_too_long': ['max_length'],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
   'photo.unsafe': [],

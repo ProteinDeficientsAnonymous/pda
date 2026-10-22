@@ -47,7 +47,9 @@ def unreject_join_request(request, id: UUID):
         raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
-    join_request.save(update_fields=["status"])
+    join_request.rejection_reason = ""
+    join_request.rejection_note = ""
+    join_request.save(update_fields=["status", "rejection_reason", "rejection_note"])
 
     audit_log(
         logging.INFO,

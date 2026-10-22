@@ -22,6 +22,7 @@ from community._join_request_approval import (
     _provision_tentative_user,
     send_join_approval,
 )
+from community._join_request_rejection import Rejection, send_join_rejection, validate_rejection
 from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -81,6 +82,8 @@ class JoinRequestOut(BaseModel):
     approved_by_name: str | None = None
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
+    rejection_reason: str = ""
+    rejection_note: str = ""
     onboarded_at: datetime | None = None
     user_has_joined_whatsapp: bool = False
     # Prior engagement of the linked (non-member) user, so admins can gauge
@@ -97,6 +100,8 @@ class JoinRequestOut(BaseModel):
 
 class JoinRequestStatusIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
+    rejection_reason: str = ""
+    rejection_note: str = ""
 
 
 class ApproveJoinRequestOut(BaseModel):
@@ -237,6 +242,8 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
+        rejection_reason=jr.rejection_reason,
+        rejection_note=jr.rejection_note,
         onboarded_at=user.onboarded_at if user else None,
         user_has_joined_whatsapp=user.has_joined_whatsapp if user else False,
         attended_official_count=breakdown.attended_official,
@@ -288,7 +295,7 @@ def list_join_requests(request):
     return Status(200, [_join_request_out(jr) for jr in join_requests])
 
 
-def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
+def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
     now = timezone.now()
     join_request.status = status
     if status == JoinRequestStatus.TENTATIVE:
@@ -300,6 +307,7 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     elif status == JoinRequestStatus.REJECTED:
         join_request.rejected_at = now
         join_request.rejected_by = actor
+        join_request.rejection_reason, join_request.rejection_note = rejection
     join_request.save()
 
 
@@ -311,7 +319,7 @@ _DECISION_ACTIONS = {
 
 
 def _apply_status_transition(
-    id: UUID, status: str, actor
+    id: UUID, status: str, actor, rejection: Rejection
 ) -> tuple[JoinRequest, str | None, bool, bool]:
     """Stamp + provision inside one locked transaction.
 
@@ -330,7 +338,7 @@ def _apply_status_transition(
             raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
 
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
-        _stamp_decision(join_request, status, actor)
+        _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
             _, magic_token = _provision_tentative_user(join_request, actor)
             return join_request, magic_token, False, False
@@ -384,8 +392,13 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
+    rejection = (
+        validate_rejection(payload.rejection_reason, payload.rejection_note)
+        if payload.status == JoinRequestStatus.REJECTED
+        else Rejection()
+    )
     join_request, magic_token, user_created, promoted = _apply_status_transition(
-        id, payload.status, request.auth
+        id, payload.status, request.auth, rejection
     )
 
     if promoted:
@@ -394,6 +407,8 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             display_name=join_request.full_name,
             first_name=join_request.first_name,
         )
+    if payload.status == JoinRequestStatus.REJECTED:
+        send_join_rejection(join_request)
 
     action = _DECISION_ACTIONS[payload.status]
     audit_log(
@@ -403,7 +418,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": join_request.full_name, "user_created": user_created},
+            details={
+                "full_name": join_request.full_name,
+                "user_created": user_created,
+                "rejection_reason": join_request.rejection_reason,
+            },
         ),
     )
 
