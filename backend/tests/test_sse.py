@@ -125,7 +125,10 @@ class TestSseStreamLoop:
         async def run() -> list[str]:
             stream = sse._sse_generator("user-1")
             try:
-                frames = [await anext(stream), await anext(stream)]
+                frames = [
+                    await asyncio.wait_for(anext(stream), timeout=5),
+                    await asyncio.wait_for(anext(stream), timeout=5),
+                ]
                 async with await psycopg.AsyncConnection.connect(
                     sse._build_async_dsn(), autocommit=True
                 ) as notifier:
