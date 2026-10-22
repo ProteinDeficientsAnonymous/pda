@@ -144,6 +144,13 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
 
 
+def _declined_outright(r: EventRSVP) -> bool:
+    # cancelled_at is stamped in the create transaction, so a row born cant_go has it ~= created_at.
+    if r.pre_cancel_status is not None or r.cancelled_at is None:
+        return False
+    return r.cancelled_at - r.created_at < timedelta(seconds=5)
+
+
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Currently-CANT_GO RSVPs with lead time in local calendar days, plus raw-24h and after-start flags."""
     if event.start_datetime is None:
@@ -164,6 +171,8 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
                 days_before_event=(start_date - cancelled_date).days,
                 within_24h=timedelta(0) <= notice < timedelta(hours=24),
                 after_start=notice < timedelta(0),
+                pre_cancel_status=r.pre_cancel_status,
+                declined_outright=_declined_outright(r),
             )
         )
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)

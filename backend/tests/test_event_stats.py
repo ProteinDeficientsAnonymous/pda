@@ -174,11 +174,14 @@ class TestCancellations:
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
 
-    def _cancel_at(self, event, user, cancelled_at):
-        rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
-        EventRSVP.objects.filter(pk=rsvp.pk).update(cancelled_at=cancelled_at)
+    def _cancel_at_existing(self, event, rsvp, **fields):
+        EventRSVP.objects.filter(pk=rsvp.pk).update(**fields)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         return _cancellations(event)[0]
+
+    def _cancel_at(self, event, user, cancelled_at, **fields):
+        rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
+        return self._cancel_at_existing(event, rsvp, cancelled_at=cancelled_at, **fields)
 
     def _event_at(self, host_user, start):
         return Event.objects.create(
@@ -218,6 +221,33 @@ class TestCancellations:
         assert row.days_before_event == 0
         assert row.within_24h is False
         assert row.after_start is True
+
+    def test_includes_pre_cancel_status(self, stats_event, members):
+        row = self._cancel_at(
+            stats_event,
+            members[0],
+            stats_event.start_datetime - timedelta(days=2),
+            pre_cancel_status=RSVPStatus.MAYBE,
+        )
+        assert row.pre_cancel_status == RSVPStatus.MAYBE
+        assert row.declined_outright is False
+
+    def test_declined_outright_when_born_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+        )
+        row = self._cancel_at_existing(stats_event, rsvp, cancelled_at=rsvp.created_at)
+        assert row.declined_outright is True
+
+    def test_not_declined_outright_for_legacy_row_cancelled_later(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+        )
+        row = self._cancel_at_existing(
+            stats_event, rsvp, cancelled_at=rsvp.created_at + timedelta(days=1)
+        )
+        assert row.pre_cancel_status is None
+        assert row.declined_outright is False
 
 
 @pytest.mark.django_db

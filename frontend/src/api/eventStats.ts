@@ -44,6 +44,8 @@ function mapCancellation(w: WireCancellation): EventCancellation {
     daysBeforeEvent: w.days_before_event,
     within24h: w.within_24h,
     afterStart: w.after_start,
+    preCancelStatus: w.pre_cancel_status,
+    declinedOutright: w.declined_outright,
   };
 }
 

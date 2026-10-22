@@ -47,6 +47,8 @@ const BASE_STATS: EventStats = {
       daysBeforeEvent: 3,
       within24h: false,
       afterStart: false,
+      preCancelStatus: null,
+      declinedOutright: false,
     },
   ],
 };
@@ -240,12 +242,68 @@ describe('EventAttendancePanel', () => {
           daysBeforeEvent,
           within24h,
           afterStart,
+          preCancelStatus: null,
+          declinedOutright: false,
         },
       ],
     };
     mockStats(stats);
     renderPanel(BASE_EVENT);
     expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it('shows the prior rsvp status alongside a cancellation', () => {
+    const stats: EventStats = {
+      ...BASE_STATS,
+      cancellations: [
+        {
+          userId: 'wasgoing',
+          name: 'was going wendy',
+          cancelledAt: new Date('2026-05-29T12:00:00Z'),
+          daysBeforeEvent: 3,
+          within24h: false,
+          afterStart: false,
+          preCancelStatus: RsvpServerStatus.Attending,
+          declinedOutright: false,
+        },
+        {
+          userId: 'wasmaybe',
+          name: 'was maybe mia',
+          cancelledAt: new Date('2026-05-29T12:00:00Z'),
+          daysBeforeEvent: 3,
+          within24h: false,
+          afterStart: false,
+          preCancelStatus: RsvpServerStatus.Maybe,
+          declinedOutright: false,
+        },
+      ],
+    };
+    mockStats(stats);
+    renderPanel(BASE_EVENT);
+    expect(screen.getByText(/\(was going\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(was maybe\)/i)).toBeInTheDocument();
+  });
+
+  it('marks an outright decline, and shows nothing when prior status is unknown', () => {
+    const stats: EventStats = {
+      ...BASE_STATS,
+      cancellations: [
+        {
+          userId: 'declined',
+          name: 'declined dana',
+          cancelledAt: new Date('2026-05-29T12:00:00Z'),
+          daysBeforeEvent: 3,
+          within24h: false,
+          afterStart: false,
+          preCancelStatus: null,
+          declinedOutright: true,
+        },
+      ],
+    };
+    mockStats(stats);
+    renderPanel(BASE_EVENT);
+    expect(screen.getByText(/\(declined\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\(was /i)).not.toBeInTheDocument();
   });
 
   it('filters cancellations by "within N days" when host enters a value', () => {
@@ -259,6 +317,8 @@ describe('EventAttendancePanel', () => {
           daysBeforeEvent: 12,
           within24h: false,
           afterStart: false,
+          preCancelStatus: null,
+          declinedOutright: false,
         },
         {
           userId: 'late',
@@ -267,6 +327,8 @@ describe('EventAttendancePanel', () => {
           daysBeforeEvent: 1,
           within24h: false,
           afterStart: false,
+          preCancelStatus: null,
+          declinedOutright: false,
         },
       ],
     };

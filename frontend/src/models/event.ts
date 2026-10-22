@@ -123,6 +123,8 @@ export interface EventCancellation {
   daysBeforeEvent: number;
   within24h: boolean;
   afterStart: boolean;
+  preCancelStatus: components['schemas']['RSVPStatus'] | null;
+  declinedOutright: boolean;
 }
 
 export interface EventStats {
