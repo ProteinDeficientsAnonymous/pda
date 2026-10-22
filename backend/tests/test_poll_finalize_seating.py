@@ -11,6 +11,8 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
+from django.utils import timezone
+from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests._payment_helpers import create_paid_event
@@ -143,6 +145,12 @@ class TestFinalizeSeating:
         assert not EventRSVP.objects.filter(event=rsvp_event, user=other_user).exists()
 
 
+def _seated_unpaid_notices(user):
+    return Notification.objects.filter(
+        recipient=user, notification_type=NotificationType.POLL_SEATED_UNPAID
+    )
+
+
 def _paid_poll(creator, **overrides):
     event = create_paid_event(created_by=creator, datetime_tbd=True, **overrides)
     poll = EventPoll.objects.create(event=event, created_by=creator)
@@ -162,6 +170,7 @@ class TestFinalizeSeatingPaidEvent:
         rsvp = EventRSVP.objects.get(event=event, user=other_user)
         assert rsvp.status == RSVPStatus.ATTENDING
         assert rsvp.paid_confirmed_at is None
+        assert _seated_unpaid_notices(other_user).count() == 1
 
     def test_waitlists_unpaid_yes_voter_when_full(
         self, api_client, auth_headers, test_user, other_user
@@ -174,3 +183,29 @@ class TestFinalizeSeatingPaidEvent:
         rsvp = EventRSVP.objects.get(event=event, user=other_user)
         assert rsvp.status == RSVPStatus.WAITLISTED
         assert rsvp.paid_confirmed_at is None
+        assert not _seated_unpaid_notices(other_user).exists()
+
+    def test_does_not_tell_a_confirmed_voter_to_pay(
+        self, api_client, auth_headers, test_user, other_user
+    ):
+        event, option = _paid_poll(test_user, max_attendees=5)
+        EventRSVP.objects.create(
+            event=event,
+            user=other_user,
+            status=RSVPStatus.MAYBE,
+            paid_confirmed_at=timezone.now(),
+        )
+        _vote_yes(option, other_user)
+
+        assert _finalize(api_client, auth_headers, event, option).status_code == 200
+        assert EventRSVP.objects.get(event=event, user=other_user).status == RSVPStatus.ATTENDING
+        assert not _seated_unpaid_notices(other_user).exists()
+
+    def test_free_event_sends_no_payment_notice(
+        self, api_client, auth_headers, rsvp_event, rsvp_poll, other_user
+    ):
+        option = rsvp_poll.options.get()
+        _vote_yes(option, other_user)
+
+        assert _finalize(api_client, auth_headers, rsvp_event, option).status_code == 200
+        assert not _seated_unpaid_notices(other_user).exists()
