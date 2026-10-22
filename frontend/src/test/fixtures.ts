@@ -194,6 +194,8 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
     approvedByName: null,
     rejectedAt: null,
     rejectedByName: null,
+    rejectionReason: null,
+    rejectionNote: '',
     onboardedAt: null,
     userHasJoinedWhatsapp: false,
     rsvpBreakdown: {

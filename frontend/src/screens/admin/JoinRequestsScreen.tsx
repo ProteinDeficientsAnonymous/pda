@@ -19,6 +19,7 @@ import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
+import { RejectJoinRequestDialog } from './RejectJoinRequestDialog';
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 const Filter = {
@@ -63,6 +64,7 @@ export default function JoinRequestsScreen() {
     phoneNumber: string;
     magicLinkToken: string | null;
   } | null>(null);
+  const [rejecting, setRejecting] = useState<JoinRequestSummary | null>(null);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -75,7 +77,7 @@ export default function JoinRequestsScreen() {
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
 
-  async function decideRequest(request: JoinRequestSummary, decision: Decision) {
+  async function decideRequest(request: JoinRequestSummary, decision: ConfirmedDecision) {
     const name = request.fullName || formatPhone(request.phoneNumber);
     const ok = await confirm(confirmPropsForDecision(decision, name));
     if (!ok) return;
@@ -203,7 +205,11 @@ export default function JoinRequestsScreen() {
                 request={r}
                 busy={decide.isPending || unreject.isPending || resend.isPending}
                 onDecide={(status) => {
-                  void decideRequest(r, status);
+                  if (status === JoinRequestStatus.REJECTED) {
+                    setRejecting(r);
+                  } else {
+                    void decideRequest(r, status);
+                  }
                 }}
                 onUnreject={() => {
                   void unrejectRequest(r);
@@ -252,6 +258,14 @@ export default function JoinRequestsScreen() {
           phoneNumber={memberPromotionMessageFor.phoneNumber}
         />
       ) : null}
+      {rejecting ? (
+        <RejectJoinRequestDialog
+          request={rejecting}
+          onClose={() => {
+            setRejecting(null);
+          }}
+        />
+      ) : null}
       {confirmElement}
     </ContentContainer>
   );
@@ -278,8 +292,10 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
   return <p className="text-muted mb-3 text-xs">sorted newest first</p>;
 }
 
+type ConfirmedDecision = Exclude<Decision, typeof JoinRequestStatus.REJECTED>;
+
 const DECISION_CONFIRM_PROPS: Record<
-  Decision,
+  ConfirmedDecision,
   { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
 > = {
   [JoinRequestStatus.APPROVED]: {
@@ -303,15 +319,9 @@ const DECISION_CONFIRM_PROPS: Record<
     message: (name) =>
       `tentatively approve ${name}? they'll show up in the tentative tab and get promoted once they check in to an event, or you can approve them manually`,
   },
-  [JoinRequestStatus.REJECTED]: {
-    title: 'reject request',
-    confirmLabel: 'reject',
-    destructive: true,
-    message: (name) => `reject ${name}? are you sure? you can un-reject them later.`,
-  },
 };
 
-function confirmPropsForDecision(status: Decision, name: string) {
+function confirmPropsForDecision(status: ConfirmedDecision, name: string) {
   const props = DECISION_CONFIRM_PROPS[status];
   return {
     title: props.title,

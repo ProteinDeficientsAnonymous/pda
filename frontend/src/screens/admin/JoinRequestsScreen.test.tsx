@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
 import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
+import { RejectionReason } from '@/api/rejectionEmail';
 import { useUpdateUser } from '@/api/users';
 import { makeRequest } from '@/test/fixtures';
 
@@ -318,6 +319,22 @@ describe('JoinRequestsScreen pending actions', () => {
     expect(within(dialog).getByText(/reject ada lovelace\?/i)).toBeInTheDocument();
     expect(within(dialog).queryByText(/can't un-reject/i)).not.toBeInTheDocument();
     expect(within(dialog).getByText(/you can un-reject them later/i)).toBeInTheDocument();
+  });
+
+  it('shows the stored rejection reason on a rejected request', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.REJECTED,
+        rejectedAt: '2026-01-02T00:00:00Z',
+        rejectionReason: RejectionReason.OTHER,
+        rejectionNote: 'we are full',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'rejected' }));
+
+    expect(screen.getByText('reason: we are full')).toBeInTheDocument();
   });
 
   it('calls decide with tentative status when tentatively approve is confirmed', async () => {

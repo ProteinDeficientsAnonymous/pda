@@ -76,6 +76,8 @@ describe('useJoinRequests', () => {
         approvedByName: null,
         rejectedAt: null,
         rejectedByName: null,
+        rejectionReason: null,
+        rejectionNote: '',
         onboardedAt: null,
         userHasJoinedWhatsapp: false,
         rsvpBreakdown: {
