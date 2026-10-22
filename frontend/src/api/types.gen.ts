@@ -1651,7 +1651,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Unreject Join Request */
-        patch: operations["community__join_requests_unreject_join_request"];
+        patch: operations["community__join_request_unreject_unreject_join_request"];
         trace?: never;
     };
     "/api/community/member-promotion-email/": {
@@ -10556,7 +10556,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_unreject_join_request: {
+    community__join_request_unreject_unreject_join_request: {
         parameters: {
             query?: never;
             header?: never;
