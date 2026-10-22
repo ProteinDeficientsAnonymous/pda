@@ -1,3 +1,10 @@
+# [0.143.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.142.0...v0.143.0) (2026-10-22)
+
+
+### Features
+
+* 1551 - edit the rejection email in-app ([#1675](https://github.com/ProteinDeficientsAnonymous/pda/issues/1675)) ([f184e41](https://github.com/ProteinDeficientsAnonymous/pda/commit/f184e416581bd40d10ae0b9d0a5bd0f4253bda51))
+
 # [0.142.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.141.1...v0.142.0) (2026-10-22)
 
 
