@@ -18,7 +18,7 @@ const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>
   [QuestionType.Checkbox]: { label: 'checkbox', wantsOptions: true },
   [QuestionType.Boolean]: { label: 'yes / no', wantsOptions: false },
   [QuestionType.Rating]: { label: '1–5 rating', wantsOptions: true },
-  [QuestionType.DatetimePoll]: { label: 'datetime poll (iso options)', wantsOptions: true },
+  [QuestionType.DatetimePoll]: { label: 'datetime poll', wantsOptions: true },
 };
 
 /** Canonical authoring metadata for every catalog question type. */

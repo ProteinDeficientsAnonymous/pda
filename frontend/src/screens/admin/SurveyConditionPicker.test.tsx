@@ -41,9 +41,11 @@ describe('eligibleSourceQuestions', () => {
 });
 
 describe('SurveyConditionPicker', () => {
-  it('explains when nothing is eligible', () => {
-    render(<SurveyConditionPicker questions={[notes]} value={null} onChange={vi.fn()} />);
-    expect(screen.getByText(/add a choice or yes\/no question above/)).toBeInTheDocument();
+  it('renders nothing when no question can be a source', () => {
+    const { container } = render(
+      <SurveyConditionPicker questions={[notes]} value={null} onChange={vi.fn()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('explains a stored condition whose source is no longer eligible', () => {
@@ -55,7 +57,7 @@ describe('SurveyConditionPicker', () => {
     render(<SurveyConditionPicker questions={[diet]} value={stale} onChange={vi.fn()} />);
     expect(screen.getByRole('checkbox', { name: 'only show when' })).toBeChecked();
     expect(screen.getByText(/can no longer be a source/)).toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'question' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'condition question' })).not.toBeInTheDocument();
   });
 
   it('creates a default condition when toggled on', async () => {
@@ -92,7 +94,7 @@ describe('SurveyConditionPicker', () => {
         onChange={vi.fn()}
       />,
     );
-    const answer = screen.getByRole('combobox', { name: 'answer' });
+    const answer = screen.getByRole('combobox', { name: 'condition answer' });
     expect([...answer.querySelectorAll('option')].map((o) => o.value)).toEqual(['vegan', 'veg']);
   });
 

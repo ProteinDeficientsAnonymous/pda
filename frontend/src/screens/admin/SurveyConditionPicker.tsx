@@ -40,13 +40,9 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
     };
   }
 
-  if (eligible.length === 0) {
-    return (
-      <p className="text-muted text-xs">
-        add a choice or yes/no question above this one to make it conditional
-      </p>
-    );
-  }
+  if (eligible.length === 0 && value === null) return null;
+
+  const idPrefix = editing?.id ?? 'new';
 
   return (
     <div className="flex flex-col gap-2">
@@ -69,9 +65,11 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
       ) : null}
 
       {value !== null && source ? (
-        <div className="border-border flex flex-col gap-2 rounded-md border p-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[2fr_1fr_1fr]">
           <Select
-            label="question"
+            id={`${idPrefix}-condition-question`}
+            label="condition question"
+            hideLabel
             value={value.questionId}
             onChange={(e) => {
               const next = eligible.find((q) => q.id === e.target.value);
@@ -80,7 +78,9 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
             options={eligible.map((q) => ({ value: q.id, label: q.label.toLowerCase() }))}
           />
           <Select
+            id={`${idPrefix}-condition-operator`}
             label="condition"
+            hideLabel
             value={value.operator}
             onChange={(e) => {
               onChange({ ...value, operator: e.target.value as ShowIfOperator });
@@ -91,7 +91,9 @@ export function SurveyConditionPicker({ questions, editing, value, onChange }: P
             }))}
           />
           <Select
-            label="answer"
+            id={`${idPrefix}-condition-answer`}
+            label="condition answer"
+            hideLabel
             value={value.value}
             onChange={(e) => {
               onChange({ ...value, value: e.target.value });

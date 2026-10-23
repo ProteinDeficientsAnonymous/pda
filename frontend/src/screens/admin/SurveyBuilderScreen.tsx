@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   type SurveyQuestion,
   useAdminSurvey,
+  useCreateSurveyQuestion,
   useDeleteSurveyQuestion,
   useReorderSurveyQuestions,
   useUpdateSurvey,
 } from '@/api/surveyAdmin';
+import { DEFAULT_SURVEY_QUESTION_TYPE } from '@/api/surveys';
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -16,7 +18,7 @@ import { surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
-import { SurveyQuestionDialog } from './SurveyQuestionDialog';
+import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
 
 export default function SurveyBuilderScreen() {
@@ -26,10 +28,12 @@ export default function SurveyBuilderScreen() {
   const update = useUpdateSurvey(surveyId);
   const reorder = useReorderSurveyQuestions(surveyId);
   const del = useDeleteSurveyQuestion(surveyId);
+  const create = useCreateSurveyQuestion(surveyId);
 
-  const [editing, setEditing] = useState<SurveyQuestion | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // A ref, not isPending: a fast second click can land before the pending state renders.
+  const duplicating = useRef(false);
   const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -56,6 +60,37 @@ export default function SurveyBuilderScreen() {
     });
     if (!ok) return;
     del.mutate(q.id);
+  }
+
+  async function addQuestion() {
+    const created = await create.mutateAsync({
+      label: 'untitled question',
+      fieldType: DEFAULT_SURVEY_QUESTION_TYPE,
+      options: [],
+      required: false,
+      showIf: null,
+    });
+    setFocusId(created.id);
+  }
+
+  async function duplicate(q: SurveyQuestion) {
+    if (duplicating.current) return;
+    duplicating.current = true;
+    try {
+      const created = await create.mutateAsync({
+        label: q.label,
+        fieldType: q.fieldType,
+        options: q.options,
+        required: q.required,
+        showIf: q.showIf ?? null,
+      });
+      const ids = currentSurvey.questions.map((other) => other.id);
+      ids.splice(ids.indexOf(q.id) + 1, 0, created.id);
+      await reorder.mutateAsync(ids);
+      setFocusId(created.id);
+    } finally {
+      duplicating.current = false;
+    }
   }
 
   function toggleActive() {
@@ -106,21 +141,12 @@ export default function SurveyBuilderScreen() {
 
       {currentSurvey.pollResult ? (
         <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized — the survey is locked
+          this poll has been finalized
         </div>
       ) : null}
 
       <section className="mt-6">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-medium">questions</h2>
-          <Button
-            onClick={() => {
-              setCreating(true);
-            }}
-          >
-            add question
-          </Button>
-        </div>
+        <h2 className="mb-3 text-base font-medium">questions</h2>
 
         {reorder.isError ? (
           <p role="alert" className="text-destructive mb-2 text-sm">
@@ -129,68 +155,47 @@ export default function SurveyBuilderScreen() {
         ) : null}
 
         {currentSurvey.questions.length === 0 ? (
-          <p className="text-muted text-sm">no questions yet</p>
+          <p className="text-muted mb-3 text-sm">no questions yet 🌿</p>
         ) : (
           <SortableList
             items={currentSurvey.questions}
             onReorder={onReorder}
             ariaLabel="survey questions"
             renderItem={(q) => (
-              <article className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {q.label}
-                    {q.required ? (
-                      <span className="text-muted ms-1 text-xs">· required</span>
-                    ) : null}
-                  </p>
-                  <p className="text-muted text-xs">
-                    {q.fieldType}
-                    {q.options.length > 0 ? ` · ${String(q.options.length)} options` : ''}
-                    {q.showIf ? ' · conditional' : ''}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setEditing(q);
-                    }}
-                  >
-                    edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      void askDelete(q);
-                    }}
-                  >
-                    delete
-                  </Button>
-                </div>
-              </article>
+              <SurveyQuestionCard
+                surveyId={surveyId}
+                question={q}
+                questions={currentSurvey.questions}
+                focusOnMount={q.id === focusId}
+                onDuplicate={() => {
+                  void duplicate(q).catch(() => undefined);
+                }}
+                onDelete={() => {
+                  void askDelete(q);
+                }}
+              />
             )}
           />
         )}
+
+        {create.isError ? (
+          <p role="alert" className="text-destructive mt-2 text-sm">
+            {extractApiErrorOr(create.error, "couldn't add the question — try again")}
+          </p>
+        ) : null}
+
+        <button
+          type="button"
+          disabled={create.isPending}
+          onClick={() => {
+            void addQuestion().catch(() => undefined);
+          }}
+          className="border-border-strong text-foreground-secondary hover:bg-surface-dim mt-3 w-full rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50"
+        >
+          {create.isPending ? 'adding…' : '+ add question'}
+        </button>
       </section>
 
-      <SurveyQuestionDialog
-        surveyId={surveyId}
-        open={creating}
-        onClose={() => {
-          setCreating(false);
-        }}
-        questions={currentSurvey.questions}
-      />
-      <SurveyQuestionDialog
-        surveyId={surveyId}
-        open={editing !== null}
-        onClose={() => {
-          setEditing(null);
-        }}
-        questions={currentSurvey.questions}
-        existing={editing ?? undefined}
-      />
       <SurveySettingsDialog
         survey={currentSurvey}
         open={settingsOpen}
