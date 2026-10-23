@@ -73,7 +73,11 @@ ASGI_APPLICATION = "config.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 
-DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
+DATABASES = {
+    "default": dj_database_url.config(
+        default="sqlite:///db.sqlite3", conn_max_age=600, conn_health_checks=True
+    )
+}
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
 # Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.
