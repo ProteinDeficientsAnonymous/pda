@@ -1,3 +1,10 @@
+# [0.151.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.150.0...v0.151.0) (2026-10-23)
+
+
+### Features
+
+* **mcp:** add oauth client, auth request and grant models ([#1706](https://github.com/ProteinDeficientsAnonymous/pda/issues/1706)) ([f5d6710](https://github.com/ProteinDeficientsAnonymous/pda/commit/f5d6710904d789600bf3b866d5e3d574a838f360))
+
 # [0.150.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.149.0...v0.150.0) (2026-10-23)
 
 
