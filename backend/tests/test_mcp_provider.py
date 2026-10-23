@@ -6,7 +6,8 @@ from django.conf import settings
 from django.utils import timezone
 from mcp.server.auth.provider import AuthorizationParams, TokenError
 from mcp.shared.auth import OAuthClientInformationFull
-from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant
+from mcp.shared.auth import OAuthToken as TokenResponse
+from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant, OAuthToken
 from mcp_gateway.provider import AuthRequestNotPending, PdaOAuthProvider, issue_auth_code
 from mcp_gateway.tokens import hash_secret
 
@@ -95,6 +96,13 @@ def test_issue_auth_code_rejects_expired_request(test_user):
     assert not OAuthGrant.objects.exists()
 
 
+def _connect(provider: PdaOAuthProvider, user) -> TokenResponse:
+    code = issue_auth_code(_pending_request(provider), user)
+    loaded = asyncio.run(provider.load_authorization_code(_client_info(), code))
+    assert loaded is not None
+    return asyncio.run(provider.exchange_authorization_code(_client_info(), loaded))
+
+
 def test_exchange_code_issues_tokens_once(test_user):
     provider = PdaOAuthProvider()
     code = issue_auth_code(_pending_request(provider), test_user)
@@ -122,3 +130,59 @@ def test_code_not_loaded_for_other_client_or_revoked_grant(test_user):
     assert asyncio.run(provider.load_authorization_code(_client_info("client-2"), code)) is None
     OAuthGrant.objects.update(revoked_at=timezone.now())
     assert asyncio.run(provider.load_authorization_code(_client_info(), code)) is None
+
+
+def test_load_access_token_returns_subject(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    access = asyncio.run(provider.load_access_token(tokens.access_token))
+    assert access is not None
+    assert access.subject == str(test_user.pk)
+    assert access.client_id == "client-1"
+    assert access.scopes == ["pda"]
+    assert access.resource == RESOURCE
+    assert access.expires_at and access.expires_at > timezone.now().timestamp()
+    assert OAuthGrant.objects.get().last_used_at is not None
+    assert tokens.refresh_token is not None
+    assert asyncio.run(provider.load_access_token(tokens.refresh_token)) is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("is_paused", True), ("archived_at", "now"), ("needs_onboarding", True)],
+)
+def test_load_access_token_rejects_blocked_account(test_user, field, value):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    setattr(test_user, field, timezone.now() if value == "now" else value)
+    test_user.save()
+    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+
+
+def test_load_access_token_rejects_revoked_grant(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    OAuthGrant.objects.update(revoked_at=timezone.now())
+    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+
+
+def test_load_access_token_rejects_expired_or_revoked_token(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    access = OAuthToken.objects.filter(kind=OAuthToken.Kind.ACCESS)
+    access.update(expires_at=timezone.now() - timedelta(seconds=1))
+    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+    access.update(expires_at=timezone.now() + timedelta(hours=1), revoked_at=timezone.now())
+    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+
+
+def test_load_access_token_touches_grant_at_most_once_a_minute(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    recent = timezone.now() - timedelta(seconds=30)
+    OAuthGrant.objects.update(last_used_at=recent)
+    asyncio.run(provider.load_access_token(tokens.access_token))
+    assert OAuthGrant.objects.get().last_used_at == recent
+    OAuthGrant.objects.update(last_used_at=recent - timedelta(minutes=1))
+    asyncio.run(provider.load_access_token(tokens.access_token))
+    assert OAuthGrant.objects.get().last_used_at > recent
