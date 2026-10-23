@@ -889,6 +889,19 @@
         "title": "CommentReactionSummaryOut",
         "type": "object"
       },
+      "ConnectRedirectOut": {
+        "properties": {
+          "redirect_url": {
+            "title": "Redirect Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_url"
+        ],
+        "title": "ConnectRedirectOut",
+        "type": "object"
+      },
       "ConnectRequestOut": {
         "properties": {
           "client_name": {
@@ -17176,6 +17189,44 @@
           }
         ],
         "summary": "Get Request",
+        "tags": [
+          "connect"
+        ]
+      }
+    },
+    "/api/connect/requests/{request_id}/approve/": {
+      "post": {
+        "operationId": "mcp_gateway_api_approve_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectRedirectOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Approve Request",
         "tags": [
           "connect"
         ]
