@@ -49,7 +49,7 @@ describe('EventFormDetails', () => {
       />,
     );
     expect(
-      screen.getByText(/fill in the \[bracketed\] bits before publishing/),
+      screen.getByText(/fill in the \[bracketed\] parts before publishing/),
     ).toBeInTheDocument();
   });
 });

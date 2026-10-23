@@ -52,7 +52,7 @@ export function EventFormDetails({ values, onChange, errors, typeLocked }: Props
         error={errors.description}
         hint={
           hasTemplatePlaceholders(values.description)
-            ? `fill in the [bracketed] bits before publishing — ${charsLeft}`
+            ? `fill in the [bracketed] parts before publishing — ${charsLeft}`
             : charsLeft
         }
       />
