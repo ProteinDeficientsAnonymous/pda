@@ -1,3 +1,10 @@
+# [0.147.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.146.0...v0.147.0) (2026-10-23)
+
+
+### Features
+
+* **events:** 1699 - prefill official event description from templates ([#1702](https://github.com/ProteinDeficientsAnonymous/pda/issues/1702)) ([df9efab](https://github.com/ProteinDeficientsAnonymous/pda/commit/df9efab60a3c57f11a852202601f378f02a90282))
+
 # [0.146.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.2...v0.146.0) (2026-10-23)
 
 
