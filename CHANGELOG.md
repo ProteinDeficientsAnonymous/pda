@@ -1,3 +1,10 @@
+# [0.149.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.148.0...v0.149.0) (2026-10-23)
+
+
+### Features
+
+* **questions:** add shared inline question card editor ([#1697](https://github.com/ProteinDeficientsAnonymous/pda/issues/1697)) ([c1cdd03](https://github.com/ProteinDeficientsAnonymous/pda/commit/c1cdd036864ef1115976a8c9723e3d627ffbee13))
+
 # [0.148.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.147.0...v0.148.0) (2026-10-23)
 
 
