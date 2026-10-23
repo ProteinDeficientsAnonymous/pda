@@ -37,6 +37,10 @@ SCOPE = "pda"
 LAST_USED_RESOLUTION = timedelta(minutes=1)
 
 
+def _user_may_act(user: User) -> bool:
+    return user.is_active and account_block_code(user) is None
+
+
 class AuthRequestNotPending(Exception):
     pass
 
@@ -93,6 +97,17 @@ async def _issue_token_pair(grant_id: UUID, scopes: list[str], resource: str) ->
         expires_in=int(ACCESS_TTL.total_seconds()),
         scope=" ".join(scopes),
     )
+
+
+async def _revoke_grant_on_refresh_reuse(token_hash: str, client_id: str) -> None:
+    # OAuth 2.1 rotation: replaying a rotated refresh token suggests theft, so kill the grant.
+    await OAuthGrant.objects.filter(
+        tokens__token_hash=token_hash,
+        tokens__kind=OAuthToken.Kind.REFRESH,
+        tokens__revoked_at__isnull=False,
+        client__client_id=client_id,
+        revoked_at__isnull=True,
+    ).aupdate(revoked_at=timezone.now())
 
 
 class PdaOAuthProvider(
@@ -175,7 +190,7 @@ class PdaOAuthProvider(
             )
             .afirst()
         )
-        if row is None or account_block_code(row.grant.user) is not None:
+        if row is None or not _user_may_act(row.grant.user):
             return None
         grant = row.grant
         if grant.last_used_at is None or now - grant.last_used_at >= LAST_USED_RESOLUTION:
@@ -192,10 +207,11 @@ class PdaOAuthProvider(
     async def load_refresh_token(
         self, client: OAuthClientInformationFull, refresh_token: str
     ) -> RefreshToken | None:
+        token_hash = hash_secret(refresh_token)
         row = await (
-            OAuthToken.objects.select_related("grant")
+            OAuthToken.objects.select_related("grant__user")
             .filter(
-                token_hash=hash_secret(refresh_token),
+                token_hash=token_hash,
                 kind=OAuthToken.Kind.REFRESH,
                 grant__client__client_id=client.client_id,
                 grant__revoked_at__isnull=True,
@@ -205,6 +221,9 @@ class PdaOAuthProvider(
             .afirst()
         )
         if row is None:
+            await _revoke_grant_on_refresh_reuse(token_hash, client.client_id)
+            return None
+        if not _user_may_act(row.grant.user):
             return None
         return RefreshToken(
             token=refresh_token,
@@ -212,7 +231,7 @@ class PdaOAuthProvider(
             scopes=row.scopes,
             expires_at=int(row.expires_at.timestamp()),
             resource=row.resource or None,
-            subject=str(row.grant.user_id),
+            subject=str(row.grant.user.pk),
         )
 
     async def exchange_refresh_token(
@@ -221,18 +240,29 @@ class PdaOAuthProvider(
         refresh_token: RefreshToken,
         scopes: list[str],
     ) -> TokenResponse:
+        token_hash = hash_secret(refresh_token.token)
         tokens = OAuthToken.objects.filter(
-            token_hash=hash_secret(refresh_token.token),
+            token_hash=token_hash,
             kind=OAuthToken.Kind.REFRESH,
             revoked_at__isnull=True,
             grant__revoked_at__isnull=True,
         )
-        row = await tokens.afirst()
+        row = await tokens.select_related("grant__user").afirst()
+        rejected = TokenError(error="invalid_grant", error_description="refresh token rejected")
+        if row is not None and not _user_may_act(row.grant.user):
+            raise rejected
         if row is None or not await tokens.filter(pk=row.pk).aupdate(revoked_at=timezone.now()):
-            raise TokenError(error="invalid_grant", error_description="refresh token revoked")
+            await _revoke_grant_on_refresh_reuse(token_hash, client.client_id)
+            raise rejected
         return await _issue_token_pair(row.grant_id, scopes, row.resource)
 
     async def revoke_token(self, token: AccessToken | RefreshToken) -> None:
-        await OAuthToken.objects.filter(
-            token_hash=hash_secret(token.token), revoked_at__isnull=True
-        ).aupdate(revoked_at=timezone.now())
+        token_hash, now = hash_secret(token.token), timezone.now()
+        if isinstance(token, RefreshToken):
+            await OAuthGrant.objects.filter(
+                tokens__token_hash=token_hash, revoked_at__isnull=True
+            ).aupdate(revoked_at=now)
+            return
+        await OAuthToken.objects.filter(token_hash=token_hash, revoked_at__isnull=True).aupdate(
+            revoked_at=now
+        )

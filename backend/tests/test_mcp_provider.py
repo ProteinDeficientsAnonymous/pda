@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 from django.conf import settings
 from django.utils import timezone
-from mcp.server.auth.provider import AuthorizationParams, TokenError
+from mcp.server.auth.provider import AccessToken, AuthorizationParams, RefreshToken, TokenError
 from mcp.shared.auth import OAuthClientInformationFull
 from mcp.shared.auth import OAuthToken as TokenResponse
 from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant, OAuthToken
@@ -147,15 +147,24 @@ def test_load_access_token_returns_subject(test_user):
     assert asyncio.run(provider.load_access_token(tokens.refresh_token)) is None
 
 
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [("is_paused", True), ("archived_at", "now"), ("needs_onboarding", True)],
-)
+BLOCKED_STATES = [
+    ("is_paused", True),
+    ("archived_at", "now"),
+    ("needs_onboarding", True),
+    ("is_active", False),
+]
+
+
+def _block(user, field: str, value) -> None:
+    setattr(user, field, timezone.now() if value == "now" else value)
+    user.save()
+
+
+@pytest.mark.parametrize(("field", "value"), BLOCKED_STATES)
 def test_load_access_token_rejects_blocked_account(test_user, field, value):
     provider = PdaOAuthProvider()
     tokens = _connect(provider, test_user)
-    setattr(test_user, field, timezone.now() if value == "now" else value)
-    test_user.save()
+    _block(test_user, field, value)
     assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
 
 
@@ -195,13 +204,30 @@ def test_refresh_token_single_use(test_user):
     old = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
     assert old is not None and old.subject == str(test_user.pk)
     rotated = asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
-    assert asyncio.run(provider.load_refresh_token(_client_info(), old.token)) is None
-    with pytest.raises(TokenError):
-        asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
     assert rotated.refresh_token is not None
     assert asyncio.run(provider.load_refresh_token(_client_info(), rotated.refresh_token))
     assert asyncio.run(provider.load_access_token(rotated.access_token))
     assert OAuthGrant.objects.count() == 1
+    assert asyncio.run(provider.load_refresh_token(_client_info(), old.token)) is None
+
+
+@pytest.mark.parametrize("replay", ["load", "exchange"])
+def test_refresh_token_reuse_revokes_grant(test_user, replay):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    old = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
+    assert old is not None
+    rotated = asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
+    assert rotated.refresh_token is not None
+    if replay == "load":
+        assert asyncio.run(provider.load_refresh_token(_client_info(), old.token)) is None
+    else:
+        with pytest.raises(TokenError):
+            asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
+    assert OAuthGrant.objects.get().revoked_at is not None
+    assert asyncio.run(provider.load_access_token(rotated.access_token)) is None
+    assert asyncio.run(provider.load_refresh_token(_client_info(), rotated.refresh_token)) is None
 
 
 def test_refresh_token_not_loaded_for_other_client_or_revoked_grant(test_user):
@@ -215,14 +241,40 @@ def test_refresh_token_not_loaded_for_other_client_or_revoked_grant(test_user):
     assert asyncio.run(load(_client_info(), tokens.refresh_token)) is None
 
 
-def test_revoke_token(test_user):
-    provider = PdaOAuthProvider()
-    tokens = _connect(provider, test_user)
+def _connected_pair(provider: PdaOAuthProvider, user) -> tuple[AccessToken, RefreshToken]:
+    tokens = _connect(provider, user)
     assert tokens.refresh_token is not None
     access = asyncio.run(provider.load_access_token(tokens.access_token))
     refresh = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
     assert access is not None and refresh is not None
+    return access, refresh
+
+
+def test_revoke_access_token_revokes_only_that_token(test_user):
+    provider = PdaOAuthProvider()
+    access, refresh = _connected_pair(provider, test_user)
     asyncio.run(provider.revoke_token(access))
-    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+    assert asyncio.run(provider.load_access_token(access.token)) is None
+    assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token))
+
+
+def test_revoke_refresh_token_revokes_grant(test_user):
+    provider = PdaOAuthProvider()
+    access, refresh = _connected_pair(provider, test_user)
     asyncio.run(provider.revoke_token(refresh))
+    assert OAuthGrant.objects.get().revoked_at is not None
+    assert asyncio.run(provider.load_access_token(access.token)) is None
     assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token)) is None
+
+
+@pytest.mark.parametrize(("field", "value"), BLOCKED_STATES)
+def test_refresh_token_rejected_for_blocked_account(test_user, field, value):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    refresh = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
+    assert refresh is not None
+    _block(test_user, field, value)
+    assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token)) is None
+    with pytest.raises(TokenError):
+        asyncio.run(provider.exchange_refresh_token(_client_info(), refresh, ["pda"]))
