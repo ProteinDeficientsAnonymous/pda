@@ -22,7 +22,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventHostCount, eventPath, isOfficialOrClub } from '@/models/event';
+import { type Event, eventHostCount, eventPath, EventType, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
@@ -37,6 +37,7 @@ import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
+import { withOfficialQuestions } from './officialQuestions';
 import { withOfficialTemplate } from './officialTemplate';
 import { validateEventForm } from './validateEventForm';
 
@@ -135,6 +136,10 @@ export function EventForm({ existing }: Props) {
   const isDraft = values.status === 'draft';
 
   function patch(p: Partial<EventFormValues>) {
+    if (p.eventType !== undefined && p.eventType !== values.eventType) {
+      const official = p.eventType === EventType.Official;
+      setRsvpQuestions((qs) => withOfficialQuestions(qs, official));
+    }
     setValues((v) => {
       const next = { ...v, ...p };
       if (existing || (!('eventType' in p) && !('isWalk' in p))) return next;
