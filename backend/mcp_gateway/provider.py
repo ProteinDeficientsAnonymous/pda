@@ -4,6 +4,7 @@ from uuid import UUID
 from config.auth import account_block_code
 from django.conf import settings
 from django.db import transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 from mcp.server.auth.provider import (
     AccessToken,
@@ -70,6 +71,11 @@ def issue_auth_code(auth_request: OAuthAuthRequest, user: User) -> str:
         expires_at=now + AUTH_CODE_TTL,
     )
     return code
+
+
+async def _claim(queryset: QuerySet, pk: UUID, **changes: object) -> bool:
+    # Join-free: a joined filter compiles to id IN (subquery), which lets racing claims through.
+    return bool(await queryset.filter(pk=pk).aupdate(**changes))
 
 
 async def _issue_token_pair(grant_id: UUID, scopes: list[str], resource: str) -> TokenResponse:
@@ -166,14 +172,14 @@ class PdaOAuthProvider(
     async def exchange_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode
     ) -> TokenResponse:
-        codes = OAuthAuthCode.objects.filter(
+        row = await OAuthAuthCode.objects.filter(
             code_hash=hash_secret(authorization_code.code),
             used_at__isnull=True,
             grant__revoked_at__isnull=True,
-        )
-        row = await codes.afirst()
-        # The conditional update is the single-use claim; a concurrent exchange gets 0 rows.
-        if row is None or not await codes.filter(pk=row.pk).aupdate(used_at=timezone.now()):
+        ).afirst()
+        if row is None or not await _claim(
+            OAuthAuthCode.objects.filter(used_at__isnull=True), row.pk, used_at=timezone.now()
+        ):
             raise TokenError(error="invalid_grant", error_description="code already used")
         return await _issue_token_pair(row.grant_id, row.scopes, row.resource)
 
@@ -251,7 +257,8 @@ class PdaOAuthProvider(
         rejected = TokenError(error="invalid_grant", error_description="refresh token rejected")
         if row is not None and not _user_may_act(row.grant.user):
             raise rejected
-        if row is None or not await tokens.filter(pk=row.pk).aupdate(revoked_at=timezone.now()):
+        unrevoked = OAuthToken.objects.filter(revoked_at__isnull=True)
+        if row is None or not await _claim(unrevoked, row.pk, revoked_at=timezone.now()):
             await _revoke_grant_on_refresh_reuse(token_hash, client.client_id)
             raise rejected
         return await _issue_token_pair(row.grant_id, scopes, row.resource)
