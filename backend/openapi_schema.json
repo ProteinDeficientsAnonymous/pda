@@ -17232,6 +17232,44 @@
         ]
       }
     },
+    "/api/connect/requests/{request_id}/deny/": {
+      "post": {
+        "operationId": "mcp_gateway_api_deny_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectRedirectOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Deny Request",
+        "tags": [
+          "connect"
+        ]
+      }
+    },
     "/api/notifications/": {
       "get": {
         "operationId": "notifications_api_list_notifications",

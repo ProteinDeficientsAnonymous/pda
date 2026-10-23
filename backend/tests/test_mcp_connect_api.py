@@ -115,3 +115,57 @@ def test_approve_is_audited(api_client, auth_headers, django_capture_on_commit_c
     entry = AuditLogEntry.objects.get(action="mcp_connection_approved")
     assert entry.target_type == "mcp_connection"
     assert entry.target_id == str(OAuthGrant.objects.get().id)
+
+
+def test_deny_returns_access_denied(api_client, auth_headers):
+    req = make_request(state="xyz")
+    resp = api_client.post(_url(req.id, "deny/"), **auth_headers)
+    assert resp.status_code == 200
+    url = resp.json()["redirect_url"]
+    assert url.startswith(REDIRECT + "?")
+    assert _query(url) == {"error": ["access_denied"], "state": ["xyz"]}
+    req.refresh_from_db()
+    assert req.status == OAuthAuthRequest.Status.DENIED
+    assert not OAuthGrant.objects.exists()
+
+
+def test_approve_after_deny_409(api_client, auth_headers):
+    req = make_request()
+    api_client.post(_url(req.id, "deny/"), **auth_headers)
+    resp = api_client.post(_url(req.id, "approve/"), **auth_headers)
+    assert resp.status_code == 409
+    assert not OAuthGrant.objects.exists()
+
+
+def test_deny_after_approve_409(api_client, auth_headers):
+    req = make_request()
+    api_client.post(_url(req.id, "approve/"), **auth_headers)
+    resp = api_client.post(_url(req.id, "deny/"), **auth_headers)
+    assert resp.status_code == 409
+    req.refresh_from_db()
+    assert req.status == OAuthAuthRequest.Status.APPROVED
+
+
+def test_deny_expired_request_410(api_client, auth_headers):
+    req = make_request()
+    _expire(req)
+    resp = api_client.post(_url(req.id, "deny/"), **auth_headers)
+    assert resp.status_code == 410
+    req.refresh_from_db()
+    assert req.status == OAuthAuthRequest.Status.PENDING
+
+
+def test_unauthenticated_deny_401(api_client):
+    req = make_request()
+    assert api_client.post(_url(req.id, "deny/")).status_code == 401
+    req.refresh_from_db()
+    assert req.status == OAuthAuthRequest.Status.PENDING
+
+
+def test_deny_is_audited(api_client, auth_headers, django_capture_on_commit_callbacks):
+    req = make_request()
+    with django_capture_on_commit_callbacks(execute=True):
+        api_client.post(_url(req.id, "deny/"), **auth_headers)
+    entry = AuditLogEntry.objects.get(action="mcp_connection_denied")
+    assert entry.target_type == "mcp_connection"
+    assert entry.target_id == str(req.id)

@@ -7,6 +7,7 @@ from audit.models import AuditTargetType
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, audit_log
 from config.auth import gated_jwt
+from django.db import transaction
 from django.utils import timezone
 from mcp.server.auth.provider import construct_redirect_uri
 from ninja import Router
@@ -71,5 +72,28 @@ def approve_request(request, request_id: UUID):
     )
     redirect_url = construct_redirect_uri(
         row.params["redirect_uri"], code=code, state=row.params.get("state")
+    )
+    return Status(200, ConnectRedirectOut(redirect_url=redirect_url))
+
+
+@router.post("/requests/{request_id}/deny/", response={200: ConnectRedirectOut}, auth=gated_jwt)
+def deny_request(request, request_id: UUID):
+    row = _get_pending_request(request_id)
+    with transaction.atomic():
+        claimed = OAuthAuthRequest.objects.filter(
+            pk=request_id,
+            status=OAuthAuthRequest.Status.PENDING,
+            expires_at__gt=timezone.now(),
+        ).update(status=OAuthAuthRequest.Status.DENIED, user=request.auth)
+        if not claimed:
+            _raise_unusable(request_id)
+        audit_log(
+            logging.INFO,
+            "mcp_connection_denied",
+            request,
+            target=AuditTarget(type=AuditTargetType.MCP_CONNECTION, id=str(request_id)),
+        )
+    redirect_url = construct_redirect_uri(
+        row.params["redirect_uri"], error="access_denied", state=row.params.get("state")
     )
     return Status(200, ConnectRedirectOut(redirect_url=redirect_url))
