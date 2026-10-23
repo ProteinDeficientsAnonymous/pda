@@ -11,19 +11,23 @@ interface Option {
 interface Props extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
   label: string;
   labelSuffix?: string | undefined;
+  hideLabel?: boolean;
   options: Option[];
   placeholder?: string;
   error?: string | undefined;
 }
 
 export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
-  { label, labelSuffix, options, placeholder, error, className, id, ...rest },
+  { label, labelSuffix, hideLabel, options, placeholder, error, className, id, ...rest },
   ref,
 ) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={inputId} className="text-foreground text-sm font-medium">
+      <label
+        htmlFor={inputId}
+        className={cn('text-foreground text-sm font-medium', hideLabel && 'sr-only')}
+      >
         {label}
         {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </label>
