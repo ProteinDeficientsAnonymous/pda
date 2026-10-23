@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 from django.conf import settings
 from django.utils import timezone
-from mcp.server.auth.provider import AuthorizationParams
+from mcp.server.auth.provider import AuthorizationParams, TokenError
 from mcp.shared.auth import OAuthClientInformationFull
 from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant
 from mcp_gateway.provider import AuthRequestNotPending, PdaOAuthProvider, issue_auth_code
@@ -93,3 +93,32 @@ def test_issue_auth_code_rejects_expired_request(test_user):
     with pytest.raises(AuthRequestNotPending):
         issue_auth_code(req, test_user)
     assert not OAuthGrant.objects.exists()
+
+
+def test_exchange_code_issues_tokens_once(test_user):
+    provider = PdaOAuthProvider()
+    code = issue_auth_code(_pending_request(provider), test_user)
+    loaded = asyncio.run(provider.load_authorization_code(_client_info(), code))
+    assert loaded is not None
+    assert loaded.subject == str(test_user.pk)
+    tokens = asyncio.run(provider.exchange_authorization_code(_client_info(), loaded))
+    assert tokens.expires_in == 3600 and tokens.scope == "pda" and tokens.refresh_token
+    assert asyncio.run(provider.load_authorization_code(_client_info(), code)) is None
+    with pytest.raises(TokenError):
+        asyncio.run(provider.exchange_authorization_code(_client_info(), loaded))
+
+
+def test_expired_code_not_loaded(test_user):
+    provider = PdaOAuthProvider()
+    code = issue_auth_code(_pending_request(provider), test_user)
+    OAuthAuthCode.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
+    assert asyncio.run(provider.load_authorization_code(_client_info(), code)) is None
+
+
+def test_code_not_loaded_for_other_client_or_revoked_grant(test_user):
+    provider = PdaOAuthProvider()
+    code = issue_auth_code(_pending_request(provider), test_user)
+    asyncio.run(provider.register_client(_client_info("client-2")))
+    assert asyncio.run(provider.load_authorization_code(_client_info("client-2"), code)) is None
+    OAuthGrant.objects.update(revoked_at=timezone.now())
+    assert asyncio.run(provider.load_authorization_code(_client_info(), code)) is None
