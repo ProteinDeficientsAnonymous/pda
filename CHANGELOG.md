@@ -1,3 +1,10 @@
+# [0.152.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.151.0...v0.152.0) (2026-10-23)
+
+
+### Features
+
+* **surveys:** edit survey questions inline instead of in a dialog ([#1698](https://github.com/ProteinDeficientsAnonymous/pda/issues/1698)) ([bbbbb13](https://github.com/ProteinDeficientsAnonymous/pda/commit/bbbbb130c7a0c5a95119026d3ec92471346ef20e))
+
 # [0.151.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.150.0...v0.151.0) (2026-10-23)
 
 
