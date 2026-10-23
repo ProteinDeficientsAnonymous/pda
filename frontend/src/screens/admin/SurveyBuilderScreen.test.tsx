@@ -191,6 +191,23 @@ describe('SurveyBuilderScreen', () => {
     );
   });
 
+  it('creates one copy when duplicate is double-clicked', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPost.mockResolvedValueOnce({ data: { id: 'q1-copy' } });
+    mockedPut.mockResolvedValueOnce({ data: [] });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    const [firstDuplicate] = screen.getAllByRole('button', { name: 'duplicate' });
+    fireEvent.click(firstDuplicate!);
+    fireEvent.click(firstDuplicate!);
+
+    await waitFor(() => {
+      expect(mockedPut).toHaveBeenCalledTimes(1);
+    });
+    expect(mockedPost).toHaveBeenCalledTimes(1);
+  });
+
   it('locks question editing once the poll is finalized', async () => {
     mockedGet.mockResolvedValue({
       data: {

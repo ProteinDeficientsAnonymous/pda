@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -32,6 +32,8 @@ export default function SurveyBuilderScreen() {
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // A ref, not isPending: a fast second click can land before the pending state renders.
+  const duplicating = useRef(false);
   const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -73,17 +75,23 @@ export default function SurveyBuilderScreen() {
   }
 
   async function duplicate(q: SurveyQuestion) {
-    const created = await create.mutateAsync({
-      label: q.label,
-      fieldType: q.fieldType,
-      options: q.options,
-      required: q.required,
-      showIf: q.showIf ?? null,
-    });
-    const ids = currentSurvey.questions.map((other) => other.id);
-    ids.splice(ids.indexOf(q.id) + 1, 0, created.id);
-    await reorder.mutateAsync(ids);
-    setFocusId(created.id);
+    if (duplicating.current) return;
+    duplicating.current = true;
+    try {
+      const created = await create.mutateAsync({
+        label: q.label,
+        fieldType: q.fieldType,
+        options: q.options,
+        required: q.required,
+        showIf: q.showIf ?? null,
+      });
+      const ids = currentSurvey.questions.map((other) => other.id);
+      ids.splice(ids.indexOf(q.id) + 1, 0, created.id);
+      await reorder.mutateAsync(ids);
+      setFocusId(created.id);
+    } finally {
+      duplicating.current = false;
+    }
   }
 
   function toggleActive() {
