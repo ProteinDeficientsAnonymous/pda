@@ -1,3 +1,10 @@
+## [0.145.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.0...v0.145.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* 1689 - keep sse stream open across heartbeats ([#1690](https://github.com/ProteinDeficientsAnonymous/pda/issues/1690)) ([472701e](https://github.com/ProteinDeficientsAnonymous/pda/commit/472701ef4361fa843e2fa98b5358b4824def31e2))
+
 # [0.145.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.144.0...v0.145.0) (2026-10-22)
 
 
