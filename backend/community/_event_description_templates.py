@@ -31,7 +31,7 @@ Check us out on IG @protein.deficients.anonymous!"""
 
 OFFICIAL_NON_WALK_TEMPLATE = """Another meetup of Protein Deficients Anonymous!
 
-Price includes [WHAT WE'RE ORDERING, PER PERSON]. [DELETE THIS LINE AND THE REFUND NOTE BELOW IF THE EVENT IS FREE]
+Price includes [WHAT WE'RE ORDERING, PER PERSON].
 
 Only vegans allowed 🌱
 
