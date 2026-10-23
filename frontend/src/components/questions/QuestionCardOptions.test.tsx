@@ -1,0 +1,65 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { QuestionType } from '@/api/questionTypes';
+
+import { QuestionCardOptions } from './QuestionCardOptions';
+
+function renderOptions(fieldType: string, options: string[]) {
+  const onChange = vi.fn();
+  const onCommit = vi.fn();
+  render(
+    <QuestionCardOptions
+      id="q1"
+      fieldType={fieldType}
+      options={options}
+      disabled={false}
+      onChange={onChange}
+      onCommit={onCommit}
+    />,
+  );
+  return { onChange, onCommit };
+}
+
+describe('QuestionCardOptions', () => {
+  it('commits the rows when an option loses focus', () => {
+    const { onCommit } = renderOptions(QuestionType.Radio, ['tofu', 'tempeh']);
+    fireEvent.blur(screen.getByLabelText('option 1'));
+    expect(onCommit).toHaveBeenCalledWith(['tofu', 'tempeh']);
+  });
+
+  it('inserts an empty row after the current one on enter', () => {
+    const { onChange } = renderOptions(QuestionType.Radio, ['tofu', 'tempeh']);
+    fireEvent.keyDown(screen.getByLabelText('option 1'), { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith(['tofu', '', 'tempeh']);
+  });
+
+  it('removes a row and commits right away', () => {
+    const { onCommit } = renderOptions(QuestionType.Checkbox, ['tofu', 'tempeh']);
+    fireEvent.click(screen.getByRole('button', { name: 'remove option 2' }));
+    expect(onCommit).toHaveBeenCalledWith(['tofu']);
+  });
+
+  it('keeps the last choice option', () => {
+    renderOptions(QuestionType.Radio, ['tofu']);
+    expect(screen.queryByRole('button', { name: /^remove/ })).not.toBeInTheDocument();
+  });
+
+  it('lets rating star labels be cleared and caps them at five', () => {
+    renderOptions(QuestionType.Rating, ['meh', 'ok', 'good', 'great', 'wow']);
+    expect(screen.getByRole('button', { name: 'remove star 1 label' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ add star label' })).not.toBeInTheDocument();
+  });
+
+  it('starts a rating with no label rows', () => {
+    renderOptions(QuestionType.Rating, []);
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ add star label' })).toBeInTheDocument();
+  });
+
+  it('uses date pickers for a datetime poll', () => {
+    renderOptions(QuestionType.DatetimePoll, []);
+    expect(screen.getByRole('button', { name: 'pick a date & time' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ add date' })).toBeInTheDocument();
+  });
+});
