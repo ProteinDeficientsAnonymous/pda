@@ -29,6 +29,7 @@ class NotificationType(models.TextChoices):
     RSVP_DECLINED_NOTE = "rsvp_declined_note", "RSVP Declined Note"
     CHECKIN_NUDGE = "checkin_nudge", "Check-in Nudge"
     PAYMENT_REVOKED = "payment_revoked", "Payment Confirmation Revoked"
+    POLL_SEATED_UNPAID = "poll_seated_unpaid", "Seated From Poll, Unpaid"
     ACCOUNT_DELETED = "account_deleted", "Account Deleted"
 
 
