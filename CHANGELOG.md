@@ -1,3 +1,10 @@
+# [0.154.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.153.0...v0.154.0) (2026-10-23)
+
+
+### Features
+
+* add walk toggle for official event description template ([#1708](https://github.com/ProteinDeficientsAnonymous/pda/issues/1708)) ([6605896](https://github.com/ProteinDeficientsAnonymous/pda/commit/660589616835ce10cf0349335e685dd0ab005a64))
+
 # [0.153.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.152.0...v0.153.0) (2026-10-23)
 
 
