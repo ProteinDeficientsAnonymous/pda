@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type SurveyStatus, surveyStatus } from '@/models/survey';
+import { type SurveyStatus, surveyStatus, surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
@@ -115,11 +115,12 @@ function SurveyRow({
           {survey.title}
         </Link>
         <p className="text-muted text-xs">
-          /{survey.slug} · {survey.visibility} · {String(survey.responseCount)} responses ·{' '}
-          {format(new Date(survey.createdAt), 'MMM d, yyyy')}
+          /{survey.slug} · {surveyVisibilityLabel(survey.visibility)} ·{' '}
+          {String(survey.responseCount)} responses ·{' '}
+          {format(new Date(survey.createdAt), 'MMM d, yyyy').toLowerCase()}
         </p>
       </div>
-      <div className="flex gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <span
           className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_CLASS[surveyStatus(survey)])}
         >

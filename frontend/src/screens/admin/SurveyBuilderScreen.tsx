@@ -12,6 +12,7 @@ import {
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
+import { surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
@@ -67,10 +68,10 @@ export default function SurveyBuilderScreen() {
         <div>
           <h1 className="text-2xl font-medium tracking-tight">{currentSurvey.title}</h1>
           <p className="text-muted text-sm">
-            /{currentSurvey.slug} · {currentSurvey.visibility}
+            /{currentSurvey.slug} · {surveyVisibilityLabel(currentSurvey.visibility)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
             to={`/surveys/${currentSurvey.slug}`}
