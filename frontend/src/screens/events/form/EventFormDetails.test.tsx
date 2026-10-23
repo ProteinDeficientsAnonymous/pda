@@ -38,4 +38,18 @@ describe('EventFormDetails', () => {
     expect(screen.queryByText(/members only/)).not.toBeInTheDocument();
     expect(screen.queryByText(/invite only/)).not.toBeInTheDocument();
   });
+
+  it('nudges the planner while template placeholders remain', () => {
+    render(
+      <EventFormDetails
+        values={values({ description: 'meet at [MEETING SPOT]' })}
+        onChange={vi.fn()}
+        errors={{}}
+        typeLocked={false}
+      />,
+    );
+    expect(
+      screen.getByText(/fill in the \[bracketed\] bits before publishing/),
+    ).toBeInTheDocument();
+  });
 });

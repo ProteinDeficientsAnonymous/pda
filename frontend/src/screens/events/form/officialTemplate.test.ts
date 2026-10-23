@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
 import { EventType } from '@/models/event';
 
-import { walkTagIds, withOfficialTemplate } from './officialTemplate';
+import { hasTemplatePlaceholders, walkTagIds, withOfficialTemplate } from './officialTemplate';
 
 const templates = { officialWalk: 'walk copy', officialNonWalk: 'non-walk copy' };
 const WALK_ID = 'tag-walk';
@@ -77,5 +77,17 @@ describe('withOfficialTemplate', () => {
   it('does nothing until templates load', () => {
     const v = values({ eventType: EventType.Official });
     expect(withOfficialTemplate(v, [WALK_ID], undefined)).toBe(v);
+  });
+});
+
+describe('hasTemplatePlaceholders', () => {
+  it('spots uppercase bracketed placeholders', () => {
+    expect(hasTemplatePlaceholders('meet at [MEETING SPOT] at 6')).toBe(true);
+    expect(hasTemplatePlaceholders('about [X] miles')).toBe(true);
+  });
+
+  it('ignores filled-in text and lowercase brackets', () => {
+    expect(hasTemplatePlaceholders('meet at the park gate at 6')).toBe(false);
+    expect(hasTemplatePlaceholders('bring snacks [optional]')).toBe(false);
   });
 });

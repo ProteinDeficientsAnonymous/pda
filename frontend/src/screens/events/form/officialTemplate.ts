@@ -4,6 +4,12 @@ import { type EventTag, EventType } from '@/models/event';
 
 export const WALK_TAG_SLUG = 'walk';
 
+const PLACEHOLDER_PATTERN = /\[[^\]a-z]*[A-Z][^\]a-z]*\]/;
+
+export function hasTemplatePlaceholders(description: string): boolean {
+  return PLACEHOLDER_PATTERN.test(description);
+}
+
 export function walkTagIds(tags: readonly EventTag[] | undefined): string[] {
   return (tags ?? []).filter((t) => t.slug === WALK_TAG_SLUG).map((t) => t.id);
 }
