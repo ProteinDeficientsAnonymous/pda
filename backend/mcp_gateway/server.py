@@ -16,7 +16,7 @@ from users.models import User
 
 from mcp_gateway.provider import SCOPE, PdaOAuthProvider
 
-BASE_URL = settings.MCP_PUBLIC_BASE_URL
+BASE_URL = settings.FRONTEND_BASE_URL.rstrip("/")
 FORBIDDEN = "you don't have permission to do that"
 TOOL_PERMISSIONS: dict[str, tuple[str, ...]] = {}
 

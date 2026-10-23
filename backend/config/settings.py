@@ -246,11 +246,10 @@ BREVO_FROM_NAME = os.environ.get("BREVO_FROM_NAME", "pda")
 if IS_PRODUCTION and BREVO_API_KEY and not BREVO_FROM_EMAIL:
     raise ValueError("BREVO_FROM_EMAIL must be set when BREVO_API_KEY is configured")
 
-# Frontend URL used to construct magic-login links in transactional emails.
+# Public app origin: magic-login links and the MCP OAuth issuer/resource base.
 # In production, set to the public app URL (e.g. https://pda.example.com).
 # In dev/test, defaults to localhost:3000.
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
-MCP_PUBLIC_BASE_URL = os.environ.get("MCP_PUBLIC_BASE_URL", "http://localhost:8000")
 
 # Floor for the attendance-reminder clock — no one's anchor predates this date.
 # Movable until the program announcement date is final (see attendance-analytics-design.md).

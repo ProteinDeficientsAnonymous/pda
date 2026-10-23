@@ -20,7 +20,7 @@ from tests._mcp_helpers import REDIRECT
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 
-BASE = settings.MCP_PUBLIC_BASE_URL
+BASE = settings.FRONTEND_BASE_URL.rstrip("/")
 RESOURCE = f"{BASE}/mcp"
 
 
