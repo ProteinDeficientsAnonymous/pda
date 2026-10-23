@@ -73,6 +73,13 @@ describe('EventForm official description template', () => {
     expect(screen.getByLabelText('description')).toHaveValue('my own words');
   });
 
+  it('does not refill after the planner clears the template', async () => {
+    renderForm();
+    await userEvent.click(screen.getByLabelText('make it an official pda event'));
+    await userEvent.clear(screen.getByLabelText('description'));
+    expect(screen.getByLabelText('description')).toHaveValue('');
+  });
+
   it('leaves existing events alone', async () => {
     renderForm(makeEvent({ eventType: EventType.Community, description: '' }));
     await userEvent.click(screen.getByLabelText('make it an official pda event'));
