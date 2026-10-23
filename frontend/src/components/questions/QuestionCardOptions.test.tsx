@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { QuestionType } from '@/api/questionTypes';
@@ -21,6 +22,20 @@ function renderOptions(fieldType: string, options: string[]) {
   return { onChange, onCommit };
 }
 
+function StatefulOptions({ initial }: { initial: string[] }) {
+  const [options, setOptions] = useState(initial);
+  return (
+    <QuestionCardOptions
+      id="q1"
+      fieldType={QuestionType.Radio}
+      options={options}
+      disabled={false}
+      onChange={setOptions}
+      onCommit={vi.fn()}
+    />
+  );
+}
+
 describe('QuestionCardOptions', () => {
   it('commits the rows when an option loses focus', () => {
     const { onCommit } = renderOptions(QuestionType.Radio, ['tofu', 'tempeh']);
@@ -28,10 +43,13 @@ describe('QuestionCardOptions', () => {
     expect(onCommit).toHaveBeenCalledWith(['tofu', 'tempeh']);
   });
 
-  it('inserts an empty row after the current one on enter', () => {
-    const { onChange } = renderOptions(QuestionType.Radio, ['tofu', 'tempeh']);
+  it('inserts an empty row after the current one on enter and focuses it', () => {
+    render(<StatefulOptions initial={['tofu', 'tempeh']} />);
     fireEvent.keyDown(screen.getByLabelText('option 1'), { key: 'Enter' });
-    expect(onChange).toHaveBeenCalledWith(['tofu', '', 'tempeh']);
+    const inserted = screen.getByLabelText('option 2');
+    expect(inserted).toHaveValue('');
+    expect(inserted).toHaveFocus();
+    expect(screen.getByLabelText('option 3')).toHaveValue('tempeh');
   });
 
   it('removes a row and commits right away', () => {
