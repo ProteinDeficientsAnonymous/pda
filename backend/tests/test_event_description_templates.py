@@ -3,7 +3,7 @@ from community._event_description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
-from community.models import Event
+from community._field_limits import FieldLimit
 
 URL = "/api/community/event-description-templates/"
 
@@ -24,6 +24,4 @@ class TestGetEventDescriptionTemplates:
 
 @pytest.mark.parametrize("template", [OFFICIAL_WALK_TEMPLATE, OFFICIAL_NON_WALK_TEMPLATE])
 def test_templates_fit_event_description(template):
-    max_length = Event._meta.get_field("description").max_length
-    assert max_length is not None
-    assert len(template) <= max_length
+    assert len(template) <= FieldLimit.EVENT_DESCRIPTION
