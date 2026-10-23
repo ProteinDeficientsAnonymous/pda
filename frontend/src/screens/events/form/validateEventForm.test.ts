@@ -32,6 +32,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     coHostIds: [],
     tagIds: [],
     status: 'active',
+    isWalk: true,
     ...overrides,
   };
 }

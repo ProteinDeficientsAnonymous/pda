@@ -8,10 +8,17 @@ interface Props {
   onChange: (patch: Partial<EventFormValues>) => void;
   canTagOfficial: boolean;
   canTagClub: boolean;
+  showWalkToggle?: boolean;
 }
 
 // Single-valued event_type makes the toggles mutually exclusive; official/club force public and lock +1s off.
-export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: Props) {
+export function EventFormType({
+  values,
+  onChange,
+  canTagOfficial,
+  canTagClub,
+  showWalkToggle = false,
+}: Props) {
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
@@ -33,6 +40,15 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
           checked={values.eventType === EventType.Official}
           onChange={(checked) => {
             setType(checked ? EventType.Official : EventType.Community);
+          }}
+        />
+      ) : null}
+      {canTagOfficial && showWalkToggle && values.eventType === EventType.Official ? (
+        <Toggle
+          label="it's a walk"
+          checked={values.isWalk}
+          onChange={(checked) => {
+            onChange({ isWalk: checked });
           }}
         />
       ) : null}

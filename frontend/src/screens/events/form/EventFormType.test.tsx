@@ -116,4 +116,45 @@ describe('EventFormType', () => {
     expect(switches[0]).toHaveAttribute('aria-checked', 'true');
     expect(switches[1]).toHaveAttribute('aria-checked', 'false');
   });
+
+  it('shows the walk toggle, on by default, for a new official event', () => {
+    render(
+      <EventFormType
+        values={values({ eventType: EventType.Official })}
+        onChange={vi.fn()}
+        canTagOfficial
+        canTagClub={false}
+        showWalkToggle
+      />,
+    );
+    expect(screen.getByRole('switch', { name: "it's a walk" })).toBeChecked();
+  });
+
+  it('turning the walk toggle off patches isWalk', async () => {
+    const onChange = vi.fn();
+    render(
+      <EventFormType
+        values={values({ eventType: EventType.Official })}
+        onChange={onChange}
+        canTagOfficial
+        canTagClub={false}
+        showWalkToggle
+      />,
+    );
+    await userEvent.click(screen.getByRole('switch', { name: "it's a walk" }));
+    expect(onChange).toHaveBeenCalledWith({ isWalk: false });
+  });
+
+  it('hides the walk toggle unless the event is official', () => {
+    render(
+      <EventFormType
+        values={values()}
+        onChange={vi.fn()}
+        canTagOfficial
+        canTagClub={false}
+        showWalkToggle
+      />,
+    );
+    expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();
+  });
 });
