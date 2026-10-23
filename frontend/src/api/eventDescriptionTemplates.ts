@@ -10,6 +10,10 @@ export interface EventDescriptionTemplates {
   officialNonWalk: string;
 }
 
+export const eventDescriptionTemplateKeys = {
+  all: ['event-description-templates'] as const,
+};
+
 export async function fetchEventDescriptionTemplates(): Promise<EventDescriptionTemplates> {
   const { data } = await apiClient.get<WireTemplates>(
     '/api/community/event-description-templates/',
@@ -17,10 +21,11 @@ export async function fetchEventDescriptionTemplates(): Promise<EventDescription
   return { officialWalk: data.official_walk, officialNonWalk: data.official_non_walk };
 }
 
-export function useEventDescriptionTemplates() {
+export function useEventDescriptionTemplates(enabled: boolean) {
   return useQuery({
-    queryKey: ['event-description-templates'],
+    queryKey: eventDescriptionTemplateKeys.all,
     queryFn: fetchEventDescriptionTemplates,
     staleTime: Infinity,
+    enabled,
   });
 }

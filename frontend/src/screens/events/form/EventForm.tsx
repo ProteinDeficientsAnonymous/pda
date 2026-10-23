@@ -131,7 +131,7 @@ export function EventForm({ existing }: Props) {
   const uploadPhoto = useUploadEventPhoto();
   const { confirm, element: confirmElement } = useConfirm();
   const { data: tags } = useEventTags();
-  const { data: templates } = useEventDescriptionTemplates();
+  const { data: templates } = useEventDescriptionTemplates(!existing && canTagOfficial);
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
