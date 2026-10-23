@@ -72,3 +72,15 @@ export function questionOptionsError(
 export function normalizeQuestionOptions(options: readonly string[]): string[] {
   return options.map((option) => option.trim()).filter(Boolean);
 }
+
+export const RATING_SCALE_SIZE = 5;
+
+/** One label slot per star; blanks keep their position so labels stay on the right star. */
+export function ratingLabelSlots(options: readonly string[]): string[] {
+  return Array.from({ length: RATING_SCALE_SIZE }, (_, i) => options[i] ?? '');
+}
+
+export function normalizeRatingLabels(options: readonly string[]): string[] {
+  const labels = ratingLabelSlots(options).map((label) => label.trim());
+  return labels.some(Boolean) ? labels : [];
+}
