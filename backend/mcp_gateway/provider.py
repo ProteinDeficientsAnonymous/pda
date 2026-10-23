@@ -37,6 +37,10 @@ SCOPE = "pda"
 LAST_USED_RESOLUTION = timedelta(minutes=1)
 
 
+def _user_may_act(user: User) -> bool:
+    return user.is_active and account_block_code(user) is None
+
+
 class AuthRequestNotPending(Exception):
     pass
 
@@ -175,7 +179,7 @@ class PdaOAuthProvider(
             )
             .afirst()
         )
-        if row is None or account_block_code(row.grant.user) is not None:
+        if row is None or not _user_may_act(row.grant.user):
             return None
         grant = row.grant
         if grant.last_used_at is None or now - grant.last_used_at >= LAST_USED_RESOLUTION:
@@ -193,7 +197,7 @@ class PdaOAuthProvider(
         self, client: OAuthClientInformationFull, refresh_token: str
     ) -> RefreshToken | None:
         row = await (
-            OAuthToken.objects.select_related("grant")
+            OAuthToken.objects.select_related("grant__user")
             .filter(
                 token_hash=hash_secret(refresh_token),
                 kind=OAuthToken.Kind.REFRESH,
@@ -204,7 +208,7 @@ class PdaOAuthProvider(
             )
             .afirst()
         )
-        if row is None:
+        if row is None or not _user_may_act(row.grant.user):
             return None
         return RefreshToken(
             token=refresh_token,
@@ -212,7 +216,7 @@ class PdaOAuthProvider(
             scopes=row.scopes,
             expires_at=int(row.expires_at.timestamp()),
             resource=row.resource or None,
-            subject=str(row.grant.user_id),
+            subject=str(row.grant.user.pk),
         )
 
     async def exchange_refresh_token(
@@ -227,9 +231,13 @@ class PdaOAuthProvider(
             revoked_at__isnull=True,
             grant__revoked_at__isnull=True,
         )
-        row = await tokens.afirst()
-        if row is None or not await tokens.filter(pk=row.pk).aupdate(revoked_at=timezone.now()):
-            raise TokenError(error="invalid_grant", error_description="refresh token revoked")
+        row = await tokens.select_related("grant__user").afirst()
+        if (
+            row is None
+            or not _user_may_act(row.grant.user)
+            or not await tokens.filter(pk=row.pk).aupdate(revoked_at=timezone.now())
+        ):
+            raise TokenError(error="invalid_grant", error_description="refresh token rejected")
         return await _issue_token_pair(row.grant_id, scopes, row.resource)
 
     async def revoke_token(self, token: AccessToken | RefreshToken) -> None:

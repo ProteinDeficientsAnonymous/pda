@@ -147,15 +147,24 @@ def test_load_access_token_returns_subject(test_user):
     assert asyncio.run(provider.load_access_token(tokens.refresh_token)) is None
 
 
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [("is_paused", True), ("archived_at", "now"), ("needs_onboarding", True)],
-)
+BLOCKED_STATES = [
+    ("is_paused", True),
+    ("archived_at", "now"),
+    ("needs_onboarding", True),
+    ("is_active", False),
+]
+
+
+def _block(user, field: str, value) -> None:
+    setattr(user, field, timezone.now() if value == "now" else value)
+    user.save()
+
+
+@pytest.mark.parametrize(("field", "value"), BLOCKED_STATES)
 def test_load_access_token_rejects_blocked_account(test_user, field, value):
     provider = PdaOAuthProvider()
     tokens = _connect(provider, test_user)
-    setattr(test_user, field, timezone.now() if value == "now" else value)
-    test_user.save()
+    _block(test_user, field, value)
     assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
 
 
@@ -226,3 +235,16 @@ def test_revoke_token(test_user):
     assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
     asyncio.run(provider.revoke_token(refresh))
     assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token)) is None
+
+
+@pytest.mark.parametrize(("field", "value"), BLOCKED_STATES)
+def test_refresh_token_rejected_for_blocked_account(test_user, field, value):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    refresh = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
+    assert refresh is not None
+    _block(test_user, field, value)
+    assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token)) is None
+    with pytest.raises(TokenError):
+        asyncio.run(provider.exchange_refresh_token(_client_info(), refresh, ["pda"]))
