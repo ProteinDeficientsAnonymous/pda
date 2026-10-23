@@ -5,19 +5,19 @@ from pydantic import BaseModel
 
 router = Router()
 
-OFFICIAL_WALK_TEMPLATE = """Come join us on a walk around [neighborhood / park]!
+OFFICIAL_WALK_TEMPLATE = """Come join us on a walk around [NEIGHBORHOOD / PARK]!
 
-Price includes [what we're ordering, per person].
+Price includes [WHAT WE'RE ORDERING, PER PERSON].
 
-We'll walk [route, e.g. along the river] and then head to [end spot]!
+We'll walk [ROUTE, E.G. ALONG THE RIVER] and then head to [END SPOT]!
 
 The route is about [X] miles and we'll walk at a social pace.
 
 Only vegans allowed 🌱
 
-Meet up at [meeting spot] at [meet time]. We'll start walking at [start time, 15 min after meet time].
+Meet up at [MEETING SPOT] at [MEET TIME]. We'll start walking at [START TIME, 15 MIN AFTER MEET TIME].
 
-Route: [google maps link]
+Route: [GOOGLE MAPS LINK]
 
 We'll share our location in the WhatsApp community when we start. Please DM a host if you need access.
 
@@ -31,7 +31,7 @@ Check us out on IG @protein.deficients.anonymous!"""
 
 OFFICIAL_NON_WALK_TEMPLATE = """Another meetup of Protein Deficients Anonymous!
 
-Price includes [what we're ordering, per person]. [delete this line and the refund note below if the event is free]
+Price includes [WHAT WE'RE ORDERING, PER PERSON]. [DELETE THIS LINE AND THE REFUND NOTE BELOW IF THE EVENT IS FREE]
 
 Only vegans allowed 🌱
 
