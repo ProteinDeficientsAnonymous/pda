@@ -11,3 +11,10 @@ class ConnectRequestOut(BaseModel):
 
 class ConnectRedirectOut(BaseModel):
     redirect_url: str
+
+
+class ConnectedAppOut(BaseModel):
+    id: str
+    client_name: str
+    created_at: datetime
+    last_used_at: datetime | None

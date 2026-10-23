@@ -13,9 +13,9 @@ from mcp.server.auth.provider import construct_redirect_uri
 from ninja import Router
 from ninja.responses import Status
 
-from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest
+from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant
 from mcp_gateway.provider import AuthRequestNotPending, issue_auth_code
-from mcp_gateway.schemas import ConnectRedirectOut, ConnectRequestOut
+from mcp_gateway.schemas import ConnectedAppOut, ConnectRedirectOut, ConnectRequestOut
 from mcp_gateway.tokens import hash_secret
 
 router = Router()
@@ -97,3 +97,26 @@ def deny_request(request, request_id: UUID):
         row.params["redirect_uri"], error="access_denied", state=row.params.get("state")
     )
     return Status(200, ConnectRedirectOut(redirect_url=redirect_url))
+
+
+def _app_out(grant: OAuthGrant) -> ConnectedAppOut:
+    return ConnectedAppOut(
+        id=str(grant.id),
+        client_name=grant.client.client_name,
+        created_at=grant.created_at,
+        last_used_at=grant.last_used_at,
+    )
+
+
+def _list_apps(user_id: UUID) -> list[ConnectedAppOut]:
+    grants = (
+        OAuthGrant.objects.filter(user_id=user_id, revoked_at__isnull=True)
+        .select_related("client")
+        .order_by("-created_at")
+    )
+    return [_app_out(g) for g in grants]
+
+
+@router.get("/apps/", response={200: list[ConnectedAppOut]}, auth=gated_jwt)
+def list_my_apps(request):
+    return Status(200, _list_apps(request.auth.pk))

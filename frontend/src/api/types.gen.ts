@@ -2193,6 +2193,23 @@ export interface paths {
         patch: operations["community__whatsapp_link_update_whatsapp_link"];
         trace?: never;
     };
+    "/api/connect/apps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Apps */
+        get: operations["mcp_gateway_api_list_my_apps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/connect/requests/{request_id}/": {
         parameters: {
             query?: never;
@@ -2723,6 +2740,20 @@ export interface components {
             expires_at: string;
             /** Redirect Host */
             redirect_host: string;
+        };
+        /** ConnectedAppOut */
+        ConnectedAppOut: {
+            /** Client Name */
+            client_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Last Used At */
+            last_used_at: string | null;
         };
         /**
          * ConsentType
@@ -12323,6 +12354,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    mcp_gateway_api_list_my_apps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectedAppOut"][];
                 };
             };
         };
