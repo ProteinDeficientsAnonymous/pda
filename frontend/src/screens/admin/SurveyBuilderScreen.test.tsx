@@ -44,6 +44,8 @@ vi.mock('@/components/SortableList', () => ({
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPut = vi.mocked(apiClient.put);
 const mockedDelete = vi.mocked(apiClient.delete);
+const mockedPost = vi.mocked(apiClient.post);
+const mockedPatch = vi.mocked(apiClient.patch);
 
 function renderScreen(surveyId = 'srv-1') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -81,7 +83,7 @@ describe('SurveyBuilderScreen', () => {
   it('reorders questions via the sortable list and calls the reorder endpoint', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
-    await screen.findByText('first');
+    await screen.findByDisplayValue('first');
 
     fireEvent.click(screen.getByRole('button', { name: 'simulate reorder' }));
 
@@ -95,7 +97,7 @@ describe('SurveyBuilderScreen', () => {
   it('asks for confirmation before deleting a question, then deletes on confirm', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
-    await screen.findByText('first');
+    await screen.findByDisplayValue('first');
 
     const [firstDeleteButton] = screen.getAllByRole('button', { name: 'delete' });
     fireEvent.click(firstDeleteButton!);
@@ -113,7 +115,7 @@ describe('SurveyBuilderScreen', () => {
   it('does not delete when the confirmation is cancelled', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
-    await screen.findByText('first');
+    await screen.findByDisplayValue('first');
 
     const [firstDeleteButton] = screen.getAllByRole('button', { name: 'delete' });
     fireEvent.click(firstDeleteButton!);
@@ -125,5 +127,124 @@ describe('SurveyBuilderScreen', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
     expect(mockedDelete).not.toHaveBeenCalled();
+  });
+
+  it('adds a blank question inline without opening a dialog', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPost.mockResolvedValueOnce({ data: { id: 'q3' } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.click(screen.getByRole('button', { name: '+ add question' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith('/api/community/surveys/srv-1/questions/', {
+        label: 'untitled question',
+        field_type: 'text',
+        options: [],
+        required: false,
+        show_if: null,
+      });
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('saves an edited label when the field loses focus', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPatch.mockResolvedValueOnce({ data: {} });
+    renderScreen();
+    const input = await screen.findByDisplayValue('first');
+
+    fireEvent.change(input, { target: { value: 'first, renamed' } });
+    expect(mockedPatch).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledWith('/api/community/surveys/srv-1/questions/q1/', {
+        label: 'first, renamed',
+        field_type: 'text',
+        options: [],
+        required: false,
+        show_if: null,
+      });
+    });
+  });
+
+  it('duplicates a question right below the original', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPost.mockResolvedValueOnce({ data: { id: 'q1-copy' } });
+    mockedPut.mockResolvedValueOnce({ data: [] });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    const [firstDuplicate] = screen.getAllByRole('button', { name: 'duplicate' });
+    fireEvent.click(firstDuplicate!);
+
+    await waitFor(() => {
+      expect(mockedPut).toHaveBeenCalledWith('/api/community/surveys/srv-1/questions/order/', {
+        question_ids: ['q1', 'q1-copy', 'q2'],
+      });
+    });
+    expect(mockedPost).toHaveBeenCalledWith(
+      '/api/community/surveys/srv-1/questions/',
+      expect.objectContaining({ label: 'first' }),
+    );
+  });
+
+  it('locks question editing once the poll is finalized', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        ...wireSurvey,
+        poll_result: {
+          id: 'pr-1',
+          winning_datetime: '2026-11-01T18:00:00Z',
+          finalized_by_id: null,
+          finalized_at: '2026-10-30T18:00:00Z',
+        },
+      },
+    });
+    renderScreen();
+    const input = await screen.findByDisplayValue('first');
+
+    expect(input).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '+ add question' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'delete' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a just-edited label when the condition is changed right after', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        ...wireSurvey,
+        questions: [
+          {
+            id: 'q1',
+            label: 'first',
+            field_type: 'radio',
+            options: ['yes', 'no'],
+            required: false,
+            display_order: 0,
+          },
+          { id: 'q2', label: 'second', field_type: 'text', required: false, display_order: 1 },
+        ],
+      },
+    });
+    mockedPatch.mockResolvedValue({ data: {} });
+    renderScreen();
+    const input = await screen.findByDisplayValue('second');
+
+    fireEvent.change(input, { target: { value: 'second, renamed' } });
+    fireEvent.blur(input);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'only show when' }));
+
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledTimes(2);
+    });
+    expect(mockedPatch).toHaveBeenLastCalledWith(
+      '/api/community/surveys/srv-1/questions/q2/',
+      expect.objectContaining({
+        label: 'second, renamed',
+        show_if: { question_id: 'q1', operator: 'equals', value: 'yes' },
+      }),
+    );
   });
 });
