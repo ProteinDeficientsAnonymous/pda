@@ -11,6 +11,9 @@ from community._event_actions import router as event_actions_router
 from community._event_blasts import router as event_blasts_router
 from community._event_cohost_invites import router as event_cohost_invites_router
 from community._event_comments import router as event_comments_router
+from community._event_description_templates import (
+    router as event_description_templates_router,
+)
 from community._event_flags import router as event_flags_router
 
 # Re-export symbols imported directly in tests
@@ -81,6 +84,7 @@ router.add_router("", attendance_import_router)
 router.add_router("", attendance_mark_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
+router.add_router("", event_description_templates_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
