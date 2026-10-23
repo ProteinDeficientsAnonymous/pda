@@ -94,6 +94,17 @@ def pda_tool(*permissions: str, **tool_kwargs: Any) -> Callable[[_Fn], _Fn]:
     return decorator
 
 
+def _profile(user: User) -> dict[str, Any]:
+    roles = list(user.roles.all())
+    keys = {key for role in roles for key in role.effective_permissions}
+    return {"name": user.full_name, "roles": [r.name for r in roles], "permissions": sorted(keys)}
+
+
+@pda_tool(description="show who you're signed in to pda as, with your roles and permissions")
+async def whoami() -> dict[str, Any]:
+    return await sync_to_async(_profile)(await current_user())
+
+
 def build_mcp_app() -> Starlette:
     return pda_mcp.streamable_http_app(
         stateless_http=True,

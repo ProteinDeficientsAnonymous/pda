@@ -90,3 +90,13 @@ def test_tool_registered_outside_pda_tool_is_hidden_and_denied(test_user, as_use
             asyncio.run(pda_mcp.call_tool("unguarded", {}))
     finally:
         pda_mcp.remove_tool("unguarded")
+
+
+def test_whoami_reports_name_roles_and_permissions(manage_users_user, as_user):
+    as_user(manage_users_user)
+    result = asyncio.run(pda_mcp.call_tool("whoami", {}))
+    assert result.structured_content == {  # type: ignore[union-attr]
+        "name": "Admin User",
+        "roles": ["admin_mgr"],
+        "permissions": sorted([PermissionKey.CREATE_USER, PermissionKey.MANAGE_USERS]),
+    }
