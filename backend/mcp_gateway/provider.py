@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -7,12 +9,27 @@ from mcp.server.auth.provider import (
     AuthorizationParams,
     OAuthAuthorizationServerProvider,
     RefreshToken,
+    TokenError,
 )
 from mcp.shared.auth import OAuthClientInformationFull
+from mcp.shared.auth import OAuthToken as TokenResponse
 from users.models import User
 
-from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthClient, OAuthGrant
-from mcp_gateway.tokens import AUTH_CODE_TTL, AUTH_REQUEST_TTL, hash_secret, new_secret
+from mcp_gateway.models import (
+    OAuthAuthCode,
+    OAuthAuthRequest,
+    OAuthClient,
+    OAuthGrant,
+    OAuthToken,
+)
+from mcp_gateway.tokens import (
+    ACCESS_TTL,
+    AUTH_CODE_TTL,
+    AUTH_REQUEST_TTL,
+    REFRESH_TTL,
+    hash_secret,
+    new_secret,
+)
 
 SCOPE = "pda"
 
@@ -48,6 +65,33 @@ def issue_auth_code(auth_request: OAuthAuthRequest, user: User) -> str:
     return code
 
 
+async def _issue_token_pair(grant_id: UUID, scopes: list[str], resource: str) -> TokenResponse:
+    now = timezone.now()
+    access, refresh = new_secret(), new_secret()
+    await OAuthToken.objects.abulk_create(
+        [
+            OAuthToken(
+                token_hash=hash_secret(secret),
+                kind=kind,
+                grant_id=grant_id,
+                scopes=scopes,
+                resource=resource,
+                expires_at=now + ttl,
+            )
+            for secret, kind, ttl in (
+                (access, OAuthToken.Kind.ACCESS, ACCESS_TTL),
+                (refresh, OAuthToken.Kind.REFRESH, REFRESH_TTL),
+            )
+        ]
+    )
+    return TokenResponse(
+        access_token=access,
+        refresh_token=refresh,
+        expires_in=int(ACCESS_TTL.total_seconds()),
+        scope=" ".join(scopes),
+    )
+
+
 class PdaOAuthProvider(
     OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, AccessToken]
 ):
@@ -72,3 +116,45 @@ class PdaOAuthProvider(
             expires_at=timezone.now() + AUTH_REQUEST_TTL,
         )
         return f"{settings.FRONTEND_BASE_URL}/connect/authorize?request={req.id}"
+
+    async def load_authorization_code(
+        self, client: OAuthClientInformationFull, authorization_code: str
+    ) -> AuthorizationCode | None:
+        row = await (
+            OAuthAuthCode.objects.select_related("grant")
+            .filter(
+                code_hash=hash_secret(authorization_code),
+                grant__client__client_id=client.client_id,
+                grant__revoked_at__isnull=True,
+                used_at__isnull=True,
+                expires_at__gt=timezone.now(),
+            )
+            .afirst()
+        )
+        if row is None:
+            return None
+        return AuthorizationCode(
+            code=authorization_code,
+            scopes=row.scopes,
+            expires_at=row.expires_at.timestamp(),
+            client_id=client.client_id,
+            code_challenge=row.code_challenge,
+            redirect_uri=row.redirect_uri,
+            redirect_uri_provided_explicitly=row.redirect_uri_provided_explicitly,
+            resource=row.resource or None,
+            subject=str(row.grant.user_id),
+        )
+
+    async def exchange_authorization_code(
+        self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode
+    ) -> TokenResponse:
+        codes = OAuthAuthCode.objects.filter(
+            code_hash=hash_secret(authorization_code.code),
+            used_at__isnull=True,
+            grant__revoked_at__isnull=True,
+        )
+        row = await codes.afirst()
+        # The conditional update is the single-use claim; a concurrent exchange gets 0 rows.
+        if row is None or not await codes.filter(pk=row.pk).aupdate(used_at=timezone.now()):
+            raise TokenError(error="invalid_grant", error_description="code already used")
+        return await _issue_token_pair(row.grant_id, row.scopes, row.resource)
