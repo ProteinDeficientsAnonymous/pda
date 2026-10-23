@@ -48,6 +48,8 @@ export interface EventFormValues {
   coHostIds: string[];
   tagIds: string[];
   status: EventStatus;
+  // form-only: picks the official description template, never sent to the api
+  isWalk: boolean;
 }
 
 type CreateEventValues = EventFormValues & {
@@ -321,6 +323,7 @@ export function emptyEventFormValues(): EventFormValues {
     coHostIds: [],
     tagIds: [],
     status: 'active',
+    isWalk: true,
   };
 }
 
@@ -385,5 +388,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     coHostIds: e.coHostIds,
     tagIds: e.tags.map((t) => t.id),
     status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
+    isWalk: true,
   };
 }
