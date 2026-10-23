@@ -295,3 +295,14 @@ describe('SurveyAdminListScreen create dialog', () => {
     expect(screen.getByLabelText('slug')).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('SurveyAdminListScreen row meta', () => {
+  beforeEach(() => {
+    surveysMock = [makeSurvey({ createdAt: '2026-03-15T12:00:00Z', responseCount: 2 })];
+  });
+
+  it('shows visibility and the created date in lowercase', () => {
+    renderScreen();
+    expect(screen.getByText(/members only · 2 responses · mar 15, 2026/)).toBeInTheDocument();
+  });
+});

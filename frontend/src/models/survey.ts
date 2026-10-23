@@ -26,3 +26,7 @@ export function surveyStatus(
   }
   return 'active';
 }
+
+export function surveyVisibilityLabel(visibility: string): string {
+  return visibility.replaceAll('_', ' ');
+}
