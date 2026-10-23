@@ -54,3 +54,37 @@ class OAuthGrant(models.Model):
 
     class Meta:
         app_label = "mcp_gateway"
+
+
+class OAuthAuthCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code_hash = models.CharField(max_length=64, unique=True)
+    grant = models.ForeignKey(OAuthGrant, on_delete=models.CASCADE, related_name="auth_codes")
+    scopes = models.JSONField(default=list)
+    code_challenge = models.CharField(max_length=255)
+    redirect_uri = models.TextField()
+    redirect_uri_provided_explicitly = models.BooleanField(default=True)
+    resource = models.TextField(blank=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "mcp_gateway"
+
+
+class OAuthToken(models.Model):
+    class Kind(models.TextChoices):
+        ACCESS = "access", "Access"
+        REFRESH = "refresh", "Refresh"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    token_hash = models.CharField(max_length=64, unique=True)
+    kind = models.CharField(max_length=16, choices=Kind)
+    grant = models.ForeignKey(OAuthGrant, on_delete=models.CASCADE, related_name="tokens")
+    scopes = models.JSONField(default=list)
+    resource = models.TextField(blank=True)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "mcp_gateway"
