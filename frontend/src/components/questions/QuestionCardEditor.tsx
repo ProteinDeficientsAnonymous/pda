@@ -44,8 +44,18 @@ function optionsRequired(fieldType: string): boolean {
 }
 
 function seedOptions(fieldType: string): string[] {
-  if (fieldType === QuestionType.Rating || fieldType === QuestionType.DatetimePoll) return [];
-  return ['option 1'];
+  return optionsRequired(fieldType) && fieldType !== QuestionType.DatetimePoll ? ['option 1'] : [];
+}
+
+const CHOICE_TYPES: ReadonlySet<string> = new Set([
+  QuestionType.Radio,
+  QuestionType.Select,
+  QuestionType.Checkbox,
+]);
+
+// Choice options carry over between choice types; poll dates and star labels don't.
+function sharesOptions(from: string, to: string): boolean {
+  return CHOICE_TYPES.has(from) && CHOICE_TYPES.has(to);
 }
 
 function normalize<T extends string>(values: QuestionAuthorValues<T>): QuestionAuthorValues<T> {
@@ -83,6 +93,7 @@ export function QuestionCardEditor<T extends string>({
   }));
   const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
   const lastSaved = useRef(JSON.stringify(normalize(value)));
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const labelRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -91,7 +102,7 @@ export function QuestionCardEditor<T extends string>({
     labelRef.current?.select();
   }, [focusOnMount]);
 
-  async function commit(next: QuestionAuthorValues<T>) {
+  function commit(next: QuestionAuthorValues<T>) {
     setDraft(next);
     const normalized = normalize(next);
     const error = validationError(normalized);
@@ -99,9 +110,14 @@ export function QuestionCardEditor<T extends string>({
       setStatus({ kind: 'error', message: error });
       return;
     }
+    // Queued so each save compares against the previous one's result, not a stale lastSaved.
+    saveQueue.current = saveQueue.current.then(() => persist(normalized));
+  }
+
+  async function persist(normalized: QuestionAuthorValues<T>) {
     const serialized = JSON.stringify(normalized);
     if (serialized === lastSaved.current) {
-      if (status.kind === 'error') setStatus({ kind: 'idle' });
+      setStatus((s) => (s.kind === 'error' ? { kind: 'idle' } : s));
       return;
     }
     setStatus({ kind: 'saving' });
@@ -115,12 +131,10 @@ export function QuestionCardEditor<T extends string>({
   }
 
   function changeType(fieldType: T) {
-    const keepOptions = draft.options.some((o) => o.trim());
-    const options =
-      questionTypeWantsOptions(fieldType as QuestionType) && !keepOptions
-        ? seedOptions(fieldType)
-        : draft.options;
-    void commit({ ...draft, fieldType, options });
+    const keepOptions =
+      sharesOptions(draft.fieldType, fieldType) && draft.options.some((o) => o.trim());
+    const options = keepOptions ? draft.options : seedOptions(fieldType);
+    commit({ ...draft, fieldType, options });
   }
 
   const wantsOptions = questionTypeWantsOptions(draft.fieldType as QuestionType);
@@ -148,7 +162,7 @@ export function QuestionCardEditor<T extends string>({
               setDraft((d) => ({ ...d, label: e.target.value }));
             }}
             onBlur={() => {
-              void commit(draft);
+              commit(draft);
             }}
           />
         </div>
@@ -177,7 +191,7 @@ export function QuestionCardEditor<T extends string>({
             setDraft((d) => ({ ...d, options }));
           }}
           onCommit={(options) => {
-            void commit({ ...draft, options });
+            commit({ ...draft, options });
           }}
         />
       ) : null}
@@ -203,7 +217,7 @@ export function QuestionCardEditor<T extends string>({
               label="required"
               checked={draft.required}
               onChange={(required) => {
-                void commit({ ...draft, required });
+                commit({ ...draft, required });
               }}
             />
           </>

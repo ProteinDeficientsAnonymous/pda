@@ -84,6 +84,66 @@ describe('QuestionCardEditor', () => {
     });
   });
 
+  it('clears choice options when switching to a datetime poll', async () => {
+    const { onSave } = renderCard({ fieldType: QuestionType.Radio, options: ['tofu', 'tempeh'] });
+    fireEvent.change(screen.getByLabelText('question type'), {
+      target: { value: QuestionType.DatetimePoll },
+    });
+    fireEvent.change(screen.getByLabelText('question type'), {
+      target: { value: QuestionType.Checkbox },
+    });
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldType: QuestionType.Checkbox, options: ['option 1'] }),
+      );
+    });
+    expect(screen.queryByDisplayValue('tofu')).not.toBeInTheDocument();
+  });
+
+  it('keeps options when switching between choice types', async () => {
+    const { onSave } = renderCard({ fieldType: QuestionType.Radio, options: ['tofu', 'tempeh'] });
+    fireEvent.change(screen.getByLabelText('question type'), {
+      target: { value: QuestionType.Checkbox },
+    });
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldType: QuestionType.Checkbox, options: ['tofu', 'tempeh'] }),
+      );
+    });
+  });
+
+  it('saves an edit made while the previous save is in flight', async () => {
+    let resolveFirst: () => void = () => undefined;
+    const onSave = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    render(
+      <QuestionCardEditor
+        id="q1"
+        value={{ label: 'x', fieldType: QuestionType.Text, options: [], required: false }}
+        typeOptions={TYPE_OPTIONS}
+        onSave={onSave}
+      />,
+    );
+    const toggle = screen.getByRole('switch', { name: 'required' });
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(toggle);
+    resolveFirst();
+    await waitFor(() => {
+      expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ required: false }));
+    });
+    expect(onSave).toHaveBeenCalledTimes(2);
+  });
+
   it('allows a rating with no star labels', async () => {
     const { onSave } = renderCard();
     fireEvent.change(screen.getByLabelText('question type'), {
