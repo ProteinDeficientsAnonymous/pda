@@ -1696,6 +1696,24 @@
         "title": "EventCommentReplyOut",
         "type": "object"
       },
+      "EventDescriptionTemplatesOut": {
+        "properties": {
+          "official_non_walk": {
+            "title": "Official Non Walk",
+            "type": "string"
+          },
+          "official_walk": {
+            "title": "Official Walk",
+            "type": "string"
+          }
+        },
+        "required": [
+          "official_walk",
+          "official_non_walk"
+        ],
+        "title": "EventDescriptionTemplatesOut",
+        "type": "object"
+      },
       "EventFlagIn": {
         "properties": {
           "reason": {
@@ -10072,6 +10090,33 @@
           }
         ],
         "summary": "Report Error",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-description-templates/": {
+      "get": {
+        "operationId": "community__event_description_templates_get_event_description_templates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDescriptionTemplatesOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Description Templates",
         "tags": [
           "community"
         ]
