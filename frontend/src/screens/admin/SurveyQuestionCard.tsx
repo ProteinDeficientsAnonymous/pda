@@ -20,7 +20,6 @@ interface Props {
   question: SurveyQuestion;
   questions: SurveyQuestion[];
   focusOnMount: boolean;
-  locked: boolean;
   onDuplicate: () => void;
   onDelete: () => void;
 }
@@ -30,7 +29,6 @@ export function SurveyQuestionCard({
   question,
   questions,
   focusOnMount,
-  locked,
   onDuplicate,
   onDelete,
 }: Props) {
@@ -75,34 +73,31 @@ export function SurveyQuestionCard({
       value={initial}
       typeOptions={TYPE_OPTIONS}
       focusOnMount={focusOnMount}
-      disabled={locked}
       onDuplicate={onDuplicate}
       onDelete={onDelete}
       onSave={(values) => enqueue(values, latestShowIf.current)}
       extraFields={
-        locked ? null : (
-          <div className="flex flex-col gap-1">
-            <SurveyConditionPicker
-              questions={questions}
-              editing={question}
-              value={showIf}
-              onChange={(next) => {
-                setShowIf(next);
-                setConditionError(null);
-                enqueue(latest.current, next).catch((err: unknown) => {
-                  setConditionError(
-                    extractApiErrorOr(err, "couldn't save the condition — try again"),
-                  );
-                });
-              }}
-            />
-            {conditionError ? (
-              <p role="alert" className="text-destructive text-xs">
-                {conditionError}
-              </p>
-            ) : null}
-          </div>
-        )
+        <div className="flex flex-col gap-1">
+          <SurveyConditionPicker
+            questions={questions}
+            editing={question}
+            value={showIf}
+            onChange={(next) => {
+              setShowIf(next);
+              setConditionError(null);
+              enqueue(latest.current, next).catch((err: unknown) => {
+                setConditionError(
+                  extractApiErrorOr(err, "couldn't save the condition — try again"),
+                );
+              });
+            }}
+          />
+          {conditionError ? (
+            <p role="alert" className="text-destructive text-xs">
+              {conditionError}
+            </p>
+          ) : null}
+        </div>
       }
     />
   );

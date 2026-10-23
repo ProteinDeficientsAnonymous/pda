@@ -40,7 +40,6 @@ export default function SurveyBuilderScreen() {
   if (isError) return <ContentError message="couldn't load survey — try refreshing" />;
 
   const currentSurvey = survey;
-  const locked = currentSurvey.pollResult !== null;
 
   function onReorder(nextIds: string[]) {
     reorder.mutate(nextIds);
@@ -142,7 +141,7 @@ export default function SurveyBuilderScreen() {
 
       {currentSurvey.pollResult ? (
         <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized — the survey is locked
+          this poll has been finalized
         </div>
       ) : null}
 
@@ -168,7 +167,6 @@ export default function SurveyBuilderScreen() {
                 question={q}
                 questions={currentSurvey.questions}
                 focusOnMount={q.id === focusId}
-                locked={locked}
                 onDuplicate={() => {
                   void duplicate(q).catch(() => undefined);
                 }}
@@ -186,18 +184,16 @@ export default function SurveyBuilderScreen() {
           </p>
         ) : null}
 
-        {locked ? null : (
-          <button
-            type="button"
-            disabled={create.isPending}
-            onClick={() => {
-              void addQuestion().catch(() => undefined);
-            }}
-            className="border-border-strong text-foreground-secondary hover:bg-surface-dim mt-3 w-full rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50"
-          >
-            {create.isPending ? 'adding…' : '+ add question'}
-          </button>
-        )}
+        <button
+          type="button"
+          disabled={create.isPending}
+          onClick={() => {
+            void addQuestion().catch(() => undefined);
+          }}
+          className="border-border-strong text-foreground-secondary hover:bg-surface-dim mt-3 w-full rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50"
+        >
+          {create.isPending ? 'adding…' : '+ add question'}
+        </button>
       </section>
 
       <SurveySettingsDialog

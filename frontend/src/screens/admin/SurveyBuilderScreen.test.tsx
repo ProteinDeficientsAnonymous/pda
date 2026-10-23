@@ -208,7 +208,7 @@ describe('SurveyBuilderScreen', () => {
     expect(mockedPost).toHaveBeenCalledTimes(1);
   });
 
-  it('locks question editing once the poll is finalized', async () => {
+  it('keeps questions editable after the poll is finalized', async () => {
     mockedGet.mockResolvedValue({
       data: {
         ...wireSurvey,
@@ -223,9 +223,10 @@ describe('SurveyBuilderScreen', () => {
     renderScreen();
     const input = await screen.findByDisplayValue('first');
 
-    expect(input).toBeDisabled();
-    expect(screen.queryByRole('button', { name: '+ add question' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'delete' })).not.toBeInTheDocument();
+    expect(screen.getByText('this poll has been finalized')).toBeInTheDocument();
+    expect(input).toBeEnabled();
+    expect(screen.getByRole('button', { name: '+ add question' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'delete' })).toHaveLength(2);
   });
 
   it('keeps a just-edited label when the condition is changed right after', async () => {
