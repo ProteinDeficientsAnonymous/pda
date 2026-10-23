@@ -1,11 +1,15 @@
 """Tests for the SSE notification stream endpoint + its single-use ticket flow."""
 
+import asyncio
 from datetime import timedelta
 
+import psycopg
 import pytest
+from django.conf import settings
 from django.core.cache import caches
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications import sse
 from notifications.models import SseTicket
 from notifications.sse import _format_notify_for_user
 
@@ -107,3 +111,35 @@ class TestSseStreamAuth:
         response = api_client.get(f"/api/notifications/stream/?ticket={ticket.token}")
         assert response.status_code == 401
         assert response.json()["detail"] == "invalid ticket"
+
+
+@pytest.mark.skipif(
+    "postgresql" not in settings.DATABASES["default"]["ENGINE"],
+    reason="LISTEN/NOTIFY requires PostgreSQL",
+)
+@pytest.mark.django_db
+class TestSseStreamLoop:
+    def test_stream_delivers_notify_after_heartbeat(self, monkeypatch):
+        monkeypatch.setattr(sse, "_HEARTBEAT_INTERVAL", 0.2)
+
+        async def run() -> list[str]:
+            stream = sse._sse_generator("user-1")
+            try:
+                frames = [
+                    await asyncio.wait_for(anext(stream), timeout=5),
+                    await asyncio.wait_for(anext(stream), timeout=5),
+                ]
+                async with await psycopg.AsyncConnection.connect(
+                    sse._build_async_dsn(), autocommit=True
+                ) as notifier:
+                    await notifier.execute("SELECT pg_notify('notifications', 'user-1')")
+                while not frames[-1].startswith("event: notification"):
+                    frames.append(await asyncio.wait_for(anext(stream), timeout=5))
+                return frames
+            finally:
+                await stream.aclose()
+
+        frames = asyncio.run(run())
+        assert frames[0].startswith("event: connected")
+        assert frames[1] == ": heartbeat\n\n"
+        assert frames[-1].startswith("event: notification")
