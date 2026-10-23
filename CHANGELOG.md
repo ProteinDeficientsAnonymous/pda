@@ -1,3 +1,10 @@
+# [0.150.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.149.0...v0.150.0) (2026-10-23)
+
+
+### Features
+
+* **mcp:** add mcp_gateway app and token helpers ([#1705](https://github.com/ProteinDeficientsAnonymous/pda/issues/1705)) ([aeead06](https://github.com/ProteinDeficientsAnonymous/pda/commit/aeead06b65941482d94e0ecd9e5f7a8ee796b539))
+
 # [0.149.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.148.0...v0.149.0) (2026-10-23)
 
 
