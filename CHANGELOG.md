@@ -1,3 +1,10 @@
+# [0.156.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.155.0...v0.156.0) (2026-10-23)
+
+
+### Features
+
+* **mcp:** add oauth provider client registration and authorize ([#1709](https://github.com/ProteinDeficientsAnonymous/pda/issues/1709)) ([ba80065](https://github.com/ProteinDeficientsAnonymous/pda/commit/ba800658556be86d1fb2fd15b13f5ff2f586e8cd))
+
 # [0.155.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.154.0...v0.155.0) (2026-10-23)
 
 
