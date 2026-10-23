@@ -1,3 +1,10 @@
+# [0.146.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.2...v0.146.0) (2026-10-23)
+
+
+### Features
+
+* **events:** 1699 - add official event description templates endpoint ([#1701](https://github.com/ProteinDeficientsAnonymous/pda/issues/1701)) ([4bb08f9](https://github.com/ProteinDeficientsAnonymous/pda/commit/4bb08f999afaaf203725e3fb89989e233afa1ca4))
+
 ## [0.145.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.1...v0.145.2) (2026-10-23)
 
 
