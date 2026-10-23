@@ -1,3 +1,10 @@
+## [0.145.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.1...v0.145.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **surveys:** align list row status pill and lowercase row meta ([#1695](https://github.com/ProteinDeficientsAnonymous/pda/issues/1695)) ([f632f2b](https://github.com/ProteinDeficientsAnonymous/pda/commit/f632f2bfba4adb3cdc42e92039b511c6d7ae1ad2))
+
 ## [0.145.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.145.0...v0.145.1) (2026-10-23)
 
 
