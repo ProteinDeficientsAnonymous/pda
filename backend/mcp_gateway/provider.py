@@ -188,3 +188,51 @@ class PdaOAuthProvider(
             resource=row.resource or None,
             subject=str(grant.user.pk),
         )
+
+    async def load_refresh_token(
+        self, client: OAuthClientInformationFull, refresh_token: str
+    ) -> RefreshToken | None:
+        row = await (
+            OAuthToken.objects.select_related("grant")
+            .filter(
+                token_hash=hash_secret(refresh_token),
+                kind=OAuthToken.Kind.REFRESH,
+                grant__client__client_id=client.client_id,
+                grant__revoked_at__isnull=True,
+                revoked_at__isnull=True,
+                expires_at__gt=timezone.now(),
+            )
+            .afirst()
+        )
+        if row is None:
+            return None
+        return RefreshToken(
+            token=refresh_token,
+            client_id=client.client_id,
+            scopes=row.scopes,
+            expires_at=int(row.expires_at.timestamp()),
+            resource=row.resource or None,
+            subject=str(row.grant.user_id),
+        )
+
+    async def exchange_refresh_token(
+        self,
+        client: OAuthClientInformationFull,
+        refresh_token: RefreshToken,
+        scopes: list[str],
+    ) -> TokenResponse:
+        tokens = OAuthToken.objects.filter(
+            token_hash=hash_secret(refresh_token.token),
+            kind=OAuthToken.Kind.REFRESH,
+            revoked_at__isnull=True,
+            grant__revoked_at__isnull=True,
+        )
+        row = await tokens.afirst()
+        if row is None or not await tokens.filter(pk=row.pk).aupdate(revoked_at=timezone.now()):
+            raise TokenError(error="invalid_grant", error_description="refresh token revoked")
+        return await _issue_token_pair(row.grant_id, scopes, row.resource)
+
+    async def revoke_token(self, token: AccessToken | RefreshToken) -> None:
+        await OAuthToken.objects.filter(
+            token_hash=hash_secret(token.token), revoked_at__isnull=True
+        ).aupdate(revoked_at=timezone.now())

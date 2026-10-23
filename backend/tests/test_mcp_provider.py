@@ -186,3 +186,43 @@ def test_load_access_token_touches_grant_at_most_once_a_minute(test_user):
     OAuthGrant.objects.update(last_used_at=recent - timedelta(minutes=1))
     asyncio.run(provider.load_access_token(tokens.access_token))
     assert OAuthGrant.objects.get().last_used_at > recent
+
+
+def test_refresh_token_single_use(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    old = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
+    assert old is not None and old.subject == str(test_user.pk)
+    rotated = asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
+    assert asyncio.run(provider.load_refresh_token(_client_info(), old.token)) is None
+    with pytest.raises(TokenError):
+        asyncio.run(provider.exchange_refresh_token(_client_info(), old, ["pda"]))
+    assert rotated.refresh_token is not None
+    assert asyncio.run(provider.load_refresh_token(_client_info(), rotated.refresh_token))
+    assert asyncio.run(provider.load_access_token(rotated.access_token))
+    assert OAuthGrant.objects.count() == 1
+
+
+def test_refresh_token_not_loaded_for_other_client_or_revoked_grant(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    asyncio.run(provider.register_client(_client_info("client-2")))
+    load = provider.load_refresh_token
+    assert asyncio.run(load(_client_info("client-2"), tokens.refresh_token)) is None
+    OAuthGrant.objects.update(revoked_at=timezone.now())
+    assert asyncio.run(load(_client_info(), tokens.refresh_token)) is None
+
+
+def test_revoke_token(test_user):
+    provider = PdaOAuthProvider()
+    tokens = _connect(provider, test_user)
+    assert tokens.refresh_token is not None
+    access = asyncio.run(provider.load_access_token(tokens.access_token))
+    refresh = asyncio.run(provider.load_refresh_token(_client_info(), tokens.refresh_token))
+    assert access is not None and refresh is not None
+    asyncio.run(provider.revoke_token(access))
+    assert asyncio.run(provider.load_access_token(tokens.access_token)) is None
+    asyncio.run(provider.revoke_token(refresh))
+    assert asyncio.run(provider.load_refresh_token(_client_info(), refresh.token)) is None
