@@ -1,3 +1,10 @@
+# [0.153.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.152.0...v0.153.0) (2026-10-23)
+
+
+### Features
+
+* **mcp:** add oauth code and token models ([#1707](https://github.com/ProteinDeficientsAnonymous/pda/issues/1707)) ([ef5eafd](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef5eafdb788bb9bfdc2e5d6a0e9fab3adec3252c))
+
 # [0.152.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.151.0...v0.152.0) (2026-10-23)
 
 
