@@ -106,3 +106,37 @@ def test_non_admin_cannot_list_member_apps_403(api_client, auth_headers, manage_
     resp = api_client.get(_admin_url(manage_users_user), **auth_headers)
     assert resp.status_code == 403
     assert_error_code(resp, "perm.denied")
+
+
+def test_admin_revokes_member_app(
+    api_client, manage_users_headers, test_user, django_capture_on_commit_callbacks
+):
+    grant = make_grant(test_user)
+    make_tokens(grant)
+    with django_capture_on_commit_callbacks(execute=True):
+        resp = api_client.delete(_admin_url(test_user, grant), **manage_users_headers)
+    assert resp.status_code == 204
+    grant.refresh_from_db()
+    assert grant.revoked_at is not None
+    assert not OAuthToken.objects.filter(grant=grant, revoked_at__isnull=True).exists()
+    entry = AuditLogEntry.objects.get(action="mcp_connection_revoked")
+    assert entry.details == {"user_id": str(test_user.pk), "by_admin": True}
+
+
+def test_non_admin_cannot_revoke_member_app_403(api_client, auth_headers, manage_users_user):
+    grant = make_grant(manage_users_user)
+    resp = api_client.delete(_admin_url(manage_users_user, grant), **auth_headers)
+    assert resp.status_code == 403
+    grant.refresh_from_db()
+    assert grant.revoked_at is None
+
+
+def test_admin_revoke_wrong_user_404(
+    api_client, manage_users_headers, test_user, manage_users_user
+):
+    grant = make_grant(test_user)
+    resp = api_client.delete(_admin_url(manage_users_user, grant), **manage_users_headers)
+    assert resp.status_code == 404
+    assert_error_code(resp, "connect.app_not_found")
+    grant.refresh_from_db()
+    assert grant.revoked_at is None

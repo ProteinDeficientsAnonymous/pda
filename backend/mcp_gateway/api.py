@@ -158,3 +158,10 @@ def list_user_apps(request, user_id: UUID):
     if not User.objects.filter(pk=user_id).exists():
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     return Status(200, _list_apps(user_id))
+
+
+@router.delete("/users/{user_id}/apps/{grant_id}/", response={204: None}, auth=gated_jwt)
+def revoke_user_app(request, user_id: UUID, grant_id: UUID):
+    require_permission(request, "revoke_user_app", PermissionKey.MANAGE_USERS)
+    _revoke_app(request, user_id, grant_id, by_admin=True)
+    return Status(204, None)

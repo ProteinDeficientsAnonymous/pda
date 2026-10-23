@@ -2295,6 +2295,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/connect/users/{user_id}/apps/{grant_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke User App */
+        delete: operations["mcp_gateway_api_revoke_user_app"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/": {
         parameters: {
             query?: never;
@@ -12517,6 +12534,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ConnectedAppOut"][];
                 };
+            };
+        };
+    };
+    mcp_gateway_api_revoke_user_app: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
