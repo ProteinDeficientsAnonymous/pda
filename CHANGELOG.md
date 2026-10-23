@@ -1,3 +1,10 @@
+# [0.155.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.154.0...v0.155.0) (2026-10-23)
+
+
+### Features
+
+* prefill official event rsvp questions ([#1714](https://github.com/ProteinDeficientsAnonymous/pda/issues/1714)) ([18ea7e3](https://github.com/ProteinDeficientsAnonymous/pda/commit/18ea7e307de43b7696b9ecc2754b43a9e0bae8cb))
+
 # [0.154.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.153.0...v0.154.0) (2026-10-23)
 
 
