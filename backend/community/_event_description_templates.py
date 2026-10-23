@@ -5,45 +5,43 @@ from pydantic import BaseModel
 
 router = Router()
 
-OFFICIAL_WALK_TEMPLATE = """Come join us on a walk _______where?_______!
+OFFICIAL_WALK_TEMPLATE = """Come join us on a walk around [neighborhood / park]!
 
-Price includes ____what food are we ordering per person?___
+Price includes [what we're ordering, per person].
 
-We'll walk ___where?__________ and then head to _________________!
+We'll walk [route, e.g. along the river] and then head to [end spot]!
 
-The route will be just about _______ miles and we'll walk at a social pace.
+The route is about [X] miles and we'll walk at a social pace.
 
 Only vegans allowed 🌱
 
-Meetup at _____location______ at ____time____, we'll start walking at _____time (15min later than meet time)_____
+Meet up at [meeting spot] at [meet time]. We'll start walking at [start time, 15 min after meet time].
 
-This will be the route:
-_________google maps route link________
+Route: [google maps link]
 
-We'll share our location in the WhatsApp community when we start; please DM a host if you need access
+We'll share our location in the WhatsApp community when we start. Please DM a host if you need access.
 
-The price for this event is your share for the group order and will not be returned to you. No refunds will be issued for cancellations within 5 days of the event - if there is leftover money it will go towards PDA ops, a fund to assist low income friends, and a coffee for our event planners / facilitators.
+The price for this event is your share of the group order and will not be returned to you. No refunds will be issued for cancellations within 5 days of the event. Any leftover money goes towards PDA ops, a fund to assist low-income friends, and a coffee for our event planners / facilitators.
 
-Disclaimer:
-Your physical safety is your responsibility. We will do all we can to be safe, but we are not liable for any injury or harm that comes to you. It's your responsibility to know and communicate as necessary your physical limitations
+Disclaimer: your physical safety is your responsibility. We will do all we can to be safe, but we are not liable for any injury or harm that comes to you. It's your responsibility to know your physical limitations and communicate them as needed.
 
-We take group photos at events and share them to instagram - if you don't want your photo shared please let us know in advance or during the event 💞🌱
+We take group photos at events and share them on Instagram. If you don't want your photo shared, please let us know in advance or during the event 💞🌱
 
 Check us out on IG @protein.deficients.anonymous!"""
 
 OFFICIAL_NON_WALK_TEMPLATE = """Another meetup of Protein Deficients Anonymous!
 
-if there is a price: Price includes ____what food are we ordering per person?___
+Price includes [what we're ordering, per person]. [delete this line and the refund note below if the event is free]
 
 Only vegans allowed 🌱
 
-Please be sure to rsvp so we can get an accurate count for the restaurant, and to stay in the loop about updates!
+Please be sure to RSVP so we can get an accurate count for the restaurant, and to stay in the loop about updates!
 
-The price for this event is your share for the group order and will not be returned to you. No refunds will be issued for cancellations within 5 days of the event - if there is leftover money it will go towards PDA ops, a fund to assist low income friends, and a coffee for our event planners / facilitators.
+The price for this event is your share of the group order and will not be returned to you. No refunds will be issued for cancellations within 5 days of the event. Any leftover money goes towards PDA ops, a fund to assist low-income friends, and a coffee for our event planners / facilitators.
 
-We take group photos at events and share them to instagram - if you don't want your photo shared please let us know in advance or during the event 💞🌱
+We take group photos at events and share them on Instagram. If you don't want your photo shared, please let us know in advance or during the event 💞🌱
 
-Check us out on IG @protein.deficients.anonymous! DM us to be added to the Whatsapp community"""
+Check us out on IG @protein.deficients.anonymous! DM us to be added to the WhatsApp community."""
 
 
 class EventDescriptionTemplatesOut(BaseModel):
