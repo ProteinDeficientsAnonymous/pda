@@ -13,7 +13,7 @@ from mcp.server.auth.provider import construct_redirect_uri
 from ninja import Router
 from ninja.responses import Status
 
-from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant
+from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant, OAuthToken
 from mcp_gateway.provider import AuthRequestNotPending, issue_auth_code
 from mcp_gateway.schemas import ConnectedAppOut, ConnectRedirectOut, ConnectRequestOut
 from mcp_gateway.tokens import hash_secret
@@ -117,6 +117,33 @@ def _list_apps(user_id: UUID) -> list[ConnectedAppOut]:
     return [_app_out(g) for g in grants]
 
 
+def _revoke_app(request, user_id: UUID, grant_id: UUID, *, by_admin: bool) -> None:
+    now = timezone.now()
+    with transaction.atomic():
+        revoked = OAuthGrant.objects.filter(
+            pk=grant_id, user_id=user_id, revoked_at__isnull=True
+        ).update(revoked_at=now)
+        if not revoked:
+            raise_validation(Code.Connect.APP_NOT_FOUND, status_code=404)
+        OAuthToken.objects.filter(grant_id=grant_id, revoked_at__isnull=True).update(revoked_at=now)
+        audit_log(
+            logging.INFO,
+            "mcp_connection_revoked",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.MCP_CONNECTION,
+                id=str(grant_id),
+                details={"user_id": str(user_id), "by_admin": by_admin},
+            ),
+        )
+
+
 @router.get("/apps/", response={200: list[ConnectedAppOut]}, auth=gated_jwt)
 def list_my_apps(request):
     return Status(200, _list_apps(request.auth.pk))
+
+
+@router.delete("/apps/{grant_id}/", response={204: None}, auth=gated_jwt)
+def revoke_my_app(request, grant_id: UUID):
+    _revoke_app(request, request.auth.pk, grant_id, by_admin=False)
+    return Status(204, None)
