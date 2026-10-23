@@ -611,6 +611,15 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'reason text is too long';
     }
 
+    case Code.Connect.RequestNotFound:
+      return 'this connection request was not found';
+    case Code.Connect.RequestExpired:
+      return 'this connection request has expired, go back to your ai app and try connecting again';
+    case Code.Connect.RequestAlreadyUsed:
+      return 'this connection request was already used';
+    case Code.Connect.AppNotFound:
+      return 'connected app not found';
+
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
       return err.field ? `${err.field.replace(/_/g, ' ')} is required` : 'this field is required';

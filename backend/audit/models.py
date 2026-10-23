@@ -17,6 +17,7 @@ class AuditTargetType(models.TextChoices):
     HOMEPAGE = "homepage", "Homepage"
     JOIN_FORM_QUESTION = "join_form_question", "Join form question"
     JOIN_REQUEST = "join_request", "Join request"
+    MCP_CONNECTION = "mcp_connection", "MCP connection"
     MEMBER_PROMOTION_EMAIL = "member_promotion_email", "Member promotion email"
     MEMBER_PROMOTION_MESSAGE = "member_promotion_message", "Member promotion message"
     REJECTION_EMAIL = "rejection_email", "Rejection email"
