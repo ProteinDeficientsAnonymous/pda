@@ -1,3 +1,10 @@
+# [0.148.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.147.0...v0.148.0) (2026-10-23)
+
+
+### Features
+
+* **questions:** add inline options editor for question cards ([#1696](https://github.com/ProteinDeficientsAnonymous/pda/issues/1696)) ([0890184](https://github.com/ProteinDeficientsAnonymous/pda/commit/089018414195839f5d9fcc57118ea4e871bac7f5))
+
 # [0.147.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.146.0...v0.147.0) (2026-10-23)
 
 
