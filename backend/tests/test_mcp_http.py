@@ -4,6 +4,7 @@ import httpx
 import pytest
 from config.asgi import application
 from django.conf import settings
+from django.core.signals import request_finished, request_started
 from mcp_gateway.asgi_router import McpDispatcher
 
 from tests._mcp_helpers import REDIRECT
@@ -45,6 +46,28 @@ def test_dispatcher_routes_lifespan_and_mcp_paths_to_mcp_app():
     for scope in scopes:
         asyncio.run(dispatcher(scope, None, None))
     assert [label for label, *_ in seen] == ["mcp", "mcp", "mcp", "django", "django", "django"]
+
+
+def test_dispatcher_runs_django_request_lifecycle_for_mcp_requests():
+    fired = []
+
+    def record(signal):
+        return lambda **kwargs: fired.append(signal)
+
+    async def mcp_app(scope, receive, send):
+        fired.append("mcp")
+
+    started, finished = record("started"), record("finished")
+    request_started.connect(started)
+    request_finished.connect(finished)
+    try:
+        dispatcher = McpDispatcher(mcp_app, mcp_app)
+        asyncio.run(dispatcher({"type": "lifespan"}, None, None))
+        asyncio.run(dispatcher({"type": "http", "path": "/token"}, None, None))
+    finally:
+        request_started.disconnect(started)
+        request_finished.disconnect(finished)
+    assert fired == ["mcp", "started", "mcp", "finished"]
 
 
 def test_protected_resource_metadata():
