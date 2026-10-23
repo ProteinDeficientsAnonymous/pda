@@ -1,0 +1,31 @@
+import { useQuery } from '@tanstack/react-query';
+
+import { apiClient } from './client';
+import type { components } from './types.gen';
+
+type WireTemplates = components['schemas']['EventDescriptionTemplatesOut'];
+
+export interface EventDescriptionTemplates {
+  officialWalk: string;
+  officialNonWalk: string;
+}
+
+export const eventDescriptionTemplateKeys = {
+  all: ['event-description-templates'] as const,
+};
+
+export async function fetchEventDescriptionTemplates(): Promise<EventDescriptionTemplates> {
+  const { data } = await apiClient.get<WireTemplates>(
+    '/api/community/event-description-templates/',
+  );
+  return { officialWalk: data.official_walk, officialNonWalk: data.official_non_walk };
+}
+
+export function useEventDescriptionTemplates(enabled: boolean) {
+  return useQuery({
+    queryKey: eventDescriptionTemplateKeys.all,
+    queryFn: fetchEventDescriptionTemplates,
+    staleTime: Infinity,
+    enabled,
+  });
+}

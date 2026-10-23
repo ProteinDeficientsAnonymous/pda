@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { EventVisibility } from '@/models/event';
 
 import { LockIcon } from './LockIcon';
+import { hasTemplatePlaceholders } from './officialTemplate';
 
 type Visibility = EventFormValues['visibility'];
 
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function EventFormDetails({ values, onChange, errors, typeLocked }: Props) {
+  const charsLeft = `${String(DESCRIPTION_MAX_LENGTH - values.description.length)} characters left`;
   const helper = typeLocked
     ? 'official and club pda events are always public'
     : VISIBILITY_HELPER[values.visibility];
@@ -48,7 +50,11 @@ export function EventFormDetails({ values, onChange, errors, typeLocked }: Props
         maxLength={DESCRIPTION_MAX_LENGTH}
         placeholder="tell people what this is about"
         error={errors.description}
-        hint={`${String(DESCRIPTION_MAX_LENGTH - values.description.length)} characters left`}
+        hint={
+          hasTemplatePlaceholders(values.description)
+            ? `fill in the [bracketed] parts before publishing — ${charsLeft}`
+            : charsLeft
+        }
       />
 
       {typeLocked ? (

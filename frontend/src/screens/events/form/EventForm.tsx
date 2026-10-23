@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 
 import { getErrorParams, getFieldError, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
+import { useEventDescriptionTemplates } from '@/api/eventDescriptionTemplates';
 import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
+import { useEventTags } from '@/api/eventTags';
 import {
   emptyEventFormValues,
   type EventFormValues,
@@ -36,6 +38,7 @@ import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
+import { walkTagIds, withOfficialTemplate } from './officialTemplate';
 import { validateEventForm } from './validateEventForm';
 
 interface Props {
@@ -127,12 +130,18 @@ export function EventForm({ existing }: Props) {
   const update = useUpdateEvent(existing?.id ?? '');
   const uploadPhoto = useUploadEventPhoto();
   const { confirm, element: confirmElement } = useConfirm();
+  const { data: tags } = useEventTags();
+  const { data: templates } = useEventDescriptionTemplates(!existing && canTagOfficial);
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
   function patch(p: Partial<EventFormValues>) {
-    setValues((v) => ({ ...v, ...p }));
+    setValues((v) => {
+      const next = { ...v, ...p };
+      if (existing || (!('eventType' in p) && !('tagIds' in p))) return next;
+      return withOfficialTemplate(next, walkTagIds(tags), templates);
+    });
   }
 
   function showFieldErrors(errs: Partial<Record<keyof EventFormValues, string>>) {
