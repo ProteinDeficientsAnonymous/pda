@@ -99,6 +99,10 @@ export default function SurveyBuilderScreen() {
 
   return (
     <ContentContainer>
+      <Link to="/admin/surveys" className="text-muted mb-4 inline-block text-sm hover:underline">
+        ← back to surveys
+      </Link>
+
       <header className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-medium tracking-tight">{currentSurvey.title}</h1>

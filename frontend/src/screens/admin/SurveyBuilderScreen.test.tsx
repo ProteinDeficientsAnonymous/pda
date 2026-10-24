@@ -80,6 +80,16 @@ beforeEach(() => {
 });
 
 describe('SurveyBuilderScreen', () => {
+  it('links back to the survey list', async () => {
+    mockedGet.mockResolvedValueOnce({ data: wireSurvey });
+    renderScreen();
+
+    expect(await screen.findByRole('link', { name: '← back to surveys' })).toHaveAttribute(
+      'href',
+      '/admin/surveys',
+    );
+  });
+
   it('reorders questions via the sortable list and calls the reorder endpoint', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
