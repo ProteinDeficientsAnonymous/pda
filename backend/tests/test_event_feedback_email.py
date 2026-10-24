@@ -7,14 +7,20 @@ from notifications.email_sender import SendResult
 URL = "https://pda.test/feedback/abc123"
 
 
-def _send(*, reminder: bool, event_date: str | None = "oct 12", display_name: str = "Sam"):
+def _send(
+    *,
+    reminder: bool,
+    event_date: str | None = "oct 12",
+    display_name: str = "Sam",
+    event_title: str = "Vegan Potluck",
+):
     sender = MagicMock()
     sender.send.return_value = SendResult(success=True, provider_message_id="m1")
     result = send_event_feedback_email(
         sender=sender,
         to="member@example.test",
         display_name=display_name,
-        event_title="Vegan Potluck",
+        event_title=event_title,
         event_date=event_date,
         url=URL,
         reminder=reminder,
@@ -37,7 +43,7 @@ class TestSendEventFeedbackEmail:
     def test_reminder_has_distinct_subject_and_copy(self):
         _, kwargs = _send(reminder=True)
         assert kwargs["subject"] == "still keen to hear about vegan potluck"
-        assert "haven't filled it out yet" in kwargs["text"]
+        assert "haven't shared your feedback yet" in kwargs["text"]
         assert URL in kwargs["html"]
 
     @pytest.mark.parametrize("reminder", [False, True])
@@ -51,3 +57,13 @@ class TestSendEventFeedbackEmail:
         _, kwargs = _send(reminder=reminder)
         letters = "".join(ch for ch in kwargs["text"].replace(URL, "") if ch.isalpha())
         assert letters == letters.lower()
+
+    @pytest.mark.parametrize("reminder", [False, True])
+    def test_text_part_does_not_html_escape(self, reminder):
+        _, kwargs = _send(
+            reminder=reminder, event_title="Leah's Q&A potluck", display_name="Tom & Jo"
+        )
+        assert "leah's q&a potluck" in kwargs["text"]
+        assert "tom & jo" in kwargs["text"]
+        assert "&#x27;" not in kwargs["text"]
+        assert "&amp;" not in kwargs["text"]
