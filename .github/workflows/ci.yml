@@ -47,7 +47,7 @@ jobs:
       # full history on PRs so diff-cover can diff against the base branch
       - uses: actions/checkout@v6
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
 
       - uses: pnpm/action-setup@v6
         with:
