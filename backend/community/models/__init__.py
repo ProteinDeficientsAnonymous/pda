@@ -46,6 +46,7 @@ from community.models.event import (
     EventRSVP,
     EventRsvpQuestion,
 )
+from community.models.event_feedback import EventFeedbackRequest
 from community.models.event_slug import (
     EventRef,
     EventSlugAlias,
@@ -72,6 +73,7 @@ __all__ = [
     "AttendanceReminder",
     "AttendanceStatus",
     "CoHostInviteStatus",
+    "EventFeedbackRequest",
     "EventFlagStatus",
     "EventStatus",
     "EventType",

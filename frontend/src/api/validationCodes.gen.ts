@@ -161,6 +161,9 @@ export const Code = {
     QuestionNotFound: 'survey.question_not_found',
     ResponseNotFound: 'survey.response_not_found',
     AnonymousLocked: 'survey.anonymous_locked',
+    FeedbackTypeTaken: 'survey.feedback_type_taken',
+    FeedbackLinkInvalid: 'survey.feedback_link_invalid',
+    FeedbackAlreadySubmitted: 'survey.feedback_already_submitted',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
     PollAlreadyFinalized: 'survey.poll_already_finalized',
@@ -411,6 +414,9 @@ export type ValidationCode =
   | 'survey.question_not_found'
   | 'survey.response_not_found'
   | 'survey.anonymous_locked'
+  | 'survey.feedback_type_taken'
+  | 'survey.feedback_link_invalid'
+  | 'survey.feedback_already_submitted'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
   | 'survey.poll_already_finalized'
@@ -621,6 +627,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.question_not_found': [],
   'survey.response_not_found': [],
   'survey.anonymous_locked': [],
+  'survey.feedback_type_taken': [],
+  'survey.feedback_link_invalid': [],
+  'survey.feedback_already_submitted': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],
   'survey.poll_already_finalized': [],

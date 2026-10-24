@@ -625,6 +625,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/event-feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Feedback */
+        get: operations["community__event_feedback_public_get_event_feedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/event-feedback/respond/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Event Feedback */
+        post: operations["community__event_feedback_public_submit_event_feedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/event-flags/": {
         parameters: {
             query?: never;
@@ -1036,6 +1070,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Feedback */
+        get: operations["community__event_feedback_host_get_event_feedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/flag/": {
         parameters: {
             query?: never;
@@ -1101,6 +1152,23 @@ export interface paths {
         put?: never;
         /** Invite To Event */
         post: operations["community__event_invitations_invite_to_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/my-feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Event Feedback */
+        get: operations["community__event_feedback_host_get_my_event_feedback"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3198,6 +3266,32 @@ export interface components {
             /** Official Walk */
             official_walk: string;
         };
+        /** EventFeedbackHostOut */
+        EventFeedbackHostOut: {
+            /** Questions */
+            questions: components["schemas"]["SurveyQuestionOut"][];
+            /** Responses */
+            responses: components["schemas"]["HostFeedbackResponseOut"][];
+        };
+        /** EventFeedbackOut */
+        EventFeedbackOut: {
+            /** Already Responded */
+            already_responded: boolean;
+            /** Event Id */
+            event_id: string;
+            /** Event Start */
+            event_start: string | null;
+            /** Event Title */
+            event_title: string;
+            /** Is Open */
+            is_open: boolean;
+            survey: components["schemas"]["SurveyOut"] | null;
+        };
+        /** EventFeedbackSubmitOut */
+        EventFeedbackSubmitOut: {
+            /** Confirmation Message */
+            confirmation_message: string;
+        };
         /** EventFlagIn */
         EventFlagIn: {
             /** Reason */
@@ -4214,6 +4308,20 @@ export interface components {
             /** Content Pm */
             content_pm?: string | null;
         };
+        /** HostFeedbackResponseOut */
+        HostFeedbackResponseOut: {
+            /** Answers */
+            answers: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /**
+             * Submitted On
+             * Format: date
+             */
+            submitted_on: string;
+        };
         /** HostRSVPIn */
         HostRSVPIn: {
             /**
@@ -4774,6 +4882,11 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /** MyEventFeedbackOut */
+        MyEventFeedbackOut: {
+            /** Token */
+            token: string | null;
+        };
         /** NotificationOut */
         NotificationOut: {
             /**
@@ -5256,6 +5369,12 @@ export interface components {
              */
             description: string;
             /**
+             * Feedback Event Type
+             * @default
+             * @enum {string}
+             */
+            feedback_event_type: "official" | "club" | "";
+            /**
              * Is Active
              * @default true
              */
@@ -5335,6 +5454,11 @@ export interface components {
             created_by_id?: string | null;
             /** Description */
             description: string;
+            /**
+             * Feedback Event Type
+             * @default
+             */
+            feedback_event_type: string;
             /** Id */
             id: string;
             /** Is Active */
@@ -5384,6 +5508,8 @@ export interface components {
             confirmation_message?: string | null;
             /** Description */
             description?: string | null;
+            /** Feedback Event Type */
+            feedback_event_type?: ("official" | "club" | "") | null;
             /** Is Active */
             is_active?: boolean | null;
             /** Linked Event Id */
@@ -5448,6 +5574,12 @@ export interface components {
             answers: {
                 [key: string]: unknown;
             };
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Start */
+            event_start?: string | null;
+            /** Event Title */
+            event_title?: string | null;
             /** Id */
             id: string;
             /**
@@ -5466,6 +5598,12 @@ export interface components {
             answers: {
                 [key: string]: unknown;
             };
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Start */
+            event_start?: string | null;
+            /** Event Title */
+            event_title?: string | null;
             /** Id */
             id: string;
             /** Response Token */
@@ -7576,6 +7714,108 @@ export interface operations {
             };
         };
     };
+    community__event_feedback_public_get_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Feedback-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_public_submit_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Feedback-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyAnswersIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackSubmitOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__event_flags_list_event_flags: {
         parameters: {
             query?: {
@@ -8815,6 +9055,46 @@ export interface operations {
             };
         };
     };
+    community__event_feedback_host_get_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackHostOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__event_flags_flag_event: {
         parameters: {
             query?: never;
@@ -8995,6 +9275,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_host_get_my_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyEventFeedbackOut"];
                 };
             };
         };
@@ -12053,7 +12355,9 @@ export interface operations {
     };
     community__surveys_responses_list_survey_responses: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path: {
                 survey_id: string;
@@ -12132,7 +12436,9 @@ export interface operations {
     };
     community__survey_reports_get_survey_summary: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path: {
                 survey_id: string;

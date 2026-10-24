@@ -24,6 +24,7 @@ from community._survey_helpers import (
     _survey_out,
     _survey_question_out,
     _validate_anonymous_change,
+    _validate_feedback_type,
     _validate_survey_window,
 )
 from community._survey_schemas import (
@@ -113,10 +114,11 @@ def create_survey(request, payload: SurveyIn):
     if Survey.objects.filter(slug=payload.slug).exists():
         raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
     _validate_survey_window(payload.opens_at, payload.closes_at)
+    data = _validate_feedback_type(None, payload.model_dump())
     linked_event = None
-    if payload.linked_event_id:
+    if data["linked_event_id"]:
         try:
-            linked_event = Event.objects.get(id=payload.linked_event_id)
+            linked_event = Event.objects.get(id=data["linked_event_id"])
         except Event.DoesNotExist:
             raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
     survey = Survey.objects.create(
@@ -126,11 +128,12 @@ def create_survey(request, payload: SurveyIn):
         visibility=payload.visibility,
         is_active=payload.is_active,
         one_response_per_user=payload.one_response_per_user,
-        anonymous=payload.anonymous,
+        anonymous=data["anonymous"],
         confirmation_message=payload.confirmation_message,
         opens_at=payload.opens_at,
         closes_at=payload.closes_at,
         max_responses=payload.max_responses,
+        feedback_event_type=data["feedback_event_type"],
         linked_event=linked_event,
         created_by=request.auth,
     )
@@ -202,7 +205,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    updates = payload.model_dump(exclude_unset=True)
+    updates = _validate_feedback_type(survey, payload.model_dump(exclude_unset=True))
     if "linked_event_id" in updates:
         updates = _apply_linked_event_update(updates)
     if "slug" in updates and updates["slug"] != survey.slug:

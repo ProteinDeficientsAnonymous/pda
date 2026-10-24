@@ -30,6 +30,7 @@ class NotificationType(models.TextChoices):
     CHECKIN_NUDGE = "checkin_nudge", "Check-in Nudge"
     PAYMENT_REVOKED = "payment_revoked", "Payment Confirmation Revoked"
     ACCOUNT_DELETED = "account_deleted", "Account Deleted"
+    EVENT_FEEDBACK = "event_feedback", "Event Feedback"
 
 
 class Notification(models.Model):
