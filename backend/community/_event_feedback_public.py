@@ -39,6 +39,8 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
 
 @router.get("/event-feedback/", response={200: EventFeedbackOut, 404: ErrorOut}, auth=None)
 def get_event_feedback(request, token: str = FeedbackToken):
+    # Even a session-authed viewer stays out of the log: view time hints at submit time.
+    mark_request_anonymized(request)
     feedback_request = _feedback_request_or_404(token)
     event = feedback_request.event
     survey = feedback_survey_for(event.event_type)
@@ -84,6 +86,7 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
 )
 @rate_limit(key_func=client_ip, rate="20/h")
 def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = FeedbackToken):
+    mark_request_anonymized(request)
     with transaction.atomic():
         # Row lock: a forwarded link or double-click must yield exactly one response.
         feedback_request = _feedback_request_or_404(token, for_update=True)
@@ -98,7 +101,6 @@ def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = Feedba
         )
         feedback_request.responded_on = timezone.localdate()
         feedback_request.save(update_fields=["responded_on"])
-        mark_request_anonymized(request)
         audit_log(
             logging.INFO,
             "survey_response_submitted",
