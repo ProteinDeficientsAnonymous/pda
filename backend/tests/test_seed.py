@@ -1,11 +1,14 @@
 import pytest
+from community._event_feedback_send import due_feedback_events
 from community.management.commands._seed_data import (
     COOKING_WORKSHOP_TITLE,
     SEED_EVENT_RSVP_QUESTIONS,
 )
-from community.models import Event, EventRSVP, JoinRequest, RSVPStatus
-from community.models.choices import AttendanceStatus
+from community.management.commands._seed_event_feedback import FEEDBACK_EVENT_TITLE
+from community.models import Event, EventRSVP, EventType, JoinRequest, RSVPStatus, Survey
+from community.models.choices import AttendanceStatus, SurveyQuestionType
 from django.core.management import call_command
+from django.utils import timezone
 from users.models import User
 
 
@@ -15,7 +18,7 @@ def test_seed_creates_expected_data():
 
     assert User.objects.filter(phone_number="+17025550001").exists()
     assert User.objects.filter(phone_number="+17025550002").exists()
-    assert Event.objects.count() == 5
+    assert Event.objects.count() == 6
     assert JoinRequest.objects.count() == 8
 
 
@@ -26,7 +29,7 @@ def test_seed_is_idempotent():
     call_command("seed")
 
     assert User.objects.filter(phone_number__startswith="+1702555").count() == 8
-    assert Event.objects.count() == 5
+    assert Event.objects.count() == 6
     assert JoinRequest.objects.count() == 8
     assert EventRSVP.objects.count() == rsvp_count
 
@@ -148,3 +151,24 @@ def test_seed_backfills_consents_on_a_pre_existing_user():
     assert user.guidelines_consent_at is not None
     assert user.sms_consent_at is not None
     assert user.contact_privacy_consent_at is not None
+
+
+@pytest.mark.django_db
+def test_seed_creates_official_feedback_survey_and_due_event():
+    call_command("seed")
+    call_command("seed")
+
+    survey = Survey.objects.get(feedback_event_type=EventType.OFFICIAL)
+    assert survey.anonymous
+    questions = list(survey.questions.all())
+    assert [q.label for q in questions] == [
+        "how was the event?",
+        "what did you love?",
+        "what's your constructive feedback?",
+    ]
+    assert questions[0].field_type == SurveyQuestionType.RADIO
+    assert questions[0].required
+    event = Event.objects.get(title=FEEDBACK_EVENT_TITLE)
+    assert event in due_feedback_events(timezone.now())
+    attended = event.rsvps.filter(attendance=AttendanceStatus.ATTENDED, checked_in_at__isnull=False)
+    assert attended.count() == 3

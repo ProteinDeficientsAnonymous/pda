@@ -95,7 +95,7 @@ export function mapQuestion(q: WireQuestion): SurveyQuestion {
   };
 }
 
-interface WireSurvey {
+export interface WireSurvey {
   id: string;
   title: string;
   description?: string;
@@ -131,7 +131,7 @@ interface WireSurveyResponse {
   response_token?: string | null;
 }
 
-function mapSurvey(w: WireSurvey): Survey {
+export function mapSurvey(w: WireSurvey): Survey {
   return {
     id: w.id,
     title: w.title,
