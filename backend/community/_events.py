@@ -56,6 +56,7 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
+from community._host_auto_rsvp import auto_rsvp_host, auto_rsvp_hosts
 from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._tentative_member_access import (
@@ -268,6 +269,7 @@ def create_event(request, payload: EventIn):
             for display_order, question in enumerate(payload.rsvp_questions)
         ]
     )
+    auto_rsvp_host(event, request.auth)
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
@@ -286,6 +288,14 @@ def create_event(request, payload: EventIn):
         ),
     )
     return Status(201, _event_out(event, request.auth))
+
+
+def _announce_rsvp_changes(
+    request, event: Event, promoted_user_ids: list[str], *, hosts_rsvped: bool
+) -> None:
+    if promoted_user_ids or hosts_rsvped:
+        broadcast_capacity_change(event.id, exclude_user_ids={str(request.auth.pk)})
+    email_promoted_users(request, event, promoted_user_ids)
 
 
 @router.patch(
@@ -315,6 +325,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     # Checked before status transitions, which have their own attendee notifications.
     was_eligible = event.is_public_rsvp_eligible
     old_max_attendees = event.max_attendees
+    was_official_or_club = is_official_or_club(event.event_type)
     removed_user_ids: list[str] = []
     promoted_user_ids: list[str] = []
 
@@ -331,11 +342,10 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
                 return early
 
         promoted_user_ids = _promote_if_capacity_increased(event, updates, old_max_attendees)
+        hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
     email_removed_non_members(request, event, removed_user_ids)
-    if promoted_user_ids:
-        broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-        email_promoted_users(request, event, promoted_user_ids)
+    _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

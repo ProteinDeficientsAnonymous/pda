@@ -219,9 +219,11 @@ def _snapshot_rsvp_answers(
     existing: EventRSVP | None,
     final_status: str,
     answers: dict[str, str] | None,
+    *,
+    require_answers: bool = True,
 ) -> dict:
     existing_answers = dict(existing.questionnaire_responses or {}) if existing is not None else {}
-    if not answers_required_for_status(final_status):
+    if not answers_required_for_status(final_status) or not require_answers:
         return existing_answers
 
     questions = list(event.rsvp_questions.all())
@@ -272,6 +274,8 @@ class _RsvpApply:
     has_plus_one: bool = False
     paid_confirmed: bool = False
     answers: dict[str, str] | None = None
+    # Host auto-rsvps bypass the payment gate and required questions.
+    skip_host_gates: bool = False
 
 
 def _apply_rsvp_in_transaction(
@@ -300,12 +304,15 @@ def _apply_rsvp_in_transaction(
     previous_status = existing.status if existing is not None else None
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
-    if not rsvp.paid_confirmed and requires_payment_gate(event, existing, rsvp.status):
+    gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates
+    if not gate_exempt and requires_payment_gate(event, existing, rsvp.status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
     final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
     final_status = _keep_waitlist_place(event, existing, final_status)
-    answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, rsvp.answers)
+    answers_snapshot = _snapshot_rsvp_answers(
+        event, existing, final_status, rsvp.answers, require_answers=not rsvp.skip_host_gates
+    )
 
     new_confirmed_at = _resolve_paid_confirmed_at(existing, rsvp.paid_confirmed, final_status)
 
