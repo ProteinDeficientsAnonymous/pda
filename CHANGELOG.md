@@ -1,3 +1,10 @@
+# [0.174.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.173.0...v0.174.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add event read tools ([#1772](https://github.com/ProteinDeficientsAnonymous/pda/issues/1772)) ([c2baade](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2baadef5cbc5cb851d106b4a1c6fcc256f831d3))
+
 # [0.173.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.172.0...v0.173.0) (2026-10-24)
 
 
