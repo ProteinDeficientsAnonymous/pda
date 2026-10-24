@@ -1,4 +1,5 @@
 import pytest
+from community._validation import Code
 from community.models import (
     Event,
     EventRSVP,
@@ -13,9 +14,11 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso
 
 EVENTS_URL = "/api/community/events/"
+PAID = {"price": "$10", "venmo_link": "https://venmo.com/x"}
 
 
 def _auth(user: User) -> dict:
@@ -89,12 +92,22 @@ class TestAutoRsvpOnCreate:
         assert not EventRSVP.objects.filter(event=event).exists()
 
     def test_payment_gated_event_rsvps_host_without_payment(self, api_client, host):
-        event = _create(
-            api_client, host, EventType.OFFICIAL, price="$10", venmo_link="https://venmo.com/x"
-        )
+        event = _create(api_client, host, EventType.OFFICIAL, **PAID)
         rsvp = EventRSVP.objects.get(event=event, user=host)
         assert rsvp.status == RSVPStatus.ATTENDING
         assert rsvp.paid_confirmed_at is None
+
+    def test_payment_gate_still_applies_to_members(self, api_client, host):
+        event = _create(api_client, host, EventType.OFFICIAL, **PAID)
+        member = User.objects.create_user(phone_number="+12025556102", password="x")
+        response = api_client.post(
+            f"{EVENTS_URL}{event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **_auth(member),
+        )
+        assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
+        assert _rsvp_status(event, member) is None
 
     def test_required_question_rsvps_host_without_answers(self, api_client, host):
         event = _create(
@@ -134,6 +147,13 @@ class TestAutoRsvpOnTypeSwitch:
         assert _rsvp_status(event, host) == RSVPStatus.ATTENDING
         assert _rsvp_status(event, co_host) == RSVPStatus.ATTENDING
         fake_email_sender.send.assert_not_called()
+
+    def test_switching_paid_event_rsvps_hosts_without_payment(self, api_client, host):
+        event = _create(api_client, host, EventType.COMMUNITY, **PAID)
+        _patch(api_client, event, host, {"event_type": EventType.CLUB})
+        rsvp = EventRSVP.objects.get(event=event, user=host)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        assert rsvp.paid_confirmed_at is None
 
     def test_switching_keeps_existing_rsvp(self, api_client, host):
         event = _create(api_client, host, EventType.COMMUNITY)
