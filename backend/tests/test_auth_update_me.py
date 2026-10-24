@@ -375,3 +375,15 @@ class TestPatchMeEmail:
         assert resp.status_code == 200
         test_user.refresh_from_db()
         assert test_user.whatsapp_reminder_opt_out is False
+
+    def test_opt_out_of_attendance_nudges(self, api_client, auth_headers, test_user):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"attendance_nudge_opt_out": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["attendance_nudge_opt_out"] is True
+        test_user.refresh_from_db()
+        assert test_user.attendance_nudge_opt_out is True
