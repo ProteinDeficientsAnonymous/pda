@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from community.models import (
@@ -132,3 +133,21 @@ class TestHostFeedback:
 
         ids = [r["id"] for r in res.json()["responses"]]
         assert ids == [str(new.id), str(old.id)]
+
+    def test_submitted_on_uses_community_timezone(self, api_client, host, event, survey):
+        response = _response(survey, event)
+        SurveyResponse.objects.filter(pk=response.pk).update(
+            submitted_at=datetime(2026, 3, 11, 2, 0, tzinfo=ZoneInfo("UTC"))
+        )
+
+        res = api_client.get(_url(event), **_auth(host))
+
+        assert res.json()["responses"][0]["submitted_on"] == "2026-03-10"
+
+    def test_same_day_responses_ordered_by_id_not_creation(self, api_client, host, event, survey):
+        created = [_response(survey, event, str(i)) for i in range(3)]
+
+        res = api_client.get(_url(event), **_auth(host))
+
+        ids = [r["id"] for r in res.json()["responses"]]
+        assert ids == sorted(str(r.id) for r in created)
