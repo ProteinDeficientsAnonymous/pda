@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Annotated, Any
 
 from community._event_description_templates import get_event_description_templates
+from community._event_list import EventListQuery
 from community._event_tags import list_event_tags as list_event_tags_view
 from community._events import get_event as get_event_view
 from community._events import list_events
@@ -28,34 +29,36 @@ def _summary(event: dict[str, Any]) -> dict[str, Any]:
 
 
 def _sort_key(event: dict[str, Any]) -> tuple[bool, float]:
-    start = event["start_datetime"]
+    start = None if event["datetime_tbd"] else event["start_datetime"]
     when = datetime.fromisoformat(start).timestamp() if start else float("inf")
     return event["is_past"], -when if event["is_past"] else when
 
 
 @pda_tool(
     description=(
-        "list events you host (created or co-host), including your drafts, upcoming first. "
-        "use it to find an event's id before reading or editing it."
+        "list events you host (created or co-host), including your drafts, upcoming first, "
+        "undated (tbd) last. use it to find an event's id before reading or editing it. "
+        "results are paged: only fetch the next page (offset=next_offset) if the event you need "
+        "isn't on this one."
     )
 )
 async def list_my_events(
     include_past: Annotated[
         bool, Field(description="also list past published events, newest first after upcoming")
     ] = False,
-) -> list[dict[str, Any]]:
+    limit: Annotated[int, Field(ge=1, le=50, description="events per page")] = 20,
+    offset: Annotated[int, Field(ge=0, description="next_offset from the previous page")] = 0,
+) -> dict[str, Any]:
     user = await current_user()
-    # no start window: the view's window drops undated (TBD) events, which aren't past
-    active = await call_view(list_events, user, status=EventStatus.ACTIVE)
-    drafts = await call_view(list_events, user, status=EventStatus.DRAFT)
-    me = str(user.pk)
-    hosted = [
-        e
-        for e in active
-        if (e["created_by_id"] == me or me in e["co_host_ids"])
-        and (include_past or not e["is_past"])
-    ]
-    return sorted((_summary(e) for e in [*drafts, *hosted]), key=_sort_key)
+    mine = EventListQuery(status=EventStatus.ACTIVE, hosted=True, upcoming=not include_past)
+    active = await call_view(list_events, user, params=mine)
+    drafts = await call_view(list_events, user, params=EventListQuery(status=EventStatus.DRAFT))
+    rows = sorted([*drafts, *active], key=_sort_key)
+    more = offset + limit < len(rows)
+    return {
+        "events": [_summary(e) for e in rows[offset : offset + limit]],
+        "next_offset": offset + limit if more else None,
+    }
 
 
 @pda_tool(

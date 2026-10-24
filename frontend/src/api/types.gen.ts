@@ -3623,6 +3623,35 @@ export interface components {
              */
             zelle_info: string;
         };
+        /** EventListQuery */
+        EventListQuery: {
+            /** End */
+            end?: string | null;
+            /**
+             * Hosted
+             * @description only events the viewer created or co-hosts
+             * @default false
+             */
+            hosted: boolean;
+            /**
+             * Include Imported
+             * @default true
+             */
+            include_imported: boolean;
+            /** Start */
+            start?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /**
+             * Upcoming
+             * @description drop events that are past; tbd events stay
+             * @default false
+             */
+            upcoming: boolean;
+        };
         /** EventOptionOut */
         EventOptionOut: {
             /** Id */
@@ -8016,6 +8045,10 @@ export interface operations {
                 start?: string | null;
                 end?: string | null;
                 include_imported?: boolean;
+                /** @description only events the viewer created or co-hosts */
+                hosted?: boolean;
+                /** @description drop events that are past; tbd events stay */
+                upcoming?: boolean;
             };
             header?: never;
             path?: never;

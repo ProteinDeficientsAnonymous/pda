@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Prefetch, Q
 from django.utils import timezone
+from pydantic import BaseModel, Field
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -32,6 +33,16 @@ from community.models import (
     EventStatus,
     PageVisibility,
 )
+from community.models.event import _is_past_q
+
+
+class EventListQuery(BaseModel):
+    status: str = EventStatus.ACTIVE
+    start: datetime | None = None
+    end: datetime | None = None
+    include_imported: bool = True
+    hosted: bool = Field(False, description="only events the viewer created or co-hosts")
+    upcoming: bool = Field(False, description="drop events that are past; tbd events stay")
 
 
 def _list_rsvp_prefetch(auth_user):
@@ -61,6 +72,10 @@ def _viewer_is_invited(auth_user) -> Exists:
     )
 
 
+def _hosted_by(auth_user):
+    return Q(created_by=auth_user) | _viewer_is_cohost(auth_user)
+
+
 def _build_events_queryset(status: str, auth_user, is_authed):
     """Build the events queryset for list_events based on status and auth state."""
     related = ["co_hosts", "poll", "tags", _list_rsvp_prefetch(auth_user)]
@@ -70,7 +85,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
             .prefetch_related(*related)
             .annotate(**_list_count_annotations())
             .filter(status=status)
-            .filter(Q(created_by=auth_user) | _viewer_is_cohost(auth_user))
+            .filter(_hosted_by(auth_user))
         )
     qs = (
         Event.objects.select_related("created_by")
@@ -115,6 +130,15 @@ def _filter_window(events, start: datetime | None, end: datetime | None, include
         )
     if end is not None:
         events = events.filter(start_datetime__lt=_aware(end))
+    return events
+
+
+def _filter_scope(events, auth_user, hosted: bool, upcoming: bool):
+    """hosted keeps the viewer's created/co-hosted rows; upcoming drops rows where is_past holds."""
+    if hosted:
+        events = events.filter(_hosted_by(auth_user))
+    if upcoming:
+        events = events.exclude(_is_past_q(timezone.now()))
     return events
 
 

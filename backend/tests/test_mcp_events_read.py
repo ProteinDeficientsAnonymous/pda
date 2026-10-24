@@ -4,6 +4,7 @@ import re
 from datetime import timedelta
 
 import pytest
+from community import _events as community_events
 from community._event_description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
@@ -48,13 +49,46 @@ def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
     draft = _event(test_user, "draft", days=5, status=EventStatus.DRAFT)
     _event(test_user, "past", days=-3)
     Event.objects.create(title="tbd", created_by=test_user, datetime_tbd=True)
+    _event(test_user, "tbd dated", days=1, datetime_tbd=True)
     _event(other, "not mine")
     _event(other, "their draft", status=EventStatus.DRAFT)
-    rows = _call(test_user, "list_my_events")["result"]
-    assert [r["title"] for r in rows] == ["soon", "draft", "later", "tbd"]
-    assert rows[1]["status"] == "draft" and rows[1]["url"].endswith(f"/events/{draft.slug}")
-    with_past = _call(test_user, "list_my_events", include_past=True)["result"]
+    body = _call(test_user, "list_my_events")
+    titles = [r["title"] for r in body["events"]]
+    assert titles[:3] == ["soon", "draft", "later"] and set(titles[3:]) == {"tbd", "tbd dated"}
+    assert body["next_offset"] is None
+    assert body["events"][1]["status"] == "draft"
+    assert body["events"][1]["url"].endswith(f"/events/{draft.slug}")
+    with_past = _call(test_user, "list_my_events", include_past=True)["events"]
     assert [r["title"] for r in with_past][-1] == "past"
+
+
+def test_list_my_events_serializes_only_hosted_rows(test_user, monkeypatch):
+    other = make_non_member("+12025550199", "o@e.com")
+    _event(test_user, "mine")
+    _event(test_user, "past", days=-3)
+    for i in range(5):
+        _event(other, f"public {i}", visibility=PageVisibility.PUBLIC)
+    serialized = []
+    real = community_events._event_list_out
+    monkeypatch.setattr(
+        community_events,
+        "_event_list_out",
+        lambda e, *args: serialized.append(e.title) or real(e, *args),
+    )
+    assert [r["title"] for r in _call(test_user, "list_my_events")["events"]] == ["mine"]
+    assert serialized == ["mine"]
+
+
+def test_list_my_events_pages(test_user):
+    for day in range(1, 6):
+        _event(test_user, f"day {day}", days=day)
+    first = _call(test_user, "list_my_events", limit=2)
+    assert [r["title"] for r in first["events"]] == ["day 1", "day 2"]
+    assert first["next_offset"] == 2
+    last = _call(test_user, "list_my_events", limit=2, offset=4)
+    assert ([r["title"] for r in last["events"]], last["next_offset"]) == (["day 5"], None)
+    with pytest.raises(ToolError):
+        _call(test_user, "list_my_events", limit=51)
 
 
 def test_get_event_by_slug_or_id(test_user):
@@ -67,7 +101,7 @@ def test_get_event_by_slug_or_id(test_user):
 def test_get_event_hides_someone_elses_draft(test_user):
     draft = _event(make_non_member("+12025550199", "o@e.com"), "x", status=EventStatus.DRAFT)
     assert _error(test_user, "get_event", event=draft.slug)["status"] == 403
-    assert _call(test_user, "list_my_events")["result"] == []
+    assert _call(test_user, "list_my_events")["events"] == []
 
 
 def test_tentative_member_gets_the_views_visibility(test_user):
