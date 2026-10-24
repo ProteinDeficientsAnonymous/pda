@@ -49,9 +49,7 @@ const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen')
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
 const DocDetail = lazyWithRetry(() => import('@/screens/docs/DocDetailScreen'));
 const Survey = lazyWithRetry(() => import('@/screens/surveys/SurveyScreen'));
-const ConnectAuthorize = lazyWithRetry(
-  () => import('@/screens/connect/ConnectAuthorizeScreen'),
-);
+const ConnectAuthorize = lazyWithRetry(() => import('@/screens/connect/ConnectAuthorizeScreen'));
 
 // Admin screens
 const AdminHub = lazyWithRetry(() => import('@/screens/admin/AdminHubScreen'));
