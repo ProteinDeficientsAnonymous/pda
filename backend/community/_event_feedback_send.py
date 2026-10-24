@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 FEEDBACK_LOOKBACK = timedelta(days=7)
+REMINDER_AFTER_DAYS = 3
 
 
 def _local_midnight(day: date) -> datetime:
@@ -39,7 +40,8 @@ def feedback_cutoff(now: datetime) -> datetime:
 
 
 def feedback_url(token: str) -> str:
-    return f"{settings.FRONTEND_BASE_URL}/feedback/{token}"
+    # Fragment: browsers never send it, so the token stays out of server request logs.
+    return f"{settings.FRONTEND_BASE_URL}/feedback#{token}"
 
 
 def _active_feedback_event_types() -> list[str]:
@@ -109,14 +111,14 @@ def _claim_first_send(request: EventFeedbackRequest, now: datetime) -> bool:
     )
 
 
-def _send_first_for_event(sender: EmailSender, event: Event, now: datetime) -> int:
+def _send_first_for_event(sender: EmailSender, event: Event, now: datetime) -> tuple[int, int]:
     rsvps = EventRSVP.objects.filter(
         event=event,
         attendance=AttendanceStatus.ATTENDED,
         user__is_active=True,
         user__archived_at__isnull=True,
     ).select_related("user")
-    sent = 0
+    sent = failed = 0
     for rsvp in rsvps:
         request = _get_or_create_request(event, rsvp.user)
         if request is None or request.first_sent_at is not None or not rsvp.user.email:
@@ -127,11 +129,46 @@ def _send_first_for_event(sender: EmailSender, event: Event, now: datetime) -> i
         if result is not None and result.success:
             sent += 1
         else:
+            failed += 1
             EventFeedbackRequest.objects.filter(pk=request.pk).update(first_sent_at=None)
-    return sent
+    return sent, failed
 
 
-def send_first_requests(now: datetime) -> int:
-    """Email a feedback link to each checked-in attendee not yet sent one, retrying failed sends. Returns emails sent."""
+def send_first_requests(now: datetime) -> tuple[int, int]:
+    """Email a feedback link to each checked-in attendee not yet sent one, retrying failed sends. Returns (sent, failed)."""
     sender = get_email_sender(EmailStream.BULK)
-    return sum(_send_first_for_event(sender, event, now) for event in due_feedback_events(now))
+    results = [_send_first_for_event(sender, event, now) for event in due_feedback_events(now)]
+    return sum(r[0] for r in results), sum(r[1] for r in results)
+
+
+def send_reminders(now: datetime) -> tuple[int, int]:
+    """Send the single reminder to non-responders three local days after the first email."""
+    today = timezone.localtime(now, settings.COMMUNITY_TZ).date()
+    first_sent_before = _local_midnight(today - timedelta(days=REMINDER_AFTER_DAYS - 1))
+    first_sent_after = (
+        _local_midnight(today) - FEEDBACK_LOOKBACK - timedelta(days=REMINDER_AFTER_DAYS)
+    )
+    due = EventFeedbackRequest.objects.filter(
+        first_sent_at__lt=first_sent_before,
+        first_sent_at__gte=first_sent_after,
+        reminder_sent_at__isnull=True,
+        responded_on__isnull=True,
+        event__status=EventStatus.ACTIVE,
+        event__event_type__in=_active_feedback_event_types(),
+    ).select_related("event", "user")
+    sender = get_email_sender(EmailStream.BULK)
+    sent = failed = 0
+    for request in due:
+        if not request.user.email:
+            continue
+        claimed = EventFeedbackRequest.objects.filter(
+            pk=request.pk, reminder_sent_at__isnull=True
+        ).update(reminder_sent_at=now)
+        if claimed != 1:
+            continue
+        result = _send(sender, request, reminder=True)
+        if result is not None and result.success:
+            sent += 1
+        else:
+            failed += 1
+    return sent, failed

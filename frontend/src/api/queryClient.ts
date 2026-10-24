@@ -10,7 +10,8 @@ export const queryClient = new QueryClient({
   // Report-only backstop: log every mutation failure to the backend. No toast —
   // components own user-facing messaging, so toasting here would double-notify.
   mutationCache: new MutationCache({
-    onError: (error) => {
+    onError: (error, _vars, _ctx, mutation) => {
+      if (mutation.meta?.skipErrorReport) return;
       void reportError(error, 'mutation');
     },
   }),
