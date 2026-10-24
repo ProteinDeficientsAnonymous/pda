@@ -1,3 +1,11 @@
+# [0.169.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.168.0...v0.169.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add connected apps list with disconnect confirm ([#1739](https://github.com/ProteinDeficientsAnonymous/pda/issues/1739)) ([b3e7570](https://github.com/ProteinDeficientsAnonymous/pda/commit/b3e7570c696b605e3fca1b39a95ba1fab495eb75))
+* **mcp:** show connected apps in settings and member detail ([#1740](https://github.com/ProteinDeficientsAnonymous/pda/issues/1740)) ([e164ff1](https://github.com/ProteinDeficientsAnonymous/pda/commit/e164ff1526646557bec1f96960bdb0c6eadaef5a))
+
 # [0.168.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.167.0...v0.168.0) (2026-10-24)
 
 
