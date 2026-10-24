@@ -14,6 +14,9 @@ from community.models import (
     SurveyResponse,
 )
 from django.utils import timezone
+from notifications._event_feedback_notifications import notify_event_feedback
+from notifications.models import Notification, NotificationType
+from users.models import User
 
 from tests._asserts import assert_error_code
 
@@ -216,3 +219,33 @@ class TestSubmitFeedback:
             _submit(api_client, feedback_request, feedback_survey).status_code for _ in range(21)
         ]
         assert statuses[-1] == 429
+
+
+@pytest.mark.django_db
+class TestFeedbackHostNotification:
+    def test_submit_notifies_creator_and_cohosts(
+        self, api_client, feedback_survey, event, test_user, django_capture_on_commit_callbacks
+    ):
+        cohost = User.objects.create_user(phone_number="+12025559301", first_name="Co")
+        attendee = User.objects.create_user(phone_number="+12025559302", first_name="Zelda")
+        event.co_hosts.add(cohost)
+        feedback_request = EventFeedbackRequest.objects.create(
+            event=event, user=attendee, token=EventFeedbackRequest.new_token()
+        )
+        with django_capture_on_commit_callbacks(execute=True):
+            response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 201
+        notes = Notification.objects.filter(notification_type=NotificationType.EVENT_FEEDBACK)
+        assert sorted(n.recipient_id for n in notes) == sorted([test_user.id, cohost.id])
+        for note in notes:
+            assert note.event_id == event.id
+            assert note.message == "new feedback for vegan potluck"
+            assert note.related_user_id is None
+            assert "Zelda" not in note.message
+
+    def test_long_event_title_truncated_to_fit(self, event):
+        event.title = "x" * 300
+        notify_event_feedback(event)
+        note = Notification.objects.get(notification_type=NotificationType.EVENT_FEEDBACK)
+        assert len(note.message) <= 255
+        assert note.message.startswith("new feedback for xxx")

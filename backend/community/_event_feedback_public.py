@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications._event_feedback_notifications import notify_event_feedback
 
 from community._event_feedback_schemas import EventFeedbackOut, EventFeedbackSubmitOut
 from community._shared import ErrorOut
@@ -92,4 +93,6 @@ def submit_event_feedback(request, token: str, payload: SurveyAnswersIn):
             request,
             target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id)),
         )
+        event = feedback_request.event
+        transaction.on_commit(lambda: notify_event_feedback(event))
     return Status(201, EventFeedbackSubmitOut(confirmation_message=survey.confirmation_message))
