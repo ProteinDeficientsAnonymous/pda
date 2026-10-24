@@ -1,3 +1,10 @@
+# [0.157.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.156.0...v0.157.0) (2026-10-24)
+
+
+### Features
+
+* show star labels on rating questions ([#1725](https://github.com/ProteinDeficientsAnonymous/pda/issues/1725)) ([a6f4768](https://github.com/ProteinDeficientsAnonymous/pda/commit/a6f47681548aed2a1851e4e932ad773fbe64bca4))
+
 # [0.156.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.155.0...v0.156.0) (2026-10-23)
 
 
