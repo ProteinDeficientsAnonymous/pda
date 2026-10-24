@@ -1,5 +1,6 @@
 from community.api import router as community_router
 from django.urls import path, re_path
+from mcp_gateway.api import router as connect_router
 from ninja import NinjaAPI
 from notifications.api import router as notifications_router
 from notifications.sse import notification_stream
@@ -14,6 +15,7 @@ api = NinjaAPI(title="PDA API", version="1.0.0")
 register_validation_handlers(api)
 api.add_router("/auth/", auth_router, tags=["auth"])
 api.add_router("/community/", community_router, tags=["community"])
+api.add_router("/connect/", connect_router, tags=["connect"])
 api.add_router("/notifications/", notifications_router, tags=["notifications"])
 
 urlpatterns = [

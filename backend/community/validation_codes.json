@@ -1168,6 +1168,28 @@
           "max_length"
         ]
       }
+    ],
+    "Connect": [
+      {
+        "name": "REQUEST_NOT_FOUND",
+        "value": "connect.request_not_found",
+        "params": []
+      },
+      {
+        "name": "REQUEST_EXPIRED",
+        "value": "connect.request_expired",
+        "params": []
+      },
+      {
+        "name": "REQUEST_ALREADY_USED",
+        "value": "connect.request_already_used",
+        "params": []
+      },
+      {
+        "name": "APP_NOT_FOUND",
+        "value": "connect.app_not_found",
+        "params": []
+      }
     ]
   }
 }
