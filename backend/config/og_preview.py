@@ -67,19 +67,19 @@ def _site_preview(request, path: str):
 
 
 def event_og_preview(request, event_id: str):
-    """Render OG/Twitter meta tags for a PUBLIC event so link scrapers can unfurl it.
-
-    Anything an anonymous user can't open gets the generic site preview, so
-    member-only details never leak and hidden events look identical to missing ones.
-    """
+    """OG tags for link scrapers; non-public events expose only their title, drafts nothing."""
     event = Event.objects.filter(parse_event_ref(event_id).as_q()).first()
-    is_previewable = (
-        event is not None
-        and event.visibility == PageVisibility.PUBLIC
-        and event.status in _PREVIEWABLE_STATUSES
-    )
-    if not is_previewable:
+    if event is None or event.status not in _PREVIEWABLE_STATUSES:
         return _site_preview(request, f"/events/{event_id}")
+
+    if event.visibility != PageVisibility.PUBLIC:
+        return _render_preview(
+            request,
+            title=event.title,
+            description=_STATIC_PAGES[""][1],
+            url=_absolute(f"/events/{event.slug or event.id}"),
+            image=_absolute(_LOGO_PATH),
+        )
 
     return _render_preview(
         request,

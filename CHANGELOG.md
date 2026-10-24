@@ -1,3 +1,29 @@
+# [0.164.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.163.0...v0.164.0) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** show event title in link previews for non-public events ([#1744](https://github.com/ProteinDeficientsAnonymous/pda/issues/1744)) ([e847581](https://github.com/ProteinDeficientsAnonymous/pda/commit/e8475817a0d3a642dad541949b1572e3c0c73c81))
+
+
+### Features
+
+* **surveys:** confirm before closing a survey ([#1742](https://github.com/ProteinDeficientsAnonymous/pda/issues/1742)) ([09c3fe4](https://github.com/ProteinDeficientsAnonymous/pda/commit/09c3fe4993e4a18255627694038a3badfd389dbf))
+
+# [0.163.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.162.0...v0.163.0) (2026-10-24)
+
+
+### Features
+
+* add back to surveys link on new and edit survey pages ([#1743](https://github.com/ProteinDeficientsAnonymous/pda/issues/1743)) ([0e52b36](https://github.com/ProteinDeficientsAnonymous/pda/commit/0e52b36e3ee06119e15a6965016072da4fdffa5e))
+
+# [0.162.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.161.0...v0.162.0) (2026-10-24)
+
+
+### Features
+
+* open the new survey page instead of a modal ([#1734](https://github.com/ProteinDeficientsAnonymous/pda/issues/1734)) ([4fb0fa8](https://github.com/ProteinDeficientsAnonymous/pda/commit/4fb0fa80e25544e54c7b8170d40a62ffe7787939))
+
 # [0.161.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.160.0...v0.161.0) (2026-10-24)
 
 
