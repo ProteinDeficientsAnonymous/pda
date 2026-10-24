@@ -61,9 +61,13 @@ class EventFeedbackRequestAdmin(admin.ModelAdmin):
     list_display = ("event", "user", "first_sent_at", "reminder_sent_at", "responded_on")
     list_select_related = ("event", "user")
     ordering = ("-created_at",)
+    exclude = ("token",)
 
     def has_add_permission(self, request):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
