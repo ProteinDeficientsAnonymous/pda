@@ -62,6 +62,7 @@ from community.models.survey import (
     SurveyResponse,
 )
 from community.models.tag import EventTag
+from community.models.tentative_attendance_nudge import TentativeAttendanceNudge
 from community.models.whatsapp_join_reminder import WhatsAppJoinReminder
 
 __all__ = [
@@ -126,5 +127,6 @@ __all__ = [
     "Survey",
     "SurveyQuestion",
     "SurveyResponse",
+    "TentativeAttendanceNudge",
     "WhatsAppJoinReminder",
 ]
