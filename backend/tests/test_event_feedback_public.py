@@ -80,8 +80,11 @@ def _url(token: str) -> str:
 @pytest.mark.django_db
 class TestGetFeedbackLink:
     def test_get_returns_survey_and_event_title(
-        self, api_client, feedback_survey, feedback_request, event
+        self, api_client, feedback_survey, feedback_request, event, test_user
     ):
+        feedback_survey.created_by = test_user
+        feedback_survey.save(update_fields=["created_by"])
+        SurveyResponse.objects.create(survey=feedback_survey, event=event, answers={})
         response = api_client.get(_url(feedback_request.token))
         assert response.status_code == 200
         body = response.json()
@@ -94,6 +97,9 @@ class TestGetFeedbackLink:
         assert [q["label"] for q in body["survey"]["questions"]] == ["how was it?"]
         assert body["survey"]["my_response_id"] is None
         assert body["survey"]["my_answers"] is None
+        assert body["survey"]["response_count"] == 0
+        assert body["survey"]["created_by_id"] is None
+        assert body["survey"]["slug"] == ""
 
     def test_unknown_token_404(self, api_client, feedback_survey):
         response = api_client.get(_url("not-a-real-token"))
