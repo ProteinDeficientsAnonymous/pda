@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns';
 
 import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
+import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 
 export function SurveyResponsesTable({
@@ -68,19 +69,4 @@ function formatSubmittedAt(iso: string, anonymous: boolean): string {
   // Anonymous surveys get a server-local date only; its yyyy-mm-dd prefix is that day.
   if (anonymous) return format(parseISO(iso.slice(0, 10)), 'MMM d, yyyy').toLowerCase();
   return format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
-}
-
-function renderAnswer(raw: unknown): string {
-  if (raw === undefined || raw === null) return '—';
-  if (typeof raw === 'object' && 'answer' in (raw as Record<string, unknown>)) {
-    const a = (raw as { answer: unknown }).answer;
-    if (typeof a === 'string') return a;
-    if (typeof a === 'object' && a !== null) {
-      return Object.entries(a as Record<string, string>)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\n');
-    }
-    return JSON.stringify(a);
-  }
-  return typeof raw === 'string' ? raw : JSON.stringify(raw);
 }

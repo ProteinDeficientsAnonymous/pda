@@ -16,7 +16,6 @@ import {
   useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
-import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
