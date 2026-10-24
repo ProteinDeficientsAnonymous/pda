@@ -12,6 +12,7 @@ export const Code = {
     MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
+    DatetimeOffsetRequired: 'event.datetime_offset_required',
     OfficialMustBePublic: 'event.official_must_be_public',
     OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
@@ -293,6 +294,7 @@ export type ValidationCode =
   | 'event.max_attendees_must_be_at_least_one'
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
+  | 'event.datetime_offset_required'
   | 'event.official_must_be_public'
   | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
@@ -506,6 +508,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.max_attendees_must_be_at_least_one': [],
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
+  'event.datetime_offset_required': [],
   'event.official_must_be_public': [],
   'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
