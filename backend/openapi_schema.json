@@ -1788,6 +1788,30 @@
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
       },
+      "EventFeedbackHostOut": {
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/HostFeedbackResponseOut"
+            },
+            "title": "Responses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "questions",
+          "responses"
+        ],
+        "title": "EventFeedbackHostOut",
+        "type": "object"
+      },
       "EventFlagIn": {
         "properties": {
           "reason": {
@@ -3980,6 +4004,31 @@
           }
         },
         "title": "HomePagePatchIn",
+        "type": "object"
+      },
+      "HostFeedbackResponseOut": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "submitted_on": {
+            "format": "date",
+            "title": "Submitted On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "answers",
+          "submitted_on"
+        ],
+        "title": "HostFeedbackResponseOut",
         "type": "object"
       },
       "HostRSVPIn": {
@@ -12103,6 +12152,64 @@
           }
         ],
         "summary": "Send Email Blast",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/feedback/": {
+      "get": {
+        "operationId": "community__event_feedback_host_get_event_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackHostOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Feedback",
         "tags": [
           "community"
         ]
