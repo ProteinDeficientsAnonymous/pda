@@ -926,6 +926,43 @@
         "title": "ConnectRequestOut",
         "type": "object"
       },
+      "ConnectedAppOut": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          }
+        },
+        "required": [
+          "id",
+          "client_name",
+          "created_at",
+          "last_used_at"
+        ],
+        "title": "ConnectedAppOut",
+        "type": "object"
+      },
       "ConsentType": {
         "enum": [
           "guidelines",
@@ -17153,6 +17190,37 @@
         "summary": "Update Whatsapp Link",
         "tags": [
           "community"
+        ]
+      }
+    },
+    "/api/connect/apps/": {
+      "get": {
+        "operationId": "mcp_gateway_api_list_my_apps",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectedAppOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List My Apps",
+        "tags": [
+          "connect"
         ]
       }
     },

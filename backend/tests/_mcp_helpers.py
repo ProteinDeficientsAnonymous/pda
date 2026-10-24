@@ -4,7 +4,7 @@ from uuid import uuid4
 from django.utils import timezone
 from mcp.server.auth.provider import AuthorizationParams
 from mcp.shared.auth import OAuthClientInformationFull
-from mcp_gateway.models import OAuthAuthRequest, OAuthClient
+from mcp_gateway.models import OAuthAuthRequest, OAuthClient, OAuthGrant
 
 REDIRECT = "https://claude.ai/api/mcp/auth_callback"
 
@@ -37,3 +37,7 @@ def make_request(client: OAuthClient | None = None, state: str | None = "xyz") -
         params=params.model_dump(mode="json"),
         expires_at=timezone.now() + timedelta(minutes=10),
     )
+
+
+def make_grant(user, client: OAuthClient | None = None) -> OAuthGrant:
+    return OAuthGrant.objects.create(user=user, client=client or make_client())
