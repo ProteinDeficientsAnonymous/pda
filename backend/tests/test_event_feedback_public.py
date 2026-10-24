@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from audit.models import AuditLogEntry
@@ -7,6 +7,7 @@ from community._validation import Code
 from community.models import (
     Event,
     EventFeedbackRequest,
+    EventStatus,
     EventType,
     Survey,
     SurveyQuestion,
@@ -153,10 +154,27 @@ class TestSubmitFeedback:
         assert stored.event_id == event.id
         assert stored.anonymous_token is None
 
-    def test_submit_marks_responded_on_date(self, api_client, feedback_survey, feedback_request):
+    def test_submit_marks_responded_on_date(
+        self, api_client, feedback_survey, feedback_request, monkeypatch
+    ):
+        # 10pm in new york is already the next day in utc
+        frozen = datetime(2026, 10, 24, 2, 0, tzinfo=UTC)
+        monkeypatch.setattr("django.utils.timezone.now", lambda: frozen)
         _submit(api_client, feedback_request, feedback_survey)
         feedback_request.refresh_from_db()
-        assert feedback_request.responded_on == timezone.localdate()
+        assert feedback_request.responded_on == date(2026, 10, 23)
+
+    @pytest.mark.parametrize("status", [EventStatus.CANCELLED, EventStatus.DELETED])
+    def test_inactive_event_closed(
+        self, api_client, feedback_survey, feedback_request, event, status
+    ):
+        event.status = status
+        event.save(update_fields=["status"])
+        assert api_client.get(_url(feedback_request.token)).json()["is_open"] is False
+        response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CLOSED)
+        assert not SurveyResponse.objects.filter(survey=feedback_survey).exists()
 
     def test_submit_leaves_no_attributed_audit_row(
         self, api_client, feedback_survey, feedback_request, django_capture_on_commit_callbacks

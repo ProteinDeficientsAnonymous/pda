@@ -2,6 +2,7 @@ import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
 from config.ratelimit import rate_limit
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
@@ -13,7 +14,7 @@ from community._survey_helpers import _survey_out, survey_is_open
 from community._survey_schemas import SurveyAnswersIn, SurveyOut
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community._validation import Code, raise_validation
-from community.models import EventFeedbackRequest, Survey, SurveyResponse
+from community.models import EventFeedbackRequest, EventStatus, Survey, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 
 router = Router()
@@ -55,7 +56,9 @@ def get_event_feedback(request, token: str):
             event_title=event.title,
             event_start=event.start_datetime,
             already_responded=feedback_request.responded_on is not None,
-            is_open=survey is not None and survey_is_open(survey),
+            is_open=(
+                survey is not None and event.status == EventStatus.ACTIVE and survey_is_open(survey)
+            ),
         ),
     )
 
@@ -63,6 +66,8 @@ def get_event_feedback(request, token: str):
 def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
     if feedback_request.responded_on is not None:
         raise_validation(Code.Survey.FEEDBACK_ALREADY_SUBMITTED, status_code=400)
+    if feedback_request.event.status != EventStatus.ACTIVE:
+        raise_validation(Code.Survey.CLOSED, status_code=400)
     survey = feedback_survey_for(feedback_request.event.event_type)
     if survey is None:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
@@ -96,7 +101,7 @@ def submit_event_feedback(request, token: str, payload: SurveyAnswersIn):
             event=feedback_request.event,
             answers=_build_survey_answers(payload.answers, questions),
         )
-        feedback_request.responded_on = timezone.localdate()
+        feedback_request.responded_on = timezone.localdate(timezone=settings.COMMUNITY_TZ)
         feedback_request.save(update_fields=["responded_on"])
         mark_request_anonymized(request)
         audit_log(
