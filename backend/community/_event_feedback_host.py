@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from config.auth import gated_jwt
-from django.utils import timezone
+from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
 
@@ -24,7 +24,7 @@ def _response_out(response: SurveyResponse) -> HostFeedbackResponseOut:
     return HostFeedbackResponseOut(
         id=str(response.id),
         answers=response.answers,
-        submitted_on=timezone.localtime(response.submitted_at).date(),
+        submitted_on=response.submitted_at.astimezone(settings.COMMUNITY_TZ).date(),
     )
 
 
@@ -34,7 +34,7 @@ def _response_out(response: SurveyResponse) -> HostFeedbackResponseOut:
     auth=gated_jwt,
 )
 def get_event_feedback(request, event_id: UUID):
-    event = Event.objects.prefetch_related("co_hosts").filter(id=event_id).first()
+    event = Event.objects.filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_edit_event(request.auth, event):
