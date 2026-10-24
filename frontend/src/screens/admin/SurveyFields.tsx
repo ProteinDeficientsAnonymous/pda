@@ -6,7 +6,7 @@ import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-import type { Event } from '@/models/event';
+import { type Event, EventType, type EventTypeValue } from '@/models/event';
 
 export type SurveyFormValues = Omit<SurveyInput, 'isActive'>;
 
@@ -15,6 +15,7 @@ interface Props {
   onChange: (patch: Partial<SurveyFormValues>) => void;
   slugError?: string | undefined;
   linkedEventError?: string | undefined;
+  feedbackTypeError?: string | undefined;
   anonymousLocked?: boolean;
 }
 
@@ -23,11 +24,18 @@ const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'public' },
 ];
 
+const FEEDBACK_TYPE_OPTIONS: { value: '' | EventTypeValue; label: string }[] = [
+  { value: '', label: 'not a feedback survey' },
+  { value: EventType.Official, label: 'official events' },
+  { value: EventType.Club, label: 'club events' },
+];
+
 export function SurveyFields({
   values,
   onChange,
   slugError,
   linkedEventError,
+  feedbackTypeError,
   anonymousLocked = false,
 }: Props) {
   return (
@@ -73,6 +81,16 @@ export function SurveyFields({
           onChange({ linkedEventId });
         }}
         error={linkedEventError}
+      />
+      <Select
+        label="feedback survey for"
+        value={values.feedbackEventType}
+        onChange={(e) => {
+          const picked = FEEDBACK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
+          onChange({ feedbackEventType: picked?.value ?? '' });
+        }}
+        options={FEEDBACK_TYPE_OPTIONS}
+        error={feedbackTypeError}
       />
       <label className="flex items-center gap-2 text-sm">
         <input

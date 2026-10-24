@@ -23,6 +23,7 @@ const EMPTY_SURVEY: SurveyInput = {
   closesAt: null,
   maxResponses: null,
   linkedEventId: null,
+  feedbackEventType: '',
 };
 
 export default function SurveyCreateScreen() {

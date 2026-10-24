@@ -34,6 +34,7 @@ const survey: Survey = {
   maxResponses: null,
   responseCount: 0,
   linkedEventId: null,
+  feedbackEventType: '',
   questions: [],
   myResponseId: null,
   myAnswers: null,
@@ -86,6 +87,7 @@ describe('SurveySettingsDialog', () => {
         closesAt: null,
         maxResponses: null,
         linkedEventId: 'evt-1',
+        feedbackEventType: '',
       });
     });
     expect(onClose).toHaveBeenCalled();
@@ -180,6 +182,32 @@ describe('SurveySettingsDialog', () => {
     renderDialog();
     await userEvent.click(screen.getByLabelText(/anonymous responses/));
     expect(screen.getByLabelText(/one response per user/)).toBeDisabled();
+  });
+
+  it('sends the chosen feedback event type', async () => {
+    renderDialog();
+    const select = screen.getByLabelText('feedback survey for');
+    expect(select).toHaveValue('');
+    await userEvent.selectOptions(select, 'official events');
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ feedbackEventType: 'official' }),
+      );
+    });
+  });
+
+  it('seeds the feedback select from the survey and shows a taken error on it', async () => {
+    mutateAsync.mockRejectedValue(fieldError('survey.feedback_type_taken', 'feedback_event_type'));
+    renderDialog({ feedbackEventType: 'club' });
+    const select = screen.getByLabelText('feedback survey for');
+    expect(select).toHaveValue('club');
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(await screen.findByText(/already/)).toBeInTheDocument();
+    expect(select).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('locks the anonymous toggle once the survey has responses', () => {
