@@ -4545,6 +4545,8 @@ export interface components {
         };
         /** MePatchIn */
         MePatchIn: {
+            /** Attendance Nudge Opt Out */
+            attendance_nudge_opt_out?: boolean | null;
             /** Bio */
             bio?: string | null;
             birthday?: components["schemas"]["BirthdayIn"] | null;
@@ -5593,6 +5595,11 @@ export interface components {
         };
         /** UserOut */
         UserOut: {
+            /**
+             * Attendance Nudge Opt Out
+             * @default false
+             */
+            attendance_nudge_opt_out: boolean;
             /**
              * Attended Count
              * @default 0

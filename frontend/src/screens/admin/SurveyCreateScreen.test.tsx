@@ -68,6 +68,10 @@ describe('SurveyCreateScreen', () => {
   it('links cancel back to the survey list', () => {
     renderScreen();
     expect(screen.getByRole('link', { name: 'cancel' })).toHaveAttribute('href', '/admin/surveys');
+    expect(screen.getByRole('link', { name: '← back to surveys' })).toHaveAttribute(
+      'href',
+      '/admin/surveys',
+    );
   });
 
   it('requires a title and slug before submitting', async () => {

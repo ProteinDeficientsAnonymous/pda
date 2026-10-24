@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,6 +10,7 @@ import { surveyStatus } from '@/models/survey';
 import SurveyAdminListScreen from './SurveyAdminListScreen';
 
 const toastSuccess = vi.fn();
+const navigate = vi.fn();
 
 function makeSurvey(overrides: Partial<SurveySummary> = {}): SurveySummary {
   return {
@@ -59,6 +62,11 @@ vi.mock('@/api/surveyAdmin', () => ({
   useAdminSurveys: () => ({ data: surveysMock, isPending: false, isError: false }),
   useDeleteSurvey: () => ({ mutate: vi.fn(), isPending: false }),
 }));
+
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof RouterDom>();
+  return { ...actual, useNavigate: () => navigate };
+});
 
 function renderScreen() {
   return render(
@@ -157,6 +165,19 @@ describe('SurveyAdminListScreen', () => {
       expect(toastSuccess).toHaveBeenCalledWith('link copied');
     });
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/surveys/summer-picnic`);
+  });
+});
+
+describe('SurveyAdminListScreen new survey', () => {
+  beforeEach(() => {
+    navigate.mockReset();
+  });
+
+  it('opens the new survey page instead of a dialog', async () => {
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'new survey' }));
+    expect(navigate).toHaveBeenCalledWith('/admin/surveys/new');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 
