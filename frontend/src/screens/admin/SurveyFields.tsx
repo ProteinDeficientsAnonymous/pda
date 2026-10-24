@@ -38,6 +38,8 @@ export function SurveyFields({
   feedbackTypeError,
   anonymousLocked = false,
 }: Props) {
+  const isFeedback = values.feedbackEventType !== '';
+  const anonymous = values.anonymous || isFeedback;
   return (
     <>
       <TextField
@@ -81,13 +83,19 @@ export function SurveyFields({
           onChange({ linkedEventId });
         }}
         error={linkedEventError}
+        disabled={isFeedback}
       />
       <Select
         label="feedback survey for"
         value={values.feedbackEventType}
         onChange={(e) => {
           const picked = FEEDBACK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
-          onChange({ feedbackEventType: picked?.value ?? '' });
+          const feedbackEventType = picked?.value ?? '';
+          onChange(
+            feedbackEventType
+              ? { feedbackEventType, anonymous: true, linkedEventId: null }
+              : { feedbackEventType },
+          );
         }}
         options={FEEDBACK_TYPE_OPTIONS}
         error={feedbackTypeError}
@@ -95,15 +103,15 @@ export function SurveyFields({
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={values.oneResponsePerUser && !values.anonymous}
-          disabled={values.anonymous}
+          checked={values.oneResponsePerUser && !anonymous}
+          disabled={anonymous}
           onChange={(e) => {
             onChange({ oneResponsePerUser: e.target.checked });
           }}
         />
         <span>
           one response per user
-          {values.anonymous ? (
+          {anonymous ? (
             <span className="text-muted"> — not enforced on anonymous surveys</span>
           ) : null}
         </span>
@@ -111,15 +119,17 @@ export function SurveyFields({
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={values.anonymous}
-          disabled={anonymousLocked}
+          checked={anonymous}
+          disabled={anonymousLocked || isFeedback}
           onChange={(e) => {
             onChange({ anonymous: e.target.checked });
           }}
         />
         <span>
           anonymous responses
-          {anonymousLocked ? (
+          {isFeedback ? (
+            <span className="text-muted"> — always anonymous for feedback surveys</span>
+          ) : anonymousLocked ? (
             <span className="text-muted"> — locked once responses come in</span>
           ) : null}
         </span>
@@ -176,10 +186,12 @@ function LinkedEventSelect({
   value,
   onChange,
   error,
+  disabled,
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
   error?: string | undefined;
+  disabled?: boolean;
 }) {
   const { data: events = [] } = useEvents();
   const options = events.map((e) => ({ value: e.id, label: eventLabel(e) }));
@@ -196,6 +208,7 @@ function LinkedEventSelect({
       }}
       options={[{ value: '', label: 'none' }, ...options]}
       error={error}
+      disabled={disabled}
     />
   );
 }

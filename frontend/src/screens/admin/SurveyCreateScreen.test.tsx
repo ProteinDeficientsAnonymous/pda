@@ -130,6 +130,20 @@ describe('SurveyCreateScreen', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('shows a taken feedback type inline on the select', async () => {
+    createMutateAsync.mockRejectedValue(
+      fieldError('survey.feedback_type_taken', 'feedback_event_type'),
+    );
+    renderScreen();
+    await fillForm();
+    await userEvent.selectOptions(screen.getByLabelText('feedback survey for'), 'official events');
+    await userEvent.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(await screen.findByText(/already/)).toBeInTheDocument();
+    expect(screen.getByLabelText('feedback survey for')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('shows a generic banner for a failure with no field error', async () => {
     createMutateAsync.mockRejectedValue(new Error('network down'));
     renderScreen();
