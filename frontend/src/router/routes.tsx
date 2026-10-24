@@ -49,6 +49,9 @@ const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen')
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
 const DocDetail = lazyWithRetry(() => import('@/screens/docs/DocDetailScreen'));
 const Survey = lazyWithRetry(() => import('@/screens/surveys/SurveyScreen'));
+const ConnectAuthorize = lazyWithRetry(
+  () => import('@/screens/connect/ConnectAuthorizeScreen'),
+);
 
 // Admin screens
 const AdminHub = lazyWithRetry(() => import('@/screens/admin/AdminHubScreen'));
@@ -114,6 +117,7 @@ export const router = createBrowserRouter([
                   { path: '/notifications', element: el(<Notifications />) },
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },
+                  { path: '/connect/authorize', element: el(<ConnectAuthorize />) },
                   { path: '/events/mine', element: el(<MyEvents />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
                   { path: '/events/:id/check-in', element: el(<EventAttendance />) },
