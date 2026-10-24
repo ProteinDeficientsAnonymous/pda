@@ -52,6 +52,10 @@ export default function SurveyCreateScreen() {
 
   return (
     <ContentContainer>
+      <Link to="/admin/surveys" className="text-muted mb-4 inline-block text-sm hover:underline">
+        ← back to surveys
+      </Link>
+
       <header className="mb-6">
         <h1 className="text-2xl font-medium tracking-tight">new survey</h1>
         <p className="text-muted text-sm">you can add questions once it's created</p>

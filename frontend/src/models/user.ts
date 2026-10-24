@@ -64,6 +64,7 @@ export interface User {
   hideLastName: boolean;
   weeklyDigestOptOut: boolean;
   whatsappReminderOptOut: boolean;
+  attendanceNudgeOptOut: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
   calendarFeedExcludedTypes: EventTypeValue[];

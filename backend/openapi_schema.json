@@ -4670,6 +4670,17 @@
       },
       "MePatchIn": {
         "properties": {
+          "attendance_nudge_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Nudge Opt Out"
+          },
           "bio": {
             "anyOf": [
               {
@@ -7317,6 +7328,11 @@
       },
       "UserOut": {
         "properties": {
+          "attendance_nudge_opt_out": {
+            "default": false,
+            "title": "Attendance Nudge Opt Out",
+            "type": "boolean"
+          },
           "attended_count": {
             "default": 0,
             "title": "Attended Count",

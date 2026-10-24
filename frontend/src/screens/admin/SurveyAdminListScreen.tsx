@@ -1,31 +1,19 @@
 import { format } from 'date-fns';
-import type { SyntheticEvent } from 'react';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
-import {
-  type SurveyInput,
-  type SurveySummary,
-  useAdminSurveys,
-  useCreateSurvey,
-  useDeleteSurvey,
-} from '@/api/surveyAdmin';
+import { type SurveySummary, useAdminSurveys, useDeleteSurvey } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { type SurveyStatus, surveyStatus, surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
-import { SurveyFields } from './SurveyFields';
-import { useSurveyFieldErrors } from './useSurveyFieldErrors';
 
 export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
   const del = useDeleteSurvey();
-  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
   const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -48,7 +36,7 @@ export default function SurveyAdminListScreen() {
         <h1 className="text-2xl font-medium tracking-tight">surveys</h1>
         <Button
           onClick={() => {
-            setCreating(true);
+            void navigate('/admin/surveys/new');
           }}
         >
           new survey
@@ -71,13 +59,6 @@ export default function SurveyAdminListScreen() {
           ))}
         </ul>
       )}
-
-      <CreateSurveyDialog
-        open={creating}
-        onClose={() => {
-          setCreating(false);
-        }}
-      />
 
       {confirmElement}
     </ContentContainer>
@@ -144,86 +125,4 @@ function SurveyRow({
       </div>
     </article>
   );
-}
-
-interface CreateSurveyDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-// Remount on open so the form starts empty — the parent keeps this mounted while closed.
-function CreateSurveyDialog(props: CreateSurveyDialogProps) {
-  if (!props.open) return null;
-  return <CreateSurveyDialogBody {...props} />;
-}
-
-function CreateSurveyDialogBody({ open, onClose }: CreateSurveyDialogProps) {
-  const create = useCreateSurvey();
-  const navigate = useNavigate();
-  const [values, setValues] = useState<SurveyInput>({
-    title: '',
-    description: '',
-    slug: '',
-    visibility: 'members_only',
-    isActive: true,
-    oneResponsePerUser: false,
-    anonymous: false,
-    confirmationMessage: '',
-    opensAt: null,
-    closesAt: null,
-    maxResponses: null,
-    linkedEventId: null,
-  });
-  const [error, setError] = useState<string | null>(null);
-  const fieldErrors = useSurveyFieldErrors();
-
-  async function submit(e: SyntheticEvent) {
-    e.preventDefault();
-    setError(null);
-    fieldErrors.reset();
-    if (!values.title.trim() || !values.slug.trim()) {
-      setError('title and slug are required');
-      return;
-    }
-    try {
-      const created = await create.mutateAsync(values);
-      onClose();
-      void navigate(`/admin/surveys/${created.id}`);
-    } catch (err) {
-      if (!fieldErrors.capture(err)) setError(extractError(err));
-    }
-  }
-
-  return (
-    <Dialog open={open} onClose={onClose} title="new survey">
-      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-        <SurveyFields
-          values={values}
-          onChange={(patch) => {
-            setValues((v) => ({ ...v, ...patch }));
-            fieldErrors.clearFor(patch);
-          }}
-          slugError={fieldErrors.slugError ?? undefined}
-          linkedEventError={fieldErrors.linkedEventError ?? undefined}
-        />
-        {error ? (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        ) : null}
-        <div className="mt-2 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={create.isPending} type="button">
-            cancel
-          </Button>
-          <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? 'creating…' : 'create'}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
-  );
-}
-
-function extractError(err: unknown): string {
-  return extractApiErrorOr(err, "couldn't complete that action — try again");
 }
