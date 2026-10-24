@@ -20,6 +20,11 @@ export interface ConnectedApp {
   lastUsedAt: Date | null;
 }
 
+// encodeURIComponent leaves '.' alone, so a bare '..' id would still traverse
+function seg(id: string): string {
+  return encodeURIComponent(id).replaceAll('.', '%2E');
+}
+
 export const connectKeys = {
   request: (requestId: string) => ['connect', 'request', requestId] as const,
   apps: ['connect', 'apps'] as const,
@@ -42,7 +47,7 @@ export function useConnectRequest(requestId: string | null) {
     retry: false,
     queryFn: async (): Promise<ConnectRequest> => {
       const { data } = await apiClient.get<WireConnectRequest>(
-        `/api/connect/requests/${requestId ?? ''}/`,
+        `/api/connect/requests/${seg(requestId ?? '')}/`,
       );
       return {
         clientName: data.client_name,
@@ -57,7 +62,7 @@ function useConnectDecision(decision: 'approve' | 'deny') {
   return useMutation({
     mutationFn: async (requestId: string): Promise<string> => {
       const { data } = await apiClient.post<WireConnectRedirect>(
-        `/api/connect/requests/${requestId}/${decision}/`,
+        `/api/connect/requests/${seg(requestId)}/${decision}/`,
       );
       return data.redirect_url;
     },
@@ -86,7 +91,7 @@ export function useRevokeConnectedApp() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (grantId: string) => {
-      await apiClient.delete(`/api/connect/apps/${grantId}/`);
+      await apiClient.delete(`/api/connect/apps/${seg(grantId)}/`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: connectKeys.apps }),
   });
@@ -97,7 +102,7 @@ export function useMemberConnectedApps(userId: string) {
     queryKey: connectKeys.memberApps(userId),
     queryFn: async (): Promise<ConnectedApp[]> => {
       const { data } = await apiClient.get<WireConnectedApp[]>(
-        `/api/connect/users/${userId}/apps/`,
+        `/api/connect/users/${seg(userId)}/apps/`,
       );
       return data.map(mapApp);
     },
@@ -108,7 +113,7 @@ export function useRevokeMemberConnectedApp(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (grantId: string) => {
-      await apiClient.delete(`/api/connect/users/${userId}/apps/${grantId}/`);
+      await apiClient.delete(`/api/connect/users/${seg(userId)}/apps/${seg(grantId)}/`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: connectKeys.memberApps(userId) }),
   });
