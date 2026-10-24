@@ -23,6 +23,7 @@ from community.models.event import _is_past_q
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from notifications.email_sender import EmailSender
+    from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -88,39 +89,49 @@ def _send(
     return result
 
 
-def _create_request(event: Event, rsvp: EventRSVP) -> EventFeedbackRequest | None:
+def _get_or_create_request(event: Event, user: User) -> EventFeedbackRequest | None:
     try:
         with transaction.atomic():
-            request, created = EventFeedbackRequest.objects.get_or_create(
-                event=event,
-                user=rsvp.user,
-                defaults={"token": EventFeedbackRequest.new_token()},
+            request, _ = EventFeedbackRequest.objects.get_or_create(
+                event=event, user=user, defaults={"token": EventFeedbackRequest.new_token()}
             )
     except IntegrityError:
         return None
-    return request if created else None
+    return request
+
+
+def _claim_first_send(request: EventFeedbackRequest, now: datetime) -> bool:
+    return (
+        EventFeedbackRequest.objects.filter(pk=request.pk, first_sent_at__isnull=True).update(
+            first_sent_at=now
+        )
+        == 1
+    )
 
 
 def _send_first_for_event(sender: EmailSender, event: Event, now: datetime) -> int:
-    requested = EventFeedbackRequest.objects.filter(event=event).values("user_id")
-    rsvps = (
-        EventRSVP.objects.filter(event=event, attendance=AttendanceStatus.ATTENDED)
-        .exclude(user_id__in=requested)
-        .select_related("user")
-    )
+    rsvps = EventRSVP.objects.filter(
+        event=event,
+        attendance=AttendanceStatus.ATTENDED,
+        user__is_active=True,
+        user__archived_at__isnull=True,
+    ).select_related("user")
     sent = 0
     for rsvp in rsvps:
-        request = _create_request(event, rsvp)
-        if request is None or not rsvp.user.email:
+        request = _get_or_create_request(event, rsvp.user)
+        if request is None or request.first_sent_at is not None or not rsvp.user.email:
+            continue
+        if not _claim_first_send(request, now):
             continue
         result = _send(sender, request, reminder=False)
         if result is not None and result.success:
-            EventFeedbackRequest.objects.filter(pk=request.pk).update(first_sent_at=now)
             sent += 1
+        else:
+            EventFeedbackRequest.objects.filter(pk=request.pk).update(first_sent_at=None)
     return sent
 
 
 def send_first_requests(now: datetime) -> int:
-    """Email a feedback link to each checked-in attendee without a request yet. Returns emails sent."""
+    """Email a feedback link to each checked-in attendee not yet sent one, retrying failed sends. Returns emails sent."""
     sender = get_email_sender(EmailStream.BULK)
     return sum(_send_first_for_event(sender, event, now) for event in due_feedback_events(now))
