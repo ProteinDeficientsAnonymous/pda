@@ -42,6 +42,19 @@ describe('EmailPreferences', () => {
     expect(onChange).toHaveBeenCalledWith({ whatsappReminderOptOut: false });
   });
 
+  it('hides the in-person reminder toggle from full members', () => {
+    renderPrefs({ isMember: true });
+    expect(screen.queryByRole('switch', { name: /come to an event in person/i })).toBeNull();
+  });
+
+  it('lets a tentative member opt out of in-person reminders', async () => {
+    const { onChange } = renderPrefs({ isMember: false, attendanceNudgeOptOut: false });
+    const toggle = screen.getByRole('switch', { name: /come to an event in person/i });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(toggle);
+    expect(onChange).toHaveBeenCalledWith({ attendanceNudgeOptOut: true });
+  });
+
   it('leaves the weekly digest toggle working independently', async () => {
     const { onChange } = renderPrefs({ weeklyDigestOptOut: false });
     await userEvent.click(screen.getByRole('switch', { name: /weekly digest/i }));
