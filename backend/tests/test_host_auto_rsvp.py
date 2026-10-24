@@ -1,0 +1,141 @@
+import pytest
+from community.models import (
+    Event,
+    EventRSVP,
+    EventType,
+    PageVisibility,
+    RsvpQuestionType,
+    RSVPStatus,
+)
+from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
+from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
+
+from tests.conftest import future_iso
+
+EVENTS_URL = "/api/community/events/"
+
+
+def _auth(user: User) -> dict:
+    refresh = RefreshToken.for_user(user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+
+
+@pytest.fixture
+def host(db) -> User:
+    user = User.objects.create_user(phone_number="+12025556100", password="x", first_name="Host")
+    role = Role.objects.create(
+        name="auto_rsvp_tagger",
+        permissions=[PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT],
+    )
+    user.roles.add(role)
+    return user
+
+
+def _create(api_client, host: User, event_type: str, **overrides) -> Event:
+    payload = {
+        "title": "Auto RSVP",
+        "start_datetime": future_iso(days=14),
+        "end_datetime": future_iso(days=14, hours=2),
+        "event_type": event_type,
+        "visibility": PageVisibility.PUBLIC,
+        "rsvp_enabled": True,
+        **overrides,
+    }
+    response = api_client.post(EVENTS_URL, payload, content_type="application/json", **_auth(host))
+    assert response.status_code == 201, response.content
+    return Event.objects.get(id=response.json()["id"])
+
+
+def _rsvp_status(event: Event, user: User) -> str | None:
+    return EventRSVP.objects.filter(event=event, user=user).values_list("status", flat=True).first()
+
+
+@pytest.mark.django_db
+class TestAutoRsvpOnCreate:
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_host_is_attending(self, api_client, host, event_type, fake_email_sender):
+        event = _create(api_client, host, event_type)
+        assert _rsvp_status(event, host) == RSVPStatus.ATTENDING
+        fake_email_sender.send.assert_not_called()
+        assert not Notification.objects.filter(
+            notification_type=NotificationType.RSVP_STATUS_CHANGED
+        ).exists()
+
+    def test_response_shows_host_going(self, api_client, host):
+        response = api_client.post(
+            EVENTS_URL,
+            {
+                "title": "Auto RSVP",
+                "start_datetime": future_iso(days=14),
+                "event_type": EventType.OFFICIAL,
+                "visibility": PageVisibility.PUBLIC,
+                "rsvp_enabled": True,
+            },
+            content_type="application/json",
+            **_auth(host),
+        )
+        assert response.status_code == 201
+        assert response.json()["my_rsvp"] == RSVPStatus.ATTENDING
+
+    def test_community_event_has_no_auto_rsvp(self, api_client, host):
+        event = _create(api_client, host, EventType.COMMUNITY)
+        assert not EventRSVP.objects.filter(event=event).exists()
+
+    def test_rsvps_disabled_skips(self, api_client, host):
+        event = _create(api_client, host, EventType.OFFICIAL, rsvp_enabled=False)
+        assert not EventRSVP.objects.filter(event=event).exists()
+
+    def test_payment_gated_event_skips(self, api_client, host):
+        event = _create(
+            api_client, host, EventType.OFFICIAL, price="$10", venmo_link="https://venmo.com/x"
+        )
+        assert not EventRSVP.objects.filter(event=event).exists()
+
+    def test_required_question_skips(self, api_client, host):
+        event = _create(
+            api_client,
+            host,
+            EventType.CLUB,
+            rsvp_questions=[
+                {"label": "diet?", "field_type": RsvpQuestionType.TEXTAREA, "required": True}
+            ],
+        )
+        assert not EventRSVP.objects.filter(event=event).exists()
+
+    def test_draft_official_event_rsvps_host(self, api_client, host):
+        event = _create(api_client, host, EventType.OFFICIAL, status="draft")
+        assert _rsvp_status(event, host) == RSVPStatus.ATTENDING
+
+    def test_switching_to_official_does_not_rsvp_hosts(self, api_client, host):
+        event = _create(api_client, host, EventType.COMMUNITY)
+        response = api_client.patch(
+            f"{EVENTS_URL}{event.id}/",
+            {"event_type": EventType.OFFICIAL},
+            content_type="application/json",
+            **_auth(host),
+        )
+        assert response.status_code == 200
+        assert not EventRSVP.objects.filter(event=event).exists()
+
+
+@pytest.mark.django_db
+class TestHostCanChangeAutoRsvp:
+    def test_host_can_withdraw(self, api_client, host):
+        event = _create(api_client, host, EventType.OFFICIAL)
+        response = api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **_auth(host))
+        assert response.status_code == 204
+        assert _rsvp_status(event, host) is None
+
+    def test_host_can_mark_cant_go(self, api_client, host):
+        event = _create(api_client, host, EventType.CLUB)
+        response = api_client.post(
+            f"{EVENTS_URL}{event.id}/rsvp/",
+            {"status": RSVPStatus.CANT_GO},
+            content_type="application/json",
+            **_auth(host),
+        )
+        assert response.status_code == 200
+        assert _rsvp_status(event, host) == RSVPStatus.CANT_GO

@@ -56,6 +56,7 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
+from community._host_auto_rsvp import auto_rsvp_host
 from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._tentative_member_access import (
@@ -268,6 +269,7 @@ def create_event(request, payload: EventIn):
             for display_order, question in enumerate(payload.rsvp_questions)
         ]
     )
+    auto_rsvp_host(event, request.auth)
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
