@@ -683,6 +683,21 @@
         "params": []
       },
       {
+        "name": "FEEDBACK_TYPE_TAKEN",
+        "value": "survey.feedback_type_taken",
+        "params": []
+      },
+      {
+        "name": "FEEDBACK_LINK_INVALID",
+        "value": "survey.feedback_link_invalid",
+        "params": []
+      },
+      {
+        "name": "FEEDBACK_ALREADY_SUBMITTED",
+        "value": "survey.feedback_already_submitted",
+        "params": []
+      },
+      {
         "name": "NO_DATETIME_POLL_QUESTION",
         "value": "survey.no_datetime_poll_question",
         "params": []
