@@ -1,3 +1,10 @@
+# [0.173.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.172.0...v0.173.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** call website views from mcp tools ([#1757](https://github.com/ProteinDeficientsAnonymous/pda/issues/1757)) ([64206fd](https://github.com/ProteinDeficientsAnonymous/pda/commit/64206fd8b2c1cbd5926cab378a361741d46c52b8))
+
 # [0.172.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.171.0...v0.172.0) (2026-10-24)
 
 
