@@ -1,3 +1,10 @@
+# [0.176.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.175.0...v0.176.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** publish event drafts from mcp with a confirm step ([#1778](https://github.com/ProteinDeficientsAnonymous/pda/issues/1778)) ([99bb7fb](https://github.com/ProteinDeficientsAnonymous/pda/commit/99bb7fb87dc27e8fc7e5d6c31edf91cb2bbe9b87))
+
 # [0.175.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.1...v0.175.0) (2026-10-24)
 
 
