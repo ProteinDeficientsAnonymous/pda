@@ -41,6 +41,7 @@ const EventQuestionResponses = lazyWithRetry(
   () => import('@/screens/events/EventQuestionResponsesScreen'),
 );
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
+const EventFeedback = lazyWithRetry(() => import('@/screens/events/EventFeedbackScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
@@ -144,7 +145,10 @@ export const router = createBrowserRouter([
 
               {
                 element: <RequireAuth />,
-                children: [{ path: '/events/:id/report', element: el(<EventCheckInReport />) }],
+                children: [
+                  { path: '/events/:id/report', element: el(<EventCheckInReport />) },
+                  { path: '/events/:id/feedback', element: el(<EventFeedback />) },
+                ],
               },
 
               // ---- admin hub: any authed user can visit; the hub itself shows
