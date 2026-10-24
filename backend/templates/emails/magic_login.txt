@@ -4,6 +4,8 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 {{ magic_link_url }}
 
+once you're in, save your password somewhere safe (a password manager works great) so you won't need another link next time — every email we send counts. if you ever get stuck, you can always request a new one.
+
 this link expires in 7 days. {% block note %}if you didn't request it, you can ignore this email.{% endblock %}
 
 — pda

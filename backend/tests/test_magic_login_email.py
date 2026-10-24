@@ -5,7 +5,11 @@ from unittest.mock import MagicMock
 
 import pytest
 from notifications._console_sender import ConsoleSender
-from notifications._email_helpers import send_magic_login_email
+from notifications._email_helpers import (
+    MAGIC_LOGIN_EMAIL,
+    LoginLinkEmail,
+    send_magic_login_email,
+)
 from notifications.email_sender import SendResult, validate_recipient
 
 
@@ -73,6 +77,28 @@ class TestSendMagicLoginEmail:
         assert subject == subject.lower()
         # Mentions login / pda
         assert "login" in subject or "log in" in subject
+
+    @pytest.mark.parametrize(
+        "email",
+        [MAGIC_LOGIN_EMAIL, LoginLinkEmail("login_reminder", "s")],
+        ids=["magic_login", "login_reminder"],
+    )
+    def test_includes_save_password_note(self, email):
+        sender = MagicMock()
+        sender.send.return_value = SendResult(success=True)
+
+        send_magic_login_email(
+            sender=sender,
+            to="user@example.com",
+            display_name="Sam",
+            magic_link_url="https://pda.test/magic/abc",
+            email=email,
+        )
+        call_kwargs = sender.send.call_args.kwargs
+        for body in (call_kwargs["text"], call_kwargs["html"]):
+            assert "save your password" in body
+            assert "password manager" in body
+            assert "you can always request a new one" in body
 
     def test_rejects_recipient_with_newline(self):
         """Header-injection guard — newlines in the recipient must be rejected.
