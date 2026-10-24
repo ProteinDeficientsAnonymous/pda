@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import sys
 from typing import Any
 
@@ -9,9 +8,8 @@ from audit.models import AuditLogEntry
 from community._event_description_templates import get_event_description_templates as templates
 from community._event_schemas import EventIn
 from community._events import create_event
-from community._validation import Code, raise_validation
-from community.models import Event
-from config.audit import AuditTarget, audit_log, is_request_via_mcp
+from community._validation import Code
+from config.audit import is_request_via_mcp
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway import tools
 from mcp_gateway.server import TOOL_PERMISSIONS, current_user, pda_mcp, pda_tool
@@ -66,15 +64,22 @@ def test_audit_marked_via_mcp_and_rate_limit_kept(test_user):
     assert (error["status"], error["detail"][0]["code"]) == (429, Code.Rate.LIMITED)
 
 
-def test_failed_view_rolls_back(test_user):
-    def view(request):
-        event = Event.objects.create(title="half", created_by=request.auth)
-        audit_log(logging.INFO, "event_created", request, AuditTarget(id=str(event.id)))
-        raise_validation(Code.Event.END_BEFORE_START, field="end_datetime")
+def test_failed_attempts_count_toward_rate_limit(test_user):
+    failing = EventIn(title="x", status="cancelled", datetime_tbd=True)
+    for _ in range(10):
+        assert _tool_error(create_event, test_user, failing)["status"] == 400
+    error = _tool_error(create_event, test_user, DRAFT)
+    assert (error["status"], error["detail"][0]["code"]) == (429, Code.Rate.LIMITED)
 
-    assert _tool_error(view, test_user)["status"] == 422
-    assert not Event.objects.filter(title="half").exists()
-    assert not AuditLogEntry.objects.filter(action="event_created").exists()
+
+def test_returned_error_status_becomes_tool_error(test_user):
+    def view(request):
+        return Status(502, {"detail": "geocoding service unavailable"})
+
+    assert _tool_error(view, test_user) == {
+        "status": 502,
+        "detail": "geocoding service unavailable",
+    }
 
 
 @pytest.fixture

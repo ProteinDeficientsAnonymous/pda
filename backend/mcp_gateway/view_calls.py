@@ -8,7 +8,6 @@ from community._validation import ValidationException
 from config.audit import mark_request_via_mcp
 from config.validation_handlers import _serialize_validation_exception
 from django.core.handlers.asgi import ASGIRequest
-from django.db import transaction
 from django.http import HttpRequest
 from mcp.server.mcpserver.exceptions import ToolError
 from ninja.responses import Status
@@ -45,12 +44,21 @@ def _jsonable(value: Any) -> Any:
     return to_jsonable_python(value)
 
 
+def _tool_error(status: int, detail: Any) -> ToolError:
+    return ToolError(json.dumps({"status": status, "detail": detail}))
+
+
 async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: Any) -> Any:
     """Run a ninja route handler as `user`; return its body as JSON-able data or raise ToolError."""
     request = _view_request(user)
+    # No outer atomic, like the website: a rollback would undo the DB-backed rate-limit counter.
     try:
-        result = await sync_to_async(transaction.atomic(view))(request, *args, **kwargs)
+        result = await sync_to_async(view)(request, *args, **kwargs)
     except ValidationException as exc:
-        error = {"status": exc.status_code, "detail": [_serialize_validation_exception(exc)]}
-        raise ToolError(json.dumps(error)) from exc
+        raise _tool_error(exc.status_code, [_serialize_validation_exception(exc)]) from exc
+    if isinstance(result, Status) and result.status_code >= 400:
+        body = _jsonable(result.value)
+        raise _tool_error(
+            result.status_code, body.get("detail", body) if isinstance(body, dict) else body
+        )
     return _jsonable(result)
