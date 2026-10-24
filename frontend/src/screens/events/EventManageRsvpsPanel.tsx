@@ -88,7 +88,7 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
                   : undefined
               }
               onReorder={
-                group.status === RsvpServerStatus.Waitlisted
+                group.status === RsvpServerStatus.Waitlisted && !event.isPast
                   ? (userIds) => {
                       reorderWaitlist.mutate(
                         { userIds },

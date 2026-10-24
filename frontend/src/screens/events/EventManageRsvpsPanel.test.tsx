@@ -321,5 +321,11 @@ describe('EventManageRsvpsPanel', () => {
       renderPanel(waitlistEvent());
       expect(screen.getAllByRole('list', { name: /order$/ })).toHaveLength(1);
     });
+
+    it('does not make the waitlist draggable once the event ended', () => {
+      renderPanel({ ...waitlistEvent(), isPast: true });
+      expect(screen.queryByRole('list', { name: /order$/ })).not.toBeInTheDocument();
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
   });
 });

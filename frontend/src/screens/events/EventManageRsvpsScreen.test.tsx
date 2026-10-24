@@ -54,7 +54,7 @@ describe('EventManageRsvpsScreen', () => {
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
-  it('shows a forbidden notice for a past event', () => {
+  it('lets a host manage rsvps after the event ended', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: makeEvent({
         createdById: 'user-creator',
@@ -68,7 +68,12 @@ describe('EventManageRsvpsScreen', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();
 
-    expect(screen.getByText(/event has already happened/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText(/anyone you add counts as going/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'check-in' })).toHaveAttribute(
+      'href',
+      '/events/ev1/check-in',
+    );
   });
 
   it('shows a forbidden notice when rsvps are disabled', () => {
@@ -94,5 +99,6 @@ describe('EventManageRsvpsScreen', () => {
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
     expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
+    expect(screen.queryByText(/anyone you add counts as going/i)).not.toBeInTheDocument();
   });
 });

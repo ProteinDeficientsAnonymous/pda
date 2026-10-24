@@ -123,15 +123,23 @@ describe('EventDetailKebabMenu', () => {
     expect(manageRsvps).toHaveAttribute('href', '/events/ev1/manage-rsvps');
   });
 
-  it('hides rsvp management and question responses on a past event without questions', async () => {
+  it('shows "manage rsvps" for a host after the event ended', async () => {
     renderMenu({ eventHasEnded: true, canManageRsvps: true });
     await openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    const manageRsvps = screen.getByRole('menuitem', { name: /manage rsvps/i });
+    expect(manageRsvps).toHaveAttribute('href', '/events/ev1/manage-rsvps');
     expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
-  it('shows "question responses" instead of "manage rsvps" on a past event with questions', async () => {
+  it('hides "manage rsvps" on a past event when the viewer cannot manage rsvps', async () => {
+    renderMenu({ eventHasEnded: true, canManageRsvps: false });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+  });
+
+  it('shows both items on a past event with questions', async () => {
     renderMenu({
       eventHasEnded: true,
       canManageRsvps: true,
@@ -149,7 +157,7 @@ describe('EventDetailKebabMenu', () => {
     });
     await openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'question responses' })).toHaveAttribute(
       'href',
       '/events/ev1/responses',
