@@ -1,3 +1,29 @@
+# [0.167.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.166.0...v0.167.0) (2026-10-24)
+
+
+### Bug Fixes
+
+* **mcp:** reject redirect uris the consent screen would refuse ([#1748](https://github.com/ProteinDeficientsAnonymous/pda/issues/1748)) ([579ada9](https://github.com/ProteinDeficientsAnonymous/pda/commit/579ada9d9353e8b37d5659f6c3fa3d435c86f25a))
+
+
+### Features
+
+* **mcp:** add connect request hooks ([#1735](https://github.com/ProteinDeficientsAnonymous/pda/issues/1735)) ([b8618ab](https://github.com/ProteinDeficientsAnonymous/pda/commit/b8618abd5dc7355334b040daaf6b5e59ed3f6027))
+
+# [0.166.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.165.0...v0.166.0) (2026-10-24)
+
+
+### Features
+
+* **digest:** nudge tentative members to come to an event in person ([#1747](https://github.com/ProteinDeficientsAnonymous/pda/issues/1747)) ([e5736c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5736c673fb4a1004d9bb6014c30aac7673034fd))
+
+# [0.165.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.164.0...v0.165.0) (2026-10-24)
+
+
+### Features
+
+* **settings:** add opt-out for in-person event reminders ([#1746](https://github.com/ProteinDeficientsAnonymous/pda/issues/1746)) ([99298a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/99298a777af6f19f540c8c48be178658ed5bfb0d))
+
 # [0.164.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.163.0...v0.164.0) (2026-10-24)
 
 

@@ -449,3 +449,27 @@ def send_whatsapp_join_reminder_email(
         html=html,
         text=text,
     )
+
+
+def send_tentative_attendance_nudge_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    calendar_url: str,
+    settings_url: str,
+) -> SendResult:
+    """Render and send the "come to an event in person to get full access" nudge."""
+    context = {
+        "display_name": display_name or "",
+        "calendar_url": calendar_url,
+        "settings_url": settings_url,
+    }
+    html = render_to_string("emails/tentative_attendance_nudge.html", context)
+    text = render_to_string("emails/tentative_attendance_nudge.txt", context)
+    return sender.send(
+        to=to,
+        subject="you're almost in at pda",
+        html=html,
+        text=text,
+    )

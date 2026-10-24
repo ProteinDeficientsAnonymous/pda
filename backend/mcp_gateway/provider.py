@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import urlparse
 from uuid import UUID
 
 from config.auth import account_block_code
@@ -12,6 +13,7 @@ from mcp.server.auth.provider import (
     AuthorizationParams,
     OAuthAuthorizationServerProvider,
     RefreshToken,
+    RegistrationError,
     TokenError,
 )
 from mcp.shared.auth import OAuthClientInformationFull
@@ -36,10 +38,19 @@ from mcp_gateway.tokens import (
 
 SCOPE = "pda"
 LAST_USED_RESOLUTION = timedelta(minutes=1)
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
 def _user_may_act(user: User) -> bool:
     return user.is_active and account_block_code(user) is None
+
+
+# mirrors the consent screen's isSafeRedirect, so a code is never issued for a redirect it refuses
+def _is_allowed_redirect(uri: str) -> bool:
+    parsed = urlparse(uri)
+    if parsed.scheme == "https":
+        return bool(parsed.hostname)
+    return parsed.scheme == "http" and parsed.hostname in LOOPBACK_HOSTS
 
 
 class AuthRequestNotPending(Exception):
@@ -124,6 +135,11 @@ class PdaOAuthProvider(
         return OAuthClientInformationFull.model_validate(row.info) if row else None
 
     async def register_client(self, client_info: OAuthClientInformationFull) -> None:
+        if not all(_is_allowed_redirect(str(uri)) for uri in client_info.redirect_uris or []):
+            raise RegistrationError(
+                error="invalid_redirect_uri",
+                error_description="redirect uris must use https, or http on localhost",
+            )
         await OAuthClient.objects.acreate(
             client_id=client_info.client_id,
             client_name=client_info.client_name or "",
