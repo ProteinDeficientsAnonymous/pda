@@ -14,6 +14,7 @@ vi.mock('@/api/client', () => ({
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
+const REQUEST_ID = '3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b';
 const assign = vi.fn();
 const originalLocation = window.location;
 
@@ -30,7 +31,7 @@ function httpError(status: number) {
   });
 }
 
-function renderScreen(url = '/connect/authorize?request=r1') {
+function renderScreen(url = `/connect/authorize?request=${REQUEST_ID}`) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
@@ -51,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+  Object.defineProperty(window, 'top', { configurable: true, value: window });
 });
 
 describe('ConnectAuthorizeScreen', () => {
@@ -62,7 +64,7 @@ describe('ConnectAuthorizeScreen', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/claude wants to act as you in pda\./)).toBeInTheDocument();
     expect(screen.getByText("after you allow, you'll be sent to claude.ai")).toBeInTheDocument();
-    expect(mockedGet).toHaveBeenCalledWith('/api/connect/requests/r1/');
+    expect(mockedGet).toHaveBeenCalledWith(`/api/connect/requests/${REQUEST_ID}/`);
   });
 
   it('allow posts approve and navigates to redirect_url', async () => {
@@ -73,7 +75,7 @@ describe('ConnectAuthorizeScreen', () => {
     await waitFor(() => {
       expect(assign).toHaveBeenCalledExactlyOnceWith('https://claude.ai/cb?code=abc');
     });
-    expect(mockedPost).toHaveBeenCalledWith('/api/connect/requests/r1/approve/');
+    expect(mockedPost).toHaveBeenCalledWith(`/api/connect/requests/${REQUEST_ID}/approve/`);
   });
 
   it('deny posts deny and navigates', async () => {
@@ -86,7 +88,7 @@ describe('ConnectAuthorizeScreen', () => {
     await waitFor(() => {
       expect(assign).toHaveBeenCalledExactlyOnceWith('https://claude.ai/cb?error=access_denied');
     });
-    expect(mockedPost).toHaveBeenCalledWith('/api/connect/requests/r1/deny/');
+    expect(mockedPost).toHaveBeenCalledWith(`/api/connect/requests/${REQUEST_ID}/deny/`);
   });
 
   it('does not navigate to an unsafe or mismatched redirect_url', async () => {
@@ -133,6 +135,27 @@ describe('ConnectAuthorizeScreen', () => {
   it('shows not found without a request id', () => {
     renderScreen('/connect/authorize');
     expect(screen.getByRole('alert')).toHaveTextContent("this connection request doesn't exist.");
+    expect(mockedGet).not.toHaveBeenCalled();
+  });
+
+  it.each(['../apps', 'r1', 'abc/def', '3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b/../x'])(
+    'shows not found and makes no request for non-uuid id %s',
+    (id) => {
+      renderScreen(`/connect/authorize?request=${encodeURIComponent(id)}`);
+      expect(screen.getByRole('alert')).toHaveTextContent("this connection request doesn't exist.");
+      expect(mockedGet).not.toHaveBeenCalled();
+      expect(mockedPost).not.toHaveBeenCalled();
+    },
+  );
+
+  it('hides allow and deny when framed in another page', () => {
+    Object.defineProperty(window, 'top', { configurable: true, value: {} });
+    renderScreen();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'for your security, open this page directly in your browser',
+    );
+    expect(screen.queryByRole('button', { name: 'allow' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'deny' })).not.toBeInTheDocument();
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });
