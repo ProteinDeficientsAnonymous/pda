@@ -4,7 +4,7 @@ import pytest
 from notifications._event_feedback_email import send_event_feedback_email
 from notifications.email_sender import SendResult
 
-URL = "https://pda.test/feedback/abc123"
+URL = "https://pda.test/feedback#abc123"
 
 
 def _send(*, reminder: bool, event_date: str | None = "oct 12", display_name: str = "Sam"):

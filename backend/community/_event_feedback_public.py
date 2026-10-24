@@ -4,7 +4,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_a
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.utils import timezone
-from ninja import Router
+from ninja import Header, Router
 from ninja.responses import Status
 from notifications._event_feedback_notifications import notify_event_feedback
 
@@ -20,7 +20,14 @@ from community.models.event_feedback import feedback_survey_for
 router = Router()
 
 
+# Header, not path/query: request log lines record the URL with a timestamp.
+FeedbackToken = Header("", alias="X-Feedback-Token")
+_MAX_TOKEN_LENGTH = EventFeedbackRequest._meta.get_field("token").max_length or 64
+
+
 def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFeedbackRequest:
+    if not token or len(token) > _MAX_TOKEN_LENGTH:
+        raise_validation(Code.Survey.FEEDBACK_LINK_INVALID, status_code=404)
     qs = EventFeedbackRequest.objects.select_related("event")
     if for_update:
         qs = qs.select_for_update()
@@ -30,8 +37,8 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
         raise_validation(Code.Survey.FEEDBACK_LINK_INVALID, status_code=404)
 
 
-@router.get("/feedback/{token}/", response={200: EventFeedbackOut, 404: ErrorOut}, auth=None)
-def get_event_feedback(request, token: str):
+@router.get("/event-feedback/", response={200: EventFeedbackOut, 404: ErrorOut}, auth=None)
+def get_event_feedback(request, token: str = FeedbackToken):
     feedback_request = _feedback_request_or_404(token)
     event = feedback_request.event
     survey = feedback_survey_for(event.event_type)
@@ -60,7 +67,7 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
 
 
 @router.post(
-    "/feedback/{token}/respond/",
+    "/event-feedback/respond/",
     response={
         201: EventFeedbackSubmitOut,
         400: ErrorOut,
@@ -71,7 +78,7 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
     auth=None,
 )
 @rate_limit(key_func=lambda r: r.META.get("REMOTE_ADDR", "anon"), rate="20/h")
-def submit_event_feedback(request, token: str, payload: SurveyAnswersIn):
+def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = FeedbackToken):
     with transaction.atomic():
         # Row lock: a forwarded link or double-click must yield exactly one response.
         feedback_request = _feedback_request_or_404(token, for_update=True)
