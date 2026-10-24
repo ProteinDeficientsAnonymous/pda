@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -21,11 +21,21 @@ import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import {
+  ALL_EVENTS,
+  eventOptions,
+  filterResponsesByEvent,
+  responseCountLabel,
+} from './surveyResponseEvents';
+import { SurveyResponsesEventFilter } from './SurveyResponsesEventFilter';
+import { SurveyResponsesTable } from './SurveyResponsesTable';
+
 export default function SurveyResponsesScreen() {
   const { id } = useParams<{ id: string }>();
   const surveyId = id ?? '';
   const survey = useAdminSurvey(surveyId);
   const responses = useSurveyResponses(surveyId);
+  const [eventFilter, setEventFilter] = useState(ALL_EVENTS);
 
   const datetimeQuestions = useMemo(() => {
     if (!survey.data) return [];
@@ -35,7 +45,10 @@ export default function SurveyResponsesScreen() {
   const tallies = useSurveyPollTallies(
     datetimeQuestions.length > 0 && survey.isSuccess ? surveyId : undefined,
   );
-  const summaries = useSurveyQuestionSummaries(survey.isSuccess ? surveyId : undefined);
+  const summaries = useSurveyQuestionSummaries(
+    survey.isSuccess ? surveyId : undefined,
+    eventFilter,
+  );
   const deleteResponse = useDeleteSurveyResponse(surveyId);
   const { confirm, element: confirmElement } = useConfirm();
 
@@ -59,6 +72,7 @@ export default function SurveyResponsesScreen() {
     return <ContentError message="couldn't load responses — try refreshing" />;
   }
 
+  const visibleResponses = filterResponsesByEvent(responses.data, eventFilter);
   const firstDatetimeQuestion = datetimeQuestions[0];
   const finalizeOptions =
     !survey.data.pollResult && firstDatetimeQuestion && firstDatetimeQuestion.options.length > 0
@@ -71,7 +85,7 @@ export default function SurveyResponsesScreen() {
         <div>
           <h1 className="text-2xl font-medium tracking-tight">{survey.data.title}</h1>
           <p className="text-muted text-sm">
-            {String(responses.data.length)} response{responses.data.length === 1 ? '' : 's'}
+            {responseCountLabel(visibleResponses.length, responses.data.length)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -116,52 +130,24 @@ export default function SurveyResponsesScreen() {
         </section>
       ) : null}
 
+      {survey.data.feedbackEventType && eventOptions(responses.data).length > 0 ? (
+        <SurveyResponsesEventFilter
+          responses={responses.data}
+          value={eventFilter}
+          onChange={setEventFilter}
+        />
+      ) : null}
+
       {responses.data.length === 0 ? (
         <p className="text-muted text-sm">no responses yet</p>
       ) : (
-        <div className="border-border bg-surface overflow-x-auto rounded-lg border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-background text-muted text-xs">
-              <tr>
-                <th className="px-3 py-2">submitted by</th>
-                <th className="px-3 py-2">at</th>
-                {survey.data.questions.map((q) => (
-                  <th key={q.id} className="px-3 py-2">
-                    {q.label}
-                  </th>
-                ))}
-                <th className="px-3 py-2">
-                  <span className="sr-only">actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {responses.data.map((r) => (
-                <tr key={r.id} className="border-border border-t align-top">
-                  <td className="text-foreground px-3 py-2">{r.userName ?? '—'}</td>
-                  <td className="text-muted px-3 py-2 text-xs">
-                    {formatSubmittedAt(r.submittedAt, survey.data.anonymous)}
-                  </td>
-                  {survey.data.questions.map((q) => (
-                    <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
-                      {renderAnswer(r.answers[q.id])}
-                    </td>
-                  ))}
-                  <td className="px-3 py-2 text-right">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        void askDeleteResponse(r);
-                      }}
-                    >
-                      delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SurveyResponsesTable
+          survey={survey.data}
+          responses={visibleResponses}
+          onDelete={(r) => {
+            void askDeleteResponse(r);
+          }}
+        />
       )}
 
       {confirmElement}
@@ -306,12 +292,6 @@ function TalliesTables({
   );
 }
 
-function formatSubmittedAt(iso: string, anonymous: boolean): string {
-  // Anonymous surveys get a server-local date only; its yyyy-mm-dd prefix is that day.
-  if (anonymous) return format(parseISO(iso.slice(0, 10)), 'MMM d, yyyy').toLowerCase();
-  return format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
-}
-
 function formatOptionLabel(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso.toLowerCase();
@@ -402,19 +382,4 @@ function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; optio
 
 function extractApiDetail(err: unknown): string {
   return extractApiErrorOr(err, 'request failed');
-}
-
-function renderAnswer(raw: unknown): string {
-  if (raw === undefined || raw === null) return '—';
-  if (typeof raw === 'object' && 'answer' in (raw as Record<string, unknown>)) {
-    const a = (raw as { answer: unknown }).answer;
-    if (typeof a === 'string') return a;
-    if (typeof a === 'object' && a !== null) {
-      return Object.entries(a as Record<string, string>)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\n');
-    }
-    return JSON.stringify(a);
-  }
-  return typeof raw === 'string' ? raw : JSON.stringify(raw);
 }
