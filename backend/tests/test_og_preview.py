@@ -83,25 +83,32 @@ class TestEventOgPreview:
         assert '<meta name="twitter:card" content="summary"' in html
         assert "og:image" not in html
 
-    def test_members_only_event_is_hidden(self, api_client, db):
+    @pytest.mark.parametrize(
+        "visibility", [PageVisibility.MEMBERS_ONLY, PageVisibility.INVITE_ONLY]
+    )
+    def test_non_public_event_shows_title_only(self, api_client, db, settings, visibility):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
         event = Event.objects.create(
-            title="Secret Members Event",
+            title="Stewards Gathering",
+            description="Secret details about the gathering.",
             start_datetime=future_iso(),
-            visibility=PageVisibility.MEMBERS_ONLY,
+            location="Secret Spot",
+            visibility=visibility,
             status=EventStatus.ACTIVE,
+            photo=_make_test_image(),
         )
-        response = api_client.get(_preview_url(event.id))
-        _assert_site_preview(response, "Secret Members Event")
+        response = api_client.get(_preview_url(event.slug))
 
-    def test_invite_only_event_is_hidden(self, api_client, db):
-        event = Event.objects.create(
-            title="Invite Only Event",
-            start_datetime=future_iso(),
-            visibility=PageVisibility.INVITE_ONLY,
-            status=EventStatus.ACTIVE,
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Stewards Gathering"' in html
+        assert (
+            f'<meta property="og:url" content="https://pda.example.com/events/{event.slug}"' in html
         )
-        response = api_client.get(_preview_url(event.id))
-        _assert_site_preview(response, "Invite Only Event")
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+        assert "Secret details" not in html
+        assert "Secret Spot" not in html
+        assert "event_photos" not in html
 
     def test_cancelled_public_event_still_previews(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
