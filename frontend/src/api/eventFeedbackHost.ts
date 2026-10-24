@@ -29,5 +29,6 @@ export function useMyEventFeedback(eventId: string, enabled: boolean) {
       return data;
     },
     enabled,
+    staleTime: 0,
   });
 }

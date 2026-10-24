@@ -85,4 +85,10 @@ describe('LinksSection — leave feedback', () => {
     renderLinks(makeEvent({ isPast: false }));
     expect(useMyEventFeedback).toHaveBeenLastCalledWith('ev1', false);
   });
+
+  it('does not ask for the token when signed out, even on a past event', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    renderLinks(makeEvent({ isPast: true }));
+    expect(useMyEventFeedback).toHaveBeenLastCalledWith('ev1', false);
+  });
 });

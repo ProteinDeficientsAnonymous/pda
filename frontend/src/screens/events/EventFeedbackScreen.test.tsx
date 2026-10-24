@@ -114,4 +114,15 @@ describe('EventFeedbackScreen', () => {
 
     expect(screen.getByText('event detail')).toBeInTheDocument();
   });
+
+  it('explains when responses exist but their questions were removed', () => {
+    mockFeedback({
+      isPending: false,
+      isError: false,
+      data: { questions: [], responses: [{ id: 'r1', submitted_on: '2026-10-20', answers: {} }] },
+    });
+    renderScreen();
+
+    expect(screen.getByText(/for removed questions/)).toBeInTheDocument();
+  });
 });
