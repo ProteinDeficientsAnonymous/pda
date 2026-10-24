@@ -21,11 +21,15 @@ import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { ALL_EVENTS, filterResponsesByEvent } from './surveyResponseEvents';
+import { SurveyResponsesEventFilter } from './SurveyResponsesEventFilter';
+
 export default function SurveyResponsesScreen() {
   const { id } = useParams<{ id: string }>();
   const surveyId = id ?? '';
   const survey = useAdminSurvey(surveyId);
   const responses = useSurveyResponses(surveyId);
+  const [eventFilter, setEventFilter] = useState(ALL_EVENTS);
 
   const datetimeQuestions = useMemo(() => {
     if (!survey.data) return [];
@@ -116,6 +120,14 @@ export default function SurveyResponsesScreen() {
         </section>
       ) : null}
 
+      {survey.data.feedbackEventType ? (
+        <SurveyResponsesEventFilter
+          responses={responses.data}
+          value={eventFilter}
+          onChange={setEventFilter}
+        />
+      ) : null}
+
       {responses.data.length === 0 ? (
         <p className="text-muted text-sm">no responses yet</p>
       ) : (
@@ -136,7 +148,7 @@ export default function SurveyResponsesScreen() {
               </tr>
             </thead>
             <tbody>
-              {responses.data.map((r) => (
+              {filterResponsesByEvent(responses.data, eventFilter).map((r) => (
                 <tr key={r.id} className="border-border border-t align-top">
                   <td className="text-foreground px-3 py-2">{r.userName ?? '—'}</td>
                   <td className="text-muted px-3 py-2 text-xs">

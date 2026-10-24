@@ -80,24 +80,36 @@ function setup({
   summaries = SUMMARY_ROWS,
   summaryState = {},
   responseCount = 1,
+  feedbackEventType = '',
+  responses,
 }: {
   questions?: typeof QUESTIONS;
   summaries?: typeof SUMMARY_ROWS;
   summaryState?: Record<string, unknown>;
   responseCount?: number;
+  feedbackEventType?: string;
+  responses?: unknown[];
 } = {}) {
   mockSurvey.mockReturnValue(
-    mockQuery({ id: 'srv-1', title: 'feedback', slug: 'feedback', questions, pollResult: null }),
+    mockQuery({
+      id: 'srv-1',
+      title: 'feedback',
+      slug: 'feedback',
+      questions,
+      pollResult: null,
+      feedbackEventType,
+    }),
   );
   mockResponses.mockReturnValue(
     mockQuery(
-      Array.from({ length: responseCount }, (_, i) => ({
-        id: `r-${String(i)}`,
-        userId: 'u1',
-        userName: 'ada',
-        answers: { 'q-colour': { label: 'Colour', answer: 'red' } },
-        submittedAt: '2026-04-20T12:00:00.000Z',
-      })),
+      responses ??
+        Array.from({ length: responseCount }, (_, i) => ({
+          id: `r-${String(i)}`,
+          userId: 'u1',
+          userName: 'ada',
+          answers: { 'q-colour': { label: 'Colour', answer: 'red' } },
+          submittedAt: '2026-04-20T12:00:00.000Z',
+        })),
     ),
   );
   mockTallies.mockReturnValue(mockQuery([]));
@@ -268,5 +280,64 @@ describe('SurveyResponsesScreen csv download', () => {
   it('should disable the button when there are no responses', () => {
     setup({ responseCount: 0 });
     expect(screen.getByRole('button', { name: 'download csv' })).toBeDisabled();
+  });
+});
+
+function feedbackResponse(id: string, answer: string, event: { id: string; title: string } | null) {
+  return {
+    id,
+    userId: null,
+    userName: null,
+    answers: { 'q-colour': { label: 'Colour', answer } },
+    submittedAt: '2026-04-20T00:00:00.000Z',
+    eventId: event?.id ?? null,
+    eventTitle: event?.title ?? null,
+    eventStart: event ? '2026-04-18T18:00:00.000Z' : null,
+  };
+}
+
+describe('SurveyResponsesScreen event filter', () => {
+  const potluck = { id: 'ev-1', title: 'Potluck' };
+  const picnic = { id: 'ev-2', title: 'Picnic' };
+  const rows = [
+    feedbackResponse('r-1', 'crimson', potluck),
+    feedbackResponse('r-2', 'azure', picnic),
+    feedbackResponse('r-3', 'orphaned', null),
+  ];
+
+  it('should not render the filter for a regular survey', () => {
+    setup({ responses: rows });
+    expect(screen.queryByRole('combobox', { name: 'event' })).not.toBeInTheDocument();
+  });
+
+  it('should list distinct events with their dates for a feedback survey', () => {
+    setup({ feedbackEventType: 'community', responses: [...rows, rows[0]] });
+    const options = within(screen.getByRole('combobox', { name: 'event' })).getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual([
+      'all events',
+      'potluck · apr 18',
+      'picnic · apr 18',
+    ]);
+  });
+
+  it('should hide other events rows once an event is selected', async () => {
+    setup({ feedbackEventType: 'community', responses: rows });
+    expect(screen.getByText('orphaned')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'event' }), 'ev-1');
+
+    expect(screen.getByText('crimson')).toBeInTheDocument();
+    expect(screen.queryByText('azure')).not.toBeInTheDocument();
+    expect(screen.queryByText('orphaned')).not.toBeInTheDocument();
+  });
+
+  it('should show every row again on all events', async () => {
+    setup({ feedbackEventType: 'community', responses: rows });
+    const select = screen.getByRole('combobox', { name: 'event' });
+    await userEvent.selectOptions(select, 'ev-2');
+    await userEvent.selectOptions(select, '');
+
+    expect(screen.getByText('crimson')).toBeInTheDocument();
+    expect(screen.getByText('orphaned')).toBeInTheDocument();
   });
 });

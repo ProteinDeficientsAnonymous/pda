@@ -320,6 +320,9 @@ export interface SurveyResponseAdmin {
   userName: string | null;
   answers: Record<string, unknown>;
   submittedAt: string;
+  eventId: string | null;
+  eventTitle: string | null;
+  eventStart: string | null;
 }
 
 interface WireResponse {
@@ -328,6 +331,9 @@ interface WireResponse {
   user_name: string | null;
   answers: Record<string, unknown>;
   submitted_at: string;
+  event_id?: string | null;
+  event_title?: string | null;
+  event_start?: string | null;
 }
 
 export function useSurveyResponses(surveyId: string | undefined) {
@@ -343,6 +349,9 @@ export function useSurveyResponses(surveyId: string | undefined) {
         userName: r.user_name,
         answers: r.answers,
         submittedAt: r.submitted_at,
+        eventId: r.event_id ?? null,
+        eventTitle: r.event_title ?? null,
+        eventStart: r.event_start ?? null,
       }));
     },
     enabled: Boolean(surveyId),
