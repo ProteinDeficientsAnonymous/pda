@@ -222,6 +222,7 @@ class TestWaitlistPromotion:
             has_plus_one=True,
         )
 
+        event.refresh_from_db()
         promote_from_waitlist(event)
 
         headcount = sum(
