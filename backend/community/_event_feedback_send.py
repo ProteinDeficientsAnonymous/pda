@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 FEEDBACK_LOOKBACK = timedelta(days=7)
+REMINDER_AFTER_DAYS = 3
 
 
 def _local_midnight(day: date) -> datetime:
@@ -125,3 +126,32 @@ def send_first_requests(now: datetime) -> int:
     """Email a feedback link to each checked-in attendee without a request yet. Returns emails sent."""
     sender = get_email_sender(EmailStream.BULK)
     return sum(_send_first_for_event(sender, event, now) for event in due_feedback_events(now))
+
+
+def send_reminders(now: datetime) -> int:
+    """Send the single reminder to non-responders three local days after the first email."""
+    first_sent_before = _local_midnight(
+        timezone.localtime(now, settings.COMMUNITY_TZ).date()
+        - timedelta(days=REMINDER_AFTER_DAYS - 1)
+    )
+    due = EventFeedbackRequest.objects.filter(
+        first_sent_at__lt=first_sent_before,
+        reminder_sent_at__isnull=True,
+        responded_on__isnull=True,
+        event__status=EventStatus.ACTIVE,
+        event__event_type__in=_active_feedback_event_types(),
+    ).select_related("event", "user")
+    sender = get_email_sender(EmailStream.BULK)
+    sent = 0
+    for request in due:
+        if not request.user.email:
+            continue
+        claimed = EventFeedbackRequest.objects.filter(
+            pk=request.pk, reminder_sent_at__isnull=True
+        ).update(reminder_sent_at=now)
+        if claimed != 1:
+            continue
+        result = _send(sender, request, reminder=True)
+        if result is not None and result.success:
+            sent += 1
+    return sent
