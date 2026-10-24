@@ -12,3 +12,7 @@ class EventFeedbackOut(BaseModel):
     event_start: datetime | None
     already_responded: bool
     is_open: bool
+
+
+class EventFeedbackSubmitOut(BaseModel):
+    confirmation_message: str

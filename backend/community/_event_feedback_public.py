@@ -1,11 +1,19 @@
+import logging
+
+from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
+from config.ratelimit import rate_limit
+from django.db import transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 
-from community._event_feedback_schemas import EventFeedbackOut
+from community._event_feedback_schemas import EventFeedbackOut, EventFeedbackSubmitOut
 from community._shared import ErrorOut
 from community._survey_helpers import _survey_out, survey_is_open
+from community._survey_schemas import SurveyAnswersIn
+from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community._validation import Code, raise_validation
-from community.models import EventFeedbackRequest
+from community.models import EventFeedbackRequest, Survey, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 
 router = Router()
@@ -37,3 +45,51 @@ def get_event_feedback(request, token: str):
             is_open=survey is not None and survey_is_open(survey),
         ),
     )
+
+
+def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
+    if feedback_request.responded_on is not None:
+        raise_validation(Code.Survey.FEEDBACK_ALREADY_SUBMITTED, status_code=400)
+    survey = feedback_survey_for(feedback_request.event.event_type)
+    if survey is None:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    if not survey_is_open(survey):
+        raise_validation(Code.Survey.CLOSED, status_code=400)
+    return survey
+
+
+@router.post(
+    "/feedback/{token}/respond/",
+    response={
+        201: EventFeedbackSubmitOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
+    auth=None,
+)
+@rate_limit(key_func=lambda r: r.META.get("REMOTE_ADDR", "anon"), rate="20/h")
+def submit_event_feedback(request, token: str, payload: SurveyAnswersIn):
+    with transaction.atomic():
+        # Row lock: a forwarded link or double-click must yield exactly one response.
+        feedback_request = _feedback_request_or_404(token, for_update=True)
+        survey = _open_feedback_survey(feedback_request)
+        questions = {str(q.id): q for q in survey.questions.all()}
+        _validate_survey_answers(payload.answers, questions)
+        SurveyResponse.objects.create(
+            survey=survey,
+            user=None,
+            event=feedback_request.event,
+            answers=_build_survey_answers(payload.answers, questions),
+        )
+        feedback_request.responded_on = timezone.localdate()
+        feedback_request.save(update_fields=["responded_on"])
+        mark_request_anonymized(request)
+        audit_log(
+            logging.INFO,
+            "survey_response_submitted",
+            request,
+            target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id)),
+        )
+    return Status(201, EventFeedbackSubmitOut(confirmation_message=survey.confirmation_message))

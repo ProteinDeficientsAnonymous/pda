@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 
 import pytest
+from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import (
     Event,
@@ -123,3 +124,95 @@ class TestGetFeedbackLink:
         response = api_client.get(_url(feedback_request.token))
         assert response.status_code == 200
         assert response.json()["already_responded"] is True
+
+
+def _submit(api_client, feedback_request, survey, text="loved it"):
+    return api_client.post(
+        f"{_url(feedback_request.token)}respond/",
+        data=_answers(survey, text),
+        content_type="application/json",
+    )
+
+
+@pytest.mark.django_db
+class TestSubmitFeedback:
+    def test_submit_creates_response_without_user_and_with_event(
+        self, api_client, feedback_survey, feedback_request, event
+    ):
+        response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 201
+        assert response.json() == {"confirmation_message": feedback_survey.confirmation_message}
+        stored = SurveyResponse.objects.get(survey=feedback_survey)
+        assert stored.user_id is None
+        assert stored.event_id == event.id
+        assert stored.anonymous_token is None
+
+    def test_submit_marks_responded_on_date(self, api_client, feedback_survey, feedback_request):
+        _submit(api_client, feedback_request, feedback_survey)
+        feedback_request.refresh_from_db()
+        assert feedback_request.responded_on == timezone.localdate()
+
+    def test_submit_leaves_no_attributed_audit_row(
+        self, api_client, feedback_survey, feedback_request, django_capture_on_commit_callbacks
+    ):
+        with django_capture_on_commit_callbacks(execute=True):
+            _submit(api_client, feedback_request, feedback_survey)
+        entry = AuditLogEntry.objects.get(action="survey_response_submitted")
+        assert entry.actor_id is None
+        assert entry.ip_address is None
+        assert feedback_request.token not in json.dumps(entry.details)
+
+    def test_second_submit_rejected(self, api_client, feedback_survey, feedback_request):
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        second = _submit(api_client, feedback_request, feedback_survey, "changed my mind")
+        assert second.status_code == 400
+        assert_error_code(second, Code.Survey.FEEDBACK_ALREADY_SUBMITTED)
+        assert SurveyResponse.objects.filter(survey=feedback_survey).count() == 1
+
+    def test_unknown_token_404(self, api_client, feedback_survey):
+        response = api_client.post(
+            "/api/community/feedback/nope/respond/",
+            data=_answers(feedback_survey),
+            content_type="application/json",
+        )
+        assert response.status_code == 404
+        assert_error_code(response, Code.Survey.FEEDBACK_LINK_INVALID)
+
+    def test_submit_after_survey_unmarked_404(self, api_client, feedback_survey, feedback_request):
+        answers = _answers(feedback_survey)
+        feedback_survey.feedback_event_type = ""
+        feedback_survey.save(update_fields=["feedback_event_type"])
+        response = api_client.post(
+            f"{_url(feedback_request.token)}respond/", data=answers, content_type="application/json"
+        )
+        assert response.status_code == 404
+        assert_error_code(response, Code.Survey.NOT_FOUND)
+        assert not SurveyResponse.objects.exists()
+
+    def test_submit_after_survey_deactivated_closed(
+        self, api_client, feedback_survey, feedback_request
+    ):
+        feedback_survey.is_active = False
+        feedback_survey.save(update_fields=["is_active"])
+        response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CLOSED)
+        feedback_request.refresh_from_db()
+        assert feedback_request.responded_on is None
+
+    def test_required_question_missing_422(self, api_client, feedback_survey, feedback_request):
+        response = api_client.post(
+            f"{_url(feedback_request.token)}respond/",
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Survey.ANSWER_REQUIRED)
+        feedback_request.refresh_from_db()
+        assert feedback_request.responded_on is None
+
+    def test_submit_rate_limited(self, api_client, feedback_survey, feedback_request):
+        statuses = [
+            _submit(api_client, feedback_request, feedback_survey).status_code for _ in range(21)
+        ]
+        assert statuses[-1] == 429
