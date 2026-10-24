@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -15,6 +16,9 @@ from community.models import (
     SurveyResponse,
 )
 from django.utils import timezone
+from notifications._event_feedback_notifications import notify_event_feedback
+from notifications.models import Notification, NotificationType
+from users.models import User
 
 from tests._asserts import assert_error_code
 
@@ -52,6 +56,13 @@ def feedback_request(event, test_user):
     )
 
 
+@pytest.fixture
+def request_logs(caplog, monkeypatch):
+    monkeypatch.setattr(logging.getLogger("pda"), "propagate", True)
+    caplog.set_level(logging.DEBUG)
+    return caplog
+
+
 def _answers(survey: Survey, text: str = "loved it") -> str:
     question = survey.questions.first()
     assert question is not None
@@ -75,8 +86,12 @@ class TestFeedbackSurveySlugHidden:
         assert not SurveyResponse.objects.filter(survey=feedback_survey).exists()
 
 
-def _url(token: str) -> str:
-    return f"/api/community/feedback/{token}/"
+FEEDBACK_URL = "/api/community/event-feedback/"
+RESPOND_URL = "/api/community/event-feedback/respond/"
+
+
+def _token_header(token: str) -> dict:
+    return {"HTTP_X_FEEDBACK_TOKEN": token}
 
 
 @pytest.mark.django_db
@@ -87,7 +102,7 @@ class TestGetFeedbackLink:
         feedback_survey.created_by = test_user
         feedback_survey.save(update_fields=["created_by"])
         SurveyResponse.objects.create(survey=feedback_survey, event=event, answers={})
-        response = api_client.get(_url(feedback_request.token))
+        response = api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
         assert response.status_code == 200
         body = response.json()
         assert body["event_id"] == str(event.id)
@@ -103,13 +118,26 @@ class TestGetFeedbackLink:
         assert body["survey"]["created_by_id"] is None
         assert body["survey"]["slug"] == ""
 
+    def test_get_rate_limited(self, api_client, feedback_request):
+        statuses = [
+            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token)).status_code
+            for _ in range(61)
+        ]
+        assert set(statuses[:60]) == {200}
+        assert statuses[-1] == 429
+
     def test_unknown_token_404(self, api_client, feedback_survey):
-        response = api_client.get(_url("not-a-real-token"))
+        response = api_client.get(FEEDBACK_URL, **_token_header("not-a-real-token"))
+        assert response.status_code == 404
+        assert_error_code(response, Code.Survey.FEEDBACK_LINK_INVALID)
+
+    def test_missing_token_header_404(self, api_client, feedback_request):
+        response = api_client.get(FEEDBACK_URL)
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.FEEDBACK_LINK_INVALID)
 
     def test_get_without_feedback_survey_returns_no_survey(self, api_client, feedback_request):
-        response = api_client.get(_url(feedback_request.token))
+        response = api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
         assert response.status_code == 200
         assert response.json()["survey"] is None
         assert response.json()["is_open"] is False
@@ -119,7 +147,7 @@ class TestGetFeedbackLink:
     ):
         feedback_survey.is_active = False
         feedback_survey.save(update_fields=["is_active"])
-        response = api_client.get(_url(feedback_request.token))
+        response = api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
         assert response.status_code == 200
         assert response.json()["is_open"] is False
 
@@ -128,16 +156,17 @@ class TestGetFeedbackLink:
     ):
         feedback_request.responded_on = timezone.localdate()
         feedback_request.save(update_fields=["responded_on"])
-        response = api_client.get(_url(feedback_request.token))
+        response = api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
         assert response.status_code == 200
         assert response.json()["already_responded"] is True
 
 
 def _submit(api_client, feedback_request, survey, text="loved it"):
     return api_client.post(
-        f"{_url(feedback_request.token)}respond/",
+        RESPOND_URL,
         data=_answers(survey, text),
         content_type="application/json",
+        **_token_header(feedback_request.token),
     )
 
 
@@ -170,7 +199,10 @@ class TestSubmitFeedback:
     ):
         event.status = status
         event.save(update_fields=["status"])
-        assert api_client.get(_url(feedback_request.token)).json()["is_open"] is False
+        assert (
+            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token)).json()["is_open"]
+            is False
+        )
         response = _submit(api_client, feedback_request, feedback_survey)
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.CLOSED)
@@ -186,6 +218,33 @@ class TestSubmitFeedback:
         assert entry.ip_address is None
         assert feedback_request.token not in json.dumps(entry.details)
 
+    def test_request_log_line_never_contains_token(
+        self, api_client, feedback_survey, feedback_request, request_logs
+    ):
+        api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        _submit(api_client, feedback_request, feedback_survey)
+        middleware_lines = [r for r in request_logs.records if r.name == "pda.middleware"]
+        assert len(middleware_lines) == 3
+        assert all(feedback_request.token not in r.getMessage() for r in request_logs.records)
+        assert all(feedback_request.token not in str(r.__dict__) for r in request_logs.records)
+
+    def test_request_log_lines_drop_a_session_user(
+        self, api_client, feedback_survey, feedback_request, test_user, request_logs
+    ):
+        api_client.force_login(test_user)
+        api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
+        api_client.post(
+            RESPOND_URL,
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+            **_token_header(feedback_request.token),
+        )
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        lines = [r for r in request_logs.records if r.name == "pda.middleware"]
+        assert len(lines) == 3
+        assert all(getattr(r, "user_id", "missing") is None for r in lines)
+
     def test_second_submit_rejected(self, api_client, feedback_survey, feedback_request):
         assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
         second = _submit(api_client, feedback_request, feedback_survey, "changed my mind")
@@ -195,9 +254,10 @@ class TestSubmitFeedback:
 
     def test_unknown_token_404(self, api_client, feedback_survey):
         response = api_client.post(
-            "/api/community/feedback/nope/respond/",
+            RESPOND_URL,
             data=_answers(feedback_survey),
             content_type="application/json",
+            **_token_header("nope"),
         )
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.FEEDBACK_LINK_INVALID)
@@ -207,7 +267,10 @@ class TestSubmitFeedback:
         feedback_survey.feedback_event_type = ""
         feedback_survey.save(update_fields=["feedback_event_type"])
         response = api_client.post(
-            f"{_url(feedback_request.token)}respond/", data=answers, content_type="application/json"
+            RESPOND_URL,
+            data=answers,
+            content_type="application/json",
+            **_token_header(feedback_request.token),
         )
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.NOT_FOUND)
@@ -226,9 +289,10 @@ class TestSubmitFeedback:
 
     def test_required_question_missing_422(self, api_client, feedback_survey, feedback_request):
         response = api_client.post(
-            f"{_url(feedback_request.token)}respond/",
+            RESPOND_URL,
             data=json.dumps({"answers": {}}),
             content_type="application/json",
+            **_token_header(feedback_request.token),
         )
         assert response.status_code == 422
         assert_error_code(response, Code.Survey.ANSWER_REQUIRED)
@@ -240,3 +304,33 @@ class TestSubmitFeedback:
             _submit(api_client, feedback_request, feedback_survey).status_code for _ in range(21)
         ]
         assert statuses[-1] == 429
+
+
+@pytest.mark.django_db
+class TestFeedbackHostNotification:
+    def test_submit_notifies_creator_and_cohosts(
+        self, api_client, feedback_survey, event, test_user, django_capture_on_commit_callbacks
+    ):
+        cohost = User.objects.create_user(phone_number="+12025559301", first_name="Co")
+        attendee = User.objects.create_user(phone_number="+12025559302", first_name="Zelda")
+        event.co_hosts.add(cohost)
+        feedback_request = EventFeedbackRequest.objects.create(
+            event=event, user=attendee, token=EventFeedbackRequest.new_token()
+        )
+        with django_capture_on_commit_callbacks(execute=True):
+            response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 201
+        notes = Notification.objects.filter(notification_type=NotificationType.EVENT_FEEDBACK)
+        assert sorted(n.recipient_id for n in notes) == sorted([test_user.id, cohost.id])
+        for note in notes:
+            assert note.event_id == event.id
+            assert note.message == "new feedback for vegan potluck"
+            assert note.related_user_id is None
+            assert "Zelda" not in note.message
+
+    def test_long_event_title_truncated_to_fit(self, event):
+        event.title = "x" * 300
+        notify_event_feedback(event)
+        note = Notification.objects.get(notification_type=NotificationType.EVENT_FEEDBACK)
+        assert len(note.message) <= 255
+        assert note.message.startswith("new feedback for xxx")

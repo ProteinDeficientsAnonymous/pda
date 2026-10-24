@@ -40,7 +40,8 @@ def feedback_cutoff(now: datetime) -> datetime:
 
 
 def feedback_url(token: str) -> str:
-    return f"{settings.FRONTEND_BASE_URL}/feedback/{token}"
+    # Fragment: browsers never send it, so the token stays out of server request logs.
+    return f"{settings.FRONTEND_BASE_URL}/feedback#{token}"
 
 
 def _active_feedback_event_types() -> list[str]:
