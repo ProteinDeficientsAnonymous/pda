@@ -1,3 +1,10 @@
+# [0.172.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.171.0...v0.172.0) (2026-10-24)
+
+
+### Features
+
+* automatic event feedback surveys ([#1750](https://github.com/ProteinDeficientsAnonymous/pda/issues/1750)) ([a3d55f9](https://github.com/ProteinDeficientsAnonymous/pda/commit/a3d55f980bc94f6a9b95375816cdf8b2dc99f28b))
+
 # [0.171.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.3...v0.171.0) (2026-10-24)
 
 
