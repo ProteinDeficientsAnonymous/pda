@@ -15,8 +15,15 @@ def auto_rsvp_host(event: Event, user) -> bool:
             Event.objects.select_for_update().only("id").get(id=event.id)
             if EventRSVP.objects.filter(event_id=event.id, user=user).exists():
                 return False
-            # Not paid_confirmed: gated events skip rather than recording a payment nobody made.
-            _apply_rsvp_in_transaction(event.id, user, _RsvpApply(status=RSVPStatus.ATTENDING))
+            _apply_rsvp_in_transaction(
+                event.id, user, _RsvpApply(status=RSVPStatus.ATTENDING, skip_host_gates=True)
+            )
     except ValidationException:
         return False
     return True
+
+
+def auto_rsvp_hosts(event: Event) -> bool:
+    """Auto-rsvp every current host; returns whether any rsvp was added."""
+    added = [auto_rsvp_host(event, host) for host in event.co_hosts.all()]
+    return any(added)
