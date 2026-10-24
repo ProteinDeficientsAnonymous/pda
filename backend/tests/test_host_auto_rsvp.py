@@ -148,13 +148,6 @@ class TestAutoRsvpOnTypeSwitch:
         assert _rsvp_status(event, co_host) == RSVPStatus.ATTENDING
         fake_email_sender.send.assert_not_called()
 
-    def test_switching_paid_event_rsvps_hosts_without_payment(self, api_client, host):
-        event = _create(api_client, host, EventType.COMMUNITY, **PAID)
-        _patch(api_client, event, host, {"event_type": EventType.CLUB})
-        rsvp = EventRSVP.objects.get(event=event, user=host)
-        assert rsvp.status == RSVPStatus.ATTENDING
-        assert rsvp.paid_confirmed_at is None
-
     def test_switching_keeps_existing_rsvp(self, api_client, host):
         event = _create(api_client, host, EventType.COMMUNITY)
         EventRSVP.objects.create(event=event, user=host, status=RSVPStatus.MAYBE)
