@@ -1,3 +1,17 @@
+# [0.161.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.160.0...v0.161.0) (2026-10-24)
+
+
+### Bug Fixes
+
+* **mcp:** run django request lifecycle and use frontend url as issuer ([#1729](https://github.com/ProteinDeficientsAnonymous/pda/issues/1729)) ([d546541](https://github.com/ProteinDeficientsAnonymous/pda/commit/d5465419787f1631d74a0fe1b4fe9b5e6287d684))
+
+
+### Features
+
+* add a new survey page at /admin/surveys/new ([#1732](https://github.com/ProteinDeficientsAnonymous/pda/issues/1732)) ([6069808](https://github.com/ProteinDeficientsAnonymous/pda/commit/606980816e8fa6d6b9a03b04e8b435a51ae06926))
+* **mcp:** add permission-gated mcp server with pda_tool registry ([#1726](https://github.com/ProteinDeficientsAnonymous/pda/issues/1726)) ([360c35c](https://github.com/ProteinDeficientsAnonymous/pda/commit/360c35cee7efef7ad4076c2f89a19b4709554817))
+* **mcp:** add whoami tool and route mcp paths to the mcp server ([#1727](https://github.com/ProteinDeficientsAnonymous/pda/issues/1727)) ([c71797c](https://github.com/ProteinDeficientsAnonymous/pda/commit/c71797cbacf78359ff88af1c4e5a2fe5e2ca4691))
+
 # [0.160.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.159.0...v0.160.0) (2026-10-24)
 
 
