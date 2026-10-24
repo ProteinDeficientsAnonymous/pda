@@ -1,0 +1,17 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+you're almost in! once you come to an event in person, you'll get full access to members-only events and our whatsapp community.
+
+we send out a weekly digest with our official and club events. rsvp to any of them, and once you attend, you'll get full access. you can also find them all on the calendar:
+
+{{ calendar_url }}
+
+see you soon!
+
+don't want these reminders? turn them off here:
+
+{{ settings_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
