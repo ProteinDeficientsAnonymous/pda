@@ -1,3 +1,10 @@
+## [0.170.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.0...v0.170.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **email:** 1586 - ask members to save their password ([#1755](https://github.com/ProteinDeficientsAnonymous/pda/issues/1755)) ([2845f8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/2845f8b6e506cf824f5f13ef15b5803a9968bbbf))
+
 # [0.170.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.1...v0.170.0) (2026-10-24)
 
 
