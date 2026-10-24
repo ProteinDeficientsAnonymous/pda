@@ -1,3 +1,10 @@
+# [0.163.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.162.0...v0.163.0) (2026-10-24)
+
+
+### Features
+
+* add back to surveys link on new and edit survey pages ([#1743](https://github.com/ProteinDeficientsAnonymous/pda/issues/1743)) ([0e52b36](https://github.com/ProteinDeficientsAnonymous/pda/commit/0e52b36e3ee06119e15a6965016072da4fdffa5e))
+
 # [0.162.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.161.0...v0.162.0) (2026-10-24)
 
 
