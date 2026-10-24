@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -81,6 +82,37 @@ describe('EventFeedbackScreen', () => {
     const q2 = screen.getByRole('heading', { name: 'rating' }).closest('section')!;
     expect(within(q2).getByText('5')).toBeInTheDocument();
     expect(within(q2).queryByText('a bit loud')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when nobody has responded', () => {
+    mockFeedback({
+      isPending: false,
+      isError: false,
+      data: { questions: QUESTIONS, responses: [] },
+    });
+    renderScreen();
+
+    expect(screen.getByText('no feedback yet 🌿')).toBeInTheDocument();
+  });
+
+  it('tells non-hosts they cannot see feedback', () => {
+    mockFeedback({
+      isPending: false,
+      isError: true,
+      error: { isAxiosError: true, response: { status: 403, data: {} } },
+    });
+    renderScreen();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/host or a co-host/i);
+  });
+
+  it('links back to the event', async () => {
+    mockFeedback({ isPending: false, isError: false, data: { questions: [], responses: [] } });
+    renderScreen();
+
+    await userEvent.click(screen.getByRole('link', { name: /back to event/i }));
+
+    expect(screen.getByText('event detail')).toBeInTheDocument();
   });
 
   it('explains when responses exist but their questions were removed', () => {

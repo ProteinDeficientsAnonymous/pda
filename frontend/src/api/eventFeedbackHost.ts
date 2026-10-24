@@ -18,3 +18,17 @@ export function useHostEventFeedback(eventId: string | undefined) {
     enabled: Boolean(eventId),
   });
 }
+
+export function useMyEventFeedback(eventId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['event-feedback', 'mine', eventId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<components['schemas']['MyEventFeedbackOut']>(
+        `/api/community/events/${eventId}/my-feedback/`,
+      );
+      return data;
+    },
+    enabled,
+    staleTime: 0,
+  });
+}
