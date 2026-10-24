@@ -1,3 +1,10 @@
+# [0.165.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.164.0...v0.165.0) (2026-10-24)
+
+
+### Features
+
+* **settings:** add opt-out for in-person event reminders ([#1746](https://github.com/ProteinDeficientsAnonymous/pda/issues/1746)) ([99298a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/99298a777af6f19f540c8c48be178658ed5bfb0d))
+
 # [0.164.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.163.0...v0.164.0) (2026-10-24)
 
 
