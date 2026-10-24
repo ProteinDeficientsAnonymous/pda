@@ -62,6 +62,15 @@ describe('ConnectedAppsSection', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows loading and error states', () => {
+    mockApps([], { isPending: true });
+    const { rerender } = render(<ConnectedAppsSection />);
+    expect(screen.getByText('loading connected apps…')).toBeInTheDocument();
+    mockApps([], { isError: true });
+    rerender(<ConnectedAppsSection />);
+    expect(screen.getByText("couldn't load connected apps")).toBeInTheDocument();
+  });
+
   it('disconnect calls revoke after confirm', async () => {
     mockApps([claude]);
     render(<ConnectedAppsSection />);
@@ -82,5 +91,17 @@ describe('ConnectedAppsSection', () => {
     await userEvent.click(screen.getByRole('button', { name: 'disconnect' }));
     await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
     expect(revoke).not.toHaveBeenCalled();
+  });
+
+  it('disables disconnect while a revoke is in flight', async () => {
+    revoke.mockReturnValue(new Promise(() => undefined));
+    mockApps([claude, neverUsed]);
+    render(<ConnectedAppsSection />);
+    await userEvent.click(screen.getAllByRole('button', { name: 'disconnect' })[0]!);
+    await userEvent.click(screen.getAllByRole('button', { name: 'disconnect' })[2]!);
+    const busy = await screen.findByRole('button', { name: 'disconnecting…' });
+    expect(busy).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'disconnect' })).toBeDisabled();
+    expect(revoke).toHaveBeenCalledTimes(1);
   });
 });
