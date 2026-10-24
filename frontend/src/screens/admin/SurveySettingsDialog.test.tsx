@@ -198,6 +198,30 @@ describe('SurveySettingsDialog', () => {
     });
   });
 
+  it('forces anonymous on and drops the linked event when a feedback type is picked', async () => {
+    renderDialog({ linkedEventId: 'evt-1', anonymous: false });
+    expect(screen.getByLabelText('linked event')).toHaveValue('evt-1');
+    await userEvent.selectOptions(screen.getByLabelText('feedback survey for'), 'club events');
+
+    const anonymous = screen.getByLabelText(/anonymous responses/);
+    expect(anonymous).toBeChecked();
+    expect(anonymous).toBeDisabled();
+    expect(screen.getByText(/always anonymous for feedback surveys/)).toBeInTheDocument();
+    expect(screen.getByLabelText('linked event')).toBeDisabled();
+    expect(screen.getByLabelText('linked event')).toHaveValue('');
+
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          feedbackEventType: 'club',
+          anonymous: true,
+          linkedEventId: null,
+        }),
+      );
+    });
+  });
+
   it('seeds the feedback select from the survey and shows a taken error on it', async () => {
     mutateAsync.mockRejectedValue(fieldError('survey.feedback_type_taken', 'feedback_event_type'));
     renderDialog({ feedbackEventType: 'club' });

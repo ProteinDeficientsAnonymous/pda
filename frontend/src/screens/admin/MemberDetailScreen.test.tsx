@@ -26,6 +26,12 @@ vi.mock('@/api/users', () => ({
   useUpdateUser: vi.fn(),
 }));
 
+vi.mock('./MemberConnectedApps', () => ({
+  MemberConnectedApps: ({ memberId }: { memberId: string }) => (
+    <div data-testid="member-connected-apps">{memberId}</div>
+  ),
+}));
+
 vi.mock('@/api/roles', () => ({
   useRoles: vi.fn(),
 }));
@@ -113,6 +119,11 @@ describe('MemberDetailScreen edit form', () => {
       mutateAsync: updateMutateAsync,
       isPending: false,
     } as unknown as ReturnType<typeof useUpdateUser>);
+  });
+
+  it('renders connected apps for the member', () => {
+    renderScreen();
+    expect(screen.getByTestId('member-connected-apps')).toHaveTextContent('member-1');
   });
 
   it('shows separate first/last name fields prefilled from the member', async () => {
