@@ -17369,6 +17369,48 @@
         ]
       }
     },
+    "/api/connect/users/{user_id}/apps/": {
+      "get": {
+        "operationId": "mcp_gateway_api_list_user_apps",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectedAppOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List User Apps",
+        "tags": [
+          "connect"
+        ]
+      }
+    },
     "/api/notifications/": {
       "get": {
         "operationId": "notifications_api_list_notifications",

@@ -79,3 +79,30 @@ def test_revoke_is_audited(api_client, auth_headers, test_user, django_capture_o
     entry = AuditLogEntry.objects.get(action="mcp_connection_revoked")
     assert entry.target_id == str(grant.id)
     assert entry.details == {"user_id": str(test_user.pk), "by_admin": False}
+
+
+def _admin_url(user, grant=None) -> str:
+    base = f"/api/connect/users/{user.pk}/apps/"
+    return base + (f"{grant.id}/" if grant else "")
+
+
+def test_admin_lists_member_apps(api_client, manage_users_headers, test_user):
+    grant = make_grant(test_user, make_client(name="claude"))
+    resp = api_client.get(_admin_url(test_user), **manage_users_headers)
+    assert resp.status_code == 200
+    assert [a["id"] for a in resp.json()] == [str(grant.id)]
+
+
+def test_admin_list_unknown_user_404(api_client, manage_users_headers):
+    resp = api_client.get(
+        "/api/connect/users/00000000-0000-0000-0000-000000000000/apps/", **manage_users_headers
+    )
+    assert resp.status_code == 404
+    assert_error_code(resp, "user.not_found")
+
+
+def test_non_admin_cannot_list_member_apps_403(api_client, auth_headers, manage_users_user):
+    make_grant(manage_users_user)
+    resp = api_client.get(_admin_url(manage_users_user), **auth_headers)
+    assert resp.status_code == 403
+    assert_error_code(resp, "perm.denied")

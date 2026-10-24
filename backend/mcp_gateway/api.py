@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from audit.models import AuditTargetType
+from community._attendance_shared import require_permission
 from community._validation import Code, raise_validation
 from config.audit import AuditTarget, audit_log
 from config.auth import gated_jwt
@@ -12,6 +13,8 @@ from django.utils import timezone
 from mcp.server.auth.provider import construct_redirect_uri
 from ninja import Router
 from ninja.responses import Status
+from users.models import User
+from users.permissions import PermissionKey
 
 from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant, OAuthToken
 from mcp_gateway.provider import AuthRequestNotPending, issue_auth_code
@@ -147,3 +150,11 @@ def list_my_apps(request):
 def revoke_my_app(request, grant_id: UUID):
     _revoke_app(request, request.auth.pk, grant_id, by_admin=False)
     return Status(204, None)
+
+
+@router.get("/users/{user_id}/apps/", response={200: list[ConnectedAppOut]}, auth=gated_jwt)
+def list_user_apps(request, user_id: UUID):
+    require_permission(request, "list_user_apps", PermissionKey.MANAGE_USERS)
+    if not User.objects.filter(pk=user_id).exists():
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+    return Status(200, _list_apps(user_id))
