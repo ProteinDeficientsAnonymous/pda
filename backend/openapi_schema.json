@@ -1788,6 +1788,58 @@
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
       },
+      "EventFeedbackOut": {
+        "properties": {
+          "already_responded": {
+            "title": "Already Responded",
+            "type": "boolean"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Start"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "is_open": {
+            "title": "Is Open",
+            "type": "boolean"
+          },
+          "survey": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurveyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "survey",
+          "event_id",
+          "event_title",
+          "event_start",
+          "already_responded",
+          "is_open"
+        ],
+        "title": "EventFeedbackOut",
+        "type": "object"
+      },
       "EventFlagIn": {
         "properties": {
           "reason": {
@@ -14207,6 +14259,48 @@
           }
         ],
         "summary": "Submit Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/feedback/{token}/": {
+      "get": {
+        "operationId": "community__event_feedback_public_get_event_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Get Event Feedback",
         "tags": [
           "community"
         ]

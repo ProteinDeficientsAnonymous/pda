@@ -1431,6 +1431,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/feedback/{token}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Feedback */
+        get: operations["community__event_feedback_public_get_event_feedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/geocode/": {
         parameters: {
             query?: never;
@@ -3197,6 +3214,20 @@ export interface components {
             official_non_walk: string;
             /** Official Walk */
             official_walk: string;
+        };
+        /** EventFeedbackOut */
+        EventFeedbackOut: {
+            /** Already Responded */
+            already_responded: boolean;
+            /** Event Id */
+            event_id: string;
+            /** Event Start */
+            event_start: string | null;
+            /** Event Title */
+            event_title: string;
+            /** Is Open */
+            is_open: boolean;
+            survey: components["schemas"]["SurveyOut"] | null;
         };
         /** EventFlagIn */
         EventFlagIn: {
@@ -10286,6 +10317,37 @@ export interface operations {
             };
             /** @description Service Unavailable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_public_get_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -71,3 +71,55 @@ class TestFeedbackSurveySlugHidden:
         assert respond.status_code == 404
         assert_error_code(respond, Code.Survey.NOT_FOUND)
         assert not SurveyResponse.objects.filter(survey=feedback_survey).exists()
+
+
+def _url(token: str) -> str:
+    return f"/api/community/feedback/{token}/"
+
+
+@pytest.mark.django_db
+class TestGetFeedbackLink:
+    def test_get_returns_survey_and_event_title(
+        self, api_client, feedback_survey, feedback_request, event
+    ):
+        response = api_client.get(_url(feedback_request.token))
+        assert response.status_code == 200
+        body = response.json()
+        assert body["event_id"] == str(event.id)
+        assert body["event_title"] == "vegan potluck"
+        assert body["event_start"] is not None
+        assert body["already_responded"] is False
+        assert body["is_open"] is True
+        assert body["survey"]["id"] == str(feedback_survey.id)
+        assert [q["label"] for q in body["survey"]["questions"]] == ["how was it?"]
+        assert body["survey"]["my_response_id"] is None
+        assert body["survey"]["my_answers"] is None
+
+    def test_unknown_token_404(self, api_client, feedback_survey):
+        response = api_client.get(_url("not-a-real-token"))
+        assert response.status_code == 404
+        assert_error_code(response, Code.Survey.FEEDBACK_LINK_INVALID)
+
+    def test_get_without_feedback_survey_returns_no_survey(self, api_client, feedback_request):
+        response = api_client.get(_url(feedback_request.token))
+        assert response.status_code == 200
+        assert response.json()["survey"] is None
+        assert response.json()["is_open"] is False
+
+    def test_get_after_survey_deactivated_reports_closed(
+        self, api_client, feedback_survey, feedback_request
+    ):
+        feedback_survey.is_active = False
+        feedback_survey.save(update_fields=["is_active"])
+        response = api_client.get(_url(feedback_request.token))
+        assert response.status_code == 200
+        assert response.json()["is_open"] is False
+
+    def test_get_after_responding_reports_already_responded(
+        self, api_client, feedback_survey, feedback_request
+    ):
+        feedback_request.responded_on = timezone.localdate()
+        feedback_request.save(update_fields=["responded_on"])
+        response = api_client.get(_url(feedback_request.token))
+        assert response.status_code == 200
+        assert response.json()["already_responded"] is True
