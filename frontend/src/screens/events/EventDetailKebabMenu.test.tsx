@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { EventStatus } from '@/models/event';
+import { EventStatus, EventType } from '@/models/event';
 import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
@@ -113,6 +113,28 @@ describe('EventDetailKebabMenu', () => {
 
     const reportLink = screen.getByRole('menuitem', { name: 'check-in report' });
     expect(reportLink).toHaveAttribute('href', '/events/ev1/report');
+  });
+
+  it('hides feedback when the event has not ended', async () => {
+    renderMenu({ eventHasEnded: false });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'feedback' })).not.toBeInTheDocument();
+  });
+
+  it('shows feedback linking to the feedback route when the event ended', async () => {
+    renderMenu({ eventHasEnded: true, event: { eventType: EventType.Official } });
+    await openMenu();
+
+    const feedback = screen.getByRole('menuitem', { name: 'feedback' });
+    expect(feedback).toHaveAttribute('href', '/events/ev1/feedback');
+  });
+
+  it('hides feedback for community events, which have no survey', async () => {
+    renderMenu({ eventHasEnded: true, event: { eventType: EventType.Community } });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'feedback' })).not.toBeInTheDocument();
   });
 
   it('shows "manage rsvps" for a host on a future event', async () => {
