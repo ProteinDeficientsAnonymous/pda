@@ -28,10 +28,11 @@ def _summary(event: dict[str, Any]) -> dict[str, Any]:
     return {**{key: event[key] for key in _SUMMARY_FIELDS}, "url": _event_url(event), "tags": tags}
 
 
-def _sort_key(event: dict[str, Any]) -> tuple[bool, float]:
+def _sort_key(event: dict[str, Any]) -> tuple[bool, float, str]:
     start = None if event["datetime_tbd"] else event["start_datetime"]
     when = datetime.fromisoformat(start).timestamp() if start else float("inf")
-    return event["is_past"], -when if event["is_past"] else when
+    # id breaks ties (every tbd event is inf) so offset pages don't repeat or skip rows
+    return event["is_past"], -when if event["is_past"] else when, str(event["id"])
 
 
 @pda_tool(

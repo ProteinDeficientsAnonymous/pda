@@ -91,6 +91,14 @@ def test_list_my_events_pages(test_user):
         _call(test_user, "list_my_events", limit=51)
 
 
+def test_list_my_events_pages_tied_events_by_id(test_user):
+    tied = [_event(test_user, f"tbd {i}", datetime_tbd=True) for i in range(5)]
+    _event(test_user, "tbd draft", datetime_tbd=True, status=EventStatus.DRAFT)
+    pages = [_call(test_user, "list_my_events", limit=2, offset=o)["events"] for o in (0, 2, 4)]
+    ids = [r["id"] for page in pages for r in page]
+    assert ids == sorted(ids) and len(set(ids)) == len(tied) + 1
+
+
 def test_get_event_by_slug_or_id(test_user):
     event = _event(test_user, "picnic", location="prospect park")
     body = _call(test_user, "get_event", event=event.slug)
