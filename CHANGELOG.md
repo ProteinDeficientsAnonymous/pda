@@ -1,3 +1,16 @@
+# [0.160.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.159.0...v0.160.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add admin connected app revoke endpoint ([#1722](https://github.com/ProteinDeficientsAnonymous/pda/issues/1722)) ([d39b438](https://github.com/ProteinDeficientsAnonymous/pda/commit/d39b438f6a15b11c7a0a8dd2df753613e0f2e775))
+* **mcp:** add admin connected apps list endpoint ([#1721](https://github.com/ProteinDeficientsAnonymous/pda/issues/1721)) ([b1ed3fb](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1ed3fbd8b592e80d101ecf275dcb133164430a5))
+* **mcp:** add connect approve endpoint ([#1717](https://github.com/ProteinDeficientsAnonymous/pda/issues/1717)) ([e7a162a](https://github.com/ProteinDeficientsAnonymous/pda/commit/e7a162ad0c19509a953fbc19b13408f7d59ce576))
+* **mcp:** add connect deny endpoint ([#1718](https://github.com/ProteinDeficientsAnonymous/pda/issues/1718)) ([ef3c844](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef3c844da501ce5f77f05974cfeacba7c121aef6))
+* **mcp:** add connect request lookup endpoint ([#1716](https://github.com/ProteinDeficientsAnonymous/pda/issues/1716)) ([761666b](https://github.com/ProteinDeficientsAnonymous/pda/commit/761666b18144fe11add7cda746036f47f3e1db24))
+* **mcp:** add connected app revoke endpoint ([#1720](https://github.com/ProteinDeficientsAnonymous/pda/issues/1720)) ([0da4971](https://github.com/ProteinDeficientsAnonymous/pda/commit/0da497158fb9784a71b421a76319e184f53323f3))
+* **mcp:** add connected apps list endpoint ([#1719](https://github.com/ProteinDeficientsAnonymous/pda/issues/1719)) ([f8be2a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8be2a7c421565d24487ab765e0d3762a2a9035f))
+
 # [0.159.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.158.0...v0.159.0) (2026-10-24)
 
 
