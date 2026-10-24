@@ -30,7 +30,6 @@ class FeedbackEventSpec:
     responders: int
 
 
-# Ended >7 days ago so the daily cron never emails these seeded attendees.
 FEEDBACK_EVENT_SPECS = [
     FeedbackEventSpec(
         SeedEvent(
