@@ -1,3 +1,10 @@
+## [0.170.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.2...v0.170.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** 1588 - show manage rsvps after an event ends ([#1762](https://github.com/ProteinDeficientsAnonymous/pda/issues/1762)) ([0187580](https://github.com/ProteinDeficientsAnonymous/pda/commit/0187580ef92934c64089b460ae6ae907618164d4))
+
 ## [0.170.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.1...v0.170.2) (2026-10-24)
 
 
