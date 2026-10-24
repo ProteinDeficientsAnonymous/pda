@@ -2210,6 +2210,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/connect/requests/{request_id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Request */
+        post: operations["mcp_gateway_api_approve_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/": {
         parameters: {
             query?: never;
@@ -2672,6 +2689,11 @@ export interface components {
              * @default []
              */
             reactors: components["schemas"]["ReactorOut"][];
+        };
+        /** ConnectRedirectOut */
+        ConnectRedirectOut: {
+            /** Redirect Url */
+            redirect_url: string;
         };
         /** ConnectRequestOut */
         ConnectRequestOut: {
@@ -12306,6 +12328,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConnectRequestOut"];
+                };
+            };
+        };
+    };
+    mcp_gateway_api_approve_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectRedirectOut"];
                 };
             };
         };
