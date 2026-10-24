@@ -1,6 +1,6 @@
 [project]
 name = "pda"
-version = "0.176.0"
+version = "0.177.0"
 description = "protein deficients anonymous — vegan collective liberation community"
 requires-python = ">=3.13"
 dependencies = [

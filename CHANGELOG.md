@@ -1,3 +1,10 @@
+# [0.177.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.176.0...v0.177.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** edit events from mcp with a confirm step ([#1782](https://github.com/ProteinDeficientsAnonymous/pda/issues/1782)) ([08c85fe](https://github.com/ProteinDeficientsAnonymous/pda/commit/08c85fe395a42f098a2199baced7597376bf1460))
+
 # [0.176.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.175.0...v0.176.0) (2026-10-24)
 
 
