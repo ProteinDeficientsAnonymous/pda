@@ -1,7 +1,7 @@
 import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
-from config.ratelimit import rate_limit
+from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.utils import timezone
 from ninja import Header, Router
@@ -30,7 +30,7 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
         raise_validation(Code.Survey.FEEDBACK_LINK_INVALID, status_code=404)
     qs = EventFeedbackRequest.objects.select_related("event")
     if for_update:
-        qs = qs.select_for_update()
+        qs = qs.select_for_update(of=("self",))
     try:
         return qs.get(token=token)
     except EventFeedbackRequest.DoesNotExist:
@@ -58,7 +58,12 @@ def get_event_feedback(request, token: str = FeedbackToken):
 def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
     if feedback_request.responded_on is not None:
         raise_validation(Code.Survey.FEEDBACK_ALREADY_SUBMITTED, status_code=400)
-    survey = feedback_survey_for(feedback_request.event.event_type)
+    # Survey row lock serializes the max_responses check-then-create across tokens.
+    survey = (
+        Survey.objects.select_for_update()
+        .filter(feedback_event_type=feedback_request.event.event_type)
+        .first()
+    )
     if survey is None:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     if not survey_is_open(survey):
@@ -77,7 +82,7 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
     },
     auth=None,
 )
-@rate_limit(key_func=lambda r: r.META.get("REMOTE_ADDR", "anon"), rate="20/h")
+@rate_limit(key_func=client_ip, rate="20/h")
 def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = FeedbackToken):
     with transaction.atomic():
         # Row lock: a forwarded link or double-click must yield exactly one response.
