@@ -1,3 +1,10 @@
+# [0.159.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.158.0...v0.159.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add connect error codes and router ([#1715](https://github.com/ProteinDeficientsAnonymous/pda/issues/1715)) ([43d1d2a](https://github.com/ProteinDeficientsAnonymous/pda/commit/43d1d2a0a86bb222985940430d1640e01e46524e))
+
 # [0.158.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.157.0...v0.158.0) (2026-10-24)
 
 
