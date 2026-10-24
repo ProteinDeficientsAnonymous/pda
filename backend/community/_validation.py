@@ -284,6 +284,12 @@ class Code:
         REASON_TEXT_REQUIRED = "rejection_email.reason_text_required"
         REASON_TEXT_TOO_LONG = "rejection_email.reason_text_too_long"  # params: { max_length: int }
 
+    class Connect:
+        REQUEST_NOT_FOUND = "connect.request_not_found"
+        REQUEST_EXPIRED = "connect.request_expired"
+        REQUEST_ALREADY_USED = "connect.request_already_used"
+        APP_NOT_FOUND = "connect.app_not_found"
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.
