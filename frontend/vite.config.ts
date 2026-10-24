@@ -35,6 +35,13 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: true,
       },
+      // No changeOrigin: MCP transport security checks Host against FRONTEND_BASE_URL.
+      '^/(mcp|authorize|token|register|revoke)(\\?.*)?$': {
+        target: backendTarget,
+      },
+      '/.well-known/oauth-': {
+        target: backendTarget,
+      },
     },
   },
   build: {

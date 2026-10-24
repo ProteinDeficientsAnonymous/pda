@@ -276,6 +276,12 @@ export const Code = {
     ReasonTextRequired: 'rejection_email.reason_text_required',
     ReasonTextTooLong: 'rejection_email.reason_text_too_long',
   },
+  Connect: {
+    RequestNotFound: 'connect.request_not_found',
+    RequestExpired: 'connect.request_expired',
+    RequestAlreadyUsed: 'connect.request_already_used',
+    AppNotFound: 'connect.app_not_found',
+  },
 } as const;
 
 export type ValidationCode =
@@ -482,7 +488,11 @@ export type ValidationCode =
   | 'rejection_email.body_required'
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
-  | 'rejection_email.reason_text_too_long';
+  | 'rejection_email.reason_text_too_long'
+  | 'connect.request_not_found'
+  | 'connect.request_expired'
+  | 'connect.request_already_used'
+  | 'connect.app_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -689,4 +699,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],
   'rejection_email.reason_text_too_long': ['max_length'],
+  'connect.request_not_found': [],
+  'connect.request_expired': [],
+  'connect.request_already_used': [],
+  'connect.app_not_found': [],
 };
