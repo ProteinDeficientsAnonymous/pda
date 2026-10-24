@@ -52,6 +52,9 @@ def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) ->
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    # Feedback surveys are only answerable through a per-attendee token link.
+    if survey.feedback_event_type:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     return survey
 
 
