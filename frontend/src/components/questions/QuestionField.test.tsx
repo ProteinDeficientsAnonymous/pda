@@ -16,6 +16,27 @@ const base: SurveyQuestion = {
 };
 
 describe('QuestionField', () => {
+  it('renders bare stars when a rating has no labels', () => {
+    render(
+      <QuestionField question={{ ...base, fieldType: 'rating' }} value="" onChange={vi.fn()} />,
+    );
+    expect(screen.getByRole('radio', { name: '3 stars' })).toHaveTextContent('★');
+    expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
+  });
+
+  it('stacks stars vertically with labels beside them when any label is set', () => {
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: 'rating', options: ['meh', '', '', '', 'loved it'] }}
+        value=""
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('radiogroup')).toHaveClass('flex-col');
+    expect(screen.getByRole('radio', { name: 'loved it' })).toHaveTextContent('loved it');
+    expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
+  });
+
   it('renders a single-line text field for text type', () => {
     render(<QuestionField question={base} value="" onChange={vi.fn()} />);
     expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('INPUT');
