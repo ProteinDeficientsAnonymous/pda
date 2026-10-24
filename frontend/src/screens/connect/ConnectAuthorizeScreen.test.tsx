@@ -1,0 +1,84 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { apiClient } from '@/api/client';
+
+import ConnectAuthorizeScreen from './ConnectAuthorizeScreen';
+
+vi.mock('@/api/client', () => ({
+  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
+
+const mockedGet = vi.mocked(apiClient.get);
+const mockedPost = vi.mocked(apiClient.post);
+const assign = vi.fn();
+const originalLocation = window.location;
+
+const REQUEST = {
+  client_name: 'claude',
+  redirect_host: 'claude.ai',
+  expires_at: '2026-10-01T12:10:00Z',
+};
+
+function renderScreen(url = '/connect/authorize?request=r1') {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[url]}>
+        <ConnectAuthorizeScreen />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { assign },
+  });
+});
+
+afterEach(() => {
+  Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+});
+
+describe('ConnectAuthorizeScreen', () => {
+  it('shows the app name and redirect host', async () => {
+    mockedGet.mockResolvedValueOnce({ data: REQUEST });
+    renderScreen();
+    expect(
+      await screen.findByRole('heading', { name: 'connect claude to pda' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/claude wants to act as you in pda\./)).toBeInTheDocument();
+    expect(screen.getByText("after you allow, you'll be sent to claude.ai")).toBeInTheDocument();
+    expect(mockedGet).toHaveBeenCalledWith('/api/connect/requests/r1/');
+  });
+
+  it('allow posts approve and navigates to redirect_url', async () => {
+    mockedGet.mockResolvedValueOnce({ data: REQUEST });
+    mockedPost.mockResolvedValueOnce({ data: { redirect_url: 'https://claude.ai/cb?code=abc' } });
+    renderScreen();
+    await userEvent.click(await screen.findByRole('button', { name: 'allow' }));
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledExactlyOnceWith('https://claude.ai/cb?code=abc');
+    });
+    expect(mockedPost).toHaveBeenCalledWith('/api/connect/requests/r1/approve/');
+  });
+
+  it('deny posts deny and navigates', async () => {
+    mockedGet.mockResolvedValueOnce({ data: REQUEST });
+    mockedPost.mockResolvedValueOnce({
+      data: { redirect_url: 'https://claude.ai/cb?error=access_denied' },
+    });
+    renderScreen();
+    await userEvent.click(await screen.findByRole('button', { name: 'deny' }));
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledExactlyOnceWith('https://claude.ai/cb?error=access_denied');
+    });
+    expect(mockedPost).toHaveBeenCalledWith('/api/connect/requests/r1/deny/');
+  });
+});
