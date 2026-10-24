@@ -1,3 +1,24 @@
+# [0.159.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.158.0...v0.159.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add connect error codes and router ([#1715](https://github.com/ProteinDeficientsAnonymous/pda/issues/1715)) ([43d1d2a](https://github.com/ProteinDeficientsAnonymous/pda/commit/43d1d2a0a86bb222985940430d1640e01e46524e))
+
+# [0.158.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.157.0...v0.158.0) (2026-10-24)
+
+
+### Features
+
+* **vetting:** show login status for tentative approvals ([#1730](https://github.com/ProteinDeficientsAnonymous/pda/issues/1730)) ([d5ab38c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d5ab38c8f1da1f9037c564e5214bc06b03d839de))
+
+# [0.157.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.156.0...v0.157.0) (2026-10-24)
+
+
+### Features
+
+* show star labels on rating questions ([#1725](https://github.com/ProteinDeficientsAnonymous/pda/issues/1725)) ([a6f4768](https://github.com/ProteinDeficientsAnonymous/pda/commit/a6f47681548aed2a1851e4e932ad773fbe64bca4))
+
 # [0.156.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.155.0...v0.156.0) (2026-10-23)
 
 
