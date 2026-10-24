@@ -45,7 +45,7 @@ endif
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
-        dump-codes generate-codes check-codes cursor-rules dump-openapi frontend-types-check \
+        dump-codes generate-codes check-codes check-migration-upgrade cursor-rules dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
@@ -89,6 +89,7 @@ help:
 	@echo "  make dump-openapi         Dump NinjaAPI OpenAPI schema to openapi_schema.json"
 	@echo "  make generate-codes       Regen frontend validationCodes.gen.ts"
 	@echo "  make check-codes          Fail if any generated artifact is stale (CI)"
+	@echo "  make check-migration-upgrade  Upgrade a throwaway DB from origin/main"
 	@echo "  make cursor-rules         Regen .cursor/rules/claude-rule-*.mdc from .claude/rules"
 	@echo ""
 	@echo "Workflow commands:"
@@ -256,6 +257,9 @@ check-codes:
 	node frontend/scripts/generate-validation-codes.mjs --check
 	cd backend && uv run python manage.py dump_openapi_schema --check
 	python3 scripts/sync_cursor_rules.py --check
+
+check-migration-upgrade:
+	uv run --no-sync python scripts/check_migration_upgrade.py
 
 # Regenerate .cursor/rules/claude-rule-*.mdc from .claude/rules/ paths frontmatter.
 cursor-rules:
