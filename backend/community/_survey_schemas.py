@@ -111,7 +111,7 @@ class SurveyIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
-    feedback_event_type: EventType | Literal[""] = ""
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = ""
 
 
 class SurveyPatchIn(BaseModel):
@@ -129,7 +129,7 @@ class SurveyPatchIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
-    feedback_event_type: EventType | Literal[""] | None = None
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] | None = None
 
 
 class FinalizePollIn(BaseModel):
