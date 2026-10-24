@@ -13,11 +13,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         now = timezone.now()
-        first = send_first_requests(now)
-        reminders = send_reminders(now)
+        first, first_failed = send_first_requests(now)
+        reminders, reminders_failed = send_reminders(now)
+        failed = first_failed + reminders_failed
         logger.info(
-            "send_event_feedback_requests: sent %d request(s), %d reminder(s)", first, reminders
+            "send_event_feedback_requests: sent %d request(s), %d reminder(s), %d failed",
+            first,
+            reminders,
+            failed,
         )
-        self.stdout.write(
-            self.style.SUCCESS(f"Sent {first} feedback request(s); {reminders} reminder(s).")
-        )
+        summary = f"Sent {first} feedback request(s); {reminders} reminder(s)."
+        if failed:
+            summary += f" {failed} failed."
+        self.stdout.write(self.style.WARNING(summary) if failed else self.style.SUCCESS(summary))

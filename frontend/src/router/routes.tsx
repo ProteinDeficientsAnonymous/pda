@@ -50,6 +50,7 @@ const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen')
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
 const DocDetail = lazyWithRetry(() => import('@/screens/docs/DocDetailScreen'));
 const Survey = lazyWithRetry(() => import('@/screens/surveys/SurveyScreen'));
+const ConnectAuthorize = lazyWithRetry(() => import('@/screens/connect/ConnectAuthorizeScreen'));
 
 // Admin screens
 const AdminHub = lazyWithRetry(() => import('@/screens/admin/AdminHubScreen'));
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
           { path: '/onboarding', element: el(<Onboarding />) },
           { path: '/new-password', element: el(<NewPassword />) },
           { path: '/consent', element: el(<Consent />) },
+          {
+            element: <RequireAuth />,
+            children: [{ path: '/connect/authorize', element: el(<ConnectAuthorize />) }],
+          },
 
           // Everything else uses the shared shell (nav + outlet).
           {
