@@ -1,3 +1,15 @@
+# [0.164.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.163.0...v0.164.0) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** show event title in link previews for non-public events ([#1744](https://github.com/ProteinDeficientsAnonymous/pda/issues/1744)) ([e847581](https://github.com/ProteinDeficientsAnonymous/pda/commit/e8475817a0d3a642dad541949b1572e3c0c73c81))
+
+
+### Features
+
+* **surveys:** confirm before closing a survey ([#1742](https://github.com/ProteinDeficientsAnonymous/pda/issues/1742)) ([09c3fe4](https://github.com/ProteinDeficientsAnonymous/pda/commit/09c3fe4993e4a18255627694038a3badfd389dbf))
+
 # [0.163.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.162.0...v0.163.0) (2026-10-24)
 
 
