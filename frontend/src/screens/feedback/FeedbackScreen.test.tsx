@@ -178,4 +178,34 @@ describe('FeedbackScreen', () => {
       await screen.findByText('you already shared feedback for this one — thank you 🌱'),
     ).toBeInTheDocument();
   });
+
+  it.each([
+    ['closed', 'survey.closed'],
+    ['not found', 'survey.not_found'],
+  ])('flips to the closed state when submit reports %s', async (_name, code) => {
+    mockedGet.mockResolvedValue(wireFeedback());
+    mockedPost.mockRejectedValueOnce(apiError(400, code));
+    renderScreen();
+
+    fireEvent.change(await screen.findByLabelText('thoughts · required'), {
+      target: { value: 'late' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    expect(await screen.findByText('feedback for this event is closed')).toBeInTheDocument();
+  });
+
+  it('keeps the form and shows an alert on a generic submit failure', async () => {
+    mockedGet.mockResolvedValue(wireFeedback());
+    mockedPost.mockRejectedValueOnce(new Error('network down'));
+    renderScreen();
+
+    fireEvent.change(await screen.findByLabelText('thoughts · required'), {
+      target: { value: 'oops' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("couldn't submit — try again");
+    expect(screen.getByLabelText('thoughts · required')).toHaveValue('oops');
+  });
 });
