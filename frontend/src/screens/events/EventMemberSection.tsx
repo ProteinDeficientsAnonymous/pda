@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { useMyEventFeedback } from '@/api/eventFeedbackHost';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
@@ -143,8 +144,10 @@ export function LocationSection({ event }: { event: Event }) {
 export function LinksSection({ event }: { event: Event }) {
   const links = buildEventLinks(event);
   const feedbackSurveys = event.linkedSurveys.filter((s) => s.slug !== event.datetimePollSlug);
+  const isAuthed = useAuthStore((s) => s.user !== null);
+  const feedbackToken = useMyEventFeedback(event.id, isAuthed && event.isPast).data?.token ?? null;
 
-  if (links.length === 0 && feedbackSurveys.length === 0) return null;
+  if (links.length === 0 && feedbackSurveys.length === 0 && !feedbackToken) return null;
   return (
     <Card label="links">
       <ul className="flex flex-col gap-2 text-sm">
@@ -170,6 +173,16 @@ export function LinksSection({ event }: { event: Event }) {
             </Link>
           </li>
         ))}
+        {feedbackToken ? (
+          <li>
+            <Link
+              to={{ pathname: '/feedback', hash: feedbackToken }}
+              className="text-brand-700 hover:text-brand-900"
+            >
+              leave feedback
+            </Link>
+          </li>
+        ) : null}
       </ul>
     </Card>
   );
