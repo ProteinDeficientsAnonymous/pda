@@ -5,7 +5,9 @@ from uuid import UUID
 import httpx
 from community._event_actions import upload_event_photo
 from community._event_schemas import _MAX_EVENT_PHOTO_SIZE
+from community._events import get_event
 from community._giphy import GiphyQuery, giphy_search
+from community.models import EventStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
@@ -37,8 +39,9 @@ async def search_event_photos(
 
 def _checked_url(url: str) -> str:
     parts = urlsplit(url)
-    # netloc must be a bare allowlisted host: no userinfo, no port.
-    if parts.scheme != "https" or parts.netloc.lower() not in PHOTO_HOSTS:
+    # urlsplit silently drops tabs/newlines, so check the raw string too.
+    unsafe = any(c.isspace() or not c.isprintable() for c in url)
+    if unsafe or parts.scheme != "https" or parts.netloc.lower() not in PHOTO_HOSTS:
         raise ToolError("only image_url values from search_event_photos can be used")
     return url
 
@@ -47,7 +50,7 @@ async def _download(url: str) -> SimpleUploadedFile:
     body = bytearray()
     try:
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
-            async with client.stream("GET", _checked_url(url)) as resp:
+            async with client.stream("GET", url) as resp:
                 if resp.status_code != 200:
                     raise ToolError(_FETCH_FAILED)
                 content_type = resp.headers.get("content-type", "").split(";")[0].strip()
@@ -55,7 +58,7 @@ async def _download(url: str) -> SimpleUploadedFile:
                     body += chunk
                     if len(body) > _MAX_EVENT_PHOTO_SIZE:
                         raise ToolError("that photo is too large, pick another")
-    except httpx.HTTPError as exc:
+    except (httpx.HTTPError, httpx.InvalidURL) as exc:
         raise ToolError(_FETCH_FAILED) from exc
     ext = content_type.rsplit("/", 1)[-1] or "jpg"
     return SimpleUploadedFile(f"photo.{ext}", bytes(body), content_type=content_type)
@@ -63,22 +66,33 @@ async def _download(url: str) -> SimpleUploadedFile:
 
 @pda_tool(
     description=(
-        "set an event's photo to a search_event_photos candidate (pass its image_url). if the "
-        "event is published, confirm the chosen photo with the user first: members will see it. "
-        "this can't use the planner's own photo or any other url; for that, tell them to add it "
-        f"on the event page at {BASE_URL}/events/<event id>."
+        "set a draft event's photo to a search_event_photos candidate (pass its image_url). pick "
+        "the photo while the event is still a draft, before publish_event; once published, the "
+        "planner changes it on the event page. this can't use the planner's own photo or any "
+        f"other url; for that, tell them to add it on the event page at {BASE_URL}/events/<id>."
     )
 )
 async def set_event_photo(
     event_id: Annotated[UUID, Field(description="the event to update")],
     image_url: Annotated[str, Field(description="image_url of a search_event_photos result")],
 ) -> dict[str, Any]:
-    photo = await _download(image_url)
+    url = _checked_url(image_url)
     user = await current_user()
+    current = await call_view(get_event, user, event_id=str(event_id))
+    if current["status"] != EventStatus.DRAFT:
+        raise ToolError(
+            "only a draft event's photo can be set here. ask the planner to change it on the "
+            f"event page: {_event_url(current)}"
+        )
+    photo = await _download(url)
     event = await call_view(upload_event_photo, user, event_id=event_id, photo=photo)
     return {
         "id": event["id"],
         "title": event["title"],
         "photo_url": event["photo_url"],
-        "url": f"{BASE_URL}/events/{event['slug'] or event['id']}",
+        "url": _event_url(event),
     }
+
+
+def _event_url(event: dict[str, Any]) -> str:
+    return f"{BASE_URL}/events/{event['slug'] or event['id']}"

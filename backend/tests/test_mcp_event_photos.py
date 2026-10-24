@@ -5,7 +5,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 from audit.models import AuditLogEntry
-from community.models import Event
+from community.models import Event, EventStatus
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
@@ -39,7 +39,9 @@ def _call(user, name, **args):
 
 @pytest.fixture
 def event(test_user):
-    return Event.objects.create(title="x", start_datetime=future_iso(days=3), created_by=test_user)
+    return Event.objects.create(
+        title="x", start_datetime=future_iso(days=3), created_by=test_user, status=EventStatus.DRAFT
+    )
 
 
 @pytest.fixture
@@ -75,11 +77,21 @@ def test_set_photo_on_own_event_stores_and_audits(test_user, event, remote):
     assert (entry.actor, entry.details["via"]) == (test_user, "mcp")
 
 
-def test_non_host_refused_by_view(event, remote):
+def test_non_host_refused_before_fetch(event, remote):
     other = User.objects.create_user(phone_number="+12025550199", password="x", first_name="o")
     remote[1][PEXELS] = _image()
     with pytest.raises(ToolError, match="403"):
         _call(other, "set_event_photo", event_id=str(event.id), image_url=PEXELS)
+    assert remote[0] == []
+
+
+def test_published_event_refused_before_fetch(test_user, event, remote):
+    Event.objects.filter(pk=event.pk).update(status=EventStatus.ACTIVE)
+    remote[1][PEXELS] = _image()
+    with pytest.raises(ToolError, match=f"event page: .*/events/{event.slug or event.id}"):
+        _call(test_user, "set_event_photo", event_id=str(event.id), image_url=PEXELS)
+    event.refresh_from_db()
+    assert (remote[0], event.photo.name) == ([], "")
 
 
 @pytest.mark.parametrize(
@@ -89,6 +101,8 @@ def test_non_host_refused_by_view(event, remote):
         "http://images.pexels.com/x.jpg",
         "https://images.pexels.com@evil.example/x.jpg",
         "https://images.pexels.com:8443/x.jpg",
+        "https://images.pex\tels.com/x.jpg",
+        "https://images.pexels.com/x.jpg\n",
     ],
 )
 def test_disallowed_urls_never_fetched(test_user, event, remote, url):
