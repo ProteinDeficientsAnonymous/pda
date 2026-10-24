@@ -11,7 +11,7 @@ from notifications._email_helpers import EventBlastEmailDetails, send_event_blas
 from notifications.email_sender import EmailStream, get_email_sender
 from pydantic import Field
 
-from community._events import _can_edit_event
+from community._event_helpers import _can_edit_event
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventEmailBlast, RSVPStatus

@@ -18,13 +18,14 @@ from notifications.service import (
 )
 
 from community._event_helpers import (
+    _can_edit_event,
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
 )
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
-from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._rsvp_counts import _attending_headcount_db
 from community._rsvp_payment import requires_payment_gate
 from community._rsvp_status_emails import email_member_rsvp_status, email_promoted_users

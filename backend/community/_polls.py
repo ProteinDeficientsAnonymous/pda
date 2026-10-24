@@ -26,8 +26,8 @@ from community._event_poll_schemas import (
     EventPollVoteIn,
     VoterOut,
 )
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._event_viewer import resolve_event_viewer
-from community._events import _enforce_event_read_visibility
 from community._poll_finalize import seat_yes_voters
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._validation import Code, raise_validation
