@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { EventTypeValue } from '@/models/event';
+
 import { apiClient } from './client';
 import { downloadFile } from './downloadFile';
 import {
@@ -83,6 +85,7 @@ interface WireSurveyFull {
   max_responses?: number | null;
   response_count?: number;
   linked_event_id?: string | null;
+  feedback_event_type?: '' | EventTypeValue;
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -110,6 +113,7 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
+    feedbackEventType: w.feedback_event_type ?? '',
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
@@ -150,6 +154,7 @@ export interface SurveyInput {
   closesAt: string | null;
   maxResponses: number | null;
   linkedEventId: string | null;
+  feedbackEventType: '' | EventTypeValue;
 }
 
 export function useCreateSurvey() {
@@ -169,6 +174,7 @@ export function useCreateSurvey() {
         closes_at: input.closesAt,
         max_responses: input.maxResponses,
         linked_event_id: input.linkedEventId,
+        feedback_event_type: input.feedbackEventType,
       });
       return mapSurveyFull(data);
     },
@@ -197,6 +203,7 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.closesAt !== undefined) body.closes_at = patch.closesAt;
       if (patch.maxResponses !== undefined) body.max_responses = patch.maxResponses;
       if (patch.linkedEventId !== undefined) body.linked_event_id = patch.linkedEventId;
+      if (patch.feedbackEventType !== undefined) body.feedback_event_type = patch.feedbackEventType;
       const { data } = await apiClient.patch<WireSurveyFull>(
         `/api/community/surveys/${surveyId}/`,
         body,
@@ -313,6 +320,9 @@ export interface SurveyResponseAdmin {
   userName: string | null;
   answers: Record<string, unknown>;
   submittedAt: string;
+  eventId: string | null;
+  eventTitle: string | null;
+  eventStart: string | null;
 }
 
 interface WireResponse {
@@ -321,6 +331,9 @@ interface WireResponse {
   user_name: string | null;
   answers: Record<string, unknown>;
   submitted_at: string;
+  event_id?: string | null;
+  event_title?: string | null;
+  event_start?: string | null;
 }
 
 export function useSurveyResponses(surveyId: string | undefined) {
@@ -336,6 +349,9 @@ export function useSurveyResponses(surveyId: string | undefined) {
         userName: r.user_name,
         answers: r.answers,
         submittedAt: r.submitted_at,
+        eventId: r.event_id ?? null,
+        eventTitle: r.event_title ?? null,
+        eventStart: r.event_start ?? null,
       }));
     },
     enabled: Boolean(surveyId),
@@ -441,12 +457,13 @@ function mapQuestionSummary(w: WireQuestionSummary): SurveyQuestionSummary {
   };
 }
 
-export function useSurveyQuestionSummaries(surveyId: string | undefined) {
+export function useSurveyQuestionSummaries(surveyId: string | undefined, eventId = '') {
   return useQuery({
-    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary'],
+    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary', eventId],
     queryFn: async () => {
       const { data } = await apiClient.get<WireQuestionSummary[]>(
         `/api/community/surveys/${surveyId ?? ''}/summary/`,
+        { params: eventId ? { event_id: eventId } : undefined },
       );
       return data.map(mapQuestionSummary);
     },

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { EventStatus } from '@/models/event';
+import { EventStatus, EventType } from '@/models/event';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { canEditEvent } from './eventEditGate';
@@ -24,6 +24,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const rootRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
   const showCheckInReport = eventHasEnded;
+  const showFeedback = eventHasEnded && event.eventType !== EventType.Community;
   const showManageRsvps = canManageRsvps && !eventHasEnded;
   const showQuestionResponses = canManageRsvps && hasQuestionHistory(event);
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
@@ -112,6 +113,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               }}
             >
               check-in report
+            </MenuLink>
+          ) : null}
+          {showFeedback ? (
+            <MenuLink
+              to={`/events/${eventId}/feedback`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              feedback
             </MenuLink>
           ) : null}
           {showEmailBlast ? (

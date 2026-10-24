@@ -1,0 +1,12 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+quick nudge about {{ event_title|lower }}{% if event_date %} ({{ event_date }}){% endif %} — if you haven't shared your feedback yet, we would love to hear from you. it only takes a minute.
+
+share your feedback:
+
+{{ url }}
+
+— pda
+{% endautoescape %}
+
+{% include "emails/_no_reply_footer.txt" %}

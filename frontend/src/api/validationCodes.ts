@@ -362,6 +362,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'response not found';
     case Code.Survey.AnonymousLocked:
       return "anonymous can't be changed once a survey has responses";
+    case Code.Survey.FeedbackTypeTaken:
+      return 'another survey is already the feedback survey for that event type';
+    case Code.Survey.FeedbackLinkInvalid:
+      return "this feedback link doesn't work anymore";
+    case Code.Survey.FeedbackAlreadySubmitted:
+      return 'you already sent feedback for this event — thank you!';
     case Code.Survey.NoDatetimePollQuestion:
       return 'survey has no datetime poll question';
     case Code.Survey.WinningDatetimeNotInOptions:
