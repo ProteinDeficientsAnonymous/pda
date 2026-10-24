@@ -1,5 +1,4 @@
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -82,5 +81,19 @@ describe('EventFeedbackScreen', () => {
     const q2 = screen.getByRole('heading', { name: 'rating' }).closest('section')!;
     expect(within(q2).getByText('5')).toBeInTheDocument();
     expect(within(q2).queryByText('a bit loud')).not.toBeInTheDocument();
+  });
+
+  it('explains when responses exist but their questions were removed', () => {
+    mockFeedback({
+      isPending: false,
+      isError: false,
+      data: {
+        questions: [],
+        responses: [{ id: 'r1', submitted_on: '2026-10-20', answers: {} }],
+      },
+    });
+    renderScreen();
+
+    expect(screen.getByText(/questions that have since been removed/)).toBeInTheDocument();
   });
 });
