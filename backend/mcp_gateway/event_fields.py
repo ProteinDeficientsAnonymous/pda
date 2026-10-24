@@ -1,28 +1,43 @@
 import json
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from community._event_schemas import EventIn
 from community._event_tags import list_event_tags
 from community._validation import ValidationException
 from community.models import EventType, PageVisibility
-from config.validation_handlers import _serialize_validation_exception
+from config.validation_handlers import _serialize_pydantic_error, _serialize_validation_exception
 from django.conf import settings
 from mcp.server.mcpserver.exceptions import ToolError
-from pydantic import AwareDatetime, BaseModel, Field, ValidationError
+from pydantic import AfterValidator, BaseModel, Field, ValidationError
 from users.models import User
 
 from mcp_gateway.server import BASE_URL
 from mcp_gateway.view_calls import call_view
 
-_WHEN = "iso 8601 with utc offset. pda events are in new york time, e.g. 2026-11-07T11:00:00-05:00"
+_WHEN = "new york local time, e.g. 2026-11-07T11:00"
+
+
+def _new_york(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    local = value.replace(tzinfo=settings.COMMUNITY_TZ)
+    if value.tzinfo is not None and value.utcoffset() != local.utcoffset():
+        offset = local.isoformat()[-6:]
+        raise ValueError(
+            f"new york is at {offset} on {value.date()}; send new york local time with no offset"
+        )
+    return local
+
+
+NewYorkTime = Annotated[datetime | None, AfterValidator(_new_york)]
 
 
 class EventFields(BaseModel):
     title: str = Field(description="event title")
     description: str = Field("", description="event description shown on the event page")
-    start_datetime: AwareDatetime | None = Field(None, description=f"start, {_WHEN}")
-    end_datetime: AwareDatetime | None = Field(None, description=f"end, {_WHEN}")
+    start_datetime: NewYorkTime = Field(None, description=f"start, {_WHEN}")
+    end_datetime: NewYorkTime = Field(None, description=f"end, {_WHEN}")
     datetime_tbd: bool = Field(False, description="true when the date/time isn't decided yet")
     location: str = Field("", description="place name and address shown to members")
     latitude: float | None = Field(None, description="meetup point latitude (see find_location)")
@@ -56,9 +71,11 @@ async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
     try:
         return EventIn(**data, tag_ids=await _tag_ids(fields.tags, user), **extra)
     except ValidationException as exc:
-        raise ToolError(json.dumps(_serialize_validation_exception(exc))) from exc
+        detail = [_serialize_validation_exception(exc)]
+        raise ToolError(json.dumps({"status": exc.status_code, "detail": detail})) from exc
     except ValidationError as exc:
-        raise ToolError(str(exc)) from exc
+        detail = [_serialize_pydantic_error({**err}) for err in exc.errors()]
+        raise ToolError(json.dumps({"status": 422, "detail": detail})) from exc
 
 
 def _local(value: str | None) -> str | None:

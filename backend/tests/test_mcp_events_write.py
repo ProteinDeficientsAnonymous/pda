@@ -16,7 +16,7 @@ from tests.test_geocode import _FakeResp
 from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
-WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00:00-05:00"}
+WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
 
 
 def _run(user, tool, **arguments):
@@ -53,6 +53,30 @@ def test_view_refuses_official_without_permission_and_tentative(test_user, is_me
     assert json.loads(error)["status"] == 403
 
 
+@pytest.mark.parametrize(
+    ("sent", "saved"),
+    [
+        ("2099-07-04T11:00", "2099-07-04T11:00:00-04:00"),
+        ("2099-12-05T11:00", "2099-12-05T11:00:00-05:00"),
+        ("2099-07-04T11:00:00-04:00", "2099-07-04T11:00:00-04:00"),
+    ],
+)
+def test_times_are_new_york_local(test_user, sent, saved):
+    summary = _run(test_user, "create_event", fields={**WALK, "start_datetime": sent})
+    assert summary["start_datetime"] == saved
+
+
+def test_wrong_offset_is_refused(test_user):
+    fields = {**WALK, "start_datetime": "2099-07-04T11:00:00-05:00"}
+    assert "new york is at -04:00 on 2099-07-04" in _error(test_user, "create_event", fields=fields)
+    assert not Event.objects.exists()
+
+
+def test_invalid_field_error_matches_view_errors(test_user):
+    error = json.loads(_error(test_user, "create_event", fields={**WALK, "whatsapp_link": "nope"}))
+    assert (error["status"], error["detail"][0]["field"]) == (422, "whatsapp_link")
+
+
 def test_unknown_tag_lists_valid_ones(test_user):
     EventTag.objects.create(name="walk")
     error = _error(test_user, "create_event", fields={**WALK, "tags": ["hike"]})
@@ -61,7 +85,8 @@ def test_unknown_tag_lists_valid_ones(test_user):
 
 def test_rate_limit_shared_with_website(test_user, api_client, auth_headers):
     post = partial(api_client.post, content_type="application/json", **auth_headers)
-    assert all(post("/api/community/events/", WALK).status_code == 201 for _ in range(10))
+    website = {**WALK, "start_datetime": "2099-11-07T11:00:00-05:00"}
+    assert all(post("/api/community/events/", website).status_code == 201 for _ in range(10))
     error = json.loads(_error(test_user, "create_event", fields=WALK))
     assert (error["status"], error["detail"][0]["code"]) == (429, Code.Rate.LIMITED)
 
