@@ -10,6 +10,8 @@ import { isSafeRedirect } from './isSafeRedirect';
 
 const NOT_FOUND_MESSAGE = "this connection request doesn't exist.";
 const UNSAFE_REDIRECT_MESSAGE = "this app's return address isn't allowed";
+const FRAMED_MESSAGE = 'for your security, open this page directly in your browser';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_MESSAGE = 'something went wrong — try again';
 
 const STATUS_MESSAGES: Record<number, string> = {
@@ -25,13 +27,17 @@ function messageForError(err: unknown): string {
 
 export default function ConnectAuthorizeScreen() {
   const [params] = useSearchParams();
-  const requestId = params.get('request');
+  const rawRequestId = params.get('request');
+  const framed = window.top !== window.self;
+  const requestId =
+    !framed && rawRequestId && UUID_PATTERN.test(rawRequestId) ? rawRequestId : null;
   const request = useConnectRequest(requestId);
   const approve = useApproveConnect();
   const deny = useDenyConnect();
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
 
+  if (framed) return <ContentError message={FRAMED_MESSAGE} />;
   if (!requestId) return <ContentError message={NOT_FOUND_MESSAGE} />;
   if (request.isPending) return <ContentLoading />;
   if (request.isError) return <ContentError message={messageForError(request.error)} />;

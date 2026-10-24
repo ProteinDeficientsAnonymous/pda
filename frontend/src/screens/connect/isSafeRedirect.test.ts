@@ -21,6 +21,13 @@ describe('isSafeRedirect', () => {
     ['/relative/path', ''],
     ['not a url', ''],
     ['', ''],
+    ['ftp://claude.ai/cb', 'claude.ai'],
+    ['http://claude.ai/cb', 'claude.ai'],
+    ['https://claude.ai@evil.com/cb', 'claude.ai'],
+    ['https://claude.ai./cb', 'claude.ai'],
+    ['http://localhost.evil.com/cb', 'localhost.evil.com'],
+    ['http://127.0.0.1.evil.com/cb', '127.0.0.1.evil.com'],
+    ['https:\\\\evil.com/cb', 'claude.ai'],
   ])('rejects unsafe or malformed %s', (url, host) => {
     expect(isSafeRedirect(url, host)).toBe(false);
   });
