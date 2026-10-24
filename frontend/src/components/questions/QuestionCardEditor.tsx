@@ -11,7 +11,12 @@ import { cn } from '@/utils/cn';
 
 import type { QuestionAuthorValues } from './QuestionAuthorDialog';
 import { QuestionCardOptions } from './QuestionCardOptions';
-import { normalizeQuestionOptions, questionTypeWantsOptions } from './questionTypeOptions';
+import {
+  normalizeQuestionOptions,
+  normalizeRatingLabels,
+  questionTypeWantsOptions,
+} from './questionTypeOptions';
+import { RatingLabelFields } from './RatingLabelFields';
 
 interface TypeOption<T extends string> {
   value: T;
@@ -58,12 +63,17 @@ function sharesOptions(from: string, to: string): boolean {
   return CHOICE_TYPES.has(from) && CHOICE_TYPES.has(to);
 }
 
+function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
+  if (fieldType === QuestionType.Rating) return normalizeRatingLabels(options);
+  if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
+  return normalizeQuestionOptions(options);
+}
+
 function normalize<T extends string>(values: QuestionAuthorValues<T>): QuestionAuthorValues<T> {
-  const wantsOptions = questionTypeWantsOptions(values.fieldType as QuestionType);
   return {
     ...values,
     label: values.label.trim(),
-    options: wantsOptions ? normalizeQuestionOptions(values.options) : [],
+    options: normalizeOptions(values.fieldType, values.options),
   };
 }
 
@@ -181,7 +191,19 @@ export function QuestionCardEditor<T extends string>({
         </div>
       </div>
 
-      {wantsOptions ? (
+      {draft.fieldType === QuestionType.Rating ? (
+        <RatingLabelFields
+          id={id}
+          options={draft.options}
+          disabled={disabled}
+          onChange={(options) => {
+            setDraft((d) => ({ ...d, options }));
+          }}
+          onCommit={(options) => {
+            commit({ ...draft, options });
+          }}
+        />
+      ) : wantsOptions ? (
         <QuestionCardOptions
           id={id}
           fieldType={draft.fieldType}
