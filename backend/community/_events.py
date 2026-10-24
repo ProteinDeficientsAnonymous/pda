@@ -16,11 +16,8 @@ from notifications.service import broadcast_event_created
 from pydantic import BaseModel
 from users._helpers import visible_display_name
 
-from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
     _build_guest_list,
-    _can_edit_event,
-    _can_see_invite_only,
     _enforce_type_tag_permission,
     _event_out,
     _event_rsvp_payload,
@@ -41,6 +38,7 @@ from community._event_nonmember_removal import (
     email_removed_non_members,
     guard_or_remove_ineligible_non_members,
 )
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._event_rsvp_answers import can_see_guest_questionnaire_responses
 from community._event_rsvp_serialize import with_guest_photos
 from community._event_schemas import (
@@ -58,6 +56,7 @@ from community._event_update import (
     _promote_if_capacity_increased,
 )
 from community._event_viewer import resolve_event_viewer
+from community._host_auto_rsvp import auto_rsvp_host, auto_rsvp_hosts
 from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._tentative_member_access import (
@@ -69,7 +68,6 @@ from community.models import (
     Event,
     EventRsvpQuestion,
     EventStatus,
-    PageVisibility,
     is_official_or_club,
     parse_event_ref,
 )
@@ -112,41 +110,6 @@ def list_events(
         200,
         [_event_list_out(e, auth_user, is_authed) for e in events],
     )
-
-
-def _can_see_draft(event: Event, auth_user) -> bool:
-    """Pending cohost invitees can see the draft they were invited to so they
-    can find the accept/decline banner. They aren't accepted co-hosts yet,
-    so `_can_edit_event` returns False — without this branch, they'd 404."""
-    if not auth_user:
-        return False
-    return _can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
-
-
-def _enforce_event_read_visibility(event: Event, auth_user) -> None:
-    """Raise the right ValidationException if `auth_user` shouldn't see this event."""
-    if event.is_deleted:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if event.is_draft and not _can_see_draft(event, auth_user):
-        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="view_draft_event")
-    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        if not _can_see_invite_only_event(auth_user, event):
-            raise_validation(
-                Code.Event.PERM_DENIED, status_code=403, action="view_invite_only_event"
-            )
-
-
-def _can_see_invite_only_event(user, event: Event) -> bool:
-    """Invite-only visibility without hydrating invitees."""
-    if user is None:
-        return False
-    if _can_see_invite_only(
-        user, {str(c.id) for c in event.co_hosts.all()}, set(), event.created_by_id
-    ):
-        return True
-    return event.invited_users.filter(pk=user.pk).exists()
 
 
 def _get_visible_event(request, event_id: str):
@@ -306,6 +269,7 @@ def create_event(request, payload: EventIn):
             for display_order, question in enumerate(payload.rsvp_questions)
         ]
     )
+    auto_rsvp_host(event, request.auth)
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
@@ -324,6 +288,14 @@ def create_event(request, payload: EventIn):
         ),
     )
     return Status(201, _event_out(event, request.auth))
+
+
+def _announce_rsvp_changes(
+    request, event: Event, promoted_user_ids: list[str], *, hosts_rsvped: bool
+) -> None:
+    if promoted_user_ids or hosts_rsvped:
+        broadcast_capacity_change(event.id, exclude_user_ids={str(request.auth.pk)})
+    email_promoted_users(request, event, promoted_user_ids)
 
 
 @router.patch(
@@ -353,6 +325,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     # Checked before status transitions, which have their own attendee notifications.
     was_eligible = event.is_public_rsvp_eligible
     old_max_attendees = event.max_attendees
+    was_official_or_club = is_official_or_club(event.event_type)
     removed_user_ids: list[str] = []
     promoted_user_ids: list[str] = []
 
@@ -369,11 +342,10 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
                 return early
 
         promoted_user_ids = _promote_if_capacity_increased(event, updates, old_max_attendees)
+        hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
     email_removed_non_members(request, event, removed_user_ids)
-    if promoted_user_ids:
-        broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-        email_promoted_users(request, event, promoted_user_ids)
+    _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

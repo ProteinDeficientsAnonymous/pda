@@ -35,17 +35,26 @@ export default function EventManageRsvpsScreen() {
       />
     );
   }
-  if (event.isPast) {
-    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
-  }
 
   return (
     <ContentContainer>
       <BackLink eventId={event.id} />
       <h1 className="mb-1 text-2xl font-medium tracking-tight">manage rsvps</h1>
       <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
+      {event.isPast ? <PastEventNote eventId={event.id} /> : null}
       <EventManageRsvpsPanel event={event} />
     </ContentContainer>
+  );
+}
+
+function PastEventNote({ eventId }: { eventId: string }) {
+  return (
+    <p className="border-border bg-surface text-foreground-secondary mb-6 rounded-md border p-3 text-sm">
+      this event already happened — anyone you add counts as going. mark who showed up on{' '}
+      <Link to={`/events/${eventId}/check-in`} className="text-foreground underline">
+        check-in
+      </Link>
+    </p>
   );
 }
 

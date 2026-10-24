@@ -25,7 +25,6 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const user = useAuthStore((s) => s.user);
   const showCheckInReport = eventHasEnded;
   const showFeedback = eventHasEnded && event.eventType !== EventType.Community;
-  const showManageRsvps = canManageRsvps && !eventHasEnded;
   const showQuestionResponses = canManageRsvps && hasQuestionHistory(event);
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
   const showEdit = canEditEvent(event, user);
@@ -77,7 +76,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               edit
             </MenuLink>
           ) : null}
-          {showManageRsvps ? (
+          {canManageRsvps ? (
             <MenuLink
               to={`/events/${eventId}/manage-rsvps`}
               onSelect={() => {

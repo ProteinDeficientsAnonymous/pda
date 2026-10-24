@@ -35,10 +35,21 @@ endif
 # gentler default. `$$` defers expansion to the recipe shell so the env var is read.
 AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
 AGENT_PYTEST_EXTRA =
+AGENT_VITEST_EXTRA =
+
+# Changed-lines-only coverage gate: CI test runs write the reports; `make diff-coverage` rebuilds them locally.
+DIFF_COVER_BASE ?= origin/main
+DIFF_COVER = UV_NO_PROGRESS=1 uvx -q diff-cover@10.6.0
+DIFF_COVER_ARGS = --compare-branch="$$DIFF_COVER_BASE" --fail-under=80 --show-uncovered
+BACKEND_COVERAGE_XML = backend/coverage.xml
+FRONTEND_COVERAGE_LCOV = frontend/coverage/lcov.info
+PYTEST_COV_ARGS = --cov=. --cov-config=$(CURDIR)/pyproject.toml --cov-report=xml:coverage.xml
+
 # CI runner is dedicated: use every core; worksteal rebalances the slow transaction-test tail
 ifdef CI
 AGENT_XDIST_N = auto
-AGENT_PYTEST_EXTRA = --dist worksteal --durations=15
+AGENT_PYTEST_EXTRA = --dist worksteal --durations=15 $(PYTEST_COV_ARGS)
+AGENT_VITEST_EXTRA = --coverage
 endif
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
@@ -49,7 +60,8 @@ endif
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
-        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
+        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck \
+        diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend
 
 help:
 	@echo "Backend commands:"
@@ -100,6 +112,7 @@ help:
 	@echo "  make agent-backend-ci   agent-ci backend portion only"
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
+	@echo "  make diff-coverage    Run tests with coverage; fail if changed lines vs DIFF_COVER_BASE (origin/main) are <80% covered"
 
 # Backend + Frontend
 install:
@@ -328,7 +341,7 @@ agent-frontend-format-check:
 	cd frontend && pnpm exec oxfmt --check
 
 agent-frontend-test:
-	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
+	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only $(AGENT_VITEST_EXTRA)
 
 agent-frontend-e2e:
 	@cd frontend && pnpm test:e2e
@@ -348,6 +361,18 @@ agent-check-codes: $(AGENT_DB_ENSURE)
 	python3 scripts/sync_cursor_rules.py --check
 
 agent-frontend-ci: parallel-agent-frontend
+
+agent-diff-coverage-backend:
+	$(DIFF_COVER) $(BACKEND_COVERAGE_XML) $(DIFF_COVER_ARGS)
+
+agent-diff-coverage-frontend:
+	$(DIFF_COVER) $(FRONTEND_COVERAGE_LCOV) $(DIFF_COVER_ARGS)
+
+# leading `-`: Postgres-only tests fail on local SQLite, but the reports are still written
+diff-coverage:
+	-$(MAKE) agent-test AGENT_PYTEST_EXTRA="$(PYTEST_COV_ARGS)"
+	-$(MAKE) agent-frontend-test AGENT_VITEST_EXTRA=--coverage
+	$(MAKE) --keep-going agent-diff-coverage-backend agent-diff-coverage-frontend
 
 # Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:

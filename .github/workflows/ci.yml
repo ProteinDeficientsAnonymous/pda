@@ -44,7 +44,10 @@ jobs:
       SECRET_KEY: ci-only-not-used-in-prod
 
     steps:
+      # full history on PRs so diff-cover can diff against the base branch
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -66,11 +69,19 @@ jobs:
       - name: Fail if the working tree is dirty
         run: git diff --exit-code
 
+      - name: Diff coverage (changed lines must be at least 80% covered)
+        if: github.event_name == 'pull_request'
+        env:
+          DIFF_COVER_BASE: origin/${{ github.base_ref }}
+        run: make agent-diff-coverage-backend
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
 
       - uses: pnpm/action-setup@v6
         with:
@@ -87,6 +98,16 @@ jobs:
 
       - name: Run frontend CI
         run: make agent-frontend-ci
+
+      # uvx runs diff-cover without installing the backend's Python deps
+      - uses: astral-sh/setup-uv@v7
+        if: github.event_name == 'pull_request'
+
+      - name: Diff coverage (changed lines must be at least 80% covered)
+        if: github.event_name == 'pull_request'
+        env:
+          DIFF_COVER_BASE: origin/${{ github.base_ref }}
+        run: make agent-diff-coverage-frontend
 
   # Matches Dockerfile `pnpm build:docker`. E2E stays on the Vite dev server.
   frontend-production-build:

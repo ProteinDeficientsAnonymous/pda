@@ -7,13 +7,13 @@ from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
+from community._event_helpers import _can_edit_event
 from community._event_rsvp_serialize import event_rsvp_question_out
 from community._event_schemas import (
     EventRsvpQuestionOut,
     EventRsvpQuestionSyncPayload,
     validate_event_rsvp_question,
 )
-from community._events import _can_edit_event
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRsvpQuestion

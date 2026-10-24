@@ -13,7 +13,7 @@ from notifications.service import create_event_flag_notifications
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community._events import _enforce_event_read_visibility
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation

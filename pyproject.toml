@@ -1,6 +1,6 @@
 [project]
 name = "pda"
-version = "0.169.1"
+version = "0.171.0"
 description = "protein deficients anonymous — vegan collective liberation community"
 requires-python = ">=3.13"
 dependencies = [
@@ -34,6 +34,7 @@ dev = [
     "django-stubs[compatible-mypy]>=6.0.1",
     "ipython>=9.16.0",
     "pytest>=8.4",
+    "pytest-cov>=7.1.0",
     "pytest-django>=4.11",
     "pytest-xdist>=3.8.0",
     "ruff",
@@ -55,6 +56,11 @@ markers = [
 filterwarnings = [
     "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:ninja.signature.utils",
 ]
+
+[tool.coverage.run]
+# sys.monitoring tracer: far lower overhead than the default C tracer on 3.12+
+core = "sysmon"
+omit = ["*/migrations/*", "*/tests/*"]
 
 [tool.ty.rules]
 # django-stubs resolves most Django metaclass issues (Model.objects, DoesNotExist, etc.).

@@ -9,12 +9,12 @@ from ninja import Router
 from ninja.responses import Status
 
 from community._event_helpers import (
+    _can_edit_event,
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
 )
 from community._event_schemas import EventOut, WaitlistOrderIn
-from community._events import _can_edit_event
 from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation

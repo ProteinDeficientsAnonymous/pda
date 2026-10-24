@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.169.1",
+  "version": "0.171.0",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
@@ -62,6 +62,7 @@
     "@types/react-big-calendar": "^1.16.3",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.12",
     "autoprefixer": "^10.5.0",
     "axe-core": "^4.11.3",
     "axios-mock-adapter": "^2.1.0",
@@ -74,7 +75,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.8",
-    "vitest": "^4.1.4",
+    "vitest": "^4.1.12",
     "vitest-axe": "^0.1.0"
   }
 }

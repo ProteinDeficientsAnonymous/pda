@@ -12,7 +12,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/calendar` | Community calendar (member details gated inline) |
 | `/events/:id` | Event detail (member details gated inline) |
 | `/events/:id/edit` | Event edit (form handles auth; backend may 401) |
-| `/events/:id/manage-rsvps` | Host/co-host guest management (future, rsvp-enabled events) |
+| `/events/:id/manage-rsvps` | Host/co-host guest management (rsvp-enabled events, including after they end) |
 | `/events/:id/responses` | Host/co-host rsvp question responses + tallies |
 | `/events/add` | Create event |
 | `/surveys/:slug` | Public / members survey |

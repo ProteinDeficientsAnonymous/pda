@@ -28,6 +28,10 @@ def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | 
     return oldest
 
 
+def _waitlist_closed(event: Event) -> bool:
+    return event.max_attendees is None or event.is_past
+
+
 def promote_from_waitlist(event: Event) -> list[str]:
     """Promote waitlisted users to attending in line order (host-set position, then FIFO).
 
@@ -35,7 +39,7 @@ def promote_from_waitlist(event: Event) -> list[str]:
     Returns the list of promoted user ids so callers that need to follow up per
     promoted user (e.g. emailing promoted non-members) can do so after commit.
     """
-    if event.max_attendees is None:
+    if _waitlist_closed(event):
         return []
     promoted_user_ids: list[str] = []
     unpaid_user_ids: list[str] = []

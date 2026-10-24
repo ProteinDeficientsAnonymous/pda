@@ -1,3 +1,39 @@
+# [0.171.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.3...v0.171.0) (2026-10-24)
+
+
+### Features
+
+* **events:** 1589 - auto-rsvp co-hosts who accept on club/official ([#1766](https://github.com/ProteinDeficientsAnonymous/pda/issues/1766)) ([d165f3c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d165f3cdd0f535c1e9108de4c4d796df1fb97c1a))
+* **events:** 1589 - auto-rsvp hosts when creating club/official events ([#1765](https://github.com/ProteinDeficientsAnonymous/pda/issues/1765)) ([23f3c4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/23f3c4a630d39a2313f26898c66246d02c702089))
+
+## [0.170.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.2...v0.170.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** 1588 - show manage rsvps after an event ends ([#1762](https://github.com/ProteinDeficientsAnonymous/pda/issues/1762)) ([0187580](https://github.com/ProteinDeficientsAnonymous/pda/commit/0187580ef92934c64089b460ae6ae907618164d4))
+
+## [0.170.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.1...v0.170.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** 1588 - let hosts add guests after an event ends ([#1761](https://github.com/ProteinDeficientsAnonymous/pda/issues/1761)) ([1d5d4d9](https://github.com/ProteinDeficientsAnonymous/pda/commit/1d5d4d9e6e9e35be50903543cf71f7467aa305e4))
+
+## [0.170.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.0...v0.170.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **email:** 1586 - ask members to save their password ([#1755](https://github.com/ProteinDeficientsAnonymous/pda/issues/1755)) ([2845f8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/2845f8b6e506cf824f5f13ef15b5803a9968bbbf))
+
+# [0.170.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.1...v0.170.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** 1723 - rate-limit oauth sign-in endpoints and prune stale rows ([#1751](https://github.com/ProteinDeficientsAnonymous/pda/issues/1751)) ([881578f](https://github.com/ProteinDeficientsAnonymous/pda/commit/881578f2f06c33c2c413fdc69072862883d74d0d))
+
 ## [0.169.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.0...v0.169.1) (2026-10-24)
 
 

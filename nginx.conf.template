@@ -3,6 +3,16 @@ map $http_user_agent $event_unfurl_bot {
     "~*(facebookexternalhit|twitterbot|slackbot|whatsapp|telegrambot|discordbot|linkedinbot|pinterest|redditbot|embedly|iframely|skypeuripreview|vkshare|bluesky|mastodon)" 1;
 }
 
+# Railway's edge appends the address it saw, so only the right-most X-Forwarded-For hop
+# can't be spoofed (same rule as TRUSTED_PROXY_COUNT=1 in backend/config/ratelimit.py).
+map $http_x_forwarded_for $mcp_client_ip {
+    default $remote_addr;
+    "~([^, ]+) *$" $1;
+}
+
+limit_req_zone $mcp_client_ip zone=mcp_signup:10m rate=10r/m;
+limit_req_zone $mcp_client_ip zone=mcp_token:10m rate=60r/m;
+
 server {
     listen ${NGINX_PORT};
     server_name _;
@@ -31,7 +41,31 @@ server {
         proxy_send_timeout 24h;
     }
 
-    location ~ ^/(mcp|authorize|token|register|revoke)$ {
+    location ~ ^/(register|authorize)$ {
+        limit_req zone=mcp_signup burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+    }
+
+    location = /token {
+        limit_req zone=mcp_token burst=30 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+    }
+
+    location ~ ^/(mcp|revoke)$ {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

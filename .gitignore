@@ -43,3 +43,8 @@ docs/superpowers/
 
 # root release tooling
 node_modules/
+
+# Coverage
+.coverage
+.coverage.*
+coverage.xml

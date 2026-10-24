@@ -28,8 +28,9 @@ from community._cohost_invite_helpers import (
     send_cohost_invite_emails,
 )
 from community._event_cohost_helpers import _can_manage_cohost_invites
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_schemas import EventOut
+from community._host_auto_rsvp import auto_rsvp_host
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
@@ -117,6 +118,8 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
         invite.save(update_fields=["status", "decided_at"])
         invite.event.co_hosts.add(invite.user)
 
+    if auto_rsvp_host(invite.event, invite.user):
+        broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     create_cohost_invite_accepted_notification(invite.event, invite.user, inviter_id)
 
     event = _reload_event_for_response(event_id)

@@ -12,6 +12,7 @@ from notifications.service import create_payment_revoked_notification
 from users.models import User as UserModel
 
 from community._event_helpers import (
+    _can_edit_event,
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
@@ -25,7 +26,6 @@ from community._event_rsvps import (
     payment_audit_details,
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
-from community._events import _can_edit_event
 from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -33,6 +33,15 @@ from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 
 router = Router()
+
+
+def _resolve_host_rsvp_status(
+    event: Event, target_user, status: str, has_plus_one: bool
+) -> tuple[str, bool]:
+    if event.is_past:
+        # Capacity is moot once the event is over — never waitlist an after-the-fact add.
+        return status, has_plus_one and event.allow_plus_ones
+    return _resolve_rsvp_status(event, target_user, status, has_plus_one)
 
 
 def _apply_host_rsvp_in_transaction(
@@ -50,7 +59,9 @@ def _apply_host_rsvp_in_transaction(
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, target_user, status, has_plus_one)
+    final_status, final_plus_one = _resolve_host_rsvp_status(
+        event, target_user, status, has_plus_one
+    )
 
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
     previous_status = getattr(existing, "status", None)
@@ -135,7 +146,8 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
+    if not event.is_past:
+        email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
     email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
