@@ -3,21 +3,17 @@ from pathlib import Path
 
 import pytest
 
-NGINX_TEMPLATE = Path(__file__).resolve().parents[2] / "nginx.conf.template"
-
-
-def _template() -> str:
-    return NGINX_TEMPLATE.read_text()
+TEMPLATE = (Path(__file__).resolve().parents[2] / "nginx.conf.template").read_text()
 
 
 def _client_ip_pattern() -> re.Pattern[str]:
-    match = re.search(r'map \$http_x_forwarded_for \$mcp_client_ip \{[^}]*"~([^"]+)"', _template())
+    match = re.search(r'map \$http_x_forwarded_for \$mcp_client_ip \{[^}]*"~([^"]+)"', TEMPLATE)
     assert match, "mcp_client_ip map not found in nginx.conf.template"
     return re.compile(match.group(1))
 
 
 def _location_block(path: str) -> str:
-    for match in re.finditer(r"location ([^{]+)\{(.*?)\n    \}", _template(), re.S):
+    for match in re.finditer(r"location ([^{]+)\{(.*?)\n    \}", TEMPLATE, re.S):
         spec = match.group(1).strip()
         if spec == f"= {path}" or (spec.startswith("~ ") and re.fullmatch(spec[2:].strip(), path)):
             return match.group(2)
@@ -50,4 +46,4 @@ def test_oauth_endpoints_are_rate_limited(path, zone):
 
 @pytest.mark.parametrize("zone", ["mcp_signup", "mcp_token"])
 def test_rate_limit_zones_use_client_ip_key(zone):
-    assert re.search(rf"limit_req_zone \$mcp_client_ip zone={zone}:", _template())
+    assert re.search(rf"limit_req_zone \$mcp_client_ip zone={zone}:", TEMPLATE)
