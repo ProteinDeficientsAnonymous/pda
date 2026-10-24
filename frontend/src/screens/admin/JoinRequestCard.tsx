@@ -125,6 +125,7 @@ export function JoinRequestCard({
       ) : isTentative ? (
         <>
           <TentativeAttribution request={request} />
+          <LoginStatus onboardedAt={request.onboardedAt} />
           <TentativeActions
             request={request}
             busy={busy}
