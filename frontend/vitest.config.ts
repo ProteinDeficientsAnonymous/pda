@@ -18,5 +18,12 @@ export default defineConfig({
     setupFiles: ['./src/test/isolateFile.ts', './src/test/setup.ts'],
     css: true,
     isolate: false,
+    coverage: {
+      provider: 'v8',
+      // repo-root-relative SF paths so diff-cover matches them against git diff paths
+      reporter: [['lcovonly', { projectRoot: path.resolve(__dirname, '..') }]],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**', 'src/**/*.gen.ts'],
+    },
   },
 });
