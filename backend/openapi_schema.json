@@ -889,6 +889,30 @@
         "title": "CommentReactionSummaryOut",
         "type": "object"
       },
+      "ConnectRequestOut": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "redirect_host": {
+            "title": "Redirect Host",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_name",
+          "redirect_host",
+          "expires_at"
+        ],
+        "title": "ConnectRequestOut",
+        "type": "object"
+      },
       "ConsentType": {
         "enum": [
           "guidelines",
@@ -17116,6 +17140,44 @@
         "summary": "Update Whatsapp Link",
         "tags": [
           "community"
+        ]
+      }
+    },
+    "/api/connect/requests/{request_id}/": {
+      "get": {
+        "operationId": "mcp_gateway_api_get_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectRequestOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Request",
+        "tags": [
+          "connect"
         ]
       }
     },

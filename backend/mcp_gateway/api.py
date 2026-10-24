@@ -1,11 +1,15 @@
 from typing import NoReturn
+from urllib.parse import urlparse
 from uuid import UUID
 
 from community._validation import Code, raise_validation
+from config.auth import gated_jwt
 from django.utils import timezone
 from ninja import Router
+from ninja.responses import Status
 
 from mcp_gateway.models import OAuthAuthRequest
+from mcp_gateway.schemas import ConnectRequestOut
 
 router = Router()
 
@@ -28,3 +32,16 @@ def _get_pending_request(request_id: UUID) -> OAuthAuthRequest:
     ):
         _raise_unusable(request_id)
     return row
+
+
+@router.get("/requests/{request_id}/", response={200: ConnectRequestOut}, auth=gated_jwt)
+def get_request(request, request_id: UUID):
+    row = _get_pending_request(request_id)
+    return Status(
+        200,
+        ConnectRequestOut(
+            client_name=row.client.client_name,
+            redirect_host=urlparse(row.params["redirect_uri"]).hostname or "",
+            expires_at=row.expires_at,
+        ),
+    )
