@@ -4,6 +4,8 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 {{ magic_link_url }}
 
+be sure to save your password. we're on free tiers for emails, so every email counts. that said, if you ever need another password reset, please don't hesitate to do it!
+
 this link expires in 7 days. {% block note %}if you didn't request it, you can ignore this email.{% endblock %}
 
 — pda
