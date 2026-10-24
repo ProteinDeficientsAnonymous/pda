@@ -1,3 +1,10 @@
+# [0.158.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.157.0...v0.158.0) (2026-10-24)
+
+
+### Features
+
+* **vetting:** show login status for tentative approvals ([#1730](https://github.com/ProteinDeficientsAnonymous/pda/issues/1730)) ([d5ab38c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d5ab38c8f1da1f9037c564e5214bc06b03d839de))
+
 # [0.157.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.156.0...v0.157.0) (2026-10-24)
 
 
