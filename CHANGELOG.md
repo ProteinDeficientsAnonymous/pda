@@ -1,3 +1,10 @@
+## [0.174.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.0...v0.174.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **surveys:** mark required survey fields instead of optional ones ([#1818](https://github.com/ProteinDeficientsAnonymous/pda/issues/1818)) ([8488c37](https://github.com/ProteinDeficientsAnonymous/pda/commit/8488c3788ff90dd65436bf7e57fcaa978a0dbb50))
+
 # [0.174.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.173.0...v0.174.0) (2026-10-24)
 
 
