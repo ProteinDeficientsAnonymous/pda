@@ -161,8 +161,10 @@ def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
         raise_validation(
             Code.Survey.FEEDBACK_TYPE_TAKEN, field="feedback_event_type", status_code=400
         )
-    data["anonymous"] = True
-    data["linked_event_id"] = None
+    if data.get("anonymous", survey.anonymous if survey else None) is not True:
+        data["anonymous"] = True
+    if data.get("linked_event_id", survey.linked_event_id if survey else None) is not None:
+        data["linked_event_id"] = None
     return data
 
 
