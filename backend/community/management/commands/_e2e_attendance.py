@@ -73,6 +73,7 @@ def _seed_attendance_report() -> dict:
     return {
         "event_id": str(event.id),
         "event_title": event.title,
+        "event_location": event.location,
         "refresh_token": str(RefreshToken.for_user(host)),
         "attended_name": attended.full_name,
         "no_show_name": no_show.full_name,

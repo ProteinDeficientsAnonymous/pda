@@ -208,3 +208,69 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 7
+
+  # Same Dockerfile production runs (nginx + Vite build, Django behind it).
+  # The e2e job stays on the Vite dev server.
+  production-image:
+    name: Production image
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pda
+          POSTGRES_PASSWORD: pda
+          POSTGRES_DB: pda
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
+      SECRET_KEY: ci-only-not-used-in-prod
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install backend dependencies
+        run: uv sync --locked
+
+      - name: Install frontend dependencies
+        run: cd frontend && pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: cd frontend && pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke the production image
+        run: make agent-prod-image-smoke
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-image-playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

@@ -23,8 +23,10 @@
   },
   "include": [
     "e2e/**/*.ts",
+    "e2e-prod/**/*.ts",
     "visual/**/*.ts",
     "playwright.config.ts",
+    "playwright.prod.config.ts",
     "playwright.visual.config.ts"
   ]
 }

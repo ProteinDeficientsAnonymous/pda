@@ -49,7 +49,7 @@ endif
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
-        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
+        agent-frontend-test agent-frontend-e2e agent-frontend-typecheck agent-prod-image-smoke
 
 help:
 	@echo "Backend commands:"
@@ -332,6 +332,32 @@ agent-frontend-test:
 
 agent-frontend-e2e:
 	@cd frontend && pnpm test:e2e
+
+# Production Dockerfile (nginx + built SPA + gunicorn). Not agent-frontend-e2e.
+PROD_SMOKE_PORT ?= 8103
+PROD_SMOKE_NAME ?= pda-prod-smoke
+PROD_SMOKE_DATABASE_URL = $(subst @127.0.0.1:,@host.docker.internal:,$(subst @localhost:,@host.docker.internal:,$(DATABASE_URL)))
+
+agent-prod-image-smoke:
+	docker build -t $(PROD_SMOKE_NAME) .
+	-docker rm -f $(PROD_SMOKE_NAME) >/dev/null 2>&1
+	@set -eu; \
+	trap 'status=$$?; if [ $$status -ne 0 ]; then docker logs $(PROD_SMOKE_NAME) >&2 || true; fi; docker rm -f $(PROD_SMOKE_NAME) >/dev/null 2>&1 || true; exit $$status' EXIT; \
+	docker run -d --name $(PROD_SMOKE_NAME) \
+		--add-host=host.docker.internal:host-gateway \
+		-p 127.0.0.1:$(PROD_SMOKE_PORT):8080 \
+		-e DATABASE_URL="$(PROD_SMOKE_DATABASE_URL)" \
+		-e SECRET_KEY="$(SECRET_KEY)" \
+		-e ALLOWED_HOSTS=localhost,127.0.0.1 \
+		-e DEBUG=False \
+		$(PROD_SMOKE_NAME); \
+	ok=0; \
+	for _ in $$(seq 1 90); do \
+	  if curl -sf http://127.0.0.1:$(PROD_SMOKE_PORT)/api/openapi.json >/dev/null; then ok=1; break; fi; \
+	  sleep 2; \
+	done; \
+	test "$$ok" = 1; \
+	cd frontend && pnpm exec playwright test -c playwright.prod.config.ts
 
 agent-frontend-typecheck:
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false

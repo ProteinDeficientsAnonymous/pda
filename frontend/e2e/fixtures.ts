@@ -51,6 +51,7 @@ export interface SeedScenarioMap {
   'attendance-report': {
     event_id: string;
     event_title: string;
+    event_location: string;
     refresh_token: string;
     attended_name: string;
     no_show_name: string;
@@ -93,8 +94,12 @@ export function seed<S extends SeedScenario>(scenario: S): SeedScenarioMap[S] {
 }
 
 // Logs in via the refresh cookie the SPA boots from — UI login is capped at 5/min per IP.
-export async function signInWithToken(context: BrowserContext, refreshToken: string) {
+export async function signInWithToken(
+  context: BrowserContext,
+  refreshToken: string,
+  url = BASE_URL,
+) {
   await context.addCookies([
-    { name: 'refresh_token', value: refreshToken, url: BASE_URL, httpOnly: true, sameSite: 'Lax' },
+    { name: 'refresh_token', value: refreshToken, url, httpOnly: true, sameSite: 'Lax' },
   ]);
 }

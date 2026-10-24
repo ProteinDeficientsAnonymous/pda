@@ -194,6 +194,7 @@ def test_e2e_seed_attendance_report_buckets_each_rsvp(capsys):
     out = json.loads(capsys.readouterr().out)
     event = Event.objects.get(id=out["event_id"])
     host = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    assert out["event_location"] == event.location
     assert event.created_by == host
     assert not host.roles.exists()
     marks = {r.user.full_name: (r.status, r.attendance) for r in event.rsvps.select_related("user")}
