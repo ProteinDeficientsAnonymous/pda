@@ -44,6 +44,7 @@ export function useEventFeedback(token: string) {
 
 export function useSubmitEventFeedback(token: string) {
   return useMutation({
+    meta: { skipErrorReport: true },
     mutationFn: async (answers: Record<string, AnswerValue>) => {
       const { data } = await authClient.post<{ confirmation_message: string }>(
         `${FEEDBACK_URL}respond/`,
