@@ -62,9 +62,9 @@ describe('SurveySettingsDialog', () => {
 
   it('seeds fields from the survey and saves edits', async () => {
     const { onClose } = renderDialog();
-    const title = screen.getByLabelText('title');
+    const title = screen.getByLabelText('title · required');
     expect(title).toHaveValue('old title');
-    expect(screen.getByLabelText('slug')).toHaveValue('old-slug');
+    expect(screen.getByLabelText('slug · required')).toHaveValue('old-slug');
     expect(screen.getByLabelText('linked event')).toHaveValue('');
 
     await userEvent.clear(title);
@@ -112,7 +112,7 @@ describe('SurveySettingsDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     expect(await screen.findByText('a survey with that slug already exists')).toBeInTheDocument();
-    expect(screen.getByLabelText('slug')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('slug · required')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -122,7 +122,7 @@ describe('SurveySettingsDialog', () => {
     renderDialog();
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
-    const slug = await screen.findByLabelText('slug');
+    const slug = await screen.findByLabelText('slug · required');
     expect(slug).toHaveAttribute('aria-invalid', 'true');
 
     await userEvent.type(slug, '-2');
@@ -153,13 +153,13 @@ describe('SurveySettingsDialog', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "couldn't save settings — try again",
     );
-    expect(screen.getByLabelText('slug')).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText('slug · required')).not.toHaveAttribute('aria-invalid');
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it('blocks save when title is blank', async () => {
     renderDialog();
-    await userEvent.clear(screen.getByLabelText('title'));
+    await userEvent.clear(screen.getByLabelText('title · required'));
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('title and slug are required');
     expect(mutateAsync).not.toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe('SurveySettingsDialog', () => {
   it('saves anonymous and confirmation message edits', async () => {
     renderDialog();
     await userEvent.click(screen.getByLabelText(/anonymous responses/));
-    await userEvent.type(screen.getByLabelText('confirmation message (optional)'), 'thanks!');
+    await userEvent.type(screen.getByLabelText('confirmation message'), 'thanks!');
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     await waitFor(() => {

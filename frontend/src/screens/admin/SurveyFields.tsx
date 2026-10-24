@@ -44,6 +44,7 @@ export function SurveyFields({
     <>
       <TextField
         label="title"
+        labelSuffix="· required"
         value={values.title}
         onChange={(e) => {
           onChange({ title: e.target.value });
@@ -52,6 +53,7 @@ export function SurveyFields({
       />
       <TextField
         label="slug"
+        labelSuffix="· required"
         value={values.slug}
         onChange={(e) => {
           onChange({ slug: e.target.value });
@@ -61,7 +63,7 @@ export function SurveyFields({
         maxLength={100}
       />
       <Textarea
-        label="description (optional)"
+        label="description"
         value={values.description}
         onChange={(e) => {
           onChange({ description: e.target.value });
@@ -135,7 +137,7 @@ export function SurveyFields({
         </span>
       </label>
       <Textarea
-        label="confirmation message (optional)"
+        label="confirmation message"
         value={values.confirmationMessage}
         onChange={(e) => {
           onChange({ confirmationMessage: e.target.value });
@@ -151,7 +153,6 @@ export function SurveyFields({
           onChange={(opensAt) => {
             onChange({ opensAt });
           }}
-          optional
         />
         <DateTimePicker
           label="closes at"
@@ -159,7 +160,6 @@ export function SurveyFields({
           onChange={(closesAt) => {
             onChange({ closesAt });
           }}
-          optional
         />
       </div>
       <TextField
@@ -171,7 +171,7 @@ export function SurveyFields({
           const raw = e.target.value;
           onChange({ maxResponses: raw === '' ? null : Number(raw) });
         }}
-        hint="optional — leave blank for unlimited"
+        hint="leave blank for unlimited"
       />
     </>
   );

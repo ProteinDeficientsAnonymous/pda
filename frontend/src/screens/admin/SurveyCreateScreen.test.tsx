@@ -41,8 +41,8 @@ function renderScreen() {
 }
 
 async function fillForm() {
-  await userEvent.type(screen.getByLabelText('title'), 'retreat a');
-  await userEvent.type(screen.getByLabelText('slug'), 'retreat-a');
+  await userEvent.type(screen.getByLabelText('title · required'), 'retreat a');
+  await userEvent.type(screen.getByLabelText('slug · required'), 'retreat-a');
   await userEvent.selectOptions(screen.getByLabelText('linked event'), 'evt-1');
 }
 
@@ -56,9 +56,9 @@ describe('SurveyCreateScreen', () => {
   it('renders every survey field inline on the page', () => {
     renderScreen();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('title')).toBeInTheDocument();
-    expect(screen.getByLabelText('description (optional)')).toBeInTheDocument();
-    expect(screen.getByLabelText('slug')).toBeInTheDocument();
+    expect(screen.getByLabelText('title · required')).toBeInTheDocument();
+    expect(screen.getByLabelText('description')).toBeInTheDocument();
+    expect(screen.getByLabelText('slug · required')).toBeInTheDocument();
     expect(screen.getByLabelText('visibility')).toBeInTheDocument();
     expect(screen.getByText('opens at')).toBeInTheDocument();
     expect(screen.getByText('closes at')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('SurveyCreateScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'create' }));
 
     expect(await screen.findByText('a survey with that slug already exists')).toBeInTheDocument();
-    const slug = screen.getByLabelText('slug');
+    const slug = screen.getByLabelText('slug · required');
     expect(slug).toHaveAttribute('aria-invalid', 'true');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();
@@ -153,6 +153,6 @@ describe('SurveyCreateScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "couldn't create the survey — try again",
     );
-    expect(screen.getByLabelText('slug')).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText('slug · required')).not.toHaveAttribute('aria-invalid');
   });
 });
