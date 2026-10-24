@@ -1,7 +1,7 @@
 import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log, mark_request_anonymized
-from config.ratelimit import rate_limit
+from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -31,7 +31,7 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
         raise_validation(Code.Survey.FEEDBACK_LINK_INVALID, status_code=404)
     qs = EventFeedbackRequest.objects.select_related("event")
     if for_update:
-        qs = qs.select_for_update()
+        qs = qs.select_for_update(of=("self",))
     try:
         return qs.get(token=token)
     except EventFeedbackRequest.DoesNotExist:
@@ -51,8 +51,15 @@ def _public_survey_out(survey: Survey) -> SurveyOut:
     )
 
 
-@router.get("/event-feedback/", response={200: EventFeedbackOut, 404: ErrorOut}, auth=None)
+@router.get(
+    "/event-feedback/",
+    response={200: EventFeedbackOut, 404: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="60/h")
 def get_event_feedback(request, token: str = FeedbackToken):
+    # Even a session-authed viewer stays out of the log: view time hints at submit time.
+    mark_request_anonymized(request)
     feedback_request = _feedback_request_or_404(token)
     event = feedback_request.event
     survey = feedback_survey_for(event.event_type)
@@ -76,7 +83,12 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
         raise_validation(Code.Survey.FEEDBACK_ALREADY_SUBMITTED, status_code=400)
     if feedback_request.event.status != EventStatus.ACTIVE:
         raise_validation(Code.Survey.CLOSED, status_code=400)
-    survey = feedback_survey_for(feedback_request.event.event_type)
+    # Survey row lock serializes the max_responses check-then-create across tokens.
+    survey = (
+        Survey.objects.select_for_update()
+        .filter(feedback_event_type=feedback_request.event.event_type)
+        .first()
+    )
     if survey is None:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     if not survey_is_open(survey):
@@ -95,8 +107,9 @@ def _open_feedback_survey(feedback_request: EventFeedbackRequest) -> Survey:
     },
     auth=None,
 )
-@rate_limit(key_func=lambda r: r.META.get("REMOTE_ADDR", "anon"), rate="20/h")
+@rate_limit(key_func=client_ip, rate="20/h")
 def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = FeedbackToken):
+    mark_request_anonymized(request)
     with transaction.atomic():
         # Row lock: a forwarded link or double-click must yield exactly one response.
         feedback_request = _feedback_request_or_404(token, for_update=True)
@@ -111,7 +124,6 @@ def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = Feedba
         )
         feedback_request.responded_on = timezone.localdate(timezone=settings.COMMUNITY_TZ)
         feedback_request.save(update_fields=["responded_on"])
-        mark_request_anonymized(request)
         audit_log(
             logging.INFO,
             "survey_response_submitted",

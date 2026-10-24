@@ -56,6 +56,13 @@ def feedback_request(event, test_user):
     )
 
 
+@pytest.fixture
+def request_logs(caplog, monkeypatch):
+    monkeypatch.setattr(logging.getLogger("pda"), "propagate", True)
+    caplog.set_level(logging.DEBUG)
+    return caplog
+
+
 def _answers(survey: Survey, text: str = "loved it") -> str:
     question = survey.questions.first()
     assert question is not None
@@ -110,6 +117,14 @@ class TestGetFeedbackLink:
         assert body["survey"]["response_count"] == 0
         assert body["survey"]["created_by_id"] is None
         assert body["survey"]["slug"] == ""
+
+    def test_get_rate_limited(self, api_client, feedback_request):
+        statuses = [
+            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token)).status_code
+            for _ in range(61)
+        ]
+        assert set(statuses[:60]) == {200}
+        assert statuses[-1] == 429
 
     def test_unknown_token_404(self, api_client, feedback_survey):
         response = api_client.get(FEEDBACK_URL, **_token_header("not-a-real-token"))
@@ -204,17 +219,31 @@ class TestSubmitFeedback:
         assert feedback_request.token not in json.dumps(entry.details)
 
     def test_request_log_line_never_contains_token(
-        self, api_client, feedback_survey, feedback_request, caplog, monkeypatch
+        self, api_client, feedback_survey, feedback_request, request_logs
     ):
-        monkeypatch.setattr(logging.getLogger("pda"), "propagate", True)
-        with caplog.at_level(logging.DEBUG):
-            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
-            assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
-            _submit(api_client, feedback_request, feedback_survey)
-        middleware_lines = [r for r in caplog.records if r.name == "pda.middleware"]
+        api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        _submit(api_client, feedback_request, feedback_survey)
+        middleware_lines = [r for r in request_logs.records if r.name == "pda.middleware"]
         assert len(middleware_lines) == 3
-        assert all(feedback_request.token not in r.getMessage() for r in caplog.records)
-        assert all(feedback_request.token not in str(r.__dict__) for r in caplog.records)
+        assert all(feedback_request.token not in r.getMessage() for r in request_logs.records)
+        assert all(feedback_request.token not in str(r.__dict__) for r in request_logs.records)
+
+    def test_request_log_lines_drop_a_session_user(
+        self, api_client, feedback_survey, feedback_request, test_user, request_logs
+    ):
+        api_client.force_login(test_user)
+        api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
+        api_client.post(
+            RESPOND_URL,
+            data=json.dumps({"answers": {}}),
+            content_type="application/json",
+            **_token_header(feedback_request.token),
+        )
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        lines = [r for r in request_logs.records if r.name == "pda.middleware"]
+        assert len(lines) == 3
+        assert all(getattr(r, "user_id", "missing") is None for r in lines)
 
     def test_second_submit_rejected(self, api_client, feedback_survey, feedback_request):
         assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
