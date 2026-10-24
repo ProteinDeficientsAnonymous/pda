@@ -1,5 +1,7 @@
 """Tests for event create/update/delete management endpoints."""
 
+from datetime import datetime, timedelta
+
 import pytest
 from community._validation import Code
 from community.api import EventPatchIn
@@ -12,6 +14,10 @@ from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
+
+
+def _naive_future_iso(days: int, hours: int = 0) -> str:
+    return (datetime.now() + timedelta(days=days, hours=hours)).replace(microsecond=0).isoformat()
 
 
 @pytest.fixture
@@ -257,6 +263,25 @@ class TestEventManagement:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.END_BEFORE_START, "end_datetime")
 
+    @pytest.mark.parametrize("field", ["start_datetime", "end_datetime"])
+    def test_create_event_naive_datetime_returns_422(
+        self, api_client, manage_events_headers, field
+    ):
+        payload = {
+            "title": "Naive Event",
+            "start_datetime": future_iso(days=14),
+            "end_datetime": future_iso(days=14, hours=2),
+        }
+        payload[field] = _naive_future_iso(days=14, hours=1)
+        response = api_client.post(
+            "/api/community/events/",
+            payload,
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.DATETIME_OFFSET_REQUIRED, field)
+
     def test_create_event_in_past_returns_400(self, api_client, manage_events_headers):
         response = api_client.post(
             "/api/community/events/",
@@ -335,6 +360,19 @@ class TestEventManagement:
         )
         assert response.status_code == 422
         assert_error_code(response, Code.Event.END_BEFORE_START, "end_datetime")
+
+    @pytest.mark.parametrize("field", ["start_datetime", "end_datetime"])
+    def test_update_event_naive_datetime_returns_422(
+        self, api_client, manage_events_headers, sample_event, field
+    ):
+        response = api_client.patch(
+            f"/api/community/events/{sample_event.id}/",
+            {field: _naive_future_iso(days=60)},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.DATETIME_OFFSET_REQUIRED, field)
 
     def test_create_event_with_lat_lng(self, api_client, manage_events_headers):
         response = api_client.post(

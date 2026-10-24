@@ -27,6 +27,11 @@
         "params": []
       },
       {
+        "name": "DATETIME_OFFSET_REQUIRED",
+        "value": "event.datetime_offset_required",
+        "params": []
+      },
+      {
         "name": "OFFICIAL_MUST_BE_PUBLIC",
         "value": "event.official_must_be_public",
         "params": []
