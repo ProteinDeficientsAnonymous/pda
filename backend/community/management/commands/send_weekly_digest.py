@@ -10,6 +10,7 @@ from notifications.email_sender import EmailStream, get_email_sender
 from users.models import HAS_EMAIL, User
 
 from community._login_reminder import send_login_reminders
+from community._tentative_attendance_nudge import send_attendance_nudges
 from community.models import Event, EventStatus, EventType
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,9 @@ def _with_email(users):
 
 class Command(BaseCommand):
     help = (
-        "Remind anyone who hasn't finished first login, then email active and "
-        "tentative members a digest of upcoming events and this month's veganniversaries."
+        "Remind anyone who hasn't finished first login, nudge tentative members to come "
+        "in person, then email active and tentative members a digest of upcoming events "
+        "and this month's veganniversaries."
     )
 
     def add_arguments(self, parser):
@@ -95,6 +97,7 @@ class Command(BaseCommand):
         # Reminders go first so a digest failure can't skip them.
         if not options["to"]:
             self._send_login_reminders()
+            self._send_attendance_nudges()
         self._send_digest(options)
 
     def _send_login_reminders(self) -> None:
@@ -107,6 +110,17 @@ class Command(BaseCommand):
         logger.info("send_weekly_digest: sent %d login reminder(s), %d failed", sent, failed)
         style = self.style.WARNING if failed else self.style.SUCCESS
         self.stdout.write(style(f"Sent {sent} login reminder(s); {failed} failed."))
+
+    def _send_attendance_nudges(self) -> None:
+        try:
+            sent, failed = send_attendance_nudges(get_email_sender(EmailStream.BULK))
+        except Exception:
+            logger.exception("send_weekly_digest: attendance nudges failed")
+            self.stderr.write(self.style.ERROR("Attendance nudges failed; sending digest anyway."))
+            return
+        logger.info("send_weekly_digest: sent %d attendance nudge(s), %d failed", sent, failed)
+        style = self.style.WARNING if failed else self.style.SUCCESS
+        self.stdout.write(style(f"Sent {sent} attendance nudge(s); {failed} failed."))
 
     def _send_digest(self, options) -> None:
         now = timezone.now()

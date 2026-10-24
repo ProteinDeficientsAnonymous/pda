@@ -17,7 +17,7 @@ _WEEKLY_REMINDERS = 4
 
 # Members created before onboarded_at existed never got it set, so their resets re-flag needs_onboarding.
 _ONBOARDED_AT_TRACKED_SINCE = datetime(2026, 4, 26, tzinfo=UTC)
-_NOT_SET_UP = Q(needs_onboarding=True, onboarded_at__isnull=True) & (
+NOT_SET_UP = Q(needs_onboarding=True, onboarded_at__isnull=True) & (
     Q(last_login__isnull=True) | Q(created_at__gte=_ONBOARDED_AT_TRACKED_SINCE)
 )
 
@@ -29,7 +29,7 @@ def _due_for_reminder(qs: QuerySet, now: datetime) -> QuerySet:
         user=OuterRef("pk"), used=False, created_at__gte=now - _WEEKLY_GAP
     ).exclude(source=MagicLoginTokenSource.REMINDER)
     return (
-        qs.filter(_NOT_SET_UP, HAS_EMAIL)
+        qs.filter(NOT_SET_UP, HAS_EMAIL)
         .exclude(Exists(recent_admin_link))
         .annotate(
             reminder_count=Count("login_reminders", distinct=True),
