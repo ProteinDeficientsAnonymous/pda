@@ -2468,6 +2468,58 @@
         "title": "EventListOut",
         "type": "object"
       },
+      "EventListQuery": {
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "hosted": {
+            "default": false,
+            "description": "only events the viewer created or co-hosts",
+            "title": "Hosted",
+            "type": "boolean"
+          },
+          "include_imported": {
+            "default": true,
+            "title": "Include Imported",
+            "type": "boolean"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "status": {
+            "default": "active",
+            "title": "Status",
+            "type": "string"
+          },
+          "upcoming": {
+            "default": false,
+            "description": "drop events that are past; tbd events stay",
+            "title": "Upcoming",
+            "type": "boolean"
+          }
+        },
+        "title": "EventListQuery",
+        "type": "object"
+      },
       "EventOptionOut": {
         "properties": {
           "id": {
@@ -10915,6 +10967,30 @@
             "schema": {
               "default": true,
               "title": "Include Imported",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "only events the viewer created or co-hosts",
+            "in": "query",
+            "name": "hosted",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "only events the viewer created or co-hosts",
+              "title": "Hosted",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "drop events that are past; tbd events stay",
+            "in": "query",
+            "name": "upcoming",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "drop events that are past; tbd events stay",
+              "title": "Upcoming",
               "type": "boolean"
             }
           }
