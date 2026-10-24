@@ -15,7 +15,7 @@ from community._surveys_responses import (
     _load_survey_for_responses,
     _ordered_responses,
 )
-from community.models import SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 
 router = Router()
 
@@ -95,11 +95,12 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
     return csv_safe(text)
 
 
-def _csv_row_prefix(r: SurveyResponse, anonymous: bool, viewer) -> list[str]:
-    if anonymous:
-        return [_day_only(r.submitted_at).isoformat()]
+def _csv_row_prefix(r: SurveyResponse, survey: Survey, viewer) -> list[str]:
+    event_cell = [csv_safe(r.event.title) if r.event else ""] if survey.feedback_event_type else []
+    if survey.anonymous:
+        return [_day_only(r.submitted_at).isoformat(), *event_cell]
     name = visible_display_name(r.user, viewer) if r.user else ""
-    return [csv_safe(name), r.submitted_at.isoformat()]
+    return [csv_safe(name), r.submitted_at.isoformat(), *event_cell]
 
 
 @router.get(
@@ -125,12 +126,13 @@ def get_survey_responses_csv(request, survey_id: UUID):
     buf = io.StringIO()
     writer = csv.writer(buf)
     labels = [csv_safe(q.label) for q in questions]
-    writer.writerow(
-        ["submitted_at", *labels] if survey.anonymous else ["submitted_by", "submitted_at", *labels]
-    )
+    header = ["submitted_at"] if survey.anonymous else ["submitted_by", "submitted_at"]
+    if survey.feedback_event_type:
+        header.append("event")
+    writer.writerow([*header, *labels])
     for r in _ordered_responses(survey):
         cells = [
             _csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
         ]
-        writer.writerow(_csv_row_prefix(r, survey.anonymous, request.auth) + cells)
+        writer.writerow(_csv_row_prefix(r, survey, request.auth) + cells)
     return csv_response(buf.getvalue(), f"survey-responses-{survey.slug}.csv")

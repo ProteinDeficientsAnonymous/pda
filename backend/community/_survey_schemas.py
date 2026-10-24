@@ -154,6 +154,9 @@ class SurveyResponseOut(BaseModel):
     user_name: str | None = None
     answers: dict
     submitted_at: datetime
+    event_id: str | None = None
+    event_title: str | None = None
+    event_start: datetime | None = None
 
 
 class SurveySubmitOut(SurveyResponseOut):

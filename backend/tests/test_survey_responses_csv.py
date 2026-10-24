@@ -2,11 +2,19 @@
 
 import csv
 import io
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from community._shared import csv_safe
 from community._validation import Code
-from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import (
+    Event,
+    EventType,
+    Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
+    SurveyResponse,
+)
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
@@ -113,6 +121,31 @@ class TestSurveyResponsesCsv:
         rows = _rows(api_client.get(_url(csv_survey), **admin_headers))
         submitted = {r.submitted_at.isoformat() for r in csv_survey.responses.all()}
         assert {row[1] for row in rows[1:]} == submitted
+
+    def test_feedback_csv_has_event_column(self, api_client, admin_headers, surveys_admin):
+        survey = Survey.objects.create(
+            title="Feedback",
+            slug="fb-csv",
+            anonymous=True,
+            feedback_event_type=EventType.COMMUNITY,
+        )
+        question = SurveyQuestion.objects.create(
+            survey=survey, label="Notes", field_type=SurveyQuestionType.TEXT
+        )
+        start = datetime(2026, 3, 4, 18, tzinfo=UTC)
+        event = Event.objects.create(
+            title="=potluck", start_datetime=start, end_datetime=start + timedelta(hours=2)
+        )
+        answers = {str(question.id): {"answer": "great"}}
+        SurveyResponse.objects.create(survey=survey, event=event, answers=answers)
+        SurveyResponse.objects.create(survey=survey, answers=answers)
+
+        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        assert rows[0] == ["submitted_at", "event", "Notes"]
+        assert sorted(row[1] for row in rows[1:]) == ["", "'=potluck"]
+
+    def test_non_feedback_csv_has_no_event_column(self, api_client, admin_headers, csv_survey):
+        assert "event" not in _rows(api_client.get(_url(csv_survey), **admin_headers))[0]
 
     def test_requires_manage_surveys(self, api_client, auth_headers, csv_survey):
         response = api_client.get(_url(csv_survey), **auth_headers)
