@@ -39,6 +39,7 @@ make agent-lint       # Run ruff (lint + format; minimal output)
 make agent-typecheck  # Run ty type checker (minimal output)
 make agent-complexity # Run cognitive complexity check (minimal output)
 make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
+make diff-coverage    # Tests + coverage; fail if lines changed vs origin/main are <80% covered
 make agent-frontend-test      # Run Vitest suite (minimal output)
 make agent-frontend-lint      # oxlint + oxfmt check (cheap pre-push)
 make agent-frontend-typecheck # Run tsc --noEmit (plain output)

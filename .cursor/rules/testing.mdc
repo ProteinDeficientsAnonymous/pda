@@ -10,4 +10,4 @@ alwaysApply: true
 - Naming: Python `test_<func>_<scenario>_<expected>` | TS `it("should <behavior> when <condition>")`
 - Markers: `@pytest.mark.unit` (mock all I/O, < 1ms) | `@pytest.mark.integration` (real test deps, fixtures, cleanup)
 - Mock where imported, not where defined. A unit test > 1s likely has unmocked I/O.
-- Minimum 80% coverage. Run the full suite, not just files you touched.
+- Minimum 80% coverage on changed lines (CI-enforced per PR; check locally with `make diff-coverage`). Run the full suite, not just files you touched.
