@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AxiosError, type AxiosResponse } from 'axios';
 import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,6 +24,13 @@ vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof RouterDom>();
   return { ...actual, useNavigate: () => navigate };
 });
+
+function fieldError(code: string, field: string) {
+  return new AxiosError('Request failed', 'ERR', undefined, undefined, {
+    status: 400,
+    data: { detail: [{ code, field }] },
+  } as AxiosResponse);
+}
 
 function renderScreen() {
   return render(
@@ -88,5 +96,45 @@ describe('SurveyCreateScreen', () => {
         closesAt: null,
       }),
     );
+  });
+
+  it('shows a slug collision inline on the slug field and clears it on change', async () => {
+    createMutateAsync.mockRejectedValue(fieldError('survey.slug_already_exists', 'slug'));
+    renderScreen();
+    await fillForm();
+    await userEvent.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(await screen.findByText('a survey with that slug already exists')).toBeInTheDocument();
+    const slug = screen.getByLabelText('slug');
+    expect(slug).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalled();
+
+    await userEvent.type(slug, '-2');
+    expect(slug).not.toHaveAttribute('aria-invalid');
+    expect(screen.queryByText('a survey with that slug already exists')).not.toBeInTheDocument();
+  });
+
+  it('shows a linked event error on the dropdown', async () => {
+    createMutateAsync.mockRejectedValue(fieldError('event.not_found', 'linked_event_id'));
+    renderScreen();
+    await fillForm();
+    await userEvent.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(await screen.findByText('event not found')).toBeInTheDocument();
+    expect(screen.getByLabelText('linked event')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows a generic banner for a failure with no field error', async () => {
+    createMutateAsync.mockRejectedValue(new Error('network down'));
+    renderScreen();
+    await fillForm();
+    await userEvent.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "couldn't create the survey — try again",
+    );
+    expect(screen.getByLabelText('slug')).not.toHaveAttribute('aria-invalid');
   });
 });
