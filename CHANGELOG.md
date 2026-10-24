@@ -1,3 +1,10 @@
+# [0.175.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.1...v0.175.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** create event drafts and find locations ([#1771](https://github.com/ProteinDeficientsAnonymous/pda/issues/1771)) ([f8f2904](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8f2904f9664c51fc644095fa9d6b48a0eb0b9d8))
+
 ## [0.174.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.0...v0.174.1) (2026-10-24)
 
 
