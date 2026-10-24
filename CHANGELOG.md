@@ -1,3 +1,10 @@
+# [0.162.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.161.0...v0.162.0) (2026-10-24)
+
+
+### Features
+
+* open the new survey page instead of a modal ([#1734](https://github.com/ProteinDeficientsAnonymous/pda/issues/1734)) ([4fb0fa8](https://github.com/ProteinDeficientsAnonymous/pda/commit/4fb0fa80e25544e54c7b8170d40a62ffe7787939))
+
 # [0.161.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.160.0...v0.161.0) (2026-10-24)
 
 
