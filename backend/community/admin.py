@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from community.models import CommunityGuidelines, EditablePage, Event, EventTag, JoinRequest
+from community.models import (
+    CommunityGuidelines,
+    EditablePage,
+    Event,
+    EventFeedbackRequest,
+    EventTag,
+    JoinRequest,
+)
 
 
 @admin.register(CommunityGuidelines)
@@ -47,3 +54,16 @@ class EventTagAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug")
     ordering = ("name",)
     readonly_fields = ("id", "slug", "created_at")
+
+
+@admin.register(EventFeedbackRequest)
+class EventFeedbackRequestAdmin(admin.ModelAdmin):
+    list_display = ("event", "user", "first_sent_at", "reminder_sent_at", "responded_on")
+    list_select_related = ("event", "user")
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
