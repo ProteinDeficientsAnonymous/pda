@@ -625,6 +625,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/event-feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Feedback */
+        get: operations["community__event_feedback_public_get_event_feedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/event-feedback/respond/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Event Feedback */
+        post: operations["community__event_feedback_public_submit_event_feedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/event-flags/": {
         parameters: {
             query?: never;
@@ -3197,6 +3231,25 @@ export interface components {
             official_non_walk: string;
             /** Official Walk */
             official_walk: string;
+        };
+        /** EventFeedbackOut */
+        EventFeedbackOut: {
+            /** Already Responded */
+            already_responded: boolean;
+            /** Event Id */
+            event_id: string;
+            /** Event Start */
+            event_start: string | null;
+            /** Event Title */
+            event_title: string;
+            /** Is Open */
+            is_open: boolean;
+            survey: components["schemas"]["SurveyOut"] | null;
+        };
+        /** EventFeedbackSubmitOut */
+        EventFeedbackSubmitOut: {
+            /** Confirmation Message */
+            confirmation_message: string;
         };
         /** EventFlagIn */
         EventFlagIn: {
@@ -7585,6 +7638,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventDescriptionTemplatesOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_public_get_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Feedback-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_public_submit_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Feedback-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyAnswersIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedbackSubmitOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
