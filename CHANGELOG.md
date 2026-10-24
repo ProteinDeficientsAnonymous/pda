@@ -1,3 +1,10 @@
+## [0.170.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.1...v0.170.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **events:** 1588 - let hosts add guests after an event ends ([#1761](https://github.com/ProteinDeficientsAnonymous/pda/issues/1761)) ([1d5d4d9](https://github.com/ProteinDeficientsAnonymous/pda/commit/1d5d4d9e6e9e35be50903543cf71f7467aa305e4))
+
 ## [0.170.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.0...v0.170.1) (2026-10-24)
 
 
