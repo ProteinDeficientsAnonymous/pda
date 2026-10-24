@@ -93,7 +93,15 @@ export default function SurveyBuilderScreen() {
     }
   }
 
-  function toggleActive() {
+  async function toggleActive() {
+    if (currentSurvey.isActive) {
+      const ok = await confirm({
+        title: 'close survey',
+        message: `close "${currentSurvey.title}"? it'll stop taking new responses until you reopen it — existing responses stay put`,
+        confirmLabel: 'close survey',
+      });
+      if (!ok) return;
+    }
     update.mutate({ isActive: !currentSurvey.isActive });
   }
 
@@ -108,6 +116,7 @@ export default function SurveyBuilderScreen() {
           <h1 className="text-2xl font-medium tracking-tight">{currentSurvey.title}</h1>
           <p className="text-muted text-sm">
             /{currentSurvey.slug} · {surveyVisibilityLabel(currentSurvey.visibility)}
+            {currentSurvey.isActive ? null : ' · closed'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -135,10 +144,10 @@ export default function SurveyBuilderScreen() {
           <Button
             variant="secondary"
             onClick={() => {
-              toggleActive();
+              void toggleActive();
             }}
           >
-            {currentSurvey.isActive ? 'close survey' : 'reopen'}
+            {currentSurvey.isActive ? 'close survey' : 'reopen survey'}
           </Button>
         </div>
       </header>
