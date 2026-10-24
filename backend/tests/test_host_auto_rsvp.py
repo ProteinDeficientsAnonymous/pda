@@ -247,6 +247,16 @@ class TestAutoRsvpOnCohostAccept:
         assert response.status_code == 200
         assert _rsvp_status(event, invitee) == prior
 
+    def test_paid_event_rsvps_accepting_cohost_without_payment(self, api_client, host, invitee):
+        event = _create(api_client, host, EventType.OFFICIAL, co_host_ids=[str(invitee.pk)], **PAID)
+
+        response = _accept(api_client, event, invitee)
+
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=invitee)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        assert rsvp.paid_confirmed_at is None
+
     def test_full_event_waitlists_accepting_cohost(self, api_client, host, invitee, guest):
         event = _create(
             api_client, host, EventType.OFFICIAL, max_attendees=2, co_host_ids=[str(invitee.pk)]
