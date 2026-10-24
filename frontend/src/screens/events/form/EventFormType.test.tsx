@@ -47,7 +47,6 @@ describe('EventFormType', () => {
       eventType: EventType.Official,
       visibility: EventVisibility.Public,
       allowPlusOnes: false,
-      cashappLink: '$pdanyc',
     });
   });
 
@@ -64,24 +63,6 @@ describe('EventFormType', () => {
     await userEvent.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith({
       eventType: EventType.Club,
-      visibility: EventVisibility.Public,
-      allowPlusOnes: false,
-    });
-  });
-
-  it('official toggle does not overwrite existing cashapp link', async () => {
-    const onChange = vi.fn();
-    render(
-      <EventFormType
-        values={values({ visibility: EventVisibility.MembersOnly, cashappLink: '@existinghandle' })}
-        onChange={onChange}
-        canTagOfficial
-        canTagClub={false}
-      />,
-    );
-    await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({
-      eventType: EventType.Official,
       visibility: EventVisibility.Public,
       allowPlusOnes: false,
     });
