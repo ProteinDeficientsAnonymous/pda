@@ -50,6 +50,16 @@ class TestPruneMcpOAuth:
         assert not OAuthClient.objects.filter(pk=unused.pk).exists()
         assert OAuthClient.objects.filter(pk=fresh.pk).exists()
 
+    def test_keeps_old_clients_with_a_recent_sign_in_attempt(self):
+        reused = make_client()
+        age_client(reused, 30)
+        in_flight = make_request(reused)
+
+        run()
+
+        assert OAuthClient.objects.filter(pk=reused.pk).exists()
+        assert OAuthAuthRequest.objects.filter(pk=in_flight.pk).exists()
+
     def test_keeps_old_clients_with_a_grant_even_if_revoked(self, test_user):
         connected = make_client()
         make_grant(test_user, connected)

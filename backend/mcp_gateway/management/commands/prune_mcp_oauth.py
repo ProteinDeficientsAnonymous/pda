@@ -18,9 +18,12 @@ class Command(BaseCommand):
         requests, _ = OAuthAuthRequest.objects.filter(
             expires_at__lt=now - _EXPIRED_REQUEST_GRACE
         ).delete()
-        _, per_model = OAuthClient.objects.filter(
-            created_at__lt=now - _UNUSED_CLIENT_AGE, grants__isnull=True
-        ).delete()
+        cutoff = now - _UNUSED_CLIENT_AGE
+        _, per_model = (
+            OAuthClient.objects.filter(created_at__lt=cutoff, grants__isnull=True)
+            .exclude(auth_requests__created_at__gte=cutoff)
+            .delete()
+        )
         clients = per_model.get(OAuthClient._meta.label, 0)
         self.stdout.write(
             self.style.SUCCESS(
