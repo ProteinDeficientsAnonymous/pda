@@ -44,6 +44,10 @@ vi.mock('./ChangePasswordDialog', () => ({
   ChangePasswordDialog: () => null,
 }));
 
+vi.mock('./ConnectedAppsSection', () => ({
+  ConnectedAppsSection: () => null,
+}));
+
 // CalendarFeedSubscription fires a real apiClient request (useCalendarToken).
 // Without a server the axios interceptor treats the 401 as session-expired and
 // force-logs-out the store mid-test — nulling `user`, so SettingsScreen renders
@@ -101,6 +105,11 @@ beforeEach(() => {
 });
 
 describe('SettingsScreen', () => {
+  it('renders the connected apps section', () => {
+    renderSettings();
+    expect(screen.getByRole('heading', { name: 'connected apps' })).toBeInTheDocument();
+  });
+
   it("renders theme mode options with 'system' selected by default", () => {
     renderSettings();
 

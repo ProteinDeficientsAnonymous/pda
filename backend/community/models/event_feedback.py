@@ -18,7 +18,7 @@ class EventFeedbackRequest(models.Model):
     user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="feedback_requests"
     )
-    token = models.CharField(max_length=64, unique=True, db_index=True)
+    token = models.CharField(max_length=64, unique=True)
     first_sent_at = models.DateTimeField(null=True, blank=True)
     reminder_sent_at = models.DateTimeField(null=True, blank=True)
     responded_on = models.DateField(null=True, blank=True)
