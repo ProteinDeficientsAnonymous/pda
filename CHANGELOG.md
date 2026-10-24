@@ -1,3 +1,10 @@
+# [0.166.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.165.0...v0.166.0) (2026-10-24)
+
+
+### Features
+
+* **digest:** nudge tentative members to come to an event in person ([#1747](https://github.com/ProteinDeficientsAnonymous/pda/issues/1747)) ([e5736c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5736c673fb4a1004d9bb6014c30aac7673034fd))
+
 # [0.165.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.164.0...v0.165.0) (2026-10-24)
 
 
