@@ -1124,6 +1124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/my-feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Event Feedback */
+        get: operations["community__event_feedback_host_get_my_event_feedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/photo/": {
         parameters: {
             query?: never;
@@ -4816,6 +4833,11 @@ export interface components {
         MemberPromotionMessagePatchIn: {
             /** Body */
             body?: string | null;
+        };
+        /** MyEventFeedbackOut */
+        MyEventFeedbackOut: {
+            /** Token */
+            token: string | null;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -9090,6 +9112,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_feedback_host_get_my_event_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyEventFeedbackOut"];
                 };
             };
         };

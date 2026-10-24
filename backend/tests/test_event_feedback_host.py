@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from community.models import (
     Event,
+    EventFeedbackRequest,
     EventType,
     Survey,
     SurveyQuestion,
@@ -132,3 +133,37 @@ class TestHostFeedback:
 
         ids = [r["id"] for r in res.json()["responses"]]
         assert ids == [str(new.id), str(old.id)]
+
+
+@pytest.mark.django_db
+class TestMyFeedback:
+    def _url(self, event: Event) -> str:
+        return f"/api/community/events/{event.id}/my-feedback/"
+
+    def test_my_feedback_returns_token_until_responded(self, api_client, event):
+        attendee = _user(5)
+        request = EventFeedbackRequest.objects.create(
+            event=event, user=attendee, token=EventFeedbackRequest.new_token()
+        )
+
+        res = api_client.get(self._url(event), **_auth(attendee))
+        assert res.json() == {"token": request.token}
+
+        request.responded_on = timezone.localdate()
+        request.save()
+        res = api_client.get(self._url(event), **_auth(attendee))
+        assert res.json() == {"token": None}
+
+    def test_my_feedback_none_for_non_attendee(self, api_client, event):
+        res = api_client.get(self._url(event), **_auth(_user(6)))
+
+        assert res.json() == {"token": None}
+
+    def test_my_feedback_ignores_other_users_tokens(self, api_client, event):
+        EventFeedbackRequest.objects.create(
+            event=event, user=_user(7), token=EventFeedbackRequest.new_token()
+        )
+
+        res = api_client.get(self._url(event), **_auth(_user(8)))
+
+        assert res.json() == {"token": None}

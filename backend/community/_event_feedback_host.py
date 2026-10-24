@@ -5,12 +5,16 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 
-from community._event_feedback_host_schemas import EventFeedbackHostOut, HostFeedbackResponseOut
+from community._event_feedback_host_schemas import (
+    EventFeedbackHostOut,
+    HostFeedbackResponseOut,
+    MyEventFeedbackOut,
+)
 from community._event_helpers import _can_edit_event
 from community._shared import ErrorOut
 from community._survey_helpers import _survey_question_out
 from community._validation import Code, raise_validation
-from community.models import Event, SurveyResponse
+from community.models import Event, EventFeedbackRequest, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 
 router = Router()
@@ -44,3 +48,17 @@ def get_event_feedback(request, event_id: UUID):
         key=lambda r: (-r.submitted_on.toordinal(), r.id),
     )
     return Status(200, EventFeedbackHostOut(questions=questions, responses=responses))
+
+
+@router.get(
+    "/events/{event_id}/my-feedback/",
+    response={200: MyEventFeedbackOut},
+    auth=gated_jwt,
+)
+def get_my_event_feedback(request, event_id: UUID):
+    feedback_request = EventFeedbackRequest.objects.filter(
+        event_id=event_id, user=request.auth, responded_on__isnull=True
+    ).first()
+    return Status(
+        200, MyEventFeedbackOut(token=feedback_request.token if feedback_request else None)
+    )
