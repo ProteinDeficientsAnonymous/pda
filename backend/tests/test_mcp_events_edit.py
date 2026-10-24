@@ -59,8 +59,8 @@ def test_publish_two_step_publishes_via_mcp(test_user, make_event):
 
 def test_publish_token_bound_to_member_event_and_state(test_user, make_event, vettor_user):
     event, other = make_event(EventStatus.DRAFT), make_event(EventStatus.DRAFT)
-    token = _publish(test_user, event)["confirm_token"]
     event.co_hosts.add(vettor_user)
+    token = _publish(test_user, event)["confirm_token"]
     assert "fresh preview" in _publish_refused(vettor_user, event, confirm_token=token)
     assert "fresh preview" in _publish_refused(test_user, other, confirm_token=token)
     later = timezone.now().timestamp() + MAX_AGE_SECONDS + 1
@@ -68,6 +68,26 @@ def test_publish_token_bound_to_member_event_and_state(test_user, make_event, ve
         assert "fresh preview" in _publish_refused(test_user, event, confirm_token=token)
     Event.objects.filter(pk=event.pk).update(location="somewhere else")
     assert "fresh preview" in _publish_refused(test_user, event, confirm_token=token)
+    assert Event.objects.get(pk=event.pk).status == EventStatus.DRAFT
+
+
+@pytest.mark.parametrize("change", ["co_hosts", "invited_users", "photo"])
+def test_publish_token_bound_to_who_gets_notified(test_user, make_event, vettor_user, change):
+    event = make_event(EventStatus.DRAFT)
+    token = _publish(test_user, event)["confirm_token"]
+    if change == "photo":
+        Event.objects.filter(pk=event.pk).update(photo_updated_at=timezone.now())
+    else:
+        getattr(event, change).add(vettor_user)
+    assert "fresh preview" in _publish_refused(test_user, event, confirm_token=token)
+
+
+def test_publish_token_is_single_use(test_user, make_event):
+    event = make_event(EventStatus.DRAFT)
+    token = _publish(test_user, event)["confirm_token"]
+    _publish(test_user, event, confirm_token=token)
+    Event.objects.filter(pk=event.pk).update(status=EventStatus.DRAFT)
+    assert "already used" in _publish_refused(test_user, event, confirm_token=token)
     assert Event.objects.get(pk=event.pk).status == EventStatus.DRAFT
 
 

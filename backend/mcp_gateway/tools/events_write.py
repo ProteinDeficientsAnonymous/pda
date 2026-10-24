@@ -10,7 +10,7 @@ from community.models import EventStatus, EventType
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
-from mcp_gateway.confirm import Confirmed, check_confirm_token, issue_confirm_token
+from mcp_gateway.confirm import Confirmed, issue_confirm_token, use_confirm_token
 from mcp_gateway.event_fields import EventFields, event_summary, to_event_in
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import current_user, pda_tool
@@ -68,6 +68,15 @@ async def _apply(user: Any, event_id: str, payload: EventPatchIn) -> dict[str, A
     return event_summary(body)
 
 
+_BOUND = (
+    "photo_updated_at",
+    "co_host_ids",
+    "invited_user_ids",
+    "invite_permission",
+    "rsvp_questions",
+)
+
+
 @pda_tool(
     description=(
         "publish a draft so members can see it. the first call returns the event summary plus "
@@ -83,8 +92,10 @@ async def publish_event(event: EventRef, confirm_token: ConfirmToken = None) -> 
     if body["event_type"] == EventType.OFFICIAL and slots:
         raise ToolError(f"fill these template slots in the description first: {', '.join(slots)}")
     summary = event_summary(body)
-    bound = Confirmed(user.pk, body["id"], "publish", None, summary)
+    # Publishing notifies co-hosts and invitees, so they're part of what the user approves.
+    unseen = {key: sorted(body[key]) if key.endswith("_ids") else body[key] for key in _BOUND}
+    bound = Confirmed(user.pk, body["id"], "publish", None, [summary, unseen])
     if confirm_token is None:
         return {**summary, "confirm_token": issue_confirm_token(bound)}
-    check_confirm_token(confirm_token, bound)
+    await use_confirm_token(confirm_token, bound)
     return await _apply(user, body["id"], EventPatchIn(status=EventStatus.ACTIVE))
