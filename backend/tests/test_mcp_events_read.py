@@ -47,10 +47,11 @@ def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
     soon.co_hosts.add(test_user)
     draft = _event(test_user, "draft", days=5, status=EventStatus.DRAFT)
     _event(test_user, "past", days=-3)
+    Event.objects.create(title="tbd", created_by=test_user, datetime_tbd=True)
     _event(other, "not mine")
     _event(other, "their draft", status=EventStatus.DRAFT)
     rows = _call(test_user, "list_my_events")["result"]
-    assert [r["title"] for r in rows] == ["soon", "draft", "later"]
+    assert [r["title"] for r in rows] == ["soon", "draft", "later", "tbd"]
     assert rows[1]["status"] == "draft" and rows[1]["url"].endswith(f"/events/{draft.slug}")
     with_past = _call(test_user, "list_my_events", include_past=True)["result"]
     assert [r["title"] for r in with_past][-1] == "past"

@@ -6,7 +6,6 @@ from community._event_tags import list_event_tags as list_event_tags_view
 from community._events import get_event as get_event_view
 from community._events import list_events
 from community.models import EventStatus
-from django.utils import timezone
 from pydantic import Field
 
 from mcp_gateway.event_templates import template_slots
@@ -46,11 +45,16 @@ async def list_my_events(
     ] = False,
 ) -> list[dict[str, Any]]:
     user = await current_user()
-    start = None if include_past else timezone.now()
-    active = await call_view(list_events, user, status=EventStatus.ACTIVE, start=start)
+    # no start window: the view's window drops undated (TBD) events, which aren't past
+    active = await call_view(list_events, user, status=EventStatus.ACTIVE)
     drafts = await call_view(list_events, user, status=EventStatus.DRAFT)
     me = str(user.pk)
-    hosted = [e for e in active if e["created_by_id"] == me or me in e["co_host_ids"]]
+    hosted = [
+        e
+        for e in active
+        if (e["created_by_id"] == me or me in e["co_host_ids"])
+        and (include_past or not e["is_past"])
+    ]
     return sorted((_summary(e) for e in [*drafts, *hosted]), key=_sort_key)
 
 
