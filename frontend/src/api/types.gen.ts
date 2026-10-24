@@ -4087,11 +4087,6 @@ export interface components {
             /** Title */
             title: string;
         };
-        /**
-         * EventType
-         * @enum {string}
-         */
-        EventType: "official" | "community" | "club";
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -5294,8 +5289,9 @@ export interface components {
             /**
              * Feedback Event Type
              * @default
+             * @enum {string}
              */
-            feedback_event_type: components["schemas"]["EventType"] | "";
+            feedback_event_type: "official" | "club" | "";
             /**
              * Is Active
              * @default true
@@ -5431,7 +5427,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Feedback Event Type */
-            feedback_event_type?: components["schemas"]["EventType"] | "" | null;
+            feedback_event_type?: ("official" | "club" | "") | null;
             /** Is Active */
             is_active?: boolean | null;
             /** Linked Event Id */

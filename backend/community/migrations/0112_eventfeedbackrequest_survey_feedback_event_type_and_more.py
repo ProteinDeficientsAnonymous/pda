@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                         default=uuid.uuid4, editable=False, primary_key=True, serialize=False
                     ),
                 ),
-                ("token", models.CharField(db_index=True, max_length=64, unique=True)),
+                ("token", models.CharField(max_length=64, unique=True)),
                 ("first_sent_at", models.DateTimeField(blank=True, null=True)),
                 ("reminder_sent_at", models.DateTimeField(blank=True, null=True)),
                 ("responded_on", models.DateField(blank=True, null=True)),

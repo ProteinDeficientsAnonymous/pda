@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 
 import pytest
+from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import Event, EventType, PageVisibility, Survey, SurveyResponse
 from django.utils import timezone
@@ -77,6 +78,27 @@ class TestFeedbackType:
         resp = _patch(api_client, survey.id, {"title": "Renamed"}, admin_headers)
         assert resp.status_code == 200
         assert resp.json()["feedback_event_type"] == "club"
+        survey.refresh_from_db()
+        assert survey.anonymous is True
+
+    def test_title_only_patch_on_typed_survey_changes_only_title(
+        self, api_client, admin_headers, django_capture_on_commit_callbacks
+    ):
+        survey = Survey.objects.create(
+            title="Own", slug="own", feedback_event_type="club", anonymous=True
+        )
+        with django_capture_on_commit_callbacks(execute=True):
+            resp = _patch(api_client, survey.id, {"title": "Renamed"}, admin_headers)
+        assert resp.status_code == 200
+        entry = AuditLogEntry.objects.get(action="survey_updated")
+        assert entry.details["fields_changed"] == ["title"]
+
+    def test_community_type_rejected(self, api_client, admin_headers):
+        resp = _post(api_client, _payload(feedback_event_type="community"), admin_headers)
+        assert resp.status_code == 422
+        survey = Survey.objects.create(title="Plain", slug="plain")
+        resp = _patch(api_client, survey.id, {"feedback_event_type": "community"}, admin_headers)
+        assert resp.status_code == 422
 
     def test_patch_sets_type_and_forces_anonymous(self, api_client, admin_headers):
         survey = Survey.objects.create(title="Plain", slug="plain")

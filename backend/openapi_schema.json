@@ -3646,15 +3646,6 @@
         "title": "EventSurveyOut",
         "type": "object"
       },
-      "EventType": {
-        "enum": [
-          "official",
-          "community",
-          "club"
-        ],
-        "title": "EventType",
-        "type": "string"
-      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -6478,17 +6469,14 @@
             "type": "string"
           },
           "feedback_event_type": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EventType"
-              },
-              {
-                "const": "",
-                "type": "string"
-              }
-            ],
             "default": "",
-            "title": "Feedback Event Type"
+            "enum": [
+              "official",
+              "club",
+              ""
+            ],
+            "title": "Feedback Event Type",
+            "type": "string"
           },
           "is_active": {
             "default": true,
@@ -6868,10 +6856,11 @@
           "feedback_event_type": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/EventType"
-              },
-              {
-                "const": "",
+                "enum": [
+                  "official",
+                  "club",
+                  ""
+                ],
                 "type": "string"
               },
               {
