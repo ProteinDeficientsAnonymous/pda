@@ -457,12 +457,13 @@ function mapQuestionSummary(w: WireQuestionSummary): SurveyQuestionSummary {
   };
 }
 
-export function useSurveyQuestionSummaries(surveyId: string | undefined) {
+export function useSurveyQuestionSummaries(surveyId: string | undefined, eventId = '') {
   return useQuery({
-    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary'],
+    queryKey: ['surveys', 'admin', surveyId ?? '', 'summary', eventId],
     queryFn: async () => {
       const { data } = await apiClient.get<WireQuestionSummary[]>(
         `/api/community/surveys/${surveyId ?? ''}/summary/`,
+        { params: eventId ? { event_id: eventId } : undefined },
       );
       return data.map(mapQuestionSummary);
     },

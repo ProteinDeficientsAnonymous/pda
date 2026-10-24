@@ -18,3 +18,10 @@ export function eventOptions(responses: SurveyResponseAdmin[]) {
 export function filterResponsesByEvent(responses: SurveyResponseAdmin[], eventId: string) {
   return eventId === ALL_EVENTS ? responses : responses.filter((r) => r.eventId === eventId);
 }
+
+export function responseCountLabel(shown: number, total: number) {
+  const noun = total === 1 ? 'response' : 'responses';
+  return shown === total
+    ? `${String(total)} ${noun}`
+    : `${String(shown)} of ${String(total)} ${noun}`;
+}

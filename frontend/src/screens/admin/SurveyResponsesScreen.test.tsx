@@ -340,4 +340,29 @@ describe('SurveyResponsesScreen event filter', () => {
     expect(screen.getByText('crimson')).toBeInTheDocument();
     expect(screen.getByText('orphaned')).toBeInTheDocument();
   });
+
+  it('should show an event column for a feedback survey only', () => {
+    const { unmount } = setup({ feedbackEventType: 'community', responses: rows });
+    expect(screen.getByRole('columnheader', { name: 'event' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'potluck' })).toBeInTheDocument();
+    unmount();
+
+    setup({ responses: rows });
+    expect(screen.queryByRole('columnheader', { name: 'event' })).not.toBeInTheDocument();
+  });
+
+  it('should show x of y responses and scope summaries once an event is selected', async () => {
+    setup({ feedbackEventType: 'community', responses: rows });
+    expect(screen.getByText('3 responses')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'event' }), 'ev-1');
+
+    expect(screen.getByText('1 of 3 responses')).toBeInTheDocument();
+    expect(mockSummaries).toHaveBeenLastCalledWith('srv-1', 'ev-1');
+  });
+
+  it('should not render the filter when no response has an event', () => {
+    setup({ feedbackEventType: 'community', responses: [feedbackResponse('r-9', 'x', null)] });
+    expect(screen.queryByRole('combobox', { name: 'event' })).not.toBeInTheDocument();
+  });
 });
