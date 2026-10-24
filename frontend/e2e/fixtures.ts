@@ -63,6 +63,12 @@ export interface SeedScenarioMap {
     at_risk_name: string;
   };
   'waitlist-screens': { password: string; wren_phone: string; guest_token: string };
+  'membership-journey': {
+    event_id: string;
+    event_title: string;
+    event_location: string;
+    admin_refresh_token: string;
+  };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;
@@ -70,7 +76,7 @@ export type SeedScenario = keyof SeedScenarioMap;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
 const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 function resolveDatabaseUrl(): string {
   // falls back to per-worktree postgres (make dev-pg) when DATABASE_URL is unset locally

@@ -246,6 +246,18 @@ def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
 
 
 @pytest.mark.django_db
+def test_e2e_seed_membership_journey_admin_and_event_only(capsys):
+    call_command("e2e_seed", "membership-journey")
+    out = json.loads(capsys.readouterr().out)
+    event = Event.objects.get(id=out["event_id"])
+    assert event.location == out["event_location"]
+    admin = User.objects.get()
+    assert admin.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS)
+    assert out["admin_refresh_token"]
+    assert not JoinRequest.objects.exists()
+
+
+@pytest.mark.django_db
 def test_e2e_seed_unknown_scenario():
     with pytest.raises(CommandError):
         call_command("e2e_seed", "not-a-real-scenario")

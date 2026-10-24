@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
 from notifications._email_helpers import format_eastern_datetime
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
@@ -404,6 +405,28 @@ def _seed_waitlist_screens() -> dict:
     }
 
 
+def _seed_membership_journey() -> dict:
+    # Join submit is 3/hour and magic-login is 5/minute, both per IP.
+    if "django_cache" in connection.introspection.table_names():
+        caches["ratelimit"].clear()
+    event = _random_event("membership")
+    phone = _random_phone()
+    admin = _screen_user(
+        phone_number=phone,
+        first_name="Ada",
+        last_name="Admin",
+        email=f"{phone.lstrip('+')}@example.com",
+        has_seen_veganniversary=True,
+    )
+    admin.roles.add(Role.objects.get(name="admin", is_default=True))
+    return {
+        "event_id": str(event.id),
+        "event_title": event.title,
+        "event_location": event.location,
+        "admin_refresh_token": str(RefreshToken.for_user(admin)),
+    }
+
+
 SCENARIOS = {
     "member": _seed_member,
     "member-screens": _seed_member_screens,
@@ -416,6 +439,7 @@ SCENARIOS = {
     "attendance-report": _seed_attendance_report,
     "attendance-analytics": _seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
+    "membership-journey": _seed_membership_journey,
 }
 
 
