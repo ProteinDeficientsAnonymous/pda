@@ -142,7 +142,7 @@ class TestSurveyResponsesCsv:
 
         rows = _rows(api_client.get(_url(survey), **admin_headers))
         assert rows[0] == ["submitted_at", "event", "Notes"]
-        assert sorted(row[1] for row in rows[1:]) == ["", "'=potluck"]
+        assert sorted(row[1] for row in rows[1:]) == ["", "'=potluck (2026-03-04)"]
 
     def test_non_feedback_csv_has_no_event_column(self, api_client, admin_headers, csv_survey):
         assert "event" not in _rows(api_client.get(_url(csv_survey), **admin_headers))[0]
