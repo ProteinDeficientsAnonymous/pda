@@ -25,6 +25,7 @@ import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 import { attendedCountLabel } from './attendedCountLabel';
+import { MemberConnectedApps } from './MemberConnectedApps';
 
 export default function MemberDetailScreen() {
   const { id = '' } = useParams<{ id: string }>();
@@ -106,6 +107,8 @@ function MemberDetailView({ member }: { member: Member }) {
       ) : null}
 
       <MemberAttendedEventsSection memberId={member.id} />
+
+      <MemberConnectedApps memberId={member.id} />
 
       {editing ? (
         <MemberEditForm
