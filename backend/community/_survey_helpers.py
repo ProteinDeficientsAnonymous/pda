@@ -97,6 +97,7 @@ def _survey_out(
         closes_at=survey.closes_at,
         max_responses=survey.max_responses,
         linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
+        feedback_event_type=survey.feedback_event_type,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
         questions=questions,
@@ -139,6 +140,30 @@ def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
         return
     if survey.responses.exists():
         raise_validation(Code.Survey.ANONYMOUS_LOCKED, field="anonymous", status_code=400)
+
+
+def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
+    """Normalize a survey write that sets or keeps a feedback event type.
+
+    survey(Survey | None): the survey being updated, None on create.
+    return(dict): data, with anonymous forced on and the linked event dropped when typed.
+    """
+    if "feedback_event_type" in data and data["feedback_event_type"] is None:
+        del data["feedback_event_type"]
+    current = survey.feedback_event_type if survey else ""
+    resulting = data.get("feedback_event_type", current)
+    if not resulting:
+        return data
+    taken = Survey.objects.filter(feedback_event_type=resulting)
+    if survey:
+        taken = taken.exclude(pk=survey.pk)
+    if taken.exists():
+        raise_validation(
+            Code.Survey.FEEDBACK_TYPE_TAKEN, field="feedback_event_type", status_code=400
+        )
+    data["anonymous"] = True
+    data["linked_event_id"] = None
+    return data
 
 
 def _apply_linked_event_update(updates: dict) -> dict:

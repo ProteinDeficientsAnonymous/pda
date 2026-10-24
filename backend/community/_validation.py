@@ -161,6 +161,7 @@ class Code:
         QUESTION_NOT_FOUND = "survey.question_not_found"
         RESPONSE_NOT_FOUND = "survey.response_not_found"
         ANONYMOUS_LOCKED = "survey.anonymous_locked"
+        FEEDBACK_TYPE_TAKEN = "survey.feedback_type_taken"
         NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
         WINNING_DATETIME_NOT_IN_OPTIONS = "survey.winning_datetime_not_in_options"
         POLL_ALREADY_FINALIZED = "survey.poll_already_finalized"

@@ -3594,6 +3594,15 @@
         "title": "EventSurveyOut",
         "type": "object"
       },
+      "EventType": {
+        "enum": [
+          "official",
+          "community",
+          "club"
+        ],
+        "title": "EventType",
+        "type": "string"
+      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -6416,6 +6425,19 @@
             "title": "Description",
             "type": "string"
           },
+          "feedback_event_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventType"
+              },
+              {
+                "const": "",
+                "type": "string"
+              }
+            ],
+            "default": "",
+            "title": "Feedback Event Type"
+          },
           "is_active": {
             "default": true,
             "title": "Is Active",
@@ -6619,6 +6641,11 @@
             "title": "Description",
             "type": "string"
           },
+          "feedback_event_type": {
+            "default": "",
+            "title": "Feedback Event Type",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6785,6 +6812,21 @@
               }
             ],
             "title": "Description"
+          },
+          "feedback_event_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventType"
+              },
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Event Type"
           },
           "is_active": {
             "anyOf": [

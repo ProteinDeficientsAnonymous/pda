@@ -1,12 +1,13 @@
 """Pydantic schemas for survey endpoints."""
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from community._field_limits import FieldLimit
-from community.models import ShowIfOperator, SurveyQuestionType, SurveyVisibility
+from community.models import EventType, ShowIfOperator, SurveyQuestionType, SurveyVisibility
 
 
 class ShowIfIn(BaseModel):
@@ -73,6 +74,7 @@ class SurveyOut(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = None
     linked_event_id: str | None = None
+    feedback_event_type: str = ""
     created_by_id: str | None = None
     created_at: datetime
     questions: list[SurveyQuestionOut] = []
@@ -109,6 +111,7 @@ class SurveyIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
+    feedback_event_type: EventType | Literal[""] = ""
 
 
 class SurveyPatchIn(BaseModel):
@@ -126,6 +129,7 @@ class SurveyPatchIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
+    feedback_event_type: EventType | Literal[""] | None = None
 
 
 class FinalizePollIn(BaseModel):
