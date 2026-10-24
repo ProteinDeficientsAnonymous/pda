@@ -142,6 +142,23 @@ def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
         raise_validation(Code.Survey.ANONYMOUS_LOCKED, field="anonymous", status_code=400)
 
 
+def _ensure_feedback_type_free(survey: Survey | None, event_type: str) -> None:
+    taken = Survey.objects.filter(feedback_event_type=event_type)
+    if survey:
+        taken = taken.exclude(pk=survey.pk)
+    if taken.exists():
+        raise_validation(
+            Code.Survey.FEEDBACK_TYPE_TAKEN, field="feedback_event_type", status_code=400
+        )
+
+
+def _force_feedback_defaults(survey: Survey | None, data: dict) -> None:
+    if data.get("anonymous", survey.anonymous if survey else None) is not True:
+        data["anonymous"] = True
+    if data.get("linked_event_id", survey.linked_event_id if survey else None) is not None:
+        data["linked_event_id"] = None
+
+
 def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     """Normalize a survey write that sets or keeps a feedback event type.
 
@@ -154,17 +171,8 @@ def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     resulting = data.get("feedback_event_type", current)
     if not resulting:
         return data
-    taken = Survey.objects.filter(feedback_event_type=resulting)
-    if survey:
-        taken = taken.exclude(pk=survey.pk)
-    if taken.exists():
-        raise_validation(
-            Code.Survey.FEEDBACK_TYPE_TAKEN, field="feedback_event_type", status_code=400
-        )
-    if data.get("anonymous", survey.anonymous if survey else None) is not True:
-        data["anonymous"] = True
-    if data.get("linked_event_id", survey.linked_event_id if survey else None) is not None:
-        data["linked_event_id"] = None
+    _ensure_feedback_type_free(survey, resulting)
+    _force_feedback_defaults(survey, data)
     return data
 
 
