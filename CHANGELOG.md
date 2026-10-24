@@ -1,3 +1,11 @@
+# [0.171.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.3...v0.171.0) (2026-10-24)
+
+
+### Features
+
+* **events:** 1589 - auto-rsvp co-hosts who accept on club/official ([#1766](https://github.com/ProteinDeficientsAnonymous/pda/issues/1766)) ([d165f3c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d165f3cdd0f535c1e9108de4c4d796df1fb97c1a))
+* **events:** 1589 - auto-rsvp hosts when creating club/official events ([#1765](https://github.com/ProteinDeficientsAnonymous/pda/issues/1765)) ([23f3c4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/23f3c4a630d39a2313f26898c66246d02c702089))
+
 ## [0.170.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.2...v0.170.3) (2026-10-24)
 
 
