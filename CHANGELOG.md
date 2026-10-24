@@ -1,3 +1,10 @@
+## [0.169.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.0...v0.169.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **mcp:** render connect consent screen outside the app shell ([#1745](https://github.com/ProteinDeficientsAnonymous/pda/issues/1745)) ([9dd6ce3](https://github.com/ProteinDeficientsAnonymous/pda/commit/9dd6ce32eb76903b12f971233d74d64aba4ec67a))
+
 # [0.169.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.168.0...v0.169.0) (2026-10-24)
 
 
