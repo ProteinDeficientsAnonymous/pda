@@ -59,6 +59,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/whatsapp` | `manage_whatsapp` |
 | `/admin/join-form` | `edit_join_questions` |
 | `/admin/surveys` | `manage_surveys` |
+| `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |
 | `/admin/surveys/:id/responses` | `manage_surveys` (raw responses + **poll tallies / finalize**) |
 

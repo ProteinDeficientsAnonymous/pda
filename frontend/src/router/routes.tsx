@@ -59,6 +59,7 @@ const AttendanceReport = lazyWithRetry(() => import('@/screens/admin/AttendanceR
 const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminScreen'));
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
+const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
@@ -181,6 +182,7 @@ export const router = createBrowserRouter([
                 element: <RequirePermission perm={Permission.ManageSurveys} />,
                 children: [
                   { path: '/admin/surveys', element: el(<SurveyAdminList />) },
+                  { path: '/admin/surveys/new', element: el(<SurveyCreate />) },
                   { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
                 ],
