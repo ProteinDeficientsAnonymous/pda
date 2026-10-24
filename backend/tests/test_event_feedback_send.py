@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 from community._event_feedback_send import (
     due_feedback_events,
+    feedback_cutoff,
     feedback_url,
     send_first_requests,
 )
@@ -87,6 +88,64 @@ class TestDueFeedbackEvents:
         Survey.objects.filter(pk=feedback_survey.pk).update(is_active=False)
         _event()
         assert not due_feedback_events(NOW).exists()
+
+    @pytest.mark.parametrize("status", [EventStatus.DRAFT, EventStatus.DELETED])
+    def test_draft_and_deleted_events_excluded(self, feedback_survey, status):
+        _event(status=status)
+        assert not due_feedback_events(NOW).exists()
+
+    def test_datetime_tbd_event_excluded(self, feedback_survey):
+        _event(datetime_tbd=True)
+        assert not due_feedback_events(NOW).exists()
+
+    @pytest.mark.parametrize(("hours_before_cutoff", "included"), [(3, True), (1, False)])
+    def test_event_without_end_uses_two_hour_default(
+        self, feedback_survey, hours_before_cutoff, included
+    ):
+        cutoff = feedback_cutoff(NOW)
+        Event.objects.create(
+            title="No End",
+            event_type=EventType.OFFICIAL,
+            status=EventStatus.ACTIVE,
+            start_datetime=cutoff - timedelta(hours=hours_before_cutoff),
+        )
+        assert due_feedback_events(NOW).exists() is included
+
+    @pytest.mark.parametrize(
+        ("now", "end", "included"),
+        [
+            (
+                datetime(2026, 11, 1, 14, 0, tzinfo=TZ),
+                datetime(2026, 10, 31, 23, 30, tzinfo=TZ),
+                True,
+            ),
+            (
+                datetime(2026, 11, 1, 14, 0, tzinfo=TZ),
+                datetime(2026, 11, 1, 0, 30, tzinfo=TZ),
+                False,
+            ),
+            (
+                datetime(2026, 11, 2, 14, 0, tzinfo=TZ),
+                datetime(2026, 11, 1, 23, 30, tzinfo=TZ),
+                True,
+            ),
+            (
+                datetime(2026, 11, 2, 14, 0, tzinfo=TZ),
+                datetime(2026, 10, 26, 0, 30, tzinfo=TZ),
+                True,
+            ),
+            (
+                datetime(2026, 11, 2, 14, 0, tzinfo=TZ),
+                datetime(2026, 10, 25, 23, 30, tzinfo=TZ),
+                False,
+            ),
+        ],
+    )
+    def test_local_midnight_boundary_across_dst_fall_back(
+        self, feedback_survey, now, end, included
+    ):
+        _event(end=end)
+        assert due_feedback_events(now).exists() is included
 
     def test_feedback_url_format(self):
         assert feedback_url("abc123") == f"{settings.FRONTEND_BASE_URL}/feedback/abc123"

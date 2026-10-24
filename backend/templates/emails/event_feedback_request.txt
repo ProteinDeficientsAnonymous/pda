@@ -1,4 +1,4 @@
-hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 {{ event_title|lower }}{% if event_date %} ({{ event_date }}){% endif %} — thanks for coming! how was it? it only takes a minute, and your answers are anonymous.
 
@@ -7,5 +7,6 @@ share your feedback:
 {{ url }}
 
 — pda
+{% endautoescape %}
 
 {% include "emails/_no_reply_footer.txt" %}

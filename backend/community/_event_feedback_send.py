@@ -34,7 +34,6 @@ def _local_midnight(day: date) -> datetime:
 
 
 def feedback_cutoff(now: datetime) -> datetime:
-    """Start of `now`'s local date in COMMUNITY_TZ."""
     return _local_midnight(timezone.localtime(now, settings.COMMUNITY_TZ).date())
 
 
