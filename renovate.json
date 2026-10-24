@@ -2,5 +2,40 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "minimumReleaseAge": "3 days",
-  "lockFileMaintenance": { "enabled": true }
+  "lockFileMaintenance": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "CI starts an empty Postgres and never mounts the compose volume at /var/lib/postgresql/data, so a major image bump passes CI and then refuses to boot locally. Same-major tags still update.",
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "A major Node bump moves node:alpine in the Dockerfile. CI builds the frontend on glibc and never builds that image. Same-major Node updates still open.",
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "CI never starts gunicorn. Production does, via entrypoint.sh.",
+      "matchPackageNames": ["gunicorn"],
+      "enabled": false
+    },
+    {
+      "description": "semantic-release runs on push to main, not in pull request CI.",
+      "matchPackageNames": [
+        "semantic-release",
+        "@semantic-release/changelog",
+        "@semantic-release/exec",
+        "@semantic-release/git"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "No CI job installs or runs whatsapp-bot.",
+      "matchFileNames": ["whatsapp-bot/package.json"],
+      "matchPackageNames": ["express", "pino"],
+      "enabled": false
+    }
+  ]
 }
