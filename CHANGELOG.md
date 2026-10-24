@@ -1,3 +1,12 @@
+# [0.168.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.167.0...v0.168.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add connect consent screen ([#1737](https://github.com/ProteinDeficientsAnonymous/pda/issues/1737)) ([6063e10](https://github.com/ProteinDeficientsAnonymous/pda/commit/6063e10bac02e183e3bf95a2ec308bfcd5d08a3b))
+* **mcp:** add connected apps hooks and redirect safety check ([#1736](https://github.com/ProteinDeficientsAnonymous/pda/issues/1736)) ([2e46b45](https://github.com/ProteinDeficientsAnonymous/pda/commit/2e46b45f6de24222d23e8e28b8d2b7b53872eb3b))
+* **mcp:** route consent screen and harden connect requests ([#1738](https://github.com/ProteinDeficientsAnonymous/pda/issues/1738)) ([196145a](https://github.com/ProteinDeficientsAnonymous/pda/commit/196145ad40ca06eb8bcd9f1390dc82595b6f8031))
+
 # [0.167.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.166.0...v0.167.0) (2026-10-24)
 
 
