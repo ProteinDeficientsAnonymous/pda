@@ -35,6 +35,15 @@ from community.models import Event, EventRSVP, RSVPStatus
 router = Router()
 
 
+def _resolve_host_rsvp_status(
+    event: Event, target_user, status: str, has_plus_one: bool
+) -> tuple[str, bool]:
+    if event.is_past:
+        # Capacity is moot once the event is over — never waitlist an after-the-fact add.
+        return status, has_plus_one and event.allow_plus_ones
+    return _resolve_rsvp_status(event, target_user, status, has_plus_one)
+
+
 def _apply_host_rsvp_in_transaction(
     event_id, target_user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str], str | None]:
@@ -50,7 +59,9 @@ def _apply_host_rsvp_in_transaction(
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, target_user, status, has_plus_one)
+    final_status, final_plus_one = _resolve_host_rsvp_status(
+        event, target_user, status, has_plus_one
+    )
 
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
     previous_status = getattr(existing, "status", None)
@@ -135,7 +146,8 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
+    if not event.is_past:
+        email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
     email_promoted_users(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 

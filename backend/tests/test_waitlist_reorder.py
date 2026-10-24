@@ -78,6 +78,7 @@ class TestReorderWaitlist:
         _reorder(api_client, full_event, host, [b.pk, c.pk, a.pk])
         full_event.max_attendees = 2
         full_event.save()
+        full_event.refresh_from_db()
         assert promote_from_waitlist(full_event) == [str(b.pk)]
 
     def test_new_joiner_goes_after_positioned_rows(self, api_client, full_event, host, waitlisted):
