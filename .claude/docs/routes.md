@@ -16,6 +16,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/events/:id/responses` | Host/co-host rsvp question responses + tallies |
 | `/events/add` | Create event |
 | `/surveys/:slug` | Public / members survey |
+| `/feedback#<token>` | Public event feedback (anonymous; token in hash) |
 | `/donate` | Donate |
 | `/install` | Install / PWA |
 | `/faq` | FAQ |
