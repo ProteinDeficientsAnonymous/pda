@@ -14,3 +14,7 @@ class HostFeedbackResponseOut(BaseModel):
 class EventFeedbackHostOut(BaseModel):
     questions: list[SurveyQuestionOut]
     responses: list[HostFeedbackResponseOut]
+
+
+class MyEventFeedbackOut(BaseModel):
+    token: str | None
