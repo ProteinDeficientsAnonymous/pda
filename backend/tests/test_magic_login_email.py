@@ -97,8 +97,8 @@ class TestSendMagicLoginEmail:
         call_kwargs = sender.send.call_args.kwargs
         for body in (call_kwargs["text"], call_kwargs["html"]):
             assert "save your password" in body
-            assert "password manager" in body
-            assert "you can always request a new one" in body
+            assert "every email counts" in body
+            assert "don't hesitate" in body
 
     def test_rejects_recipient_with_newline(self):
         """Header-injection guard — newlines in the recipient must be rejected.
