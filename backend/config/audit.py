@@ -14,10 +14,13 @@ __all__ = [
     "AuditTargetType",
     "audit_log",
     "is_request_anonymized",
+    "is_request_via_mcp",
     "mark_request_anonymized",
+    "mark_request_via_mcp",
 ]
 
 _ANONYMIZED_ATTR = "pda_anonymized"
+_VIA_MCP_ATTR = "pda_via_mcp"
 
 
 def mark_request_anonymized(request) -> None:
@@ -27,6 +30,14 @@ def mark_request_anonymized(request) -> None:
 
 def is_request_anonymized(request) -> bool:
     return getattr(request, _ANONYMIZED_ATTR, False)
+
+
+def mark_request_via_mcp(request) -> None:
+    setattr(request, _VIA_MCP_ATTR, True)
+
+
+def is_request_via_mcp(request) -> bool:
+    return getattr(request, _VIA_MCP_ATTR, False)
 
 
 class AuditTarget(NamedTuple):
@@ -82,6 +93,7 @@ def audit_log(
         persist: write a row to the audit table; False for console-only noise
     """
     target_type, target_id, details = target or AuditTarget()
+    details = {**(details or {}), "via": "mcp"} if is_request_via_mcp(request) else details or {}
     user, ip_address = _actor_and_ip(request)
     if user:
         actor_id = str(user.pk)
@@ -102,7 +114,7 @@ def audit_log(
             "actor_name": actor_name,
             "target_type": target_type,
             "target_id": target_id,
-            "details": details or {},
+            "details": details,
             "ip_address": ip_address,
         },
     )
@@ -116,7 +128,7 @@ def audit_log(
         "actor_label": actor_name,
         "target_type": target_type,
         "target_id": target_id,
-        "details": details or {},
+        "details": details,
         "ip_address": _valid_ip(ip_address),
         "level": level,
     }
