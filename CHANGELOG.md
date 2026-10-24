@@ -1,3 +1,10 @@
+# [0.170.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.1...v0.170.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** 1723 - rate-limit oauth sign-in endpoints and prune stale rows ([#1751](https://github.com/ProteinDeficientsAnonymous/pda/issues/1751)) ([881578f](https://github.com/ProteinDeficientsAnonymous/pda/commit/881578f2f06c33c2c413fdc69072862883d74d0d))
+
 ## [0.169.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.169.0...v0.169.1) (2026-10-24)
 
 
