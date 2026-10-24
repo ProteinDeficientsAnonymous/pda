@@ -2,14 +2,14 @@ import json
 from datetime import datetime
 from typing import Annotated, Any
 
-from community._event_schemas import EventIn
+from community._event_schemas import EventIn, EventPatchIn
 from community._event_tags import list_event_tags
 from community._validation import ValidationException
-from community.models import EventType, PageVisibility
+from community.models import EventType, PageVisibility, is_official_or_club
 from config.validation_handlers import _serialize_pydantic_error, _serialize_validation_exception
 from django.conf import settings
 from mcp.server.mcpserver.exceptions import ToolError
-from pydantic import AfterValidator, BaseModel, Field, ValidationError
+from pydantic import AfterValidator, BaseModel, Field, ValidationError, create_model
 from users.models import User
 
 from mcp_gateway.server import BASE_URL
@@ -57,25 +57,60 @@ class EventFields(BaseModel):
     other_link: str = Field("", description="any other link for the event")
 
 
-async def _tag_ids(names: list[str], user: User) -> list[str]:
-    by_name = {tag["name"].lower(): tag["id"] for tag in await call_view(list_event_tags, user)}
+async def _tags(names: list[str], user: User) -> dict[str, str]:
+    by_name = {tag["name"].lower(): tag for tag in await call_view(list_event_tags, user)}
     unknown = [name for name in names if name.strip().lower() not in by_name]
     if unknown:
         valid = ", ".join(sorted(by_name)) or "none"
         raise ToolError(f"unknown tags: {', '.join(unknown)}. valid tags: {valid}")
-    return [by_name[name.strip().lower()] for name in names]
+    picked = [by_name[name.strip().lower()] for name in names]
+    return {tag["name"]: tag["id"] for tag in picked}
 
 
-async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
-    data = fields.model_dump(mode="json", exclude={"tags"})
+def _no_default(schema: dict[str, Any]) -> None:
+    schema.pop("default", None)
+
+
+# Same fields, all optional; an explicit null is only accepted where EventFields allows it.
+EventChanges = create_model(
+    "EventChanges",
+    **{
+        name: (
+            field.rebuild_annotation(),
+            Field(None, description=field.description, json_schema_extra=_no_default),
+        )
+        for name, field in EventFields.model_fields.items()
+    },
+)  # ty: ignore[no-matching-overload]
+
+
+def _build[T: BaseModel](schema: type[T], data: dict[str, Any]) -> T:
     try:
-        return EventIn(**data, tag_ids=await _tag_ids(fields.tags, user), **extra)
+        return schema(**data)
     except ValidationException as exc:
         detail = [_serialize_validation_exception(exc)]
         raise ToolError(json.dumps({"status": exc.status_code, "detail": detail})) from exc
     except ValidationError as exc:
         detail = [_serialize_pydantic_error({**err}) for err in exc.errors()]
         raise ToolError(json.dumps({"status": 422, "detail": detail})) from exc
+
+
+async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
+    data = fields.model_dump(mode="json", exclude={"tags"})
+    tag_ids = list((await _tags(fields.tags, user)).values())
+    return _build(EventIn, {**data, "tag_ids": tag_ids, **extra})
+
+
+async def to_event_patch(
+    changes: dict[str, Any], user: User, **extra: Any
+) -> tuple[EventPatchIn, dict[str, Any]]:
+    """return(tuple): the patch, and the changes with tags as their stored names."""
+    data = {key: value for key, value in changes.items() if key != "tags"}
+    if "tags" in changes:
+        tags = await _tags(changes["tags"], user)
+        data["tag_ids"] = list(tags.values())
+        changes = {**changes, "tags": sorted(tags)}
+    return _build(EventPatchIn, {**data, **extra}), changes
 
 
 def _local(value: str | None) -> str | None:
@@ -86,6 +121,32 @@ def event_summary(event: dict[str, Any]) -> dict[str, Any]:
     summary = {key: event[key] for key in EventFields.model_fields if key != "tags"}
     summary["start_datetime"] = _local(event["start_datetime"])
     summary["end_datetime"] = _local(event["end_datetime"])
-    summary["tags"] = [tag["name"] for tag in event["tags"]]
+    summary["tags"] = sorted(tag["name"] for tag in event["tags"])
     url = f"{BASE_URL}/events/{event['slug'] or event['id']}"
     return {"id": event["id"], "status": event["status"], "url": url, **summary}
+
+
+def event_diff(event: dict[str, Any], changes: dict[str, Any]) -> dict[str, Any]:
+    before = event_summary(event)
+    after = {
+        key: _local(value) if key.endswith("_datetime") else value for key, value in changes.items()
+    }
+    return {
+        key: {"before": before[key], "after": value}
+        for key, value in after.items()
+        if before[key] != value
+    }
+
+
+def update_notes(event: dict[str, Any], changes: dict[str, Any]) -> list[str]:
+    notes = []
+    new_type = changes.get("event_type", event["event_type"])
+    plus_ones = changes.get("allow_plus_ones", event["allow_plus_ones"])
+    if is_official_or_club(new_type) and plus_ones:
+        if new_type != event["event_type"] or not event["allow_plus_ones"]:
+            notes.append("plus-ones will be turned off: official and club events don't allow them")
+    old_max, new_max = event["max_attendees"], changes.get("max_attendees")
+    raised = new_max is not None and (old_max is None or new_max > old_max)
+    if raised and event["waitlisted_count"]:
+        notes.append("raising capacity moves waitlisted members to going and emails them")
+    return notes

@@ -6,12 +6,21 @@ from community._events import create_event as create_event_view
 from community._events import get_event as get_event_view
 from community._events import update_event as update_event_view
 from community._geocode import GeocodeQuery, geocode
+from community._validation import Code
 from community.models import EventStatus, EventType
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
 from mcp_gateway.confirm import Confirmed, issue_confirm_token, use_confirm_token
-from mcp_gateway.event_fields import EventFields, event_summary, to_event_in
+from mcp_gateway.event_fields import (
+    EventChanges,
+    EventFields,
+    event_diff,
+    event_summary,
+    to_event_in,
+    to_event_patch,
+    update_notes,
+)
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import current_user, pda_tool
 from mcp_gateway.view_calls import call_view
@@ -64,8 +73,22 @@ ConfirmToken = Annotated[
 
 
 async def _apply(user: Any, event_id: str, payload: EventPatchIn) -> dict[str, Any]:
-    body = await call_view(update_event_view, user, event_id=UUID(event_id), payload=payload)
+    try:
+        body = await call_view(update_event_view, user, event_id=UUID(event_id), payload=payload)
+    except ToolError as exc:
+        if Code.Event.WOULD_REMOVE_NON_MEMBERS not in str(exc):
+            raise
+        raise ToolError(
+            f"nothing was saved: this change would remove non-member rsvps ({exc}). ask the user; "
+            "if they agree, preview again with remove_non_member_rsvps true and confirm again."
+        ) from exc
     return event_summary(body)
+
+
+def _refuse_unfilled_slots(event_type: str, description: str) -> None:
+    slots = template_slots(description)
+    if event_type == EventType.OFFICIAL and slots:
+        raise ToolError(f"fill these template slots in the description first: {', '.join(slots)}")
 
 
 _BOUND = (
@@ -79,6 +102,45 @@ _BOUND = (
 
 @pda_tool(
     description=(
+        "edit an event you host; send only the fields to change. drafts are saved right away. "
+        "for a published event, the first call saves nothing and returns a before/after diff, "
+        "notes on side effects and a confirm_token: show the diff and notes, get an explicit yes, "
+        "then call again with the same changes and the token. editing doesn't notify attendees "
+        "unless a note says so; to publish a draft use publish_event."
+    )
+)
+async def update_event(
+    event: EventRef,
+    changes: EventChanges,
+    remove_non_member_rsvps: Annotated[
+        bool, Field(description="only after the user agreed to remove non-member rsvps")
+    ] = False,
+    confirm_token: ConfirmToken = None,
+) -> dict[str, Any]:
+    user = await current_user()
+    before = await call_view(get_event_view, user, event_id=event)
+    changed = changes.model_dump(mode="json", exclude_unset=True)
+    if not changed:
+        raise ToolError("no changes given")
+    force = {"force": True} if remove_non_member_rsvps else {}
+    payload, changed = await to_event_patch(changed, user, **force)
+    if before["status"] == EventStatus.DRAFT:
+        return await _apply(user, before["id"], payload)
+    after = {**before, **changed}
+    _refuse_unfilled_slots(after["event_type"], after["description"])
+    bound = Confirmed(user.pk, before["id"], "update", [changed, force], event_summary(before))
+    if confirm_token is None:
+        diff = event_diff(before, changed)
+        if not diff:
+            raise ToolError("nothing would change: these values match the event already")
+        notes = update_notes(before, changed)
+        return {"changes": diff, "notes": notes, "confirm_token": issue_confirm_token(bound)}
+    await use_confirm_token(confirm_token, bound)
+    return await _apply(user, before["id"], payload)
+
+
+@pda_tool(
+    description=(
         "publish a draft so members can see it. the first call returns the event summary plus "
         "confirm_token: show the summary, get an explicit yes, then call again with the token."
     )
@@ -88,9 +150,7 @@ async def publish_event(event: EventRef, confirm_token: ConfirmToken = None) -> 
     body = await call_view(get_event_view, user, event_id=event)
     if body["status"] != EventStatus.DRAFT:
         raise ToolError(f"only drafts can be published; this event is {body['status']}")
-    slots = template_slots(body["description"])
-    if body["event_type"] == EventType.OFFICIAL and slots:
-        raise ToolError(f"fill these template slots in the description first: {', '.join(slots)}")
+    _refuse_unfilled_slots(body["event_type"], body["description"])
     summary = event_summary(body)
     # Publishing notifies co-hosts and invitees, so they're part of what the user approves.
     unseen = {key: sorted(body[key]) if key.endswith("_ids") else body[key] for key in _BOUND}
