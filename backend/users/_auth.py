@@ -154,6 +154,7 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "hide_last_name",
     "weekly_digest_opt_out",
     "whatsapp_reminder_opt_out",
+    "attendance_nudge_opt_out",
     "week_start",
     "calendar_feed_scope",
     "calendar_feed_excluded_types",
