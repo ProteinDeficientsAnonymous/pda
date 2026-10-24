@@ -40,6 +40,7 @@ from ._seed_staging_data import (
     reset_member_email,
     reset_member_phone,
 )
+from ._seed_staging_feedback import reset_staging_feedback, seed_staging_feedback
 from ._seed_staging_rsvps import (
     MEMBER_RSVP_SPECS,
     NON_MEMBER_SPECS,
@@ -81,6 +82,9 @@ class Command(BaseCommand):
             rsvp_questions = self._seed_event_rsvp_questions(events)
             self._seed_member_rsvps(cond_users, events, rsvp_questions)
             non_members = self._seed_non_members(events, rsvp_questions)
+            seed_staging_feedback(
+                self.stdout, admin, {e.title: e for e in events}, perm_users + cond_users
+            )
             questions = seed_join_form_questions(self.stdout)
             join_requests = seed_join_requests(self.stdout, admin, questions)
         self._print_summary(
@@ -95,6 +99,7 @@ class Command(BaseCommand):
         )
 
     def _reset(self) -> None:
+        reset_staging_feedback()
         Event.objects.filter(title__startswith="[staging] ").delete()
         Event.objects.filter(title=NON_MEMBER_EVENT_TITLE).delete()
         User.objects.filter(phone_number__startswith="+170255501").delete()
