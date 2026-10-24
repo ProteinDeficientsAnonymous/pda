@@ -5574,6 +5574,12 @@ export interface components {
             answers: {
                 [key: string]: unknown;
             };
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Start */
+            event_start?: string | null;
+            /** Event Title */
+            event_title?: string | null;
             /** Id */
             id: string;
             /**
@@ -5592,6 +5598,12 @@ export interface components {
             answers: {
                 [key: string]: unknown;
             };
+            /** Event Id */
+            event_id?: string | null;
+            /** Event Start */
+            event_start?: string | null;
+            /** Event Title */
+            event_title?: string | null;
             /** Id */
             id: string;
             /** Response Token */
@@ -12343,7 +12355,9 @@ export interface operations {
     };
     community__surveys_responses_list_survey_responses: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path: {
                 survey_id: string;
@@ -12422,7 +12436,9 @@ export interface operations {
     };
     community__survey_reports_get_survey_summary: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path: {
                 survey_id: string;
