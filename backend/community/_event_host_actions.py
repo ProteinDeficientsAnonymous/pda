@@ -11,6 +11,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from community._event_helpers import (
+    _can_edit_event,
     _cancellations,
     _event_out,
     load_event_with_stats_prefetch,
@@ -21,7 +22,6 @@ from community._event_schemas import (
     EventStatsOut,
     TextRecipientsOut,
 )
-from community._events import _can_edit_event
 from community._join_request_approval import _maybe_promote_tentative, send_join_approval
 from community._rsvp_counts import (
     _attended_count,

@@ -15,7 +15,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community._event_helpers import _can_see_invite_only
-from community._events import _enforce_event_read_visibility
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._shared import _authenticated_user, _gated, _optional_jwt
 from community._validation import ValidationException
 from community.models import (

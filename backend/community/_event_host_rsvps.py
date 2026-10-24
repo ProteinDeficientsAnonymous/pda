@@ -12,6 +12,7 @@ from notifications.service import create_payment_revoked_notification
 from users.models import User as UserModel
 
 from community._event_helpers import (
+    _can_edit_event,
     _event_out,
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
@@ -25,7 +26,6 @@ from community._event_rsvps import (
     payment_audit_details,
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
-from community._events import _can_edit_event
 from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation

@@ -7,7 +7,7 @@ from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
 
-from community._event_helpers import is_cohost, load_event_with_stats_prefetch
+from community._event_helpers import _can_edit_event, is_cohost, load_event_with_stats_prefetch
 from community._event_report_schemas import (
     REPORT_CSV_COLUMNS,
     AttendedPersonOut,
@@ -17,7 +17,6 @@ from community._event_report_schemas import (
     ReportBucket,
     ReportPlusOne,
 )
-from community._events import _can_edit_event
 from community._shared import ErrorOut, csv_response, csv_safe
 from community._validation import Code, raise_validation
 from community.models import AttendanceStatus, Event, RSVPStatus
