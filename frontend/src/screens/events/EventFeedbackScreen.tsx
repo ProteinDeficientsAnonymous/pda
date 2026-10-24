@@ -44,11 +44,7 @@ function FeedbackBody({ feedback }: { feedback: HostEventFeedback }) {
     return <p className="text-muted text-sm">no feedback yet 🌿</p>;
   }
   if (feedback.questions.length === 0) {
-    return (
-      <p className="text-muted text-sm">
-        this feedback is for questions that have since been removed
-      </p>
-    );
+    return <p className="text-muted text-sm">these responses are for removed questions</p>;
   }
   return (
     <div className="flex flex-col gap-6">

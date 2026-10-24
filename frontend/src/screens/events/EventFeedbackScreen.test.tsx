@@ -87,13 +87,10 @@ describe('EventFeedbackScreen', () => {
     mockFeedback({
       isPending: false,
       isError: false,
-      data: {
-        questions: [],
-        responses: [{ id: 'r1', submitted_on: '2026-10-20', answers: {} }],
-      },
+      data: { questions: [], responses: [{ id: 'r1', submitted_on: '2026-10-20', answers: {} }] },
     });
     renderScreen();
 
-    expect(screen.getByText(/questions that have since been removed/)).toBeInTheDocument();
+    expect(screen.getByText(/for removed questions/)).toBeInTheDocument();
   });
 });
