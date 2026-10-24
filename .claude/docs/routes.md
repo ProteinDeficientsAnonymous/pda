@@ -38,6 +38,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/settings` | Settings (profile, accessibility, **calendar ICS feed**) |
 | `/profile` | Profile |
 | `/volunteer` | Volunteer |
+| `/connect/authorize?request=<id>` | MCP consent screen (allow/deny an AI app); logged-out users return via `/login?redirect=` |
 | `/docs` | Docs index (**manage_documents**: folder/doc admin) |
 | `/docs/:id` | Doc detail / editor |
 | `/events/mine` | My events |

@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 import pytest
@@ -41,6 +42,7 @@ def test_new_token_is_unique_and_urlsafe():
     a, b = EventFeedbackRequest.new_token(), EventFeedbackRequest.new_token()
     assert a != b
     assert len(a) <= 64
+    assert re.fullmatch(r"[A-Za-z0-9_-]+", a)
 
 
 def test_feedback_survey_for_returns_marked_survey_or_none(db):
