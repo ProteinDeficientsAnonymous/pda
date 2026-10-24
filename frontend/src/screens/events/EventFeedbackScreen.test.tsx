@@ -83,4 +83,35 @@ describe('EventFeedbackScreen', () => {
     expect(within(q2).getByText('5')).toBeInTheDocument();
     expect(within(q2).queryByText('a bit loud')).not.toBeInTheDocument();
   });
+
+  it('shows an empty state when nobody has responded', () => {
+    mockFeedback({
+      isPending: false,
+      isError: false,
+      data: { questions: QUESTIONS, responses: [] },
+    });
+    renderScreen();
+
+    expect(screen.getByText('no feedback yet 🌿')).toBeInTheDocument();
+  });
+
+  it('tells non-hosts they cannot see feedback', () => {
+    mockFeedback({
+      isPending: false,
+      isError: true,
+      error: { isAxiosError: true, response: { status: 403, data: {} } },
+    });
+    renderScreen();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/host or a co-host/i);
+  });
+
+  it('links back to the event', async () => {
+    mockFeedback({ isPending: false, isError: false, data: { questions: [], responses: [] } });
+    renderScreen();
+
+    await userEvent.click(screen.getByRole('link', { name: /back to event/i }));
+
+    expect(screen.getByText('event detail')).toBeInTheDocument();
+  });
 });

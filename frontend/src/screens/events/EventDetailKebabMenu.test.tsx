@@ -115,6 +115,21 @@ describe('EventDetailKebabMenu', () => {
     expect(reportLink).toHaveAttribute('href', '/events/ev1/report');
   });
 
+  it('hides feedback when the event has not ended', async () => {
+    renderMenu({ eventHasEnded: false });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'feedback' })).not.toBeInTheDocument();
+  });
+
+  it('shows feedback linking to the feedback route when the event ended', async () => {
+    renderMenu({ eventHasEnded: true });
+    await openMenu();
+
+    const feedback = screen.getByRole('menuitem', { name: 'feedback' });
+    expect(feedback).toHaveAttribute('href', '/events/ev1/feedback');
+  });
+
   it('shows "manage rsvps" for a host on a future event', async () => {
     renderMenu({ eventHasEnded: false, canManageRsvps: true });
     await openMenu();

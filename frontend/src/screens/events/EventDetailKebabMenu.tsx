@@ -114,6 +114,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               check-in report
             </MenuLink>
           ) : null}
+          {showCheckInReport ? (
+            <MenuLink
+              to={`/events/${eventId}/feedback`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              feedback
+            </MenuLink>
+          ) : null}
           {showEmailBlast ? (
             <MenuButton
               onSelect={() => {
