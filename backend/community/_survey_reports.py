@@ -4,6 +4,8 @@ import re
 from uuid import UUID
 
 from config.auth import gated_jwt
+from django.conf import settings
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
@@ -95,8 +97,15 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
     return csv_safe(text)
 
 
+def _csv_event_cell(r: SurveyResponse) -> str:
+    if not r.event:
+        return ""
+    start = timezone.localtime(r.event.start_datetime, settings.COMMUNITY_TZ).date()
+    return csv_safe(f"{r.event.title} ({start.isoformat()})")
+
+
 def _csv_row_prefix(r: SurveyResponse, survey: Survey, viewer) -> list[str]:
-    event_cell = [csv_safe(r.event.title) if r.event else ""] if survey.feedback_event_type else []
+    event_cell = [_csv_event_cell(r)] if survey.feedback_event_type else []
     if survey.anonymous:
         return [_day_only(r.submitted_at).isoformat(), *event_cell]
     name = visible_display_name(r.user, viewer) if r.user else ""
@@ -108,10 +117,10 @@ def _csv_row_prefix(r: SurveyResponse, survey: Survey, viewer) -> list[str]:
     response={200: list[QuestionSummaryOut], 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
-def get_survey_summary(request, survey_id: UUID):
+def get_survey_summary(request, survey_id: UUID, event_id: UUID | None = None):
     survey = _load_survey_for_responses(request, survey_id, "get_survey_summary")
     questions = [q for q in survey.questions.all() if q.field_type in SUMMARIZED_TYPES]
-    responses = list(survey.responses.all())
+    responses = _ordered_responses(survey, event_id)
     return Status(200, [_summarize_question(q, responses) for q in questions])
 
 
