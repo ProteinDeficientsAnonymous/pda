@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from audit.models import AuditLogEntry
@@ -8,6 +8,7 @@ from community._validation import Code
 from community.models import (
     Event,
     EventFeedbackRequest,
+    EventStatus,
     EventType,
     Survey,
     SurveyQuestion,
@@ -96,8 +97,11 @@ def _token_header(token: str) -> dict:
 @pytest.mark.django_db
 class TestGetFeedbackLink:
     def test_get_returns_survey_and_event_title(
-        self, api_client, feedback_survey, feedback_request, event
+        self, api_client, feedback_survey, feedback_request, event, test_user
     ):
+        feedback_survey.created_by = test_user
+        feedback_survey.save(update_fields=["created_by"])
+        SurveyResponse.objects.create(survey=feedback_survey, event=event, answers={})
         response = api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token))
         assert response.status_code == 200
         body = response.json()
@@ -110,6 +114,17 @@ class TestGetFeedbackLink:
         assert [q["label"] for q in body["survey"]["questions"]] == ["how was it?"]
         assert body["survey"]["my_response_id"] is None
         assert body["survey"]["my_answers"] is None
+        assert body["survey"]["response_count"] == 0
+        assert body["survey"]["created_by_id"] is None
+        assert body["survey"]["slug"] == ""
+
+    def test_get_rate_limited(self, api_client, feedback_request):
+        statuses = [
+            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token)).status_code
+            for _ in range(61)
+        ]
+        assert set(statuses[:60]) == {200}
+        assert statuses[-1] == 429
 
     def test_unknown_token_404(self, api_client, feedback_survey):
         response = api_client.get(FEEDBACK_URL, **_token_header("not-a-real-token"))
@@ -168,10 +183,30 @@ class TestSubmitFeedback:
         assert stored.event_id == event.id
         assert stored.anonymous_token is None
 
-    def test_submit_marks_responded_on_date(self, api_client, feedback_survey, feedback_request):
+    def test_submit_marks_responded_on_date(
+        self, api_client, feedback_survey, feedback_request, monkeypatch
+    ):
+        # 10pm in new york is already the next day in utc
+        frozen = datetime(2026, 10, 24, 2, 0, tzinfo=UTC)
+        monkeypatch.setattr("django.utils.timezone.now", lambda: frozen)
         _submit(api_client, feedback_request, feedback_survey)
         feedback_request.refresh_from_db()
-        assert feedback_request.responded_on == timezone.localdate()
+        assert feedback_request.responded_on == date(2026, 10, 23)
+
+    @pytest.mark.parametrize("status", [EventStatus.CANCELLED, EventStatus.DELETED])
+    def test_inactive_event_closed(
+        self, api_client, feedback_survey, feedback_request, event, status
+    ):
+        event.status = status
+        event.save(update_fields=["status"])
+        assert (
+            api_client.get(FEEDBACK_URL, **_token_header(feedback_request.token)).json()["is_open"]
+            is False
+        )
+        response = _submit(api_client, feedback_request, feedback_survey)
+        assert response.status_code == 400
+        assert_error_code(response, Code.Survey.CLOSED)
+        assert not SurveyResponse.objects.filter(survey=feedback_survey).exists()
 
     def test_submit_leaves_no_attributed_audit_row(
         self, api_client, feedback_survey, feedback_request, django_capture_on_commit_callbacks
