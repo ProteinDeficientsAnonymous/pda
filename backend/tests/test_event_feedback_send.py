@@ -170,7 +170,7 @@ class TestFirstRequests:
         _rsvp(event, _user(), AttendanceStatus.DIDNT_GO)
         _rsvp(event, _user(), AttendanceStatus.UNKNOWN)
 
-        assert send_first_requests(NOW) == 1
+        assert send_first_requests(NOW)[0] == 1
 
         assert fake_email_sender.send.call_count == 1
         assert fake_email_sender.send.call_args.kwargs["to"] == attended.email
@@ -181,38 +181,38 @@ class TestFirstRequests:
     def test_event_ended_earlier_today_not_sent(self, feedback_survey, fake_email_sender):
         event = _event(end=datetime(2026, 10, 15, 10, 0, tzinfo=TZ))
         _rsvp(event, _user())
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         fake_email_sender.send.assert_not_called()
         assert not EventFeedbackRequest.objects.exists()
 
     def test_event_older_than_lookback_not_sent(self, feedback_survey, fake_email_sender):
         event = _event(end=NOW - timedelta(days=8))
         _rsvp(event, _user())
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         assert not EventFeedbackRequest.objects.exists()
 
     def test_cancelled_event_not_sent(self, feedback_survey, fake_email_sender):
         event = _event(status=EventStatus.CANCELLED)
         _rsvp(event, _user())
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         assert not EventFeedbackRequest.objects.exists()
 
     def test_type_without_feedback_survey_not_sent(self, feedback_survey, fake_email_sender):
         event = _event(event_type=EventType.CLUB)
         _rsvp(event, _user())
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         assert not EventFeedbackRequest.objects.exists()
 
     def test_inactive_feedback_survey_not_sent(self, feedback_survey, fake_email_sender):
         Survey.objects.filter(pk=feedback_survey.pk).update(is_active=False)
         _rsvp(_event(), _user())
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         assert not EventFeedbackRequest.objects.exists()
 
     def test_rerun_same_day_sends_once(self, feedback_survey, fake_email_sender):
         _rsvp(_event(), _user())
-        assert send_first_requests(NOW) == 1
-        assert send_first_requests(NOW + timedelta(hours=3)) == 0
+        assert send_first_requests(NOW)[0] == 1
+        assert send_first_requests(NOW + timedelta(hours=3))[0] == 0
         assert fake_email_sender.send.call_count == 1
         assert EventFeedbackRequest.objects.count() == 1
 
@@ -221,17 +221,17 @@ class TestFirstRequests:
         early, late = _user(), _user()
         _rsvp(event, early)
         late_rsvp = _rsvp(event, late, AttendanceStatus.UNKNOWN)
-        assert send_first_requests(NOW) == 1
+        assert send_first_requests(NOW)[0] == 1
 
         late_rsvp.attendance = AttendanceStatus.ATTENDED
         late_rsvp.save()
-        assert send_first_requests(NOW + timedelta(days=1)) == 1
+        assert send_first_requests(NOW + timedelta(days=1))[0] == 1
         assert fake_email_sender.send.call_count == 2
         assert EventFeedbackRequest.objects.count() == 2
 
     def test_user_without_email_gets_request_but_no_send(self, feedback_survey, fake_email_sender):
         _rsvp(_event(), _user(email=None))
-        assert send_first_requests(NOW) == 0
+        assert send_first_requests(NOW)[0] == 0
         fake_email_sender.send.assert_not_called()
         assert EventFeedbackRequest.objects.get().first_sent_at is None
 
@@ -246,10 +246,15 @@ class TestFirstRequests:
             RuntimeError("boom"),
             SendResult(success=True, provider_message_id="ok"),
         ]
-        assert send_first_requests(NOW) == 1
+        assert send_first_requests(NOW) == (1, 1)
         assert fake_email_sender.send.call_count == 2
         assert EventFeedbackRequest.objects.filter(first_sent_at__isnull=True).count() == 1
         assert EventFeedbackRequest.objects.filter(first_sent_at__isnull=False).count() == 1
+
+        fake_email_sender.send.side_effect = None
+        fake_email_sender.send.return_value = SendResult(success=True)
+        assert send_first_requests(NOW + timedelta(days=1)) == (1, 0)
+        assert not EventFeedbackRequest.objects.filter(first_sent_at__isnull=True).exists()
 
     def test_email_contains_personal_link(self, feedback_survey, fake_email_sender):
         _rsvp(_event(), _user())
@@ -274,7 +279,7 @@ class TestReminders:
         pending = self._sent_request(event, 3)
         self._sent_request(event, 3, responded_on=NOW.date())
 
-        assert send_reminders(NOW) == 1
+        assert send_reminders(NOW)[0] == 1
 
         assert fake_email_sender.send.call_count == 1
         kwargs = fake_email_sender.send.call_args.kwargs
@@ -286,47 +291,74 @@ class TestReminders:
 
     def test_reminder_sent_once(self, feedback_survey, fake_email_sender):
         self._sent_request(_event(end=NOW - timedelta(days=4)), 3)
-        assert send_reminders(NOW) == 1
-        assert send_reminders(NOW + timedelta(hours=6)) == 0
-        assert send_reminders(NOW + timedelta(days=1)) == 0
+        assert send_reminders(NOW)[0] == 1
+        assert send_reminders(NOW + timedelta(hours=6))[0] == 0
+        assert send_reminders(NOW + timedelta(days=1))[0] == 0
         assert fake_email_sender.send.call_count == 1
 
     def test_reminder_not_sent_on_day_two(self, feedback_survey, fake_email_sender):
         self._sent_request(_event(end=NOW - timedelta(days=3)), 2)
-        assert send_reminders(NOW) == 0
+        assert send_reminders(NOW)[0] == 0
         fake_email_sender.send.assert_not_called()
 
     def test_never_sent_request_gets_no_reminder(self, feedback_survey, fake_email_sender):
         _request(_event(end=NOW - timedelta(days=4)), _user())
-        assert send_reminders(NOW) == 0
+        assert send_reminders(NOW)[0] == 0
 
     def test_cancelled_event_gets_no_reminder(self, feedback_survey, fake_email_sender):
         event = _event(end=NOW - timedelta(days=4), status=EventStatus.CANCELLED)
         self._sent_request(event, 3)
-        assert send_reminders(NOW) == 0
+        assert send_reminders(NOW)[0] == 0
+
+    def test_reminder_not_sent_when_first_email_is_stale(self, feedback_survey, fake_email_sender):
+        self._sent_request(_event(end=NOW - timedelta(days=21)), 20)
+        assert send_reminders(NOW) == (0, 0)
+        fake_email_sender.send.assert_not_called()
+
+    def test_reminder_sent_at_oldest_allowed_first_email_age(
+        self, feedback_survey, fake_email_sender
+    ):
+        self._sent_request(_event(end=NOW - timedelta(days=10)), 9)
+        assert send_reminders(NOW) == (1, 0)
 
     def test_failed_reminder_keeps_claim(self, feedback_survey, fake_email_sender):
         request = self._sent_request(_event(end=NOW - timedelta(days=4)), 3)
         fake_email_sender.send.side_effect = RuntimeError("boom")
-        assert send_reminders(NOW) == 0
+        assert send_reminders(NOW) == (0, 1)
         request.refresh_from_db()
         assert request.reminder_sent_at == NOW
         fake_email_sender.send.side_effect = None
         fake_email_sender.send.return_value = SendResult(success=True)
-        assert send_reminders(NOW) == 0
+        assert send_reminders(NOW)[0] == 0
+
+
+def _run_command() -> str:
+    out = StringIO()
+    call_command("send_event_feedback_requests", stdout=out)
+    return out.getvalue().strip()
 
 
 @pytest.mark.django_db
-def test_command_runs_both_passes(feedback_survey, fake_email_sender):
+def test_command_runs_both_passes_once_per_day(feedback_survey, fake_email_sender):
     old = _event(end=datetime.now(TZ) - timedelta(days=5))
     due_reminder = _request(old, _user(), first_sent_at=datetime.now(TZ) - timedelta(days=3))
     fresh = _event(end=datetime.now(TZ) - timedelta(days=1) - timedelta(hours=1))
     _rsvp(fresh, _user())
-    out = StringIO()
 
-    call_command("send_event_feedback_requests", stdout=out)
+    assert _run_command() == "Sent 1 feedback request(s); 1 reminder(s)."
 
     due_reminder.refresh_from_db()
     assert due_reminder.reminder_sent_at is not None
-    assert fake_email_sender.send.call_count >= 1
-    assert "request" in out.getvalue()
+    assert EventFeedbackRequest.objects.get(event=fresh).first_sent_at is not None
+    assert fake_email_sender.send.call_count == 2
+
+    assert _run_command() == "Sent 0 feedback request(s); 0 reminder(s)."
+    assert fake_email_sender.send.call_count == 2
+
+
+@pytest.mark.django_db
+def test_command_reports_failed_sends(feedback_survey, fake_email_sender):
+    _rsvp(_event(end=datetime.now(TZ) - timedelta(days=1, hours=1)), _user())
+    fake_email_sender.send.side_effect = RuntimeError("boom")
+
+    assert _run_command() == "Sent 0 feedback request(s); 0 reminder(s). 1 failed."
