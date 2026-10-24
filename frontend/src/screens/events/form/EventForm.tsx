@@ -15,6 +15,7 @@ import {
   useUpdateEvent,
   useUploadEventPhoto,
 } from '@/api/eventWrites';
+import { useOfficialEventDefaults } from '@/api/officialEventDefaults';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
@@ -131,14 +132,15 @@ export function EventForm({ existing }: Props) {
   const uploadPhoto = useUploadEventPhoto();
   const { confirm, element: confirmElement } = useConfirm();
   const { data: templates } = useEventDescriptionTemplates(!existing && canTagOfficial);
+  const { data: officialDefaults } = useOfficialEventDefaults(canTagOfficial);
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
   function patch(p: Partial<EventFormValues>) {
-    if (p.eventType !== undefined && p.eventType !== values.eventType) {
+    if (p.eventType !== undefined && p.eventType !== values.eventType && officialDefaults) {
       const official = p.eventType === EventType.Official;
-      setRsvpQuestions((qs) => withOfficialQuestions(qs, official));
+      setRsvpQuestions((qs) => withOfficialQuestions(qs, official, officialDefaults.rsvpQuestions));
     }
     setValues((v) => {
       const next = { ...v, ...p };
