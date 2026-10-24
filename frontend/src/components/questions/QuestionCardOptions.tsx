@@ -7,7 +7,7 @@ import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
 function OptionMarker({ fieldType, index }: { fieldType: string; index: number }) {
-  if (fieldType === QuestionType.Select || fieldType === QuestionType.Rating) {
+  if (fieldType === QuestionType.Select) {
     return <span className="text-muted w-4 text-end text-sm">{String(index + 1)}.</span>;
   }
   return (
@@ -47,10 +47,8 @@ export function QuestionCardOptions({
   }, [focusTarget]);
 
   const isPoll = fieldType === QuestionType.DatetimePoll;
-  const isRating = fieldType === QuestionType.Rating;
-  const rows = options.length === 0 && !isRating ? [''] : options;
-  const canRemove = rows.length > 1 || isRating;
-  const canAdd = !isRating || rows.length < 5;
+  const rows = options.length === 0 ? [''] : options;
+  const canRemove = rows.length > 1;
 
   function insertRowAfter(index: number) {
     setFocusTarget({ index: index + 1 });
@@ -65,12 +63,9 @@ export function QuestionCardOptions({
 
   return (
     <div className="flex flex-col gap-2">
-      {isRating ? <p className="text-muted text-xs">optional labels for stars 1–5</p> : null}
       <ul className="flex flex-col gap-2">
         {rows.map((option, index) => {
-          const label = isRating
-            ? `star ${String(index + 1)} label`
-            : `option ${String(index + 1)}`;
+          const label = `option ${String(index + 1)}`;
           return (
             <li key={index} className="flex items-center gap-2">
               {isPoll ? null : <OptionMarker fieldType={fieldType} index={index} />}
@@ -98,7 +93,7 @@ export function QuestionCardOptions({
                       onChange(setRow(index, e.target.value));
                     }}
                     onKeyDown={(e) => {
-                      if (e.key !== 'Enter' || !canAdd) return;
+                      if (e.key !== 'Enter') return;
                       e.preventDefault();
                       insertRowAfter(index);
                     }}
@@ -124,7 +119,7 @@ export function QuestionCardOptions({
           );
         })}
       </ul>
-      {disabled || !canAdd ? null : (
+      {disabled ? null : (
         <Button
           variant="ghost"
           className="h-9 self-start px-2"
@@ -132,7 +127,7 @@ export function QuestionCardOptions({
             insertRowAfter(rows.length - 1);
           }}
         >
-          {isPoll ? '+ add date' : isRating ? '+ add star label' : '+ add option'}
+          {isPoll ? '+ add date' : '+ add option'}
         </Button>
       )}
     </div>

@@ -63,18 +63,6 @@ describe('QuestionCardOptions', () => {
     expect(screen.queryByRole('button', { name: /^remove/ })).not.toBeInTheDocument();
   });
 
-  it('lets rating star labels be cleared and caps them at five', () => {
-    renderOptions(QuestionType.Rating, ['meh', 'ok', 'good', 'great', 'wow']);
-    expect(screen.getByRole('button', { name: 'remove star 1 label' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '+ add star label' })).not.toBeInTheDocument();
-  });
-
-  it('starts a rating with no label rows', () => {
-    renderOptions(QuestionType.Rating, []);
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '+ add star label' })).toBeInTheDocument();
-  });
-
   it('uses date pickers for a datetime poll', () => {
     renderOptions(QuestionType.DatetimePoll, []);
     expect(screen.getByRole('button', { name: 'pick a date & time' })).toBeInTheDocument();
