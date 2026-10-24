@@ -2,6 +2,7 @@ import pytest
 from community._validation import Code
 from community.models import (
     Event,
+    EventCoHostInvite,
     EventRSVP,
     EventType,
     PageVisibility,
@@ -37,6 +38,16 @@ def host(db) -> User:
     return user
 
 
+@pytest.fixture
+def invitee(db) -> User:
+    return User.objects.create_user(phone_number="+12025556101", password="x", first_name="Co")
+
+
+@pytest.fixture
+def guest(db) -> User:
+    return User.objects.create_user(phone_number="+12025556102", password="x", first_name="Guest")
+
+
 def _create(api_client, host: User, event_type: str, **overrides) -> Event:
     payload = {
         "title": "Auto RSVP",
@@ -50,6 +61,15 @@ def _create(api_client, host: User, event_type: str, **overrides) -> Event:
     response = api_client.post(EVENTS_URL, payload, content_type="application/json", **_auth(host))
     assert response.status_code == 201, response.content
     return Event.objects.get(id=response.json()["id"])
+
+
+def _accept(api_client, event: Event, user: User):
+    invite = EventCoHostInvite.objects.get(event=event, user=user)
+    return api_client.post(
+        f"{EVENTS_URL}{event.id}/cohost-invites/{invite.id}/accept/",
+        content_type="application/json",
+        **_auth(user),
+    )
 
 
 def _rsvp_status(event: Event, user: User) -> str | None:
@@ -190,3 +210,60 @@ class TestHostCanChangeAutoRsvp:
         )
         assert response.status_code == 200
         assert _rsvp_status(event, host) == RSVPStatus.CANT_GO
+
+
+@pytest.mark.django_db
+class TestAutoRsvpOnCohostAccept:
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_accepting_cohost_is_attending(
+        self, api_client, host, invitee, event_type, fake_email_sender
+    ):
+        event = _create(api_client, host, event_type, co_host_ids=[str(invitee.pk)])
+        assert _rsvp_status(event, invitee) is None
+        fake_email_sender.send.reset_mock()
+
+        response = _accept(api_client, event, invitee)
+
+        assert response.status_code == 200
+        assert _rsvp_status(event, invitee) == RSVPStatus.ATTENDING
+        fake_email_sender.send.assert_not_called()
+        assert not Notification.objects.filter(
+            notification_type=NotificationType.RSVP_STATUS_CHANGED
+        ).exists()
+
+    def test_community_event_accept_has_no_auto_rsvp(self, api_client, host, invitee):
+        event = _create(api_client, host, EventType.COMMUNITY, co_host_ids=[str(invitee.pk)])
+        response = _accept(api_client, event, invitee)
+        assert response.status_code == 200
+        assert _rsvp_status(event, invitee) is None
+
+    @pytest.mark.parametrize("prior", [RSVPStatus.CANT_GO, RSVPStatus.MAYBE])
+    def test_existing_rsvp_is_not_overwritten(self, api_client, host, invitee, prior):
+        event = _create(api_client, host, EventType.OFFICIAL, co_host_ids=[str(invitee.pk)])
+        EventRSVP.objects.create(event=event, user=invitee, status=prior)
+
+        response = _accept(api_client, event, invitee)
+
+        assert response.status_code == 200
+        assert _rsvp_status(event, invitee) == prior
+
+    def test_paid_event_rsvps_accepting_cohost_without_payment(self, api_client, host, invitee):
+        event = _create(api_client, host, EventType.OFFICIAL, co_host_ids=[str(invitee.pk)], **PAID)
+
+        response = _accept(api_client, event, invitee)
+
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=invitee)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        assert rsvp.paid_confirmed_at is None
+
+    def test_full_event_waitlists_accepting_cohost(self, api_client, host, invitee, guest):
+        event = _create(
+            api_client, host, EventType.OFFICIAL, max_attendees=2, co_host_ids=[str(invitee.pk)]
+        )
+        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+
+        response = _accept(api_client, event, invitee)
+
+        assert response.status_code == 200
+        assert _rsvp_status(event, invitee) == RSVPStatus.WAITLISTED
