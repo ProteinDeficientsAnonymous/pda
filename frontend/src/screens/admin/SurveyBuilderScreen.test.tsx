@@ -129,6 +129,61 @@ describe('SurveyBuilderScreen', () => {
     expect(mockedDelete).not.toHaveBeenCalled();
   });
 
+  it('asks for confirmation before closing the survey, then closes on confirm', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPatch.mockResolvedValueOnce({ data: { ...wireSurvey, is_active: false } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.click(screen.getByRole('button', { name: 'close survey' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'close survey' });
+    expect(mockedPatch).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'close survey' }));
+
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledWith(
+        '/api/community/surveys/srv-1/',
+        expect.objectContaining({ is_active: false }),
+      );
+    });
+  });
+
+  it('does not close the survey when the confirmation is cancelled', async () => {
+    mockedGet.mockResolvedValueOnce({ data: wireSurvey });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.click(screen.getByRole('button', { name: 'close survey' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'close survey' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(mockedPatch).not.toHaveBeenCalled();
+  });
+
+  it('reopens a closed survey without asking', async () => {
+    mockedGet.mockResolvedValue({ data: { ...wireSurvey, is_active: false } });
+    mockedPatch.mockResolvedValueOnce({ data: wireSurvey });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+    expect(screen.getByText(/· closed/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'reopen survey' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledWith(
+        '/api/community/surveys/srv-1/',
+        expect.objectContaining({ is_active: true }),
+      );
+    });
+  });
+
   it('adds a blank question inline without opening a dialog', async () => {
     mockedGet.mockResolvedValue({ data: wireSurvey });
     mockedPost.mockResolvedValueOnce({ data: { id: 'q3' } });
