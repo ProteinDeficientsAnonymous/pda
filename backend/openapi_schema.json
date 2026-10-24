@@ -17411,6 +17411,47 @@
         ]
       }
     },
+    "/api/connect/users/{user_id}/apps/{grant_id}/": {
+      "delete": {
+        "operationId": "mcp_gateway_api_revoke_user_app",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Revoke User App",
+        "tags": [
+          "connect"
+        ]
+      }
+    },
     "/api/notifications/": {
       "get": {
         "operationId": "notifications_api_list_notifications",
