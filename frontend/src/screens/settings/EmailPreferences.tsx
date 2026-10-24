@@ -1,9 +1,16 @@
 import { Toggle } from '@/components/ui/Toggle';
 import type { User } from '@/models/user';
 
+type EmailPreferencesPatch = Partial<
+  Pick<User, 'weeklyDigestOptOut' | 'whatsappReminderOptOut' | 'attendanceNudgeOptOut'>
+>;
+
 interface EmailPreferencesProps {
-  user: Pick<User, 'weeklyDigestOptOut' | 'whatsappReminderOptOut'>;
-  onChange: (patch: { weeklyDigestOptOut?: boolean; whatsappReminderOptOut?: boolean }) => void;
+  user: Pick<
+    User,
+    'isMember' | 'weeklyDigestOptOut' | 'whatsappReminderOptOut' | 'attendanceNudgeOptOut'
+  >;
+  onChange: (patch: EmailPreferencesPatch) => void;
 }
 
 export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
@@ -23,6 +30,15 @@ export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
           onChange({ whatsappReminderOptOut: !v });
         }}
       />
+      {!user.isMember && (
+        <Toggle
+          label="reminders to come to an event in person"
+          checked={!user.attendanceNudgeOptOut}
+          onChange={(v) => {
+            onChange({ attendanceNudgeOptOut: !v });
+          }}
+        />
+      )}
     </>
   );
 }
