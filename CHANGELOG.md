@@ -1,3 +1,10 @@
+# [0.178.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.177.0...v0.178.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** filter hosted events server-side and paginate list_my_events ([#1797](https://github.com/ProteinDeficientsAnonymous/pda/issues/1797)) ([4afe05d](https://github.com/ProteinDeficientsAnonymous/pda/commit/4afe05d3d5c5bef277aec1ba7574f9e49945db84))
+
 # [0.177.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.176.0...v0.177.0) (2026-10-24)
 
 
