@@ -33,12 +33,18 @@ FEEDBACK_QUESTIONS = [
 ]
 
 
-def seed_feedback_survey(stdout, created_by: User | None) -> Survey:
+def seed_feedback_survey(
+    stdout,
+    created_by: User | None,
+    *,
+    title: str = "event feedback",
+    slug: str = FEEDBACK_SURVEY_SLUG,
+) -> Survey:
     survey, created = Survey.objects.get_or_create(
         feedback_event_type=EventType.OFFICIAL,
         defaults={
-            "title": "event feedback",
-            "slug": FEEDBACK_SURVEY_SLUG,
+            "title": title,
+            "slug": slug,
             "anonymous": True,
             "created_by": created_by,
         },
