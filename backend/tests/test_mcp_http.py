@@ -89,6 +89,29 @@ def test_register_rejects_unknown_scope():
     assert response.json()["error"] == "invalid_client_metadata"
 
 
+@pytest.mark.parametrize(
+    "redirect_uri",
+    [
+        "cursor://anysphere.cursor-mcp/oauth/callback",
+        "http://evil.example/cb",
+        "http://localhost.evil.example/cb",
+        "javascript:alert(1)",
+    ],
+)
+def test_register_rejects_redirect_the_consent_screen_would_refuse(redirect_uri):
+    response = _register(redirect_uris=[REDIRECT, redirect_uri])
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_redirect_uri"
+
+
+@pytest.mark.parametrize(
+    "redirect_uri",
+    ["http://localhost:6274/oauth/callback", "http://127.0.0.1:8080/cb", "http://[::1]:8080/cb"],
+)
+def test_register_allows_loopback_http_redirect(redirect_uri):
+    assert _register(redirect_uris=[redirect_uri]).status_code == 201
+
+
 def test_register_defaults_to_pda_scope():
     response = _register()
     assert response.status_code == 201
