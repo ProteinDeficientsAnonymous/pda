@@ -158,7 +158,7 @@ class TestDueFeedbackEvents:
         assert due_feedback_events(now).exists() is included
 
     def test_feedback_url_format(self):
-        assert feedback_url("abc123") == f"{settings.FRONTEND_BASE_URL}/feedback/abc123"
+        assert feedback_url("abc123") == f"{settings.FRONTEND_BASE_URL}/feedback#abc123"
 
 
 @pytest.mark.django_db

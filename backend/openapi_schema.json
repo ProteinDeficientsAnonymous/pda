@@ -1840,6 +1840,19 @@
         "title": "EventFeedbackOut",
         "type": "object"
       },
+      "EventFeedbackSubmitOut": {
+        "properties": {
+          "confirmation_message": {
+            "title": "Confirmation Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation_message"
+        ],
+        "title": "EventFeedbackSubmitOut",
+        "type": "object"
+      },
       "EventFlagIn": {
         "properties": {
           "reason": {
@@ -10295,6 +10308,142 @@
         ]
       }
     },
+    "/api/community/event-feedback/": {
+      "get": {
+        "operationId": "community__event_feedback_public_get_event_feedback",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Feedback-Token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Feedback-Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Get Event Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-feedback/respond/": {
+      "post": {
+        "operationId": "community__event_feedback_public_submit_event_feedback",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Feedback-Token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Feedback-Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyAnswersIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackSubmitOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Submit Event Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/event-flags/": {
       "get": {
         "operationId": "community__event_flags_list_event_flags",
@@ -14248,48 +14397,6 @@
           }
         ],
         "summary": "Submit Feedback",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/feedback/{token}/": {
-      "get": {
-        "operationId": "community__event_feedback_public_get_event_feedback",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "token",
-            "required": true,
-            "schema": {
-              "title": "Token",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventFeedbackOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "summary": "Get Event Feedback",
         "tags": [
           "community"
         ]
