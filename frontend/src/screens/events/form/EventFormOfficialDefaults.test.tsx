@@ -1,28 +1,36 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import type * as EventWritesModule from '@/api/eventWrites';
 import { type OfficialEventDefaults, officialEventDefaultsKeys } from '@/api/officialEventDefaults';
 import { QuestionType } from '@/api/questionTypes';
 import { useAuthStore } from '@/auth/store';
+import { type Event, EventType } from '@/models/event';
 import { Permission } from '@/models/permissions';
-import { makeUser } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 type EventWrites = typeof EventWritesModule;
+
+const { updateEvent } = vi.hoisted(() => ({ updateEvent: vi.fn() }));
 
 vi.mock('@/api/eventWrites', async () => {
   const actual = await vi.importActual<EventWrites>('@/api/eventWrites');
   return {
     ...actual,
     useCreateEvent: () => ({ mutateAsync: vi.fn(), isPending: false }),
-    useUpdateEvent: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    useUpdateEvent: () => ({ mutateAsync: updateEvent, isPending: false }),
     useUploadEventPhoto: () => ({ mutateAsync: vi.fn(), isPending: false }),
   };
 });
 
+vi.mock('@/api/eventRsvpQuestions', async (importActual) => ({
+  ...(await importActual<object>()),
+  syncEventRsvpQuestions: vi.fn(async () => []),
+}));
 vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
 
 import { EventForm } from './EventForm';
@@ -34,7 +42,7 @@ const defaults: OfficialEventDefaults = {
   ],
 };
 
-function renderForm() {
+function renderForm(existing?: Event) {
   useAuthStore.setState({
     user: makeUser({
       roles: [
@@ -48,13 +56,17 @@ function renderForm() {
   render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <EventForm />
+        <EventForm existing={existing} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 describe('EventForm official defaults', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('making an event official fills cash app and adds the official questions', async () => {
     renderForm();
     expect(screen.queryByText('paid?')).not.toBeInTheDocument();
@@ -69,5 +81,26 @@ describe('EventForm official defaults', () => {
     await userEvent.click(toggle);
     await userEvent.click(toggle);
     expect(screen.queryByText('paid?')).not.toBeInTheDocument();
+  });
+
+  it('accepts the questions the server added when an edit makes the event official', async () => {
+    const existing = makeEvent({ eventType: EventType.Community, rsvpQuestions: [] });
+    const serverAdded = { id: 'srv-1', ...defaults.rsvpQuestions[0]! };
+    updateEvent.mockResolvedValue({
+      ...existing,
+      eventType: EventType.Official,
+      rsvpQuestions: [serverAdded],
+    });
+    renderForm(existing);
+    await userEvent.click(screen.getByRole('switch', { name: 'make it an official pda event' }));
+    await userEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(syncEventRsvpQuestions).toHaveBeenCalledWith(
+        existing.id,
+        [expect.objectContaining({ label: 'paid?' })],
+        [serverAdded],
+      );
+    });
   });
 });

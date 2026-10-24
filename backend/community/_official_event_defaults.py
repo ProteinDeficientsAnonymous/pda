@@ -4,7 +4,7 @@ from ninja.responses import Status
 from pydantic import BaseModel
 
 from community._event_schemas import EventRsvpQuestionIn
-from community.models import RsvpQuestionType
+from community.models import Event, EventRsvpQuestion, EventType, RsvpQuestionType
 
 router = Router()
 
@@ -48,6 +48,20 @@ OFFICIAL_RSVP_QUESTIONS = [
         required=True,
     ),
 ]
+
+
+def apply_official_defaults(event: Event, *, was_official: bool = False) -> None:
+    """Fill the cash app link and rsvp questions of an event that just became official, if it has none."""
+    if was_official or event.event_type != EventType.OFFICIAL:
+        return
+    if not event.cashapp_link:
+        event.cashapp_link = OFFICIAL_CASHAPP_LINK
+        event.save(update_fields=["cashapp_link"])
+    if not event.rsvp_questions.exists():
+        EventRsvpQuestion.objects.bulk_create(
+            EventRsvpQuestion(event=event, display_order=order, **question.model_dump())
+            for order, question in enumerate(OFFICIAL_RSVP_QUESTIONS)
+        )
 
 
 class OfficialEventDefaultsOut(BaseModel):
