@@ -227,27 +227,33 @@ describe('EventManageRsvpsPanel', () => {
   it('shows unpaid for a guest who has not said they paid', () => {
     renderPanel(paidEvent({ paidConfirmed: false, paymentVerified: false }));
     const toggle = screen.getByRole('button', { name: 'unpaid, mark payment verified' });
-    expect(toggle).toHaveAttribute('aria-pressed', 'false');
     expect(toggle).toHaveTextContent('unpaid');
   });
 
   it('shows says paid for a self-attested guest the host has not verified', () => {
     renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: false }));
     const toggle = screen.getByRole('button', { name: 'says paid, mark payment verified' });
-    expect(toggle).toHaveAttribute('aria-pressed', 'false');
     expect(toggle).toHaveTextContent('says paid');
   });
 
   it('shows verified for a host-verified guest', () => {
     renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: true }));
     const toggle = screen.getByRole('button', { name: 'verified, unverify payment' });
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
     expect(toggle).toHaveTextContent('verified');
+  });
+
+  it('marks an unpaid guest verified when the toggle is clicked', () => {
+    renderPanel(paidEvent({ paidConfirmed: false, paymentVerified: false }));
+    fireEvent.click(screen.getByRole('button', { name: 'unpaid, mark payment verified' }));
+    expect(setGuestPaymentMutate).toHaveBeenCalledWith(
+      { userId: 'u1', verified: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it('marks a self-attested guest verified when the toggle is clicked', () => {
     renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: false }));
-    fireEvent.click(screen.getByRole('button', { name: /mark payment verified/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'says paid, mark payment verified' }));
     expect(setGuestPaymentMutate).toHaveBeenCalledWith(
       { userId: 'u1', verified: true },
       expect.objectContaining({ onError: expect.any(Function) }),
@@ -256,7 +262,7 @@ describe('EventManageRsvpsPanel', () => {
 
   it('unverifies a verified guest when the toggle is clicked', () => {
     renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: true }));
-    fireEvent.click(screen.getByRole('button', { name: /unverify payment/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'verified, unverify payment' }));
     expect(setGuestPaymentMutate).toHaveBeenCalledWith(
       { userId: 'u1', verified: false },
       expect.objectContaining({ onError: expect.any(Function) }),

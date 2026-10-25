@@ -83,9 +83,7 @@ function PaymentBadge({
       type="button"
       onClick={onToggle}
       disabled={isPending}
-      aria-pressed={guest.paymentVerified}
       aria-label={`${label}, ${action}`}
-      title={action}
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60',
         classes,
