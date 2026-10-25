@@ -31,12 +31,17 @@ describe('ConsentScreen', () => {
   function mockStore({
     needsGuidelinesConsent = true,
     needsSmsConsent = false,
-  }: { needsGuidelinesConsent?: boolean; needsSmsConsent?: boolean } = {}) {
+    needsContactPrivacyConsent = false,
+  }: {
+    needsGuidelinesConsent?: boolean;
+    needsSmsConsent?: boolean;
+    needsContactPrivacyConsent?: boolean;
+  } = {}) {
     vi.mocked(useAuthStore).mockImplementation((selector) =>
       selector({
         acceptConsents,
         logout,
-        user: { needsGuidelinesConsent, needsSmsConsent },
+        user: { needsGuidelinesConsent, needsSmsConsent, needsContactPrivacyConsent },
       } as never),
     );
   }
@@ -145,6 +150,20 @@ describe('ConsentScreen', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
     // "not now" is available without ticking the checkbox — it's a decline.
     expect(acceptConsents).not.toHaveBeenCalled();
+  });
+
+  it('keeps the user logged in on "not now" when only the privacy check is pending', async () => {
+    mockStore({ needsGuidelinesConsent: false, needsContactPrivacyConsent: true });
+    acceptConsents.mockResolvedValue(undefined);
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(logout).not.toHaveBeenCalled();
+    expect(acceptConsents).toHaveBeenCalledExactlyOnceWith(['contact_privacy']);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
   });
 
   it('allows "not now" even before the checkbox is ticked', () => {
