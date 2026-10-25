@@ -1,3 +1,10 @@
+# [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** redirect to a thank-you page after submitting ([#1895](https://github.com/ProteinDeficientsAnonymous/pda/issues/1895)) ([f3552b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3552b2eb12a6daf606d0cb63aabdc1e0bffa382))
+
 ## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
 
 
