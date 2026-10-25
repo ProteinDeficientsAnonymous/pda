@@ -1,3 +1,10 @@
+## [0.180.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.0...v0.180.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* drop list survey urls, strict uuid refs, safe poll times ([#1834](https://github.com/ProteinDeficientsAnonymous/pda/issues/1834)) ([3a5a0f8](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a5a0f8134050681e77b97b2ae32b286a74a0d43))
+
 # [0.180.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.179.1...v0.180.0) (2026-10-25)
 
 
