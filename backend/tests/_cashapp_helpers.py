@@ -1,8 +1,10 @@
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import TypedDict, Unpack
 
 from community._cashapp_import_csv import CashAppRow
-from community._cashapp_import_types import EventPaymentContext
+from community._cashapp_import_types import EventPaymentContext, GuestRecord
+from community.models import RSVPStatus
 
 HEADER = (
     "Transaction ID,Date,Transaction Type,Currency,Amount,Fee,Net Amount,Asset Type,"
@@ -40,6 +42,18 @@ def event_ctx(price="$15", ends_at=ENDS, is_paid_event=True) -> EventPaymentCont
     return EventPaymentContext(
         created_at=CREATED, ends_at=ends_at, price=price, is_paid_event=is_paid_event
     )
+
+
+class GuestExtras(TypedDict, total=False):
+    nickname: str
+    status: RSVPStatus
+    has_plus_one: bool
+    said_paid: bool
+
+
+def guest(user_id: str, first: str, last: str, **extras: Unpack[GuestExtras]) -> GuestRecord:
+    fields: GuestExtras = {"nickname": "", "status": RSVPStatus.ATTENDING, **extras}
+    return GuestRecord(user_id=user_id, first_name=first, last_name=last, **fields)
 
 
 def row(index: int = 0, amount: str | None = "15", **overrides) -> CashAppRow:
