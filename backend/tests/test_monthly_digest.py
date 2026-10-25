@@ -12,7 +12,7 @@ from notifications.email_sender import EmailStream, SendResult
 
 from tests.test_weekly_digest import _make_event, _make_member, _make_tentative
 
-# The daily cron runs at 12:00 UTC: early morning of the same day in eastern, any time of year.
+# The monthly cron runs at 12:00 UTC: early morning of the same day in eastern, any time of year.
 FIRST_OF_JUNE = datetime(2026, 6, 1, 12, 0, 0)
 
 
@@ -87,10 +87,20 @@ class TestSendMonthlyDigestCommand:
         assert "late june show" in text
         assert "july 1 brunch" not in text
 
+    def test_december_runs_through_new_years_eve(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, datetime(2026, 12, 1, 12, 0, 0))
+        _make_member("+12025550316")
+        _make_event("solstice potluck", 20)
+        _make_event("new year brunch", 32)
+        call_command("send_monthly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        assert "solstice potluck" in text
+        assert "new year brunch" not in text
+
     def test_includes_veganniversaries_grouped_by_years(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
-        ada = _shoutout("+12025550304", "Ada", 2021)
         bo = _shoutout("+12025550305", "Bo", 2021)
+        ada = _shoutout("+12025550304", "Ada", 2021)
         _shoutout("+12025550306", "Cam", 2025)
         call_command("send_monthly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
@@ -99,6 +109,8 @@ class TestSendMonthlyDigestCommand:
         assert "5 years" in text
         assert "1 year" in text
         assert "cam" in text
+        assert text.index("5 years") < text.index("1 year")
+        assert text.index("ada") < text.index("bo")
         assert f"http://localhost:3000/members/{ada.pk}" in text
         assert f'href="http://localhost:3000/members/{bo.pk}"' in html
 
@@ -204,6 +216,21 @@ class TestMonthlyDigestTentativeMembers:
         assert "potluck" in texts[tentative.email]
         assert "veganniversary" not in texts[tentative.email]
 
+    def test_skips_tentative_member_opted_out(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_tentative("+12025550324", monthly_digest_opt_out=True)
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_not_called()
+
+    def test_rerun_does_not_resend_to_tentative_member(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_tentative("+12025550325")
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_called_once()
+
     def test_skips_tentative_member_when_only_veganniversaries(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
         member = _shoutout("+12025550322", "Gus", 2024)
@@ -234,3 +261,23 @@ class TestSendMonthlyDigestEmail:
         assert "here's what's coming up in june:" in kwargs["text"]
         assert "potluck" in kwargs["text"]
         assert 'href="https://pda.test/events/p"' in kwargs["html"]
+
+    def test_renders_without_events(self):
+        sender = MagicMock()
+        sender.send.return_value = SendResult(success=True, provider_message_id="msg")
+        send_monthly_digest_email(
+            sender=sender,
+            to="ada@example.test",
+            display_name="Ada",
+            month="June",
+            events=[],
+            urls={
+                "calendar_url": "https://pda.test/calendar",
+                "settings_url": "https://pda.test/s",
+            },
+            veganniversaries=[{"label": "1 year", "people": [{"name": "Bo", "url": "u"}]}],
+        )
+        text = sender.send.call_args.kwargs["text"]
+        assert "coming up in june:" not in text
+        assert "happy june veganniversary!" in text
+        assert "see the full calendar" in text

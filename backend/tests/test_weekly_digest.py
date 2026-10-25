@@ -263,8 +263,9 @@ class TestSendWeeklyDigestCommand:
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
-        text = fake_sender.send.call_args.kwargs["text"]
-        assert "veganniversary" not in text
+        kwargs = fake_sender.send.call_args.kwargs
+        assert "veganniversary" not in kwargs["text"]
+        assert "veganniversary" not in kwargs["html"]
 
 
 @pytest.mark.django_db
