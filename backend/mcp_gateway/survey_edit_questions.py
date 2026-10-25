@@ -22,7 +22,9 @@ from mcp_gateway.survey_edit_fields import (
 from mcp_gateway.survey_edit_plan import Edit, Step
 
 Question = dict[str, Any]
-_FIELDS = ("label", "field_type", "options", "required", "show_if")
+_FIELDS = ("label", "field_type", "options", "description", "required", "show_if")
+# Stored options are already shaped; only re-check the question when these change.
+_RECHECK = {"field_type", "options", "description"}
 _CONDITION = ("question_id", "operator", "value")
 
 
@@ -89,8 +91,9 @@ class Questions:
             position = self.by_id[show_if["question_id"]]["position"]
             show_if = {"position": position, **{key: show_if[key] for key in _CONDITION[1:]}}
         merged = {**state, "show_if": show_if, **changes}
-        # Stored options are already shaped; only reshape when the type or options change.
-        if not {"field_type", "options"} & changes.keys():
+        if merged["field_type"] == QuestionType.SECTION and merged["required"]:
+            raise ToolError("section headers can't be required")
+        if not _RECHECK & changes.keys():
             return merged
         if "options" not in changes and state["field_type"] == QuestionType.DATETIME_POLL:
             # Stored in utc; the input model takes new york time and converts it back.

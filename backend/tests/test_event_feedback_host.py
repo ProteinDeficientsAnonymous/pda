@@ -123,6 +123,14 @@ class TestHostFeedback:
 
         assert res.json() == {"questions": [], "responses": []}
 
+    def test_section_headers_left_out(self, api_client, host, event, survey):
+        SurveyQuestion.objects.create(
+            survey=survey, label="about you", field_type=SurveyQuestionType.SECTION
+        )
+        res = api_client.get(_url(event), **_auth(host))
+
+        assert [q["label"] for q in res.json()["questions"]] == ["how was it?"]
+
     def test_responses_newest_day_first(self, api_client, host, event, survey):
         old = _response(survey, event, "old")
         new = _response(survey, event, "new")
