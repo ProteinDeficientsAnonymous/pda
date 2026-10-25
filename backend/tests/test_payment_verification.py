@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from community._payment_verification import apply_payment_verification
+from community._payment_verification import MISCLICK_WINDOW, apply_payment_verification
 from community.models import EventRSVP, RSVPStatus
 from django.apps import apps
 from django.utils import timezone
@@ -59,7 +59,7 @@ class TestApplyPaymentVerification:
         assert change.revoked is True
         assert change.notifies_guest is True
 
-    def test_undoing_a_host_stamped_verify_clears_the_stamp_quietly(self, event, guest, test_user):
+    def test_undoing_a_fresh_host_stamped_verify_regates_quietly(self, event, guest, test_user):
         rsvp = EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
         apply_payment_verification(rsvp, verified=True, actor=test_user)
         assert rsvp.paid_confirmed_at == rsvp.payment_verified_at
@@ -69,8 +69,66 @@ class TestApplyPaymentVerification:
         rsvp.refresh_from_db()
         assert rsvp.paid_confirmed_at is None
         assert rsvp.payment_verified_at is None
-        assert change.revoked is True
+        assert (change.revoked, change.host_stamped, change.quick_undo) == (True, True, True)
         assert change.notifies_guest is False
+
+    def test_undoing_an_old_host_stamped_verify_regates_and_notifies(self, event, guest, test_user):
+        stamped = timezone.now() - MISCLICK_WINDOW - timedelta(minutes=1)
+        rsvp = EventRSVP.objects.create(
+            event=event,
+            user=guest,
+            status=RSVPStatus.ATTENDING,
+            paid_confirmed_at=stamped,
+            payment_verified_at=stamped,
+            payment_verified_by=test_user,
+        )
+
+        change = apply_payment_verification(rsvp, verified=False, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert rsvp.paid_confirmed_at is None
+        assert (change.host_stamped, change.quick_undo, change.notifies_guest) == (
+            True,
+            False,
+            True,
+        )
+
+    def test_reverifying_after_a_host_stamped_undo_stamps_again(self, event, guest, test_user):
+        rsvp = EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        apply_payment_verification(rsvp, verified=True, actor=test_user)
+        apply_payment_verification(rsvp, verified=False, actor=test_user)
+
+        change = apply_payment_verification(rsvp, verified=True, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert rsvp.paid_confirmed_at is not None
+        assert rsvp.paid_confirmed_at == rsvp.payment_verified_at
+        assert (change.was_paid, change.was_verified) == (False, False)
+
+    def test_backfilled_host_stamped_row_undoes_cleanly(self, event, guest, test_user):
+        stamped = timezone.now() - timedelta(days=3)
+        rsvp = EventRSVP.objects.create(
+            event=event, user=guest, status=RSVPStatus.ATTENDING, paid_confirmed_at=stamped
+        )
+        EventRSVP.objects.filter(pk=rsvp.pk).update(created_at=stamped - timedelta(days=1))
+        _log(
+            "guest_payment_changed",
+            test_user,
+            event,
+            guest,
+            stamped + timedelta(milliseconds=5),
+            paid_confirmed=True,
+            was_paid=False,
+            paid_confirmed_at=stamped.isoformat(),
+        )
+        backfill.backfill_payment_verified(apps, None)
+        rsvp.refresh_from_db()
+
+        change = apply_payment_verification(rsvp, verified=False, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert (rsvp.paid_confirmed_at, rsvp.payment_verified_at) == (None, None)
+        assert change.host_stamped is True
 
 
 def _log(action, actor, event, guest, at, **details):
