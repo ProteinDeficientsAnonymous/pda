@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db.models import Count, Exists, Max, OuterRef, Q, QuerySet
@@ -6,6 +6,7 @@ from django.utils import timezone
 from notifications._email_helpers import LoginLinkEmail, send_magic_login_email
 from notifications.email_sender import EmailSender
 from users._helpers import _magic_login_url
+from users._member_status import NOT_SET_UP
 from users.models import HAS_EMAIL, MagicLoginToken, MagicLoginTokenSource, User
 
 from community.models import LoginReminder
@@ -14,12 +15,6 @@ from community.models import LoginReminder
 _WEEKLY_GAP = timedelta(days=6)
 _MONTHLY_GAP = timedelta(days=27)
 _WEEKLY_REMINDERS = 4
-
-# Members created before onboarded_at existed never got it set, so their resets re-flag needs_onboarding.
-_ONBOARDED_AT_TRACKED_SINCE = datetime(2026, 4, 26, tzinfo=UTC)
-NOT_SET_UP = Q(needs_onboarding=True, onboarded_at__isnull=True) & (
-    Q(last_login__isnull=True) | Q(created_at__gte=_ONBOARDED_AT_TRACKED_SINCE)
-)
 
 _REMINDER_EMAIL = LoginLinkEmail("login_reminder", "finish setting up your pda account")
 
