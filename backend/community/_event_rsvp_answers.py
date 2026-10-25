@@ -51,7 +51,7 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
 def _normalize_list_answer(q: EventRsvpQuestion, answer: list[str]) -> list[str]:
     field = f"questionnaire_responses.{q.id}"
     if q.field_type != RsvpQuestionType.CHECKBOX:
-        raise_validation(Code.Event.RSVP_ANSWER_INVALID_OPTION, field=field, label=q.label)
+        raise_validation(Code.Event.RSVP_ANSWER_INVALID_FORMAT, field=field, label=q.label)
     assert_checkbox_members(
         answer,
         q.options,

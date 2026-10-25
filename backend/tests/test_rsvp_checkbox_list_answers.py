@@ -59,7 +59,7 @@ class TestRsvpCheckboxListAnswers:
         q = _question(rsvp_event, field_type=RsvpQuestionType.SELECT)
         response = _rsvp(api_client, auth_headers, rsvp_event, {str(q.id): ["mains"]})
         assert response.status_code == 422
-        assert_error_code(response, Code.Event.RSVP_ANSWER_INVALID_OPTION)
+        assert_error_code(response, Code.Event.RSVP_ANSWER_INVALID_FORMAT)
 
     def test_blank_list_counts_as_unanswered(self, api_client, auth_headers, rsvp_event):
         q = _question(rsvp_event)
