@@ -1,3 +1,10 @@
+# [0.196.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.195.0...v0.196.0) (2026-10-25)
+
+
+### Features
+
+* **events:** read official rsvp questions from the api ([#1809](https://github.com/ProteinDeficientsAnonymous/pda/issues/1809)) ([b23a888](https://github.com/ProteinDeficientsAnonymous/pda/commit/b23a8889e9020b83fe5c3898a7e75de3c85c5c42))
+
 # [0.195.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.194.0...v0.195.0) (2026-10-25)
 
 
