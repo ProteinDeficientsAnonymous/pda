@@ -1,3 +1,10 @@
+# [0.185.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.184.0...v0.185.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add find_members tool for member audits ([#1845](https://github.com/ProteinDeficientsAnonymous/pda/issues/1845)) ([38a728c](https://github.com/ProteinDeficientsAnonymous/pda/commit/38a728c4534d1ea949c07c59b74588379df98978))
+
 # [0.184.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.183.0...v0.184.0) (2026-10-25)
 
 
