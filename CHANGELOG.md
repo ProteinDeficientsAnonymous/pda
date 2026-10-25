@@ -1,3 +1,10 @@
+## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** preview any survey from a read-only admin screen ([#1884](https://github.com/ProteinDeficientsAnonymous/pda/issues/1884)) ([8240dad](https://github.com/ProteinDeficientsAnonymous/pda/commit/8240dad6e989757b240486e3477656e849862f1a))
+
 # [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
 
 
