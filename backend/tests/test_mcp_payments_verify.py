@@ -2,7 +2,7 @@ import json
 
 import pytest
 from audit.models import AuditLogEntry
-from community.models import EventRSVP
+from community.models import EventRSVP, RSVPStatus
 from django.core.cache import caches
 from django.utils import timezone
 from mcp_gateway.cashapp_review import csv_digest, review_cache_key
@@ -115,6 +115,10 @@ def test_preview_has_no_side_effects(importer, event, guests, review_id):
     )
     assert payment["reason"]
     assert preview["to_verify"][0]["said_paid"] is False
+    assert (preview["to_verify"][0]["has_plus_one"], preview["to_verify"][0]["headcount"]) == (
+        False,
+        1,
+    )
     assert preview["confirm_token"]
     assert not verified_ids(event)
     assert not AuditLogEntry.objects.filter(action="guest_payment_changed").exists()
@@ -127,6 +131,7 @@ def test_confirm_verifies_via_mcp_and_recomputes_the_gap_list(importer, event, g
     result = _verify(importer, event, review_id, assignments, confirm_token=token)
 
     assert set(_names(result["verified"])) == {"Alex Kim", "Riley Chen"}
+    assert all("already_verified" not in person for person in result["verified"])
     assert result["event_verified_total"] == 2
     assert _names(result["gap_list"]) == ["Casey Wu"]
     assert verified_ids(event) == {str(guests["alex"].pk), str(guests["riley"].pk)}
@@ -188,7 +193,7 @@ def test_a_payment_cant_cover_more_people_than_its_amount(importer, event, guest
     EventRSVP.objects.filter(user=guests["alex"]).update(has_plus_one=True)
     review_id = review(importer, event, csv_text)["review_id"]
     error = _refused(importer, event, review_id, [_pay("tx1", guests["alex"])])
-    assert "covers at most 1 people, but these guests are 2 with plus-ones" in error
+    assert "covers at most 1 person, but these guests are 2 people with plus-ones" in error
 
 
 def test_one_guest_covered_by_two_payments(importer, event, guests):
@@ -243,3 +248,31 @@ def test_already_verified_guests_are_dropped(importer, event, guests, review_id)
 
 def test_review_id_is_the_csv_digest(review_id, csv_text):
     assert review_id == csv_digest(csv_text)
+
+
+def test_repeated_user_id_in_an_assignment_counts_once(importer, event, guests, review_id):
+    preview = _verify(importer, event, review_id, [_pay("tx1", guests["alex"], guests["alex"])])
+    assert _names(preview["to_verify"]) == ["Alex Kim"]
+
+
+def test_guest_who_stopped_attending_is_named_at_confirm(importer, event, guests, review_id):
+    alex = [_pay("tx1", guests["alex"])]
+    token = _verify(importer, event, review_id, alex)["confirm_token"]
+    EventRSVP.objects.filter(user=guests["alex"]).update(status=RSVPStatus.CANT_GO)
+    error = _refused(importer, event, review_id, alex, confirm_token=token)
+    assert f"{guests['alex'].pk} isn't attending or waitlisted for this event any more" in error
+    assert not verified_ids(event)
+
+
+def test_token_goes_stale_when_a_verified_guest_is_unverified_first(
+    importer, event, guests, review_id
+):
+    EventRSVP.objects.filter(user=guests["alex"]).update(payment_verified_at=timezone.now())
+    assignments = [_pay("tx1", guests["alex"]), _pay("tx4", guests["riley"])]
+    preview = _verify(importer, event, review_id, assignments)
+    assert _names(preview["already_verified"]) == ["Alex Kim"]
+    EventRSVP.objects.filter(user=guests["alex"]).update(payment_verified_at=None)
+    assert "fresh preview" in _refused(
+        importer, event, review_id, assignments, confirm_token=preview["confirm_token"]
+    )
+    assert not verified_ids(event)

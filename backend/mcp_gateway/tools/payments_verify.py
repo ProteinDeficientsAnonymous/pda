@@ -50,25 +50,39 @@ def _not_a_proposal(pid: str, loaded: LoadedReview) -> ToolError:
     return ToolError(f"payment {pid} isn't in this review for the event")
 
 
+def _people(count: int) -> str:
+    return "1 person" if count == 1 else f"{count} people"
+
+
 def _check_headcount(proposal: PaymentProposal, user_ids: list[str], loaded: LoadedReview) -> None:
     headcount = sum(loaded.guests[uid].headcount for uid in user_ids)
     if proposal.people_high is not None and headcount > proposal.people_high:
         raise ToolError(
             f"payment {proposal.payment_id} (${proposal.amount}) covers at most "
-            f"{proposal.people_high} people, but these guests are {headcount} with plus-ones; "
-            "assign fewer guests to it"
+            f"{_people(proposal.people_high)}, but these guests are {_people(headcount)} with "
+            "plus-ones; assign fewer guests to it"
+        )
+
+
+def _refuse_non_guests(user_ids: list[str], loaded: LoadedReview) -> None:
+    gone = [uid for uid in user_ids if uid not in loaded.guests]
+    if gone:
+        raise ToolError(
+            f"{', '.join(gone)} isn't attending or waitlisted for this event any more, so their "
+            f"payment can't be verified; run review_cashapp_payments again"
         )
 
 
 def _assignment_user_ids(assignment: PaymentAssignment, loaded: LoadedReview) -> list[str]:
     pid = assignment.payment_id
+    user_ids = list(dict.fromkeys(str(uid) for uid in assignment.user_ids))
+    _refuse_non_guests(user_ids, loaded)
     proposal = next((p for p in loaded.review.proposals if p.payment_id == pid), None)
     if proposal is None:
         raise _not_a_proposal(pid, loaded)
     if proposal.confidence == MatchConfidence.UNMATCHED:
         raise ToolError(f"payment {pid} didn't match any guest, so it can't be applied; {_BY_HAND}")
     allowed = set(proposal.user_ids) | set(proposal.candidate_user_ids)
-    user_ids = [str(uid) for uid in assignment.user_ids]
     outside = [uid for uid in user_ids if uid not in allowed]
     if outside:
         raise ToolError(
@@ -108,6 +122,8 @@ def _preview(
         {
             **loaded.person(uid),
             "said_paid": loaded.guests[uid].said_paid,
+            "has_plus_one": loaded.guests[uid].has_plus_one,
+            "headcount": loaded.guests[uid].headcount,
             "payments": [payments[pid] for pid in pids],
         }
         for uid, pids in pending.items()
@@ -129,6 +145,12 @@ def _bound(
     return Confirmed(user_pk, loaded.event_id, "verify_payments", pending, state)
 
 
+def _just_verified(after: LoadedReview, user_id: str) -> dict[str, Any]:
+    person = after.person(user_id)
+    del person["already_verified"]
+    return person
+
+
 async def _apply(user: Any, loaded: LoadedReview, pending: dict[str, list[str]]) -> dict[str, Any]:
     payload = BulkPaymentVerifyIn(user_ids=[UUID(uid) for uid in pending])
     result = await call_view(
@@ -138,7 +160,7 @@ async def _apply(user: Any, loaded: LoadedReview, pending: dict[str, list[str]])
     grouped = proposals_by_confidence(after)
     return {
         "event": after.event,
-        "verified": [after.person(uid) for uid in result["verified_user_ids"]],
+        "verified": [_just_verified(after, uid) for uid in result["verified_user_ids"]],
         "already_verified": [after.person(uid) for uid in result["already_verified_user_ids"]],
         "event_verified_total": result["event_verified_total"],
         "gap_list": [gap_out(g) for g in after.review.gap_guests],
