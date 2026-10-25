@@ -5,10 +5,9 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from users.models import User
 
-from community.models import AttendanceMilestone, AttendanceStatus, EventType
-from community.models.event import EventRSVP
-
-QUALIFYING_EVENT_TYPES = (EventType.CLUB, EventType.OFFICIAL)
+from community._attendance_analytics import QUALIFYING_EVENT_TYPES
+from community._rsvp_counts import attendance_q, reportable_events_q
+from community.models import AttendanceMilestone, AttendanceStatus, Event
 
 _MILESTONE_OFFSETS: dict[str, relativedelta] = {
     AttendanceMilestone.M10: relativedelta(months=10),
@@ -27,15 +26,18 @@ _MILESTONES_DESCENDING = [
 
 
 def last_qualifying_attendance_date(user: User) -> date | None:
-    """Most recent start_datetime of a club/official event the user attended."""
+    """Date of compute_member_stats().last_qualifying_at — same rsvps, read via SQL."""
+    # One filter() call so the rsvps__ conditions bind to the same rsvp row.
     latest = (
-        EventRSVP.objects.filter(
-            user=user,
-            attendance=AttendanceStatus.ATTENDED,
-            event__event_type__in=QUALIFYING_EVENT_TYPES,
+        Event.objects.filter(
+            reportable_events_q(prefix=""),
+            attendance_q(AttendanceStatus.ATTENDED),
+            rsvps__user=user,
+            event_type__in=QUALIFYING_EVENT_TYPES,
+            start_datetime__isnull=False,
         )
-        .order_by("-event__start_datetime")
-        .values_list("event__start_datetime", flat=True)
+        .order_by("-start_datetime")
+        .values_list("start_datetime", flat=True)
         .first()
     )
     return latest.date() if latest else None

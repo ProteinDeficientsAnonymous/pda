@@ -3,8 +3,21 @@
 from datetime import UTC, date, datetime
 
 import pytest
-from community._attendance_clock import compute_anchor, latest_due_milestone, milestone_due_date
-from community.models import AttendanceMilestone, AttendanceStatus, Event, EventRSVP, EventType
+from community._attendance_analytics import compute_member_stats, user_rsvps_for_attendance
+from community._attendance_clock import (
+    compute_anchor,
+    last_qualifying_attendance_date,
+    latest_due_milestone,
+    milestone_due_date,
+)
+from community.models import (
+    AttendanceMilestone,
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+)
 from users.models import User
 
 
@@ -23,11 +36,12 @@ def _make_user(date_joined: date, **extra) -> User:
     return user
 
 
-def _make_event(*, event_type: str, start: date) -> Event:
+def _make_event(*, event_type: str, start: date | None, status: str = EventStatus.ACTIVE) -> Event:
     return Event.objects.create(
         title="test event",
         event_type=event_type,
-        start_datetime=datetime.combine(start, datetime.min.time(), tzinfo=UTC),
+        status=status,
+        start_datetime=datetime.combine(start, datetime.min.time(), tzinfo=UTC) if start else None,
     )
 
 
@@ -83,6 +97,62 @@ class TestComputeAnchor:
         )
         anchor = compute_anchor(user, today=date(2026, 12, 1))
         assert anchor == date(2026, 8, 1)
+
+    @pytest.mark.parametrize(
+        "status", [EventStatus.CANCELLED, EventStatus.DRAFT, EventStatus.DELETED]
+    )
+    def test_non_reportable_event_does_not_advance_anchor(self, status):
+        user = _make_user(date_joined=date(2020, 1, 1))
+        _attend(user, _make_event(event_type=EventType.OFFICIAL, start=date(2026, 9, 1)))
+        _attend(
+            user, _make_event(event_type=EventType.CLUB, start=date(2026, 10, 5), status=status)
+        )
+        anchor = compute_anchor(user, today=date(2026, 12, 1))
+        assert anchor == date(2026, 9, 1)
+
+    def test_null_start_event_does_not_mask_real_attendance(self):
+        user = _make_user(date_joined=date(2020, 1, 1))
+        _attend(user, _make_event(event_type=EventType.CLUB, start=date(2026, 9, 10)))
+        _attend(user, _make_event(event_type=EventType.CLUB, start=None))
+        assert last_qualifying_attendance_date(user) == date(2026, 9, 10)
+
+
+@pytest.mark.django_db
+class TestMatchesMemberAnalytics:
+    def _assert_matches_analytics(self, user: User) -> None:
+        stats = compute_member_stats(user_rsvps_for_attendance(user))
+        expected = stats.last_qualifying_at.date() if stats.last_qualifying_at else None
+        assert last_qualifying_attendance_date(user) == expected
+
+    def test_matches_with_mixed_rsvps(self):
+        user = _make_user(date_joined=date(2020, 1, 1))
+        _attend(user, _make_event(event_type=EventType.OFFICIAL, start=date(2026, 8, 20)))
+        _attend(user, _make_event(event_type=EventType.CLUB, start=date(2026, 9, 10)))
+        _attend(user, _make_event(event_type=EventType.COMMUNITY, start=date(2026, 11, 1)))
+        _attend(user, _make_event(event_type=EventType.CLUB, start=None))
+        for status in (EventStatus.CANCELLED, EventStatus.DRAFT, EventStatus.DELETED):
+            _attend(
+                user, _make_event(event_type=EventType.CLUB, start=date(2026, 10, 1), status=status)
+            )
+        EventRSVP.objects.create(
+            user=user,
+            event=_make_event(event_type=EventType.OFFICIAL, start=date(2026, 10, 15)),
+            status="attending",
+            attendance=AttendanceStatus.DIDNT_GO,
+        )
+        self._assert_matches_analytics(user)
+        assert last_qualifying_attendance_date(user) == date(2026, 9, 10)
+
+    def test_matches_when_only_non_reportable_attendance(self):
+        user = _make_user(date_joined=date(2020, 1, 1))
+        _attend(
+            user,
+            _make_event(
+                event_type=EventType.CLUB, start=date(2026, 9, 10), status=EventStatus.CANCELLED
+            ),
+        )
+        self._assert_matches_analytics(user)
+        assert last_qualifying_attendance_date(user) is None
 
 
 class TestMilestoneDueDate:
