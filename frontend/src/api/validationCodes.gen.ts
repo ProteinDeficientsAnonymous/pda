@@ -216,6 +216,11 @@ export const Code = {
     InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
   },
+  CashAppImport: {
+    CsvEmpty: 'cashapp_import.csv_empty',
+    CsvMissingColumns: 'cashapp_import.csv_missing_columns',
+    CsvTooManyRows: 'cashapp_import.csv_too_many_rows',
+  },
   AttendanceMark: {
     EventOrTitleRequired: 'attendance_mark.event_or_title_required',
     InvalidEventType: 'attendance_mark.invalid_event_type',
@@ -463,6 +468,9 @@ export type ValidationCode =
   | 'attendance_import.event_or_title_required'
   | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
+  | 'cashapp_import.csv_empty'
+  | 'cashapp_import.csv_missing_columns'
+  | 'cashapp_import.csv_too_many_rows'
   | 'attendance_mark.event_or_title_required'
   | 'attendance_mark.invalid_event_type'
   | 'attendance_mark.no_members_selected'
@@ -677,6 +685,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'attendance_import.event_or_title_required': [],
   'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
+  'cashapp_import.csv_empty': [],
+  'cashapp_import.csv_missing_columns': ['columns'],
+  'cashapp_import.csv_too_many_rows': ['max_rows'],
   'attendance_mark.event_or_title_required': [],
   'attendance_mark.invalid_event_type': [],
   'attendance_mark.no_members_selected': [],
