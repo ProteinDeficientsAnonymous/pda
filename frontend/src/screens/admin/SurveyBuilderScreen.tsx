@@ -22,6 +22,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
+import { SurveyThankYouCard } from './SurveyThankYouCard';
 
 const ADD_BUTTON =
   'border-border-strong text-foreground-secondary hover:bg-surface-dim flex-1 rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50';
@@ -143,7 +144,7 @@ export default function SurveyBuilderScreen() {
         <div className="flex flex-wrap gap-2">
           <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
-            to={`/surveys/${currentSurvey.slug}`}
+            to={`/admin/surveys/${surveyId}/preview`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
           >
             preview
@@ -241,6 +242,11 @@ export default function SurveyBuilderScreen() {
             + add section
           </button>
         </div>
+
+        <SurveyThankYouCard
+          surveyId={surveyId}
+          confirmationMessage={currentSurvey.confirmationMessage}
+        />
       </section>
 
       <SurveySettingsDialog

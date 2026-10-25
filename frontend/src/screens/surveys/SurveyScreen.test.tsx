@@ -7,6 +7,7 @@ import { apiClient } from '@/api/client';
 import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenStorage';
 
 import SurveyScreen from './SurveyScreen';
+import SurveyThanksScreen from './SurveyThanksScreen';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
@@ -27,6 +28,7 @@ function renderScreen(slug = 'feedback', qc = makeQueryClient()) {
       <MemoryRouter initialEntries={[`/surveys/${slug}`]}>
         <Routes>
           <Route path="/surveys/:slug" element={<SurveyScreen />} />
+          <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -88,7 +90,7 @@ describe('SurveyScreen', () => {
         { params: undefined },
       );
     });
-    expect(await screen.findByText('saved ✓')).toBeInTheDocument();
+    expect(await screen.findByText('thanks for filling out our survey!')).toBeInTheDocument();
   });
 
   it('labels the button "update response" and preloads the answer when already responded', async () => {
@@ -221,13 +223,26 @@ describe('SurveyScreen post-submit confirmation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
   }
 
-  it('shows the survey confirmation message, lowercased, after a successful submit', async () => {
+  it('redirects to the thank-you page with the custom message, lowercased', async () => {
     await submitWith('Thanks For Your Feedback!');
-    expect(await screen.findByText('thanks for your feedback!')).toBeInTheDocument();
-    expect(screen.queryByText('saved ✓')).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'thanks for your feedback!' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'submit' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'edit your response' })).toHaveAttribute(
+      'href',
+      '/surveys/feedback',
+    );
   });
 
-  it('keeps the confirmation visible when the submit fills the response cap', async () => {
+  it('falls back to the default thank-you message when none is set', async () => {
+    await submitWith('   ');
+    expect(
+      await screen.findByRole('heading', { name: 'thanks for filling out our survey!' }),
+    ).toBeInTheDocument();
+  });
+
+  it('still shows the thank-you page when the submit fills the response cap', async () => {
     mockedGet
       .mockResolvedValueOnce({
         data: { ...baseWireSurvey, confirmation_message: 'thanks!', max_responses: 1 },
@@ -249,11 +264,7 @@ describe('SurveyScreen post-submit confirmation', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
-    expect(await screen.findByText('thanks!')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(mockedGet).toHaveBeenCalledTimes(2);
-    });
-    expect(screen.getByText('thanks!')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'thanks!' })).toBeInTheDocument();
     expect(screen.queryByText(/reached its response limit/)).not.toBeInTheDocument();
   });
 

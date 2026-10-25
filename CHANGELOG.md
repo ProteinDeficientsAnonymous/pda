@@ -1,3 +1,24 @@
+# [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** edit the thank-you message in a locked editor card ([#1896](https://github.com/ProteinDeficientsAnonymous/pda/issues/1896)) ([66b3d47](https://github.com/ProteinDeficientsAnonymous/pda/commit/66b3d47eae8ec940f6fbe31d5c37c9a7afb47359))
+
+# [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** redirect to a thank-you page after submitting ([#1895](https://github.com/ProteinDeficientsAnonymous/pda/issues/1895)) ([f3552b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3552b2eb12a6daf606d0cb63aabdc1e0bffa382))
+
+## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** preview any survey from a read-only admin screen ([#1884](https://github.com/ProteinDeficientsAnonymous/pda/issues/1884)) ([8240dad](https://github.com/ProteinDeficientsAnonymous/pda/commit/8240dad6e989757b240486e3477656e849862f1a))
+
 # [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
 
 
