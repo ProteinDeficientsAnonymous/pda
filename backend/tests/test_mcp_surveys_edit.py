@@ -1,8 +1,12 @@
+import asyncio
+from unittest.mock import DEFAULT, patch
 from uuid import uuid4
 
 import pytest
 from audit.models import AuditLogEntry
+from community._surveys import get_survey_admin
 from community.models import Survey
+from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -10,6 +14,8 @@ from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
+TOOL = "mcp_gateway.tools.surveys_edit"
 
 
 @pytest.fixture
@@ -76,3 +82,31 @@ def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
     for settings in ({"anonymous": False}, {"linked_event_id": str(uuid4())}):
         assert "always anonymous" in _refused(surveys_admin, survey, settings=settings)
     assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["title"] == "x"
+
+
+def test_failed_save_says_nothing_was_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    with patch(SETTINGS_VIEW, side_effect=ToolError("bad")):
+        error = _refused(surveys_admin, survey, settings={"title": "x"})
+    assert error == "nothing was saved: settings failed: bad"
+    with patch(SETTINGS_VIEW, side_effect=RuntimeError("db went away")):
+        with pytest.raises(UnexpectedToolError) as exc_info:
+            _edit(surveys_admin, survey, settings={"title": "x"})
+    assert str(exc_info.value.__cause__) == "db went away"
+
+
+def test_failed_reload_after_a_full_save_still_says_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    reload_fails = [DEFAULT, RuntimeError("blip")]
+    with patch(f"{TOOL}.get_survey_view", wraps=get_survey_admin, side_effect=reload_fails):
+        result = _edit(surveys_admin, survey, settings={"title": "x"})
+    assert result["saved"] and "call get_survey" in result["note"]
+    assert "blip" not in result["note"] and Survey.objects.get().title == "x"
+
+
+def test_cancel_between_steps_is_logged(surveys_admin, caplog):
+    survey = _survey(is_active=False)
+    with patch(f"{TOOL}.checkpoint", side_effect=asyncio.CancelledError):
+        with pytest.raises(asyncio.CancelledError):
+            _edit(surveys_admin, survey, settings={"title": "x"})
+    assert f"cancelled on survey {survey.pk} after ['settings']" in caplog.text

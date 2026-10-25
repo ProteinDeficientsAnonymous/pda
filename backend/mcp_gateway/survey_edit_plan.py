@@ -15,6 +15,7 @@ _FEEDBACK_FIXED = ("anonymous", "linked_event_id")
 
 @dataclass(frozen=True)
 class Step:
+    label: str
     view: Callable[..., Any]
     args: tuple[Any, ...] = ()
 
@@ -29,4 +30,4 @@ def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -
     forced = [key for key in _FEEDBACK_FIXED if key in changed and changed[key] != detail[key]]
     if detail["feedback_event_type"] and forced:
         raise ToolError("feedback surveys are always anonymous and never linked to an event")
-    edit.steps.append(Step(update_survey_view, (build(SurveyPatchIn, changed),)))
+    edit.steps.append(Step("settings", update_survey_view, (build(SurveyPatchIn, changed),)))
