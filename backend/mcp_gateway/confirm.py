@@ -13,7 +13,7 @@ MAX_AGE_SECONDS = 15 * 60
 
 class Confirmed(NamedTuple):
     user_id: Any
-    event_id: str
+    target_id: str
     action: str
     changes: Any
     state: Any
@@ -38,7 +38,7 @@ async def use_confirm_token(token: str, bound: Confirmed) -> None:
         signed = None
     if not isinstance(signed, dict) or signed.get("digest") != _digest(bound):
         raise ToolError(
-            "confirm_token is expired or doesn't match this event, user and these exact changes. "
+            "confirm_token is expired or doesn't match this item, user and these exact changes. "
             + _AGAIN
         )
     # DB-backed cache so a token is single-use across workers.
