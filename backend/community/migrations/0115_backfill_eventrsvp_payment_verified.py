@@ -69,7 +69,7 @@ def backfill_payment_verified(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("audit", "0004_mcp_connection_target_type"),
-        ("community", "0113_eventrsvp_payment_verified"),
+        ("community", "0114_eventrsvp_payment_verified"),
     ]
 
     operations = [

@@ -14,7 +14,7 @@ from tests._payment_helpers import create_paid_event
 
 pytestmark = pytest.mark.django_db
 
-backfill = importlib.import_module("community.migrations.0114_backfill_eventrsvp_payment_verified")
+backfill = importlib.import_module("community.migrations.0115_backfill_eventrsvp_payment_verified")
 
 HOST_RSVP_URL = "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/"
 PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"

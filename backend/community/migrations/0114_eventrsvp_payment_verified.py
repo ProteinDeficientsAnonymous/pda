@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0112_eventfeedbackrequest_survey_feedback_event_type_and_more"),
+        ("community", "0113_surveyquestion_section"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
