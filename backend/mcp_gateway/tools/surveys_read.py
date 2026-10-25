@@ -36,18 +36,26 @@ def _status(survey: dict[str, Any]) -> str:
     return "capped" if cap is not None and survey["response_count"] >= cap else "active"
 
 
-def _overview(survey: dict[str, Any], public: bool) -> dict[str, Any]:
+def _overview(survey: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": _status(survey),
         "opens_at": _local(survey["opens_at"]),
         "closes_at": _local(survey["closes_at"]),
-        "url": f"{BASE_URL}/surveys/{survey['slug']}" if public else None,
         "edit_url": f"{BASE_URL}/admin/surveys/{survey['id']}",
     }
 
 
 def _row(survey: dict[str, Any]) -> dict[str, Any]:
-    return {**{key: survey[key] for key in _LIST_FIELDS}, **_overview(survey, public=True)}
+    return {**{key: survey[key] for key in _LIST_FIELDS}, **_overview(survey)}
+
+
+def _option_time(option: str) -> str | None:
+    # API clients other than the frontend can store options that aren't offset-aware ISO times.
+    try:
+        aware = datetime.fromisoformat(option).tzinfo is not None
+    except ValueError:
+        return None
+    return _local(option) if aware else None
 
 
 def _question(
@@ -55,7 +63,7 @@ def _question(
 ) -> dict[str, Any]:
     row = {key: q[key] for key in ("id", "label", "field_type", "options", "required")}
     if q["field_type"] == SurveyQuestionType.DATETIME_POLL:
-        row["option_times"] = [_local(option) for option in q["options"]]
+        row["option_times"] = [_option_time(option) for option in q["options"]]
     show_if = q["show_if"]
     if show_if:
         source_position, source_label = sources.get(show_if["question_id"], (None, None))
@@ -77,9 +85,12 @@ async def _surveys(user: User) -> list[dict[str, Any]]:
 
 async def _survey_id(ref: str, user: User) -> UUID:
     try:
-        return UUID(ref)
+        parsed = UUID(ref)
     except ValueError:
-        pass
+        parsed = None
+    # UUID() also takes dashless and braced forms, which could be a hex-looking slug.
+    if parsed is not None and str(parsed) == ref.lower():
+        return parsed
     match = next((s for s in await _surveys(user) if s["slug"] == ref), None)
     if match is None:
         raise _tool_error(404, f"no survey with id or slug {ref}")
@@ -91,9 +102,9 @@ async def _survey_id(ref: str, user: User) -> UUID:
     description=(
         "list every survey, newest first, with its status (active, scheduled, capped or closed), "
         "window (new york local time) and response count. use it to find a survey's id before "
-        "reading or editing it. event feedback surveys have no public link: check get_survey "
-        "before sharing a url. results are paged: only fetch the next page (offset=next_offset) "
-        "if the survey you need isn't on this one."
+        "reading or editing it, and use get_survey for a survey's public link. results are "
+        "paged: only fetch the next page (offset=next_offset) if the survey you need isn't on "
+        "this one."
     ),
 )
 async def list_surveys(
@@ -122,8 +133,10 @@ async def get_survey(
 ) -> dict[str, Any]:
     user = await current_user()
     body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey, user))
+    public = not body["feedback_event_type"]
     return {
         **{key: body[key] for key in _SETTINGS},
-        **_overview(body, public=not body["feedback_event_type"]),
+        **_overview(body),
+        "url": f"{BASE_URL}/surveys/{body['slug']}" if public else None,
         "questions": _questions(body["questions"]),
     }

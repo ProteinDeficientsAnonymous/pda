@@ -80,7 +80,6 @@ def test_list_surveys_newest_first_in_new_york_time(surveys_admin):
         "linked_event_id": None,
         "opens_at": None,
         "closes_at": None,
-        "url": f"{BASE_URL}/surveys/old",
         "edit_url": f"{BASE_URL}/admin/surveys/{old.id}",
     }
 
@@ -132,6 +131,12 @@ def test_get_survey_by_uppercase_uuid(surveys_admin):
     assert _call(surveys_admin, "get_survey", survey=str(survey.id).upper())["id"] == str(survey.id)
 
 
+def test_get_survey_hex_slug_is_not_a_uuid(surveys_admin):
+    hex_slug = uuid.uuid4().hex
+    survey = _survey(hex_slug)
+    assert _call(surveys_admin, "get_survey", survey=hex_slug)["id"] == str(survey.id)
+
+
 def test_feedback_survey_has_no_public_url(surveys_admin):
     _survey("feedback", feedback_event_type=EventType.OFFICIAL)
     body = _call(surveys_admin, "get_survey", survey="feedback")
@@ -166,6 +171,16 @@ def test_datetime_poll_options_stay_raw_with_new_york_times(surveys_admin):
     [question] = _call(surveys_admin, "get_survey", survey="when")["questions"]
     assert question["options"] == options
     assert question["option_times"] == ["2026-11-07T11:00:00-05:00", "2026-07-04T18:30:00-04:00"]
+
+
+def test_datetime_poll_options_without_an_offset_have_no_time(surveys_admin):
+    survey = _survey("when")
+    options = ["saturday brunch", "2026-11-07T11:00", "2026-11-07T16:00:00Z"]
+    SurveyQuestion.objects.create(
+        survey=survey, label="when?", field_type=SurveyQuestionType.DATETIME_POLL, options=options
+    )
+    [question] = _call(surveys_admin, "get_survey", survey="when")["questions"]
+    assert question["option_times"] == [None, None, "2026-11-07T11:00:00-05:00"]
 
 
 def test_get_survey_questions_in_order_with_show_if_source(surveys_admin):
