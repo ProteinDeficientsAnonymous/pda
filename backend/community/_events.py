@@ -58,6 +58,7 @@ from community._event_update import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._host_auto_rsvp import auto_rsvp_host, auto_rsvp_hosts
+from community._official_event_defaults import apply_official_defaults
 from community._rsvp_status_emails import email_promoted_users
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._tentative_member_access import (
@@ -69,6 +70,7 @@ from community.models import (
     Event,
     EventRsvpQuestion,
     EventStatus,
+    EventType,
     is_official_or_club,
     parse_event_ref,
 )
@@ -266,6 +268,7 @@ def create_event(request, payload: EventIn):
             for display_order, question in enumerate(payload.rsvp_questions)
         ]
     )
+    apply_official_defaults(event)
     auto_rsvp_host(event, request.auth)
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
@@ -323,12 +326,14 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     was_eligible = event.is_public_rsvp_eligible
     old_max_attendees = event.max_attendees
     was_official_or_club = is_official_or_club(event.event_type)
+    was_official = event.event_type == EventType.OFFICIAL
     removed_user_ids: list[str] = []
     promoted_user_ids: list[str] = []
 
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
         _apply_field_updates(request, event, event_id, updates)
+        apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:
             removed_user_ids = guard_or_remove_ineligible_non_members(event, force)

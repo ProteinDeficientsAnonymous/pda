@@ -215,12 +215,14 @@ export function EventForm({ existing }: Props) {
           if (!ok) return;
           saved = await update.mutateAsync({ ...patchBody, force: true });
         }
+        // The server adds the official questions when an event becomes official with none.
+        const becameOfficial =
+          existing.eventType !== EventType.Official && saved.eventType === EventType.Official;
+        const expected = becameOfficial
+          ? [...savedRsvpQuestions, ...saved.rsvpQuestions.slice(savedRsvpQuestions.length)]
+          : savedRsvpQuestions;
         try {
-          const synced = await syncEventRsvpQuestions(
-            existing.id,
-            rsvpQuestions,
-            savedRsvpQuestions,
-          );
+          const synced = await syncEventRsvpQuestions(existing.id, rsvpQuestions, expected);
           setRsvpQuestions(synced);
           setSavedRsvpQuestions(synced);
         } catch (err) {
