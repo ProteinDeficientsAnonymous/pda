@@ -17,6 +17,8 @@ export const NotificationType = {
   RsvpStatusChanged: 'rsvp_status_changed',
   CheckinNudge: 'checkin_nudge',
   PaymentRevoked: 'payment_revoked',
+  EventFeedback: 'event_feedback',
+  SurveyResponse: 'survey_response',
   AccountDeleted: 'account_deleted',
 } as const;
 
@@ -24,6 +26,7 @@ export interface AppNotification {
   id: string;
   notificationType: string;
   eventId: string | null;
+  surveyId: string | null;
   relatedUserId: string | null;
   message: string;
   isRead: boolean;

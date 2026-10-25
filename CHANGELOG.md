@@ -1,3 +1,230 @@
+# [0.194.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.193.0...v0.194.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - track when an rsvp status changes ([#1875](https://github.com/ProteinDeficientsAnonymous/pda/issues/1875)) ([f719b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/f719b57c1251e4607b3cbd551bf381284e18a5fe))
+
+# [0.193.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.192.0...v0.193.0) (2026-10-25)
+
+
+### Features
+
+* **events:** add payment verified fields to rsvps ([#1837](https://github.com/ProteinDeficientsAnonymous/pda/issues/1837)) ([f4d0190](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4d0190df7e30a3a011ae75e0ab2a53b578d8540))
+
+# [0.192.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.191.0...v0.192.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** warn in update_event previews about non-member removal, over-capacity and stale map pins ([#1825](https://github.com/ProteinDeficientsAnonymous/pda/issues/1825)) ([dd543ff](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd543ffab9b571fe804b3587812b418bcc7525b7))
+
+# [0.191.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.190.0...v0.191.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** add section header question type ([#1885](https://github.com/ProteinDeficientsAnonymous/pda/issues/1885)) ([92297fa](https://github.com/ProteinDeficientsAnonymous/pda/commit/92297fab8580dfe296c4b1694a62d28ab3306951))
+
+# [0.190.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.189.0...v0.190.0) (2026-10-25)
+
+
+### Features
+
+* add monthly digest with veganniversaries and its own opt-out ([#1866](https://github.com/ProteinDeficientsAnonymous/pda/issues/1866)) ([4633c5b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4633c5b6999f30e99aca0bb425d711d63e3d7fd7))
+
+# [0.189.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.188.0...v0.189.0) (2026-10-25)
+
+
+### Features
+
+* notify survey managers of new survey responses ([#1900](https://github.com/ProteinDeficientsAnonymous/pda/issues/1900)) ([0c2d6cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c2d6cf6a5e41f83b3cf4fab041e3e4b8dc44de1))
+
+# [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** edit the thank-you message in a locked editor card ([#1896](https://github.com/ProteinDeficientsAnonymous/pda/issues/1896)) ([66b3d47](https://github.com/ProteinDeficientsAnonymous/pda/commit/66b3d47eae8ec940f6fbe31d5c37c9a7afb47359))
+
+# [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** redirect to a thank-you page after submitting ([#1895](https://github.com/ProteinDeficientsAnonymous/pda/issues/1895)) ([f3552b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3552b2eb12a6daf606d0cb63aabdc1e0bffa382))
+
+## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** preview any survey from a read-only admin screen ([#1884](https://github.com/ProteinDeficientsAnonymous/pda/issues/1884)) ([8240dad](https://github.com/ProteinDeficientsAnonymous/pda/commit/8240dad6e989757b240486e3477656e849862f1a))
+
+# [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** find inactive members by qualifying attendance ([#1864](https://github.com/ProteinDeficientsAnonymous/pda/issues/1864)) ([5aede93](https://github.com/ProteinDeficientsAnonymous/pda/commit/5aede938d3c952e51c0165eba74f7b628275f61c))
+
+# [0.185.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.184.0...v0.185.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add find_members tool for member audits ([#1845](https://github.com/ProteinDeficientsAnonymous/pda/issues/1845)) ([38a728c](https://github.com/ProteinDeficientsAnonymous/pda/commit/38a728c4534d1ea949c07c59b74588379df98978))
+
+# [0.184.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.183.0...v0.184.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add member_totals tool for member audits ([#1835](https://github.com/ProteinDeficientsAnonymous/pda/issues/1835)) ([3f72120](https://github.com/ProteinDeficientsAnonymous/pda/commit/3f721206fad00dd631258954c04a782644af3075))
+
+# [0.183.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.182.0...v0.183.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add publish_survey tool ([#1852](https://github.com/ProteinDeficientsAnonymous/pda/issues/1852)) ([14ae04c](https://github.com/ProteinDeficientsAnonymous/pda/commit/14ae04cd85e681329011d58524ed3d503326621b))
+* **mcp:** add update_survey for a switched-off survey's settings ([#1857](https://github.com/ProteinDeficientsAnonymous/pda/issues/1857)) ([942a6ed](https://github.com/ProteinDeficientsAnonymous/pda/commit/942a6ede90b96cc3edecaf34259240d3ed7802fb))
+* **mcp:** let create_survey add radio, select and checkbox questions ([#1848](https://github.com/ProteinDeficientsAnonymous/pda/issues/1848)) ([3de6b1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/3de6b1ccdd973a48167a99c1c4fbea3a1b22fafd))
+* **mcp:** let create_survey add rating and datetime poll questions ([#1851](https://github.com/ProteinDeficientsAnonymous/pda/issues/1851)) ([39efa3e](https://github.com/ProteinDeficientsAnonymous/pda/commit/39efa3e43eaa787a9f2a8018592c1bdf992694e4))
+* **mcp:** let create_survey add show_if conditions ([#1850](https://github.com/ProteinDeficientsAnonymous/pda/issues/1850)) ([4812c01](https://github.com/ProteinDeficientsAnonymous/pda/commit/4812c014b3abc3d41ba923deab5dac4151e65e36))
+* **mcp:** let create_survey set the remaining survey settings ([#1849](https://github.com/ProteinDeficientsAnonymous/pda/issues/1849)) ([74ca09c](https://github.com/ProteinDeficientsAnonymous/pda/commit/74ca09cbc3b0b9dfe0760b2701ecfcae5c0d3f63))
+* **mcp:** let update_survey add and reorder questions ([#1863](https://github.com/ProteinDeficientsAnonymous/pda/issues/1863)) ([e240fe6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e240fe687189303085cbd401c73335315ea32afc))
+* **mcp:** let update_survey change a question's fields ([#1861](https://github.com/ProteinDeficientsAnonymous/pda/issues/1861)) ([bb6a796](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb6a79614618093e415601bb3f404ad1b9df51d7))
+* **mcp:** let update_survey change a question's show_if ([#1862](https://github.com/ProteinDeficientsAnonymous/pda/issues/1862)) ([545aca6](https://github.com/ProteinDeficientsAnonymous/pda/commit/545aca6b2718b04d3c27598a2e66d70ce136fe0c))
+* **mcp:** let update_survey remove questions and report a partial save ([#1859](https://github.com/ProteinDeficientsAnonymous/pda/issues/1859)) ([8f39797](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f39797e4470a1366a435d44f0c046fcdbbfcdb3))
+* **mcp:** preview and confirm update_survey on a switched-on survey ([#1860](https://github.com/ProteinDeficientsAnonymous/pda/issues/1860)) ([0bbea60](https://github.com/ProteinDeficientsAnonymous/pda/commit/0bbea60444a557829f2a63606ded235302fe3dfc))
+* **mcp:** say plainly when update_survey couldn't save ([#1858](https://github.com/ProteinDeficientsAnonymous/pda/issues/1858)) ([fedc023](https://github.com/ProteinDeficientsAnonymous/pda/commit/fedc02323f84530bbe8b78f1dfd29cc19ddaf295))
+* **mcp:** say where a partial survey is when cleanup fails ([#1847](https://github.com/ProteinDeficientsAnonymous/pda/issues/1847)) ([6c123b5](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c123b52ba6410aebd840ea1208619fa952a9166))
+
+# [0.182.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.181.0...v0.182.0) (2026-10-25)
+
+
+### Bug Fixes
+
+* **attendance:** align reminder clock with analytics qualifying attendance ([#1865](https://github.com/ProteinDeficientsAnonymous/pda/issues/1865)) ([6bd6ef1](https://github.com/ProteinDeficientsAnonymous/pda/commit/6bd6ef1b88cc95b93f9fba8b1a2a4bf74d60fe7d))
+
+
+### Features
+
+* **mcp:** let create_survey add text, textarea, number and yes/no questions ([#1853](https://github.com/ProteinDeficientsAnonymous/pda/issues/1853)) ([04d9f2b](https://github.com/ProteinDeficientsAnonymous/pda/commit/04d9f2b39e908893744960abf9f8d6585f5b0924))
+
+# [0.181.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.1...v0.181.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add create_survey tool ([#1846](https://github.com/ProteinDeficientsAnonymous/pda/issues/1846)) ([d8eef27](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8eef2757b71a41f9ccf2ca4c2d5d278ce0bb02f))
+
+## [0.180.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.0...v0.180.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* drop list survey urls, strict uuid refs, safe poll times ([#1834](https://github.com/ProteinDeficientsAnonymous/pda/issues/1834)) ([3a5a0f8](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a5a0f8134050681e77b97b2ae32b286a74a0d43))
+
+# [0.180.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.179.1...v0.180.0) (2026-10-25)
+
+
+### Features
+
+* add mcp list_surveys tool ([#1831](https://github.com/ProteinDeficientsAnonymous/pda/issues/1831)) ([39daa87](https://github.com/ProteinDeficientsAnonymous/pda/commit/39daa8745d477ee5d5731e889ad5a7445914978c))
+
+## [0.179.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.179.0...v0.179.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **admin:** keep survey response columns readable and pin the event column ([#1828](https://github.com/ProteinDeficientsAnonymous/pda/issues/1828)) ([ac7ba4d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ac7ba4db680f8ec4260a5cb581d192076f0373de))
+
+# [0.179.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.3...v0.179.0) (2026-10-25)
+
+
+### Features
+
+* **permissions:** add import_payments permission ([#1830](https://github.com/ProteinDeficientsAnonymous/pda/issues/1830)) ([5cc6f09](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cc6f091db2474127f348d1f8182b24e6e5b5195))
+
+## [0.178.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.2...v0.178.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* **events:** 404 invite-only events for anon and prompt them to log in ([#1826](https://github.com/ProteinDeficientsAnonymous/pda/issues/1826)) ([498eea3](https://github.com/ProteinDeficientsAnonymous/pda/commit/498eea34d34b29d6da9280c14772927817e7183d))
+
+## [0.178.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.1...v0.178.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **seed:** delete seeded users' comments before staging reset ([#1827](https://github.com/ProteinDeficientsAnonymous/pda/issues/1827)) ([d1f157b](https://github.com/ProteinDeficientsAnonymous/pda/commit/d1f157b260186218364e460f3a65aa5feaf6fbe1))
+
+## [0.178.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.0...v0.178.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **mcp:** break list_my_events sort ties by id so pages don't repeat or skip ([#1824](https://github.com/ProteinDeficientsAnonymous/pda/issues/1824)) ([ebf479c](https://github.com/ProteinDeficientsAnonymous/pda/commit/ebf479ca982595890f0dd3a99c5eab007208445c))
+
+# [0.178.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.177.0...v0.178.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** filter hosted events server-side and paginate list_my_events ([#1797](https://github.com/ProteinDeficientsAnonymous/pda/issues/1797)) ([4afe05d](https://github.com/ProteinDeficientsAnonymous/pda/commit/4afe05d3d5c5bef277aec1ba7574f9e49945db84))
+
+# [0.177.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.176.0...v0.177.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** edit events from mcp with a confirm step ([#1782](https://github.com/ProteinDeficientsAnonymous/pda/issues/1782)) ([08c85fe](https://github.com/ProteinDeficientsAnonymous/pda/commit/08c85fe395a42f098a2199baced7597376bf1460))
+
+# [0.176.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.175.0...v0.176.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** publish event drafts from mcp with a confirm step ([#1778](https://github.com/ProteinDeficientsAnonymous/pda/issues/1778)) ([99bb7fb](https://github.com/ProteinDeficientsAnonymous/pda/commit/99bb7fb87dc27e8fc7e5d6c31edf91cb2bbe9b87))
+
+# [0.175.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.1...v0.175.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** create event drafts and find locations ([#1771](https://github.com/ProteinDeficientsAnonymous/pda/issues/1771)) ([f8f2904](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8f2904f9664c51fc644095fa9d6b48a0eb0b9d8))
+
+## [0.174.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.174.0...v0.174.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **surveys:** mark required survey fields instead of optional ones ([#1818](https://github.com/ProteinDeficientsAnonymous/pda/issues/1818)) ([8488c37](https://github.com/ProteinDeficientsAnonymous/pda/commit/8488c3788ff90dd65436bf7e57fcaa978a0dbb50))
+
+# [0.174.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.173.0...v0.174.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** add event read tools ([#1772](https://github.com/ProteinDeficientsAnonymous/pda/issues/1772)) ([c2baade](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2baadef5cbc5cb851d106b4a1c6fcc256f831d3))
+
+# [0.173.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.172.0...v0.173.0) (2026-10-24)
+
+
+### Features
+
+* **mcp:** call website views from mcp tools ([#1757](https://github.com/ProteinDeficientsAnonymous/pda/issues/1757)) ([64206fd](https://github.com/ProteinDeficientsAnonymous/pda/commit/64206fd8b2c1cbd5926cab378a361741d46c52b8))
+
+# [0.172.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.171.0...v0.172.0) (2026-10-24)
+
+
+### Features
+
+* automatic event feedback surveys ([#1750](https://github.com/ProteinDeficientsAnonymous/pda/issues/1750)) ([a3d55f9](https://github.com/ProteinDeficientsAnonymous/pda/commit/a3d55f980bc94f6a9b95375816cdf8b2dc99f28b))
+
 # [0.171.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.170.3...v0.171.0) (2026-10-24)
 
 

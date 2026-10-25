@@ -123,14 +123,21 @@ def _validate_one_answer(answer: str | dict[str, str], q: SurveyQuestion) -> Non
         validator(answer, q)
 
 
+def _answerable_ids(
+    questions: dict[str, SurveyQuestion], answers: dict[str, str | dict[str, str]]
+) -> set[str]:
+    visible = visible_question_ids(questions, answers)
+    return {q_id for q_id in visible if questions[q_id].field_type != SurveyQuestionType.SECTION}
+
+
 def _validate_survey_answers(
     answers: dict[str, str | dict[str, str]],
     questions: dict[str, SurveyQuestion],
 ) -> None:
     """Raise ValidationException if any answer fails validation."""
-    visible = visible_question_ids(questions, answers)
+    answerable = _answerable_ids(questions, answers)
     for q_id, q in questions.items():
-        if q_id not in visible:
+        if q_id not in answerable:
             continue
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):
@@ -149,9 +156,9 @@ def _build_survey_answers(
     questions: dict[str, SurveyQuestion],
 ) -> dict:
     result = {}
-    visible = visible_question_ids(questions, answers)
+    answerable = _answerable_ids(questions, answers)
     for q_id, q in questions.items():
-        if q_id not in visible:
+        if q_id not in answerable:
             continue
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):

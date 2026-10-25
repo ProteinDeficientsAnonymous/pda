@@ -201,13 +201,13 @@ class TestInviteOnlyVisibility:
         err = assert_error_code(response, Code.Event.PERM_DENIED)
         assert err["params"]["action"] == "view_invite_only_event"
 
-    def test_get_event_403_for_anonymous(self, api_client, test_user):
+    def test_get_event_404_for_anonymous(self, api_client, test_user):
+        # 404 like members-only, so anon can't confirm a private event exists
         creator = self._make_user("+12025550207", "Creator7")
         event = self._make_invite_only_event(creator)
         response = api_client.get(f"/api/community/events/{event.id}/")
-        assert response.status_code == 403
-        err = assert_error_code(response, Code.Event.PERM_DENIED)
-        assert err["params"]["action"] == "view_invite_only_event"
+        assert response.status_code == 404
+        assert_error_code(response, Code.Event.NOT_FOUND)
 
     def test_get_event_200_for_invited_user(self, api_client, test_user):
         creator = self._make_user("+12025550208", "Creator8")

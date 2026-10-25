@@ -17,6 +17,7 @@ describe('QuestionType', () => {
       'boolean',
       'rating',
       'datetime_poll',
+      'section',
     ];
 
     expect(QuestionType.Text).toBe('text');
@@ -28,6 +29,7 @@ describe('QuestionType', () => {
     expect(QuestionType.Boolean).toBe('boolean');
     expect(QuestionType.Rating).toBe('rating');
     expect(QuestionType.DatetimePoll).toBe('datetime_poll');
+    expect(QuestionType.Section).toBe('section');
     expect(Object.values(QuestionType).sort()).toEqual([...expected].sort());
   });
 });

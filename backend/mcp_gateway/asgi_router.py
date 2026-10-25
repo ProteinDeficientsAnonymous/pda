@@ -1,3 +1,5 @@
+from contextvars import ContextVar
+
 from asgiref.sync import ThreadSensitiveContext
 from django.core.signals import request_finished, request_started
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -13,6 +15,8 @@ MCP_PATHS = frozenset(
         "/.well-known/oauth-protected-resource/mcp",
     }
 )
+
+mcp_http_scope: ContextVar[Scope | None] = ContextVar("mcp_http_scope", default=None)
 
 
 class McpDispatcher:
@@ -33,7 +37,9 @@ class McpDispatcher:
         # Mirror ASGIHandler: per-request sync thread and DB connection health checks.
         async with ThreadSensitiveContext():
             await request_started.asend(sender=self.__class__, scope=scope)
+            token = mcp_http_scope.set(scope)
             try:
                 await self.mcp_app(scope, receive, send)
             finally:
+                mcp_http_scope.reset(token)
                 await request_finished.asend(sender=self.__class__)

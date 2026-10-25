@@ -113,7 +113,10 @@ class RSVPGuestOut(BaseModel):
     plus_one_attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     plus_one_checked_in_at: datetime | None = None
     is_member: bool = True
-    paid_confirmed: bool = False
+    paid_confirmed: bool = Field(
+        default=False, description="Guest says they paid, or a host verified it."
+    )
+    payment_verified: bool = Field(default=False, description="A host verified the payment.")
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -246,6 +249,19 @@ class HostRSVPIn(BaseModel):
 
 class HostRSVPPaymentIn(BaseModel):
     paid_confirmed: bool
+
+
+MAX_BULK_PAYMENT_VERIFY = 500
+
+
+class BulkPaymentVerifyIn(BaseModel):
+    user_ids: list[UUID] = Field(min_length=1, max_length=MAX_BULK_PAYMENT_VERIFY)
+
+
+class BulkPaymentVerifyOut(BaseModel):
+    verified_user_ids: list[str]
+    already_verified_user_ids: list[str]
+    event_verified_total: int = Field(description="Rsvps on the event with a verified payment now.")
 
 
 class WaitlistOrderIn(BaseModel):

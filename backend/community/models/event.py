@@ -238,11 +238,25 @@ class EventRSVP(models.Model):
     pre_cancel_status = models.CharField(
         max_length=20, choices=RSVPStatus.choices, null=True, blank=True
     )
+    # Guest's own "i paid" attestation; gates attending writes. Host verification is separate.
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
+    payment_verified_at = models.DateTimeField(null=True, blank=True)
+    payment_verified_by = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="payment_verified_rsvps",
+    )
     # Set on joining the waitlist, cleared on leaving; hosts can renumber via the reorder endpoint.
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
+    # Stamped on create and on any status change (see save()); bulk .update() callers must set it.
+    status_changed_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Status as last loaded/saved; None when status was deferred.
+    _loaded_status: str | None = None
 
     class Meta:
         app_label = "community"
@@ -251,13 +265,44 @@ class EventRSVP(models.Model):
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
         ]
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        if "status" in field_names:
+            instance._loaded_status = instance.status
+        return instance
+
+    def refresh_from_db(self, using=None, fields=None, from_queryset=None):
+        super().refresh_from_db(using=using, fields=fields, from_queryset=from_queryset)
+        if fields is None or "status" in fields:
+            self._loaded_status = self.__dict__.get("status")
+
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        extra_fields: set[str] = set()
+
         position = self._resolved_waitlist_position()
         if position != self.waitlist_position:
             self.waitlist_position = position
-            if kwargs.get("update_fields") is not None:
-                kwargs["update_fields"] = {*kwargs["update_fields"], "waitlist_position"}
+            extra_fields.add("waitlist_position")
+
+        persists_status = update_fields is None or "status" in update_fields
+        if persists_status and self._status_is_new(update_fields):
+            self.status_changed_at = timezone.now()
+            extra_fields.add("status_changed_at")
+
+        if update_fields is not None and extra_fields:
+            kwargs["update_fields"] = {*update_fields, *extra_fields}
         super().save(*args, **kwargs)
+        if persists_status:
+            self._loaded_status = self.status
+
+    def _status_is_new(self, update_fields) -> bool:
+        if self._state.adding:
+            return True
+        if self._loaded_status is None:
+            return update_fields is not None or "status" in self.__dict__
+        return self._loaded_status != self.status
 
     def _resolved_waitlist_position(self) -> int | None:
         # Callers hold the event row lock, so max+1 can't race with another joiner.

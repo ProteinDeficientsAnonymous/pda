@@ -80,6 +80,16 @@ beforeEach(() => {
 });
 
 describe('SurveyBuilderScreen', () => {
+  it('pins the thank-you page after the add question button', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...wireSurvey, confirmation_message: 'yay' } });
+    renderScreen();
+
+    const card = await screen.findByRole('article', { name: 'thank-you page' });
+    const add = screen.getByRole('button', { name: '+ add question' });
+    expect(add.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(card).getByLabelText('thank-you message')).toHaveValue('yay');
+  });
+
   it('links back to the survey list', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
@@ -87,6 +97,16 @@ describe('SurveyBuilderScreen', () => {
     expect(await screen.findByRole('link', { name: '← back to surveys' })).toHaveAttribute(
       'href',
       '/admin/surveys',
+    );
+  });
+
+  it('opens the survey in preview mode', async () => {
+    mockedGet.mockResolvedValueOnce({ data: wireSurvey });
+    renderScreen();
+
+    expect(await screen.findByRole('link', { name: 'preview' })).toHaveAttribute(
+      'href',
+      '/admin/surveys/srv-1/preview',
     );
   });
 
@@ -120,6 +140,37 @@ describe('SurveyBuilderScreen', () => {
     await waitFor(() => {
       expect(mockedDelete).toHaveBeenCalledWith('/api/community/surveys/srv-1/questions/q1/');
     });
+  });
+
+  it('says a deleted section header leaves its questions', async () => {
+    const section = { id: 'q0', label: 'about you', field_type: 'section', display_order: 0 };
+    mockedGet.mockResolvedValueOnce({
+      data: { ...wireSurvey, questions: [section, ...wireSurvey.questions] },
+    });
+    renderScreen();
+    await screen.findByDisplayValue('about you');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'delete' })[0]!);
+
+    const dialog = await screen.findByRole('dialog', { name: 'delete section' });
+    expect(dialog).toHaveTextContent('the questions under it stay');
+  });
+
+  it('confirms before turning a question on an answered survey into a section', async () => {
+    mockedGet.mockResolvedValue({ data: { ...wireSurvey, response_count: 2 } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.change(screen.getAllByLabelText('question type')[0]!, {
+      target: { value: 'section' },
+    });
+
+    const dialog = await screen.findByRole('dialog', { name: 'change to section header' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(mockedPatch).not.toHaveBeenCalled();
   });
 
   it('does not delete when the confirmation is cancelled', async () => {
@@ -207,11 +258,28 @@ describe('SurveyBuilderScreen', () => {
         label: 'untitled question',
         field_type: 'text',
         options: [],
+        description: '',
         required: false,
         show_if: null,
       });
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('adds a section header', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPost.mockResolvedValueOnce({ data: { id: 'q3' } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.click(screen.getByRole('button', { name: '+ add section' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/srv-1/questions/',
+        expect.objectContaining({ label: 'untitled section', field_type: 'section' }),
+      );
+    });
   });
 
   it('saves an edited label when the field loses focus', async () => {
@@ -229,6 +297,7 @@ describe('SurveyBuilderScreen', () => {
         label: 'first, renamed',
         field_type: 'text',
         options: [],
+        description: '',
         required: false,
         show_if: null,
       });

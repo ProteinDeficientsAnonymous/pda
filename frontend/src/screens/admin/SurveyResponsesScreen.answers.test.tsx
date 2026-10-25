@@ -52,6 +52,7 @@ const wireSurvey = {
       required: false,
       display_order: 2,
     },
+    { id: 'qs', label: 'about you', field_type: 'section', display_order: 3 },
   ],
   my_response_id: null,
   my_answers: null,
@@ -88,11 +89,12 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByText('great')).toBeInTheDocument();
     expect(screen.getByText('vanilla,choc')).toBeInTheDocument();
     expect(
-      screen.getByText((_, el) => el?.textContent === '2030-01-01T18:00:00+00:00: yes'),
+      screen.getByRole('cell', { name: '2030-01-01T18:00:00+00:00: yes' }),
     ).toBeInTheDocument();
 
     expect(screen.getByRole('columnheader', { name: 'mood' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'flavors' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'availability' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'about you' })).not.toBeInTheDocument();
   });
 });

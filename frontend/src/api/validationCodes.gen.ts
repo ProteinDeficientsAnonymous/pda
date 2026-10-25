@@ -32,6 +32,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    PaymentVerifyNotGuests: 'event.payment_verify_not_guests',
     WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
@@ -161,6 +162,9 @@ export const Code = {
     QuestionNotFound: 'survey.question_not_found',
     ResponseNotFound: 'survey.response_not_found',
     AnonymousLocked: 'survey.anonymous_locked',
+    FeedbackTypeTaken: 'survey.feedback_type_taken',
+    FeedbackLinkInvalid: 'survey.feedback_link_invalid',
+    FeedbackAlreadySubmitted: 'survey.feedback_already_submitted',
     NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
     WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
     PollAlreadyFinalized: 'survey.poll_already_finalized',
@@ -211,6 +215,11 @@ export const Code = {
     EventOrTitleRequired: 'attendance_import.event_or_title_required',
     InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
+  },
+  CashAppImport: {
+    CsvEmpty: 'cashapp_import.csv_empty',
+    CsvMissingColumns: 'cashapp_import.csv_missing_columns',
+    CsvTooManyRows: 'cashapp_import.csv_too_many_rows',
   },
   AttendanceMark: {
     EventOrTitleRequired: 'attendance_mark.event_or_title_required',
@@ -310,6 +319,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.payment_verify_not_guests'
   | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
@@ -411,6 +421,9 @@ export type ValidationCode =
   | 'survey.question_not_found'
   | 'survey.response_not_found'
   | 'survey.anonymous_locked'
+  | 'survey.feedback_type_taken'
+  | 'survey.feedback_link_invalid'
+  | 'survey.feedback_already_submitted'
   | 'survey.no_datetime_poll_question'
   | 'survey.winning_datetime_not_in_options'
   | 'survey.poll_already_finalized'
@@ -455,6 +468,9 @@ export type ValidationCode =
   | 'attendance_import.event_or_title_required'
   | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
+  | 'cashapp_import.csv_empty'
+  | 'cashapp_import.csv_missing_columns'
+  | 'cashapp_import.csv_too_many_rows'
   | 'attendance_mark.event_or_title_required'
   | 'attendance_mark.invalid_event_type'
   | 'attendance_mark.no_members_selected'
@@ -520,6 +536,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.payment_verify_not_guests': ['user_ids'],
   'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
@@ -621,6 +638,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.question_not_found': [],
   'survey.response_not_found': [],
   'survey.anonymous_locked': [],
+  'survey.feedback_type_taken': [],
+  'survey.feedback_link_invalid': [],
+  'survey.feedback_already_submitted': [],
   'survey.no_datetime_poll_question': [],
   'survey.winning_datetime_not_in_options': [],
   'survey.poll_already_finalized': [],
@@ -665,6 +685,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'attendance_import.event_or_title_required': [],
   'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
+  'cashapp_import.csv_empty': [],
+  'cashapp_import.csv_missing_columns': ['columns'],
+  'cashapp_import.csv_too_many_rows': ['max_rows'],
   'attendance_mark.event_or_title_required': [],
   'attendance_mark.invalid_event_type': [],
   'attendance_mark.no_members_selected': [],
