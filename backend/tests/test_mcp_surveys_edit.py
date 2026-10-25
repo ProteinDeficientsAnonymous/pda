@@ -16,6 +16,7 @@ from tests.test_mcp_surveys_read import _tool_names
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 NEW = {"title": "new", "description": ""}
+NOTES = {"label": "notes", "field_type": "textarea"}
 LABELS = ["food?", "why?", "notes"]
 REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
 SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
@@ -55,6 +56,10 @@ def _remove(ref) -> dict:
 
 def _update(ref, **changes) -> dict:
     return {"op": "update", "question": ref, "changes": changes}
+
+
+def _add(question, **placement) -> dict:
+    return {"op": "add", "question": question, **placement}
 
 
 def _when(position, value) -> dict:
@@ -209,6 +214,12 @@ def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admi
         ([_remove(1), _update(3, show_if=_when(1, "very"))], "which this edit removes"),
         ([_update(3, label=" ")], "at least 1 character"),
         ([_update(3, colour="red")], "Extra inputs are not permitted"),
+        ([_add(NOTES, after=5)], "there's no question 5"),
+        ([_remove(1), _add({**NOTES, "show_if": _when(1, "very")})], "which this edit removes"),
+        ([{"op": "reorder", "order": [1, 2]}], "list every question that stays, each once"),
+        ([{"op": "reorder", "order": [2, 1, 3]}], '"why?" would come before "food?"'),
+        ([{"op": "reorder", "order": [1, 2, 3]}] * 2, "at most one reorder"),
+        ([_remove(3), {"op": "reorder", "order": [1, 2, 3]}], 'question 3 ("notes") is removed'),
     ],
 )
 def test_bad_question_changes_refused_before_saving(surveys_admin, ops, message):
@@ -331,3 +342,48 @@ def test_condition_on_a_tied_stored_order_refused(surveys_admin):
     error = _refused(surveys_admin, survey, questions=[_update(2, show_if=_when(1, "x"))])
     assert "reorder first" in error
     assert not any(q.show_if for q in SurveyQuestion.objects.all())
+
+
+def test_add_places_questions_after_their_anchor(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    ops = [
+        _add({**NOTES, "label": "last"}),
+        _add({**NOTES, "label": "first"}, after=0),
+        _add({"label": "how very?", "show_if": _when(1, "very")}, after=1),
+        {"op": "reorder", "order": [1, 3, 2]},
+    ]
+    result = _edit(surveys_admin, survey, questions=ops)
+    expected = ["first", "food?", "how very?", "notes", "why?", "last"]
+    assert [q["label"] for q in result["questions"]] == expected == _labels(survey)
+    assert result["questions"][2]["show_if"]["question"] == "food?"
+    assert AuditLogEntry.objects.filter(action="survey_question_created").count() == 3
+    assert AuditLogEntry.objects.get(action="survey_questions_reordered").details["via"] == "mcp"
+
+
+def test_live_reorder_previews_the_new_order(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    ops = [{"op": "reorder", "order": [1, 3, 2]}]
+    preview = _edit(surveys_admin, survey, questions=ops)
+    order = {"before": LABELS, "after": ["food?", "notes", "why?"]}
+    assert (preview["changes"], preview["notes"]) == ({"order": order}, [])
+    _edit(surveys_admin, survey, questions=ops, confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["food?", "notes", "why?"]
+
+
+def test_two_adds_after_one_question_keep_their_order(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    ops = [_add({**NOTES, "label": "a"}, after=1), _add({**NOTES, "label": "b"}, after=1)]
+    _edit(surveys_admin, survey, questions=ops)
+    assert _labels(survey) == ["food?", "a", "b", "why?", "notes"]
+
+
+def test_live_add_previews_its_condition_and_place(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    add = _add({"label": "how?", "show_if": _when(1, "very")}, after=1)
+    (entry,) = _edit(surveys_admin, survey, questions=[add])["changes"]["questions"]
+    assert entry["after"] == {"position": 1, "label": "food?"}
+    assert entry["question"]["show_if"]["question"] == "food?"

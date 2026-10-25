@@ -3,16 +3,20 @@ from uuid import UUID
 
 from community._survey_conditions import condition_still_valid
 from community._survey_schemas import SurveyQuestionIn
+from community._surveys import create_survey_question as create_question_view
 from community._surveys import delete_survey_question as delete_question_view
+from community._surveys import reorder_survey_questions as reorder_view
 from community._surveys import update_survey_question as update_question_view
 from community.models import QuestionType, SurveyQuestion
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gateway.fields import build
 from mcp_gateway.survey_edit_fields import (
+    AddQuestion,
     EditQuestionFields,
     QuestionRef,
     RemoveQuestion,
+    ReorderQuestions,
     UpdateQuestion,
 )
 from mcp_gateway.survey_edit_plan import Edit, Step
@@ -43,6 +47,8 @@ class Questions:
         self.now = {q["id"]: _state(q) for q in questions}
         self.touched: set[str] = set()
         self.refs: list[tuple[int, Question]] = []
+        self.anchors: list[tuple[str, Any]] = []
+        self.order: tuple[int, list[str]] | None = None
         self.diff: list[dict[str, Any]] = []
 
     def _find(self, ref: QuestionRef) -> Question:
@@ -60,6 +66,11 @@ class Questions:
         if q["id"] in self.touched:
             raise ToolError(f"{_named(q)} is already changed by an earlier operation")
         self.touched.add(q["id"])
+        return q
+
+    def _ref(self, number: int, ref: QuestionRef) -> Question:
+        q = self._find(ref)
+        self.refs.append((number, q))
         return q
 
     def _dependents(self, qid: str) -> list[str]:
@@ -97,7 +108,8 @@ class Questions:
                 raise ToolError(f"show_if points at {_named(source)}, which this edit removes")
             if source["position"] >= below:
                 raise ToolError(
-                    "show_if must point at a question above it in the survey as it is now"
+                    "show_if must point at a question above it in the survey as it is now; to "
+                    "depend on a later question, reorder it above in a separate call first"
                 )
             data["show_if"] = {**show_if, "question_id": source["id"]}
             del data["show_if"]["position"]
@@ -174,9 +186,67 @@ class Questions:
                 "conditions in an earlier operation"
             )
 
+    def add(self, number: int, op: AddQuestion) -> None:
+        key = f"new question from operation {number}"
+        payload, source = self._payload(op.question.model_dump(mode="json"), len(self.before) + 1)
+        if source:
+            self.refs.append((number, source))
+        anchor, after = op.after, "last" if op.after is None else "first"
+        if op.after not in (None, 0):
+            q = self._ref(number, op.after)
+            anchor, after = q["id"], {"position": q["position"], "label": q["label"]}
+        self.now[key] = payload.model_dump(mode="json")
+        self.anchors.append((key, anchor))
+        self.diff.append({"op": "add", "question": self._shown(payload), "after": after})
+        label = f'operation {number}: add "{payload.label}"'
+        self.edit.steps.append(Step(label, create_question_view, (payload,), creates=key))
+
+    def reorder(self, number: int, op: ReorderQuestions) -> None:
+        if self.order is not None:
+            raise ToolError("send at most one reorder")
+        self.order = number, [self._ref(number, ref)["id"] for ref in op.order]
+
+    def _final_order(self) -> list[str]:
+        base = [qid for qid in self.now if qid in self.by_id]
+        if self.order is not None:
+            number, listed = self.order
+            if sorted(listed) != sorted(base):
+                raise ToolError(
+                    f"nothing was saved: operation {number}: list every question that stays, "
+                    "each once"
+                )
+            base = listed
+        placed: dict[Any, list[str]] = {}
+        for key, anchor in self.anchors:
+            placed.setdefault(anchor, []).append(key)
+        final = list(placed.get(0, []))
+        for qid in base:
+            final += [qid, *placed.get(qid, [])]
+        return final + placed.get(None, [])
+
+    def _check_dependencies(self, final: list[str]) -> None:
+        index = {qid: i for i, qid in enumerate(final)}
+        for qid in final:
+            show_if = self.now[qid]["show_if"]
+            if show_if and index[show_if["question_id"]] > index[qid]:
+                raise ToolError(
+                    f'nothing was saved: "{self.now[qid]["label"]}" would come before '
+                    f'"{self.now[show_if["question_id"]]["label"]}", which its show_if depends on'
+                )
+
     def finish(self) -> None:
         for number, q in self.refs:
             if q["id"] not in self.now:
                 raise ToolError(f"nothing was saved: operation {number}: {_named(q)} is removed")
+        final = self._final_order()
+        self._check_dependencies(final)
+        if final != list(self.now):
+            labels = [self.now[qid]["label"] for qid in final]
+            self.edit.changes["order"] = {
+                "before": [q["label"] for q in self.before],
+                "after": labels,
+            }
+            step = Step("put the questions in their new order", reorder_view, order=tuple(final))
+            self.edit.steps.append(step)
         if self.diff:
             self.edit.changes["questions"] = self.diff
