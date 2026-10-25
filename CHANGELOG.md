@@ -1,3 +1,10 @@
+## [0.178.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.0...v0.178.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **mcp:** break list_my_events sort ties by id so pages don't repeat or skip ([#1824](https://github.com/ProteinDeficientsAnonymous/pda/issues/1824)) ([ebf479c](https://github.com/ProteinDeficientsAnonymous/pda/commit/ebf479ca982595890f0dd3a99c5eab007208445c))
+
 # [0.178.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.177.0...v0.178.0) (2026-10-24)
 
 
