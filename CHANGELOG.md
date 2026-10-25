@@ -1,3 +1,10 @@
+# [0.189.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.188.0...v0.189.0) (2026-10-25)
+
+
+### Features
+
+* notify survey managers of new survey responses ([#1900](https://github.com/ProteinDeficientsAnonymous/pda/issues/1900)) ([0c2d6cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c2d6cf6a5e41f83b3cf4fab041e3e4b8dc44de1))
+
 # [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
 
 
