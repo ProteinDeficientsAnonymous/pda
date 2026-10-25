@@ -17,7 +17,7 @@ vi.mock('@/api/eventDescriptionTemplates', () => ({
 
 vi.mock('@/api/eventTags', () => ({
   useEventTags: () => ({
-    data: [{ id: 'tag-walk', name: 'walk', slug: 'walk' }],
+    data: [],
     isPending: false,
     isError: false,
   }),
@@ -56,13 +56,15 @@ describe('EventForm official description template', () => {
     });
   });
 
-  it('fills the non-walk template when official is toggled on, then swaps to walk', async () => {
+  it('fills the walk template when official is toggled on, then swaps to non-walk', async () => {
     renderForm();
     await userEvent.click(screen.getByLabelText('make it an official pda event'));
+    expect(screen.getByLabelText('description')).toHaveValue('walk copy');
+
+    await userEvent.click(screen.getByLabelText("it's a walk"));
     expect(screen.getByLabelText('description')).toHaveValue('non-walk copy');
 
-    await userEvent.click(screen.getByRole('button', { name: /^tags/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'walk' }));
+    await userEvent.click(screen.getByLabelText("it's a walk"));
     expect(screen.getByLabelText('description')).toHaveValue('walk copy');
   });
 
