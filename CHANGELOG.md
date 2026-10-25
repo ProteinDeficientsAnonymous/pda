@@ -1,3 +1,10 @@
+# [0.191.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.190.0...v0.191.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** add section header question type ([#1885](https://github.com/ProteinDeficientsAnonymous/pda/issues/1885)) ([92297fa](https://github.com/ProteinDeficientsAnonymous/pda/commit/92297fab8580dfe296c4b1694a62d28ab3306951))
+
 # [0.190.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.189.0...v0.190.0) (2026-10-25)
 
 
