@@ -1,3 +1,10 @@
+# [0.197.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.196.0...v0.197.0) (2026-10-25)
+
+
+### Features
+
+* **events:** read the official cash app link from the api ([#1810](https://github.com/ProteinDeficientsAnonymous/pda/issues/1810)) ([25d3000](https://github.com/ProteinDeficientsAnonymous/pda/commit/25d3000d5099e22a7cafbd1c1b207e48a801486f))
+
 # [0.196.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.195.0...v0.196.0) (2026-10-25)
 
 
