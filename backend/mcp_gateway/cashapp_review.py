@@ -1,6 +1,6 @@
 import hashlib
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -27,6 +27,7 @@ from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, EventRSVP
 from django.conf import settings
 from django.core.cache import caches
+from mcp.server.mcpserver.exceptions import ToolError
 from users.models import User
 
 from mcp_gateway.server import BASE_URL
@@ -50,6 +51,7 @@ class LoadedReview:
     guests: dict[str, GuestRecord]
     verified: frozenset[str]
     review_id: str
+    csv_text: str = field(repr=False)
 
     @property
     def event_id(self) -> str:
@@ -86,9 +88,7 @@ def _review_event(
     return review, guests, verified
 
 
-async def load_review(user: User, event_ref: str, csv_text: str) -> LoadedReview:
-    """Resolve the event through the website's read rules, then review the csv against it."""
-    body = await call_view(get_event_view, user, event_id=event_ref)
+async def _review_body(user: User, body: dict[str, Any], csv_text: str) -> LoadedReview:
     review, guests, verified = await sync_to_async(_review_event)(user, body["id"], csv_text)
     event = {
         "id": body["id"],
@@ -97,7 +97,25 @@ async def load_review(user: User, event_ref: str, csv_text: str) -> LoadedReview
         "url": f"{BASE_URL}/events/{body['slug'] or body['id']}",
     }
     guest_map = {g.user_id: g for g in guests}
-    return LoadedReview(event, review, guest_map, frozenset(verified), csv_digest(csv_text))
+    return LoadedReview(
+        event, review, guest_map, frozenset(verified), csv_digest(csv_text), csv_text
+    )
+
+
+async def load_review(user: User, event_ref: str, csv_text: str) -> LoadedReview:
+    """Resolve the event through the website's read rules, then review the csv against it."""
+    body = await call_view(get_event_view, user, event_id=event_ref)
+    return await _review_body(user, body, csv_text)
+
+
+async def load_cached_review(user: User, event_ref: str, review_id: str) -> LoadedReview:
+    """Re-run a review on the csv this user cached for this event; refuse once it's gone."""
+    body = await call_view(get_event_view, user, event_id=event_ref)
+    key = review_cache_key(user.pk, body["id"], review_id)
+    csv_text = await caches["ratelimit"].aget(key)
+    if csv_text is None:
+        raise ToolError("review expired — run review_cashapp_payments again")
+    return await _review_body(user, body, csv_text)
 
 
 async def remember_csv(user: User, loaded: LoadedReview, csv_text: str) -> None:
@@ -109,7 +127,7 @@ def _local(value: datetime) -> str:
     return value.astimezone(settings.COMMUNITY_TZ).isoformat()
 
 
-def _people(p: PaymentProposal) -> str | None:
+def people_text(p: PaymentProposal) -> str | None:
     if p.people_low is None:
         return None
     if p.people_high is None:
@@ -128,10 +146,19 @@ def payment_out(p: PaymentProposal) -> dict[str, Any]:
     }
 
 
+def payment_summary(p: PaymentProposal) -> dict[str, Any]:
+    return {
+        **payment_out(p),
+        "confidence": p.confidence.value,
+        "reason": p.reason,
+        "covers_people": people_text(p),
+    }
+
+
 def _proposal_out(p: PaymentProposal, loaded: LoadedReview) -> dict[str, Any]:
     return {
         **payment_out(p),
-        "covers_people": _people(p),
+        "covers_people": people_text(p),
         "reason": p.reason,
         "matched_by": p.matched_by.value,
         "guests": [loaded.person(uid) for uid in p.user_ids],
