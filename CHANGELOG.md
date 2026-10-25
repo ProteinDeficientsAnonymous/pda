@@ -1,3 +1,10 @@
+# [0.202.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.201.0...v0.202.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - send daily host digests ([#1881](https://github.com/ProteinDeficientsAnonymous/pda/issues/1881)) ([f8311c4](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8311c4b5db6cc4113e22e87f9cc6a112b48ae09))
+
 # [0.201.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.200.0...v0.201.0) (2026-10-25)
 
 
