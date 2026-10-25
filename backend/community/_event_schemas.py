@@ -113,7 +113,10 @@ class RSVPGuestOut(BaseModel):
     plus_one_attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     plus_one_checked_in_at: datetime | None = None
     is_member: bool = True
-    paid_confirmed: bool = False
+    paid_confirmed: bool = Field(
+        default=False, description="Guest says they paid, or a host verified it."
+    )
+    payment_verified: bool = Field(default=False, description="A host verified the payment.")
 
 
 class PendingCoHostInviteOut(BaseModel):

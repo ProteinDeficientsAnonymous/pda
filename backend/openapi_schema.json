@@ -6062,7 +6062,14 @@
           },
           "paid_confirmed": {
             "default": false,
+            "description": "Guest says they paid, or a host verified it.",
             "title": "Paid Confirmed",
+            "type": "boolean"
+          },
+          "payment_verified": {
+            "default": false,
+            "description": "A host verified the payment.",
+            "title": "Payment Verified",
             "type": "boolean"
           },
           "phone": {

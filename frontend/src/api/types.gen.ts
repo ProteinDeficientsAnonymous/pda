@@ -5173,9 +5173,16 @@ export interface components {
             name: string;
             /**
              * Paid Confirmed
+             * @description Guest says they paid, or a host verified it.
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Payment Verified
+             * @description A host verified the payment.
+             * @default false
+             */
+            payment_verified: boolean;
             /** Phone */
             phone?: string | null;
             /**

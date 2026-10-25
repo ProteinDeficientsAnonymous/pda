@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
+from community._payment_verification import apply_payment_verification
 from community.models import EventRSVP, RSVPStatus
 from django.apps import apps
 from django.utils import timezone
@@ -24,6 +25,52 @@ def guest(django_user_model):
     return django_user_model.objects.create_user(
         phone_number="+14155550501", first_name="Guest", is_member=True
     )
+
+
+class TestApplyPaymentVerification:
+    def test_verify_stamps_attestation_and_mark(self, event, guest, test_user):
+        rsvp = EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.MAYBE)
+
+        change = apply_payment_verification(rsvp, verified=True, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert rsvp.paid_confirmed_at is not None
+        assert rsvp.payment_verified_at is not None
+        assert rsvp.payment_verified_by == test_user
+        assert (change.was_paid, change.was_verified, change.revoked) == (False, False, False)
+
+    def test_unverify_keeps_a_self_attestation_and_notifies(self, event, guest, test_user):
+        attested_at = timezone.now() - timedelta(hours=1)
+        rsvp = EventRSVP.objects.create(
+            event=event,
+            user=guest,
+            status=RSVPStatus.ATTENDING,
+            paid_confirmed_at=attested_at,
+            payment_verified_at=timezone.now(),
+            payment_verified_by=test_user,
+        )
+
+        change = apply_payment_verification(rsvp, verified=False, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert rsvp.paid_confirmed_at == attested_at
+        assert rsvp.payment_verified_at is None
+        assert rsvp.payment_verified_by is None
+        assert change.revoked is True
+        assert change.notifies_guest is True
+
+    def test_undoing_a_host_stamped_verify_clears_the_stamp_quietly(self, event, guest, test_user):
+        rsvp = EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        apply_payment_verification(rsvp, verified=True, actor=test_user)
+        assert rsvp.paid_confirmed_at == rsvp.payment_verified_at
+
+        change = apply_payment_verification(rsvp, verified=False, actor=test_user)
+
+        rsvp.refresh_from_db()
+        assert rsvp.paid_confirmed_at is None
+        assert rsvp.payment_verified_at is None
+        assert change.revoked is True
+        assert change.notifies_guest is False
 
 
 def _log(action, actor, event, guest, at, **details):
