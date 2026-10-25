@@ -1,8 +1,9 @@
+import logging
 from typing import Annotated, Any
 from uuid import UUID
 
 import anyio
-import anyio.lowlevel
+from anyio.lowlevel import checkpoint
 from community._surveys import get_survey_admin as get_survey_view
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
@@ -15,6 +16,9 @@ from mcp_gateway.survey_edit_plan import Edit, Step, plan_settings
 from mcp_gateway.tools.surveys_read import _survey_id, survey_detail
 from mcp_gateway.view_calls import call_view
 
+logger = logging.getLogger(__name__)
+_RELOAD_FAILED = "every change was saved, but the survey couldn't be reloaded: call get_survey"
+
 
 def _plan(detail: dict[str, Any], settings: dict[str, Any]) -> Edit:
     """Check every change against the survey before saving any; return the view calls to make."""
@@ -23,12 +27,32 @@ def _plan(detail: dict[str, Any], settings: dict[str, Any]) -> Edit:
     return edit
 
 
+def _stopped(steps: list[Step], done: int, exc: Exception) -> ToolError:
+    failed = f"{steps[done].label} failed"
+    if isinstance(exc, ToolError):
+        failed += f": {exc}"
+    else:
+        # Only a ToolError's text is written for the client; anything else stays in the log.
+        logger.exception("update_survey: %s", failed)
+        raise exc
+    return ToolError(f"nothing was saved: {failed}")
+
+
 async def _apply(user: User, survey_id: UUID, steps: list[Step]) -> None:
-    for step in steps:
-        # A cancelled await doesn't stop the view's thread, so let each write finish.
-        with anyio.CancelScope(shield=True):
-            await call_view(step.view, user, survey_id, *step.args)
-        await anyio.lowlevel.checkpoint()
+    for done, step in enumerate(steps):
+        try:
+            # A cancelled await doesn't stop the view's thread, so let each write finish.
+            with anyio.CancelScope(shield=True):
+                await call_view(step.view, user, survey_id, *step.args)
+        # Exception, not BaseException: a cancel lands at the checkpoint, between steps.
+        except Exception as exc:
+            raise _stopped(steps, done, exc) from exc
+        try:
+            await checkpoint()
+        except anyio.get_cancelled_exc_class():
+            applied = [step.label for step in steps[: done + 1]]
+            logger.warning("update_survey cancelled on survey %s after %s", survey_id, applied)
+            raise
 
 
 @pda_tool(
@@ -53,4 +77,9 @@ async def update_survey(
         raise ToolError("no changes given")
     edit = _plan(survey_detail(before), changed)
     await _apply(user, survey_id, edit.steps)
-    return survey_detail(await call_view(get_survey_view, user, survey_id))
+    try:
+        return survey_detail(await call_view(get_survey_view, user, survey_id))
+    except Exception:
+        # Everything is saved, so an error here would only invite a retry that saves it twice.
+        logger.exception("update_survey saved survey %s but couldn't reload it", survey_id)
+        return {"saved": True, "note": _RELOAD_FAILED}
