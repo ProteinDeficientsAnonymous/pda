@@ -6554,6 +6554,12 @@
                   "type": "string"
                 },
                 {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
                   "additionalProperties": {
                     "type": "string"
                   },
