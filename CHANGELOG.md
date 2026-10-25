@@ -1,3 +1,10 @@
+## [0.178.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.1...v0.178.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **seed:** delete seeded users' comments before staging reset ([#1827](https://github.com/ProteinDeficientsAnonymous/pda/issues/1827)) ([d1f157b](https://github.com/ProteinDeficientsAnonymous/pda/commit/d1f157b260186218364e460f3a65aa5feaf6fbe1))
+
 ## [0.178.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.0...v0.178.1) (2026-10-25)
 
 
