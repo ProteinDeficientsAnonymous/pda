@@ -98,3 +98,9 @@ class TestCheckboxListAnswers:
         assert summary.counts == {CLUBS: 1, "potlucks": 1}
         assert summary.answered == 1
         assert _csv_answer_cell(interests, answer) == f"{CLUBS}\npotlucks"
+
+    def test_legacy_comma_string_is_stored_as_list(self, api_client, survey, interests):
+        response = _submit(api_client, survey, {str(interests.id): "potlucks"})
+        assert response.status_code == 201
+        stored = SurveyResponse.objects.get(survey=survey).answers[str(interests.id)]
+        assert stored["answer"] == ["potlucks"]

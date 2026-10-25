@@ -166,7 +166,7 @@ def _build_survey_answers(
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):
             continue
-        if isinstance(answer, list):
+        if q.field_type == SurveyQuestionType.CHECKBOX and isinstance(answer, str | list):
             answer = list(dict.fromkeys(checkbox_values(answer)))
         result[q_id] = {"label": q.label, "answer": answer}
     return result

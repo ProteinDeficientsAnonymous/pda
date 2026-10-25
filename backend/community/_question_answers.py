@@ -43,19 +43,3 @@ def assert_checkbox_members(
     for val in checkbox_values(answer):
         if val not in option_set:
             raise_validation(code, field=field, label=label)
-
-
-def normalize_checkbox_csv(
-    answer: str,
-    options: Sequence[str] | None,
-    *,
-    code: str,
-    field: str,
-    label: str,
-) -> str:
-    cleaned = [v.strip() for v in str(answer).split(",") if v.strip()]
-    option_set = set(options or [])
-    for val in cleaned:
-        if val not in option_set:
-            raise_validation(code, field=field, label=label)
-    return ",".join(cleaned)

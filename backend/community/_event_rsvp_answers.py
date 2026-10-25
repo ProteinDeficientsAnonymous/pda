@@ -6,7 +6,6 @@ from community._question_answers import (
     assert_single_choice_member,
     checkbox_values,
     is_answer_empty,
-    normalize_checkbox_csv,
 )
 from community._validation import Code, raise_validation
 from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
@@ -48,10 +47,8 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
         )
 
 
-def _normalize_list_answer(q: EventRsvpQuestion, answer: list[str]) -> list[str]:
+def _normalize_checkbox_answer(q: EventRsvpQuestion, answer: RsvpAnswerIn) -> list[str]:
     field = f"questionnaire_responses.{q.id}"
-    if q.field_type != RsvpQuestionType.CHECKBOX:
-        raise_validation(Code.Event.RSVP_ANSWER_INVALID_FORMAT, field=field, label=q.label)
     assert_checkbox_members(
         answer,
         q.options,
@@ -63,17 +60,11 @@ def _normalize_list_answer(q: EventRsvpQuestion, answer: list[str]) -> list[str]
 
 
 def _normalize_answer(q: EventRsvpQuestion, answer: RsvpAnswerIn) -> RsvpAnswerIn:
-    if isinstance(answer, list):
-        return _normalize_list_answer(q, answer)
-    field = f"questionnaire_responses.{q.id}"
     if q.field_type == RsvpQuestionType.CHECKBOX:
-        return normalize_checkbox_csv(
-            answer,
-            q.options,
-            code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
-            field=field,
-            label=q.label,
-        )
+        return _normalize_checkbox_answer(q, answer)
+    field = f"questionnaire_responses.{q.id}"
+    if isinstance(answer, list):
+        raise_validation(Code.Event.RSVP_ANSWER_INVALID_FORMAT, field=field, label=q.label)
 
     text = str(answer).strip()
     if q.field_type == RsvpQuestionType.SELECT:
@@ -111,7 +102,7 @@ def build_rsvp_answers(
                 max=FieldLimit.DESCRIPTION,
             )
         normalized = _normalize_answer(q, answer)
-        # Checkbox ",,," normalizes to "" (and [" "] to []) — treat as unanswered.
+        # Checkbox ",,," or [" "] normalizes to [] — treat as unanswered.
         if is_answer_empty(normalized):
             _require_if_needed(q, require_answers=require_answers)
             continue

@@ -124,10 +124,10 @@ def pick_question_templates(count: int) -> list[QuestionTemplate]:
     return picked
 
 
-def random_answer(template: QuestionTemplate) -> str:
+def random_answer(template: QuestionTemplate) -> str | list[str]:
     if template.field_type == RsvpQuestionType.TEXTAREA:
         return secrets.choice(template.sample_answers)
     if template.field_type == RsvpQuestionType.SELECT:
         return secrets.choice(template.options)
     chosen = [option for option in template.options if secrets.randbelow(2)]
-    return ",".join(chosen or [secrets.choice(template.options)])
+    return chosen or [secrets.choice(template.options)]

@@ -66,3 +66,12 @@ class TestRsvpCheckboxListAnswers:
         response = _rsvp(api_client, auth_headers, rsvp_event, {str(q.id): [" "]})
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_REQUIRED)
+
+    def test_legacy_comma_string_is_stored_as_list(
+        self, api_client, auth_headers, rsvp_event, test_user
+    ):
+        q = _question(rsvp_event)
+        response = _rsvp(api_client, auth_headers, rsvp_event, {str(q.id): " mains , desserts "})
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=rsvp_event, user=test_user)
+        assert rsvp.questionnaire_responses[str(q.id)]["answer"] == ["mains", "desserts"]
