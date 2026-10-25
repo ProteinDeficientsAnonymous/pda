@@ -5,11 +5,13 @@ from unittest.mock import patch
 import anyio
 import pytest
 from audit.models import AuditLogEntry
-from community._surveys import create_survey as create_survey_view
+from community._surveys import create_survey_question as create_question_view
 from community._validation import Code
-from community.models import Survey
+from community.models import Survey, SurveyQuestion
 from mcp.server.auth.middleware.auth_context import auth_context_var
+from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from mcp_gateway.server import pda_mcp
+from mcp_gateway.tools import surveys_write
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -18,6 +20,8 @@ from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 SETTINGS = {"title": "Retreat Planning!"}
+NAME = {"label": "name", "required": True}
+NOTES = {"label": "notes", "field_type": "textarea"}
 
 
 @pytest.fixture
@@ -27,12 +31,13 @@ def surveys_admin(test_user):
     return test_user
 
 
-def _create(user, **settings) -> dict:
-    return _run(user, "create_survey", settings={**SETTINGS, **settings})
+def _create(user, questions=(NAME, NOTES), **settings) -> dict:
+    return _run(user, "create_survey", settings={**SETTINGS, **settings}, questions=list(questions))
 
 
-def _create_refused(user, **settings) -> str:
-    return _error(user, "create_survey", settings={**SETTINGS, **settings})
+def _create_refused(user, questions=(NAME, NOTES), **settings) -> str:
+    arguments = {"settings": {**SETTINGS, **settings}, "questions": list(questions)}
+    return _error(user, "create_survey", **arguments)
 
 
 def test_refused_without_manage_surveys(test_user):
@@ -40,30 +45,38 @@ def test_refused_without_manage_surveys(test_user):
     assert not Survey.objects.exists()
 
 
-def test_creates_switched_off(surveys_admin):
+def test_creates_switched_off_with_every_type(surveys_admin):
     settings = {"description": "help us plan", "slug": "Retreat 2099", "visibility": "members_only"}
-    summary = _create(surveys_admin, **settings)
+    numbers = [
+        {"label": "nights", "field_type": "number"},
+        {"label": "car?", "field_type": "boolean"},
+    ]
+    questions = [NAME, NOTES, *numbers]
+    summary = _create(surveys_admin, questions, **settings)
     expected = {**settings, "slug": "retreat-2099", "is_active": False, "status": "closed"}
     assert {key: summary[key] for key in expected} == expected
-    entry = AuditLogEntry.objects.get(actor=surveys_admin)
-    assert (entry.action, entry.target_id, entry.details["via"]) == (
-        "survey_created",
-        summary["id"],
-        "mcp",
-    )
+    saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
+    assert [q.field_type for q in saved] == [q.get("field_type", "text") for q in questions]
+    assert [q.required for q in saved] == [True, False, False, False]
+    entries = AuditLogEntry.objects.filter(actor=surveys_admin)
+    assert entries.count() == 5 and all(e.details["via"] == "mcp" for e in entries)
 
 
 @pytest.mark.parametrize(
-    ("changes", "message"),
+    ("questions", "changes", "message"),
     [
-        ({"title": " "}, "at least 1 character"),
-        ({"title": "🌱🌱"}, "give a slug"),
-        ({"closes_on": "2099-07-04"}, "closes_on"),
-        ({"feedback_event_type": "official"}, "feedback_event_type"),
+        (({"label": "rate", "field_type": "rating"},), {}, "field_type"),
+        (({"label": "why", "show_if": {"position": 1, "value": "x"}},), {}, "show_if"),
+        (({"label": "  "},), {}, "at least 1 character"),
+        (({"label": "x" * 301},), {}, '"field": "label"'),
+        ((NAME,), {"title": " "}, "at least 1 character"),
+        ((NAME,), {"title": "🌱🌱"}, "give a slug"),
+        ((NAME,), {"closes_on": "2099-07-04"}, "closes_on"),
+        ((NAME,), {"feedback_event_type": "official"}, "feedback_event_type"),
     ],
 )
-def test_bad_settings_refused_before_writing(surveys_admin, changes, message):
-    assert message in _create_refused(surveys_admin, **changes)
+def test_bad_input_refused_before_writing(surveys_admin, questions, changes, message):
+    assert message in _create_refused(surveys_admin, questions, **changes)
     assert not Survey.objects.exists()
 
 
@@ -73,24 +86,50 @@ def test_duplicate_slug_refused(surveys_admin):
     assert (error["status"], error["detail"][0]["code"]) == (400, Code.Survey.SLUG_ALREADY_EXISTS)
 
 
-def _cancel_midway(user, view: str, real, arguments: dict) -> None:
+def _second_question_fails(error: BaseException):
+    calls = []
+
+    def view(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 2:
+            raise error
+        return create_question_view(*args, **kwargs)
+
+    return patch("mcp_gateway.tools.surveys_write.create_question_view", view)
+
+
+def test_failure_midway_leaves_no_survey(surveys_admin):
+    with _second_question_fails(ToolError("bad question")):
+        assert _create_refused(surveys_admin) == "nothing was saved: question 2: bad question"
+    with _second_question_fails(RuntimeError("db went away")):
+        with pytest.raises(UnexpectedToolError) as exc_info:
+            _create(surveys_admin)
+    assert str(exc_info.value.__cause__) == "db went away"
+    assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
+
+
+@pytest.mark.parametrize(
+    ("view", "cancel_at"),
+    [("create_survey_view", 0.1), ("create_question_view", 0.1), ("create_question_view", 0.45)],
+    ids=["survey", "first_question", "last_question"],
+)
+def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
+    real = getattr(surveys_write, view)
+
     def slow(*args, **kwargs):
         time.sleep(0.3)
         return real(*args, **kwargs)
 
-    async def cancel():
-        with anyio.move_on_after(0.1):
+    async def cancel_midway():
+        with anyio.move_on_after(cancel_at):
+            arguments = {"settings": SETTINGS, "questions": [NAME, NOTES]}
             await pda_mcp.call_tool("create_survey", arguments)
         await anyio.sleep(0.5)  # lets an unshielded view thread finish, as it would in production
 
-    reset = _signed_in(user)
+    reset = _signed_in(surveys_admin)
     try:
         with patch(f"mcp_gateway.tools.surveys_write.{view}", slow):
-            anyio.run(cancel)
+            anyio.run(cancel_midway)
     finally:
         auth_context_var.reset(reset)
-
-
-def test_cancel_during_create_leaves_no_survey(surveys_admin):
-    _cancel_midway(surveys_admin, "create_survey_view", create_survey_view, {"settings": SETTINGS})
-    assert not Survey.objects.exists()
+    assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
