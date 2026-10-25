@@ -30,8 +30,12 @@ class TestParseEventPrice:
             ("2 for $25", PriceSpec(PriceKind.EXACT, D("25"), D("25"))),
             ("$15 (doors at 7)", PriceSpec(PriceKind.EXACT, D("15"), D("15"))),
             ("doors at 7, $10-15", PriceSpec(PriceKind.RANGE, D("10"), D("15"))),
-            ("$15 ($20 with a plus one)", PriceSpec(PriceKind.RANGE, D("15"), D("20"))),
             ("$10/20", PriceSpec(PriceKind.RANGE, D("10"), D("20"))),
+            ("$10-20", PriceSpec(PriceKind.RANGE, D("10"), D("20"))),
+            ("$15 / $20 at door", PriceSpec(PriceKind.RANGE, D("15"), D("20"))),
+            ("$15 or $20", PriceSpec(PriceKind.RANGE, D("15"), D("20"))),
+            ("$10-$20+", PriceSpec(PriceKind.RANGE, D("10"), None)),
+            ("$10 - 20 or more", PriceSpec(PriceKind.RANGE, D("10"), None)),
         ],
     )
     def test_readable_prices(self, raw, expected):
@@ -50,6 +54,12 @@ class TestParseEventPrice:
             "$0",
             "$5 / $10 / $15",
             "bring a dish",
+            "$15 + $3 fee",
+            "$25 ($5 off for members)",
+            "$20 includes $5 drink",
+            "$15 tip $5",
+            "doors at 7, 15 dollars",
+            "$15 ($20 with a plus one)",
         ],
     )
     def test_unparseable_prices(self, raw):

@@ -34,7 +34,7 @@ UNPARSEABLE = PriceSpec(PriceKind.UNPARSEABLE)
 _NUM = r"\d{1,3}(?:,\d{3})+(?!\d)(?:\.\d+)?|\d+(?:\.\d+)?"
 _NUMBER_RE = re.compile(rf"(\$\s*)?({_NUM})")
 _RANGE_RE = re.compile(
-    rf"(\$\s*)?({_NUM})(?:\s*[-–—/]\s*|\s+to\s+|,(?=\d)(?!\d{{3}}(?!\d)))(\$\s*)?({_NUM})"
+    rf"(\$\s*)?({_NUM})(?:\s*[-–—/]\s*|\s+(?:to|or)\s+|,(?=\d)(?!\d{{3}}(?!\d)))(\$\s*)?({_NUM})"
 )
 _OPEN_ENDED_RE = re.compile(r"\d\s*\+|or more|and up")
 _ANY_AMOUNT_PHRASES = ("pay what you", "pwyc", "donation", "free")
@@ -47,9 +47,10 @@ def _to_decimal(number: str) -> Decimal:
 def _spec_for(numbers: list[Decimal], text: str) -> PriceSpec:
     if not numbers or len(numbers) > 2 or min(numbers) <= 0:
         return UNPARSEABLE
+    open_ended = _OPEN_ENDED_RE.search(text) is not None
     if len(numbers) == 2:
-        return PriceSpec(PriceKind.RANGE, min(numbers), max(numbers))
-    if _OPEN_ENDED_RE.search(text):
+        return PriceSpec(PriceKind.RANGE, min(numbers), None if open_ended else max(numbers))
+    if open_ended:
         return PriceSpec(PriceKind.RANGE, numbers[0], None)
     return PriceSpec(PriceKind.EXACT, numbers[0], numbers[0])
 
@@ -73,7 +74,11 @@ def parse_event_price(raw: str) -> PriceSpec:
     numbers = [_to_decimal(n) for dollar, n in found if dollar or not has_dollar]
     if len(numbers) > 2:
         return UNPARSEABLE
-    return _range_in(text, has_dollar) or _spec_for(numbers, text)
+    # Two amounts make a range only when joined like one: "$15 or $20", not "$15 + $3 fee".
+    joined = _range_in(text, has_dollar)
+    if joined is not None:
+        return joined
+    return UNPARSEABLE if len(numbers) == 2 else _spec_for(numbers, text)
 
 
 def people_for_amount(price: PriceSpec, amount: Decimal) -> PeopleRange | None:
