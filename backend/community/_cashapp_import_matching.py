@@ -96,6 +96,9 @@ def _pick(hits: _Hits) -> _Pick:
         return _pick_attending_sender(sender, hits)
     if sender and not hits.note_guests:
         return _Pick([sender], extras, MatchSource.SENDER, "guest is waitlisted", True)
+    if sender:
+        reason = "sender is waitlisted; note names another guest"
+        return _Pick(hits.note_guests, [*extras, sender], MatchSource.NOTE, reason, True)
     pick = _pick_without_sender(hits)
     return replace(pick, candidates=pick.candidates + hits.senders)
 
@@ -112,7 +115,7 @@ def _headcount_reason(covered: list[GuestRecord], people: PeopleRange) -> str | 
     headcount = sum(g.headcount for g in covered)
     if not people.includes(headcount):
         return f"amount covers {_people_text(people)}, matched {headcount}"
-    if len(covered) > 1 and people.low != people.high:
+    if headcount > 1 and people.low != people.high:
         return f"amount could cover {_people_text(people)}"
     return None
 

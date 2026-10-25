@@ -150,10 +150,27 @@ class TestNoteMatch:
         assert p.confidence == MatchConfidence.UNSURE
         assert p.reason == "amount could cover 1-2 people"
 
-    def test_sliding_scale_single_guest_with_plus_one_is_confident(self):
+    def test_sliding_scale_single_guest_with_plus_one_is_unsure(self):
         alex = guest("u-alex", "Alex", "Kim", has_plus_one=True)
         [p] = _match([row(sender="Alex Kim", amount="20")], [alex], price="$10-20")
-        assert p.confidence == MatchConfidence.CONFIDENT
+        assert p.confidence == MatchConfidence.UNSURE
+        assert p.reason == "amount could cover 1-2 people"
+
+    def test_waitlisted_sender_whose_note_names_another_guest_is_unsure(self):
+        bob = guest("u-bob", "Bob", "Lee", status=RSVPStatus.WAITLISTED)
+        jane = guest("u-jane", "Jane", "Doe")
+        [p] = _match([row(sender="Bob Lee", note="with jane doe")], [bob, jane])
+        assert p.confidence == MatchConfidence.UNSURE
+        assert p.reason == "sender is waitlisted; note names another guest"
+        assert (p.user_ids, p.candidate_user_ids) == (["u-jane"], ["u-bob"])
+
+    def test_nickname_only_waitlisted_sender_whose_note_names_another_guest_is_unsure(self):
+        robert = guest("u-rob", "Robert", "Lee", nickname="Bob", status=RSVPStatus.WAITLISTED)
+        jane = guest("u-jane", "Jane", "Doe")
+        [p] = _match([row(sender="Bob", note="with jane doe")], [robert, jane])
+        assert p.confidence == MatchConfidence.UNSURE
+        assert p.reason == "sender is waitlisted; note names another guest"
+        assert (p.user_ids, p.candidate_user_ids) == (["u-jane"], ["u-rob"])
 
     def test_note_with_nickname_and_last_name_matches(self):
         [p] = _match([row(sender="Pat Kim", note="sam ortiz's ticket")], [SAM])
@@ -165,13 +182,6 @@ class TestNoteMatch:
         assert p.user_ids == []
         assert p.candidate_user_ids == ["u-jamie"]
         assert p.reason == "only a first name in the note matched"
-
-    def test_note_wins_over_waitlisted_sender(self):
-        alex = guest("u-alex", "Alex", "Kim", status=RSVPStatus.WAITLISTED)
-        [p] = _match([row(sender="Alex Kim", note="for jamie lee")], [alex, JAMIE])
-        assert p.user_ids == ["u-jamie"]
-        assert p.candidate_user_ids == []
-        assert p.confidence == MatchConfidence.CONFIDENT
 
     def test_no_sender_or_note_match_is_unmatched(self):
         [p] = _match([row(sender="Pat Kim", note="dinner")], [ALEX, JAMIE])
