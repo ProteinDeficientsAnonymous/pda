@@ -22,7 +22,8 @@ _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
 _RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
 _TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; rating: 1-5 stars; "
-_TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time"
+_TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time; section: a heading "
+_TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 # A real id only exists once the source question is created; validation just needs a UUID.
 _PENDING_ID = UUID(int=0)
@@ -49,7 +50,10 @@ class SurveyQuestionFields(BaseModel):
             "like the survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
         ),
     )
-    required: bool = Field(False, description="respondents must answer it")
+    description: str = Field(
+        "", max_length=FieldLimit.DESCRIPTION, description="section only: text under the heading"
+    )
+    required: bool = Field(False, description="respondents must answer it; not for a section")
     show_if: ShowIf | None = Field(
         None,
         description="show it only when an earlier radio/select/checkbox/boolean answer matches",
@@ -67,6 +71,15 @@ class SurveyQuestionFields(BaseModel):
             raise ValueError(f"{kind} questions take no options")
         if kind == QuestionType.DATETIME_POLL:
             self.options = [_poll_option(option) for option in self.options]
+        return self
+
+    @model_validator(mode="after")
+    def _check_section(self) -> Self:
+        self.description = self.description.strip()
+        if self.field_type == QuestionType.SECTION and self.required:
+            raise ValueError("section headers can't be required")
+        if self.field_type != QuestionType.SECTION and self.description:
+            raise ValueError("only section headers take a description")
         return self
 
 
