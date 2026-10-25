@@ -57,8 +57,9 @@ async def _discard(user: User, survey_id: UUID, error: BaseException) -> None:
     description=(
         "create a pda survey, switched off: its page shows it closed and it takes no responses. "
         "before calling: map each of the user's questions to a field_type, show them every "
-        "question's type and options plus the settings, and get their ok. after creating, show "
-        "the summary and say it stays off until they switch it on in pda at its edit_url."
+        "question's type, options and show_if plus the settings, and get their ok. after "
+        "creating, show the summary and say it stays off until they switch it on in pda at its "
+        "edit_url."
     ),
 )
 async def create_survey(settings: SurveySettings, questions: SurveyQuestions) -> dict[str, Any]:
@@ -74,7 +75,9 @@ async def create_survey(settings: SurveySettings, questions: SurveyQuestions) ->
     # Every write is shielded, so these checkpoints are where a cancel lands and gets cleaned up.
     try:
         await anyio.lowlevel.checkpoint()
-        for position, payload in enumerate(payloads, start=1):
+        for position, (source, payload) in enumerate(payloads, start=1):
+            if payload.show_if:
+                payload.show_if.question_id = UUID(created[source - 1]["id"])
             with _question(position):
                 created.append(await _shielded(create_question_view, user, survey_id, payload))
             await anyio.lowlevel.checkpoint()
