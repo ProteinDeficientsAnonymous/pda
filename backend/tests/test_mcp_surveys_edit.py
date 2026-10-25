@@ -213,6 +213,8 @@ def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admi
         ([_update(3, show_if=_when(1, "very")), _remove(1)], 'operation 1: question 1 ("food?")'),
         ([_remove(1), _update(3, show_if=_when(1, "very"))], "which this edit removes"),
         ([_update(3, label=" ")], "at least 1 character"),
+        ([_update(3, description="x")], '"code": "field_invalid"'),
+        ([_update(3, field_type="section", show_if=_when(2, "x"))], "show_if doesn't fit"),
         ([_update(3, colour="red")], "Extra inputs are not permitted"),
         ([_add(NOTES, after=5)], "there's no question 5"),
         ([_remove(1), _add({**NOTES, "show_if": _when(1, "very")})], "which this edit removes"),
@@ -309,6 +311,21 @@ def test_update_after_its_condition_source_is_removed(surveys_admin):
     token = _edit(surveys_admin, survey, questions=ops)["confirm_token"]
     _edit(surveys_admin, survey, questions=ops, confirm_token=token)
     assert SurveyQuestion.objects.get(label="why").show_if is None
+
+
+def test_turns_a_question_into_a_section_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    _edit(surveys_admin, survey, questions=[_update(3, field_type="section", description="more")])
+    notes = SurveyQuestion.objects.get(label="notes")
+    assert (notes.field_type, notes.description) == ("section", "more")
+
+
+def test_section_cannot_be_made_required_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    SurveyQuestion.objects.create(survey=survey, label="about you", field_type="section")
+    message = _refused(surveys_admin, survey, questions=[_update(1, required=True)])
+    assert "section headers can't be required" in message
 
 
 def test_label_change_leaves_stored_options_alone(surveys_admin):

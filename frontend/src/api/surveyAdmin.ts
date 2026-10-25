@@ -233,6 +233,7 @@ export interface SurveyQuestionInput {
   label: string;
   fieldType: SurveyQuestionType;
   options: string[];
+  description?: string;
   required: boolean;
   showIf: ShowIfCondition | null;
 }
@@ -242,6 +243,7 @@ function questionBody(input: SurveyQuestionInput) {
     label: input.label,
     field_type: input.fieldType,
     options: input.options,
+    description: input.description ?? '',
     required: input.required,
     show_if: input.showIf
       ? {
