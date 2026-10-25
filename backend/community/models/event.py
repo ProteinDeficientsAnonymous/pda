@@ -238,7 +238,16 @@ class EventRSVP(models.Model):
     pre_cancel_status = models.CharField(
         max_length=20, choices=RSVPStatus.choices, null=True, blank=True
     )
+    # Guest's own "i paid" attestation; gates attending writes. Host verification is separate.
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
+    payment_verified_at = models.DateTimeField(null=True, blank=True)
+    payment_verified_by = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="payment_verified_rsvps",
+    )
     # Set on joining the waitlist, cleared on leaving; hosts can renumber via the reorder endpoint.
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
