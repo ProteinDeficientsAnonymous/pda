@@ -37,15 +37,14 @@ async def member_totals(
     return {**totals, "period_days": period_days, "period_start": since.isoformat()}
 
 
-_ANNOTATED = ("status", "member_since", "last_qualifying_at")
+_ANNOTATED = ("status", "member_since", "last_qualifying_at", "qualifying_count_12mo")
 _FIELDS = ("last_login", "has_joined_whatsapp", "whatsapp_reminder_opt_out")
 _CONTACT = ("phone_number", "email")
 
 
 def _row(user: User, fields: tuple[str, ...]) -> dict[str, Any]:
     values = {f: getattr(user, f) for f in (*_ANNOTATED, *fields)}
-    counts = {"qualifying_count_12mo": user.qualifying_count}  # ty: ignore[unresolved-attribute]
-    return {"id": str(user.id), "name": user.full_name, **values, **counts}
+    return {"id": str(user.id), "name": user.full_name, **values}
 
 
 def _page(
@@ -59,8 +58,7 @@ def _page(
     now = timezone.now()
     qs = members_matching(filters, now, sort)
     total = qs.count()
-    window_start = now - timedelta(days=QUALIFYING_WINDOW_DAYS)
-    page = with_qualifying_count(qs, window_start).only("first_name", "last_name", *fields)
+    page = with_qualifying_count(qs, now).only("first_name", "last_name", *fields)
     page = page[offset : offset + limit]
     return {
         "members": [_row(u, fields) for u in page],
@@ -78,11 +76,12 @@ def _page(
         "(active and still_onboarding) are listed. joined_within_days uses the same membership "
         "start as new_in_period. attendance uses the members analytics screen's definition: a "
         "qualifying event is an official or club event (community events don't count) that a "
-        "host marked the member attended; cancelled, draft and deleted events never count. rows "
-        "have id, name, status, member_since, last_login, the whatsapp flags, last_qualifying_at "
-        "(start of their latest qualifying event, null if never) and qualifying_count_12mo "
-        f"(qualifying events starting in the last {QUALIFYING_WINDOW_DAYS} days, as on the "
-        "analytics screen); total is the full match count. last_login is the last password or "
+        "host marked the member attended; cancelled, draft and deleted events and events with no "
+        "start time never count. rows have id, name, status, member_since, last_login, the "
+        "whatsapp flags, last_qualifying_at (start of their latest qualifying event, null if "
+        "never) and qualifying_count_12mo (qualifying events starting on or after "
+        f"{QUALIFYING_WINDOW_DAYS} days ago, future-dated ones included, as on the analytics "
+        "screen); total is the full match count. last_login is the last password or "
         "login-link sign-in: staying signed in doesn't update it, so it isn't a measure of site "
         "use. phone and email are left out unless include_contact is true: only set it when the "
         "user explicitly asks for phone numbers or emails. paged: fetch more with "
@@ -94,9 +93,9 @@ async def find_members(
     sort: Annotated[
         MemberSort,
         Field(
-            description="newest_member: latest membership start first. longest_inactive: members "
-            "who never attended a qualifying event first (longest-standing members first), then "
-            "by oldest last_qualifying_at"
+            description="newest_member: latest membership start first. longest_inactive: longest "
+            "since their last qualifying event first, counting from membership start for members "
+            "who never attended one"
         ),
     ] = MemberSort.NEWEST_MEMBER,
     include_contact: Annotated[

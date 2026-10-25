@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from community._attendance_analytics import (
@@ -35,11 +35,15 @@ def admin(manage_users_user):
     return manage_users_user
 
 
-def _event(days_ago: float | None, event_type=_OFFICIAL, status=EventStatus.ACTIVE) -> Event:
-    start = None if days_ago is None else timezone.now() - timedelta(days=days_ago)
+def _event_at(start: datetime | None, event_type=_OFFICIAL, status=EventStatus.ACTIVE) -> Event:
     return Event.objects.create(
         title="e", start_datetime=start, event_type=event_type, status=status
     )
+
+
+def _event(days_ago: float | None, event_type=_OFFICIAL, status=EventStatus.ACTIVE) -> Event:
+    start = None if days_ago is None else timezone.now() - timedelta(days=days_ago)
+    return _event_at(start, event_type, status)
 
 
 def _went(user, *events, attendance=AttendanceStatus.ATTENDED, status=RSVPStatus.ATTENDING):
@@ -116,6 +120,24 @@ def test_varied_members_get_the_expected_attendance(admin):
     assert str(future_only.id) in _ids(admin, never_attended=False)
 
 
+def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
+    now = datetime(2026, 10, 24, 12, 0, 0, 123456, tzinfo=UTC)
+    monkeypatch.setattr(timezone, "now", lambda: now)
+    edge = now - timedelta(days=365)
+    on_edge, just_before = _set_up(500), _set_up(500)
+    _went(on_edge, _event_at(edge))
+    _went(just_before, _event_at(edge - timedelta(microseconds=1)))
+    rows = {row["id"]: row for row in _rows(admin)}
+    inactive = _ids(admin, inactive_for_days=365)
+    assert rows[str(on_edge.id)]["qualifying_count_12mo"] == 1
+    assert rows[str(just_before.id)]["qualifying_count_12mo"] == 0
+    assert inactive == _of(admin, just_before)
+    for member in (on_edge, just_before):
+        stats = compute_member_stats(user_rsvps_for_attendance(member), now)
+        assert rows[str(member.id)]["qualifying_count_12mo"] == stats.qualifying_count_12mo
+        assert is_pause_candidate(stats) == (str(member.id) in inactive)
+
+
 def test_inactive_for_days_counts_never_attended(admin):
     never = _set_up(400)
     stale = _attended(100)
@@ -136,25 +158,19 @@ def test_joined_recently_and_never_attended(admin):
     assert _ids(admin, joined_within_days=60, inactive_for_days=60) == expected
 
 
-def test_longest_inactive_sort_with_ties(admin):
+def test_longest_inactive_sorts_by_time_since_last_activity(admin):
     shared = _event(50)
-    old_never, young_never = _set_up(300), _set_up(10)
-    tied_never = _set_up(10)
-    User.objects.filter(pk__in=[young_never.pk, tied_never.pk]).update(
-        date_joined=timezone.now() - timedelta(days=10)
-    )
+    three_years = _attended(1095, joined_days_ago=1200)
     long_ago = _attended(200)
-    same_a, same_b, same_c = _set_up(400), _set_up(100), _set_up(100)
-    User.objects.filter(pk__in=[same_b.pk, same_c.pk]).update(
-        date_joined=timezone.now() - timedelta(days=100)
-    )
-    _went(same_a, shared)
-    _went(same_b, shared)
-    _went(same_c, shared)
+    tied = [_set_up(400), _set_up(100), _set_up(100)]
+    for member in tied:
+        _went(member, shared)
+    tied_never = _set_up(50)
+    User.objects.filter(pk=tied_never.pk).update(date_joined=shared.start_datetime)
+    just_joined = _set_up(2)
     recent = _attended(1)
-    tied_pair = sorted([young_never, tied_never], key=lambda u: u.pk)
-    later_pair = sorted([same_b, same_c], key=lambda u: u.pk)
-    expected = [admin, old_never, *tied_pair, long_ago, same_a, *later_pair, recent]
+    ties = sorted([*tied, tied_never], key=lambda u: u.pk)
+    expected = [three_years, admin, long_ago, *ties, just_joined, recent]
     ordered = [row["id"] for row in _rows(admin, sort=MemberSort.LONGEST_INACTIVE)]
     assert ordered == [str(u.id) for u in expected]
 
@@ -171,8 +187,8 @@ def test_longest_inactive_paging_is_stable_with_ties(admin):
     for _ in range(3):
         _set_up()
     User.objects.update(date_joined=timezone.now() - timedelta(days=1))
-    first = _find(admin, sort="longest_inactive", limit=100)
-    paged = _rows(admin, sort="longest_inactive")
+    first = _find(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
+    paged = _rows(admin, sort=MemberSort.LONGEST_INACTIVE)
     assert first["total"] == len(paged) == 8
     assert [row["id"] for row in paged] == [row["id"] for row in first["members"]]
 

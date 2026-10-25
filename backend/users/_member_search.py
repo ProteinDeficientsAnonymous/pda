@@ -18,8 +18,8 @@ _SIGN_IN = (
     "isn't a measure of site use"
 )
 _QUALIFYING = (
-    "qualifying = an official or club event (not community) that a host marked them attended, "
-    "same as the members analytics screen"
+    "qualifying = an official or club event (not community) with a start time that a host marked "
+    "them attended, same as the members analytics screen"
 )
 
 
@@ -48,9 +48,10 @@ class MemberFilters(BaseModel):
     )
     inactive_for_days: Days = Field(
         None,
-        description="no qualifying event starting in the last n days, counting members who never "
-        f"attended one. use {QUALIFYING_WINDOW_DAYS} when asked for inactive members without a "
-        f"number: that's the analytics screen's pause-candidate window. {_QUALIFYING}",
+        description="no qualifying event starting on or after n days ago (a future-dated one "
+        "counts too), counting members who never attended one. use "
+        f"{QUALIFYING_WINDOW_DAYS} when asked for inactive members without a number: that's the "
+        f"analytics screen's pause-candidate window. {_QUALIFYING}",
     )
     never_attended: bool | None = Field(
         None,
@@ -98,33 +99,29 @@ def with_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
     return qs.annotate(last_qualifying_at=Subquery(latest[:1]))
 
 
-def with_qualifying_count(qs: QuerySet[User], since: datetime) -> QuerySet[User]:
-    """Annotate qualifying_count: qualifying events starting at or after since.
+def with_qualifying_count(qs: QuerySet[User], now: datetime) -> QuerySet[User]:
+    """Annotate qualifying_count_12mo: qualifying events starting in the analytics window or later.
 
     param(qs): users to annotate
-    param(since): window start
-    return(QuerySet[User]): qs with a qualifying_count int
+    param(now): reference time the window counts back from
+    return(QuerySet[User]): qs with a qualifying_count_12mo int
     """
     counted = (
         _qualifying_rsvps()
-        .filter(event__start_datetime__gte=since)
+        .filter(event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS))
         .order_by()
         .values("user")
         .annotate(n=Count("pk"))
         .values("n")
     )
     return qs.annotate(
-        qualifying_count=Coalesce(Subquery(counted, output_field=IntegerField()), Value(0))
+        qualifying_count_12mo=Coalesce(Subquery(counted, output_field=IntegerField()), Value(0))
     )
 
 
 _ORDERING = {
     MemberSort.NEWEST_MEMBER: (F("member_since").desc(), "id"),
-    MemberSort.LONGEST_INACTIVE: (
-        F("last_qualifying_at").asc(nulls_first=True),
-        F("member_since").asc(),
-        "id",
-    ),
+    MemberSort.LONGEST_INACTIVE: (Coalesce("last_qualifying_at", "member_since").asc(), "id"),
 }
 
 
@@ -135,7 +132,7 @@ def members_matching(
 
     param(filters): conditions to AND together
     param(now): reference time for the day-count filters
-    param(sort): newest membership first, or never-attended then longest since a qualifying event
+    param(sort): newest membership first, or longest since last qualifying event or joining
     return(QuerySet[User]): annotated with status, member_since and last_qualifying_at
     """
     qs = with_last_qualifying_at(with_member_since(with_status(User.objects.members())))
