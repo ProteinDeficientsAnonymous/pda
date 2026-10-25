@@ -9,25 +9,29 @@ from users._member_status import MemberStatus, with_member_since, with_status
 from users.models import User
 
 Days = Annotated[int | None, Field(ge=1, le=3650)]
+_SIGN_IN = (
+    "a sign-in is a password or login-link login; staying signed in doesn't count, so this "
+    "isn't a measure of site use"
+)
 
 
 class MemberFilters(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(extra="forbid")
 
     status: tuple[MemberStatus, ...] = Field(
-        (MemberStatus.ACTIVE,),
+        (MemberStatus.ACTIVE, MemberStatus.STILL_ONBOARDING),
         min_length=1,
-        description="statuses to include; pass active, still_onboarding and paused for everyone "
-        "not archived",
+        description="statuses to include; default active and still_onboarding (everyone who can "
+        "sign in); add paused for everyone not archived",
     )
     joined_within_days: Days = Field(None, description="membership started in the last n days")
     never_logged_in: bool | None = Field(
-        None, description="true: never signed in. false: signed in at least once"
+        None, description=f"true: never signed in. false: signed in at least once. {_SIGN_IN}"
     )
     not_logged_in_for_days: Days = Field(
         None,
         description="no sign-in in the last n days, counting members who never signed in; add "
-        "never_logged_in=false for only those who signed in before",
+        f"never_logged_in=false for only those who signed in before. {_SIGN_IN}",
     )
     whatsapp_joined: bool | None = Field(None, description="has joined the whatsapp group")
     whatsapp_reminder_opt_out: bool | None = Field(
@@ -50,7 +54,7 @@ def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
         yield Q(whatsapp_reminder_opt_out=f.whatsapp_reminder_opt_out)
 
 
-def find_members(filters: MemberFilters, now: datetime) -> QuerySet[User]:
+def members_matching(filters: MemberFilters, now: datetime) -> QuerySet[User]:
     """Members matching every filter, newest membership first, id breaking ties.
 
     param(filters): conditions to AND together
