@@ -186,7 +186,7 @@ class TestRsvpAnswerEdgeCases:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_REQUIRED)
 
-    def test_checkbox_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
+    def test_checkbox_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(
             api_client,
             auth_headers,
@@ -194,8 +194,7 @@ class TestRsvpAnswerEdgeCases:
             field_type=RsvpQuestionType.CHECKBOX,
             options=["a, b", "c"],
         )
-        assert response.status_code == 400
-        assert_error_code(response, Code.Event.RSVP_QUESTION_OPTION_NO_COMMA)
+        assert response.status_code == 200
 
     def test_select_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(

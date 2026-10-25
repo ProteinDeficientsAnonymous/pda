@@ -83,8 +83,6 @@ def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
         raise_validation(
             Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED, field="options", status_code=400
         )
-    if payload.field_type == "checkbox" and any("," in option for option in payload.options):
-        raise_validation(Code.Event.RSVP_QUESTION_OPTION_NO_COMMA, field="options", status_code=400)
 
 
 class TagOut(BaseModel):

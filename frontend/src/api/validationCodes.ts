@@ -132,8 +132,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvp questions changed — refresh and try again';
     case Code.Event.RsvpQuestionOptionsRequired:
       return 'add at least one option';
-    case Code.Event.RsvpQuestionOptionNoComma:
-      return 'options cannot contain commas';
     case Code.Event.RsvpAnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
