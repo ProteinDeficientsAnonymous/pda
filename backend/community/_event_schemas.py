@@ -251,6 +251,19 @@ class HostRSVPPaymentIn(BaseModel):
     paid_confirmed: bool
 
 
+MAX_BULK_PAYMENT_VERIFY = 500
+
+
+class BulkPaymentVerifyIn(BaseModel):
+    user_ids: list[UUID] = Field(min_length=1, max_length=MAX_BULK_PAYMENT_VERIFY)
+
+
+class BulkPaymentVerifyOut(BaseModel):
+    verified_user_ids: list[str]
+    already_verified_user_ids: list[str]
+    verified_count: int = Field(description="Rsvps on the event with a verified payment now.")
+
+
 class WaitlistOrderIn(BaseModel):
     user_ids: list[UUID]
 

@@ -127,6 +127,13 @@
         "params": []
       },
       {
+        "name": "PAYMENT_VERIFY_NOT_GUESTS",
+        "value": "event.payment_verify_not_guests",
+        "params": [
+          "user_ids"
+        ]
+      },
+      {
         "name": "WAITLIST_ORDER_STALE",
         "value": "event.waitlist_order_stale",
         "params": []

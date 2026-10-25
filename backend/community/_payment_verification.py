@@ -81,7 +81,9 @@ def apply_payment_verification(
     return change
 
 
-def record_payment_verification(request, event: Event, change: PaymentVerificationChange) -> None:
+def record_payment_verification(
+    request, event: Event, change: PaymentVerificationChange, *, source: str | None = None
+) -> None:
     """Audit a verification change; notify the guest unless it undoes a fresh host-stamped mark."""
     audit_log(
         logging.INFO,
@@ -96,6 +98,7 @@ def record_payment_verification(request, event: Event, change: PaymentVerificati
                 "was_verified": change.was_verified,
                 "host_stamped": change.host_stamped,
                 **payment_audit_details(event.id, change.user_id),
+                **({"source": source} if source else {}),
             },
         ),
     )

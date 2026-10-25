@@ -100,6 +100,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.PaymentVerifyNotGuests:
+      return "some of those people aren't on this event's guest list — nothing was verified";
     case Code.Event.WaitlistOrderStale:
       return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:

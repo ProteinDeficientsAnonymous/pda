@@ -8,6 +8,7 @@ from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 from users.models import User as UserModel
+from users.permissions import PermissionKey
 
 from community._event_helpers import (
     _can_edit_event,
@@ -22,7 +23,13 @@ from community._event_rsvps import (
     _validate_rsvp_status,
     payment_audit_details,
 )
-from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
+from community._event_schemas import (
+    BulkPaymentVerifyIn,
+    BulkPaymentVerifyOut,
+    EventOut,
+    HostRSVPIn,
+    HostRSVPPaymentIn,
+)
 from community._payment_verification import (
     PaymentVerificationChange,
     apply_payment_verification,
@@ -209,6 +216,74 @@ def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPP
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return Status(200, _event_out(event, request.auth))
+
+
+CASHAPP_IMPORT_SOURCE = "cashapp_import"
+
+
+def _verify_payments_in_transaction(
+    event_id, user_ids: list[UUID], actor
+) -> tuple[list[PaymentVerificationChange], list[str]]:
+    """All-or-nothing: every id needs an rsvp on the event; already-verified guests are skipped."""
+    rsvps = {
+        str(rsvp.user_id): rsvp
+        for rsvp in EventRSVP.objects.select_for_update()
+        .filter(event_id=event_id, user_id__in=user_ids)
+        .order_by("user_id")
+    }
+    missing = [str(uid) for uid in user_ids if str(uid) not in rsvps]
+    if missing:
+        raise_validation(
+            Code.Event.PAYMENT_VERIFY_NOT_GUESTS, status_code=400, user_ids=", ".join(missing)
+        )
+    changes: list[PaymentVerificationChange] = []
+    skipped: list[str] = []
+    for uid in user_ids:
+        rsvp = rsvps[str(uid)]
+        if rsvp.payment_verified_at is not None:
+            skipped.append(str(uid))
+        else:
+            changes.append(apply_payment_verification(rsvp, verified=True, actor=actor))
+    return changes, skipped
+
+
+@router.post(
+    "/events/{event_id}/rsvps/payments/verify/",
+    response={
+        200: BulkPaymentVerifyOut,
+        400: ErrorOut,
+        403: ErrorOut,
+        404: ErrorOut,
+        429: ErrorOut,
+    },
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def verify_guest_payments(request, event_id: UUID, payload: BulkPaymentVerifyIn):
+    """Bulk-verify guests' payments from a cash app import; needs import_payments, not hosting."""
+    if not request.auth.has_permission(PermissionKey.IMPORT_PAYMENTS):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
+    event = Event.objects.filter(id=event_id).first()
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+
+    user_ids = list(dict.fromkeys(payload.user_ids))
+    with transaction.atomic():
+        changes, skipped = _verify_payments_in_transaction(event_id, user_ids, request.auth)
+
+    for change in changes:
+        record_payment_verification(request, event, change, source=CASHAPP_IMPORT_SOURCE)
+    verified_count = EventRSVP.objects.filter(
+        event_id=event_id, payment_verified_at__isnull=False
+    ).count()
+    return Status(
+        200,
+        BulkPaymentVerifyOut(
+            verified_user_ids=[change.user_id for change in changes],
+            already_verified_user_ids=skipped,
+            verified_count=verified_count,
+        ),
+    )
 
 
 @router.delete(
