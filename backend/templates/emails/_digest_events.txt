@@ -1,0 +1,5 @@
+{% for event in events %}
+{{ event.title|lower }}{% if event.when %}
+{{ event.when|lower }}{% endif %}
+{{ event.url }}
+{% endfor %}

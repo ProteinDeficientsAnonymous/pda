@@ -63,6 +63,7 @@ export interface User {
   hasSeenVeganniversary: boolean;
   hideLastName: boolean;
   weeklyDigestOptOut: boolean;
+  monthlyDigestOptOut: boolean;
   whatsappReminderOptOut: boolean;
   attendanceNudgeOptOut: boolean;
   weekStart: 'sunday' | 'monday';
