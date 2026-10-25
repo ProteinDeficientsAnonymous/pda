@@ -48,6 +48,11 @@ def _tool_error(status: int, detail: Any) -> ToolError:
     return ToolError(json.dumps({"status": status, "detail": detail}))
 
 
+def validation_tool_error(exc: ValidationException) -> ToolError:
+    """A website validation error as a ToolError shaped like call_view's."""
+    return _tool_error(exc.status_code, [_serialize_validation_exception(exc)])
+
+
 async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: Any) -> Any:
     """Run a ninja route handler as `user`; return its body as JSON-able data or raise ToolError."""
     request = _view_request(user)
@@ -55,7 +60,7 @@ async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: 
     try:
         result = await sync_to_async(view)(request, *args, **kwargs)
     except ValidationException as exc:
-        raise _tool_error(exc.status_code, [_serialize_validation_exception(exc)]) from exc
+        raise validation_tool_error(exc) from exc
     if isinstance(result, Status) and result.status_code >= 400:
         body = _jsonable(result.value)
         raise _tool_error(

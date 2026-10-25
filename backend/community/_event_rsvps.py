@@ -211,9 +211,14 @@ def payment_audit_details(event_id, user_id) -> dict:
         .values("paid_confirmed_at", "payment_verified_at", "payment_verified_by_id")
         .first()
     ) or {}
-    stamped_at = row.get("paid_confirmed_at")
-    verified_at = row.get("payment_verified_at")
-    verified_by_id = row.get("payment_verified_by_id")
+    return payment_audit_fields(
+        row.get("paid_confirmed_at"),
+        row.get("payment_verified_at"),
+        row.get("payment_verified_by_id"),
+    )
+
+
+def payment_audit_fields(stamped_at, verified_at, verified_by_id) -> dict:
     return {
         "paid_confirmed": stamped_at is not None,
         "paid_confirmed_at": stamped_at.isoformat() if stamped_at else None,
