@@ -212,7 +212,7 @@ describe('EventManageRsvpsPanel', () => {
     );
     expect(screen.queryByText(/unpaid/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/says paid/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /payment verified/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /payment/i })).not.toBeInTheDocument();
   });
 
   const paidEvent = (guest: Partial<EventGuest>) =>

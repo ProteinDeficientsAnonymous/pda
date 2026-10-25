@@ -89,4 +89,39 @@ describe('useSetGuestPayment', () => {
     expect(cached?.guests[0]?.paymentVerified).toBe(true);
     expect(qc.getQueryData<Event>(eventKeys.detail('ev1', true))).toBe(cached);
   });
+
+  it('caches an undone verification as unpaid', async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    vi.mocked(apiClient.patch).mockResolvedValue({
+      data: {
+        id: 'ev1',
+        slug: 'test-event',
+        title: 'Test Event',
+        guests: [
+          {
+            user_id: 'u1',
+            name: 'Alex',
+            status: 'attending',
+            paid_confirmed: false,
+            payment_verified: false,
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useSetGuestPayment('ev1'), { wrapper: Wrapper });
+    result.current.mutate({ userId: 'u1', verified: false });
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/community/events/ev1/rsvps/u1/payment/', {
+      paid_confirmed: false,
+    });
+    const guest = qc.getQueryData<Event>(eventKeys.detail('test-event', true))?.guests[0];
+    expect(guest?.paidConfirmed).toBe(false);
+    expect(guest?.paymentVerified).toBe(false);
+  });
 });
