@@ -88,7 +88,7 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByText('great')).toBeInTheDocument();
     expect(screen.getByText('vanilla,choc')).toBeInTheDocument();
     expect(
-      screen.getByText((_, el) => el?.textContent === '2030-01-01T18:00:00+00:00: yes'),
+      screen.getByRole('cell', { name: '2030-01-01T18:00:00+00:00: yes' }),
     ).toBeInTheDocument();
 
     expect(screen.getByRole('columnheader', { name: 'mood' })).toBeInTheDocument();
