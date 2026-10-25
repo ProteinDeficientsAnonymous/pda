@@ -2,7 +2,11 @@ from collections.abc import Iterator
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from django.db.models import Q, QuerySet
+from community._attendance_analytics import QUALIFYING_WINDOW_DAYS, qualifying_attendance_q
+from community.models import EventRSVP
+from django.db import models
+from django.db.models import Count, F, IntegerField, OuterRef, Q, QuerySet, Subquery, Value
+from django.db.models.functions import Coalesce
 from pydantic import BaseModel, ConfigDict, Field
 
 from users._member_status import MemberStatus, with_member_since, with_status
@@ -13,6 +17,15 @@ _SIGN_IN = (
     "a sign-in is a password or login-link login; staying signed in doesn't count, so this "
     "isn't a measure of site use"
 )
+_QUALIFYING = (
+    "qualifying = an official or club event (not community) with a start time that a host marked "
+    "them attended, same as the members analytics screen"
+)
+
+
+class MemberSort(models.TextChoices):
+    NEWEST_MEMBER = "newest_member"
+    LONGEST_INACTIVE = "longest_inactive"
 
 
 class MemberFilters(BaseModel):
@@ -33,6 +46,18 @@ class MemberFilters(BaseModel):
         description="no sign-in in the last n days, counting members who never signed in; add "
         f"never_logged_in=false for only those who signed in before. {_SIGN_IN}",
     )
+    inactive_for_days: Days = Field(
+        None,
+        description="no qualifying event starting on or after n days ago (a future-dated one "
+        "counts too), counting members who never attended one. use "
+        f"{QUALIFYING_WINDOW_DAYS} when asked for inactive members without a number: that's the "
+        f"analytics screen's pause-candidate window. {_QUALIFYING}",
+    )
+    never_attended: bool | None = Field(
+        None,
+        description="true: never attended a qualifying event. false: attended at least one. "
+        f"{_QUALIFYING}",
+    )
     whatsapp_joined: bool | None = Field(None, description="has joined the whatsapp group")
     whatsapp_reminder_opt_out: bool | None = Field(
         None, description="opted out of whatsapp join reminders"
@@ -48,18 +73,67 @@ def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
     if f.not_logged_in_for_days is not None:
         cutoff = now - timedelta(days=f.not_logged_in_for_days)
         yield Q(last_login__isnull=True) | Q(last_login__lt=cutoff)
+    if f.inactive_for_days is not None:
+        cutoff = now - timedelta(days=f.inactive_for_days)
+        yield Q(last_qualifying_at__isnull=True) | Q(last_qualifying_at__lt=cutoff)
+    if f.never_attended is not None:
+        yield Q(last_qualifying_at__isnull=f.never_attended)
     if f.whatsapp_joined is not None:
         yield Q(has_joined_whatsapp=f.whatsapp_joined)
     if f.whatsapp_reminder_opt_out is not None:
         yield Q(whatsapp_reminder_opt_out=f.whatsapp_reminder_opt_out)
 
 
-def members_matching(filters: MemberFilters, now: datetime) -> QuerySet[User]:
-    """Members matching every filter, newest membership first, id breaking ties.
+def _qualifying_rsvps() -> QuerySet[EventRSVP]:
+    # Correlated subqueries, not joined aggregates, so a member is still one row for count/paging.
+    return EventRSVP.objects.filter(qualifying_attendance_q(), user=OuterRef("pk"))
+
+
+def with_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
+    """Annotate last_qualifying_at: start of their latest qualifying event, null if none.
+
+    param(qs): users to annotate
+    return(QuerySet[User]): qs with a last_qualifying_at datetime
+    """
+    latest = _qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
+    return qs.annotate(last_qualifying_at=Subquery(latest[:1]))
+
+
+def with_qualifying_count(qs: QuerySet[User], now: datetime) -> QuerySet[User]:
+    """Annotate qualifying_count_12mo: qualifying events starting in the analytics window or later.
+
+    param(qs): users to annotate
+    param(now): reference time the window counts back from
+    return(QuerySet[User]): qs with a qualifying_count_12mo int
+    """
+    counted = (
+        _qualifying_rsvps()
+        .filter(event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS))
+        .order_by()
+        .values("user")
+        .annotate(n=Count("pk"))
+        .values("n")
+    )
+    return qs.annotate(
+        qualifying_count_12mo=Coalesce(Subquery(counted, output_field=IntegerField()), Value(0))
+    )
+
+
+_ORDERING = {
+    MemberSort.NEWEST_MEMBER: (F("member_since").desc(), "id"),
+    MemberSort.LONGEST_INACTIVE: (Coalesce("last_qualifying_at", "member_since").asc(), "id"),
+}
+
+
+def members_matching(
+    filters: MemberFilters, now: datetime, sort: MemberSort = MemberSort.NEWEST_MEMBER
+) -> QuerySet[User]:
+    """Members matching every filter, in sort order with id as the final tiebreak.
 
     param(filters): conditions to AND together
     param(now): reference time for the day-count filters
-    return(QuerySet[User]): annotated with status and member_since
+    param(sort): newest membership first, or longest since last qualifying event or joining
+    return(QuerySet[User]): annotated with status, member_since and last_qualifying_at
     """
-    qs = with_member_since(with_status(User.objects.members()))
-    return qs.filter(*_conditions(filters, now)).order_by("-member_since", "id")
+    qs = with_last_qualifying_at(with_member_since(with_status(User.objects.members())))
+    return qs.filter(*_conditions(filters, now)).order_by(*_ORDERING[sort])
