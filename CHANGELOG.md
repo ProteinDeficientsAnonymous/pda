@@ -1,3 +1,10 @@
+# [0.184.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.183.0...v0.184.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add member_totals tool for member audits ([#1835](https://github.com/ProteinDeficientsAnonymous/pda/issues/1835)) ([3f72120](https://github.com/ProteinDeficientsAnonymous/pda/commit/3f721206fad00dd631258954c04a782644af3075))
+
 # [0.183.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.182.0...v0.183.0) (2026-10-25)
 
 
