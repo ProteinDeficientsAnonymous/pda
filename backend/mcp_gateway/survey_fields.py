@@ -1,4 +1,5 @@
 from typing import Annotated, Literal, Self
+from uuid import UUID
 
 from community._field_limits import FieldLimit
 from community._survey_schemas import SurveyIn, SurveyQuestionIn
@@ -7,7 +8,7 @@ from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from mcp_gateway.fields import build
+from mcp_gateway.fields import WHEN, NewYorkTime, build
 
 _NEEDS_OPTIONS = ("radio", "select", "checkbox")
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
@@ -47,6 +48,13 @@ class SurveySettings(BaseModel):
     description: str = Field("", description="intro shown above the questions")
     slug: str = Field("", description="url segment, /surveys/<slug>; empty: made from the title")
     visibility: SurveyVisibility = Field(SurveyVisibility.PUBLIC, description="who can answer")
+    anonymous: bool = Field(False, description="responses aren't tied to a member")
+    one_response_per_user: bool = Field(False, description="each person can answer only once")
+    opens_at: NewYorkTime = Field(None, description=f"first time it takes responses, {WHEN}")
+    closes_at: NewYorkTime = Field(None, description=f"stops taking responses, {WHEN}")
+    max_responses: int | None = Field(None, description="stop after this many; empty: unlimited")
+    linked_event_id: UUID | None = Field(None, description="event id this survey is for")
+    confirmation_message: str = Field("", description="shown to the respondent after submitting")
 
 
 def to_survey_in(settings: SurveySettings) -> SurveyIn:

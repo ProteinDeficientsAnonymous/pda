@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import timedelta
 from unittest.mock import patch
 
 import anyio
@@ -7,7 +8,8 @@ import pytest
 from audit.models import AuditLogEntry
 from community._surveys import create_survey_question as create_question_view
 from community._validation import Code
-from community.models import Survey, SurveyQuestion
+from community.models import Event, Survey, SurveyQuestion
+from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
@@ -194,3 +196,21 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
         auth_context_var.reset(reset)
     survey_id = str(Survey.objects.get().pk)
     assert any(survey_id in r.getMessage() for r in caplog.records if r.levelname == "ERROR")
+
+
+def test_saves_every_setting_in_new_york_time(surveys_admin):
+    event = Event.objects.create(title="x", start_datetime=timezone.now() + timedelta(7))
+    settings = {
+        **{"anonymous": True, "one_response_per_user": True, "max_responses": 40},
+        **{"opens_at": "2099-07-04T09:00", "closes_at": "2099-12-05T17:00:00-05:00"},
+        **{"linked_event_id": str(event.pk), "confirmation_message": "thanks!"},
+    }
+    summary = _create(surveys_admin, **settings)
+    expected = {**settings, "opens_at": "2099-07-04T09:00:00-04:00"}
+    assert {key: summary[key] for key in expected} == expected
+
+
+def test_wrong_new_york_offset_refused(surveys_admin):
+    error = _create_refused(surveys_admin, closes_at="2099-07-04T11:00:00-05:00")
+    assert "new york is at -04:00 on 2099-07-04" in error
+    assert not Survey.objects.exists()
