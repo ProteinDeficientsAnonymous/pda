@@ -5010,6 +5010,17 @@
             ],
             "title": "Last Name"
           },
+          "monthly_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Digest Opt Out"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -5544,12 +5555,24 @@
               }
             ],
             "title": "Related User Id"
+          },
+          "survey_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Id"
           }
         },
         "required": [
           "id",
           "notification_type",
           "event_id",
+          "survey_id",
           "related_user_id",
           "message",
           "is_read",
@@ -6068,7 +6091,8 @@
           "number",
           "boolean",
           "rating",
-          "datetime_poll"
+          "datetime_poll",
+          "section"
         ],
         "title": "QuestionType",
         "type": "string"
@@ -7158,6 +7182,12 @@
       },
       "SurveyQuestionIn": {
         "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
           "field_type": {
             "allOf": [
               {
@@ -7219,6 +7249,11 @@
       },
       "SurveyQuestionOut": {
         "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
           "display_order": {
             "title": "Display Order",
             "type": "integer"
@@ -7786,6 +7821,11 @@
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
+            "type": "boolean"
+          },
+          "monthly_digest_opt_out": {
+            "default": false,
+            "title": "Monthly Digest Opt Out",
             "type": "boolean"
           },
           "needs_contact_privacy_consent": {

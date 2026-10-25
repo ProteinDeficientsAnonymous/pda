@@ -64,6 +64,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |
 | `/admin/surveys/:id/responses` | `manage_surveys` (raw responses + **poll tallies / finalize**) |
+| `/admin/surveys/:id/preview` | `manage_surveys` (read-only preview — never submits) |
 
 ## Catch-all
 

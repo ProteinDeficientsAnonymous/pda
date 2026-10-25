@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
@@ -17,20 +17,19 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
   const { data: survey, isPending, isError } = useSurvey(slug);
-  // The submit that fills the cap refetches a capped survey; keep the form so its confirmation shows.
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
   // A finalized poll keeps rendering its result rather than a shut-door message.
-  if (status !== 'active' && survey.pollResult === null && !submitted) {
+  if (status !== 'active' && survey.pollResult === null) {
     return <SurveyUnavailable survey={survey} status={status} />;
   }
   return (
     <SurveyForm
       survey={survey}
       onSubmitted={() => {
-        setSubmitted(true);
+        void navigate(`/surveys/${survey.slug}/thanks`);
       }}
     />
   );
@@ -188,12 +187,6 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
           <Button type="submit" disabled={submit.isPending}>
             {submit.isPending ? 'saving…' : submitLabel}
           </Button>
-        ) : null}
-
-        {submit.isSuccess && !readOnly ? (
-          <p className="text-success text-sm whitespace-pre-wrap">
-            {survey.confirmationMessage ? survey.confirmationMessage.toLowerCase() : 'saved ✓'}
-          </p>
         ) : null}
 
         {canStartFresh ? (

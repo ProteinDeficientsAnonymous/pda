@@ -9,6 +9,7 @@ function notification(overrides: Partial<AppNotification>): AppNotification {
     id: 'n1',
     notificationType: NotificationType.EventInvite,
     eventId: 'e1',
+    surveyId: null,
     relatedUserId: null,
     message: '',
     isRead: false,
@@ -26,5 +27,15 @@ describe('notificationTarget', () => {
   it('has no target for feedback without an event', () => {
     const n = notification({ notificationType: NotificationType.EventFeedback, eventId: null });
     expect(notificationTarget(n)).toBeNull();
+  });
+
+  it('sends a survey response to that survey’s responses page', () => {
+    const n = notification({ notificationType: NotificationType.SurveyResponse, surveyId: 's1' });
+    expect(notificationTarget(n)).toBe('/admin/surveys/s1/responses');
+  });
+
+  it('falls back to the survey list when the survey is gone', () => {
+    const n = notification({ notificationType: NotificationType.SurveyResponse, eventId: null });
+    expect(notificationTarget(n)).toBe('/admin/surveys');
   });
 });

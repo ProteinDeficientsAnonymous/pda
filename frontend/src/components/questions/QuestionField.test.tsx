@@ -59,4 +59,17 @@ describe('QuestionField', () => {
     expect(screen.getByRole('textbox', { name: 'notes' })).toBeInTheDocument();
     expect(screen.queryByText(/optional/)).not.toBeInTheDocument();
   });
+
+  it('renders a section as a heading with its description and no input', () => {
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: 'section', label: 'about you', description: 'optional' }}
+        value={undefined}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'about you' })).toBeInTheDocument();
+    expect(screen.getByText('optional')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
 });

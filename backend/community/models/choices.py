@@ -72,6 +72,7 @@ class QuestionType(models.TextChoices):
     BOOLEAN = "boolean", "Yes / No"
     RATING = "rating", "Rating"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
+    SECTION = "section", "Section"
 
 
 # Survey authors the full catalog; keep the historical name as an alias.

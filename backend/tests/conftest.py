@@ -258,3 +258,8 @@ def fake_email_sender(monkeypatch):
     )
     yield fake
     # monkeypatch auto-cleans up.
+
+
+@pytest.fixture
+def fake_sender(fake_email_sender):
+    return fake_email_sender

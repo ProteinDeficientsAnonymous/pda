@@ -4738,6 +4738,8 @@ export interface components {
             hide_last_name?: boolean | null;
             /** Last Name */
             last_name?: string | null;
+            /** Monthly Digest Opt Out */
+            monthly_digest_opt_out?: boolean | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
             /** Nickname */
@@ -4972,6 +4974,8 @@ export interface components {
             notification_type: string;
             /** Related User Id */
             related_user_id: string | null;
+            /** Survey Id */
+            survey_id: string | null;
         };
         /** OnboardingIn */
         OnboardingIn: {
@@ -5189,7 +5193,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -5602,6 +5606,11 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** @default text */
             field_type: components["schemas"]["QuestionType"];
             /** Label */
@@ -5625,6 +5634,11 @@ export interface components {
         };
         /** SurveyQuestionOut */
         SurveyQuestionOut: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** Display Order */
             display_order: number;
             field_type: components["schemas"]["QuestionType"];
@@ -5901,6 +5915,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Monthly Digest Opt Out
+             * @default false
+             */
+            monthly_digest_opt_out: boolean;
             /**
              * Needs Contact Privacy Consent
              * @default false

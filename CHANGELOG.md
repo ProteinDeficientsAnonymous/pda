@@ -1,3 +1,59 @@
+# [0.191.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.190.0...v0.191.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** add section header question type ([#1885](https://github.com/ProteinDeficientsAnonymous/pda/issues/1885)) ([92297fa](https://github.com/ProteinDeficientsAnonymous/pda/commit/92297fab8580dfe296c4b1694a62d28ab3306951))
+
+# [0.190.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.189.0...v0.190.0) (2026-10-25)
+
+
+### Features
+
+* add monthly digest with veganniversaries and its own opt-out ([#1866](https://github.com/ProteinDeficientsAnonymous/pda/issues/1866)) ([4633c5b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4633c5b6999f30e99aca0bb425d711d63e3d7fd7))
+
+# [0.189.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.188.0...v0.189.0) (2026-10-25)
+
+
+### Features
+
+* notify survey managers of new survey responses ([#1900](https://github.com/ProteinDeficientsAnonymous/pda/issues/1900)) ([0c2d6cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c2d6cf6a5e41f83b3cf4fab041e3e4b8dc44de1))
+
+# [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** edit the thank-you message in a locked editor card ([#1896](https://github.com/ProteinDeficientsAnonymous/pda/issues/1896)) ([66b3d47](https://github.com/ProteinDeficientsAnonymous/pda/commit/66b3d47eae8ec940f6fbe31d5c37c9a7afb47359))
+
+# [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** redirect to a thank-you page after submitting ([#1895](https://github.com/ProteinDeficientsAnonymous/pda/issues/1895)) ([f3552b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3552b2eb12a6daf606d0cb63aabdc1e0bffa382))
+
+## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** preview any survey from a read-only admin screen ([#1884](https://github.com/ProteinDeficientsAnonymous/pda/issues/1884)) ([8240dad](https://github.com/ProteinDeficientsAnonymous/pda/commit/8240dad6e989757b240486e3477656e849862f1a))
+
+# [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** find inactive members by qualifying attendance ([#1864](https://github.com/ProteinDeficientsAnonymous/pda/issues/1864)) ([5aede93](https://github.com/ProteinDeficientsAnonymous/pda/commit/5aede938d3c952e51c0165eba74f7b628275f61c))
+
+# [0.185.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.184.0...v0.185.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add find_members tool for member audits ([#1845](https://github.com/ProteinDeficientsAnonymous/pda/issues/1845)) ([38a728c](https://github.com/ProteinDeficientsAnonymous/pda/commit/38a728c4534d1ea949c07c59b74588379df98978))
+
 # [0.184.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.183.0...v0.184.0) (2026-10-25)
 
 
