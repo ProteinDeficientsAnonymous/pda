@@ -160,6 +160,8 @@ class User(AbstractUser):
     show_birthday = models.BooleanField(default=True)
     hide_last_name = models.BooleanField(default=False)
     weekly_digest_opt_out = models.BooleanField(default=False)
+    monthly_digest_opt_out = models.BooleanField(default=False)
+    monthly_digest_sent_on = models.DateField(null=True, blank=True)
     whatsapp_reminder_opt_out = models.BooleanField(default=False)
     attendance_nudge_opt_out = models.BooleanField(default=False)
     is_paused = models.BooleanField(default=False)

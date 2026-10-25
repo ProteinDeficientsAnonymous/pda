@@ -1,49 +1,28 @@
 import logging
-from collections import defaultdict
 from datetime import timedelta
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from notifications._digest_emails import send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._digest import digest_events, digest_recipients, digest_urls, send_digest_to_all
+from community._digest import (
+    digest_events,
+    digest_urls,
+    send_digest_to_all,
+    weekly_digest_recipients,
+)
 from community._login_reminder import send_login_reminders
 from community._tentative_attendance_nudge import send_attendance_nudges
 
 logger = logging.getLogger(__name__)
 
 
-def veganniversary_groups(*, now, users) -> list[dict]:
-    today = timezone.localtime(now).date()
-    if today.day > 7:
-        return []
-    grouped: dict[int, list[dict]] = defaultdict(list)
-    for user in users:
-        if user.veganniversary_month != today.month:
-            continue
-        years = today.year - user.veganniversary_year
-        if years < 1:
-            continue
-        grouped[years].append(
-            {
-                "name": user.first_name,
-                "url": f"{settings.FRONTEND_BASE_URL}/members/{user.pk}",
-            }
-        )
-    return [
-        {"label": "1 year" if y == 1 else f"{y} years", "people": people}
-        for y, people in sorted(grouped.items(), reverse=True)
-    ]
-
-
 class Command(BaseCommand):
     help = (
         "Remind anyone who hasn't finished first login, nudge tentative members to come "
-        "in person, then email active and tentative members a digest of upcoming events "
-        "and this month's veganniversaries."
+        "in person, then email active and tentative members a digest of upcoming events."
     )
 
     def add_arguments(self, parser):
@@ -100,22 +79,12 @@ class Command(BaseCommand):
     def _send_digest(self, options) -> None:
         now = timezone.now()
         events = digest_events(start=now, end=now + timedelta(days=7))
-        groups = veganniversary_groups(
-            now=now,
-            users=User.objects.active_members()
-            .filter(
-                veganniversary_month__isnull=False,
-                veganniversary_year__isnull=False,
-                veganniversary_shoutout_opt_in=True,
-            )
-            .exclude(first_name=""),
-        )
-        if not events and not groups:
-            logger.info("send_weekly_digest: no upcoming events or veganniversaries, skipped")
+        if not events:
+            logger.info("send_weekly_digest: no upcoming events, skipped")
             self.stdout.write(self.style.SUCCESS("Nothing to send; sent 0 digest(s)."))
             return
 
-        payload = {"events": events, "urls": digest_urls(), "veganniversaries": groups}
+        payload = {"events": events, "urls": digest_urls()}
         sender = get_email_sender(EmailStream.BULK)
         if options["to"]:
             self._send_test(sender, options["to"], payload)
@@ -124,19 +93,17 @@ class Command(BaseCommand):
         sent_count, failed_count = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            digest_recipients(User.objects.active_members()),
+            weekly_digest_recipients(User.objects.active_members()),
             payload,
         )
-        if events:
-            # Shoutouts link to member profiles, which tentative members can't open.
-            tentative_sent, tentative_failed = send_digest_to_all(
-                send_weekly_digest_email,
-                sender,
-                digest_recipients(User.objects.active_tentative_members()),
-                {**payload, "veganniversaries": []},
-            )
-            sent_count += tentative_sent
-            failed_count += tentative_failed
+        tentative_sent, tentative_failed = send_digest_to_all(
+            send_weekly_digest_email,
+            sender,
+            weekly_digest_recipients(User.objects.active_tentative_members()),
+            payload,
+        )
+        sent_count += tentative_sent
+        failed_count += tentative_failed
 
         logger.info("send_weekly_digest: sent %d digest(s), %d failed", sent_count, failed_count)
         summary = f"Sent {sent_count} digest(s); {failed_count} failed."

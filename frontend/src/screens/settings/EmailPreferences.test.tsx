@@ -60,4 +60,15 @@ describe('EmailPreferences', () => {
     await userEvent.click(screen.getByRole('switch', { name: /weekly digest/i }));
     expect(onChange).toHaveBeenCalledWith({ weeklyDigestOptOut: true });
   });
+
+  it('leaves veganniversaries out of the monthly digest label for tentative members', () => {
+    renderPrefs({ isMember: false });
+    expect(screen.getByRole('switch', { name: 'monthly digest of events' })).toBeInTheDocument();
+  });
+
+  it('opts out of the monthly digest separately from the weekly one', async () => {
+    const { onChange } = renderPrefs({ monthlyDigestOptOut: false });
+    await userEvent.click(screen.getByRole('switch', { name: /monthly digest/i }));
+    expect(onChange).toHaveBeenCalledWith({ monthlyDigestOptOut: true });
+  });
 });
