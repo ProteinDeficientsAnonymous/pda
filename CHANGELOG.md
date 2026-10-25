@@ -1,3 +1,10 @@
+# [0.192.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.191.0...v0.192.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** warn in update_event previews about non-member removal, over-capacity and stale map pins ([#1825](https://github.com/ProteinDeficientsAnonymous/pda/issues/1825)) ([dd543ff](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd543ffab9b571fe804b3587812b418bcc7525b7))
+
 # [0.191.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.190.0...v0.191.0) (2026-10-25)
 
 
