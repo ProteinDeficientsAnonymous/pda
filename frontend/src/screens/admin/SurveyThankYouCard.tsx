@@ -39,9 +39,7 @@ export function SurveyThankYouCard({ surveyId, confirmationMessage }: Props) {
     >
       <header className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-medium">thank-you page</h3>
-        <span className="text-muted text-xs">
-          <span aria-hidden="true">🔒 </span>always last
-        </span>
+        <span className="text-muted text-xs">always last</span>
       </header>
       <Textarea
         label="thank-you message"
