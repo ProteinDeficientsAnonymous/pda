@@ -61,7 +61,7 @@ class TestGetPollVisibility:
         self, api_client, invite_only_event, invite_only_poll
     ):
         response = api_client.get(f"/api/community/events/{invite_only_event.id}/poll/")
-        assert response.status_code == 403
+        assert response.status_code == 404
 
     def test_non_invitee_cannot_read_invite_only_poll(
         self, api_client, stranger_headers, invite_only_event, invite_only_poll
