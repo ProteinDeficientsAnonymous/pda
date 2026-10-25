@@ -97,4 +97,4 @@ class TestCheckboxListAnswers:
         summary = _summarize_question(interests, [response])
         assert summary.counts == {CLUBS: 1, "potlucks": 1}
         assert summary.answered == 1
-        assert _csv_answer_cell(interests, answer) == f"{CLUBS}; potlucks"
+        assert _csv_answer_cell(interests, answer) == f"{CLUBS}\npotlucks"

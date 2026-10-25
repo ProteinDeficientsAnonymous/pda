@@ -96,7 +96,8 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
     if answer is None:
         return ""
     if isinstance(answer, list):
-        return csv_safe("; ".join(answer))
+        # Options can contain "," or ";", so put one ticked option per line.
+        return csv_safe("\n".join(answer))
     text = str(answer)
     # Validated numbers like -5 stay numeric in spreadsheets instead of becoming '-5 text.
     if q.field_type == SurveyQuestionType.NUMBER and _PLAIN_NUMBER.fullmatch(text):
