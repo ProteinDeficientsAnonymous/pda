@@ -122,7 +122,7 @@ export default function SurveyBuilderScreen() {
         <div className="flex flex-wrap gap-2">
           <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
-            to={`/surveys/${currentSurvey.slug}`}
+            to={`/admin/surveys/${surveyId}/preview`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
           >
             preview

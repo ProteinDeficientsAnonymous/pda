@@ -90,6 +90,16 @@ describe('SurveyBuilderScreen', () => {
     );
   });
 
+  it('opens the survey in preview mode', async () => {
+    mockedGet.mockResolvedValueOnce({ data: wireSurvey });
+    renderScreen();
+
+    expect(await screen.findByRole('link', { name: 'preview' })).toHaveAttribute(
+      'href',
+      '/admin/surveys/srv-1/preview',
+    );
+  });
+
   it('reorders questions via the sortable list and calls the reorder endpoint', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
