@@ -1,3 +1,10 @@
+# [0.195.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.194.0...v0.195.0) (2026-10-25)
+
+
+### Features
+
+* **events:** add official event defaults endpoint ([#1808](https://github.com/ProteinDeficientsAnonymous/pda/issues/1808)) ([37ea30d](https://github.com/ProteinDeficientsAnonymous/pda/commit/37ea30d46ab3ced35edc96e054f5bd8ce01a83f8))
+
 # [0.194.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.193.0...v0.194.0) (2026-10-25)
 
 
