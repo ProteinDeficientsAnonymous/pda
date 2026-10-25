@@ -203,7 +203,10 @@ def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admi
         ([{**_remove(1), "after": 2}], "Extra inputs are not permitted"),
         ([_remove(True)], "Input should be a valid integer"),
         ([_update(1, options=["vegan"])], 'breaks the show_if on "why?"'),
-        ([_update(3, show_if=_when(1, "very"))], "show_if can't be changed here yet"),
+        ([_update(1, show_if=_when(2, "x"))], "above it in the survey"),
+        ([_update(3, show_if=_when(1, "x"))], "show_if doesn't fit"),
+        ([_update(3, show_if=_when(1, "very")), _remove(1)], 'operation 1: question 1 ("food?")'),
+        ([_remove(1), _update(3, show_if=_when(1, "very"))], "which this edit removes"),
         ([_update(3, label=" ")], "at least 1 character"),
         ([_update(3, colour="red")], "Extra inputs are not permitted"),
     ],
@@ -259,14 +262,15 @@ def test_update_merges_changes_into_the_question_via_mcp(surveys_admin):
     )
     ops = [
         _update(1, options=["vegan", "very", "raw"]),
-        _update(str(notes.pk), required=True),
+        _update(str(notes.pk), required=True, show_if=_when(1, "raw")),
         _update(4, label="which day?"),
     ]
     _edit(surveys_admin, survey, questions=ops)
     for q in (food, notes, poll):
         q.refresh_from_db()
     assert (food.label, food.options) == ("food?", ["vegan", "very", "raw"])
-    assert notes.required
+    assert (notes.required, notes.show_if["value"]) == (True, "raw")
+    assert notes.show_if["question_id"] == str(food.pk)
     assert (poll.label, poll.options) == ("which day?", when)
     entries = AuditLogEntry.objects.filter(action="survey_question_updated")
     assert [e.details["via"] for e in entries] == ["mcp"] * 3
@@ -303,3 +307,27 @@ def test_label_change_leaves_stored_options_alone(surveys_admin):
     SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
     _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
     assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]
+
+
+def test_unchanged_condition_cleared_when_its_source_is_removed(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    _edit(surveys_admin, survey, questions=[_update(2, label="why"), _remove(1)])
+    assert SurveyQuestion.objects.get(label="why").show_if is None
+
+
+def test_token_bound_to_an_explicit_null_show_if(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    token = _edit(surveys_admin, survey, questions=[_update(2, label="why2")])["confirm_token"]
+    confirm = {"questions": [_update(2, label="why2", show_if=None)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+
+
+def test_condition_on_a_tied_stored_order_refused(surveys_admin):
+    survey = _survey(is_active=False)
+    for label in ("a?", "b?"):
+        SurveyQuestion.objects.create(survey=survey, label=label, field_type="radio", options=["x"])
+    error = _refused(surveys_admin, survey, questions=[_update(2, show_if=_when(1, "x"))])
+    assert "reorder first" in error
+    assert not any(q.show_if for q in SurveyQuestion.objects.all())
