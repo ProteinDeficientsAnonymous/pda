@@ -1,13 +1,15 @@
 from typing import Annotated, Any
 from uuid import UUID
 
+from community._event_helpers import _can_edit_event
+from community._event_nonmember_removal import ineligible_non_member_rsvps
 from community._event_schemas import EventPatchIn
 from community._events import create_event as create_event_view
 from community._events import get_event as get_event_view
 from community._events import update_event as update_event_view
 from community._geocode import GeocodeQuery, geocode
-from community._validation import Code
-from community.models import EventStatus, EventType
+from community._validation import Code, raise_validation
+from community.models import Event, EventStatus, EventType
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
@@ -88,6 +90,25 @@ def _refuse_unfilled_slots(event_type: str, description: str) -> None:
         raise ToolError(f"fill these template slots in the description first: {', '.join(slots)}")
 
 
+_ELIGIBILITY_FIELDS = frozenset(
+    {"event_type", "visibility", "rsvp_enabled", "start_datetime", "end_datetime", "datetime_tbd"}
+)
+
+
+def _non_members_removed(request: Any, event_id: str, payload: EventPatchIn) -> int:
+    """Mirrors update_event: count non-member rsvps the edit would remove, on an unsaved copy."""
+    event = Event.objects.get(pk=event_id)
+    # Same gate as update_event's save, so non-editors never see the count.
+    if not _can_edit_event(request.auth, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
+    if not event.is_public_rsvp_eligible:
+        return 0
+    for name, value in payload.model_dump(exclude_unset=True).items():
+        if name in _ELIGIBILITY_FIELDS:
+            setattr(event, name, value)
+    return 0 if event.is_public_rsvp_eligible else ineligible_non_member_rsvps(event).count()
+
+
 _BOUND = (
     "photo_updated_at",
     "co_host_ids",
@@ -130,7 +151,8 @@ async def update_event(
         diff = event_diff(before, changed)
         if not diff:
             raise ToolError("nothing would change: these values match the event already")
-        notes = update_notes(before, changed)
+        removed = await call_view(_non_members_removed, user, before["id"], payload)
+        notes = update_notes(before, changed, removed, remove_non_member_rsvps)
         return {"changes": diff, "notes": notes, "confirm_token": issue_confirm_token(bound)}
     await use_confirm_token(confirm_token, bound)
     return await _apply(user, before["id"], payload)

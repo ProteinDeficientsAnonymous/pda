@@ -27,6 +27,7 @@ export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
     plusOneAttendance: AttendanceStatus.Unknown,
     isMember: true,
     paidConfirmed: false,
+    paymentVerified: false,
     questionnaireResponses: {},
     ...overrides,
   };
@@ -142,6 +143,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     monthlyDigestOptOut: false,
     whatsappReminderOptOut: false,
     attendanceNudgeOptOut: false,
+    hostDigestOptOut: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     calendarFeedExcludedTypes: [],

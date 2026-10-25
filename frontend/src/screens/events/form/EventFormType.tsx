@@ -1,6 +1,5 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { Toggle } from '@/components/ui/Toggle';
-import { OFFICIAL_EVENT_CASHAPP_TAG } from '@/config/organization';
 import { EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
 
 interface Props {
@@ -22,13 +21,11 @@ export function EventFormType({
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    const prefillCashapp = type === EventType.Official && !values.cashappLink.trim();
     onChange({
       eventType: type,
       ...(isOfficialOrClub(type)
         ? { visibility: EventVisibility.Public, allowPlusOnes: false }
         : {}),
-      ...(prefillCashapp ? { cashappLink: OFFICIAL_EVENT_CASHAPP_TAG } : {}),
     });
   };
 

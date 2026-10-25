@@ -71,11 +71,11 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
                   },
                 );
               }}
-              onTogglePaid={
+              onTogglePaymentVerified={
                 showPaymentStatus
-                  ? (userId, paidConfirmed) => {
+                  ? (userId, verified) => {
                       setGuestPayment.mutate(
-                        { userId, paidConfirmed },
+                        { userId, verified },
                         {
                           onError: (err) => {
                             toast.error(

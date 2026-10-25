@@ -281,16 +281,12 @@ def create_waitlist_promoted_notifications(
 
 
 def create_payment_revoked_notification(event: Event, user_id: str) -> None:
-    """Tell a guest a host retracted their payment confirmation.
-
-    Silence here would leave them believing they're seated — they'd show up
-    unpaid, which is the outcome the whole gate exists to prevent.
-    """
+    """Tell a guest a host un-verified their payment, so they don't show up assuming it landed."""
     Notification.objects.create(
         recipient_id=user_id,
         notification_type=NotificationType.PAYMENT_REVOKED,
         event=event,
-        message=f"your payment for {event.title} needs attention — please confirm payment again.",
+        message=f"your payment for {event.title} needs attention — a host couldn't verify it.",
     )
     notify_users([user_id])
 

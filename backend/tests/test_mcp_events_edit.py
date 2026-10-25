@@ -131,10 +131,11 @@ def test_live_edit_previews_then_applies_with_token(test_user, make_event):
     assert entry.details["via"] == "mcp"
 
 
-def test_non_host_refused_by_view(make_event, vettor_user):
-    event = make_event()
-    token = _update(vettor_user, event)["confirm_token"]
-    assert json.loads(_update_refused(vettor_user, event, confirm_token=token))["status"] == 403
+def test_non_host_refused_before_preview(make_event, vettor_user):
+    event = make_event(price="$15")
+    error = json.loads(_update_refused(vettor_user, event))
+    assert (error["status"], error["detail"][0]["code"]) == (403, "perm.denied")
+    assert Event.objects.get(pk=event.pk).price == "$15"
 
 
 def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
@@ -196,6 +197,42 @@ def test_preview_notes_side_effects(test_user, make_event, vettor_user):
     notes = _update(test_user, event, {"event_type": "club", "max_attendees": 5})["notes"]
     assert [note.split(" ")[0] for note in notes] == ["plus-ones", "raising"]
     assert _update(test_user, event, PRICE)["notes"] == []
+
+
+def test_preview_notes_capacity_below_going(test_user, make_event, vettor_user):
+    event = make_event(rsvp_enabled=True)
+    EventRSVP.objects.create(event=event, user=vettor_user, status=RSVPStatus.ATTENDING)
+    EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+    notes = _update(test_user, event, {"max_attendees": 1})["notes"]
+    assert len(notes) == 1 and notes[0].startswith("2 spots are already taken")
+    assert _update(test_user, event, {"max_attendees": 2})["notes"] == []
+
+
+def test_preview_notes_location_moved_without_new_pin(test_user, make_event):
+    event = make_event(location="grand army plaza", latitude=40.67, longitude=-73.97)
+    moved = {"location": "prospect park bandshell"}
+    assert _update(test_user, event, moved)["notes"][0].startswith("the map pin stays")
+    repinned = {**moved, "latitude": 40.66, "longitude": -73.97}
+    assert _update(test_user, event, repinned)["notes"] == []
+    unpinned = make_event(location="grand army plaza")
+    assert _update(test_user, unpinned, moved)["notes"] == []
+
+
+def test_preview_notes_non_member_removal(test_user, make_event):
+    event = make_event(event_type=EventType.OFFICIAL, rsvp_enabled=True)
+    for i, status in enumerate([RSVPStatus.ATTENDING, RSVPStatus.MAYBE]):
+        guest = make_non_member(f"+1202555017{i}", f"n{i}@e.com")
+        EventRSVP.objects.create(event=event, user=guest, status=status)
+    to_community = {"event_type": "community"}
+    asking = _update(test_user, event, to_community)["notes"]
+    assert asking == [
+        "removes 2 non-member rsvps and emails them: "
+        "ask the user, then preview again with remove_non_member_rsvps true"
+    ]
+    forced = _update(test_user, event, to_community, remove_non_member_rsvps=True)["notes"]
+    assert forced == ["removes 2 non-member rsvps and emails them"]
+    assert _update(test_user, event, PRICE)["notes"] == []
+    assert EventRSVP.objects.filter(event=event, status=RSVPStatus.REMOVED).count() == 0
 
 
 def test_fields_outside_event_fields_are_ignored(test_user, make_event, vettor_user):
