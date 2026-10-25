@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -12,10 +13,12 @@ from mcp.server.mcpserver.exceptions import ToolError
 from users.models import User
 from users.permissions import PermissionKey
 
-from mcp_gateway.server import current_user, pda_tool
+from mcp_gateway.server import BASE_URL, current_user, pda_tool
 from mcp_gateway.survey_fields import SurveyQuestions, SurveySettings, to_question_in, to_survey_in
 from mcp_gateway.tools.surveys_read import survey_detail
 from mcp_gateway.view_calls import call_view
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -30,6 +33,23 @@ async def _shielded(view: Any, user: User, *args: Any) -> Any:
     # A cancelled await doesn't stop the view's thread, so let each write finish before a cancel.
     with anyio.CancelScope(shield=True):
         return await call_view(view, user, *args)
+
+
+async def _discard(user: User, survey_id: UUID, error: BaseException) -> None:
+    try:
+        await _shielded(delete_survey_view, user, survey_id)
+    except Exception:
+        logger.exception(
+            "create_survey couldn't remove partial survey %s after %r", survey_id, error
+        )
+        if not isinstance(error, Exception):
+            return
+        # Only a ToolError's text is written for the client; anything else stays in the log.
+        reason = str(error) if isinstance(error, ToolError) else "an internal error"
+        raise ToolError(
+            f"creating the survey failed ({reason}) and the partial survey {survey_id} couldn't "
+            f"be removed; delete it at {BASE_URL}/admin/surveys/{survey_id}"
+        ) from error
 
 
 @pda_tool(
@@ -59,7 +79,7 @@ async def create_survey(settings: SurveySettings, questions: SurveyQuestions) ->
                 created.append(await _shielded(create_question_view, user, survey_id, payload))
             await anyio.lowlevel.checkpoint()
     except BaseException as exc:
-        await _shielded(delete_survey_view, user, survey_id)
+        await _discard(user, survey_id, exc)
         if isinstance(exc, ToolError):
             raise ToolError(f"nothing was saved: {exc}") from exc
         raise
