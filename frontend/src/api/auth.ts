@@ -61,6 +61,7 @@ interface WireUser {
   monthly_digest_opt_out?: boolean;
   whatsapp_reminder_opt_out?: boolean;
   attendance_nudge_opt_out?: boolean;
+  host_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
   calendar_feed_excluded_types?: EventTypeValue[];
@@ -131,6 +132,7 @@ function mapUser(u: WireUser): User {
     monthlyDigestOptOut: u.monthly_digest_opt_out ?? false,
     whatsappReminderOptOut: u.whatsapp_reminder_opt_out ?? false,
     attendanceNudgeOptOut: u.attendance_nudge_opt_out ?? false,
+    hostDigestOptOut: u.host_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
     calendarFeedExcludedTypes: u.calendar_feed_excluded_types ?? [],
@@ -276,6 +278,7 @@ export interface ProfileUpdate {
   monthlyDigestOptOut?: boolean;
   whatsappReminderOptOut?: boolean;
   attendanceNudgeOptOut?: boolean;
+  hostDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
   calendarFeedExcludedTypes?: EventTypeValue[];
@@ -320,6 +323,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
     body.whatsapp_reminder_opt_out = patch.whatsappReminderOptOut;
   if (patch.attendanceNudgeOptOut !== undefined)
     body.attendance_nudge_opt_out = patch.attendanceNudgeOptOut;
+  if (patch.hostDigestOptOut !== undefined) body.host_digest_opt_out = patch.hostDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
   if (patch.calendarFeedExcludedTypes !== undefined)

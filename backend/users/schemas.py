@@ -164,6 +164,7 @@ class UserOut(BaseModel):
     monthly_digest_opt_out: bool = False
     whatsapp_reminder_opt_out: bool = False
     attendance_nudge_opt_out: bool = False
+    host_digest_opt_out: bool = False
     is_paused: bool = False
     has_joined_whatsapp: bool = False
     # False until the user's first successful login (Django's last_login is null).
@@ -213,6 +214,7 @@ class UserOut(BaseModel):
             monthly_digest_opt_out=user.monthly_digest_opt_out,
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
+            host_digest_opt_out=user.host_digest_opt_out,
             is_paused=user.is_paused,
             has_joined_whatsapp=user.has_joined_whatsapp,
             has_logged_in=user.last_login is not None,
@@ -337,6 +339,7 @@ class MePatchIn(BaseModel):
     monthly_digest_opt_out: bool | None = None
     whatsapp_reminder_opt_out: bool | None = None
     attendance_nudge_opt_out: bool | None = None
+    host_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
     calendar_feed_excluded_types: (

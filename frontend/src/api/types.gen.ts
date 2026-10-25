@@ -4753,6 +4753,8 @@ export interface components {
             has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
+            /** Host Digest Opt Out */
+            host_digest_opt_out?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Monthly Digest Opt Out */
@@ -5910,6 +5912,11 @@ export interface components {
              * @default false
              */
             hide_last_name: boolean;
+            /**
+             * Host Digest Opt Out
+             * @default false
+             */
+            host_digest_opt_out: boolean;
             /** Id */
             id: string;
             /**
