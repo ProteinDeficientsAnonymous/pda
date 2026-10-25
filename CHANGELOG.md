@@ -1,3 +1,10 @@
+# [0.179.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.3...v0.179.0) (2026-10-25)
+
+
+### Features
+
+* **permissions:** add import_payments permission ([#1830](https://github.com/ProteinDeficientsAnonymous/pda/issues/1830)) ([5cc6f09](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cc6f091db2474127f348d1f8182b24e6e5b5195))
+
 ## [0.178.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.2...v0.178.3) (2026-10-25)
 
 
