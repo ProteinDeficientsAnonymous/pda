@@ -1,3 +1,11 @@
+# [0.199.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.198.0...v0.199.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - collect rsvp activity for host digests ([#1878](https://github.com/ProteinDeficientsAnonymous/pda/issues/1878)) ([4210d64](https://github.com/ProteinDeficientsAnonymous/pda/commit/4210d640a918332a37b2d6a816b372a31287a4b2))
+* **events:** apply official event defaults server-side ([#1811](https://github.com/ProteinDeficientsAnonymous/pda/issues/1811)) ([20495af](https://github.com/ProteinDeficientsAnonymous/pda/commit/20495afb5a25b3523d6cfd4a28a62119a03e4910))
+
 # [0.198.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.197.0...v0.198.0) (2026-10-25)
 
 
