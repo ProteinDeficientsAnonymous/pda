@@ -26,6 +26,7 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventHostCount, eventPath, EventType, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { fromCashAppUrl } from '@/utils/paymentHandle';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
@@ -137,10 +138,14 @@ export function EventForm({ existing }: Props) {
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
-  function patch(p: Partial<EventFormValues>) {
+  function patch(input: Partial<EventFormValues>) {
+    let p = input;
     if (p.eventType !== undefined && p.eventType !== values.eventType && officialDefaults) {
       const official = p.eventType === EventType.Official;
       setRsvpQuestions((qs) => withOfficialQuestions(qs, official, officialDefaults.rsvpQuestions));
+      if (official && !values.cashappLink.trim()) {
+        p = { ...p, cashappLink: fromCashAppUrl(officialDefaults.cashappLink) };
+      }
     }
     setValues((v) => {
       const next = { ...v, ...p };
