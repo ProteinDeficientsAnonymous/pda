@@ -133,6 +133,11 @@ async def get_survey(
 ) -> dict[str, Any]:
     user = await current_user()
     body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey, user))
+    return survey_detail(body)
+
+
+def survey_detail(body: dict[str, Any]) -> dict[str, Any]:
+    """return(dict): a get_survey_admin body as the survey tools show it."""
     public = not body["feedback_event_type"]
     return {
         **{key: body[key] for key in _SETTINGS},
