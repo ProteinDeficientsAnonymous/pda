@@ -111,7 +111,11 @@ def test_rows_leave_out_contact_unless_asked(admin):
         "last_login",
         "has_joined_whatsapp",
         "whatsapp_reminder_opt_out",
+        "last_qualifying_at",
+        "qualifying_count_12mo",
     }
+    assert row["last_qualifying_at"] is None
+    assert row["qualifying_count_12mo"] == 0
     assert row["has_joined_whatsapp"] is row["whatsapp_reminder_opt_out"] is True
     assert row["last_login"] is None
     assert datetime.fromisoformat(row["member_since"])
