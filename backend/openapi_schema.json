@@ -8224,6 +8224,10 @@
         "scheme": "bearer",
         "type": "http"
       },
+      "GatedJWTOrAnonymousAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      },
       "OptionalJWTAuth": {
         "scheme": "bearer",
         "type": "http"
@@ -18169,9 +18173,27 @@
     },
     "/api/notifications/sse-ticket/": {
       "post": {
-        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nLets the client open the stream with ?ticket= instead of the JWT (EventSource\ncan't send an auth header).",
+        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nLets the client open the stream with ?ticket= instead of the JWT (EventSource\ncan't send an auth header). Without a JWT, pass ?event_id= and the rsvp\n?token= to get a ticket that only receives that event's comment pings.",
         "operationId": "notifications_api_create_sse_ticket",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -18182,6 +18204,26 @@
               }
             },
             "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "429": {
             "content": {
@@ -18196,7 +18238,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "GatedJWTOrAnonymousAuth": []
           }
         ],
         "summary": "Create Sse Ticket",
