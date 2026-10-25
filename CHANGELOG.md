@@ -1,3 +1,10 @@
+## [0.179.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.179.0...v0.179.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **admin:** keep survey response columns readable and pin the event column ([#1828](https://github.com/ProteinDeficientsAnonymous/pda/issues/1828)) ([ac7ba4d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ac7ba4db680f8ec4260a5cb581d192076f0373de))
+
 # [0.179.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.3...v0.179.0) (2026-10-25)
 
 
