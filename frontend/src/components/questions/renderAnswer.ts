@@ -3,6 +3,7 @@ export function renderAnswer(raw: unknown): string {
   if (typeof raw === 'object' && 'answer' in (raw as Record<string, unknown>)) {
     const a = (raw as { answer: unknown }).answer;
     if (typeof a === 'string') return a;
+    if (Array.isArray(a)) return a.join(', ');
     if (typeof a === 'object' && a !== null) {
       return Object.entries(a as Record<string, string>)
         .map(([k, v]) => `${k}: ${v}`)

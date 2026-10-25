@@ -1,8 +1,9 @@
 import { QuestionType } from '@/api/questionTypes';
+import { checkboxValues } from '@/components/questions/checkboxAnswer';
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
 import { rsvpGroupLabel } from '@/models/event';
 
-import { isRsvpRespondentStatus } from './rsvpQuestions';
+import { isAnswerFilled, isRsvpRespondentStatus, type RsvpAnswerValue } from './rsvpQuestions';
 
 interface ResponseColumn {
   id: string;
@@ -107,9 +108,9 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
   let answered = 0;
   for (const g of guests) {
     const answer = g.questionnaireResponses[question.id]?.answer;
-    if (!answer?.trim()) continue;
+    if (!isAnswerFilled(answer)) continue;
     const values =
-      question.fieldType === QuestionType.Checkbox ? answer.split(',').filter(Boolean) : [answer];
+      question.fieldType === QuestionType.Checkbox ? checkboxValues(answer) : [String(answer)];
     answered += 1;
     for (const v of values) {
       counts.set(v, (counts.get(v) ?? 0) + 1);
@@ -134,7 +135,8 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
   );
 }
 
-function renderAnswer(answer: string | undefined): string {
+function renderAnswer(answer: RsvpAnswerValue | undefined): string {
+  if (Array.isArray(answer)) return answer.length ? answer.join(', ') : '—';
   const trimmed = answer?.trim();
   if (!trimmed) return '—';
   return trimmed.replaceAll(',', ', ');

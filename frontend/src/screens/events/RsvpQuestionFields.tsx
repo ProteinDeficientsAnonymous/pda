@@ -28,7 +28,7 @@ export function RsvpQuestionFields({
           question={question}
           value={answers[question.id] ?? ''}
           onChange={(v) => {
-            onChange(question.id, typeof v === 'string' ? v : '');
+            onChange(question.id, typeof v === 'string' || Array.isArray(v) ? v : '');
           }}
           error={errors[question.id]}
           readOnly={disabled}

@@ -6,7 +6,7 @@ import type {
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
-import { AttendanceStatus } from '@/models/event';
+import { AttendanceStatus, type QuestionnaireAnswer } from '@/models/event';
 
 import { mapRsvpQuestion } from './eventRsvpQuestions';
 
@@ -21,7 +21,7 @@ interface WireGuest {
   plus_one_attendance?: string;
   is_member?: boolean;
   paid_confirmed?: boolean;
-  questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
+  questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
 }
 
 export interface WireEvent {
@@ -66,7 +66,7 @@ export interface WireEvent {
   guests?: WireGuest[];
   my_rsvp?: string | null;
   my_paid_confirmed?: boolean;
-  my_questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
+  my_questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
   rsvp_questions?: {
     id: string;
     label: string;
@@ -119,7 +119,7 @@ function mapAttendance(value: string | undefined): AttendanceStatusValue {
 }
 
 function mapQuestionnaireResponses(
-  raw: Record<string, { label?: string; answer?: string }> | undefined,
+  raw: Record<string, { label?: string; answer?: QuestionnaireAnswer }> | undefined,
 ): Event['myQuestionnaireResponses'] {
   return Object.fromEntries(
     Object.entries(raw ?? {}).map(([id, snap]) => [

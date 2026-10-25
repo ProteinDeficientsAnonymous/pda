@@ -30,6 +30,7 @@ import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
+  isAnswerFilled,
   missingRequiredQuestionIds,
   type RsvpAnswerValue,
   rsvpQuestionsApplyToStatus,
@@ -136,11 +137,11 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   async function onSubmit(paidConfirmed: boolean) {
     setSubmitError(null);
     if (!status || !validate()) return;
-    const filledAnswers: Record<string, string> = {};
+    const filledAnswers: Record<string, RsvpAnswerValue> = {};
     if (showQuestions) {
       for (const q of questions) {
         const value = answers[q.id];
-        if (value?.trim()) filledAnswers[q.id] = value;
+        if (value !== undefined && isAnswerFilled(value)) filledAnswers[q.id] = value;
       }
     }
     try {

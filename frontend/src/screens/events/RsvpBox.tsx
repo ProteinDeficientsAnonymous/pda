@@ -9,6 +9,7 @@ import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
 import {
+  isAnswerFilled,
   missingRequiredQuestionIds,
   type RsvpAnswerValue,
   type RsvpQuestionDraft,
@@ -85,7 +86,7 @@ export function RsvpBox({
     if (!showQuestions) return next;
     for (const q of questions) {
       const value = answers[q.id];
-      if (value?.trim()) {
+      if (value !== undefined && isAnswerFilled(value)) {
         next[q.id] = value;
       }
     }
