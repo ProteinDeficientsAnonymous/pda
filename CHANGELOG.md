@@ -1,3 +1,10 @@
+## [0.202.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.1...v0.202.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **events:** accept RSVP checkbox answers as a list of options ([#1890](https://github.com/ProteinDeficientsAnonymous/pda/issues/1890)) ([070bb4b](https://github.com/ProteinDeficientsAnonymous/pda/commit/070bb4b0b679d937f2dce30916c3ee7ca62ccfa9))
+
 ## [0.202.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.0...v0.202.1) (2026-10-25)
 
 
