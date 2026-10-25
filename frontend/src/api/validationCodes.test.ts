@@ -12,6 +12,12 @@ describe('messageForCode', () => {
     ).toBe('pick a start time, or mark the time as tbd');
   });
 
+  it('asks for a timezone when an event datetime has no offset', () => {
+    expect(
+      messageForCode({ code: Code.Event.DatetimeOffsetRequired, field: 'start_datetime' }),
+    ).toBe('date and time must include a timezone');
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
