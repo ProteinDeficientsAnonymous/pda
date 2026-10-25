@@ -179,6 +179,21 @@ class TestHostPaymentChangeAudit:
         assert entry.details["paid_confirmed_at"] is not None
         assert entry.details["payment_verified"] is True
         assert entry.details["payment_verified_by"] == str(test_user.pk)
+        assert entry.details["host_stamped"] is False
+
+    def test_undoing_a_host_stamped_verify_audits_host_stamped(
+        self, commit, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user)
+        guest = self._guest(django_user_model, event)
+        url = PAYMENT_URL.format(event_id=event.id, user_id=guest.id)
+        _patch(commit, api_client, url, {"paid_confirmed": True}, auth_headers)
+
+        _patch(commit, api_client, url, {"paid_confirmed": False}, auth_headers)
+
+        entry = _entry("guest_payment_revoked")
+        assert entry.details["host_stamped"] is True
+        assert entry.details["paid_confirmed"] is False
 
     def test_unverifying_a_self_attested_guest_is_not_a_revoke(
         self, commit, api_client, auth_headers, test_user, django_user_model

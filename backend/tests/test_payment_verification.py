@@ -8,6 +8,7 @@ from community.models import EventRSVP, RSVPStatus
 from django.apps import apps
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
 
 from tests._payment_helpers import create_paid_event
 
@@ -16,6 +17,7 @@ pytestmark = pytest.mark.django_db
 backfill = importlib.import_module("community.migrations.0114_backfill_eventrsvp_payment_verified")
 
 HOST_RSVP_URL = "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/"
+PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"
 
 
 @pytest.fixture
@@ -169,8 +171,9 @@ class TestHostSetRsvpVerifies:
     def test_paid_on_an_otherwise_unchanged_rsvp_still_verifies(
         self, api_client, auth_headers, test_user, event, guest
     ):
+        attested_at = timezone.now() - timedelta(hours=1)
         EventRSVP.objects.create(
-            event=event, user=guest, status=RSVPStatus.ATTENDING, paid_confirmed_at=timezone.now()
+            event=event, user=guest, status=RSVPStatus.ATTENDING, paid_confirmed_at=attested_at
         )
 
         _host_set(
@@ -181,7 +184,39 @@ class TestHostSetRsvpVerifies:
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
         )
 
-        assert EventRSVP.objects.get(event=event, user=guest).payment_verified_by == test_user
+        rsvp = EventRSVP.objects.get(event=event, user=guest)
+        assert rsvp.payment_verified_by == test_user
+        assert rsvp.paid_confirmed_at == attested_at
+        assert rsvp.paid_confirmed_at != rsvp.payment_verified_at
+
+    def test_undoing_a_host_set_rsvp_verify_keeps_a_self_attestation_and_notifies(
+        self, api_client, auth_headers, event, guest
+    ):
+        attested_at = timezone.now() - timedelta(hours=1)
+        EventRSVP.objects.create(
+            event=event, user=guest, status=RSVPStatus.ATTENDING, paid_confirmed_at=attested_at
+        )
+        _host_set(
+            api_client,
+            auth_headers,
+            event,
+            guest,
+            {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
+        )
+
+        response = api_client.patch(
+            PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
+            {"paid_confirmed": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=guest)
+        assert (rsvp.paid_confirmed_at, rsvp.payment_verified_at) == (attested_at, None)
+        assert Notification.objects.filter(
+            recipient=guest, notification_type=NotificationType.PAYMENT_REVOKED
+        ).exists()
 
     def test_paid_on_maybe_verifies_like_the_toggle(self, api_client, auth_headers, event, guest):
         _host_set(

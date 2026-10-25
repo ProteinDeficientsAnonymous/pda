@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -53,16 +52,12 @@ def _needs_host_verification(existing: EventRSVP | None, paid_confirmed: bool) -
 
 
 def _host_rsvp_unchanged(
-    existing: EventRSVP | None,
-    final_status: str,
-    final_plus_one: bool,
-    new_confirmed_at: datetime | None,
+    existing: EventRSVP | None, final_status: str, final_plus_one: bool
 ) -> bool:
     return (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
-        and existing.paid_confirmed_at == new_confirmed_at
     )
 
 
@@ -97,9 +92,7 @@ def _apply_host_rsvp_in_transaction(
     new_confirmed_at = existing.paid_confirmed_at if existing is not None else None
     needs_verification = _needs_host_verification(existing, payload.paid_confirmed)
 
-    if not needs_verification and _host_rsvp_unchanged(
-        existing, final_status, final_plus_one, new_confirmed_at
-    ):
+    if not needs_verification and _host_rsvp_unchanged(existing, final_status, final_plus_one):
         return final_status, [], previous_status
 
     rsvp, _ = EventRSVP.objects.update_or_create(

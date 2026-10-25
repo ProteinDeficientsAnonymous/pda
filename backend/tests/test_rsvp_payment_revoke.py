@@ -81,17 +81,24 @@ class TestHostRevokePayment:
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.MAYBE)
         url = PAYMENT_URL.format(event_id=event.id, user_id=guest.id)
-        for paid in (True, False):
-            api_client.patch(
-                url, {"paid_confirmed": paid}, content_type="application/json", **auth_headers
-            )
+        verify = api_client.patch(
+            url, {"paid_confirmed": True}, content_type="application/json", **auth_headers
+        )
+        assert verify.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=guest)
+        assert rsvp.payment_verified_at is not None
+        assert rsvp.paid_confirmed_at == rsvp.payment_verified_at
+        undo = api_client.patch(
+            url, {"paid_confirmed": False}, content_type="application/json", **auth_headers
+        )
+        assert undo.status_code == 200
 
         rsvp = EventRSVP.objects.get(event=event, user=guest)
         assert rsvp.paid_confirmed_at is None
         assert rsvp.payment_verified_at is None
         assert not Notification.objects.filter(
             recipient=guest, notification_type=NotificationType.PAYMENT_REVOKED
-        ).exists(), "they never claimed a payment, so there is nothing to tell them"
+        ).exists(), "a quick undo of a host-stamped mark is a mis-click, not a retraction"
 
         rsvp_url = RSVP_URL.format(event_id=event.id)
         gated = api_client.post(
@@ -111,6 +118,41 @@ class TestHostRevokePayment:
         )
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=event, user=guest).paid_confirmed_at is not None
+
+    def test_guest_claim_over_a_host_stamp_becomes_theirs(
+        self, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user)
+        guest = django_user_model.objects.create_user(
+            phone_number="+14155550308", first_name="Guest", is_member=True
+        )
+        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.MAYBE)
+        url = PAYMENT_URL.format(event_id=event.id, user_id=guest.id)
+        api_client.patch(
+            url, {"paid_confirmed": True}, content_type="application/json", **auth_headers
+        )
+
+        response = api_client.post(
+            RSVP_URL.format(event_id=event.id),
+            {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
+            content_type="application/json",
+            **_headers(guest),
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=event, user=guest)
+        claimed_at = rsvp.paid_confirmed_at
+        assert claimed_at is not None
+        assert claimed_at != rsvp.payment_verified_at
+
+        api_client.patch(
+            url, {"paid_confirmed": False}, content_type="application/json", **auth_headers
+        )
+
+        rsvp = EventRSVP.objects.get(event=event, user=guest)
+        assert (rsvp.paid_confirmed_at, rsvp.payment_verified_at) == (claimed_at, None)
+        assert Notification.objects.filter(
+            recipient=guest, notification_type=NotificationType.PAYMENT_REVOKED
+        ).exists()
 
     def test_revoke_notifies_the_guest(
         self, api_client, auth_headers, test_user, django_user_model
