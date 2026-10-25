@@ -15,3 +15,4 @@ class PermissionKey(models.TextChoices):
     TAG_OFFICIAL_EVENT = "tag_official_event", "Tag official event"
     TAG_CLUB_EVENT = "tag_club_event", "Tag club event"
     MANAGE_DOCUMENTS = "manage_documents", "Manage documents"
+    IMPORT_PAYMENTS = "import_payments", "Import payments"
