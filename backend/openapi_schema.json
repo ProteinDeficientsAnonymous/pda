@@ -4961,6 +4961,17 @@
             ],
             "title": "Last Name"
           },
+          "monthly_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Digest Opt Out"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -7730,6 +7741,11 @@
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
+            "type": "boolean"
+          },
+          "monthly_digest_opt_out": {
+            "default": false,
+            "title": "Monthly Digest Opt Out",
             "type": "boolean"
           },
           "needs_contact_privacy_consent": {

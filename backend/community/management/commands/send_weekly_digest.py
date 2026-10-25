@@ -7,7 +7,12 @@ from notifications._digest_emails import send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._digest import digest_events, digest_recipients, digest_urls, send_digest_to_all
+from community._digest import (
+    digest_events,
+    digest_urls,
+    send_digest_to_all,
+    weekly_digest_recipients,
+)
 from community._login_reminder import send_login_reminders
 from community._tentative_attendance_nudge import send_attendance_nudges
 
@@ -88,13 +93,13 @@ class Command(BaseCommand):
         sent_count, failed_count = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            digest_recipients(User.objects.active_members()),
+            weekly_digest_recipients(User.objects.active_members()),
             payload,
         )
         tentative_sent, tentative_failed = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            digest_recipients(User.objects.active_tentative_members()),
+            weekly_digest_recipients(User.objects.active_tentative_members()),
             payload,
         )
         sent_count += tentative_sent
