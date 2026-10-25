@@ -20,6 +20,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
+import { SurveyThankYouCard } from './SurveyThankYouCard';
 
 export default function SurveyBuilderScreen() {
   const { id } = useParams<{ id: string }>();
@@ -207,6 +208,11 @@ export default function SurveyBuilderScreen() {
         >
           {create.isPending ? 'adding…' : '+ add question'}
         </button>
+
+        <SurveyThankYouCard
+          surveyId={surveyId}
+          confirmationMessage={currentSurvey.confirmationMessage}
+        />
       </section>
 
       <SurveySettingsDialog

@@ -80,6 +80,16 @@ beforeEach(() => {
 });
 
 describe('SurveyBuilderScreen', () => {
+  it('pins the thank-you page after the add question button', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...wireSurvey, confirmation_message: 'yay' } });
+    renderScreen();
+
+    const card = await screen.findByRole('article', { name: 'thank-you page' });
+    const add = screen.getByRole('button', { name: '+ add question' });
+    expect(add.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(card).getByLabelText('thank-you message')).toHaveValue('yay');
+  });
+
   it('links back to the survey list', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
