@@ -48,6 +48,10 @@ def digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
     return users.filter(HAS_EMAIL, weekly_digest_opt_out=False)
 
 
+def monthly_digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
+    return users.filter(HAS_EMAIL, monthly_digest_opt_out=False)
+
+
 def send_digest_to_all(
     send: SendDigest, sender: EmailSender, recipients, payload: dict
 ) -> tuple[int, int]:

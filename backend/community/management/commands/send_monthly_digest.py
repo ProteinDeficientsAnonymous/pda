@@ -10,8 +10,8 @@ from users.models import User
 
 from community._digest import (
     digest_events,
-    digest_recipients,
     digest_urls,
+    monthly_digest_recipients,
     send_digest_to_all,
     shoutout_members,
     veganniversary_groups,
@@ -67,7 +67,7 @@ class Command(BaseCommand):
         sent_count, failed_count = send_digest_to_all(
             send_monthly_digest_email,
             sender,
-            digest_recipients(User.objects.active_members()),
+            monthly_digest_recipients(User.objects.active_members()),
             payload,
         )
         if events:
@@ -75,7 +75,7 @@ class Command(BaseCommand):
             tentative_sent, tentative_failed = send_digest_to_all(
                 send_monthly_digest_email,
                 sender,
-                digest_recipients(User.objects.active_tentative_members()),
+                monthly_digest_recipients(User.objects.active_tentative_members()),
                 {**payload, "veganniversaries": []},
             )
             sent_count += tentative_sent

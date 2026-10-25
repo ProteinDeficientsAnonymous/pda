@@ -4701,6 +4701,8 @@ export interface components {
             hide_last_name?: boolean | null;
             /** Last Name */
             last_name?: string | null;
+            /** Monthly Digest Opt Out */
+            monthly_digest_opt_out?: boolean | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
             /** Nickname */
@@ -5857,6 +5859,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Monthly Digest Opt Out
+             * @default false
+             */
+            monthly_digest_opt_out: boolean;
             /**
              * Needs Contact Privacy Consent
              * @default false

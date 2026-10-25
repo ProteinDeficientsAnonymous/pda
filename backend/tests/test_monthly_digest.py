@@ -124,10 +124,17 @@ class TestSendMonthlyDigestCommand:
 
     def test_skips_member_opted_out(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
-        _make_member("+12025550309", weekly_digest_opt_out=True)
+        _make_member("+12025550309", monthly_digest_opt_out=True)
         _make_event("potluck", 3)
         call_command("send_monthly_digest")
         fake_sender.send.assert_not_called()
+
+    def test_weekly_opt_out_still_gets_monthly(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_member("+12025550312", weekly_digest_opt_out=True)
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_called_once()
 
     def test_uses_bulk_email_stream(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
