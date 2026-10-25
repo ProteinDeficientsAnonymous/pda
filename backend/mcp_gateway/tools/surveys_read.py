@@ -102,8 +102,9 @@ async def _survey_id(ref: str, user: User) -> UUID:
     description=(
         "list every survey, newest first, with its status (active, scheduled, capped or closed), "
         "window (new york local time) and response count. use it to find a survey's id before "
-        "reading or editing it, and use get_survey for a survey's public link. results are paged: only fetch the next page (offset=next_offset) "
-        "if the survey you need isn't on this one."
+        "reading or editing it, and use get_survey for a survey's public link. results are "
+        "paged: only fetch the next page (offset=next_offset) if the survey you need isn't on "
+        "this one."
     ),
 )
 async def list_surveys(
