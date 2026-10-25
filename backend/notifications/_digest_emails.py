@@ -44,9 +44,10 @@ def send_monthly_digest_email(  # noqa: PLR0913
     param urls: calendar_url and settings_url
     param veganniversaries: year-grouped shout-out people, or empty
     """
+    month = month.lower()
     context = {
         "display_name": display_name or "",
-        "month": month.lower(),
+        "month": month,
         "events": events,
         "veganniversaries": veganniversaries or [],
         **urls,
@@ -55,7 +56,7 @@ def send_monthly_digest_email(  # noqa: PLR0913
     text = render_to_string("emails/monthly_digest.txt", context)
     return sender.send(
         to=to,
-        subject=f"what's coming up in {month.lower()} at pda",
+        subject=f"what's coming up in {month} at pda",
         html=html,
         text=text,
     )

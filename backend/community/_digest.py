@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import datetime
+from datetime import date, datetime
 
 from django.conf import settings
 from django.db.models import QuerySet
@@ -44,22 +44,31 @@ def digest_urls() -> dict[str, str]:
     }
 
 
-def digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
+def weekly_digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
     return users.filter(HAS_EMAIL, weekly_digest_opt_out=False)
 
 
-def monthly_digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
-    return users.filter(HAS_EMAIL, monthly_digest_opt_out=False)
+def monthly_digest_recipients(users: QuerySet[User], today: date) -> QuerySet[User]:
+    # Skipping anyone already sent today makes a cron re-run on the 1st retry only failures.
+    return users.filter(HAS_EMAIL, monthly_digest_opt_out=False).exclude(
+        monthly_digest_sent_on=today
+    )
 
 
 def send_digest_to_all(
-    send: SendDigest, sender: EmailSender, recipients, payload: dict
+    send: SendDigest,
+    sender: EmailSender,
+    recipients: QuerySet[User],
+    payload: dict,
+    on_sent: Callable[[User], None] | None = None,
 ) -> tuple[int, int]:
     sent = failed = 0
     for user in recipients:
         result = send(sender=sender, to=user.email, display_name=user.first_name, **payload)
         if result.success:
             sent += 1
+            if on_sent:
+                on_sent(user)
         else:
             failed += 1
     return sent, failed
@@ -94,4 +103,5 @@ def shoutout_members() -> QuerySet[User]:
             veganniversary_shoutout_opt_in=True,
         )
         .exclude(first_name="")
+        .order_by("first_name")
     )
