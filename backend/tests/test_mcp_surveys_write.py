@@ -12,6 +12,7 @@ from community.models import Event, Survey, SurveyQuestion
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
+from mcp_gateway.confirm import MAX_AGE_SECONDS
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools import surveys_write
 from users.permissions import PermissionKey
@@ -45,9 +46,77 @@ def _create_refused(user, questions=(NAME, NOTES), **settings) -> str:
     return _error(user, "create_survey", **arguments)
 
 
+def _publish(user, survey_id, **arguments) -> dict:
+    return _run(user, "publish_survey", survey=survey_id, **arguments)
+
+
+def _publish_refused(user, survey_id, **arguments) -> str:
+    return _error(user, "publish_survey", survey=survey_id, **arguments)
+
+
+def test_publish_two_step(surveys_admin):
+    survey_id = _create(surveys_admin)["id"]
+    preview = _publish(surveys_admin, survey_id)
+    assert (preview["is_active"], preview["notes"]) == (False, [])
+    assert not Survey.objects.get(pk=survey_id).is_active
+    published = _publish(surveys_admin, survey_id, confirm_token=preview["confirm_token"])
+    assert published["is_active"] and Survey.objects.get(pk=survey_id).is_active
+    entry = AuditLogEntry.objects.get(action="survey_updated")
+    assert (entry.details["fields_changed"], entry.details["via"]) == (["is_active"], "mcp")
+
+
+def test_publish_token_single_use_and_refused_once_on(surveys_admin):
+    survey_id = _create(surveys_admin)["id"]
+    token = _publish(surveys_admin, survey_id)["confirm_token"]
+    _publish(surveys_admin, survey_id, confirm_token=token)
+    assert "already switched on" in _publish_refused(surveys_admin, survey_id, confirm_token=token)
+    Survey.objects.filter(pk=survey_id).update(is_active=False)
+    assert "already used" in _publish_refused(surveys_admin, survey_id, confirm_token=token)
+
+
+def test_publish_token_bound_to_member_survey_and_age(surveys_admin, manage_users_user):
+    survey_id = _create(surveys_admin)["id"]
+    other_id = _create(surveys_admin, slug="other")["id"]
+    manage_users_user.roles.add(*surveys_admin.roles.all())
+    token = _publish(surveys_admin, survey_id)["confirm_token"]
+    assert "fresh preview" in _publish_refused(manage_users_user, survey_id, confirm_token=token)
+    assert "fresh preview" in _publish_refused(surveys_admin, other_id, confirm_token=token)
+    later = timezone.now().timestamp() + MAX_AGE_SECONDS + 1
+    with patch("django.core.signing.time.time", return_value=later):
+        assert "fresh preview" in _publish_refused(surveys_admin, survey_id, confirm_token=token)
+    assert not Survey.objects.get(pk=survey_id).is_active
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda pk: Survey.objects.filter(pk=pk).update(title="changed"),
+        lambda pk: Survey.objects.filter(pk=pk).update(feedback_event_type="official"),
+        lambda pk: SurveyQuestion.objects.filter(survey_id=pk, label="notes").update(label="x"),
+    ],
+    ids=["title", "feedback_event_type", "question"],
+)
+def test_publish_token_bound_to_survey_state(surveys_admin, change):
+    survey_id = _create(surveys_admin)["id"]
+    token = _publish(surveys_admin, survey_id)["confirm_token"]
+    change(survey_id)
+    assert "fresh preview" in _publish_refused(surveys_admin, survey_id, confirm_token=token)
+    assert not Survey.objects.get(pk=survey_id).is_active
+
+
+def test_feedback_survey_preview_warns_about_emails(surveys_admin):
+    survey_id = _create(surveys_admin)["id"]
+    Survey.objects.filter(pk=survey_id).update(feedback_event_type="club")
+    preview = _publish(surveys_admin, survey_id)
+    assert (preview["feedback_event_type"], preview["url"]) == ("club", None)
+    assert "starts the daily feedback emails" in preview["notes"][0]
+
+
 def test_refused_without_manage_surveys(test_user):
     assert "permission" in _create_refused(test_user)
-    assert not Survey.objects.exists()
+    survey = Survey.objects.create(title="old", slug="old", is_active=False)
+    assert "permission" in _publish_refused(test_user, str(survey.pk))
+    assert not Survey.objects.get().is_active
 
 
 def test_creates_switched_off_with_every_type(surveys_admin):
