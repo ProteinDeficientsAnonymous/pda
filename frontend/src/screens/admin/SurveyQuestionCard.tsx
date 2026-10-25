@@ -22,6 +22,7 @@ interface Props {
   focusOnMount: boolean;
   onDuplicate: () => void;
   onDelete: () => void;
+  confirmTypeChange: (fieldType: SurveyQuestionType) => Promise<boolean>;
 }
 
 export function SurveyQuestionCard({
@@ -31,6 +32,7 @@ export function SurveyQuestionCard({
   focusOnMount,
   onDuplicate,
   onDelete,
+  confirmTypeChange,
 }: Props) {
   const update = useUpdateSurveyQuestion(surveyId, question.id);
   const initial: QuestionAuthorValues = {
@@ -76,6 +78,7 @@ export function SurveyQuestionCard({
       focusOnMount={focusOnMount}
       onDuplicate={onDuplicate}
       onDelete={onDelete}
+      confirmTypeChange={confirmTypeChange}
       onSave={(values) => enqueue(values, latestShowIf.current)}
       extraFields={
         <div className="flex flex-col gap-1">
