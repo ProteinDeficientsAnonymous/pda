@@ -261,7 +261,7 @@ class BulkPaymentVerifyIn(BaseModel):
 class BulkPaymentVerifyOut(BaseModel):
     verified_user_ids: list[str]
     already_verified_user_ids: list[str]
-    verified_count: int = Field(description="Rsvps on the event with a verified payment now.")
+    event_verified_total: int = Field(description="Rsvps on the event with a verified payment now.")
 
 
 class WaitlistOrderIn(BaseModel):

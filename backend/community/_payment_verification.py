@@ -7,8 +7,11 @@ from django.utils import timezone
 from notifications.service import create_payment_revoked_notification
 from users.models import User
 
-from community._event_rsvps import payment_audit_details
-from community.models import Event, EventRSVP
+from community._event_rsvps import payment_audit_details, payment_audit_fields
+from community.models import Event, EventRSVP, RSVPStatus
+
+# Guests a payment import can match and verify; the cash app review uses the same set.
+MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
 
 MISCLICK_WINDOW = timedelta(minutes=10)
 
@@ -81,10 +84,25 @@ def apply_payment_verification(
     return change
 
 
+def _rsvp_audit_details(rsvp: EventRSVP) -> dict:
+    return payment_audit_fields(
+        rsvp.paid_confirmed_at, rsvp.payment_verified_at, rsvp.payment_verified_by_id
+    )
+
+
 def record_payment_verification(
-    request, event: Event, change: PaymentVerificationChange, *, source: str | None = None
+    request,
+    event: Event,
+    change: PaymentVerificationChange,
+    *,
+    source: str | None = None,
+    rsvp: EventRSVP | None = None,
 ) -> None:
-    """Audit a verification change; notify the guest unless it undoes a fresh host-stamped mark."""
+    """Audit a verification change; notify the guest unless it undoes a fresh host-stamped mark.
+
+    param(rsvp): the row as just saved, to skip re-reading it; omitted, the row is re-read.
+    """
+    stored = _rsvp_audit_details(rsvp) if rsvp else payment_audit_details(event.id, change.user_id)
     audit_log(
         logging.INFO,
         "guest_payment_revoked" if change.revoked else "guest_payment_changed",
@@ -97,7 +115,7 @@ def record_payment_verification(
                 "was_paid": change.was_paid,
                 "was_verified": change.was_verified,
                 "host_stamped": change.host_stamped,
-                **payment_audit_details(event.id, change.user_id),
+                **stored,
                 **({"source": source} if source else {}),
             },
         ),

@@ -1360,7 +1360,7 @@ export interface paths {
         put?: never;
         /**
          * Verify Guest Payments
-         * @description Bulk-verify guests' payments from a cash app import; needs import_payments, not hosting.
+         * @description Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.
          */
         post: operations["community__event_host_rsvps_verify_guest_payments"];
         delete?: never;
@@ -2682,10 +2682,10 @@ export interface components {
             /** Already Verified User Ids */
             already_verified_user_ids: string[];
             /**
-             * Verified Count
+             * Event Verified Total
              * @description Rsvps on the event with a verified payment now.
              */
-            verified_count: number;
+            event_verified_total: number;
             /** Verified User Ids */
             verified_user_ids: string[];
         };

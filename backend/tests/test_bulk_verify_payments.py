@@ -1,10 +1,11 @@
 import uuid
+from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
 from community._event_schemas import MAX_BULK_PAYMENT_VERIFY
 from community._validation import Code
-from community.models import EventRSVP, RSVPStatus
+from community.models import EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
@@ -21,13 +22,20 @@ def _headers(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
+def _user_with(django_user_model, phone: str, *permissions: str):
+    user = django_user_model.objects.create_user(phone_number=phone, first_name="Imp")
+    user.roles.add(Role.objects.create(name=f"role-{phone}", permissions=list(permissions)))
+    return user
+
+
 @pytest.fixture
 def importer(django_user_model):
-    user = django_user_model.objects.create_user(phone_number="+14155550601", first_name="Imp")
-    user.roles.add(
-        Role.objects.create(name="payments", permissions=[PermissionKey.IMPORT_PAYMENTS])
+    return _user_with(
+        django_user_model,
+        "+14155550601",
+        PermissionKey.IMPORT_PAYMENTS,
+        PermissionKey.MANAGE_EVENTS,
     )
-    return user
 
 
 @pytest.fixture
@@ -68,7 +76,7 @@ def test_verifies_guests_and_skips_already_verified(api_client, importer, event,
     assert response.json() == {
         "verified_user_ids": [str(fresh.id)],
         "already_verified_user_ids": [str(done.id)],
-        "verified_count": 2,
+        "event_verified_total": 2,
     }
     rsvp = EventRSVP.objects.get(event=event, user=fresh)
     assert rsvp.payment_verified_by == importer
@@ -155,3 +163,47 @@ def test_is_rate_limited(api_client, importer, event, django_user_model):
     codes = [_verify(api_client, importer, event.id, [done.id]).status_code for _ in range(11)]
     assert codes[:10] == [200] * 10
     assert codes[10] == 429
+
+
+def test_import_permission_alone_cannot_see_payments(api_client, event, django_user_model):
+    guest = _guest(django_user_model, 1, event)
+    import_only = _user_with(django_user_model, "+14155550602", PermissionKey.IMPORT_PAYMENTS)
+    response = _verify(api_client, import_only, event.id, [guest.id])
+    assert response.status_code == 403
+    assert EventRSVP.objects.get(user=guest).payment_verified_at is None
+
+
+def test_co_host_with_import_permission_can_verify(api_client, event, django_user_model):
+    guest = _guest(django_user_model, 1, event)
+    co_host = _user_with(django_user_model, "+14155550603", PermissionKey.IMPORT_PAYMENTS)
+    event.co_hosts.add(co_host)
+    response = _verify(api_client, co_host, event.id, [guest.id])
+    assert response.status_code == 200
+    assert response.json()["verified_user_ids"] == [str(guest.id)]
+
+
+def test_deleted_event_is_404(api_client, importer, event, django_user_model):
+    guest = _guest(django_user_model, 1, event)
+    event.status = EventStatus.DELETED
+    event.save(update_fields=["status"])
+    assert _verify(api_client, importer, event.id, [guest.id]).status_code == 404
+
+
+@pytest.mark.parametrize("status", [RSVPStatus.MAYBE, RSVPStatus.CANT_GO])
+def test_guests_outside_matchable_statuses_count_as_not_guests(
+    api_client, importer, event, django_user_model, status
+):
+    guest = _guest(django_user_model, 1, event)
+    EventRSVP.objects.filter(user=guest).update(status=status)
+    response = _verify(api_client, importer, event.id, [guest.id])
+    assert response.status_code == 400
+    assert response.json()["detail"][0]["code"] == Code.Event.PAYMENT_VERIFY_NOT_GUESTS
+
+
+def test_verifying_keeps_a_self_attested_paid_time(api_client, importer, event, django_user_model):
+    attested_at = timezone.now() - timedelta(days=1)
+    guest = _guest(django_user_model, 1, event, paid_confirmed_at=attested_at)
+    _verify(api_client, importer, event.id, [guest.id])
+    rsvp = EventRSVP.objects.get(user=guest)
+    assert rsvp.paid_confirmed_at == attested_at
+    assert rsvp.payment_verified_at is not None

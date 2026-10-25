@@ -501,9 +501,9 @@
             "title": "Already Verified User Ids",
             "type": "array"
           },
-          "verified_count": {
+          "event_verified_total": {
             "description": "Rsvps on the event with a verified payment now.",
-            "title": "Verified Count",
+            "title": "Event Verified Total",
             "type": "integer"
           },
           "verified_user_ids": {
@@ -517,7 +517,7 @@
         "required": [
           "verified_user_ids",
           "already_verified_user_ids",
-          "verified_count"
+          "event_verified_total"
         ],
         "title": "BulkPaymentVerifyOut",
         "type": "object"
@@ -14084,7 +14084,7 @@
     },
     "/api/community/events/{event_id}/rsvps/payments/verify/": {
       "post": {
-        "description": "Bulk-verify guests' payments from a cash app import; needs import_payments, not hosting.",
+        "description": "Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.",
         "operationId": "community__event_host_rsvps_verify_guest_payments",
         "parameters": [
           {

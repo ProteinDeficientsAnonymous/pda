@@ -16,6 +16,7 @@ from community._event_helpers import (
     broadcast_capacity_change,
     load_event_with_stats_prefetch,
 )
+from community._event_read_visibility import _enforce_event_read_visibility
 from community._event_rsvps import (
     _resolve_cancelled_at,
     _resolve_pre_cancel_status,
@@ -31,6 +32,7 @@ from community._event_schemas import (
     HostRSVPPaymentIn,
 )
 from community._payment_verification import (
+    MATCHABLE_RSVP_STATUSES,
     PaymentVerificationChange,
     apply_payment_verification,
     record_payment_verification,
@@ -223,12 +225,12 @@ CASHAPP_IMPORT_SOURCE = "cashapp_import"
 
 def _verify_payments_in_transaction(
     event_id, user_ids: list[UUID], actor
-) -> tuple[list[PaymentVerificationChange], list[str]]:
-    """All-or-nothing: every id needs an rsvp on the event; already-verified guests are skipped."""
+) -> tuple[list[tuple[EventRSVP, PaymentVerificationChange]], list[str]]:
+    """All-or-nothing: every id needs a matchable rsvp; already-verified guests are skipped."""
     rsvps = {
         str(rsvp.user_id): rsvp
         for rsvp in EventRSVP.objects.select_for_update()
-        .filter(event_id=event_id, user_id__in=user_ids)
+        .filter(event_id=event_id, user_id__in=user_ids, status__in=MATCHABLE_RSVP_STATUSES)
         .order_by("user_id")
     }
     missing = [str(uid) for uid in user_ids if str(uid) not in rsvps]
@@ -236,15 +238,31 @@ def _verify_payments_in_transaction(
         raise_validation(
             Code.Event.PAYMENT_VERIFY_NOT_GUESTS, status_code=400, user_ids=", ".join(missing)
         )
-    changes: list[PaymentVerificationChange] = []
+    applied: list[tuple[EventRSVP, PaymentVerificationChange]] = []
     skipped: list[str] = []
     for uid in user_ids:
         rsvp = rsvps[str(uid)]
         if rsvp.payment_verified_at is not None:
             skipped.append(str(uid))
         else:
-            changes.append(apply_payment_verification(rsvp, verified=True, actor=actor))
-    return changes, skipped
+            applied.append((rsvp, apply_payment_verification(rsvp, verified=True, actor=actor)))
+    return applied, skipped
+
+
+def _load_payment_import_event(request, event_id: UUID) -> Event:
+    """Same rules as the guest list: the event is readable and the caller may see payments."""
+    event = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts")
+        .filter(id=event_id)
+        .first()
+    )
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    _enforce_event_read_visibility(event, request.auth)
+    if not _can_edit_event(request.auth, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
+    return event
 
 
 @router.post(
@@ -260,28 +278,24 @@ def _verify_payments_in_transaction(
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def verify_guest_payments(request, event_id: UUID, payload: BulkPaymentVerifyIn):
-    """Bulk-verify guests' payments from a cash app import; needs import_payments, not hosting."""
+    """Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights."""
     if not request.auth.has_permission(PermissionKey.IMPORT_PAYMENTS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
-    event = Event.objects.filter(id=event_id).first()
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    event = _load_payment_import_event(request, event_id)
 
     user_ids = list(dict.fromkeys(payload.user_ids))
     with transaction.atomic():
-        changes, skipped = _verify_payments_in_transaction(event_id, user_ids, request.auth)
+        applied, skipped = _verify_payments_in_transaction(event_id, user_ids, request.auth)
 
-    for change in changes:
-        record_payment_verification(request, event, change, source=CASHAPP_IMPORT_SOURCE)
-    verified_count = EventRSVP.objects.filter(
-        event_id=event_id, payment_verified_at__isnull=False
-    ).count()
+    for rsvp, change in applied:
+        record_payment_verification(request, event, change, source=CASHAPP_IMPORT_SOURCE, rsvp=rsvp)
+    total = EventRSVP.objects.filter(event_id=event_id, payment_verified_at__isnull=False).count()
     return Status(
         200,
         BulkPaymentVerifyOut(
-            verified_user_ids=[change.user_id for change in changes],
+            verified_user_ids=[change.user_id for _, change in applied],
             already_verified_user_ids=skipped,
-            verified_count=verified_count,
+            event_verified_total=total,
         ),
     )
 
