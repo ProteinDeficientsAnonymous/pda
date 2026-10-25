@@ -1,3 +1,10 @@
+# [0.190.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.189.0...v0.190.0) (2026-10-25)
+
+
+### Features
+
+* add monthly digest with veganniversaries and its own opt-out ([#1866](https://github.com/ProteinDeficientsAnonymous/pda/issues/1866)) ([4633c5b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4633c5b6999f30e99aca0bb425d711d63e3d7fd7))
+
 # [0.189.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.188.0...v0.189.0) (2026-10-25)
 
 
