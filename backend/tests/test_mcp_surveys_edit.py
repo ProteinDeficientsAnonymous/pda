@@ -1,0 +1,406 @@
+import asyncio
+import json
+from unittest.mock import DEFAULT, patch
+from uuid import uuid4
+
+import pytest
+from audit.models import AuditLogEntry
+from community._surveys import delete_survey_question, get_survey_admin
+from community.models import Survey, SurveyQuestion, SurveyResponse
+from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
+from users.permissions import PermissionKey
+from users.roles import Role
+
+from tests.test_mcp_events_write import _error, _run
+from tests.test_mcp_surveys_read import _tool_names
+
+pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+NEW = {"title": "new", "description": ""}
+NOTES = {"label": "notes", "field_type": "textarea"}
+LABELS = ["food?", "why?", "notes"]
+REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
+SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
+TOOL = "mcp_gateway.tools.surveys_edit"
+
+
+@pytest.fixture
+def surveys_admin(test_user):
+    role = Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS])
+    test_user.roles.add(role)
+    return test_user
+
+
+def _survey(*, responses=0, **fields) -> Survey:
+    survey = Survey.objects.create(**{"title": "retreat", "slug": "retreat", **fields})
+    for _ in range(responses):
+        SurveyResponse.objects.create(survey=survey)
+    return survey
+
+
+def _questions(survey) -> list[SurveyQuestion]:
+    food = SurveyQuestion.objects.create(
+        survey=survey, label="food?", field_type="radio", options=["vegan", "very"]
+    )
+    when = {"question_id": str(food.pk), "operator": "equals", "value": "very"}
+    why = SurveyQuestion.objects.create(survey=survey, label="why?", display_order=1, show_if=when)
+    return [food, why, SurveyQuestion.objects.create(survey=survey, label="notes", display_order=2)]
+
+
+def _labels(survey) -> list[str]:
+    return [q.label for q in SurveyQuestion.objects.filter(survey=survey)]
+
+
+def _remove(ref) -> dict:
+    return {"op": "remove", "question": ref}
+
+
+def _update(ref, **changes) -> dict:
+    return {"op": "update", "question": ref, "changes": changes}
+
+
+def _add(question, **placement) -> dict:
+    return {"op": "add", "question": question, **placement}
+
+
+def _when(position, value) -> dict:
+    return {"position": position, "value": value}
+
+
+def _edit(user, survey, **arguments) -> dict:
+    return _run(user, "update_survey", survey=str(survey.pk), **arguments)
+
+
+def _refused(user, survey, **arguments) -> str:
+    return _error(user, "update_survey", survey=str(survey.pk), **arguments)
+
+
+def test_hidden_and_refused_without_manage_surveys(test_user):
+    survey = _survey(is_active=False)
+    assert "update_survey" not in _tool_names(test_user)
+    assert "permission" in _refused(test_user, survey, settings={"title": "x"})
+    assert Survey.objects.get().title == "retreat"
+
+
+def test_switched_off_saves_at_once_via_mcp(surveys_admin):
+    survey = _survey(is_active=False, description="keep", max_responses=5)
+    settings = {"title": "Retreat 2099", "slug": "", "opens_at": "2099-07-04T09:00"}
+    result = _edit(surveys_admin, survey, settings={**settings, "max_responses": None})
+    expected = {**settings, "slug": "retreat-2099", "opens_at": "2099-07-04T09:00:00-04:00"}
+    assert {key: result[key] for key in expected} == expected
+    assert (result["max_responses"], result["description"]) == (None, "keep")
+    entry = AuditLogEntry.objects.get(action="survey_updated")
+    assert sorted(entry.details["fields_changed"]) == ["max_responses", "opens_at", "slug", "title"]
+    assert entry.details["via"] == "mcp"
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({}, "no changes given"),
+        ({"title": " "}, "at least 1 character"),
+        ({"slug": "🌱"}, "give a slug"),
+        ({"is_active": True}, "Extra inputs are not permitted"),
+        ({"anonymous": True}, "nothing was saved: anonymous can't change"),
+    ],
+)
+def test_bad_settings_refused_before_saving(surveys_admin, changes, message):
+    survey = _survey(is_active=False, responses=1)
+    assert message in _refused(surveys_admin, survey, settings=changes)
+    assert not AuditLogEntry.objects.filter(action="survey_updated").exists()
+
+
+def test_switched_on_previews_then_saves(surveys_admin):
+    survey = _survey(responses=2)
+    locked = _edit(surveys_admin, survey, settings={"anonymous": True, "title": "new"})
+    assert locked["confirm_token"] is None
+    assert "anonymous can't change once a survey has responses" in locked["notes"][1]
+    preview = _edit(surveys_admin, survey, settings=NEW)
+    assert preview["changes"] == {"settings": {"title": {"before": "retreat", "after": "new"}}}
+    assert preview["notes"] == ["this survey already has 2 responses"]
+    assert Survey.objects.get().title == "retreat"
+    token = preview["confirm_token"]
+    assert _edit(surveys_admin, survey, settings=NEW, confirm_token=token)["title"] == "new"
+    assert "nothing would change" in _refused(surveys_admin, survey, settings=NEW)
+
+
+def test_token_bound_to_changes_and_state_and_single_use(surveys_admin):
+    survey = _survey()
+    token = _edit(surveys_admin, survey, settings=NEW)["confirm_token"]
+    confirm = {"settings": NEW, "confirm_token": token}
+    assert "fresh preview" in _refused(
+        surveys_admin, survey, **confirm | {"settings": {"title": "x"}}
+    )
+    Survey.objects.filter(pk=survey.pk).update(description="changed")
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+    Survey.objects.filter(pk=survey.pk).update(description="")
+    _edit(surveys_admin, survey, **confirm)
+    Survey.objects.filter(pk=survey.pk).update(title="retreat")
+    assert "already used" in _refused(surveys_admin, survey, **confirm)
+
+
+def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
+    survey = _survey(feedback_event_type="official", anonymous=True, responses=1)
+    for settings in ({"anonymous": False}, {"linked_event_id": str(uuid4())}):
+        assert "always anonymous" in _refused(surveys_admin, survey, settings=settings)
+    assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["confirm_token"]
+
+
+def test_failed_save_says_nothing_was_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    with patch(SETTINGS_VIEW, side_effect=ToolError("bad")):
+        error = _refused(surveys_admin, survey, settings={"title": "x"})
+    assert error == "nothing was saved: settings failed: bad"
+    with patch(SETTINGS_VIEW, side_effect=RuntimeError("db went away")):
+        with pytest.raises(UnexpectedToolError) as exc_info:
+            _edit(surveys_admin, survey, settings={"title": "x"})
+    assert str(exc_info.value.__cause__) == "db went away"
+
+
+def test_failed_reload_after_a_full_save_still_says_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    reload_fails = [DEFAULT, RuntimeError("blip")]
+    with patch(f"{TOOL}.get_survey_view", wraps=get_survey_admin, side_effect=reload_fails):
+        result = _edit(surveys_admin, survey, settings={"title": "x"})
+    assert result["saved"] and "call get_survey" in result["note"]
+    assert "blip" not in result["note"] and Survey.objects.get().title == "x"
+
+
+def test_cancel_between_steps_is_logged(surveys_admin, caplog):
+    survey = _survey(is_active=False)
+    with patch(f"{TOOL}.checkpoint", side_effect=asyncio.CancelledError):
+        with pytest.raises(asyncio.CancelledError):
+            _edit(surveys_admin, survey, settings={"title": "x"})
+    assert f"cancelled on survey {survey.pk} after ['settings']" in caplog.text
+
+
+def test_remove_by_position_or_id_clears_conditions_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    _, why, _ = _questions(survey)
+    result = _edit(surveys_admin, survey, questions=[_remove(1), _remove(str(why.pk))])
+    assert [q["label"] for q in result["questions"]] == ["notes"] == _labels(survey)
+    entries = AuditLogEntry.objects.filter(action="survey_question_deleted")
+    assert [e.details["via"] for e in entries] == ["mcp", "mcp"]
+
+
+def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admin):
+    survey = _survey(responses=1)
+    _questions(survey)
+    preview = _edit(surveys_admin, survey, questions=[_remove(1)])
+    assert preview["changes"] == {"questions": [{"op": "remove", "position": 1, "label": "food?"}]}
+    assert preview["notes"] == [
+        "this survey already has 1 response",
+        'removing question 1 ("food?") hides its answers in existing responses',
+        'removing question 1 ("food?") clears the show_if on "why?"',
+    ]
+    assert _labels(survey) == LABELS
+    _edit(surveys_admin, survey, questions=[_remove(1)], confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["why?", "notes"]
+    assert SurveyQuestion.objects.get(label="why?").show_if is None
+
+
+@pytest.mark.parametrize(
+    ("ops", "message"),
+    [
+        ([_remove(4)], "operation 1: there's no question 4: the survey has 3"),
+        ([_remove("00000000-0000-0000-0000-000000000000")], "no question with id"),
+        ([_remove(1), _remove(1)], "operation 2: question 1"),
+        ([{"op": "move", "question": 1}], "does not match any of the expected tags"),
+        ([{**_remove(1), "after": 2}], "Extra inputs are not permitted"),
+        ([_remove(True)], "Input should be a valid integer"),
+        ([_update(1, options=["vegan"])], 'breaks the show_if on "why?"'),
+        ([_update(1, show_if=_when(2, "x"))], "above it in the survey"),
+        ([_update(3, show_if=_when(1, "x"))], "show_if doesn't fit"),
+        ([_update(3, show_if=_when(1, "very")), _remove(1)], 'operation 1: question 1 ("food?")'),
+        ([_remove(1), _update(3, show_if=_when(1, "very"))], "which this edit removes"),
+        ([_update(3, label=" ")], "at least 1 character"),
+        ([_update(3, description="x")], '"code": "field_invalid"'),
+        ([_update(3, field_type="section", show_if=_when(2, "x"))], "show_if doesn't fit"),
+        ([_update(3, colour="red")], "Extra inputs are not permitted"),
+        ([_add(NOTES, after=5)], "there's no question 5"),
+        ([_remove(1), _add({**NOTES, "show_if": _when(1, "very")})], "which this edit removes"),
+        ([{"op": "reorder", "order": [1, 2]}], "list every question that stays, each once"),
+        ([{"op": "reorder", "order": [2, 1, 3]}], '"why?" would come before "food?"'),
+        ([{"op": "reorder", "order": [1, 2, 3]}] * 2, "at most one reorder"),
+        ([_remove(3), {"op": "reorder", "order": [1, 2, 3]}], 'question 3 ("notes") is removed'),
+    ],
+)
+def test_bad_question_changes_refused_before_saving(surveys_admin, ops, message):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    assert message in _refused(surveys_admin, survey, settings={"title": "x"}, questions=ops)
+    assert (Survey.objects.get().title, _labels(survey)) == ("retreat", LABELS)
+
+
+def test_failure_midway_reports_what_was_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    arguments = {"settings": {"title": "x"}, "questions": [_remove(3), _remove(2)]}
+    second_fails = [DEFAULT, RuntimeError("db went away")]
+    with patch(REMOVE_VIEW, wraps=delete_survey_question, side_effect=second_fails):
+        report = json.loads(_refused(surveys_admin, survey, **arguments))
+    assert report["error"].endswith('operation 2: remove question 2 ("why?") failed unexpectedly')
+    assert report["applied"] == ["settings", 'operation 1: remove question 3 ("notes")']
+    assert report["not_applied"] == ['operation 2: remove question 2 ("why?")']
+    assert [q["label"] for q in report["survey"]["questions"]] == ["food?", "why?"]
+    assert report["survey"]["title"] == "x"
+
+
+def test_unchanged_values_save_nothing(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    arguments = {"settings": {"title": "retreat"}, "questions": [_update(1, label="food?")]}
+    assert "nothing would change" in _refused(surveys_admin, survey, **arguments)
+    _edit(surveys_admin, survey, settings={"title": "retreat"}, questions=[_remove(3)])
+    assert not AuditLogEntry.objects.filter(action="survey_updated").exists()
+
+
+def test_token_bound_to_question_changes_and_checked_once_switched_off(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    token = _edit(surveys_admin, survey, questions=[_remove(3)])["confirm_token"]
+    other = {"questions": [_remove(2)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **other)
+    Survey.objects.filter(pk=survey.pk).update(is_active=False)
+    confirm = {"questions": [_remove(3)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+    assert _labels(survey) == LABELS
+
+
+def test_update_merges_changes_into_the_question_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    food, _, notes = _questions(survey)
+    when = ["2099-11-07T16:00:00.000Z"]
+    poll = SurveyQuestion.objects.create(
+        survey=survey, label="when", field_type="datetime_poll", options=when, display_order=3
+    )
+    ops = [
+        _update(1, options=["vegan", "very", "raw"]),
+        _update(str(notes.pk), required=True, show_if=_when(1, "raw")),
+        _update(4, label="which day?"),
+    ]
+    _edit(surveys_admin, survey, questions=ops)
+    for q in (food, notes, poll):
+        q.refresh_from_db()
+    assert (food.label, food.options) == ("food?", ["vegan", "very", "raw"])
+    assert (notes.required, notes.show_if["value"]) == (True, "raw")
+    assert notes.show_if["question_id"] == str(food.pk)
+    assert (poll.label, poll.options) == ("which day?", when)
+    entries = AuditLogEntry.objects.filter(action="survey_question_updated")
+    assert [e.details["via"] for e in entries] == ["mcp"] * 3
+
+
+def test_live_update_previews_the_diff_and_answers_that_may_not_fit(surveys_admin):
+    survey = _survey(responses=1)
+    _questions(survey)
+    ops = [_update(1, label="food", options=["vegan", "very", "raw"])]
+    preview = _edit(surveys_admin, survey, questions=ops)
+    (entry,) = preview["changes"]["questions"]
+    assert entry["changes"] == {
+        "label": {"before": "food?", "after": "food"},
+        "options": {"before": ["vegan", "very"], "after": ["vegan", "very", "raw"]},
+    }
+    assert "may leave existing answers" in preview["notes"][1]
+    _edit(surveys_admin, survey, questions=ops, confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["food", "why?", "notes"]
+
+
+def test_update_after_its_condition_source_is_removed(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    ops = [_remove(1), _update(2, label="why")]
+    token = _edit(surveys_admin, survey, questions=ops)["confirm_token"]
+    _edit(surveys_admin, survey, questions=ops, confirm_token=token)
+    assert SurveyQuestion.objects.get(label="why").show_if is None
+
+
+def test_turns_a_question_into_a_section_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    _edit(surveys_admin, survey, questions=[_update(3, field_type="section", description="more")])
+    notes = SurveyQuestion.objects.get(label="notes")
+    assert (notes.field_type, notes.description) == ("section", "more")
+
+
+def test_section_cannot_be_made_required_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    SurveyQuestion.objects.create(survey=survey, label="about you", field_type="section")
+    message = _refused(surveys_admin, survey, questions=[_update(1, required=True)])
+    assert "section headers can't be required" in message
+
+
+def test_label_change_leaves_stored_options_alone(surveys_admin):
+    survey = _survey(is_active=False)
+    stars = ["bad", "", "good"]
+    SurveyQuestion.objects.create(survey=survey, label="r", field_type="rating", options=stars)
+    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
+    _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
+    assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]
+
+
+def test_unchanged_condition_cleared_when_its_source_is_removed(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    _edit(surveys_admin, survey, questions=[_update(2, label="why"), _remove(1)])
+    assert SurveyQuestion.objects.get(label="why").show_if is None
+
+
+def test_token_bound_to_an_explicit_null_show_if(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    token = _edit(surveys_admin, survey, questions=[_update(2, label="why2")])["confirm_token"]
+    confirm = {"questions": [_update(2, label="why2", show_if=None)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+
+
+def test_condition_on_a_tied_stored_order_refused(surveys_admin):
+    survey = _survey(is_active=False)
+    for label in ("a?", "b?"):
+        SurveyQuestion.objects.create(survey=survey, label=label, field_type="radio", options=["x"])
+    error = _refused(surveys_admin, survey, questions=[_update(2, show_if=_when(1, "x"))])
+    assert "reorder first" in error
+    assert not any(q.show_if for q in SurveyQuestion.objects.all())
+
+
+def test_add_places_questions_after_their_anchor(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    ops = [
+        _add({**NOTES, "label": "last"}),
+        _add({**NOTES, "label": "first"}, after=0),
+        _add({"label": "how very?", "show_if": _when(1, "very")}, after=1),
+        {"op": "reorder", "order": [1, 3, 2]},
+    ]
+    result = _edit(surveys_admin, survey, questions=ops)
+    expected = ["first", "food?", "how very?", "notes", "why?", "last"]
+    assert [q["label"] for q in result["questions"]] == expected == _labels(survey)
+    assert result["questions"][2]["show_if"]["question"] == "food?"
+    assert AuditLogEntry.objects.filter(action="survey_question_created").count() == 3
+    assert AuditLogEntry.objects.get(action="survey_questions_reordered").details["via"] == "mcp"
+
+
+def test_live_reorder_previews_the_new_order(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    ops = [{"op": "reorder", "order": [1, 3, 2]}]
+    preview = _edit(surveys_admin, survey, questions=ops)
+    order = {"before": LABELS, "after": ["food?", "notes", "why?"]}
+    assert (preview["changes"], preview["notes"]) == ({"order": order}, [])
+    _edit(surveys_admin, survey, questions=ops, confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["food?", "notes", "why?"]
+
+
+def test_two_adds_after_one_question_keep_their_order(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    ops = [_add({**NOTES, "label": "a"}, after=1), _add({**NOTES, "label": "b"}, after=1)]
+    _edit(surveys_admin, survey, questions=ops)
+    assert _labels(survey) == ["food?", "a", "b", "why?", "notes"]
+
+
+def test_live_add_previews_its_condition_and_place(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    add = _add({"label": "how?", "show_if": _when(1, "very")}, after=1)
+    (entry,) = _edit(surveys_admin, survey, questions=[add])["changes"]["questions"]
+    assert entry["after"] == {"position": 1, "label": "food?"}
+    assert entry["question"]["show_if"]["question"] == "food?"

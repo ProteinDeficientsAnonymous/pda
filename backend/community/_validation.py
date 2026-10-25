@@ -30,6 +30,7 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
+        PAYMENT_VERIFY_NOT_GUESTS = "event.payment_verify_not_guests"  # params: { user_ids: str }
         WAITLIST_ORDER_STALE = "event.waitlist_order_stale"
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
@@ -161,6 +162,9 @@ class Code:
         QUESTION_NOT_FOUND = "survey.question_not_found"
         RESPONSE_NOT_FOUND = "survey.response_not_found"
         ANONYMOUS_LOCKED = "survey.anonymous_locked"
+        FEEDBACK_TYPE_TAKEN = "survey.feedback_type_taken"
+        FEEDBACK_LINK_INVALID = "survey.feedback_link_invalid"
+        FEEDBACK_ALREADY_SUBMITTED = "survey.feedback_already_submitted"
         NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
         WINNING_DATETIME_NOT_IN_OPTIONS = "survey.winning_datetime_not_in_options"
         POLL_ALREADY_FINALIZED = "survey.poll_already_finalized"
@@ -219,6 +223,11 @@ class Code:
         EVENT_OR_TITLE_REQUIRED = "attendance_import.event_or_title_required"
         INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
         AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
+
+    class CashAppImport:
+        CSV_EMPTY = "cashapp_import.csv_empty"
+        CSV_MISSING_COLUMNS = "cashapp_import.csv_missing_columns"  # params: { columns: str }
+        CSV_TOO_MANY_ROWS = "cashapp_import.csv_too_many_rows"  # params: { max_rows: int }
 
     class AttendanceMark:
         EVENT_OR_TITLE_REQUIRED = "attendance_mark.event_or_title_required"

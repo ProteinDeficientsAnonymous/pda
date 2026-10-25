@@ -27,6 +27,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.TagOfficialEvent]: 'tag official events',
   [Permission.TagClubEvent]: 'tag club events',
   [Permission.ManageDocuments]: 'manage documents',
+  [Permission.ImportPayments]: 'import payments',
 };
 
 export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {

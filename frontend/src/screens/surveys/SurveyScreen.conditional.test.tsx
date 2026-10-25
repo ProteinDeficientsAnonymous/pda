@@ -38,6 +38,7 @@ const survey: Survey = {
   maxResponses: null,
   responseCount: 0,
   linkedEventId: null,
+  feedbackEventType: '',
   myResponseId: null,
   myAnswers: null,
   pollResult: null,

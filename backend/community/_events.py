@@ -1,7 +1,6 @@
 """Events CRUD endpoints."""
 
 import logging
-from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -10,7 +9,7 @@ from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.utils import timezone
-from ninja import Router
+from ninja import Query, Router
 from ninja.responses import Status
 from notifications.service import broadcast_event_created
 from pydantic import BaseModel
@@ -28,9 +27,11 @@ from community._event_helpers import (
     is_cohost,
 )
 from community._event_list import (
+    EventListQuery,
     _build_events_queryset,
     _event_list_out,
     _filter_invite_only,
+    _filter_scope,
     _filter_window,
     _list_count_annotations,
 )
@@ -90,24 +91,20 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 
 @router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
-def list_events(
-    request,
-    status: str = EventStatus.ACTIVE,
-    start: datetime | None = None,
-    end: datetime | None = None,
-    include_imported: bool = True,
-):
+def list_events(request, params: Query[EventListQuery]):
     """start/end bound a calendar window; include_imported=false drops partiful/legacy rows."""
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
+    status = params.status
 
-    if status in (EventStatus.CANCELLED, EventStatus.DRAFT) and not is_authed:
+    if (params.hosted or status in (EventStatus.CANCELLED, EventStatus.DRAFT)) and not is_authed:
         raise_validation(Code.Event.AUTH_REQUIRED, status_code=403)
 
     events = _filter_invite_only(
         _build_events_queryset(status, auth_user, is_authed), auth_user, status
     )
-    events = _filter_window(events, start, end, include_imported)
+    events = _filter_window(events, params.start, params.end, params.include_imported)
+    events = _filter_scope(events, auth_user, params.hosted, params.upcoming)
     return Status(
         200,
         [_event_list_out(e, auth_user, is_authed) for e in events],

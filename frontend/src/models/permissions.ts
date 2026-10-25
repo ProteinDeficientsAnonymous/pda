@@ -12,6 +12,7 @@ export const Permission = {
   TagOfficialEvent: 'tag_official_event',
   TagClubEvent: 'tag_club_event',
   ManageDocuments: 'manage_documents',
+  ImportPayments: 'import_payments',
 } as const;
 
 export type PermissionKey = (typeof Permission)[keyof typeof Permission];

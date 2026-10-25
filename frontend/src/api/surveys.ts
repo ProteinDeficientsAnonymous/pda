@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { EventTypeValue } from '@/models/event';
+
 import { apiClient } from './client';
 import { QuestionType } from './questionTypes';
 import { getStoredSurveyToken, setStoredSurveyToken } from './surveyTokenStorage';
@@ -27,6 +29,7 @@ export interface SurveyQuestion {
   label: string;
   fieldType: SurveyQuestionType;
   options: string[];
+  description?: string;
   required: boolean;
   displayOrder: number;
   showIf: ShowIfCondition | null;
@@ -47,6 +50,7 @@ export interface Survey {
   maxResponses: number | null;
   responseCount: number;
   linkedEventId: string | null;
+  feedbackEventType: '' | EventTypeValue;
   questions: SurveyQuestion[];
   myResponseId: string | null;
   myAnswers: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -69,6 +73,7 @@ export interface WireQuestion {
   label: string;
   field_type: SurveyQuestionType;
   options?: string[];
+  description?: string;
   required?: boolean;
   display_order: number;
   show_if?: WireShowIf | null;
@@ -80,7 +85,8 @@ export function mapQuestion(q: WireQuestion): SurveyQuestion {
     label: q.label,
     fieldType: q.field_type,
     options: q.options ?? [],
-    required: q.required ?? false,
+    description: q.description ?? '',
+    required: q.field_type !== QuestionType.Section && (q.required ?? false),
     displayOrder: q.display_order,
     showIf: q.show_if
       ? {
@@ -92,7 +98,7 @@ export function mapQuestion(q: WireQuestion): SurveyQuestion {
   };
 }
 
-interface WireSurvey {
+export interface WireSurvey {
   id: string;
   title: string;
   description?: string;
@@ -107,6 +113,7 @@ interface WireSurvey {
   max_responses?: number | null;
   response_count?: number;
   linked_event_id?: string | null;
+  feedback_event_type?: '' | EventTypeValue;
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
@@ -127,7 +134,7 @@ interface WireSurveyResponse {
   response_token?: string | null;
 }
 
-function mapSurvey(w: WireSurvey): Survey {
+export function mapSurvey(w: WireSurvey): Survey {
   return {
     id: w.id,
     title: w.title,
@@ -143,6 +150,7 @@ function mapSurvey(w: WireSurvey): Survey {
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
     linkedEventId: w.linked_event_id ?? null,
+    feedbackEventType: w.feedback_event_type ?? '',
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,

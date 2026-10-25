@@ -473,6 +473,55 @@
         "title": "BirthdayOut",
         "type": "object"
       },
+      "BulkPaymentVerifyIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "BulkPaymentVerifyIn",
+        "type": "object"
+      },
+      "BulkPaymentVerifyOut": {
+        "properties": {
+          "already_verified_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Already Verified User Ids",
+            "type": "array"
+          },
+          "event_verified_total": {
+            "description": "Rsvps on the event with a verified payment now.",
+            "title": "Event Verified Total",
+            "type": "integer"
+          },
+          "verified_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Verified User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "verified_user_ids",
+          "already_verified_user_ids",
+          "event_verified_total"
+        ],
+        "title": "BulkPaymentVerifyOut",
+        "type": "object"
+      },
       "BulkUserCreateIn": {
         "properties": {
           "phone_numbers": {
@@ -1788,6 +1837,95 @@
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
       },
+      "EventFeedbackHostOut": {
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/HostFeedbackResponseOut"
+            },
+            "title": "Responses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "questions",
+          "responses"
+        ],
+        "title": "EventFeedbackHostOut",
+        "type": "object"
+      },
+      "EventFeedbackOut": {
+        "properties": {
+          "already_responded": {
+            "title": "Already Responded",
+            "type": "boolean"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Start"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "is_open": {
+            "title": "Is Open",
+            "type": "boolean"
+          },
+          "survey": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurveyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "survey",
+          "event_id",
+          "event_title",
+          "event_start",
+          "already_responded",
+          "is_open"
+        ],
+        "title": "EventFeedbackOut",
+        "type": "object"
+      },
+      "EventFeedbackSubmitOut": {
+        "properties": {
+          "confirmation_message": {
+            "title": "Confirmation Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation_message"
+        ],
+        "title": "EventFeedbackSubmitOut",
+        "type": "object"
+      },
       "EventFlagIn": {
         "properties": {
           "reason": {
@@ -2377,6 +2515,58 @@
           "location"
         ],
         "title": "EventListOut",
+        "type": "object"
+      },
+      "EventListQuery": {
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "hosted": {
+            "default": false,
+            "description": "only events the viewer created or co-hosts",
+            "title": "Hosted",
+            "type": "boolean"
+          },
+          "include_imported": {
+            "default": true,
+            "title": "Include Imported",
+            "type": "boolean"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "status": {
+            "default": "active",
+            "title": "Status",
+            "type": "string"
+          },
+          "upcoming": {
+            "default": false,
+            "description": "drop events that are past; tbd events stay",
+            "title": "Upcoming",
+            "type": "boolean"
+          }
+        },
+        "title": "EventListQuery",
         "type": "object"
       },
       "EventOptionOut": {
@@ -3973,6 +4163,31 @@
         "title": "HomePagePatchIn",
         "type": "object"
       },
+      "HostFeedbackResponseOut": {
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "submitted_on": {
+            "format": "date",
+            "title": "Submitted On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "answers",
+          "submitted_on"
+        ],
+        "title": "HostFeedbackResponseOut",
+        "type": "object"
+      },
       "HostRSVPIn": {
         "properties": {
           "has_plus_one": {
@@ -4795,6 +5010,17 @@
             ],
             "title": "Last Name"
           },
+          "monthly_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Digest Opt Out"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -5265,6 +5491,26 @@
         "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
+      "MyEventFeedbackOut": {
+        "properties": {
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "MyEventFeedbackOut",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "created_at": {
@@ -5309,12 +5555,24 @@
               }
             ],
             "title": "Related User Id"
+          },
+          "survey_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Id"
           }
         },
         "required": [
           "id",
           "notification_type",
           "event_id",
+          "survey_id",
           "related_user_id",
           "message",
           "is_read",
@@ -5854,7 +6112,8 @@
           "number",
           "boolean",
           "rating",
-          "datetime_poll"
+          "datetime_poll",
+          "section"
         ],
         "title": "QuestionType",
         "type": "string"
@@ -5897,7 +6156,14 @@
           },
           "paid_confirmed": {
             "default": false,
+            "description": "Guest says they paid, or a host verified it.",
             "title": "Paid Confirmed",
+            "type": "boolean"
+          },
+          "payment_verified": {
+            "default": false,
+            "description": "A host verified the payment.",
+            "title": "Payment Verified",
             "type": "boolean"
           },
           "phone": {
@@ -6437,6 +6703,16 @@
             "title": "Description",
             "type": "string"
           },
+          "feedback_event_type": {
+            "default": "",
+            "enum": [
+              "official",
+              "club",
+              ""
+            ],
+            "title": "Feedback Event Type",
+            "type": "string"
+          },
           "is_active": {
             "default": true,
             "title": "Is Active",
@@ -6640,6 +6916,11 @@
             "title": "Description",
             "type": "string"
           },
+          "feedback_event_type": {
+            "default": "",
+            "title": "Feedback Event Type",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6807,6 +7088,22 @@
             ],
             "title": "Description"
           },
+          "feedback_event_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "official",
+                  "club",
+                  ""
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Event Type"
+          },
           "is_active": {
             "anyOf": [
               {
@@ -6906,6 +7203,12 @@
       },
       "SurveyQuestionIn": {
         "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
           "field_type": {
             "allOf": [
               {
@@ -6967,6 +7270,11 @@
       },
       "SurveyQuestionOut": {
         "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
           "display_order": {
             "title": "Display Order",
             "type": "integer"
@@ -7022,6 +7330,40 @@
             "title": "Answers",
             "type": "object"
           },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Start"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -7068,6 +7410,40 @@
             "additionalProperties": true,
             "title": "Answers",
             "type": "object"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Start"
+          },
+          "event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Title"
           },
           "id": {
             "title": "Id",
@@ -7466,6 +7842,11 @@
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
+            "type": "boolean"
+          },
+          "monthly_digest_opt_out": {
+            "default": false,
+            "title": "Monthly Digest Opt Out",
             "type": "boolean"
           },
           "needs_contact_privacy_consent": {
@@ -10233,6 +10614,142 @@
         ]
       }
     },
+    "/api/community/event-feedback/": {
+      "get": {
+        "operationId": "community__event_feedback_public_get_event_feedback",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Feedback-Token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Feedback-Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Get Event Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-feedback/respond/": {
+      "post": {
+        "operationId": "community__event_feedback_public_submit_event_feedback",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Feedback-Token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Feedback-Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyAnswersIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackSubmitOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Submit Event Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/event-flags/": {
       "get": {
         "operationId": "community__event_flags_list_event_flags",
@@ -10567,6 +11084,30 @@
             "schema": {
               "default": true,
               "title": "Include Imported",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "only events the viewer created or co-hosts",
+            "in": "query",
+            "name": "hosted",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "only events the viewer created or co-hosts",
+              "title": "Hosted",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "drop events that are past; tbd events stay",
+            "in": "query",
+            "name": "upcoming",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "drop events that are past; tbd events stay",
+              "title": "Upcoming",
               "type": "boolean"
             }
           }
@@ -12087,6 +12628,64 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/feedback/": {
+      "get": {
+        "operationId": "community__event_feedback_host_get_event_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFeedbackHostOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Feedback",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/flag/": {
       "post": {
         "operationId": "community__event_flags_flag_event",
@@ -12346,6 +12945,44 @@
           }
         ],
         "summary": "Invite To Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/my-feedback/": {
+      "get": {
+        "operationId": "community__event_feedback_host_get_my_event_feedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyEventFeedbackOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get My Event Feedback",
         "tags": [
           "community"
         ]
@@ -13506,6 +14143,95 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/rsvps/payments/verify/": {
+      "post": {
+        "description": "Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.",
+        "operationId": "community__event_host_rsvps_verify_guest_payments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkPaymentVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkPaymentVerifyOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Verify Guest Payments",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
       "post": {
         "operationId": "community__event_host_actions_set_attendance",
@@ -13606,7 +14332,7 @@
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/payment/": {
       "patch": {
-        "description": "Let a host confirm or retract a guest's payment without touching their rsvp status.",
+        "description": "Let a host verify or un-verify a guest's payment without touching their rsvp status.",
         "operationId": "community__event_host_rsvps_set_guest_payment",
         "parameters": [
           {
@@ -16755,6 +17481,23 @@
               "title": "Survey Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
           }
         ],
         "responses": {
@@ -16877,6 +17620,23 @@
               "format": "uuid",
               "title": "Survey Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
             }
           }
         ],

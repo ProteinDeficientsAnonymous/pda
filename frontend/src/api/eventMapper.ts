@@ -21,6 +21,7 @@ interface WireGuest {
   plus_one_attendance?: string;
   is_member?: boolean;
   paid_confirmed?: boolean;
+  payment_verified?: boolean;
   questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
 }
 
@@ -141,6 +142,7 @@ function mapGuest(g: WireGuest): EventGuest {
     plusOneAttendance: mapAttendance(g.plus_one_attendance),
     isMember: g.is_member ?? true,
     paidConfirmed: g.paid_confirmed ?? false,
+    paymentVerified: g.payment_verified ?? false,
     questionnaireResponses: mapQuestionnaireResponses(g.questionnaire_responses),
   };
 }

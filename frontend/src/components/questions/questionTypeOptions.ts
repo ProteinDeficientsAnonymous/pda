@@ -19,6 +19,7 @@ const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>
   [QuestionType.Boolean]: { label: 'yes / no', wantsOptions: false },
   [QuestionType.Rating]: { label: '1–5 rating', wantsOptions: true },
   [QuestionType.DatetimePoll]: { label: 'datetime poll', wantsOptions: true },
+  [QuestionType.Section]: { label: 'section header', wantsOptions: false },
 };
 
 /** Canonical authoring metadata for every catalog question type. */

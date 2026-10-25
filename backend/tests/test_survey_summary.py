@@ -1,8 +1,10 @@
 """Tests for the per-question survey summary endpoint (Issue 1462)."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from community._validation import Code
-from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import Event, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -135,6 +137,28 @@ class TestSurveySummary:
         assert rows["Vibes"]["counts"] == {"1": 0, "2": 1, "3": 0, "4": 0, "5": 1}
         assert rows["Vibes"]["answered"] == 2
         assert rows["Vibes"]["mean"] == 3.5
+
+    def test_event_id_filters_counts_to_that_event(
+        self, api_client, surveys_admin_headers, mixed_survey
+    ):
+        start = datetime(2026, 3, 4, 18, tzinfo=UTC)
+        event = Event.objects.create(
+            title="potluck", start_datetime=start, end_datetime=start + timedelta(hours=2)
+        )
+        colour = mixed_survey.questions.get(label="Colour")
+        blue = next(
+            r for r in mixed_survey.responses.all() if r.answers[str(colour.id)]["answer"] == "blue"
+        )
+        blue.event = event
+        blue.save(update_fields=["event"])
+
+        response = api_client.get(
+            f"{self._url(mixed_survey)}?event_id={event.id}", **surveys_admin_headers
+        )
+        assert response.status_code == 200
+        rows = self._by_label(mixed_survey, response.json())
+        assert rows["Colour"]["counts"] == {"red": 0, "blue": 1}
+        assert rows["Colour"]["answered"] == 1
 
     def test_rating_mean_is_none_without_answers(
         self, api_client, survey_owner, surveys_admin_headers
