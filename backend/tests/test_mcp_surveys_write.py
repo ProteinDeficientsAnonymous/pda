@@ -25,6 +25,7 @@ SETTINGS = {"title": "Retreat Planning!"}
 NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
 FOOD = {"label": "food?", "field_type": "radio", "options": ["vegan", "very vegan"]}
+WHY = {"label": "why?", "show_if": {"position": 1, "value": "very vegan"}}
 
 
 @pytest.fixture
@@ -83,7 +84,10 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({"label": "rate", "field_type": "rating"},), {}, "field_type"),
-        (({"label": "why", "show_if": {"position": 1, "value": "x"}},), {}, "show_if"),
+        ((FOOD, {**WHY, "show_if": {"position": 2, "value": "vegan"}}), {}, "earlier question"),
+        ((FOOD, {**WHY, "show_if": {"position": 3, "value": "vegan"}}), {}, "earlier question"),
+        ((FOOD, {**WHY, "show_if": {"position": 1, "value": "x" * 301}}), {}, '"show_if.value"'),
+        ((FOOD, {**WHY, "show_if": {**WHY["show_if"], "question_id": "x"}}), {}, "question_id"),
         (({"label": "  "},), {}, "at least 1 character"),
         (({"label": "x" * 301},), {}, '"field": "label"'),
         ((NAME,), {"title": " "}, "at least 1 character"),
@@ -94,6 +98,24 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
 )
 def test_bad_input_refused_before_writing(surveys_admin, questions, changes, message):
     assert message in _create_refused(surveys_admin, questions, **changes)
+    assert not Survey.objects.exists()
+
+
+def test_show_if_wired_to_the_created_source(surveys_admin):
+    summary = _create(surveys_admin, (FOOD, NOTES, WHY))
+    food = SurveyQuestion.objects.get(survey_id=summary["id"], label="food?")
+    condition = {"question_id": str(food.pk), "operator": "equals", "value": "very vegan"}
+    assert SurveyQuestion.objects.get(label="why?").show_if == condition
+    shown = {**condition, "question_position": 1, "question": "food?"}
+    assert summary["questions"][2]["show_if"] == shown
+
+
+def test_condition_the_website_refuses_leaves_no_survey(surveys_admin):
+    error = _create_refused(
+        surveys_admin, (FOOD, {**WHY, "show_if": {"position": 1, "value": "x"}})
+    )
+    detail = json.loads(error.removeprefix("nothing was saved: question 2: "))
+    assert detail["detail"][0]["code"] == Code.Survey.CONDITION_VALUE_INVALID
     assert not Survey.objects.exists()
 
 
