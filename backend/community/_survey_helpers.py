@@ -32,6 +32,7 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
         label=q.label,
         field_type=q.field_type,
         options=q.options or [],
+        description=q.description,
         required=q.required,
         display_order=q.display_order,
         show_if=q.show_if,
