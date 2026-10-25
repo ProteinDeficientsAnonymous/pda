@@ -1,11 +1,12 @@
 import asyncio
+import json
 from unittest.mock import DEFAULT, patch
 from uuid import uuid4
 
 import pytest
 from audit.models import AuditLogEntry
-from community._surveys import get_survey_admin
-from community.models import Survey
+from community._surveys import delete_survey_question, get_survey_admin
+from community.models import Survey, SurveyQuestion
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -14,6 +15,8 @@ from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+LABELS = ["food?", "why?", "notes"]
+REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
 SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
 TOOL = "mcp_gateway.tools.surveys_edit"
 
@@ -27,6 +30,23 @@ def surveys_admin(test_user):
 
 def _survey(**fields) -> Survey:
     return Survey.objects.create(**{"title": "retreat", "slug": "retreat", **fields})
+
+
+def _questions(survey) -> list[SurveyQuestion]:
+    food = SurveyQuestion.objects.create(
+        survey=survey, label="food?", field_type="radio", options=["vegan", "very"]
+    )
+    when = {"question_id": str(food.pk), "operator": "equals", "value": "very"}
+    why = SurveyQuestion.objects.create(survey=survey, label="why?", display_order=1, show_if=when)
+    return [food, why, SurveyQuestion.objects.create(survey=survey, label="notes", display_order=2)]
+
+
+def _labels(survey) -> list[str]:
+    return [q.label for q in SurveyQuestion.objects.filter(survey=survey)]
+
+
+def _remove(ref) -> dict:
+    return {"op": "remove", "question": ref}
 
 
 def _edit(user, survey, **arguments) -> dict:
@@ -110,3 +130,44 @@ def test_cancel_between_steps_is_logged(surveys_admin, caplog):
         with pytest.raises(asyncio.CancelledError):
             _edit(surveys_admin, survey, settings={"title": "x"})
     assert f"cancelled on survey {survey.pk} after ['settings']" in caplog.text
+
+
+def test_remove_by_position_or_id_clears_conditions_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    _, why, _ = _questions(survey)
+    result = _edit(surveys_admin, survey, questions=[_remove(1), _remove(str(why.pk))])
+    assert [q["label"] for q in result["questions"]] == ["notes"] == _labels(survey)
+    entries = AuditLogEntry.objects.filter(action="survey_question_deleted")
+    assert [e.details["via"] for e in entries] == ["mcp", "mcp"]
+
+
+@pytest.mark.parametrize(
+    ("ops", "message"),
+    [
+        ([_remove(4)], "operation 1: there's no question 4: the survey has 3"),
+        ([_remove("00000000-0000-0000-0000-000000000000")], "no question with id"),
+        ([_remove(1), _remove(1)], "operation 2: question 1"),
+        ([{"op": "update", "question": 1}], "Input should be 'remove'"),
+        ([{**_remove(1), "after": 2}], "Extra inputs are not permitted"),
+        ([_remove(True)], "Input should be a valid integer"),
+    ],
+)
+def test_bad_question_changes_refused_before_saving(surveys_admin, ops, message):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    assert message in _refused(surveys_admin, survey, settings={"title": "x"}, questions=ops)
+    assert (Survey.objects.get().title, _labels(survey)) == ("retreat", LABELS)
+
+
+def test_failure_midway_reports_what_was_saved(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    arguments = {"settings": {"title": "x"}, "questions": [_remove(3), _remove(2)]}
+    second_fails = [DEFAULT, RuntimeError("db went away")]
+    with patch(REMOVE_VIEW, wraps=delete_survey_question, side_effect=second_fails):
+        report = json.loads(_refused(surveys_admin, survey, **arguments))
+    assert report["error"].endswith('operation 2: remove question 2 ("why?") failed unexpectedly')
+    assert report["applied"] == ["settings", 'operation 1: remove question 3 ("notes")']
+    assert report["not_applied"] == ['operation 2: remove question 2 ("why?")']
+    assert [q["label"] for q in report["survey"]["questions"]] == ["food?", "why?"]
+    assert report["survey"]["title"] == "x"

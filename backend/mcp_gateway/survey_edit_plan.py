@@ -1,4 +1,5 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -23,6 +24,14 @@ class Step:
 @dataclass
 class Edit:
     steps: list[Step] = field(default_factory=list)
+
+
+@contextmanager
+def operation(number: int) -> Iterator[None]:
+    try:
+        yield
+    except ToolError as exc:
+        raise ToolError(f"nothing was saved: operation {number}: {exc}") from exc
 
 
 def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -> None:
