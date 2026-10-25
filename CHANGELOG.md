@@ -1,3 +1,11 @@
+# [0.198.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.197.0...v0.198.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - add host digest opt-out ([#1876](https://github.com/ProteinDeficientsAnonymous/pda/issues/1876)) ([3876c90](https://github.com/ProteinDeficientsAnonymous/pda/commit/3876c905004de7c6c7166e013268a7f8b6dd1e9c))
+* 1603 - pick host digest events and recipients ([#1877](https://github.com/ProteinDeficientsAnonymous/pda/issues/1877)) ([50448b8](https://github.com/ProteinDeficientsAnonymous/pda/commit/50448b8874037d8848f0b057eb28d43a99dac058))
+
 # [0.197.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.196.0...v0.197.0) (2026-10-25)
 
 
