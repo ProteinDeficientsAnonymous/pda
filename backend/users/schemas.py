@@ -161,6 +161,7 @@ class UserOut(BaseModel):
     has_seen_veganniversary: bool = False
     hide_last_name: bool = False
     weekly_digest_opt_out: bool = False
+    monthly_digest_opt_out: bool = False
     whatsapp_reminder_opt_out: bool = False
     attendance_nudge_opt_out: bool = False
     is_paused: bool = False
@@ -209,6 +210,7 @@ class UserOut(BaseModel):
             has_seen_veganniversary=user.has_seen_veganniversary,
             hide_last_name=user.hide_last_name,
             weekly_digest_opt_out=user.weekly_digest_opt_out,
+            monthly_digest_opt_out=user.monthly_digest_opt_out,
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
             is_paused=user.is_paused,
@@ -332,6 +334,7 @@ class MePatchIn(BaseModel):
     has_seen_veganniversary: bool | None = None
     hide_last_name: bool | None = None
     weekly_digest_opt_out: bool | None = None
+    monthly_digest_opt_out: bool | None = None
     whatsapp_reminder_opt_out: bool | None = None
     attendance_nudge_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
