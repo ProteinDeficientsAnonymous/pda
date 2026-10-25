@@ -37,6 +37,7 @@ export function SurveyQuestionCard({
     label: question.label,
     fieldType: question.fieldType,
     options: question.options,
+    description: question.description ?? '',
     required: question.required,
   };
   // Last-sent values, so a condition save during an in-flight label save keeps the new label.

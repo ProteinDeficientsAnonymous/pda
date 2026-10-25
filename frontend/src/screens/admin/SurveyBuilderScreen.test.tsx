@@ -207,11 +207,28 @@ describe('SurveyBuilderScreen', () => {
         label: 'untitled question',
         field_type: 'text',
         options: [],
+        description: '',
         required: false,
         show_if: null,
       });
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('adds a section header', async () => {
+    mockedGet.mockResolvedValue({ data: wireSurvey });
+    mockedPost.mockResolvedValueOnce({ data: { id: 'q3' } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.click(screen.getByRole('button', { name: '+ add section' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/srv-1/questions/',
+        expect.objectContaining({ label: 'untitled section', field_type: 'section' }),
+      );
+    });
   });
 
   it('saves an edited label when the field loses focus', async () => {
@@ -229,6 +246,7 @@ describe('SurveyBuilderScreen', () => {
         label: 'first, renamed',
         field_type: 'text',
         options: [],
+        description: '',
         required: false,
         show_if: null,
       });

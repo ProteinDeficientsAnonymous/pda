@@ -5,6 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { QuestionType } from '@/api/questionTypes';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { cn } from '@/utils/cn';
@@ -70,15 +71,24 @@ function normalizeOptions(fieldType: string, options: readonly string[]): string
 }
 
 function normalize<T extends string>(values: QuestionAuthorValues<T>): QuestionAuthorValues<T> {
+  const section =
+    values.fieldType === QuestionType.Section
+      ? { description: (values.description ?? '').trim(), required: false }
+      : {};
   return {
     ...values,
     label: values.label.trim(),
     options: normalizeOptions(values.fieldType, values.options),
+    ...section,
   };
 }
 
 function validationError<T extends string>(values: QuestionAuthorValues<T>): string | null {
-  if (!values.label) return 'question text required';
+  if (!values.label) {
+    return values.fieldType === QuestionType.Section
+      ? 'heading required'
+      : 'question text required';
+  }
   if (optionsRequired(values.fieldType) && values.options.length === 0) {
     return 'add at least one option';
   }
@@ -148,6 +158,7 @@ export function QuestionCardEditor<T extends string>({
   }
 
   const wantsOptions = questionTypeWantsOptions(draft.fieldType as QuestionType);
+  const isSection = draft.fieldType === QuestionType.Section;
 
   return (
     <article
@@ -162,9 +173,9 @@ export function QuestionCardEditor<T extends string>({
           <TextField
             ref={labelRef}
             id={`${id}-label`}
-            label="question"
+            label={isSection ? 'section heading' : 'question'}
             hideLabel
-            placeholder="question"
+            placeholder={isSection ? 'section heading' : 'question'}
             value={draft.label}
             disabled={disabled}
             maxLength={200}
@@ -191,7 +202,23 @@ export function QuestionCardEditor<T extends string>({
         </div>
       </div>
 
-      {draft.fieldType === QuestionType.Rating ? (
+      {isSection ? (
+        <Textarea
+          id={`${id}-description`}
+          label="description"
+          labelSuffix="· optional"
+          rows={2}
+          maxLength={2000}
+          value={draft.description ?? ''}
+          disabled={disabled}
+          onChange={(e) => {
+            setDraft((d) => ({ ...d, description: e.target.value }));
+          }}
+          onBlur={() => {
+            commit(draft);
+          }}
+        />
+      ) : draft.fieldType === QuestionType.Rating ? (
         <RatingLabelFields
           id={id}
           options={draft.options}
@@ -234,14 +261,18 @@ export function QuestionCardEditor<T extends string>({
                 delete
               </Button>
             ) : null}
-            <span aria-hidden="true" className="bg-border mx-1 hidden h-6 w-px sm:block" />
-            <Toggle
-              label="required"
-              checked={draft.required}
-              onChange={(required) => {
-                commit({ ...draft, required });
-              }}
-            />
+            {isSection ? null : (
+              <>
+                <span aria-hidden="true" className="bg-border mx-1 hidden h-6 w-px sm:block" />
+                <Toggle
+                  label="required"
+                  checked={draft.required}
+                  onChange={(required) => {
+                    commit({ ...draft, required });
+                  }}
+                />
+              </>
+            )}
           </>
         )}
       </footer>

@@ -29,6 +29,7 @@ export interface SurveyQuestion {
   label: string;
   fieldType: SurveyQuestionType;
   options: string[];
+  description?: string;
   required: boolean;
   displayOrder: number;
   showIf: ShowIfCondition | null;
@@ -72,6 +73,7 @@ export interface WireQuestion {
   label: string;
   field_type: SurveyQuestionType;
   options?: string[];
+  description?: string;
   required?: boolean;
   display_order: number;
   show_if?: WireShowIf | null;
@@ -83,6 +85,7 @@ export function mapQuestion(q: WireQuestion): SurveyQuestion {
     label: q.label,
     fieldType: q.field_type,
     options: q.options ?? [],
+    description: q.description ?? '',
     required: q.required ?? false,
     displayOrder: q.display_order,
     showIf: q.show_if
