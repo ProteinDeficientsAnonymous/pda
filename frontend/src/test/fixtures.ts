@@ -139,6 +139,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     hasSeenVeganniversary: false,
     hideLastName: false,
     weeklyDigestOptOut: false,
+    monthlyDigestOptOut: false,
     whatsappReminderOptOut: false,
     attendanceNudgeOptOut: false,
     weekStart: 'sunday',
