@@ -351,6 +351,14 @@ describe('SurveyResponsesScreen event filter', () => {
     expect(screen.queryByRole('columnheader', { name: 'event' })).not.toBeInTheDocument();
   });
 
+  it('should pin the event as the first column so it stays visible while scrolling', () => {
+    setup({ feedbackEventType: 'community', responses: rows });
+    const header = screen.getByRole('columnheader', { name: 'event' });
+    expect(header.parentElement?.firstElementChild).toBe(header);
+    expect(header).toHaveClass('sticky', 'left-0');
+    expect(screen.getByRole('cell', { name: 'potluck' })).toHaveClass('sticky', 'left-0');
+  });
+
   it('should show x of y responses and scope summaries once an event is selected', async () => {
     setup({ feedbackEventType: 'community', responses: rows });
     expect(screen.getByText('3 responses')).toBeInTheDocument();
