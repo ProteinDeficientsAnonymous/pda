@@ -41,6 +41,7 @@ const EventQuestionResponses = lazyWithRetry(
   () => import('@/screens/events/EventQuestionResponsesScreen'),
 );
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
+const EventFeedback = lazyWithRetry(() => import('@/screens/events/EventFeedbackScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
@@ -49,6 +50,8 @@ const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen')
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
 const DocDetail = lazyWithRetry(() => import('@/screens/docs/DocDetailScreen'));
 const Survey = lazyWithRetry(() => import('@/screens/surveys/SurveyScreen'));
+const SurveyThanks = lazyWithRetry(() => import('@/screens/surveys/SurveyThanksScreen'));
+const Feedback = lazyWithRetry(() => import('@/screens/feedback/FeedbackScreen'));
 const ConnectAuthorize = lazyWithRetry(() => import('@/screens/connect/ConnectAuthorizeScreen'));
 
 // Admin screens
@@ -62,6 +65,7 @@ const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminL
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
+const SurveyPreview = lazyWithRetry(() => import('@/screens/admin/SurveyPreviewScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -104,6 +108,8 @@ export const router = createBrowserRouter([
               { path: '/events/:id', element: el(<EventDetail />) },
               { path: '/my-rsvps', element: el(<PublicRsvps />) },
               { path: '/surveys/:slug', element: el(<Survey />) },
+              { path: '/surveys/:slug/thanks', element: el(<SurveyThanks />) },
+              { path: '/feedback', element: el(<Feedback />) },
               { path: '/donate', element: el(<Donate />) },
               { path: '/install', element: el(<Install />) },
               { path: '/faq', element: el(<Faq />) },
@@ -142,7 +148,10 @@ export const router = createBrowserRouter([
 
               {
                 element: <RequireAuth />,
-                children: [{ path: '/events/:id/report', element: el(<EventCheckInReport />) }],
+                children: [
+                  { path: '/events/:id/report', element: el(<EventCheckInReport />) },
+                  { path: '/events/:id/feedback', element: el(<EventFeedback />) },
+                ],
               },
 
               // ---- admin hub: any authed user can visit; the hub itself shows
@@ -190,6 +199,7 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/new', element: el(<SurveyCreate />) },
                   { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
+                  { path: '/admin/surveys/:id/preview', element: el(<SurveyPreview />) },
                 ],
               },
 

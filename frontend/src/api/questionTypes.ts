@@ -8,6 +8,7 @@ export const QuestionType = {
   Boolean: 'boolean',
   Rating: 'rating',
   DatetimePoll: 'datetime_poll',
+  Section: 'section',
 } as const;
 
 export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];

@@ -14,6 +14,8 @@ from community._event_comments import router as event_comments_router
 from community._event_description_templates import (
     router as event_description_templates_router,
 )
+from community._event_feedback_host import router as event_feedback_host_router
+from community._event_feedback_public import router as event_feedback_public_router
 from community._event_flags import router as event_flags_router
 
 # Re-export symbols imported directly in tests
@@ -49,6 +51,7 @@ from community._member_promotion_email import (
 from community._member_promotion_message import (
     router as member_promotion_message_router,
 )
+from community._official_event_defaults import router as official_event_defaults_router
 from community._pages import router as pages_router
 from community._poll_options import router as poll_options_router
 from community._polls import router as polls_router
@@ -82,9 +85,11 @@ router.add_router("", feedback_router)
 router.add_router("", attendance_report_router)
 router.add_router("", attendance_import_router)
 router.add_router("", attendance_mark_router)
+router.add_router("", event_feedback_host_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_description_templates_router)
+router.add_router("", official_event_defaults_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
@@ -101,6 +106,7 @@ router.add_router("", event_blasts_router)
 router.add_router("", event_cohost_invites_router)
 router.add_router("", event_invitations_router)
 router.add_router("", event_flags_router)
+router.add_router("", event_feedback_public_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)

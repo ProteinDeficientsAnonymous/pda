@@ -1,9 +1,16 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from community._validation import Code
-from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.models import (
+    Event,
+    EventType,
+    Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
+    SurveyResponse,
+)
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -129,6 +136,67 @@ class TestListSurveyResponsesAnonymity:
         assert resp.status_code == 200
         submitted = datetime.fromisoformat(resp.json()[0]["submitted_at"])
         assert submitted == datetime(2026, 3, 4, tzinfo=UTC)
+
+
+@pytest.mark.django_db
+class TestListSurveyResponsesByEvent:
+    def _url(self, survey_id):
+        return f"/api/community/surveys/{survey_id}/responses/"
+
+    @pytest.fixture
+    def feedback_survey(self, db):
+        return Survey.objects.create(
+            title="Feedback",
+            slug="fb-events",
+            anonymous=True,
+            feedback_event_type=EventType.COMMUNITY,
+        )
+
+    def _event(self, title):
+        start = datetime(2026, 3, 4, 18, tzinfo=UTC)
+        return Event.objects.create(
+            title=title, start_datetime=start, end_datetime=start + timedelta(hours=2)
+        )
+
+    def test_responses_filtered_by_event_id(self, api_client, admin_headers, feedback_survey):
+        potluck, picnic = self._event("potluck"), self._event("picnic")
+        SurveyResponse.objects.create(survey=feedback_survey, event=potluck, answers={})
+        SurveyResponse.objects.create(survey=feedback_survey, event=picnic, answers={})
+        SurveyResponse.objects.create(survey=feedback_survey, answers={})
+
+        everything = api_client.get(self._url(feedback_survey.id), **admin_headers)
+        assert len(everything.json()) == 3
+
+        resp = api_client.get(
+            self._url(feedback_survey.id), {"event_id": str(potluck.id)}, **admin_headers
+        )
+        assert resp.status_code == 200
+        rows = resp.json()
+        assert [r["event_id"] for r in rows] == [str(potluck.id)]
+
+    def test_response_out_includes_event_title(self, api_client, admin_headers, feedback_survey):
+        potluck = self._event("potluck")
+        SurveyResponse.objects.create(survey=feedback_survey, event=potluck, answers={})
+        SurveyResponse.objects.create(survey=feedback_survey, answers={})
+
+        rows = api_client.get(self._url(feedback_survey.id), **admin_headers).json()
+        by_id = {r["event_id"]: r for r in rows}
+        assert by_id[str(potluck.id)]["event_title"] == "potluck"
+        assert (
+            datetime.fromisoformat(by_id[str(potluck.id)]["event_start"]) == potluck.start_datetime
+        )
+        assert by_id[None]["event_title"] is None
+        assert by_id[None]["event_start"] is None
+
+    def test_event_does_not_unmask_anonymous_responder(
+        self, api_client, admin_headers, feedback_survey, test_user
+    ):
+        SurveyResponse.objects.create(
+            survey=feedback_survey, user=test_user, event=self._event("potluck"), answers={}
+        )
+        row = api_client.get(self._url(feedback_survey.id), **admin_headers).json()[0]
+        assert row["user_id"] is None
+        assert row["user_name"] is None
 
 
 @pytest.mark.django_db

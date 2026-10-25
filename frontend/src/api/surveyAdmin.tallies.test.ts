@@ -103,6 +103,18 @@ describe('useFinalizeSurveyPoll', () => {
 });
 
 describe('useSurveyQuestionSummaries', () => {
+  it('should pass the event filter as event_id', async () => {
+    mockedGet.mockResolvedValueOnce({ data: [] });
+    const qc = makeQc();
+    const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1', 'ev-1'), {
+      wrapper: makeWrapper(qc),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
+      params: { event_id: 'ev-1' },
+    });
+  });
+
   it('should map wire summary rows', async () => {
     mockedGet.mockResolvedValueOnce({
       data: [
@@ -121,7 +133,9 @@ describe('useSurveyQuestionSummaries', () => {
       wrapper: makeWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/');
+    expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
+      params: undefined,
+    });
     const [rating, radio] = result.current.data!;
     expect(rating).toEqual({
       questionId: 'q1',

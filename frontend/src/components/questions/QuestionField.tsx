@@ -7,10 +7,11 @@ import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
 import { FieldError } from './FieldError';
+import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
 
 interface Props {
-  question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required'>;
+  question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required' | 'description'>;
   value: AnswerValue | undefined;
   onChange: (v: AnswerValue) => void;
   error?: string | undefined;
@@ -111,6 +112,8 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={onChange}
         />
       );
+    case QuestionType.Section:
+      return <SectionHeader label={label} description={question.description} />;
     case QuestionType.Text:
     default:
       return (

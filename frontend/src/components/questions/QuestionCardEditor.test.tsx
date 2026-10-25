@@ -185,4 +185,17 @@ describe('QuestionCardEditor', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'required' }));
     expect(await screen.findByRole('alert')).toHaveTextContent("couldn't save — try again");
   });
+
+  it('edits a section heading and description without a required toggle', async () => {
+    const { onSave } = renderCard({ label: 'about you', fieldType: QuestionType.Section });
+    expect(screen.queryByRole('switch', { name: 'required' })).not.toBeInTheDocument();
+    const description = screen.getByLabelText(/description/);
+    fireEvent.change(description, { target: { value: ' all optional ' } });
+    fireEvent.blur(description);
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'all optional', required: false }),
+      );
+    });
+  });
 });

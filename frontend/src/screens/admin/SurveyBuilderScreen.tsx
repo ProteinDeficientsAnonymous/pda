@@ -2,8 +2,10 @@ import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   type SurveyQuestion,
+  type SurveyQuestionType,
   useAdminSurvey,
   useCreateSurveyQuestion,
   useDeleteSurveyQuestion,
@@ -20,6 +22,10 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
 import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
+import { SurveyThankYouCard } from './SurveyThankYouCard';
+
+const ADD_BUTTON =
+  'border-border-strong text-foreground-secondary hover:bg-surface-dim flex-1 rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50';
 
 export default function SurveyBuilderScreen() {
   const { id } = useParams<{ id: string }>();
@@ -52,9 +58,12 @@ export default function SurveyBuilderScreen() {
     const conditionNote = dependents.length
       ? ` ${dependents.join(', ')} will lose ${dependents.length === 1 ? 'its condition' : 'their conditions'} and always show.`
       : '';
+    const section = q.fieldType === QuestionType.Section;
     const ok = await confirm({
-      title: 'delete question',
-      message: `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
+      title: section ? 'delete section' : 'delete question',
+      message: section
+        ? `delete the "${q.label}" section header? the questions under it stay`
+        : `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
       confirmLabel: 'delete',
       destructive: true,
     });
@@ -62,15 +71,27 @@ export default function SurveyBuilderScreen() {
     del.mutate(q.id);
   }
 
-  async function addQuestion() {
+  async function addQuestion(fieldType: SurveyQuestionType) {
+    const section = fieldType === QuestionType.Section;
     const created = await create.mutateAsync({
-      label: 'untitled question',
-      fieldType: DEFAULT_SURVEY_QUESTION_TYPE,
+      label: section ? 'untitled section' : 'untitled question',
+      fieldType,
       options: [],
       required: false,
       showIf: null,
     });
     setFocusId(created.id);
+  }
+
+  function confirmTypeChange(q: SurveyQuestion, fieldType: SurveyQuestionType) {
+    if (fieldType !== QuestionType.Section || currentSurvey.responseCount === 0) {
+      return Promise.resolve(true);
+    }
+    return confirm({
+      title: 'change to section header',
+      message: `"${q.label}" may already have answers — a section header takes none, so they'll be hidden from responses and the csv`,
+      confirmLabel: 'change',
+    });
   }
 
   async function duplicate(q: SurveyQuestion) {
@@ -81,6 +102,7 @@ export default function SurveyBuilderScreen() {
         label: q.label,
         fieldType: q.fieldType,
         options: q.options,
+        description: q.description ?? '',
         required: q.required,
         showIf: q.showIf ?? null,
       });
@@ -122,7 +144,7 @@ export default function SurveyBuilderScreen() {
         <div className="flex flex-wrap gap-2">
           <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
-            to={`/surveys/${currentSurvey.slug}`}
+            to={`/admin/surveys/${surveyId}/preview`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
           >
             preview
@@ -186,6 +208,7 @@ export default function SurveyBuilderScreen() {
                 onDelete={() => {
                   void askDelete(q);
                 }}
+                confirmTypeChange={(fieldType) => confirmTypeChange(q, fieldType)}
               />
             )}
           />
@@ -197,16 +220,33 @@ export default function SurveyBuilderScreen() {
           </p>
         ) : null}
 
-        <button
-          type="button"
-          disabled={create.isPending}
-          onClick={() => {
-            void addQuestion().catch(() => undefined);
-          }}
-          className="border-border-strong text-foreground-secondary hover:bg-surface-dim mt-3 w-full rounded-lg border border-dashed py-3 text-sm transition-colors disabled:opacity-50"
-        >
-          {create.isPending ? 'adding…' : '+ add question'}
-        </button>
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            disabled={create.isPending}
+            onClick={() => {
+              void addQuestion(DEFAULT_SURVEY_QUESTION_TYPE).catch(() => undefined);
+            }}
+            className={ADD_BUTTON}
+          >
+            {create.isPending ? 'adding…' : '+ add question'}
+          </button>
+          <button
+            type="button"
+            disabled={create.isPending}
+            onClick={() => {
+              void addQuestion(QuestionType.Section).catch(() => undefined);
+            }}
+            className={ADD_BUTTON}
+          >
+            + add section
+          </button>
+        </div>
+
+        <SurveyThankYouCard
+          surveyId={surveyId}
+          confirmationMessage={currentSurvey.confirmationMessage}
+        />
       </section>
 
       <SurveySettingsDialog

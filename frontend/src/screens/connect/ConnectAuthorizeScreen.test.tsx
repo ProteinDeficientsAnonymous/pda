@@ -67,6 +67,13 @@ describe('ConnectAuthorizeScreen', () => {
     expect(mockedGet).toHaveBeenCalledWith(`/api/connect/requests/${REQUEST_ID}/`);
   });
 
+  it('discloses that member data the account can access is sent to the app', async () => {
+    mockedGet.mockResolvedValueOnce({ data: REQUEST });
+    renderScreen();
+    const p = await screen.findByText(/member info your roles allow/);
+    expect(p).toHaveTextContent(/that info will be sent to claude/);
+  });
+
   it('allow posts approve and navigates to redirect_url', async () => {
     mockedGet.mockResolvedValueOnce({ data: REQUEST });
     mockedPost.mockResolvedValueOnce({ data: { redirect_url: 'https://claude.ai/cb?code=abc' } });

@@ -25,10 +25,11 @@ def attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
     """Has this attendance mark, regardless of the rsvp's current status.
 
     attendance(str): the AttendanceStatus to match.
-    prefix(str): relation lookup prefix from the queried model to EventRSVP.
+    prefix(str): relation lookup prefix from the queried model to EventRSVP; "" for EventRSVP.
     return(Q): filter on attendance=<attendance>.
     """
-    return Q(**{f"{prefix}__attendance": attendance})
+    field = f"{prefix}__attendance" if prefix else "attendance"
+    return Q(**{field: attendance})
 
 
 def no_show_q(prefix: str = "rsvps") -> Q:

@@ -5,11 +5,17 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
 
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
-from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES, is_attended, is_didnt_go
-from community.models import EventRSVP, EventType
+from community._rsvp_counts import (
+    NON_REPORTABLE_EVENT_STATUSES,
+    attendance_q,
+    is_attended,
+    is_didnt_go,
+    reportable_events_q,
+)
+from community.models import AttendanceStatus, EventRSVP, EventType
 
 QUALIFYING_EVENT_TYPES = (EventType.CLUB, EventType.OFFICIAL)
 QUALIFYING_WINDOW_DAYS = 365
@@ -22,6 +28,18 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
 
 def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
     return is_attended(rsvp) and rsvp.event.event_type in QUALIFYING_EVENT_TYPES
+
+
+def qualifying_attendance_q() -> Q:
+    """EventRSVP filter matching the rsvps compute_member_stats counts as qualifying.
+
+    return(Q): reportable, attended, qualifying type, known start
+    """
+    return (
+        attendance_q(AttendanceStatus.ATTENDED, prefix="")
+        & reportable_events_q()
+        & Q(event__event_type__in=QUALIFYING_EVENT_TYPES, event__start_datetime__isnull=False)
+    )
 
 
 class MemberAttendanceStats(NamedTuple):

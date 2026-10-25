@@ -10,6 +10,7 @@ from config.ratelimit import auth_or_ip_key, rate_limit
 from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
+from notifications._survey_response_notifications import notify_survey_response
 from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
@@ -51,6 +52,9 @@ def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) ->
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    # Feedback surveys are only answerable through a per-attendee token link.
+    if survey.feedback_event_type:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     return survey
 
@@ -121,6 +125,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
             survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
         audit_log(logging.INFO, "survey_response_submitted", request, target=target)
+        transaction.on_commit(lambda: notify_survey_response(survey, response_user))
         return Status(201, _submit_out(response, user_name))
 
 

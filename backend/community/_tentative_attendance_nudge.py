@@ -6,9 +6,9 @@ from django.db.models import Count, Exists, Max, OuterRef, Q, QuerySet
 from django.utils import timezone
 from notifications._email_helpers import send_tentative_attendance_nudge_email
 from notifications.email_sender import EmailSender
+from users._member_status import NOT_SET_UP
 from users.models import HAS_EMAIL, User
 
-from community._login_reminder import NOT_SET_UP
 from community.models import (
     EventRSVP,
     EventStatus,

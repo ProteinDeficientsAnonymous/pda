@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 
-from community.models.choices import SurveyQuestionType, SurveyVisibility
+from community.models.choices import EventType, SurveyQuestionType, SurveyVisibility
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -28,6 +28,9 @@ class Survey(models.Model):
     opens_at = models.DateTimeField(null=True, blank=True)
     closes_at = models.DateTimeField(null=True, blank=True)
     max_responses = models.PositiveIntegerField(null=True, blank=True)
+    feedback_event_type = models.CharField(
+        max_length=20, choices=EventType.choices, blank=True, default=""
+    )
     linked_event = models.ForeignKey(
         "community.Event",
         null=True,
@@ -54,6 +57,13 @@ class Survey(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["feedback_event_type"],
+                condition=~models.Q(feedback_event_type=""),
+                name="unique_feedback_survey_per_event_type",
+            ),
+        ]
 
     def __str__(self):
         return self.title
@@ -69,6 +79,8 @@ class SurveyQuestion(models.Model):
         default=SurveyQuestionType.TEXT,
     )
     options = models.JSONField(default=list, blank=True)
+    # Shown under a section header; other question types leave it empty.
+    description = models.TextField(blank=True, default="")
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
     # {question_id, operator, value}; None means always shown.
@@ -93,6 +105,13 @@ class SurveyResponse(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="survey_responses",
+    )
+    event = models.ForeignKey(
+        "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="feedback_responses",
     )
     answers = models.JSONField(default=dict, blank=True)
     anonymous_token = models.CharField(max_length=64, null=True, blank=True, unique=True)

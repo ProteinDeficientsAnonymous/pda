@@ -387,3 +387,15 @@ class TestPatchMeEmail:
         assert resp.json()["attendance_nudge_opt_out"] is True
         test_user.refresh_from_db()
         assert test_user.attendance_nudge_opt_out is True
+
+    def test_opt_out_of_monthly_digest(self, api_client, auth_headers, test_user):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"monthly_digest_opt_out": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["monthly_digest_opt_out"] is True
+        test_user.refresh_from_db()
+        assert test_user.monthly_digest_opt_out is True

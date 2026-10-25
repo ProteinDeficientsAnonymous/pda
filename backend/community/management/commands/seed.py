@@ -22,6 +22,7 @@ from ._seed_data import (
     SEED_USERS,
     SeedUser,
 )
+from ._seed_event_feedback import seed_event_feedback
 from ._seed_join_requests import seed_join_form_questions
 from ._seed_shared import (
     apply_rsvp,
@@ -55,6 +56,7 @@ class Command(BaseCommand):
         events = self._seed_events(admin_user)
         rsvp_questions = self._seed_event_rsvp_questions(events)
         self._seed_rsvps(events, rsvp_questions)
+        self._seed_event_feedback(admin_user)
         self._seed_join_requests(questions, admin_user)
         self._seed_content()
         self._print_summary()
@@ -187,6 +189,9 @@ class Command(BaseCommand):
                 )
             apply_rsvp(event, user, defaults)
             self.stdout.write(f"  RSVP: {user.full_name} → {data.event_title}")
+
+    def _seed_event_feedback(self, admin_user: User) -> None:
+        seed_event_feedback(self.stdout, admin_user)
 
     def _seed_join_requests(self, questions: dict[str, JoinFormQuestion], admin_user: User) -> None:
         now = timezone.now()

@@ -1,12 +1,13 @@
 """Pydantic schemas for survey endpoints."""
 
 from datetime import datetime
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from community._field_limits import FieldLimit
-from community.models import ShowIfOperator, SurveyQuestionType, SurveyVisibility
+from community.models import EventType, ShowIfOperator, SurveyQuestionType, SurveyVisibility
 
 
 class ShowIfIn(BaseModel):
@@ -26,6 +27,7 @@ class SurveyQuestionOut(BaseModel):
     label: str
     field_type: SurveyQuestionType
     options: list[str] = []
+    description: str = ""
     required: bool
     display_order: int
     show_if: ShowIfOut | None = None
@@ -73,6 +75,7 @@ class SurveyOut(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = None
     linked_event_id: str | None = None
+    feedback_event_type: str = ""
     created_by_id: str | None = None
     created_at: datetime
     questions: list[SurveyQuestionOut] = []
@@ -109,6 +112,7 @@ class SurveyIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = ""
 
 
 class SurveyPatchIn(BaseModel):
@@ -126,6 +130,7 @@ class SurveyPatchIn(BaseModel):
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
     linked_event_id: str | None = None
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] | None = None
 
 
 class FinalizePollIn(BaseModel):
@@ -136,8 +141,17 @@ class SurveyQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
     field_type: SurveyQuestionType = SurveyQuestionType.TEXT
     options: list[str] = []
+    description: str = Field(default="", max_length=FieldLimit.DESCRIPTION)
     required: bool = False
     show_if: ShowIfIn | None = None
+
+    @model_validator(mode="after")
+    def _section_takes_no_answer(self) -> Self:
+        if self.field_type == SurveyQuestionType.SECTION:
+            self.options, self.required = [], False
+        else:
+            self.description = ""
+        return self
 
 
 class SurveyQuestionOrderIn(BaseModel):
@@ -150,6 +164,9 @@ class SurveyResponseOut(BaseModel):
     user_name: str | None = None
     answers: dict
     submitted_at: datetime
+    event_id: str | None = None
+    event_title: str | None = None
+    event_start: datetime | None = None
 
 
 class SurveySubmitOut(SurveyResponseOut):
