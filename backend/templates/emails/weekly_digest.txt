@@ -5,13 +5,6 @@ here's what's coming up this week:
 {{ event.title|lower }}{% if event.when %}
 {{ event.when|lower }}{% endif %}
 {{ event.url }}
-{% endfor %}{% endif %}{% if veganniversaries %}
-Happy veganniversary!
-{% for group in veganniversaries %}
-{{ group.label }}
-{% for person in group.people %}{{ person.name|lower }}
-{{ person.url }}
-{% endfor %}
 {% endfor %}{% endif %}
 see the full calendar:
 

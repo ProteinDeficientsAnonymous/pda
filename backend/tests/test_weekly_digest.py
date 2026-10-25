@@ -252,48 +252,19 @@ class TestSendWeeklyDigestCommand:
         utc_clock = start.astimezone(UTC).strftime("%I:%M %p").lstrip("0").lower()
         assert utc_clock not in text
 
-    def test_omits_veganniversary_in_other_month(self, fake_sender, monkeypatch):
+    def test_omits_veganniversaries(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
-        _make_member("+12025550223")
         _make_member(
-            "+12025550224",
-            first_name="Dana",
-            veganniversary_month=7,
-            veganniversary_day=15,
-            veganniversary_year=2018,
+            "+12025550220",
+            first_name="Ada",
+            veganniversary_month=6,
+            veganniversary_year=2021,
             veganniversary_shoutout_opt_in=True,
         )
         _make_event("potluck", 2)
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
         assert "veganniversary" not in text
-
-    def test_omits_veganniversaries_after_the_7th(self, fake_sender, monkeypatch):
-        _freeze_digest(monkeypatch, datetime(2026, 6, 8, 12, 0, 0))
-        _make_member("+12025550229")
-        _make_member(
-            "+12025550230",
-            first_name="Eve",
-            veganniversary_month=6,
-            veganniversary_year=2023,
-            veganniversary_shoutout_opt_in=True,
-        )
-        _make_event("potluck", 2)
-        call_command("send_weekly_digest")
-        text = fake_sender.send.call_args.kwargs["text"]
-        assert "veganniversary" not in text
-
-    def test_omits_without_shoutout_opt_in(self, fake_sender, monkeypatch):
-        _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
-        _make_member(
-            "+12025550227",
-            first_name="Fay",
-            veganniversary_month=6,
-            veganniversary_year=2024,
-            veganniversary_shoutout_opt_in=False,
-        )
-        call_command("send_weekly_digest")
-        fake_sender.send.assert_not_called()
 
 
 @pytest.mark.django_db
