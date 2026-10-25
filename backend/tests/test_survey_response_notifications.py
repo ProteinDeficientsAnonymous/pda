@@ -30,14 +30,19 @@ def _headers(user) -> dict:
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
 
 
-def _submit(api_client, survey, text="hi", **headers):
-    question = survey.questions.first()
-    return api_client.post(
-        f"/api/community/surveys/view/{survey.slug}/respond/",
-        data=json.dumps({"answers": {str(question.id): text}}),
-        content_type="application/json",
-        **headers,
-    )
+@pytest.fixture
+def submit(api_client, django_capture_on_commit_callbacks):
+    def _submit(survey, text="hi", **headers):
+        question = survey.questions.first()
+        with django_capture_on_commit_callbacks(execute=True):
+            return api_client.post(
+                f"/api/community/surveys/view/{survey.slug}/respond/",
+                data=json.dumps({"answers": {str(question.id): text}}),
+                content_type="application/json",
+                **headers,
+            )
+
+    return _submit
 
 
 def _survey_notes():
@@ -47,38 +52,39 @@ def _survey_notes():
 @pytest.mark.django_db
 class TestSurveyResponseNotifications:
     def test_new_response_notifies_survey_managers(
-        self, api_client, survey, survey_manager, auth_headers
+        self, submit, survey, survey_manager, auth_headers
     ):
-        assert _submit(api_client, survey, **auth_headers).status_code == 201
+        assert submit(survey, **auth_headers).status_code == 201
         note = _survey_notes().get()
         assert note.recipient_id == survey_manager.id
         assert note.survey_id == survey.id
         assert note.message == "new response to Potluck ideas"
         assert note.related_user_id is None
 
-    def test_submitter_with_manage_surveys_is_not_notified(
-        self, api_client, survey, survey_manager
-    ):
-        _submit(api_client, survey, **_headers(survey_manager))
+    def test_submitter_with_manage_surveys_is_not_notified(self, submit, survey, survey_manager):
+        submit(survey, **_headers(survey_manager))
         assert not _survey_notes().exists()
 
     def test_updating_existing_response_does_not_notify(
-        self, api_client, survey, survey_manager, auth_headers
+        self, submit, survey, survey_manager, auth_headers
     ):
         survey.one_response_per_user = True
         survey.save()
-        _submit(api_client, survey, "first", **auth_headers)
-        assert _submit(api_client, survey, "second", **auth_headers).status_code == 200
+        submit(survey, "first", **auth_headers)
+        assert submit(survey, "second", **auth_headers).status_code == 200
         assert _survey_notes().count() == 1
 
-    def test_anonymous_response_notifies_without_naming_responder(
-        self, api_client, survey, survey_manager
+    def test_anonymous_survey_notifies_even_the_submitting_manager(
+        self, submit, survey, survey_manager
     ):
-        assert _submit(api_client, survey).status_code == 201
+        survey.anonymous = True
+        survey.save()
+        assert submit(survey, **_headers(survey_manager)).status_code == 201
         note = _survey_notes().get()
+        assert note.recipient_id == survey_manager.id
         assert note.related_user_id is None
 
-    def test_list_exposes_survey_id(self, api_client, survey, survey_manager):
-        _submit(api_client, survey)
+    def test_list_exposes_survey_id(self, api_client, submit, survey, survey_manager):
+        submit(survey)
         resp = api_client.get("/api/notifications/", **_headers(survey_manager))
         assert resp.json()[0]["survey_id"] == str(survey.id)

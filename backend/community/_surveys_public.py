@@ -125,7 +125,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
             survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
         audit_log(logging.INFO, "survey_response_submitted", request, target=target)
-        notify_survey_response(survey, auth_user)
+        transaction.on_commit(lambda: notify_survey_response(survey, response_user))
         return Status(201, _submit_out(response, user_name))
 
 
