@@ -1,3 +1,10 @@
+## [0.202.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.0...v0.202.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** accept checkbox answers as a list of options ([#1889](https://github.com/ProteinDeficientsAnonymous/pda/issues/1889)) ([f7d6688](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7d6688fddcdbdc88ef22d540935f9a34a734111))
+
 # [0.202.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.201.0...v0.202.0) (2026-10-25)
 
 
