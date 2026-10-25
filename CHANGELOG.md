@@ -1,3 +1,10 @@
+# [0.200.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.199.0...v0.200.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - count new comments in host digests ([#1879](https://github.com/ProteinDeficientsAnonymous/pda/issues/1879)) ([20f6d3b](https://github.com/ProteinDeficientsAnonymous/pda/commit/20f6d3b8c98a5a804223107d204ef067bbdb99d8))
+
 # [0.199.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.198.0...v0.199.0) (2026-10-25)
 
 
