@@ -1,8 +1,10 @@
 import asyncio
+import json
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community.models import Survey, SurveyResponse
+from community.models import EventType, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
@@ -47,11 +49,13 @@ def _tool_names(user) -> set[str]:
         auth_context_var.reset(token)
 
 
-def test_list_surveys_needs_manage_surveys(test_user, surveys_admin):
-    assert "list_surveys" not in _tool_names(test_user)
-    assert "list_surveys" in _tool_names(surveys_admin)
-    with pytest.raises(ToolError, match="permission"):
-        _call(test_user, "list_surveys")
+def test_survey_tools_need_manage_surveys(test_user, surveys_admin):
+    survey = _survey("feedback")
+    assert {"list_surveys", "get_survey"} & _tool_names(test_user) == set()
+    assert {"list_surveys", "get_survey"} <= _tool_names(surveys_admin)
+    for name, arguments in (("list_surveys", {}), ("get_survey", {"survey": survey.slug})):
+        with pytest.raises(ToolError, match="permission"):
+            _call(test_user, name, **arguments)
 
 
 def test_list_surveys_newest_first_in_new_york_time(surveys_admin):
@@ -90,6 +94,51 @@ def test_list_surveys_pages(surveys_admin):
     assert ([r["slug"] for r in last["surveys"]], last["next_offset"]) == (["s4"], None)
 
 
+def test_get_survey_by_id_or_slug(surveys_admin):
+    survey = _survey(
+        "feedback",
+        description="tell us",
+        anonymous=True,
+        confirmation_message="thanks",
+        closes_at=datetime(2026, 7, 4, 4, tzinfo=UTC),
+    )
+    by_slug = _call(surveys_admin, "get_survey", survey="feedback")
+    assert _call(surveys_admin, "get_survey", survey=str(survey.id)) == by_slug
+    assert by_slug["id"] == str(survey.id)
+    assert (by_slug["description"], by_slug["anonymous"]) == ("tell us", True)
+    assert by_slug["confirmation_message"] == "thanks"
+    assert by_slug["closes_at"] == "2026-07-04T00:00:00-04:00"
+    assert by_slug["url"] == f"{BASE_URL}/surveys/feedback"
+    assert by_slug["questions"] == []
+
+
+def _error(user, **arguments) -> dict:
+    with pytest.raises(ToolError) as exc_info:
+        _call(user, "get_survey", **arguments)
+    return json.loads(str(exc_info.value).split(": ", 1)[1])
+
+
+def test_get_survey_unknown_ref(surveys_admin):
+    _survey("feedback")
+    assert _error(surveys_admin, survey="nope") == {
+        "status": 404,
+        "detail": "no survey with id or slug nope",
+    }
+    assert _error(surveys_admin, survey=str(uuid.uuid4()))["status"] == 404
+
+
+def test_get_survey_by_uppercase_uuid(surveys_admin):
+    survey = _survey("feedback")
+    assert _call(surveys_admin, "get_survey", survey=str(survey.id).upper())["id"] == str(survey.id)
+
+
+def test_feedback_survey_has_no_public_url(surveys_admin):
+    _survey("feedback", feedback_event_type=EventType.OFFICIAL)
+    body = _call(surveys_admin, "get_survey", survey="feedback")
+    assert body["url"] is None
+    assert body["edit_url"] == f"{BASE_URL}/admin/surveys/{body['id']}"
+
+
 def test_survey_status_precedence(surveys_admin):
     now = datetime.now(UTC)
     _survey("off", is_active=False, opens_at=now + timedelta(days=1))
@@ -105,3 +154,53 @@ def test_survey_status_precedence(surveys_admin):
         "full": "capped",
         "open": "active",
     }
+    assert _call(surveys_admin, "get_survey", survey="full")["status"] == "capped"
+
+
+def test_datetime_poll_options_stay_raw_with_new_york_times(surveys_admin):
+    survey = _survey("when")
+    options = ["2026-11-07T16:00:00.000Z", "2026-07-04T22:30:00.000Z"]
+    SurveyQuestion.objects.create(
+        survey=survey, label="when?", field_type=SurveyQuestionType.DATETIME_POLL, options=options
+    )
+    [question] = _call(surveys_admin, "get_survey", survey="when")["questions"]
+    assert question["options"] == options
+    assert question["option_times"] == ["2026-11-07T11:00:00-05:00", "2026-07-04T18:30:00-04:00"]
+
+
+def test_get_survey_questions_in_order_with_show_if_source(surveys_admin):
+    survey = _survey("feedback")
+    radio = SurveyQuestionType.RADIO
+    later = SurveyQuestion.objects.create(survey=survey, label="why?", display_order=5)
+    first = SurveyQuestion.objects.create(
+        survey=survey, label="came?", field_type=radio, options=["yes", "no"], display_order=2
+    )
+    later.show_if = {"question_id": str(first.id), "operator": "equals", "value": "no"}
+    later.save()
+    questions = _call(surveys_admin, "get_survey", survey="feedback")["questions"]
+    assert questions == [
+        {
+            "id": str(first.id),
+            "label": "came?",
+            "field_type": "radio",
+            "options": ["yes", "no"],
+            "required": False,
+            "position": 1,
+            "show_if": None,
+        },
+        {
+            "id": str(later.id),
+            "label": "why?",
+            "field_type": "text",
+            "options": [],
+            "required": False,
+            "position": 2,
+            "show_if": {
+                "question_id": str(first.id),
+                "operator": "equals",
+                "value": "no",
+                "question_position": 1,
+                "question": "came?",
+            },
+        },
+    ]
