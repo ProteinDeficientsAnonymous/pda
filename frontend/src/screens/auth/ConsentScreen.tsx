@@ -45,19 +45,8 @@ export default function ConsentScreen() {
   }
 
   async function onSkip() {
-    setSubmitting(true);
-    if (consents.length === 0) {
-      // privacy-only check isn't a required consent: keep current visibility and move on
-      try {
-        await acceptConsents([ConsentType.ContactPrivacy]);
-        void navigate('/calendar', { replace: true });
-      } catch (err) {
-        setServerError(extractApiError(err, "couldn't save that — try again"));
-        setSubmitting(false);
-      }
-      return;
-    }
     // decline: drop the session and return to the landing page logged out
+    setSubmitting(true);
     await logout();
     void navigate('/', { replace: true });
   }
@@ -101,8 +90,13 @@ export default function ConsentScreen() {
           disabled={submitting}
           onClick={() => void onSkip()}
         >
-          {consents.length === 0 ? 'skip' : 'not now'}
+          not now
         </Button>
+        {needsContactPrivacyStep ? (
+          <p className="text-muted-foreground text-center text-sm">
+            hit continue to save your settings and log in — not now logs you out
+          </p>
+        ) : null}
       </div>
     </AuthLayout>
   );
