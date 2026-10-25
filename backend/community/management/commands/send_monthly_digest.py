@@ -64,19 +64,24 @@ class Command(BaseCommand):
             self._send_test(sender, options["to"], payload)
             return
 
+        def mark_sent(user: User) -> None:
+            User.objects.filter(pk=user.pk).update(monthly_digest_sent_on=today)
+
         sent_count, failed_count = send_digest_to_all(
             send_monthly_digest_email,
             sender,
-            monthly_digest_recipients(User.objects.active_members()),
+            monthly_digest_recipients(User.objects.active_members(), today),
             payload,
+            on_sent=mark_sent,
         )
         if events:
             # Shoutouts link to member profiles, which tentative members can't open.
             tentative_sent, tentative_failed = send_digest_to_all(
                 send_monthly_digest_email,
                 sender,
-                monthly_digest_recipients(User.objects.active_tentative_members()),
+                monthly_digest_recipients(User.objects.active_tentative_members(), today),
                 {**payload, "veganniversaries": []},
+                on_sent=mark_sent,
             )
             sent_count += tentative_sent
             failed_count += tentative_failed

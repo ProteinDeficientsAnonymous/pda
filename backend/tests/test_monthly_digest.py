@@ -12,7 +12,7 @@ from notifications.email_sender import EmailStream, SendResult
 
 from tests.test_weekly_digest import _make_event, _make_member, _make_tentative
 
-# 12:00 UTC is 8am eastern, when the daily cron runs.
+# The daily cron runs at 12:00 UTC: early morning of the same day in eastern, any time of year.
 FIRST_OF_JUNE = datetime(2026, 6, 1, 12, 0, 0)
 
 
@@ -128,6 +128,34 @@ class TestSendMonthlyDigestCommand:
         _make_event("potluck", 3)
         call_command("send_monthly_digest")
         fake_sender.send.assert_not_called()
+
+    def test_rerun_on_the_first_does_not_resend(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_member("+12025550313")
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_called_once()
+
+    def test_rerun_retries_failed_sends(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_member("+12025550314")
+        _make_event("potluck", 3)
+        fake_sender.send.return_value = SendResult(success=False, error="boom")
+        call_command("send_monthly_digest")
+        fake_sender.send.return_value = SendResult(success=True, provider_message_id="ok")
+        call_command("send_monthly_digest")
+        assert fake_sender.send.call_count == 2
+
+    def test_sends_again_next_month(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_member("+12025550315")
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        _freeze(monkeypatch, datetime(2026, 7, 1, 12, 0, 0))
+        _make_event("july potluck", 3)
+        call_command("send_monthly_digest")
+        assert fake_sender.send.call_count == 2
 
     def test_weekly_opt_out_still_gets_monthly(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
