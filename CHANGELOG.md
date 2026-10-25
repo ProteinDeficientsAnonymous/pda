@@ -1,3 +1,10 @@
+## [0.202.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.4...v0.202.5) (2026-10-25)
+
+
+### Bug Fixes
+
+* **events:** allow commas in RSVP checkbox options ([#1893](https://github.com/ProteinDeficientsAnonymous/pda/issues/1893)) ([01f3d4f](https://github.com/ProteinDeficientsAnonymous/pda/commit/01f3d4fea3469ebd81233f2621aa12344b894f26))
+
 ## [0.202.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.3...v0.202.4) (2026-10-25)
 
 
