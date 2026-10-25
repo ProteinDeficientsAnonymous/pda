@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
+from community._cashapp_import_price import PriceSpec
 from community.models import RSVPStatus
 
 
@@ -28,6 +29,12 @@ class FilterReason(StrEnum):
     BEFORE_EVENT_CREATED = "before_event_created"
     AFTER_EVENT_ENDED = "after_event_ended"
     AMOUNT_MISMATCH = "amount_mismatch"
+
+
+class GapReason(StrEnum):
+    SAID_PAID = "said_paid"
+    ATTENDING_PAID_EVENT = "attending_paid_event"
+    UNSURE_MATCH_PENDING = "unsure_match_pending"
 
 
 @dataclass(frozen=True)
@@ -79,6 +86,27 @@ class PaymentProposal:
 
 
 @dataclass(frozen=True)
+class GapGuest:
+    """param(pending_payment_ids): unsure proposals that may cover this guest."""
+
+    user_id: str
+    name: str
+    status: RSVPStatus
+    said_paid: bool
+    reason: GapReason
+    pending_payment_ids: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class UnreadableRow:
+    payment_id: str
+    row_index: int
+    sender_name: str
+    raw_amount: str
+    raw_date: str
+
+
+@dataclass(frozen=True)
 class AmountMismatchLead:
     """A completed in-window payment whose amount doesn't fit the price, from a guest."""
 
@@ -88,3 +116,17 @@ class AmountMismatchLead:
     amount: Decimal
     paid_at: datetime
     user_ids: list[str]
+
+
+@dataclass(frozen=True)
+class CashAppReview:
+    """param(filtered): dropped row counts by FilterReason value."""
+
+    price: PriceSpec
+    total_rows: int
+    proposals: list[PaymentProposal]
+    gap_guests: list[GapGuest]
+    unplaced_payment_ids: list[str]
+    filtered: dict[str, int]
+    unreadable_rows: list[UnreadableRow] = field(default_factory=list)
+    amount_mismatch_leads: list[AmountMismatchLead] = field(default_factory=list)
