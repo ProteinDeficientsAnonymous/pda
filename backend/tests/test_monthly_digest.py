@@ -21,6 +21,17 @@ def _freeze(monkeypatch, when: datetime) -> None:
     monkeypatch.setattr(digest_command.timezone, "now", lambda: frozen)
 
 
+def _shoutout(phone_number: str, first_name: str, year: int, month: int = 6, **extra):
+    return _make_member(
+        phone_number,
+        first_name=first_name,
+        veganniversary_month=month,
+        veganniversary_year=year,
+        veganniversary_shoutout_opt_in=True,
+        **extra,
+    )
+
+
 @pytest.fixture
 def fake_sender(monkeypatch):
     fake = MagicMock()
@@ -76,6 +87,41 @@ class TestSendMonthlyDigestCommand:
         assert "late june show" in text
         assert "july 1 brunch" not in text
 
+    def test_includes_veganniversaries_grouped_by_years(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        ada = _shoutout("+12025550304", "Ada", 2021)
+        bo = _shoutout("+12025550305", "Bo", 2021)
+        _shoutout("+12025550306", "Cam", 2025)
+        call_command("send_monthly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        html = fake_sender.send.call_args.kwargs["html"]
+        assert "happy june veganniversary!" in text
+        assert "5 years" in text
+        assert "1 year" in text
+        assert "cam" in text
+        assert f"http://localhost:3000/members/{ada.pk}" in text
+        assert f'href="http://localhost:3000/members/{bo.pk}"' in html
+
+    def test_omits_veganniversary_in_other_month(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _shoutout("+12025550307", "Dana", 2018, month=7)
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        text = fake_sender.send.call_args.kwargs["text"]
+        assert "veganniversary" not in text
+
+    def test_omits_without_shoutout_opt_in(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _make_member(
+            "+12025550308",
+            first_name="Fay",
+            veganniversary_month=6,
+            veganniversary_year=2024,
+            veganniversary_shoutout_opt_in=False,
+        )
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_not_called()
+
     def test_skips_member_opted_out(self, fake_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
         _make_member("+12025550309", weekly_digest_opt_out=True)
@@ -110,6 +156,26 @@ class TestMonthlyDigestTentativeMembers:
         call_command("send_monthly_digest")
         fake_sender.send.assert_called_once()
         assert fake_sender.send.call_args.kwargs["to"] == tentative.email
+
+    def test_omits_veganniversaries_for_tentative_member(self, fake_sender, monkeypatch):
+        """Shoutouts link to member profiles, which a tentative member can't open."""
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        member = _shoutout("+12025550320", "Ada", 2021)
+        tentative = _make_tentative("+12025550321")
+        _make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        texts = {c.kwargs["to"]: c.kwargs["text"] for c in fake_sender.send.call_args_list}
+        assert "veganniversary" in texts[member.email]
+        assert "potluck" in texts[tentative.email]
+        assert "veganniversary" not in texts[tentative.email]
+
+    def test_skips_tentative_member_when_only_veganniversaries(self, fake_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        member = _shoutout("+12025550322", "Gus", 2024)
+        _make_tentative("+12025550323")
+        call_command("send_monthly_digest")
+        fake_sender.send.assert_called_once()
+        assert fake_sender.send.call_args.kwargs["to"] == member.email
 
 
 class TestSendMonthlyDigestEmail:

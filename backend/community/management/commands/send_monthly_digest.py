@@ -8,7 +8,14 @@ from notifications._digest_emails import send_monthly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._digest import digest_events, digest_recipients, digest_urls, send_digest_to_all
+from community._digest import (
+    digest_events,
+    digest_recipients,
+    digest_urls,
+    send_digest_to_all,
+    shoutout_members,
+    veganniversary_groups,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +30,7 @@ def _start_of_next_month(today) -> datetime:
 class Command(BaseCommand):
     help = (
         "On the 1st of the month, email active and tentative members this month's "
-        "upcoming events. Runs from the daily cron."
+        "upcoming events and members this month's veganniversaries. Runs from the daily cron."
     )
 
     def add_arguments(self, parser):
@@ -40,8 +47,9 @@ class Command(BaseCommand):
             return
 
         events = digest_events(start=now, end=_start_of_next_month(today))
-        if not events:
-            logger.info("send_monthly_digest: no events this month, skipped")
+        groups = veganniversary_groups(today=today, users=shoutout_members())
+        if not events and not groups:
+            logger.info("send_monthly_digest: no events or veganniversaries, skipped")
             self.stdout.write(self.style.SUCCESS("Nothing to send; sent 0 monthly digest(s)."))
             return
 
@@ -49,19 +57,29 @@ class Command(BaseCommand):
             "month": today.strftime("%B"),
             "events": events,
             "urls": digest_urls(),
+            "veganniversaries": groups,
         }
         sender = get_email_sender(EmailStream.BULK)
         if options["to"]:
             self._send_test(sender, options["to"], payload)
             return
 
-        sent_count = failed_count = 0
-        for users in (User.objects.active_members(), User.objects.active_tentative_members()):
-            sent, failed = send_digest_to_all(
-                send_monthly_digest_email, sender, digest_recipients(users), payload
+        sent_count, failed_count = send_digest_to_all(
+            send_monthly_digest_email,
+            sender,
+            digest_recipients(User.objects.active_members()),
+            payload,
+        )
+        if events:
+            # Shoutouts link to member profiles, which tentative members can't open.
+            tentative_sent, tentative_failed = send_digest_to_all(
+                send_monthly_digest_email,
+                sender,
+                digest_recipients(User.objects.active_tentative_members()),
+                {**payload, "veganniversaries": []},
             )
-            sent_count += sent
-            failed_count += failed
+            sent_count += tentative_sent
+            failed_count += tentative_failed
 
         logger.info("send_monthly_digest: sent %d digest(s), %d failed", sent_count, failed_count)
         style = self.style.WARNING if failed_count else self.style.SUCCESS

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
 
@@ -58,3 +59,35 @@ def send_digest_to_all(
         else:
             failed += 1
     return sent, failed
+
+
+def veganniversary_groups(*, today, users) -> list[dict]:
+    grouped: dict[int, list[dict]] = defaultdict(list)
+    for user in users:
+        if user.veganniversary_month != today.month:
+            continue
+        years = today.year - user.veganniversary_year
+        if years < 1:
+            continue
+        grouped[years].append(
+            {
+                "name": user.first_name,
+                "url": f"{settings.FRONTEND_BASE_URL}/members/{user.pk}",
+            }
+        )
+    return [
+        {"label": "1 year" if y == 1 else f"{y} years", "people": people}
+        for y, people in sorted(grouped.items(), reverse=True)
+    ]
+
+
+def shoutout_members() -> QuerySet[User]:
+    return (
+        User.objects.active_members()
+        .filter(
+            veganniversary_month__isnull=False,
+            veganniversary_year__isnull=False,
+            veganniversary_shoutout_opt_in=True,
+        )
+        .exclude(first_name="")
+    )
