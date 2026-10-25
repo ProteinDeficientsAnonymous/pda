@@ -114,7 +114,7 @@ def assert_order_keeps_dependencies(
         )
 
 
-def _condition_still_valid(condition: Mapping[str, object], source: SurveyQuestion) -> bool:
+def condition_still_valid(condition: Mapping[str, object], source: SurveyQuestion) -> bool:
     if source.field_type not in CONDITION_SOURCE_TYPES:
         return False
     if (
@@ -132,7 +132,7 @@ def assert_edit_keeps_conditions(survey_id: UUID, source: SurveyQuestion) -> Non
         for q in SurveyQuestion.objects.filter(survey_id=survey_id).exclude(id=source.id)
         if q.show_if
         and str(q.show_if.get("question_id")) == str(source.id)
-        and not _condition_still_valid(q.show_if, source)
+        and not condition_still_valid(q.show_if, source)
     ]
     if broken:
         raise_validation(

@@ -92,7 +92,7 @@ async def _apply(user: User, survey_id: UUID, steps: list[Step]) -> None:
 @pda_tool(
     PermissionKey.MANAGE_SURVEYS,
     description=(
-        "edit a survey in place: its settings, and remove questions. "
+        "edit a survey in place: its settings, and change or remove questions. "
         "send only what changes. question positions always mean the survey as it was before this "
         "edit, so read it with get_survey first. a switched-off survey is saved right away. for a "
         "switched-on survey (members may be answering), the first call saves nothing and returns "
