@@ -1,3 +1,10 @@
+# [0.181.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.1...v0.181.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add create_survey tool ([#1846](https://github.com/ProteinDeficientsAnonymous/pda/issues/1846)) ([d8eef27](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8eef2757b71a41f9ccf2ca4c2d5d278ce0bb02f))
+
 ## [0.180.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.0...v0.180.1) (2026-10-25)
 
 
