@@ -1,3 +1,10 @@
+# [0.194.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.193.0...v0.194.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - track when an rsvp status changes ([#1875](https://github.com/ProteinDeficientsAnonymous/pda/issues/1875)) ([f719b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/f719b57c1251e4607b3cbd551bf381284e18a5fe))
+
 # [0.193.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.192.0...v0.193.0) (2026-10-25)
 
 
