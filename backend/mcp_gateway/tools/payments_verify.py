@@ -17,9 +17,9 @@ from mcp_gateway.cashapp_review import (
     payment_summary,
     proposals_by_confidence,
 )
-from mcp_gateway.confirm import Confirmed, issue_confirm_token, use_confirm_token
+from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.server import current_user, pda_tool
-from mcp_gateway.tools.payments_review import EventRef
+from mcp_gateway.tools.events_write import EventRef
 from mcp_gateway.view_calls import call_view
 
 _BY_HAND = "a host can verify that guest by hand in the app"
@@ -142,7 +142,9 @@ def _bound(
     # Only the selected guests' verified state matters; unrelated verifications don't stale it.
     selected_verified = sorted(uid for uid in selection if uid in loaded.verified)
     state = [loaded.review_id, selected_verified]
-    return Confirmed(user_pk, loaded.event_id, "verify_payments", pending, state)
+    return Confirmed(
+        user_pk, target_id=loaded.event_id, action="verify_payments", changes=pending, state=state
+    )
 
 
 def _just_verified(after: LoadedReview, user_id: str) -> dict[str, Any]:
@@ -185,9 +187,7 @@ async def verify_cashapp_payments(
     event: EventRef,
     review_id: ReviewId,
     assignments: Annotated[list[PaymentAssignment], Field(min_length=1, max_length=500)],
-    confirm_token: Annotated[
-        str | None, Field(description="from the preview; send only after the user said yes")
-    ] = None,
+    confirm_token: ConfirmToken = None,
 ) -> dict[str, Any]:
     user = await current_user()
     loaded = await load_cached_review(user, event, review_id)
