@@ -1,3 +1,10 @@
+## [0.202.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.3...v0.202.4) (2026-10-25)
+
+
+### Bug Fixes
+
+* **questions:** store checkbox answers as lists and migrate old ones ([#1892](https://github.com/ProteinDeficientsAnonymous/pda/issues/1892)) ([c7ed21b](https://github.com/ProteinDeficientsAnonymous/pda/commit/c7ed21bb4a1abed1053a2ec924754ed0b00a3cf0))
+
 ## [0.202.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.2...v0.202.3) (2026-10-25)
 
 
