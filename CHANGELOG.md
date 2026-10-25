@@ -1,3 +1,10 @@
+# [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** find inactive members by qualifying attendance ([#1864](https://github.com/ProteinDeficientsAnonymous/pda/issues/1864)) ([5aede93](https://github.com/ProteinDeficientsAnonymous/pda/commit/5aede938d3c952e51c0165eba74f7b628275f61c))
+
 # [0.185.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.184.0...v0.185.0) (2026-10-25)
 
 
