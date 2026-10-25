@@ -101,7 +101,7 @@ export default function ConsentScreen() {
           disabled={submitting}
           onClick={() => void onSkip()}
         >
-          not now
+          {consents.length === 0 ? 'skip' : 'not now'}
         </Button>
       </div>
     </AuthLayout>

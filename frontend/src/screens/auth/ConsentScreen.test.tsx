@@ -152,7 +152,7 @@ describe('ConsentScreen', () => {
     expect(acceptConsents).not.toHaveBeenCalled();
   });
 
-  it('keeps the user logged in on "not now" when only the privacy check is pending', async () => {
+  it('keeps the user logged in on "skip" when only the privacy check is pending', async () => {
     mockStore({ needsGuidelinesConsent: false, needsContactPrivacyConsent: true });
     acceptConsents.mockResolvedValue(undefined);
     render(
@@ -160,10 +160,25 @@ describe('ConsentScreen', () => {
         <ConsentScreen />
       </MemoryRouter>,
     );
-    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(screen.queryByRole('button', { name: /not now/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /skip/i }));
     expect(logout).not.toHaveBeenCalled();
     expect(acceptConsents).toHaveBeenCalledExactlyOnceWith(['contact_privacy']);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
+  });
+
+  it('shows an error and re-enables buttons when the privacy-only skip fails', async () => {
+    mockStore({ needsGuidelinesConsent: false, needsContactPrivacyConsent: true });
+    acceptConsents.mockRejectedValue(new Error('boom'));
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /skip/i }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /skip/i })).toBeEnabled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('allows "not now" even before the checkbox is ticked', () => {
