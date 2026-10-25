@@ -1,15 +1,18 @@
+import json
 from typing import Annotated, Any
 from uuid import UUID
 
 from asgiref.sync import sync_to_async
+from community._event_helpers import _can_edit_event
 from community._event_nonmember_removal import ineligible_non_member_rsvps
 from community._event_schemas import EventPatchIn
 from community._events import create_event as create_event_view
 from community._events import get_event as get_event_view
 from community._events import update_event as update_event_view
 from community._geocode import GeocodeQuery, geocode
-from community._validation import Code
+from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, EventStatus, EventType
+from config.validation_handlers import _serialize_validation_exception
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
@@ -98,9 +101,12 @@ _ELIGIBILITY_FIELDS = frozenset(
 )
 
 
-def _non_members_removed(event_id: str, payload: EventPatchIn) -> int:
+def _non_members_removed(user: Any, event_id: str, payload: EventPatchIn) -> int:
     """Mirrors update_event: count non-member rsvps the edit would remove, on an unsaved copy."""
     event = Event.objects.get(pk=event_id)
+    # Same gate as update_event's save, so non-editors never see the count.
+    if not _can_edit_event(user, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
     if not event.is_public_rsvp_eligible:
         return 0
     for name, value in payload.model_dump(exclude_unset=True).items():
@@ -151,7 +157,11 @@ async def update_event(
         diff = event_diff(before, changed)
         if not diff:
             raise ToolError("nothing would change: these values match the event already")
-        removed = await sync_to_async(_non_members_removed)(before["id"], payload)
+        try:
+            removed = await sync_to_async(_non_members_removed)(user, before["id"], payload)
+        except ValidationException as exc:
+            detail = [_serialize_validation_exception(exc)]
+            raise ToolError(json.dumps({"status": exc.status_code, "detail": detail})) from exc
         notes = update_notes(before, changed, removed, remove_non_member_rsvps)
         return {"changes": diff, "notes": notes, "confirm_token": issue_confirm_token(bound)}
     await use_confirm_token(confirm_token, bound)

@@ -131,10 +131,11 @@ def test_live_edit_previews_then_applies_with_token(test_user, make_event):
     assert entry.details["via"] == "mcp"
 
 
-def test_non_host_refused_by_view(make_event, vettor_user):
-    event = make_event()
-    token = _update(vettor_user, event)["confirm_token"]
-    assert json.loads(_update_refused(vettor_user, event, confirm_token=token))["status"] == 403
+def test_non_host_refused_before_preview(make_event, vettor_user):
+    event = make_event(price="$15")
+    error = json.loads(_update_refused(vettor_user, event))
+    assert (error["status"], error["detail"][0]["code"]) == (403, "perm.denied")
+    assert Event.objects.get(pk=event.pk).price == "$15"
 
 
 def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
