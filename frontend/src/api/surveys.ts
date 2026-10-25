@@ -86,7 +86,7 @@ export function mapQuestion(q: WireQuestion): SurveyQuestion {
     fieldType: q.field_type,
     options: q.options ?? [],
     description: q.description ?? '',
-    required: q.required ?? false,
+    required: q.field_type !== QuestionType.Section && (q.required ?? false),
     displayOrder: q.display_order,
     showIf: q.show_if
       ? {
