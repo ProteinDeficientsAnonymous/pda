@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { EventGuest } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
@@ -210,88 +211,67 @@ describe('EventManageRsvpsPanel', () => {
       }),
     );
     expect(screen.queryByText(/unpaid/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/^paid$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/says paid/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /payment/i })).not.toBeInTheDocument();
   });
 
-  it('shows an unpaid indicator for a paid event guest no host has verified', () => {
-    renderPanel(
-      makeEvent({
-        price: '$10',
-        venmoLink: 'https://venmo.com/u/host',
-        guests: [
-          makeGuest({
-            userId: 'u1',
-            name: 'Alex',
-            status: RsvpServerStatus.Attending,
-            paidConfirmed: true,
-            paymentVerified: false,
-          }),
-        ],
-      }),
-    );
-    expect(screen.getByRole('button', { name: /unpaid/i })).toBeInTheDocument();
+  const paidEvent = (guest: Partial<EventGuest>) =>
+    makeEvent({
+      price: '$10',
+      venmoLink: 'https://venmo.com/u/host',
+      guests: [
+        makeGuest({ userId: 'u1', name: 'Alex', status: RsvpServerStatus.Attending, ...guest }),
+      ],
+    });
+
+  it('shows unpaid for a guest who has not said they paid', () => {
+    renderPanel(paidEvent({ paidConfirmed: false, paymentVerified: false }));
+    const toggle = screen.getByRole('button', { name: 'unpaid, mark payment verified' });
+    expect(toggle).toHaveTextContent('unpaid');
   });
 
-  it('shows a paid indicator for a paid event guest a host has verified', () => {
-    renderPanel(
-      makeEvent({
-        price: '$10',
-        venmoLink: 'https://venmo.com/u/host',
-        guests: [
-          makeGuest({
-            userId: 'u1',
-            name: 'Alex',
-            status: RsvpServerStatus.Attending,
-            paidConfirmed: true,
-            paymentVerified: true,
-          }),
-        ],
-      }),
-    );
-    expect(screen.getByRole('button', { name: /^✓ paid$/i })).toBeInTheDocument();
+  it('shows says paid for a self-attested guest the host has not verified', () => {
+    renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: false }));
+    const toggle = screen.getByRole('button', { name: 'says paid, mark payment verified' });
+    expect(toggle).toHaveTextContent('says paid');
   });
 
-  it('toggles a guest payment status when the indicator is clicked', () => {
-    renderPanel(
-      makeEvent({
-        price: '$10',
-        venmoLink: 'https://venmo.com/u/host',
-        guests: [
-          makeGuest({
-            userId: 'u1',
-            name: 'Alex',
-            status: RsvpServerStatus.Attending,
-            paidConfirmed: true,
-            paymentVerified: false,
-          }),
-        ],
-      }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: /unpaid/i }));
+  it('shows verified for a host-verified guest', () => {
+    renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: true }));
+    const toggle = screen.getByRole('button', { name: 'verified, unverify payment' });
+    expect(toggle).toHaveTextContent('verified');
+  });
+
+  it('marks an unpaid guest verified when the toggle is clicked', () => {
+    renderPanel(paidEvent({ paidConfirmed: false, paymentVerified: false }));
+    fireEvent.click(screen.getByRole('button', { name: 'unpaid, mark payment verified' }));
     expect(setGuestPaymentMutate).toHaveBeenCalledWith(
-      { userId: 'u1', paidConfirmed: true },
+      { userId: 'u1', verified: true },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
   });
 
-  it('shows a paid indicator for non-member guests on a paid event', () => {
-    renderPanel(
-      makeEvent({
-        price: '$10',
-        venmoLink: 'https://venmo.com/u/host',
-        guests: [
-          makeGuest({
-            userId: 'u1',
-            name: 'Walkin',
-            status: RsvpServerStatus.Attending,
-            isMember: false,
-            paidConfirmed: true,
-            paymentVerified: true,
-          }),
-        ],
-      }),
+  it('marks a self-attested guest verified when the toggle is clicked', () => {
+    renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: false }));
+    fireEvent.click(screen.getByRole('button', { name: 'says paid, mark payment verified' }));
+    expect(setGuestPaymentMutate).toHaveBeenCalledWith(
+      { userId: 'u1', verified: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
     );
-    expect(screen.getByRole('button', { name: /^✓ paid$/i })).toBeInTheDocument();
+  });
+
+  it('unverifies a verified guest when the toggle is clicked', () => {
+    renderPanel(paidEvent({ paidConfirmed: true, paymentVerified: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'verified, unverify payment' }));
+    expect(setGuestPaymentMutate).toHaveBeenCalledWith(
+      { userId: 'u1', verified: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it('shows the payment toggle for non-member guests on a paid event', () => {
+    renderPanel(paidEvent({ name: 'Walkin', isMember: false, paymentVerified: true }));
+    expect(screen.getByRole('button', { name: 'verified, unverify payment' })).toBeInTheDocument();
   });
 
   describe('waitlist order', () => {

@@ -9,7 +9,7 @@ export function GuestGroup({
   guests,
   onChangeStatus,
   onRemove,
-  onTogglePaid,
+  onTogglePaymentVerified,
   onReorder,
   isPending,
 }: {
@@ -17,7 +17,7 @@ export function GuestGroup({
   guests: EventGuest[];
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
-  onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
+  onTogglePaymentVerified?: ((userId: string, verified: boolean) => void) | undefined;
   onReorder?: ((userIds: string[]) => void) | undefined;
   isPending: boolean;
 }) {
@@ -26,7 +26,7 @@ export function GuestGroup({
       guest={g}
       onChangeStatus={onChangeStatus}
       onRemove={onRemove}
-      onTogglePaid={onTogglePaid}
+      onTogglePaymentVerified={onTogglePaymentVerified}
       isPending={isPending}
     />
   );
@@ -54,42 +54,42 @@ export function GuestGroup({
   );
 }
 
-function PaidBadge({
-  paidConfirmed,
+type PaymentState = 'verified' | 'says-paid' | 'unpaid';
+
+const PAYMENT_BADGE: Record<PaymentState, { icon: string; label: string; classes: string }> = {
+  verified: { icon: '✓', label: 'verified', classes: 'bg-success-subtle text-success' },
+  'says-paid': { icon: '◐', label: 'says paid', classes: 'bg-warning-subtle text-warning' },
+  unpaid: { icon: '○', label: 'unpaid', classes: 'bg-surface-dim text-foreground-secondary' },
+};
+
+function paymentState(guest: EventGuest): PaymentState {
+  if (guest.paymentVerified) return 'verified';
+  return guest.paidConfirmed ? 'says-paid' : 'unpaid';
+}
+
+function PaymentBadge({
+  guest,
   onToggle,
   isPending,
 }: {
-  paidConfirmed: boolean;
-  onToggle?: () => void;
+  guest: EventGuest;
+  onToggle: () => void;
   isPending: boolean;
 }) {
-  const label = paidConfirmed ? 'paid' : 'unpaid';
-  const classes = paidConfirmed
-    ? 'bg-info/15 text-info'
-    : 'bg-surface-dim text-foreground-secondary';
-
-  if (!onToggle) {
-    return (
-      <span
-        className={cn('inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs', classes)}
-      >
-        {paidConfirmed ? '✓' : '○'} {label}
-      </span>
-    );
-  }
-
+  const { icon, label, classes } = PAYMENT_BADGE[paymentState(guest)];
+  const action = guest.paymentVerified ? 'unverify payment' : 'mark payment verified';
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={isPending}
-      aria-pressed={paidConfirmed}
+      aria-label={`${label}, ${action}`}
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60',
         classes,
       )}
     >
-      {paidConfirmed ? '✓' : '○'} {label}
+      <span aria-hidden="true">{icon}</span> {label}
     </button>
   );
 }
@@ -98,13 +98,13 @@ function GuestRow({
   guest,
   onChangeStatus,
   onRemove,
-  onTogglePaid,
+  onTogglePaymentVerified,
   isPending,
 }: {
   guest: EventGuest;
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
-  onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
+  onTogglePaymentVerified?: ((userId: string, verified: boolean) => void) | undefined;
   isPending: boolean;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
@@ -117,12 +117,12 @@ function GuestRow({
             {guest.name}
             {guest.isMember ? null : <span className="text-muted"> (not a member)</span>}
           </span>
-          {onTogglePaid ? (
-            <PaidBadge
-              paidConfirmed={guest.paymentVerified}
+          {onTogglePaymentVerified ? (
+            <PaymentBadge
+              guest={guest}
               isPending={isPending}
               onToggle={() => {
-                onTogglePaid(guest.userId, !guest.paymentVerified);
+                onTogglePaymentVerified(guest.userId, !guest.paymentVerified);
               }}
             />
           ) : null}
