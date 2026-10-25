@@ -91,6 +91,8 @@ class Questions:
             position = self.by_id[show_if["question_id"]]["position"]
             show_if = {"position": position, **{key: show_if[key] for key in _CONDITION[1:]}}
         merged = {**state, "show_if": show_if, **changes}
+        if merged["field_type"] == QuestionType.SECTION and merged["required"]:
+            raise ToolError("section headers can't be required")
         if not _RECHECK & changes.keys():
             return merged
         if "options" not in changes and state["field_type"] == QuestionType.DATETIME_POLL:

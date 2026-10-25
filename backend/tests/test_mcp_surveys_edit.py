@@ -321,6 +321,13 @@ def test_turns_a_question_into_a_section_via_mcp(surveys_admin):
     assert (notes.field_type, notes.description) == ("section", "more")
 
 
+def test_section_cannot_be_made_required_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    SurveyQuestion.objects.create(survey=survey, label="about you", field_type="section")
+    message = _refused(surveys_admin, survey, questions=[_update(1, required=True)])
+    assert "section headers can't be required" in message
+
+
 def test_label_change_leaves_stored_options_alone(surveys_admin):
     survey = _survey(is_active=False)
     stars = ["bad", "", "good"]
