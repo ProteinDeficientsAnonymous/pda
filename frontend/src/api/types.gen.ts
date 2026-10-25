@@ -1795,6 +1795,23 @@ export interface paths {
         patch: operations["community__member_promotion_message_update_member_promotion_message"];
         trace?: never;
     };
+    "/api/community/official-event-defaults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Official Event Defaults */
+        get: operations["community__official_event_defaults_get_official_event_defaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/pages/{slug}/": {
         parameters: {
             query?: never;
@@ -4976,6 +4993,13 @@ export interface components {
             related_user_id: string | null;
             /** Survey Id */
             survey_id: string | null;
+        };
+        /** OfficialEventDefaultsOut */
+        OfficialEventDefaultsOut: {
+            /** Cashapp Link */
+            cashapp_link: string;
+            /** Rsvp Questions */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
         };
         /** OnboardingIn */
         OnboardingIn: {
@@ -11454,6 +11478,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__official_event_defaults_get_official_event_defaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficialEventDefaultsOut"];
                 };
             };
         };

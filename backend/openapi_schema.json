@@ -5581,6 +5581,27 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "OfficialEventDefaultsOut": {
+        "properties": {
+          "cashapp_link": {
+            "title": "Cashapp Link",
+            "type": "string"
+          },
+          "rsvp_questions": {
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionIn"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cashapp_link",
+          "rsvp_questions"
+        ],
+        "title": "OfficialEventDefaultsOut",
+        "type": "object"
+      },
       "OnboardingIn": {
         "properties": {
           "consent_types": {
@@ -15902,6 +15923,33 @@
           }
         ],
         "summary": "Update Member Promotion Message",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/official-event-defaults/": {
+      "get": {
+        "operationId": "community__official_event_defaults_get_official_event_defaults",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialEventDefaultsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Official Event Defaults",
         "tags": [
           "community"
         ]
