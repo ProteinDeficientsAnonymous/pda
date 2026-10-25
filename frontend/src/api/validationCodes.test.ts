@@ -35,6 +35,38 @@ describe('messageForCode', () => {
     );
   });
 
+  it('explains an empty cash app csv', () => {
+    expect(messageForCode({ code: Code.CashAppImport.CsvEmpty, field: null })).toMatch(
+      /doesn't have any rows/,
+    );
+  });
+
+  it('names the missing cash app csv columns when known', () => {
+    expect(
+      messageForCode({
+        code: Code.CashAppImport.CsvMissingColumns,
+        field: null,
+        params: { columns: 'amount, date' },
+      }),
+    ).toContain('missing columns: amount, date');
+    expect(messageForCode({ code: Code.CashAppImport.CsvMissingColumns, field: null })).toMatch(
+      /couldn't read that csv/,
+    );
+  });
+
+  it('gives the cash app csv row limit when known', () => {
+    expect(
+      messageForCode({
+        code: Code.CashAppImport.CsvTooManyRows,
+        field: null,
+        params: { max_rows: 10000 },
+      }),
+    ).toContain('more than 10000 rows');
+    expect(messageForCode({ code: Code.CashAppImport.CsvTooManyRows, field: null })).toMatch(
+      /too big/,
+    );
+  });
+
   it('explains an unsafe photo', () => {
     expect(
       messageForCode({
