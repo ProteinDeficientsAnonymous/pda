@@ -6042,7 +6042,8 @@
           "number",
           "boolean",
           "rating",
-          "datetime_poll"
+          "datetime_poll",
+          "section"
         ],
         "title": "QuestionType",
         "type": "string"
@@ -7125,6 +7126,12 @@
       },
       "SurveyQuestionIn": {
         "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
           "field_type": {
             "allOf": [
               {
@@ -7186,6 +7193,11 @@
       },
       "SurveyQuestionOut": {
         "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
           "display_order": {
             "title": "Display Order",
             "type": "integer"

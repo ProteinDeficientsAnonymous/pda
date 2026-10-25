@@ -5156,7 +5156,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -5562,6 +5562,11 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** @default text */
             field_type: components["schemas"]["QuestionType"];
             /** Label */
@@ -5585,6 +5590,11 @@ export interface components {
         };
         /** SurveyQuestionOut */
         SurveyQuestionOut: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** Display Order */
             display_order: number;
             field_type: components["schemas"]["QuestionType"];
