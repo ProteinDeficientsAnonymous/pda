@@ -22,6 +22,7 @@ pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 SETTINGS = {"title": "Retreat Planning!"}
 NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
+FOOD = {"label": "food?", "field_type": "radio", "options": ["vegan", "very vegan"]}
 
 
 @pytest.fixture
@@ -62,9 +63,23 @@ def test_creates_switched_off_with_every_type(surveys_admin):
     assert entries.count() == 5 and all(e.details["via"] == "mcp" for e in entries)
 
 
+def test_creates_choice_questions_with_trimmed_options(surveys_admin):
+    borough = {"label": "borough", "field_type": "select", "options": [" bk ", "", "qns"]}
+    bring = {"label": "bring", "field_type": "checkbox", "options": ["tent"]}
+    summary = _create(surveys_admin, (FOOD, borough, bring))
+    saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
+    assert [(q.field_type, q.options) for q in saved] == [
+        ("radio", ["vegan", "very vegan"]),
+        ("select", ["bk", "qns"]),
+        ("checkbox", ["tent"]),
+    ]
+
+
 @pytest.mark.parametrize(
     ("questions", "changes", "message"),
     [
+        (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
+        (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({"label": "rate", "field_type": "rating"},), {}, "field_type"),
         (({"label": "why", "show_if": {"position": 1, "value": "x"}},), {}, "show_if"),
         (({"label": "  "},), {}, "at least 1 character"),
