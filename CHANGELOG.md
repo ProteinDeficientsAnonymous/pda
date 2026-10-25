@@ -1,3 +1,22 @@
+# [0.183.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.182.0...v0.183.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** add publish_survey tool ([#1852](https://github.com/ProteinDeficientsAnonymous/pda/issues/1852)) ([14ae04c](https://github.com/ProteinDeficientsAnonymous/pda/commit/14ae04cd85e681329011d58524ed3d503326621b))
+* **mcp:** add update_survey for a switched-off survey's settings ([#1857](https://github.com/ProteinDeficientsAnonymous/pda/issues/1857)) ([942a6ed](https://github.com/ProteinDeficientsAnonymous/pda/commit/942a6ede90b96cc3edecaf34259240d3ed7802fb))
+* **mcp:** let create_survey add radio, select and checkbox questions ([#1848](https://github.com/ProteinDeficientsAnonymous/pda/issues/1848)) ([3de6b1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/3de6b1ccdd973a48167a99c1c4fbea3a1b22fafd))
+* **mcp:** let create_survey add rating and datetime poll questions ([#1851](https://github.com/ProteinDeficientsAnonymous/pda/issues/1851)) ([39efa3e](https://github.com/ProteinDeficientsAnonymous/pda/commit/39efa3e43eaa787a9f2a8018592c1bdf992694e4))
+* **mcp:** let create_survey add show_if conditions ([#1850](https://github.com/ProteinDeficientsAnonymous/pda/issues/1850)) ([4812c01](https://github.com/ProteinDeficientsAnonymous/pda/commit/4812c014b3abc3d41ba923deab5dac4151e65e36))
+* **mcp:** let create_survey set the remaining survey settings ([#1849](https://github.com/ProteinDeficientsAnonymous/pda/issues/1849)) ([74ca09c](https://github.com/ProteinDeficientsAnonymous/pda/commit/74ca09cbc3b0b9dfe0760b2701ecfcae5c0d3f63))
+* **mcp:** let update_survey add and reorder questions ([#1863](https://github.com/ProteinDeficientsAnonymous/pda/issues/1863)) ([e240fe6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e240fe687189303085cbd401c73335315ea32afc))
+* **mcp:** let update_survey change a question's fields ([#1861](https://github.com/ProteinDeficientsAnonymous/pda/issues/1861)) ([bb6a796](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb6a79614618093e415601bb3f404ad1b9df51d7))
+* **mcp:** let update_survey change a question's show_if ([#1862](https://github.com/ProteinDeficientsAnonymous/pda/issues/1862)) ([545aca6](https://github.com/ProteinDeficientsAnonymous/pda/commit/545aca6b2718b04d3c27598a2e66d70ce136fe0c))
+* **mcp:** let update_survey remove questions and report a partial save ([#1859](https://github.com/ProteinDeficientsAnonymous/pda/issues/1859)) ([8f39797](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f39797e4470a1366a435d44f0c046fcdbbfcdb3))
+* **mcp:** preview and confirm update_survey on a switched-on survey ([#1860](https://github.com/ProteinDeficientsAnonymous/pda/issues/1860)) ([0bbea60](https://github.com/ProteinDeficientsAnonymous/pda/commit/0bbea60444a557829f2a63606ded235302fe3dfc))
+* **mcp:** say plainly when update_survey couldn't save ([#1858](https://github.com/ProteinDeficientsAnonymous/pda/issues/1858)) ([fedc023](https://github.com/ProteinDeficientsAnonymous/pda/commit/fedc02323f84530bbe8b78f1dfd29cc19ddaf295))
+* **mcp:** say where a partial survey is when cleanup fails ([#1847](https://github.com/ProteinDeficientsAnonymous/pda/issues/1847)) ([6c123b5](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c123b52ba6410aebd840ea1208619fa952a9166))
+
 # [0.182.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.181.0...v0.182.0) (2026-10-25)
 
 
