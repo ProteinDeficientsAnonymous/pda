@@ -53,6 +53,14 @@ def _remove(ref) -> dict:
     return {"op": "remove", "question": ref}
 
 
+def _update(ref, **changes) -> dict:
+    return {"op": "update", "question": ref, "changes": changes}
+
+
+def _when(position, value) -> dict:
+    return {"position": position, "value": value}
+
+
 def _edit(user, survey, **arguments) -> dict:
     return _run(user, "update_survey", survey=str(survey.pk), **arguments)
 
@@ -191,9 +199,13 @@ def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admi
         ([_remove(4)], "operation 1: there's no question 4: the survey has 3"),
         ([_remove("00000000-0000-0000-0000-000000000000")], "no question with id"),
         ([_remove(1), _remove(1)], "operation 2: question 1"),
-        ([{"op": "update", "question": 1}], "Input should be 'remove'"),
+        ([{"op": "move", "question": 1}], "does not match any of the expected tags"),
         ([{**_remove(1), "after": 2}], "Extra inputs are not permitted"),
         ([_remove(True)], "Input should be a valid integer"),
+        ([_update(1, options=["vegan"])], 'breaks the show_if on "why?"'),
+        ([_update(3, show_if=_when(1, "very"))], "show_if can't be changed here yet"),
+        ([_update(3, label=" ")], "at least 1 character"),
+        ([_update(3, colour="red")], "Extra inputs are not permitted"),
     ],
 )
 def test_bad_question_changes_refused_before_saving(surveys_admin, ops, message):
@@ -220,7 +232,8 @@ def test_failure_midway_reports_what_was_saved(surveys_admin):
 def test_unchanged_values_save_nothing(surveys_admin):
     survey = _survey(is_active=False)
     _questions(survey)
-    assert "nothing would change" in _refused(surveys_admin, survey, settings={"title": "retreat"})
+    arguments = {"settings": {"title": "retreat"}, "questions": [_update(1, label="food?")]}
+    assert "nothing would change" in _refused(surveys_admin, survey, **arguments)
     _edit(surveys_admin, survey, settings={"title": "retreat"}, questions=[_remove(3)])
     assert not AuditLogEntry.objects.filter(action="survey_updated").exists()
 
@@ -235,3 +248,58 @@ def test_token_bound_to_question_changes_and_checked_once_switched_off(surveys_a
     confirm = {"questions": [_remove(3)], "confirm_token": token}
     assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
     assert _labels(survey) == LABELS
+
+
+def test_update_merges_changes_into_the_question_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    food, _, notes = _questions(survey)
+    when = ["2099-11-07T16:00:00.000Z"]
+    poll = SurveyQuestion.objects.create(
+        survey=survey, label="when", field_type="datetime_poll", options=when, display_order=3
+    )
+    ops = [
+        _update(1, options=["vegan", "very", "raw"]),
+        _update(str(notes.pk), required=True),
+        _update(4, label="which day?"),
+    ]
+    _edit(surveys_admin, survey, questions=ops)
+    for q in (food, notes, poll):
+        q.refresh_from_db()
+    assert (food.label, food.options) == ("food?", ["vegan", "very", "raw"])
+    assert notes.required
+    assert (poll.label, poll.options) == ("which day?", when)
+    entries = AuditLogEntry.objects.filter(action="survey_question_updated")
+    assert [e.details["via"] for e in entries] == ["mcp"] * 3
+
+
+def test_live_update_previews_the_diff_and_answers_that_may_not_fit(surveys_admin):
+    survey = _survey(responses=1)
+    _questions(survey)
+    ops = [_update(1, label="food", options=["vegan", "very", "raw"])]
+    preview = _edit(surveys_admin, survey, questions=ops)
+    (entry,) = preview["changes"]["questions"]
+    assert entry["changes"] == {
+        "label": {"before": "food?", "after": "food"},
+        "options": {"before": ["vegan", "very"], "after": ["vegan", "very", "raw"]},
+    }
+    assert "may leave existing answers" in preview["notes"][1]
+    _edit(surveys_admin, survey, questions=ops, confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["food", "why?", "notes"]
+
+
+def test_update_after_its_condition_source_is_removed(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    ops = [_remove(1), _update(2, label="why")]
+    token = _edit(surveys_admin, survey, questions=ops)["confirm_token"]
+    _edit(surveys_admin, survey, questions=ops, confirm_token=token)
+    assert SurveyQuestion.objects.get(label="why").show_if is None
+
+
+def test_label_change_leaves_stored_options_alone(surveys_admin):
+    survey = _survey(is_active=False)
+    stars = ["bad", "", "good"]
+    SurveyQuestion.objects.create(survey=survey, label="r", field_type="rating", options=stars)
+    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
+    _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
+    assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]

@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from mcp_gateway.event_fields import _no_default
 from mcp_gateway.fields import local_time
-from mcp_gateway.survey_fields import SurveySettings
+from mcp_gateway.survey_fields import ShowIf, SurveyQuestionFields, SurveySettings
 
 _TIMES = ("opens_at", "closes_at")
 
@@ -54,6 +54,22 @@ QuestionRef = Annotated[
 _FORBID = ConfigDict(extra="forbid")
 
 
+class EditShowIf(ShowIf):
+    model_config = _FORBID
+
+    position: int = Field(ge=1, description="position, before this edit, of an earlier question")
+
+
+class EditQuestionFields(SurveyQuestionFields):
+    show_if: EditShowIf | None = Field(
+        None,
+        description="show it only when an earlier radio/select/checkbox/boolean answer matches",
+    )
+
+
+QuestionChanges = partial_model(EditQuestionFields, "QuestionChanges")
+
+
 class RemoveQuestion(BaseModel):
     """remove a question: its answers are hidden and show_ifs that depend on it are cleared"""
 
@@ -63,6 +79,19 @@ class RemoveQuestion(BaseModel):
     question: QuestionRef
 
 
+class UpdateQuestion(BaseModel):
+    """change a question"""
+
+    model_config = _FORBID
+
+    op: Literal["update"]
+    question: QuestionRef
+    changes: QuestionChanges = Field(
+        description="only the fields to change; the rest stay as they are"
+    )
+
+
+QuestionOp = Annotated[RemoveQuestion | UpdateQuestion, Field(discriminator="op")]
 QuestionOps = Annotated[
-    list[RemoveQuestion], Field(min_length=1, description="question changes, applied in order")
+    list[QuestionOp], Field(min_length=1, description="question changes, applied in order")
 ]
