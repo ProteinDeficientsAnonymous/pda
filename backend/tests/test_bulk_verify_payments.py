@@ -93,11 +93,16 @@ def test_audits_each_verification_as_a_cashapp_import(
 
     entries = AuditLogEntry.objects.filter(action="guest_payment_changed", target_id=str(event.id))
     assert sorted(e.details["user_id"] for e in entries) == sorted(str(g.id) for g in guests)
+    rows = {str(r.user_id): r for r in EventRSVP.objects.filter(event=event)}
     for entry in entries:
+        row = rows[entry.details["user_id"]]
         assert entry.actor == importer
         assert entry.details["source"] == "cashapp_import"
+        assert entry.details["host_stamped"] is False
         assert entry.details["payment_verified"] is True
         assert entry.details["payment_verified_by"] == str(importer.id)
+        assert entry.details["paid_confirmed_at"] == row.paid_confirmed_at.isoformat()
+        assert entry.details["payment_verified_at"] == row.payment_verified_at.isoformat()
 
 
 def test_skipped_guests_get_no_audit_row(

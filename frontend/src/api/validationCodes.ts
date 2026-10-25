@@ -101,7 +101,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
     case Code.Event.PaymentVerifyNotGuests:
-      return "some of those people aren't on this event's guest list — nothing was verified";
+      return "some of those people aren't attending or waitlisted for this event — nothing was verified";
     case Code.Event.WaitlistOrderStale:
       return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:

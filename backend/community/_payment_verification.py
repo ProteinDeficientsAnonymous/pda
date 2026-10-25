@@ -8,10 +8,7 @@ from notifications.service import create_payment_revoked_notification
 from users.models import User
 
 from community._event_rsvps import payment_audit_details, payment_audit_fields
-from community.models import Event, EventRSVP, RSVPStatus
-
-# Guests a payment import can match and verify; the cash app review uses the same set.
-MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
+from community.models import Event, EventRSVP
 
 MISCLICK_WINDOW = timedelta(minutes=10)
 

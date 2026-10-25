@@ -32,7 +32,6 @@ from community._event_schemas import (
     HostRSVPPaymentIn,
 )
 from community._payment_verification import (
-    MATCHABLE_RSVP_STATUSES,
     PaymentVerificationChange,
     apply_payment_verification,
     record_payment_verification,
@@ -41,7 +40,7 @@ from community._rsvp_status_emails import email_host_set_rsvp_status, email_prom
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community._waitlist import promote_from_waitlist
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import MATCHABLE_RSVP_STATUSES, Event, EventRSVP, RSVPStatus
 
 router = Router()
 
@@ -251,12 +250,7 @@ def _verify_payments_in_transaction(
 
 def _load_payment_import_event(request, event_id: UUID) -> Event:
     """Same rules as the guest list: the event is readable and the caller may see payments."""
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts")
-        .filter(id=event_id)
-        .first()
-    )
+    event = Event.objects.select_related("created_by").filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     _enforce_event_read_visibility(event, request.auth)
