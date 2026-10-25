@@ -34,12 +34,15 @@ def _state(q: Question) -> Question:
 class Questions:
     """Plays the operations through a copy of the survey, so each is checked before any is saved."""
 
-    def __init__(self, edit: Edit, questions: list[Question], answered: bool) -> None:
-        self.edit, self.before, self.answered = edit, questions, answered
+    def __init__(
+        self, edit: Edit, questions: list[Question], answered: bool, orders: dict[str, int]
+    ) -> None:
+        self.edit, self.before, self.answered, self.orders = edit, questions, answered, orders
         self.by_id = {q["id"]: q for q in questions}
         # Each question as the operations so far leave it, in the order the website holds them.
         self.now = {q["id"]: _state(q) for q in questions}
         self.touched: set[str] = set()
+        self.refs: list[tuple[int, Question]] = []
         self.diff: list[dict[str, Any]] = []
 
     def _find(self, ref: QuestionRef) -> Question:
@@ -83,13 +86,27 @@ class Questions:
             merged["options"] = [t or o for t, o in zip(q["option_times"], state["options"])]
         return build(EditQuestionFields, merged).model_dump(mode="json")
 
-    def _payload(self, fields: dict[str, Any]) -> SurveyQuestionIn:
-        data = {key: fields[key] for key in _FIELDS[:-1]}
+    def _payload(
+        self, fields: dict[str, Any], below: int
+    ) -> tuple[SurveyQuestionIn, Question | None]:
+        """return(tuple): the payload, and its show_if source (which must sit above `below`)."""
+        data, source = {key: fields[key] for key in _FIELDS[:-1]}, None
         if show_if := fields["show_if"]:
             source = self._find(show_if["position"])
+            if source["id"] not in self.now:
+                raise ToolError(f"show_if points at {_named(source)}, which this edit removes")
+            if source["position"] >= below:
+                raise ToolError(
+                    "show_if must point at a question above it in the survey as it is now"
+                )
             data["show_if"] = {**show_if, "question_id": source["id"]}
             del data["show_if"]["position"]
-        return build(SurveyQuestionIn, data)
+            if not self._fits(data["show_if"]):
+                raise ToolError(
+                    f"show_if doesn't fit {_named(source)}: compare with one of its options "
+                    "(yes/no for a boolean), and use contains only on a checkbox question"
+                )
+        return build(SurveyQuestionIn, data), source
 
     def _shown(self, payload: SurveyQuestionIn) -> dict[str, Any]:
         after = payload.model_dump(mode="json", include=set(_FIELDS))
@@ -117,9 +134,13 @@ class Questions:
     def update(self, number: int, op: UpdateQuestion) -> None:
         q = self._target(op.question)
         changes = op.changes.model_dump(mode="json", include=op.changes.model_fields_set)
-        if "show_if" in changes:
-            raise ToolError("show_if can't be changed here yet: edit it in pda")
-        payload = self._payload(self._merged(q, changes))
+        payload, source = self._payload(self._merged(q, changes), below=q["position"])
+        # An unchanged condition is cleared, not refused, when this edit removes its source.
+        if source and "show_if" in changes:
+            self.refs.append((number, source))
+        # Legacy rows can share a display_order, and the website refuses a source that isn't lower.
+        if source and self.orders[source["id"]] >= self.orders[q["id"]]:
+            raise ToolError(f"{_named(source)} shares this question's stored place: reorder first")
         self.now[q["id"]] = payload.model_dump(mode="json")
         self._keeps_dependents(q)
         if self._diff_update(q, payload):
@@ -154,5 +175,8 @@ class Questions:
             )
 
     def finish(self) -> None:
+        for number, q in self.refs:
+            if q["id"] not in self.now:
+                raise ToolError(f"nothing was saved: operation {number}: {_named(q)} is removed")
         if self.diff:
             self.edit.changes["questions"] = self.diff
