@@ -4,6 +4,7 @@ import uuid
 import pytest
 from django.core.cache import caches
 from mcp_gateway.cashapp_review import csv_digest, review_cache_key
+from mcp_gateway.server import pda_mcp
 from mcp_gateway.tools.payments_review import MAX_CSV_CHARS
 from users.permissions import PermissionKey
 
@@ -114,3 +115,9 @@ def test_review_unknown_event_is_404(importer, csv_text):
 
 def test_csv_text_is_bounded(importer, event):
     assert "csv_text" in review_refused(importer, str(event.pk), "x" * (MAX_CSV_CHARS + 1))
+
+
+def test_description_says_the_csv_is_kept_not_that_nothing_is_saved():
+    description = pda_mcp._tool_manager.get_tool("review_cashapp_payments").description
+    assert "nothing is saved" not in description
+    assert "kept on the server for an hour" in description

@@ -22,8 +22,9 @@ CsvText = Annotated[
 @pda_tool(
     PermissionKey.IMPORT_PAYMENTS,
     description=(
-        "check a cash app csv export against one event's rsvps. read-only: nothing is saved. pass "
-        "the csv contents exactly as exported. lead with gap_list: guests who said they paid, or "
+        "check a cash app csv export against one event's rsvps. no payments are marked; the csv "
+        "is kept on the server for an hour so verify_cashapp_payments can reuse it. pass the csv "
+        "contents exactly as exported. lead with gap_list: guests who said they paid, or "
         "are attending a paid event, with no matching payment, so a host can follow up or verify "
         "them by hand. then show the confident matches, the unsure ones with their reason and "
         "candidates, and unplaced_payments, plus any amount_mismatch_leads and unreadable_rows. "
