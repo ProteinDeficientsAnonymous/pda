@@ -1,3 +1,10 @@
+# [0.193.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.192.0...v0.193.0) (2026-10-25)
+
+
+### Features
+
+* **events:** add payment verified fields to rsvps ([#1837](https://github.com/ProteinDeficientsAnonymous/pda/issues/1837)) ([f4d0190](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4d0190df7e30a3a011ae75e0ab2a53b578d8540))
+
 # [0.192.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.191.0...v0.192.0) (2026-10-25)
 
 
