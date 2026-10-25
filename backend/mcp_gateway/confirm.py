@@ -1,14 +1,19 @@
 import hashlib
 import json
 import secrets
-from typing import Any, NamedTuple
+from typing import Annotated, Any, NamedTuple
 
 from django.core import signing
 from django.core.cache import caches
 from mcp.server.mcpserver.exceptions import ToolError
+from pydantic import Field
 
 _SALT = "mcp_gateway.confirm"
 MAX_AGE_SECONDS = 15 * 60
+
+ConfirmToken = Annotated[
+    str | None, Field(description="from the preview; send only after the user said yes")
+]
 
 
 class Confirmed(NamedTuple):

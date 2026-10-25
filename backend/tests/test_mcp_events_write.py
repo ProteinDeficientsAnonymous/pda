@@ -77,6 +77,12 @@ def test_invalid_field_error_matches_view_errors(test_user):
     assert (error["status"], error["detail"][0]["field"]) == (422, "whatsapp_link")
 
 
+def test_schema_error_reports_its_field(test_user):
+    error = json.loads(_error(test_user, "create_event", fields={**WALK, "title": "x" * 201}))
+    assert (error["status"], error["detail"][0]["field"]) == (422, "title")
+    assert not Event.objects.exists()
+
+
 def test_unknown_tag_lists_valid_ones(test_user):
     EventTag.objects.create(name="walk")
     error = _error(test_user, "create_event", fields={**WALK, "tags": ["hike"]})
