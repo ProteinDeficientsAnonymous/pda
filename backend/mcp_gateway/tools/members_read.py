@@ -19,9 +19,9 @@ from mcp_gateway.server import pda_tool
         "archived = account deleted, by an admin or by the member themselves; paused = paused by "
         "an admin, not archived; still_onboarding = not paused or archived but hasn't finished "
         "setting up their account yet; active = everyone else, set up and able to use the site. "
-        "new_in_period = members who became members in the last period_days days (their latest "
-        "join request approval, or account creation if an admin added them directly), whatever "
-        "their status now, so it overlaps the other counts."
+        "new_in_period = members whose membership started in the last period_days days, counted "
+        "from the later of their latest join request approval and their account creation, "
+        "whatever their status now, so it overlaps the other counts."
     ),
 )
 async def member_totals(

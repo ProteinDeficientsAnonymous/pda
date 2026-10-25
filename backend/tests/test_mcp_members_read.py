@@ -36,9 +36,11 @@ def _joined(days_ago: float, **fields) -> User:
     return user
 
 
-def _join_request(user, days_ago: float, status=JoinRequestStatus.APPROVED, linked=True):
+def _join_request(
+    user, days_ago: float, status=JoinRequestStatus.APPROVED, linked=True, phone=None
+):
     return JoinRequest.objects.create(
-        phone_number=user.phone_number,
+        phone_number=phone or user.phone_number,
         email="j@e.com",
         user=user if linked else None,
         status=status,
@@ -139,6 +141,15 @@ def test_new_in_period_counts_from_membership_approval(manage_users_user):
     # An approval older than the account (e.g. a deleted user's phone reused) doesn't backdate it.
     _join_request(_joined(1), days_ago=100, linked=False)
     assert _call(manage_users_user)["new_in_period"] == 3
+
+
+def test_linked_request_does_not_count_for_member_sharing_its_phone(manage_users_user):
+    User.objects.filter(pk=manage_users_user.pk).update(
+        date_joined=timezone.now() - timedelta(days=400)
+    )
+    other = _joined(300)
+    _join_request(_joined(300), days_ago=2, phone=other.phone_number)
+    assert _call(manage_users_user)["new_in_period"] == 1
 
 
 @pytest.mark.parametrize("period_days", [0, 366])

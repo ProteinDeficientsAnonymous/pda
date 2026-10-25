@@ -19,10 +19,10 @@ def with_member_since(qs: QuerySet[User]) -> QuerySet[User]:
     param(qs): users to annotate
     return(QuerySet[User]): qs with a member_since datetime
     """
-    # Matched by phone too: re-approving an archived member links the request by phone only.
+    # Unlinked requests match by phone: re-approving an archived member links by phone only.
     latest_approval = (
         JoinRequest.objects.filter(
-            Q(user=OuterRef("pk")) | Q(phone_number=OuterRef("phone_number")),
+            Q(user=OuterRef("pk")) | Q(user__isnull=True, phone_number=OuterRef("phone_number")),
             status=JoinRequestStatus.APPROVED,
             approved_at__isnull=False,
         )
@@ -35,7 +35,7 @@ def with_member_since(qs: QuerySet[User]) -> QuerySet[User]:
 
 
 def count_members_by_status(since: datetime) -> dict[str, int]:
-    """Count members by status; the four buckets are disjoint and skip is_active=False members.
+    """Count members by status; buckets are disjoint, active/still_onboarding skip is_active=False.
 
     param(since): start of the window for new_in_period
     return(dict[str, int]): total, the four status buckets, and new_in_period
