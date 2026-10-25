@@ -125,6 +125,10 @@ class RSVPStatus(models.TextChoices):
     REMOVED = "removed", "Removed"
 
 
+# Guests a payment import can match and verify.
+MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
+
+
 class AttendanceStatus(models.TextChoices):
     UNKNOWN = "unknown", "Unknown"
     ATTENDED = "attended", "Attended"

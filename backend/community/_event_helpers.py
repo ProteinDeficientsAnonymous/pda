@@ -118,6 +118,7 @@ def _build_guest_list(
             plus_one_checked_in_at=r.plus_one_checked_in_at,
             is_member=r.user.is_member,
             paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
+            payment_verified=bool(r.payment_verified_at) if can_see_payment_status else False,
             questionnaire_responses=(
                 dict(r.questionnaire_responses or {}) if include_questionnaire_responses else {}
             ),
