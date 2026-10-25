@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from audit.models import AuditLogEntry
 from community._surveys import delete_survey_question, get_survey_admin
-from community.models import Survey, SurveyQuestion
+from community.models import Survey, SurveyQuestion, SurveyResponse
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -15,6 +15,7 @@ from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+NEW = {"title": "new", "description": ""}
 LABELS = ["food?", "why?", "notes"]
 REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
 SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
@@ -28,8 +29,11 @@ def surveys_admin(test_user):
     return test_user
 
 
-def _survey(**fields) -> Survey:
-    return Survey.objects.create(**{"title": "retreat", "slug": "retreat", **fields})
+def _survey(*, responses=0, **fields) -> Survey:
+    survey = Survey.objects.create(**{"title": "retreat", "slug": "retreat", **fields})
+    for _ in range(responses):
+        SurveyResponse.objects.create(survey=survey)
+    return survey
 
 
 def _questions(survey) -> list[SurveyQuestion]:
@@ -83,25 +87,49 @@ def test_switched_off_saves_at_once_via_mcp(surveys_admin):
         ({"title": " "}, "at least 1 character"),
         ({"slug": "🌱"}, "give a slug"),
         ({"is_active": True}, "Extra inputs are not permitted"),
+        ({"anonymous": True}, "nothing was saved: anonymous can't change"),
     ],
 )
 def test_bad_settings_refused_before_saving(surveys_admin, changes, message):
-    survey = _survey(is_active=False)
+    survey = _survey(is_active=False, responses=1)
     assert message in _refused(surveys_admin, survey, settings=changes)
     assert not AuditLogEntry.objects.filter(action="survey_updated").exists()
 
 
-def test_switched_on_refused(surveys_admin):
-    survey = _survey()
-    assert "switched on" in _refused(surveys_admin, survey, settings={"title": "new"})
+def test_switched_on_previews_then_saves(surveys_admin):
+    survey = _survey(responses=2)
+    locked = _edit(surveys_admin, survey, settings={"anonymous": True, "title": "new"})
+    assert locked["confirm_token"] is None
+    assert "anonymous can't change once a survey has responses" in locked["notes"][1]
+    preview = _edit(surveys_admin, survey, settings=NEW)
+    assert preview["changes"] == {"settings": {"title": {"before": "retreat", "after": "new"}}}
+    assert preview["notes"] == ["this survey already has 2 responses"]
     assert Survey.objects.get().title == "retreat"
+    token = preview["confirm_token"]
+    assert _edit(surveys_admin, survey, settings=NEW, confirm_token=token)["title"] == "new"
+    assert "nothing would change" in _refused(surveys_admin, survey, settings=NEW)
+
+
+def test_token_bound_to_changes_and_state_and_single_use(surveys_admin):
+    survey = _survey()
+    token = _edit(surveys_admin, survey, settings=NEW)["confirm_token"]
+    confirm = {"settings": NEW, "confirm_token": token}
+    assert "fresh preview" in _refused(
+        surveys_admin, survey, **confirm | {"settings": {"title": "x"}}
+    )
+    Survey.objects.filter(pk=survey.pk).update(description="changed")
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+    Survey.objects.filter(pk=survey.pk).update(description="")
+    _edit(surveys_admin, survey, **confirm)
+    Survey.objects.filter(pk=survey.pk).update(title="retreat")
+    assert "already used" in _refused(surveys_admin, survey, **confirm)
 
 
 def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
-    survey = _survey(is_active=False, feedback_event_type="official", anonymous=True)
+    survey = _survey(feedback_event_type="official", anonymous=True, responses=1)
     for settings in ({"anonymous": False}, {"linked_event_id": str(uuid4())}):
         assert "always anonymous" in _refused(surveys_admin, survey, settings=settings)
-    assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["title"] == "x"
+    assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["confirm_token"]
 
 
 def test_failed_save_says_nothing_was_saved(surveys_admin):
@@ -141,6 +169,22 @@ def test_remove_by_position_or_id_clears_conditions_via_mcp(surveys_admin):
     assert [e.details["via"] for e in entries] == ["mcp", "mcp"]
 
 
+def test_live_remove_previews_hidden_answers_and_cleared_conditions(surveys_admin):
+    survey = _survey(responses=1)
+    _questions(survey)
+    preview = _edit(surveys_admin, survey, questions=[_remove(1)])
+    assert preview["changes"] == {"questions": [{"op": "remove", "position": 1, "label": "food?"}]}
+    assert preview["notes"] == [
+        "this survey already has 1 response",
+        'removing question 1 ("food?") hides its answers in existing responses',
+        'removing question 1 ("food?") clears the show_if on "why?"',
+    ]
+    assert _labels(survey) == LABELS
+    _edit(surveys_admin, survey, questions=[_remove(1)], confirm_token=preview["confirm_token"])
+    assert _labels(survey) == ["why?", "notes"]
+    assert SurveyQuestion.objects.get(label="why?").show_if is None
+
+
 @pytest.mark.parametrize(
     ("ops", "message"),
     [
@@ -171,3 +215,23 @@ def test_failure_midway_reports_what_was_saved(surveys_admin):
     assert report["not_applied"] == ['operation 2: remove question 2 ("why?")']
     assert [q["label"] for q in report["survey"]["questions"]] == ["food?", "why?"]
     assert report["survey"]["title"] == "x"
+
+
+def test_unchanged_values_save_nothing(surveys_admin):
+    survey = _survey(is_active=False)
+    _questions(survey)
+    assert "nothing would change" in _refused(surveys_admin, survey, settings={"title": "retreat"})
+    _edit(surveys_admin, survey, settings={"title": "retreat"}, questions=[_remove(3)])
+    assert not AuditLogEntry.objects.filter(action="survey_updated").exists()
+
+
+def test_token_bound_to_question_changes_and_checked_once_switched_off(surveys_admin):
+    survey = _survey()
+    _questions(survey)
+    token = _edit(surveys_admin, survey, questions=[_remove(3)])["confirm_token"]
+    other = {"questions": [_remove(2)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **other)
+    Survey.objects.filter(pk=survey.pk).update(is_active=False)
+    confirm = {"questions": [_remove(3)], "confirm_token": token}
+    assert "fresh preview" in _refused(surveys_admin, survey, **confirm)
+    assert _labels(survey) == LABELS

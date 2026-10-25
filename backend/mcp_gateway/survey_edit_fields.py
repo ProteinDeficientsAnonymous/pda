@@ -7,7 +7,10 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from mcp_gateway.event_fields import _no_default
+from mcp_gateway.fields import local_time
 from mcp_gateway.survey_fields import SurveySettings
+
+_TIMES = ("opens_at", "closes_at")
 
 
 def partial_model(model: type[BaseModel], name: str) -> Any:
@@ -33,6 +36,15 @@ def normalize_settings(changed: dict[str, Any], title: str) -> dict[str, Any]:
     if not slug:
         raise ToolError("give a slug with letters or numbers")
     return {**changed, "slug": slug}
+
+
+def settings_diff(detail: dict[str, Any], changed: dict[str, Any]) -> dict[str, Any]:
+    shown = {key: local_time(v) if key in _TIMES else v for key, v in changed.items()}
+    return {
+        key: {"before": detail[key], "after": value}
+        for key, value in shown.items()
+        if detail[key] != value
+    }
 
 
 QuestionRef = Annotated[

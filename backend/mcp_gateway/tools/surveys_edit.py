@@ -11,6 +11,7 @@ from pydantic import Field
 from users.models import User
 from users.permissions import PermissionKey
 
+from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.server import current_user, pda_tool
 from mcp_gateway.survey_edit_fields import QuestionOps, SurveyChanges
 from mcp_gateway.survey_edit_plan import Edit, Step, operation, plan_settings
@@ -24,14 +25,24 @@ _RELOAD_FAILED = "every change was saved, but the survey couldn't be reloaded: c
 
 def _plan(detail: dict[str, Any], settings: dict[str, Any], ops: list[Any]) -> Edit:
     """Check every change against the survey before saving any; return the view calls to make."""
-    edit = Edit()
+    edit, count = Edit(), detail["response_count"]
+    if count:
+        edit.notes.append(f"this survey already has {count} response{'s' * (count != 1)}")
     if settings:
         plan_settings(edit, detail, settings)
-    questions = Questions(edit, detail["questions"])
+    questions = Questions(edit, detail["questions"], answered=bool(count))
     for number, op in enumerate(ops, start=1):
         with operation(number):
             getattr(questions, op.op)(number, op)
+    questions.finish()
+    if not edit.changes:
+        raise ToolError("nothing would change: these values match the survey already")
     return edit
+
+
+def _preview(bound: Confirmed, edit: Edit) -> dict[str, Any]:
+    token = None if edit.blockers else issue_confirm_token(bound)
+    return {"changes": edit.changes, "notes": edit.notes + edit.blockers, "confirm_token": token}
 
 
 async def _stopped(
@@ -81,26 +92,39 @@ async def _apply(user: User, survey_id: UUID, steps: list[Step]) -> None:
 @pda_tool(
     PermissionKey.MANAGE_SURVEYS,
     description=(
-        "edit a switched-off survey in place: its settings, and remove questions. send only what "
-        "changes. question positions always mean the survey as it was before this edit, so read "
-        "it with get_survey first. it's saved right away. a switched-on survey can't be edited "
-        "with this tool yet. to switch a survey on use publish_survey."
+        "edit a survey in place: its settings, and remove questions. "
+        "send only what changes. question positions always mean the survey as it was before this "
+        "edit, so read it with get_survey first. a switched-off survey is saved right away. for a "
+        "switched-on survey (members may be answering), the first call saves nothing and returns "
+        "a before/after diff, notes on side effects and a confirm_token: show the diff and notes, "
+        "get an explicit yes, then call again with the same changes and the token. to switch a "
+        "survey on use publish_survey."
     ),
 )
 async def update_survey(
     survey: Annotated[str, Field(description="survey id (uuid) or slug, e.g. from list_surveys")],
     settings: Annotated[SurveyChanges | None, Field(description="only what changes")] = None,
     questions: QuestionOps | None = None,
+    confirm_token: ConfirmToken = None,
 ) -> dict[str, Any]:
     user = await current_user()
     survey_id = await _survey_id(survey, user)
     before = await call_view(get_survey_view, user, survey_id)
-    if before["is_active"]:
-        raise ToolError("this survey is switched on: edit it in pda for now")
     changed = settings.model_dump(mode="json", exclude_unset=True) if settings else {}
     if not (changed or questions):
         raise ToolError("no changes given")
-    edit = _plan(survey_detail(before), changed, questions or [])
+    detail = survey_detail(before)
+    edit = _plan(detail, changed, questions or [])
+    ops = [op.model_dump(mode="json") for op in questions or []]
+    # status turns on by the clock alone, so it would expire a token for no reason.
+    state = {key: value for key, value in detail.items() if key != "status"}
+    bound = Confirmed(user.pk, before["id"], "update_survey", [changed, ops], state)
+    if confirm_token is not None:
+        await use_confirm_token(confirm_token, bound)
+    elif before["is_active"]:
+        return _preview(bound, edit)
+    elif edit.blockers:
+        raise ToolError("nothing was saved: " + "; ".join(edit.blockers))
     await _apply(user, survey_id, edit.steps)
     try:
         return survey_detail(await call_view(get_survey_view, user, survey_id))
