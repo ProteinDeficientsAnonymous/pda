@@ -57,9 +57,12 @@ export default function SurveyBuilderScreen() {
     const conditionNote = dependents.length
       ? ` ${dependents.join(', ')} will lose ${dependents.length === 1 ? 'its condition' : 'their conditions'} and always show.`
       : '';
+    const section = q.fieldType === QuestionType.Section;
     const ok = await confirm({
-      title: 'delete question',
-      message: `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
+      title: section ? 'delete section' : 'delete question',
+      message: section
+        ? `delete the "${q.label}" section header? the questions under it stay`
+        : `delete "${q.label}"? this also deletes responses to it.${conditionNote}`,
       confirmLabel: 'delete',
       destructive: true,
     });
@@ -77,6 +80,17 @@ export default function SurveyBuilderScreen() {
       showIf: null,
     });
     setFocusId(created.id);
+  }
+
+  function confirmTypeChange(q: SurveyQuestion, fieldType: SurveyQuestionType) {
+    if (fieldType !== QuestionType.Section || currentSurvey.responseCount === 0) {
+      return Promise.resolve(true);
+    }
+    return confirm({
+      title: 'change to section header',
+      message: `"${q.label}" may already have answers — a section header takes none, so they'll be hidden from responses and the csv`,
+      confirmLabel: 'change',
+    });
   }
 
   async function duplicate(q: SurveyQuestion) {
@@ -193,6 +207,7 @@ export default function SurveyBuilderScreen() {
                 onDelete={() => {
                   void askDelete(q);
                 }}
+                confirmTypeChange={(fieldType) => confirmTypeChange(q, fieldType)}
               />
             )}
           />

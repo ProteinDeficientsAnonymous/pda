@@ -31,6 +31,8 @@ interface Props<T extends string> {
   onSave: (values: QuestionAuthorValues<T>) => Promise<unknown>;
   onDuplicate?: (() => void) | undefined;
   onDelete?: (() => void) | undefined;
+  /** Resolves false to keep the current type. */
+  confirmTypeChange?: ((fieldType: T) => Promise<boolean>) | undefined;
   focusOnMount?: boolean;
   disabled?: boolean;
   /** Extra controls rendered under the options; state and saving live in the caller. */
@@ -102,6 +104,7 @@ export function QuestionCardEditor<T extends string>({
   onSave,
   onDuplicate,
   onDelete,
+  confirmTypeChange,
   focusOnMount = false,
   disabled = false,
   extraFields,
@@ -150,7 +153,8 @@ export function QuestionCardEditor<T extends string>({
     }
   }
 
-  function changeType(fieldType: T) {
+  async function changeType(fieldType: T) {
+    if (confirmTypeChange && !(await confirmTypeChange(fieldType))) return;
     const keepOptions =
       sharesOptions(draft.fieldType, fieldType) && draft.options.some((o) => o.trim());
     const options = keepOptions ? draft.options : seedOptions(fieldType);
@@ -196,7 +200,7 @@ export function QuestionCardEditor<T extends string>({
             disabled={disabled}
             options={typeOptions}
             onChange={(e) => {
-              changeType(e.target.value as T);
+              void changeType(e.target.value as T);
             }}
           />
         </div>

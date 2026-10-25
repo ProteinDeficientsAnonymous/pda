@@ -122,6 +122,37 @@ describe('SurveyBuilderScreen', () => {
     });
   });
 
+  it('says a deleted section header leaves its questions', async () => {
+    const section = { id: 'q0', label: 'about you', field_type: 'section', display_order: 0 };
+    mockedGet.mockResolvedValueOnce({
+      data: { ...wireSurvey, questions: [section, ...wireSurvey.questions] },
+    });
+    renderScreen();
+    await screen.findByDisplayValue('about you');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'delete' })[0]!);
+
+    const dialog = await screen.findByRole('dialog', { name: 'delete section' });
+    expect(dialog).toHaveTextContent('the questions under it stay');
+  });
+
+  it('confirms before turning a question on an answered survey into a section', async () => {
+    mockedGet.mockResolvedValue({ data: { ...wireSurvey, response_count: 2 } });
+    renderScreen();
+    await screen.findByDisplayValue('first');
+
+    fireEvent.change(screen.getAllByLabelText('question type')[0]!, {
+      target: { value: 'section' },
+    });
+
+    const dialog = await screen.findByRole('dialog', { name: 'change to section header' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(mockedPatch).not.toHaveBeenCalled();
+  });
+
   it('does not delete when the confirmation is cancelled', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
