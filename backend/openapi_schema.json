@@ -4998,6 +4998,17 @@
             ],
             "title": "Hide Last Name"
           },
+          "host_digest_opt_out": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host Digest Opt Out"
+          },
           "last_name": {
             "anyOf": [
               {
@@ -7780,6 +7791,11 @@
           "hide_last_name": {
             "default": false,
             "title": "Hide Last Name",
+            "type": "boolean"
+          },
+          "host_digest_opt_out": {
+            "default": false,
+            "title": "Host Digest Opt Out",
             "type": "boolean"
           },
           "id": {

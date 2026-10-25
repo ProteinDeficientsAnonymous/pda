@@ -164,6 +164,8 @@ class User(AbstractUser):
     monthly_digest_sent_on = models.DateField(null=True, blank=True)
     whatsapp_reminder_opt_out = models.BooleanField(default=False)
     attendance_nudge_opt_out = models.BooleanField(default=False)
+    host_digest_opt_out = models.BooleanField(default=False)
+    host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
     is_paused = models.BooleanField(default=False)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)

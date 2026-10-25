@@ -55,6 +55,20 @@ describe('EmailPreferences', () => {
     expect(onChange).toHaveBeenCalledWith({ attendanceNudgeOptOut: true });
   });
 
+  it('shows the host updates toggle off when opted out', () => {
+    renderPrefs({ hostDigestOptOut: true });
+    expect(screen.getByRole('switch', { name: /updates about events i host/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('opts out when the host updates toggle is switched off', async () => {
+    const { onChange } = renderPrefs({ hostDigestOptOut: false });
+    await userEvent.click(screen.getByRole('switch', { name: /updates about events i host/i }));
+    expect(onChange).toHaveBeenCalledWith({ hostDigestOptOut: true });
+  });
+
   it('leaves the weekly digest toggle working independently', async () => {
     const { onChange } = renderPrefs({ weeklyDigestOptOut: false });
     await userEvent.click(screen.getByRole('switch', { name: /weekly digest/i }));
