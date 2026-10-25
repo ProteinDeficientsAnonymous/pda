@@ -57,8 +57,8 @@ async def _discard(user: User, survey_id: UUID, error: BaseException) -> None:
     description=(
         "create a pda survey, switched off: its page shows it closed and it takes no responses. "
         "before calling: map each of the user's questions to a field_type, show them every "
-        "question's type plus the settings, and get their ok. after creating, show the summary "
-        "and say it stays off until they switch it on in pda at its edit_url."
+        "question's type and options plus the settings, and get their ok. after creating, show "
+        "the summary and say it stays off until they switch it on in pda at its edit_url."
     ),
 )
 async def create_survey(settings: SurveySettings, questions: SurveyQuestions) -> dict[str, Any]:
