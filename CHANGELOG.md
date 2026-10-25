@@ -1,3 +1,10 @@
+## [0.202.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.2...v0.202.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* **frontend:** send checkbox answers as a list of options ([#1891](https://github.com/ProteinDeficientsAnonymous/pda/issues/1891)) ([ada251e](https://github.com/ProteinDeficientsAnonymous/pda/commit/ada251ea52f884ea7088f91483332437d9c3c2b9))
+
 ## [0.202.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.1...v0.202.2) (2026-10-25)
 
 
