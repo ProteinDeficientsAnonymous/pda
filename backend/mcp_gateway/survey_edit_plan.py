@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
-from community._survey_schemas import SurveyPatchIn
+from community._survey_schemas import SurveyPatchIn, SurveyQuestionOrderIn
 from community._surveys import update_survey as update_survey_view
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -19,6 +19,14 @@ class Step:
     label: str
     view: Callable[..., Any]
     args: tuple[Any, ...] = ()
+    # The created question's id is kept under this key, for the reorder step.
+    creates: str = ""
+    order: tuple[str, ...] = ()
+
+    def call_args(self, created: dict[str, str]) -> tuple[Any, ...]:
+        if not self.order:
+            return self.args
+        return (SurveyQuestionOrderIn(question_ids=[created.get(k, k) for k in self.order]),)
 
 
 @dataclass

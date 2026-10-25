@@ -91,7 +91,30 @@ class UpdateQuestion(BaseModel):
     )
 
 
-QuestionOp = Annotated[RemoveQuestion | UpdateQuestion, Field(discriminator="op")]
+class AddQuestion(BaseModel):
+    """add a question; its show_if can only point at a question that already exists"""
+
+    model_config = _FORBID
+
+    op: Literal["add"]
+    question: EditQuestionFields
+    after: Annotated[int, Field(ge=0, strict=True)] | UUID | None = Field(
+        None, description="put it after this question (position or id); 0: first; empty: last"
+    )
+
+
+class ReorderQuestions(BaseModel):
+    """put the questions in a new order; added questions go right after their `after` question"""
+
+    model_config = _FORBID
+
+    op: Literal["reorder"]
+    order: list[QuestionRef] = Field(description="every question that stays, in its new order")
+
+
+QuestionOp = Annotated[
+    RemoveQuestion | UpdateQuestion | AddQuestion | ReorderQuestions, Field(discriminator="op")
+]
 QuestionOps = Annotated[
     list[QuestionOp], Field(min_length=1, description="question changes, applied in order")
 ]

@@ -75,14 +75,17 @@ async def _stopped(
 
 
 async def _apply(user: User, survey_id: UUID, steps: list[Step]) -> None:
+    created: dict[str, str] = {}
     for done, step in enumerate(steps):
         try:
             # A cancelled await doesn't stop the view's thread, so let each write finish.
             with anyio.CancelScope(shield=True):
-                await call_view(step.view, user, survey_id, *step.args)
+                body = await call_view(step.view, user, survey_id, *step.call_args(created))
         # Exception, not BaseException: a cancel lands at the checkpoint, between steps.
         except Exception as exc:
             raise await _stopped(user, survey_id, steps, done, exc) from exc
+        if step.creates:
+            created[step.creates] = body["id"]
         try:
             await checkpoint()
         except anyio.get_cancelled_exc_class():
@@ -94,7 +97,7 @@ async def _apply(user: User, survey_id: UUID, steps: list[Step]) -> None:
 @pda_tool(
     PermissionKey.MANAGE_SURVEYS,
     description=(
-        "edit a survey in place: its settings, and change or remove questions. "
+        "edit a survey in place: its settings, and add, change, remove or reorder questions. "
         "send only what changes. question positions always mean the survey as it was before this "
         "edit, so read it with get_survey first. a switched-off survey is saved right away. for a "
         "switched-on survey (members may be answering), the first call saves nothing and returns "
