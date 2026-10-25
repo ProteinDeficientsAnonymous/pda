@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/api/client';
 
 import {
+  fetchSseTicket,
   notificationKeys,
   useMarkAllNotificationsRead,
   useNotificationHistory,
@@ -209,5 +210,25 @@ describe('useMarkAllNotificationsRead', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(qc.getQueryData(notificationKeys.unread)).toBe(3);
     expect(qc.getQueryData(notificationKeys.bell)).toEqual([{ id: 'n1', isRead: false }]);
+  });
+});
+
+describe('fetchSseTicket', () => {
+  it('mints a session ticket with no params', async () => {
+    mockedPost.mockResolvedValueOnce({ data: { ticket: 't-1' } });
+
+    await expect(fetchSseTicket()).resolves.toBe('t-1');
+    expect(mockedPost).toHaveBeenCalledWith('/api/notifications/sse-ticket/', undefined, {
+      params: undefined,
+    });
+  });
+
+  it('sends the event scope as query params for logged-out rsvp viewers', async () => {
+    mockedPost.mockResolvedValueOnce({ data: { ticket: 't-2' } });
+
+    await expect(fetchSseTicket({ eventId: 'evt-1', token: 'rsvp-tok' })).resolves.toBe('t-2');
+    expect(mockedPost).toHaveBeenCalledWith('/api/notifications/sse-ticket/', undefined, {
+      params: { event_id: 'evt-1', token: 'rsvp-tok' },
+    });
   });
 });
