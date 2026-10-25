@@ -27,7 +27,7 @@ def _csv():
         csv_line(tx="t1", name="Alex Kim"),
         csv_line(tx="t2", name="Pat Doe", note="dinner"),
         csv_line(tx="t3", name="Alex Kim", status="FAILED"),
-        csv_line(tx="t4", name="Alex Kim", amount="-$40"),
+        csv_line(tx="t4", name="Rent Co", amount="-$40"),
         csv_line(tx="t5", name="Alex Kim", amount="$16"),
         csv_line(tx="t6", name="Alex Kim", date="2026-01-01 10:00:00 EST"),
     )
@@ -70,6 +70,18 @@ class TestReview:
     def test_already_verified_guests_are_left_out_of_gap(self):
         review = review_cashapp_csv(_csv(), event_ctx(), [JAMIE, SAM], {"u-jamie", "u-sam"})
         assert review.gap_guests == []
+
+    def test_partial_refund_to_the_guest_keeps_them_pending(self):
+        csv_text = make_csv(
+            csv_line(tx="t1", name="Alex Kim"),
+            csv_line(tx="t2", name="Alex Kim", amount="-$5", date="2026-10-02 18:00:00 EDT"),
+        )
+        review = review_cashapp_csv(csv_text, event_ctx(), [ALEX])
+        assert (review.proposals[0].confidence, review.proposals[0].reason) == (
+            MatchConfidence.UNSURE,
+            "refunded?",
+        )
+        assert [g.reason for g in review.gap_guests] == [GapReason.UNSURE_MATCH_PENDING]
 
     def test_unsure_match_stays_in_gap_as_pending(self):
         alex = guest("u-alex", "Alex", "Kim", has_plus_one=True, said_paid=True)
