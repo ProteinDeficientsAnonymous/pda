@@ -95,6 +95,7 @@ describe('NotificationRow', () => {
       id: 'n4',
       notificationType: NotificationType.PollSeatedUnpaid,
       eventId: 'e321',
+      surveyId: null,
       relatedUserId: null,
       message: "you're going, but your spot isn't confirmed until you pay",
       isRead: false,
