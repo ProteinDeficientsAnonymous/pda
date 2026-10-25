@@ -1,8 +1,8 @@
 import MockAdapter from 'axios-mock-adapter';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { restoreSession } from './auth';
-import { authClient } from './client';
+import { restoreSession, updateProfile } from './auth';
+import { apiClient, authClient } from './client';
 
 const wireUser = {
   id: 'user-1',
@@ -90,5 +90,36 @@ describe('restoreSession', () => {
 
     expect(calls).toBe(2);
     expect(result).toBeNull();
+  });
+});
+
+describe('updateProfile', () => {
+  let apiMock: MockAdapter;
+
+  beforeEach(() => {
+    apiMock = new MockAdapter(apiClient);
+  });
+
+  it('sends the monthly digest opt-out and maps it back', async () => {
+    apiMock
+      .onPatch('/api/auth/me/', { monthly_digest_opt_out: true })
+      .reply(200, { ...wireUser, monthly_digest_opt_out: true });
+
+    const user = await updateProfile({ monthlyDigestOptOut: true });
+
+    expect(user.monthlyDigestOptOut).toBe(true);
+  });
+
+  it('sends the host digest opt-out and maps it back', async () => {
+    let sent: unknown;
+    apiMock.onPatch('/api/auth/me/').reply((config) => {
+      sent = JSON.parse(config.data as string);
+      return [200, { ...wireUser, host_digest_opt_out: true }];
+    });
+
+    const user = await updateProfile({ hostDigestOptOut: true });
+
+    expect(sent).toEqual({ host_digest_opt_out: true });
+    expect(user.hostDigestOptOut).toBe(true);
   });
 });

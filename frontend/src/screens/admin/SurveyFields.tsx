@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { type Event, EventType, type EventTypeValue } from '@/models/event';
 
-export type SurveyFormValues = Omit<SurveyInput, 'isActive'>;
+export type SurveyFormValues = Omit<SurveyInput, 'isActive' | 'confirmationMessage'>;
 
 interface Props {
   values: SurveyFormValues;
@@ -136,16 +136,6 @@ export function SurveyFields({
           ) : null}
         </span>
       </label>
-      <Textarea
-        label="confirmation message"
-        value={values.confirmationMessage}
-        onChange={(e) => {
-          onChange({ confirmationMessage: e.target.value });
-        }}
-        hint="shown to the participant after they submit"
-        rows={2}
-        maxLength={1000}
-      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <DateTimePicker
           label="opens at"

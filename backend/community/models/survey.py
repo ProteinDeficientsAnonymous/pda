@@ -79,6 +79,8 @@ class SurveyQuestion(models.Model):
         default=SurveyQuestionType.TEXT,
     )
     options = models.JSONField(default=list, blank=True)
+    # Shown under a section header; other question types leave it empty.
+    description = models.TextField(blank=True, default="")
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
     # {question_id, operator, value}; None means always shown.

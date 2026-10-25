@@ -127,6 +127,13 @@
         "params": []
       },
       {
+        "name": "PAYMENT_VERIFY_NOT_GUESTS",
+        "value": "event.payment_verify_not_guests",
+        "params": [
+          "user_ids"
+        ]
+      },
+      {
         "name": "WAITLIST_ORDER_STALE",
         "value": "event.waitlist_order_stale",
         "params": []
@@ -972,6 +979,27 @@
         "value": "attendance_import.ambiguous_user_pick",
         "params": [
           "row_index"
+        ]
+      }
+    ],
+    "CashAppImport": [
+      {
+        "name": "CSV_EMPTY",
+        "value": "cashapp_import.csv_empty",
+        "params": []
+      },
+      {
+        "name": "CSV_MISSING_COLUMNS",
+        "value": "cashapp_import.csv_missing_columns",
+        "params": [
+          "columns"
+        ]
+      },
+      {
+        "name": "CSV_TOO_MANY_ROWS",
+        "value": "cashapp_import.csv_too_many_rows",
+        "params": [
+          "max_rows"
         ]
       }
     ],

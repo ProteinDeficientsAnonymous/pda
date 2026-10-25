@@ -72,6 +72,7 @@ class QuestionType(models.TextChoices):
     BOOLEAN = "boolean", "Yes / No"
     RATING = "rating", "Rating"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
+    SECTION = "section", "Section"
 
 
 # Survey authors the full catalog; keep the historical name as an alias.
@@ -122,6 +123,10 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+# Guests a payment import can match and verify.
+MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
 
 
 class AttendanceStatus(models.TextChoices):

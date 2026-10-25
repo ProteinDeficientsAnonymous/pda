@@ -1,3 +1,138 @@
+## [0.202.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.0...v0.202.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** accept checkbox answers as a list of options ([#1889](https://github.com/ProteinDeficientsAnonymous/pda/issues/1889)) ([f7d6688](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7d6688fddcdbdc88ef22d540935f9a34a734111))
+
+# [0.202.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.201.0...v0.202.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - send daily host digests ([#1881](https://github.com/ProteinDeficientsAnonymous/pda/issues/1881)) ([f8311c4](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8311c4b5db6cc4113e22e87f9cc6a112b48ae09))
+
+# [0.201.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.200.0...v0.201.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - host digest email template ([#1880](https://github.com/ProteinDeficientsAnonymous/pda/issues/1880)) ([62c257d](https://github.com/ProteinDeficientsAnonymous/pda/commit/62c257de3631a1e97e74636b1ab311693c2574ee))
+
+# [0.200.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.199.0...v0.200.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - count new comments in host digests ([#1879](https://github.com/ProteinDeficientsAnonymous/pda/issues/1879)) ([20f6d3b](https://github.com/ProteinDeficientsAnonymous/pda/commit/20f6d3b8c98a5a804223107d204ef067bbdb99d8))
+
+# [0.199.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.198.0...v0.199.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - collect rsvp activity for host digests ([#1878](https://github.com/ProteinDeficientsAnonymous/pda/issues/1878)) ([4210d64](https://github.com/ProteinDeficientsAnonymous/pda/commit/4210d640a918332a37b2d6a816b372a31287a4b2))
+* **events:** apply official event defaults server-side ([#1811](https://github.com/ProteinDeficientsAnonymous/pda/issues/1811)) ([20495af](https://github.com/ProteinDeficientsAnonymous/pda/commit/20495afb5a25b3523d6cfd4a28a62119a03e4910))
+
+# [0.198.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.197.0...v0.198.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - add host digest opt-out ([#1876](https://github.com/ProteinDeficientsAnonymous/pda/issues/1876)) ([3876c90](https://github.com/ProteinDeficientsAnonymous/pda/commit/3876c905004de7c6c7166e013268a7f8b6dd1e9c))
+* 1603 - pick host digest events and recipients ([#1877](https://github.com/ProteinDeficientsAnonymous/pda/issues/1877)) ([50448b8](https://github.com/ProteinDeficientsAnonymous/pda/commit/50448b8874037d8848f0b057eb28d43a99dac058))
+
+# [0.197.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.196.0...v0.197.0) (2026-10-25)
+
+
+### Features
+
+* **events:** read the official cash app link from the api ([#1810](https://github.com/ProteinDeficientsAnonymous/pda/issues/1810)) ([25d3000](https://github.com/ProteinDeficientsAnonymous/pda/commit/25d3000d5099e22a7cafbd1c1b207e48a801486f))
+
+# [0.196.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.195.0...v0.196.0) (2026-10-25)
+
+
+### Features
+
+* **events:** read official rsvp questions from the api ([#1809](https://github.com/ProteinDeficientsAnonymous/pda/issues/1809)) ([b23a888](https://github.com/ProteinDeficientsAnonymous/pda/commit/b23a8889e9020b83fe5c3898a7e75de3c85c5c42))
+
+# [0.195.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.194.0...v0.195.0) (2026-10-25)
+
+
+### Features
+
+* **events:** add official event defaults endpoint ([#1808](https://github.com/ProteinDeficientsAnonymous/pda/issues/1808)) ([37ea30d](https://github.com/ProteinDeficientsAnonymous/pda/commit/37ea30d46ab3ced35edc96e054f5bd8ce01a83f8))
+
+# [0.194.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.193.0...v0.194.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - track when an rsvp status changes ([#1875](https://github.com/ProteinDeficientsAnonymous/pda/issues/1875)) ([f719b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/f719b57c1251e4607b3cbd551bf381284e18a5fe))
+
+# [0.193.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.192.0...v0.193.0) (2026-10-25)
+
+
+### Features
+
+* **events:** add payment verified fields to rsvps ([#1837](https://github.com/ProteinDeficientsAnonymous/pda/issues/1837)) ([f4d0190](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4d0190df7e30a3a011ae75e0ab2a53b578d8540))
+
+# [0.192.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.191.0...v0.192.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** warn in update_event previews about non-member removal, over-capacity and stale map pins ([#1825](https://github.com/ProteinDeficientsAnonymous/pda/issues/1825)) ([dd543ff](https://github.com/ProteinDeficientsAnonymous/pda/commit/dd543ffab9b571fe804b3587812b418bcc7525b7))
+
+# [0.191.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.190.0...v0.191.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** add section header question type ([#1885](https://github.com/ProteinDeficientsAnonymous/pda/issues/1885)) ([92297fa](https://github.com/ProteinDeficientsAnonymous/pda/commit/92297fab8580dfe296c4b1694a62d28ab3306951))
+
+# [0.190.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.189.0...v0.190.0) (2026-10-25)
+
+
+### Features
+
+* add monthly digest with veganniversaries and its own opt-out ([#1866](https://github.com/ProteinDeficientsAnonymous/pda/issues/1866)) ([4633c5b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4633c5b6999f30e99aca0bb425d711d63e3d7fd7))
+
+# [0.189.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.188.0...v0.189.0) (2026-10-25)
+
+
+### Features
+
+* notify survey managers of new survey responses ([#1900](https://github.com/ProteinDeficientsAnonymous/pda/issues/1900)) ([0c2d6cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c2d6cf6a5e41f83b3cf4fab041e3e4b8dc44de1))
+
+# [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** edit the thank-you message in a locked editor card ([#1896](https://github.com/ProteinDeficientsAnonymous/pda/issues/1896)) ([66b3d47](https://github.com/ProteinDeficientsAnonymous/pda/commit/66b3d47eae8ec940f6fbe31d5c37c9a7afb47359))
+
+# [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** redirect to a thank-you page after submitting ([#1895](https://github.com/ProteinDeficientsAnonymous/pda/issues/1895)) ([f3552b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3552b2eb12a6daf606d0cb63aabdc1e0bffa382))
+
+## [0.186.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.0...v0.186.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **surveys:** preview any survey from a read-only admin screen ([#1884](https://github.com/ProteinDeficientsAnonymous/pda/issues/1884)) ([8240dad](https://github.com/ProteinDeficientsAnonymous/pda/commit/8240dad6e989757b240486e3477656e849862f1a))
+
+# [0.186.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.185.0...v0.186.0) (2026-10-25)
+
+
+### Features
+
+* **mcp:** find inactive members by qualifying attendance ([#1864](https://github.com/ProteinDeficientsAnonymous/pda/issues/1864)) ([5aede93](https://github.com/ProteinDeficientsAnonymous/pda/commit/5aede938d3c952e51c0165eba74f7b628275f61c))
+
 # [0.185.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.184.0...v0.185.0) (2026-10-25)
 
 

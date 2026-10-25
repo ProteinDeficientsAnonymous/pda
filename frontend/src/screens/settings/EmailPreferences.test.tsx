@@ -55,9 +55,34 @@ describe('EmailPreferences', () => {
     expect(onChange).toHaveBeenCalledWith({ attendanceNudgeOptOut: true });
   });
 
+  it('shows the host updates toggle off when opted out', () => {
+    renderPrefs({ hostDigestOptOut: true });
+    expect(screen.getByRole('switch', { name: /updates about events i host/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('opts out when the host updates toggle is switched off', async () => {
+    const { onChange } = renderPrefs({ hostDigestOptOut: false });
+    await userEvent.click(screen.getByRole('switch', { name: /updates about events i host/i }));
+    expect(onChange).toHaveBeenCalledWith({ hostDigestOptOut: true });
+  });
+
   it('leaves the weekly digest toggle working independently', async () => {
     const { onChange } = renderPrefs({ weeklyDigestOptOut: false });
     await userEvent.click(screen.getByRole('switch', { name: /weekly digest/i }));
     expect(onChange).toHaveBeenCalledWith({ weeklyDigestOptOut: true });
+  });
+
+  it('leaves veganniversaries out of the monthly digest label for tentative members', () => {
+    renderPrefs({ isMember: false });
+    expect(screen.getByRole('switch', { name: 'monthly digest of events' })).toBeInTheDocument();
+  });
+
+  it('opts out of the monthly digest separately from the weekly one', async () => {
+    const { onChange } = renderPrefs({ monthlyDigestOptOut: false });
+    await userEvent.click(screen.getByRole('switch', { name: /monthly digest/i }));
+    expect(onChange).toHaveBeenCalledWith({ monthlyDigestOptOut: true });
   });
 });
