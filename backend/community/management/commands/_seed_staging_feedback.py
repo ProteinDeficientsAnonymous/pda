@@ -76,15 +76,20 @@ def _choice_answer(question: SurveyQuestion, index: int) -> str | None:
     return options[CHOICE_SKEW[index % len(CHOICE_SKEW)] % len(options)] if options else None
 
 
+def _checkbox_answer(question: SurveyQuestion, index: int) -> list[str] | None:
+    choice = _choice_answer(question, index)
+    return [choice] if choice is not None else None
+
+
 def _text_answer(question: SurveyQuestion, index: int) -> str | None:
     pool = TEXT_ANSWERS.get(question.label, GENERIC_TEXT)
     return pool[index % len(pool)] or None
 
 
-_ANSWER_BUILDERS: dict[str, Callable[[SurveyQuestion, int], str | None]] = {
+_ANSWER_BUILDERS: dict[str, Callable[[SurveyQuestion, int], str | list[str] | None]] = {
     SurveyQuestionType.RADIO: _choice_answer,
     SurveyQuestionType.SELECT: _choice_answer,
-    SurveyQuestionType.CHECKBOX: _choice_answer,
+    SurveyQuestionType.CHECKBOX: _checkbox_answer,
     SurveyQuestionType.TEXT: _text_answer,
     SurveyQuestionType.TEXTAREA: _text_answer,
     SurveyQuestionType.RATING: lambda _q, i: str(5 - CHOICE_SKEW[i % len(CHOICE_SKEW)]),

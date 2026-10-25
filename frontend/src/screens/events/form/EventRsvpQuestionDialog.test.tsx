@@ -68,17 +68,18 @@ describe('EventRsvpQuestionDialog', () => {
     });
   });
 
-  it('rejects commas in select multiple options', async () => {
+  it('allows commas in select multiple options', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     await user.type(screen.getByLabelText('question'), 'help');
     fireEvent.change(screen.getByLabelText('type'), { target: { value: 'checkbox' } });
-    await user.type(screen.getByLabelText('option 1'), 'yes, with a guest');
+    await user.type(screen.getByLabelText('option 1'), 'club events (book club, movie club)');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/options cannot contain commas/i);
-    expect(onSave).not.toHaveBeenCalled();
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ options: ['club events (book club, movie club)'] }),
+    );
   });
 
   it('allows commas in select one options', async () => {

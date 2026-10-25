@@ -46,7 +46,6 @@ export const Code = {
     RsvpQuestionDuplicate: 'event.rsvp_question_duplicate',
     RsvpQuestionConflict: 'event.rsvp_question_conflict',
     RsvpQuestionOptionsRequired: 'event.rsvp_question_options_required',
-    RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
     RsvpAnswerRequired: 'event.rsvp_answer_required',
     RsvpAnswerInvalidOption: 'event.rsvp_answer_invalid_option',
     RsvpAnswerInvalidFormat: 'event.rsvp_answer_invalid_format',
@@ -334,7 +333,6 @@ export type ValidationCode =
   | 'event.rsvp_question_duplicate'
   | 'event.rsvp_question_conflict'
   | 'event.rsvp_question_options_required'
-  | 'event.rsvp_question_option_no_comma'
   | 'event.rsvp_answer_required'
   | 'event.rsvp_answer_invalid_option'
   | 'event.rsvp_answer_invalid_format'
@@ -552,7 +550,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_question_duplicate': [],
   'event.rsvp_question_conflict': [],
   'event.rsvp_question_options_required': [],
-  'event.rsvp_question_option_no_comma': [],
   'event.rsvp_answer_required': ['label'],
   'event.rsvp_answer_invalid_option': ['label'],
   'event.rsvp_answer_invalid_format': ['label'],

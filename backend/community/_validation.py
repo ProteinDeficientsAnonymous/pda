@@ -44,7 +44,6 @@ class Code:
         RSVP_QUESTION_DUPLICATE = "event.rsvp_question_duplicate"
         RSVP_QUESTION_CONFLICT = "event.rsvp_question_conflict"
         RSVP_QUESTION_OPTIONS_REQUIRED = "event.rsvp_question_options_required"
-        RSVP_QUESTION_OPTION_NO_COMMA = "event.rsvp_question_option_no_comma"
         RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }
         RSVP_ANSWER_INVALID_OPTION = "event.rsvp_answer_invalid_option"  # params: { label: str }
         RSVP_ANSWER_INVALID_FORMAT = "event.rsvp_answer_invalid_format"  # params: { label: str }
