@@ -1,3 +1,10 @@
+## [0.178.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.2...v0.178.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* **events:** 404 invite-only events for anon and prompt them to log in ([#1826](https://github.com/ProteinDeficientsAnonymous/pda/issues/1826)) ([498eea3](https://github.com/ProteinDeficientsAnonymous/pda/commit/498eea34d34b29d6da9280c14772927817e7183d))
+
 ## [0.178.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.178.1...v0.178.2) (2026-10-25)
 
 
