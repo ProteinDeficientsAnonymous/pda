@@ -4935,6 +4935,8 @@ export interface components {
             notification_type: string;
             /** Related User Id */
             related_user_id: string | null;
+            /** Survey Id */
+            survey_id: string | null;
         };
         /** OnboardingIn */
         OnboardingIn: {
