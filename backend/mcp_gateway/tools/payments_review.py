@@ -5,10 +5,10 @@ from users.permissions import PermissionKey
 
 from mcp_gateway.cashapp_review import load_review, remember_csv, review_out
 from mcp_gateway.server import current_user, pda_tool
+from mcp_gateway.tools.events_write import EventRef
 
 MAX_CSV_CHARS = 2_000_000
 
-EventRef = Annotated[str, Field(description="event id (uuid) or slug, e.g. from list_my_events")]
 CsvText = Annotated[
     str,
     Field(
