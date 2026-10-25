@@ -13,6 +13,10 @@ describe('renderAnswer', () => {
     expect(renderAnswer('plain')).toBe('plain');
   });
 
+  it('joins list answers with commas', () => {
+    expect(renderAnswer({ label: 'q', answer: ['a, b', 'c'] })).toBe('a, b, c');
+  });
+
   it('joins object answers one pair per line', () => {
     expect(renderAnswer({ label: 'q', answer: { a: '1', b: '2' } })).toBe('a: 1\nb: 2');
   });

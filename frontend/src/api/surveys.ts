@@ -53,7 +53,7 @@ export interface Survey {
   feedbackEventType: '' | EventTypeValue;
   questions: SurveyQuestion[];
   myResponseId: string | null;
-  myAnswers: Record<string, { label: string; answer: string | Record<string, string> }> | null;
+  myAnswers: Record<string, { label: string; answer: AnswerValue }> | null;
   pollResult: {
     id: string;
     winningDatetime: string;
@@ -185,7 +185,7 @@ export function useSurvey(slug: string | undefined) {
   });
 }
 
-export type AnswerValue = string | Record<string, string>;
+export type AnswerValue = string | string[] | Record<string, string>;
 
 export function useSubmitSurvey(slug: string) {
   const qc = useQueryClient();

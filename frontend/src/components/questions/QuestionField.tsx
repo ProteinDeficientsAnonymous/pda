@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
+import { checkboxValues } from './checkboxAnswer';
 import { FieldError } from './FieldError';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
@@ -74,10 +75,8 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
         <CheckboxGroup
           {...common}
           options={question.options}
-          value={asCsv(value)}
-          onChange={(list) => {
-            onChange(list.join(','));
-          }}
+          value={checkboxValues(value)}
+          onChange={onChange}
         />
       );
     case QuestionType.Boolean:
@@ -132,12 +131,8 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
 function asString(v: AnswerValue | undefined): string {
   return typeof v === 'string' ? v : '';
 }
-function asCsv(v: AnswerValue | undefined): string[] {
-  const s = asString(v);
-  return s ? s.split(',').filter(Boolean) : [];
-}
 function asAvailabilityMap(v: AnswerValue | undefined): Record<string, string> {
-  return typeof v === 'object' ? v : {};
+  return typeof v === 'object' && !Array.isArray(v) ? v : {};
 }
 
 function RadioGroup({

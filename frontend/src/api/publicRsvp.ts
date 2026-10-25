@@ -9,7 +9,7 @@ import {
   setEventDetailData,
 } from '@/api/events';
 import type { components } from '@/api/types.gen';
-import type { Event, RsvpInputStatus } from '@/models/event';
+import type { Event, QuestionnaireAnswer, RsvpInputStatus } from '@/models/event';
 
 import { apiClient } from './client';
 
@@ -114,7 +114,7 @@ interface UpdateArgs {
   hasPlusOne: boolean;
   comment?: string;
   paidConfirmed?: boolean;
-  questionnaireResponses?: Record<string, string>;
+  questionnaireResponses?: Record<string, QuestionnaireAnswer>;
 }
 
 function useManageInvalidate(token: string) {

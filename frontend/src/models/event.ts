@@ -3,6 +3,9 @@ import type { components } from '@/api/types.gen';
 import { hasPermission, Permission } from './permissions';
 import type { User } from './user';
 
+/** checkbox answers are a list of ticked options; older ones are comma-joined strings */
+export type QuestionnaireAnswer = string | string[];
+
 export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export const EventType = {
@@ -114,7 +117,7 @@ export interface EventGuest {
   paidConfirmed: boolean;
   paymentVerified: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  questionnaireResponses: Record<string, { label: string; answer: string }>;
+  questionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
 }
 
 export interface EventCancellation {
@@ -190,7 +193,7 @@ export interface Event {
   myRsvp: string | null;
   myPaidConfirmed: boolean;
   /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
-  myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
+  myQuestionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   linkedSurveys: EventLinkedSurvey[];
