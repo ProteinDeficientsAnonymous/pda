@@ -27,7 +27,10 @@ from community.models.event_slug import SLUG_MAX
 
 RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
-RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
+RsvpTextAnswer = Annotated[
+    str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})
+]
+RsvpAnswer = RsvpTextAnswer | list[RsvpQuestionOption]
 
 
 class EventRsvpQuestionOut(BaseModel):
@@ -234,7 +237,7 @@ class RSVPIn(BaseModel):
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     questionnaire_responses: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
-        description="Question UUID to answer; checkbox values are comma-separated.",
+        description="Question UUID to answer; checkbox answers are a list of ticked options.",
     )
 
 

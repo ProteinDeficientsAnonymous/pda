@@ -5749,10 +5749,21 @@
           },
           "questionnaire_responses": {
             "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "description": "Question UUID to answer; checkbox answers are a list of ticked options.",
             "title": "Questionnaire Responses",
             "type": "object"
           },
@@ -5805,8 +5816,19 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "maxLength": 2000,
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "maxLength": 2000,
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
                 },
                 "type": "object"
               },
@@ -6150,10 +6172,21 @@
           },
           "questionnaire_responses": {
             "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "description": "Question UUID to answer; checkbox answers are a list of ticked options.",
             "title": "Questionnaire Responses",
             "type": "object"
           },

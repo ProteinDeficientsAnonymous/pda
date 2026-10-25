@@ -24,7 +24,11 @@ from community._event_helpers import (
     load_event_with_stats_prefetch,
 )
 from community._event_read_visibility import _enforce_event_read_visibility
-from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
+from community._event_rsvp_answers import (
+    AnswersIn,
+    answers_required_for_status,
+    build_rsvp_answers,
+)
 from community._event_schemas import EventOut, RSVPIn
 from community._rsvp_counts import _attending_headcount_db
 from community._rsvp_payment import requires_payment_gate
@@ -218,7 +222,7 @@ def _snapshot_rsvp_answers(
     event: Event,
     existing: EventRSVP | None,
     final_status: str,
-    answers: dict[str, str] | None,
+    answers: AnswersIn | None,
     *,
     require_answers: bool = True,
 ) -> dict:
@@ -273,7 +277,7 @@ class _RsvpApply:
     status: str
     has_plus_one: bool = False
     paid_confirmed: bool = False
-    answers: dict[str, str] | None = None
+    answers: AnswersIn | None = None
     # Host auto-rsvps bypass the payment gate and required questions.
     skip_host_gates: bool = False
 
