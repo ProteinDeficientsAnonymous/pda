@@ -39,4 +39,5 @@ def test_survey_question_schemas_use_catalog_question_type():
         "boolean",
         "rating",
         "datetime_poll",
+        "section",
     }

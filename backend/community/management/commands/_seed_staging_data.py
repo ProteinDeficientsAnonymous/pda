@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from community.models.choices import EventType, JoinRequestStatus, PageVisibility
 
 from ._seed_shared import SeedEvent
+from ._seed_staging_feedback import FEEDBACK_EVENTS
 
 PASSWORD = "testPassword1@"
 
@@ -241,7 +242,7 @@ STAGING_EVENTS = [
         rsvp_enabled=True,
         max_attendees=2,
     ),
-]
+] + FEEDBACK_EVENTS
 
 
 @dataclass

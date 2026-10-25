@@ -1,3 +1,4 @@
+from django.utils import timezone
 from notifications._email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
 from users.models import NonMemberRsvpToken, User
@@ -27,7 +28,9 @@ def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[st
     if not force:
         raise_validation(Code.Event.WOULD_REMOVE_NON_MEMBERS, status_code=409, count=len(rsvps))
     user_ids = [str(r.user_id) for r in rsvps]
-    EventRSVP.objects.filter(id__in=[r.id for r in rsvps]).update(status=RSVPStatus.REMOVED)
+    EventRSVP.objects.filter(id__in=[r.id for r in rsvps]).update(
+        status=RSVPStatus.REMOVED, status_changed_at=timezone.now()
+    )
     return user_ids
 
 
