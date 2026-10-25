@@ -11,9 +11,7 @@ from community._cashapp_import_types import (
     MatchSource,
     PaymentProposal,
 )
-from community.models import RSVPStatus
-
-MATCHABLE_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
+from community.models import MATCHABLE_RSVP_STATUSES, RSVPStatus
 
 
 @dataclass(frozen=True)
@@ -171,14 +169,14 @@ def _flag_shared_guests(proposals: list[PaymentProposal]) -> list[PaymentProposa
 
 
 def match_payments(kept: list[KeptPayment], guests: list[GuestRecord]) -> list[PaymentProposal]:
-    index = NameIndex.build([g for g in guests if g.status in MATCHABLE_STATUSES])
+    index = NameIndex.build([g for g in guests if g.status in MATCHABLE_RSVP_STATUSES])
     return _flag_shared_guests([propose_match(p, index) for p in kept])
 
 
 def amount_mismatch_leads(
     mismatches: list[KeptPayment], guests: list[GuestRecord]
 ) -> list[AmountMismatchLead]:
-    index = NameIndex.build([g for g in guests if g.status in MATCHABLE_STATUSES])
+    index = NameIndex.build([g for g in guests if g.status in MATCHABLE_RSVP_STATUSES])
     leads = []
     for payment in mismatches:
         senders, _ = index.sender_matches(payment.row.sender_name)
