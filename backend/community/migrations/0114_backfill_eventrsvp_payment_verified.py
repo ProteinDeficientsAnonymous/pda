@@ -23,6 +23,15 @@ def _is_set_paid(entry) -> bool:
     return entry.action == SET_ACTION and (entry.details or {}).get("paid_confirmed") is True
 
 
+def _host_stamped(entry, rsvp) -> bool:
+    # The old toggle stamped paid_confirmed_at a few ms before writing the audit row.
+    details = entry.details or {}
+    return (
+        details.get("was_paid") is False
+        and details.get("paid_confirmed_at") == rsvp.paid_confirmed_at.isoformat()
+    )
+
+
 def backfill_payment_verified(apps, schema_editor):
     AuditLogEntry = apps.get_model("audit", "AuditLogEntry")
     EventRSVP = apps.get_model("community", "EventRSVP")
@@ -41,13 +50,15 @@ def backfill_payment_verified(apps, schema_editor):
         event_id__in=event_ids,
         paid_confirmed_at__isnull=False,
         payment_verified_at__isnull=True,
-    ).only("id", "event_id", "user_id", "created_at")
+    ).only("id", "event_id", "user_id", "created_at", "paid_confirmed_at")
     for rsvp in candidates.iterator():
         entry = set_paid.get((str(rsvp.event_id), str(rsvp.user_id)))
         # A removed-and-recreated rsvp must not inherit the old row's verification.
         if entry is None or entry.created_at < rsvp.created_at:
             continue
-        rsvp.payment_verified_at = entry.created_at
+        rsvp.payment_verified_at = (
+            rsvp.paid_confirmed_at if _host_stamped(entry, rsvp) else entry.created_at
+        )
         rsvp.payment_verified_by_id = entry.actor_id
         updated.append(rsvp)
     EventRSVP.objects.bulk_update(

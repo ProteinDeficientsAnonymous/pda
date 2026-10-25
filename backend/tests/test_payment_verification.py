@@ -70,6 +70,38 @@ class TestBackfill:
         assert rsvp.payment_verified_at == at
         assert rsvp.payment_verified_by == test_user
 
+    def test_host_stamped_row_keeps_the_stamp_as_its_verified_time(
+        self, rsvp, event, guest, test_user
+    ):
+        _log(
+            "guest_payment_changed",
+            test_user,
+            event,
+            guest,
+            timezone.now() - timedelta(days=1),
+            paid_confirmed=True,
+            was_paid=False,
+            paid_confirmed_at=rsvp.paid_confirmed_at.isoformat(),
+        )
+
+        rsvp = self._run(rsvp)
+
+        assert rsvp.payment_verified_at == rsvp.paid_confirmed_at
+
+    def test_self_attested_row_verifies_at_the_entry_time(self, rsvp, event, guest, test_user):
+        at = _log(
+            "guest_payment_changed",
+            test_user,
+            event,
+            guest,
+            timezone.now() - timedelta(days=1),
+            paid_confirmed=True,
+            was_paid=True,
+            paid_confirmed_at=rsvp.paid_confirmed_at.isoformat(),
+        )
+
+        assert self._run(rsvp).payment_verified_at == at
+
     def test_original_payload_shape_counts(self, rsvp, event, guest, test_user):
         """The first release logged only user_id + the requested paid_confirmed."""
         _log(
