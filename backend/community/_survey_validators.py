@@ -5,6 +5,7 @@ from collections.abc import Callable
 from community._question_answers import (
     assert_checkbox_members,
     assert_single_choice_member,
+    checkbox_values,
     is_answer_empty,
 )
 from community._survey_conditions import visible_question_ids
@@ -22,7 +23,7 @@ def _validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
     )
 
 
-def _validate_checkbox_answer(answer: str, q: SurveyQuestion) -> None:
+def _validate_checkbox_answer(answer: str | list[str], q: SurveyQuestion) -> None:
     assert_checkbox_members(
         answer,
         q.options,
@@ -91,7 +92,6 @@ def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) ->
 _TEXT_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], None]] = {
     SurveyQuestionType.RADIO: _validate_choice_answer,
     SurveyQuestionType.SELECT: _validate_choice_answer,
-    SurveyQuestionType.CHECKBOX: _validate_checkbox_answer,
     SurveyQuestionType.NUMBER: _validate_number_answer,
     SurveyQuestionType.BOOLEAN: _validate_boolean_answer,
     SurveyQuestionType.RATING: _validate_rating_answer,
@@ -102,7 +102,10 @@ _DICT_VALIDATORS: dict[str, Callable[[dict[str, str], SurveyQuestion], None]] = 
 }
 
 
-def _validate_one_answer(answer: str | dict[str, str], q: SurveyQuestion) -> None:
+def _validate_one_answer(answer: str | list[str] | dict[str, str], q: SurveyQuestion) -> None:
+    if q.field_type == SurveyQuestionType.CHECKBOX and isinstance(answer, str | list):
+        _validate_checkbox_answer(answer, q)
+        return
     if q.field_type in _DICT_VALIDATORS:
         if not isinstance(answer, dict):
             raise_validation(
@@ -131,7 +134,7 @@ def _answerable_ids(
 
 
 def _validate_survey_answers(
-    answers: dict[str, str | dict[str, str]],
+    answers: dict[str, str | list[str] | dict[str, str]],
     questions: dict[str, SurveyQuestion],
 ) -> None:
     """Raise ValidationException if any answer fails validation."""
@@ -152,7 +155,7 @@ def _validate_survey_answers(
 
 
 def _build_survey_answers(
-    answers: dict[str, str | dict[str, str]],
+    answers: dict[str, str | list[str] | dict[str, str]],
     questions: dict[str, SurveyQuestion],
 ) -> dict:
     result = {}
@@ -163,5 +166,7 @@ def _build_survey_answers(
         answer = answers.get(q_id)
         if answer is None or is_answer_empty(answer):
             continue
+        if isinstance(answer, list):
+            answer = list(dict.fromkeys(checkbox_values(answer)))
         result[q_id] = {"label": q.label, "answer": answer}
     return result

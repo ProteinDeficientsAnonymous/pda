@@ -10,6 +10,7 @@ from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
 
+from community._question_answers import checkbox_values, is_answer_empty
 from community._shared import ErrorOut, csv_response, csv_safe
 from community._survey_schemas import QuestionSummaryOut
 from community._surveys_responses import (
@@ -38,10 +39,10 @@ def _summary_buckets(q: SurveyQuestion) -> list[str]:
     return list(q.options or [])
 
 
-def _answer_values(q: SurveyQuestion, answer: str) -> list[str]:
+def _answer_values(q: SurveyQuestion, answer: str | list[str]) -> list[str]:
     if q.field_type == SurveyQuestionType.CHECKBOX:
-        return [v.strip() for v in answer.split(",") if v.strip()]
-    return [answer.strip()]
+        return checkbox_values(answer)
+    return [str(answer).strip()]
 
 
 def _answered_values(q: SurveyQuestion, responses: list[SurveyResponse]) -> list[list[str]]:
@@ -51,7 +52,11 @@ def _answered_values(q: SurveyQuestion, responses: list[SurveyResponse]) -> list
     return(list): one entry per answered response; checkbox entries hold many.
     """
     answers = ((r.answers.get(str(q.id)) or {}).get("answer") for r in responses)
-    return [_answer_values(q, a) for a in answers if isinstance(a, str) and a.strip()]
+    return [
+        _answer_values(q, a)
+        for a in answers
+        if isinstance(a, str | list) and not is_answer_empty(a)
+    ]
 
 
 def _rating_mean(counts: dict[str, int]) -> float | None:
@@ -90,6 +95,9 @@ def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
         return csv_safe(";".join(f"{opt}={answer[opt]}" for opt in ordered))
     if answer is None:
         return ""
+    if isinstance(answer, list):
+        # Options can contain "," or ";", so put one ticked option per line.
+        return csv_safe("\n".join(answer))
     text = str(answer)
     # Validated numbers like -5 stay numeric in spreadsheets instead of becoming '-5 text.
     if q.field_type == SurveyQuestionType.NUMBER and _PLAIN_NUMBER.fullmatch(text):

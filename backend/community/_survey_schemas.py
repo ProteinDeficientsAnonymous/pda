@@ -174,21 +174,23 @@ class SurveySubmitOut(SurveyResponseOut):
 
 
 # str for standard question types (text, select, number, etc.)
+# list[str] for checkbox answers (ticked options)
 # dict[str, str] for availability answers (option -> "yes"|"maybe")
 TextAnswer = str
+ChoiceListAnswer = list[str]
 AvailabilityAnswer = dict[str, str]
+SurveyAnswer = TextAnswer | ChoiceListAnswer | AvailabilityAnswer
 
 
 class SurveyAnswersIn(BaseModel):
-    answers: dict[str, TextAnswer | AvailabilityAnswer]
+    answers: dict[str, SurveyAnswer]
 
     @field_validator("answers")
     @classmethod
-    def validate_answer_lengths(
-        cls, v: dict[str, TextAnswer | AvailabilityAnswer]
-    ) -> dict[str, TextAnswer | AvailabilityAnswer]:
+    def validate_answer_lengths(cls, v: dict[str, SurveyAnswer]) -> dict[str, SurveyAnswer]:
         for key, answer in v.items():
-            if isinstance(answer, str) and len(answer) > FieldLimit.DESCRIPTION:
+            text = "".join(answer) if isinstance(answer, list) else answer
+            if isinstance(text, str) and len(text) > FieldLimit.DESCRIPTION:
                 raise ValueError(
                     f"Answer for question {key} exceeds {FieldLimit.DESCRIPTION} characters."
                 )

@@ -3,6 +3,7 @@
 from collections.abc import Iterable, Mapping
 from uuid import UUID
 
+from community._question_answers import checkbox_values
 from community._survey_schemas import ShowIfIn
 from community._validation import Code, raise_validation
 from community.models import (
@@ -156,9 +157,9 @@ def clear_dependent_conditions(survey_id: UUID, question_id: UUID) -> None:
         SurveyQuestion.objects.bulk_update(dependents, ["show_if"])
 
 
-def _condition_met(answer: str, operator: str, value: str, *, multi: bool) -> bool:
+def _condition_met(answer: str | list[str], operator: str, value: str, *, multi: bool) -> bool:
     if multi:
-        ticked = value in [v.strip() for v in answer.split(",") if v.strip()]
+        ticked = value in checkbox_values(answer)
         return not ticked if operator == ShowIfOperator.NOT_EQUALS else ticked
     if operator == ShowIfOperator.NOT_EQUALS:
         return answer != value
@@ -167,7 +168,7 @@ def _condition_met(answer: str, operator: str, value: str, *, multi: bool) -> bo
 
 def visible_question_ids(
     questions: Mapping[str, SurveyQuestion],
-    answers: Mapping[str, str | dict[str, str]],
+    answers: Mapping[str, str | list[str] | dict[str, str]],
 ) -> set[str]:
     """Ids of visible questions; a condition on a hidden question is never met, so hiding cascades."""
     visible: set[str] = set()
@@ -181,7 +182,7 @@ def visible_question_ids(
         if source_id not in visible:
             continue
         answer = answers.get(source_id)
-        if not isinstance(answer, str):
+        if not isinstance(answer, str | list):
             answer = ""
         if _condition_met(
             answer,

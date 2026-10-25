@@ -5447,7 +5447,7 @@ export interface components {
         SurveyAnswersIn: {
             /** Answers */
             answers: {
-                [key: string]: string | {
+                [key: string]: string | string[] | {
                     [key: string]: string;
                 };
             };
