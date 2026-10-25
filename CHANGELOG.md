@@ -1,3 +1,10 @@
+# [0.188.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.187.0...v0.188.0) (2026-10-25)
+
+
+### Features
+
+* **surveys:** edit the thank-you message in a locked editor card ([#1896](https://github.com/ProteinDeficientsAnonymous/pda/issues/1896)) ([66b3d47](https://github.com/ProteinDeficientsAnonymous/pda/commit/66b3d47eae8ec940f6fbe31d5c37c9a7afb47359))
+
 # [0.187.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.186.1...v0.187.0) (2026-10-25)
 
 
