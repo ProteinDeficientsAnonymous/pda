@@ -975,6 +975,27 @@
         ]
       }
     ],
+    "CashAppImport": [
+      {
+        "name": "CSV_EMPTY",
+        "value": "cashapp_import.csv_empty",
+        "params": []
+      },
+      {
+        "name": "CSV_MISSING_COLUMNS",
+        "value": "cashapp_import.csv_missing_columns",
+        "params": [
+          "columns"
+        ]
+      },
+      {
+        "name": "CSV_TOO_MANY_ROWS",
+        "value": "cashapp_import.csv_too_many_rows",
+        "params": [
+          "max_rows"
+        ]
+      }
+    ],
     "AttendanceMark": [
       {
         "name": "EVENT_OR_TITLE_REQUIRED",

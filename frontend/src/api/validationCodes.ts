@@ -511,6 +511,22 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
 
+    // Cash App import
+    case Code.CashAppImport.CsvEmpty:
+      return "that csv doesn't have any rows — export your cash app activity and try again";
+    case Code.CashAppImport.CsvMissingColumns: {
+      const columns = typeof err.params?.columns === 'string' ? err.params.columns : null;
+      return columns
+        ? `that csv is missing columns: ${columns} — use the raw cash app export`
+        : "couldn't read that csv — use the raw cash app export";
+    }
+    case Code.CashAppImport.CsvTooManyRows: {
+      const maxRows = typeof err.params?.max_rows === 'number' ? err.params.max_rows : null;
+      return maxRows !== null
+        ? `that csv has more than ${String(maxRows)} rows — narrow the date range and try again`
+        : 'that csv is too big — narrow the date range and try again';
+    }
+
     // Attendance mark
     case Code.AttendanceMark.EventOrTitleRequired:
       return 'pick an existing event or give the new event a name and date';

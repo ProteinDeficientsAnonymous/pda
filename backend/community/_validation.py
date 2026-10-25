@@ -224,6 +224,11 @@ class Code:
         INVALID_EVENT_TYPE = "attendance_import.invalid_event_type"
         AMBIGUOUS_USER_PICK = "attendance_import.ambiguous_user_pick"  # params: { row_index: int }
 
+    class CashAppImport:
+        CSV_EMPTY = "cashapp_import.csv_empty"
+        CSV_MISSING_COLUMNS = "cashapp_import.csv_missing_columns"  # params: { columns: str }
+        CSV_TOO_MANY_ROWS = "cashapp_import.csv_too_many_rows"  # params: { max_rows: int }
+
     class AttendanceMark:
         EVENT_OR_TITLE_REQUIRED = "attendance_mark.event_or_title_required"
         INVALID_EVENT_TYPE = "attendance_mark.invalid_event_type"
