@@ -1,3 +1,10 @@
+# [0.201.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.200.0...v0.201.0) (2026-10-25)
+
+
+### Features
+
+* 1603 - host digest email template ([#1880](https://github.com/ProteinDeficientsAnonymous/pda/issues/1880)) ([62c257d](https://github.com/ProteinDeficientsAnonymous/pda/commit/62c257de3631a1e97e74636b1ab311693c2574ee))
+
 # [0.200.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.199.0...v0.200.0) (2026-10-25)
 
 
