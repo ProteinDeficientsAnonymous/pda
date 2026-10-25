@@ -51,16 +51,13 @@ class FilterResult:
     amount_mismatches: list[KeptPayment] = field(default_factory=list)
 
 
-_RefundKey = tuple[str, Decimal]
-
-
-def _outgoing_by_counterparty(rows: list[CashAppRow]) -> dict[_RefundKey, list[datetime]]:
-    sent: dict[_RefundKey, list[datetime]] = defaultdict(list)
+def _outgoing_by_counterparty(rows: list[CashAppRow]) -> dict[str, list[datetime]]:
+    sent: dict[str, list[datetime]] = defaultdict(list)
     for row in rows:
         if row.amount is None or row.paid_at is None or row.amount >= 0:
             continue
         if row.status not in _VOID_STATUSES:
-            sent[(normalize_name(row.sender_name), -row.amount)].append(row.paid_at)
+            sent[normalize_name(row.sender_name)].append(row.paid_at)
     return sent
 
 
@@ -83,21 +80,24 @@ def _reject_reason(
 def _evaluate(
     row: CashAppRow, event: EventPaymentContext, price: PriceSpec, seen_ids: set[str]
 ) -> KeptPayment | FilterReason:
+    """Every row claims its transaction id, so a repeat is a duplicate even if the first was dropped."""
+    if row.payment_id in seen_ids:
+        return FilterReason.DUPLICATE
+    seen_ids.add(row.payment_id)
     amount, paid_at = row.amount, row.paid_at
     if amount is None or paid_at is None:
         return FilterReason.UNREADABLE
     reason = _reject_reason(row, amount, paid_at, event)
     if reason is not None:
         return reason
-    if row.payment_id in seen_ids:
-        return FilterReason.DUPLICATE
     if price.kind == PriceKind.UNPARSEABLE:
         return KeptPayment(row, amount, paid_at, None)
     return KeptPayment(row, amount, paid_at, people_for_amount(price, amount))
 
 
-def _was_refunded(payment: KeptPayment, sent: dict[_RefundKey, list[datetime]]) -> bool:
-    times = sent.get((normalize_name(payment.row.sender_name), payment.amount), [])
+def _was_refunded(payment: KeptPayment, sent: dict[str, list[datetime]]) -> bool:
+    """Any later payment back to the sender, so partial refunds count too."""
+    times = sent.get(normalize_name(payment.row.sender_name), [])
     return any(t >= payment.paid_at for t in times)
 
 
@@ -119,6 +119,5 @@ def filter_payments(
             result.dropped[FilterReason.AMOUNT_MISMATCH] += 1
             result.amount_mismatches.append(outcome)
             continue
-        seen_ids.add(row.payment_id)
         result.kept.append(replace(outcome, refunded=_was_refunded(outcome, sent)))
     return result

@@ -62,6 +62,11 @@ class TestStatusAndDirection:
         assert result.dropped == {FilterReason.UNREADABLE: 2}
         assert [r.row_index for r in result.unreadable] == [0, 1]
 
+    def test_duplicate_of_a_dropped_row_still_counts_as_duplicate(self):
+        result = _result([row(tx="abc", amount="7"), row(index=1, tx="abc", amount="7")])
+        assert result.dropped == {FilterReason.AMOUNT_MISMATCH: 1, FilterReason.DUPLICATE: 1}
+        assert len(result.amount_mismatches) == 1
+
     def test_repeated_transaction_id_is_dropped_as_duplicate(self):
         kept, dropped = _run([row(tx="abc"), row(index=1, tx="abc")])
         assert [k.row.row_index for k in kept] == [0]
@@ -146,8 +151,13 @@ class TestRefunds:
         kept, _ = _run([row(), earlier])
         assert not kept[0].refunded
 
-    def test_outgoing_for_a_different_amount_is_not_a_refund(self):
-        other = row(index=1, amount="-20", paid_at=IN_WINDOW + timedelta(hours=1))
+    def test_later_partial_refund_to_the_sender_marks_refunded(self):
+        partial = row(index=1, amount="-5", paid_at=IN_WINDOW + timedelta(hours=1))
+        kept, _ = _run([row(), partial])
+        assert kept[0].refunded
+
+    def test_later_outgoing_to_someone_else_is_not_a_refund(self):
+        other = row(index=1, amount="-15", sender="Sam Lee", paid_at=IN_WINDOW + timedelta(hours=1))
         kept, _ = _run([row(), other])
         assert not kept[0].refunded
 
