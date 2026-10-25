@@ -14,7 +14,7 @@ import { DEFAULT_SURVEY_QUESTION_TYPE } from '@/api/surveys';
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { surveyVisibilityLabel } from '@/models/survey';
+import { SURVEY_PREVIEW_PARAM, surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
@@ -122,7 +122,7 @@ export default function SurveyBuilderScreen() {
         <div className="flex flex-wrap gap-2">
           <SurveyCopyLinkButton slug={currentSurvey.slug} />
           <Link
-            to={`/surveys/${currentSurvey.slug}`}
+            to={`/surveys/${currentSurvey.slug}?${SURVEY_PREVIEW_PARAM}=1`}
             className="text-foreground-secondary hover:bg-surface-dim inline-flex h-10 items-center rounded-md px-4 text-sm"
           >
             preview

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
@@ -11,24 +11,28 @@ import { useAuthStore } from '@/auth/store';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { visibleQuestionIds } from '@/components/questions/questionVisibility';
 import { Button } from '@/components/ui/Button';
-import { type SurveyStatus, surveyStatus } from '@/models/survey';
+import { SURVEY_PREVIEW_PARAM, type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
   const { data: survey, isPending, isError } = useSurvey(slug);
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.has(SURVEY_PREVIEW_PARAM);
   // The submit that fills the cap refetches a capped survey; keep the form so its confirmation shows.
   const [submitted, setSubmitted] = useState(false);
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
   // A finalized poll keeps rendering its result rather than a shut-door message.
-  if (status !== 'active' && survey.pollResult === null && !submitted) {
+  const unavailable = status !== 'active' && survey.pollResult === null && !submitted;
+  if (unavailable && !isPreview) {
     return <SurveyUnavailable survey={survey} status={status} />;
   }
   return (
     <SurveyForm
       survey={survey}
+      previewNotice={unavailable ? UNAVAILABLE_MESSAGE[status] : null}
       onSubmitted={() => {
         setSubmitted(true);
       }}
@@ -74,7 +78,15 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
   return out;
 }
 
-function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
+function SurveyForm({
+  survey,
+  previewNotice,
+  onSubmitted,
+}: {
+  survey: Survey;
+  previewNotice: string | null;
+  onSubmitted: () => void;
+}) {
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
@@ -87,6 +99,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
 
   const finalized = survey.pollResult !== null;
   const readOnly = finalized;
+  const canSubmit = !readOnly && previewNotice === null;
 
   const visible = visibleQuestionIds(survey.questions, answers);
   const shownQuestions = survey.questions.filter((q) => visible.has(q.id));
@@ -110,6 +123,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
 
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setServerError(null);
     if (!validate()) return;
     // Strip empties before submit to match Flutter behavior.
@@ -134,7 +148,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
 
   const submitLabel = survey.myResponseId ? 'update response' : 'submit';
   const canStartFresh =
-    !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
+    !isAuthed && canSubmit && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
 
   function startNewResponse() {
     clearStoredSurveyToken(survey.slug);
@@ -155,6 +169,15 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
       {survey.anonymous ? (
         <p className="text-foreground-secondary mb-6 text-sm">
           responses are anonymous — your name isn't saved with your answers
+        </p>
+      ) : null}
+
+      {previewNotice ? (
+        <p
+          role="status"
+          className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm"
+        >
+          preview — {previewNotice}
         </p>
       ) : null}
 
@@ -184,7 +207,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
           </p>
         ) : null}
 
-        {!readOnly ? (
+        {canSubmit ? (
           <Button type="submit" disabled={submit.isPending}>
             {submit.isPending ? 'saving…' : submitLabel}
           </Button>
