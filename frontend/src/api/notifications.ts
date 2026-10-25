@@ -15,6 +15,7 @@ interface WireNotification {
   id: string;
   notification_type: string;
   event_id: string | null;
+  survey_id: string | null;
   related_user_id: string | null;
   message: string;
   is_read: boolean;
@@ -26,6 +27,7 @@ function mapNotification(n: WireNotification): AppNotification {
     id: n.id,
     notificationType: n.notification_type,
     eventId: n.event_id,
+    surveyId: n.survey_id,
     relatedUserId: n.related_user_id,
     message: n.message,
     isRead: n.is_read,

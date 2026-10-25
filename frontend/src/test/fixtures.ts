@@ -229,6 +229,7 @@ export function makeNotification(id: string, message: string, isRead = false): A
     id,
     notificationType: NotificationType.EventInvite,
     eventId: 'evt1',
+    surveyId: null,
     relatedUserId: null,
     message,
     isRead,

@@ -21,6 +21,8 @@ export function notificationTarget(n: AppNotification): string | null {
       return n.eventId ? `/events/${n.eventId}/check-in` : null;
     case NotificationType.EventFeedback:
       return n.eventId ? `/events/${n.eventId}/feedback` : null;
+    case NotificationType.SurveyResponse:
+      return n.surveyId ? `/admin/surveys/${n.surveyId}/responses` : '/admin/surveys';
     case NotificationType.EventFlagged:
       return '/admin/flagged-events';
     case NotificationType.JoinRequest:
