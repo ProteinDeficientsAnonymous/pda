@@ -7,12 +7,13 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from community.models import Event, EventType, RSVPStatus
+from community.models import Event, EventComment, EventType, RSVPStatus
 
 from ._seed_join_requests import reset_join_requests, seed_join_form_questions, seed_join_requests
 from ._seed_shared import (
@@ -48,6 +49,9 @@ from ._seed_staging_rsvps import (
     TOKEN_EXPIRED,
     TOKEN_NONE,
 )
+
+# Block 04 holds users created by approving seeded join requests; reset must clear it too.
+SEEDED_PHONE_PREFIXES = tuple(f"+1702555{block:02d}" for block in range(1, 7))
 
 
 class Command(BaseCommand):
@@ -102,14 +106,12 @@ class Command(BaseCommand):
         reset_staging_feedback()
         Event.objects.filter(title__startswith="[staging] ").delete()
         Event.objects.filter(title=NON_MEMBER_EVENT_TITLE).delete()
-        User.objects.filter(phone_number__startswith="+170255501").delete()
-        User.objects.filter(phone_number__startswith="+170255502").delete()
-        User.objects.filter(phone_number__startswith="+170255503").delete()
-        # +170255504 is the join-request range: approving a request creates a user
-        # at that phone, so reset must clear those too or reseeds re-orphan them.
-        User.objects.filter(phone_number__startswith="+170255504").delete()
-        User.objects.filter(phone_number__startswith="+170255505").delete()
-        User.objects.filter(phone_number__startswith="+170255506").delete()
+        seeded = Q()
+        for prefix in SEEDED_PHONE_PREFIXES:
+            seeded |= Q(phone_number__startswith=prefix)
+        # EventComment.author is PROTECT: comments left on real events block the user delete.
+        EventComment.objects.filter(author__in=User.objects.filter(seeded)).delete()
+        User.objects.filter(seeded).delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         reset_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
