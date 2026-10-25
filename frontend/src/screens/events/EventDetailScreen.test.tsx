@@ -348,26 +348,7 @@ describe('EventDetailScreen', () => {
       expect(screen.getByRole('heading', { name: /test event/i })).toBeInTheDocument();
     });
 
-    it('prompts an unauthenticated visitor to log in on an invite-only 403', () => {
-      mockError(403, {
-        detail: [
-          {
-            code: 'event.perm_denied',
-            field: null,
-            params: { action: 'view_invite_only_event' },
-          },
-        ],
-      });
-      renderScreen('ev1');
-
-      expect(screen.getByText(/log in to see this event/i)).toBeInTheDocument();
-      expect(screen.queryByText(/you don't have permission/i)).not.toBeInTheDocument();
-      const loginLink = screen.getByRole('link', { name: /log in/i });
-      expect(loginLink).toHaveAttribute('href', '/login?redirect=%2Fevents%2Fev1');
-    });
-
     it('keeps the generic permission message for other 403s', () => {
-      useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
       mockError(403, {
         detail: [
           {

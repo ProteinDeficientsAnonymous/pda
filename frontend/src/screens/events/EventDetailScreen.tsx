@@ -67,27 +67,18 @@ export default function EventDetailScreen() {
       );
     }
     const status = getApiStatus(error);
-    const redirect = encodeURIComponent(location.pathname + location.search);
     if (status === 403) {
-      if (!isAuthed) {
-        return (
-          <ForbiddenNotice
-            message="log in to see this event"
-            subtext="this event is invite-only — sign in to check if you're on the list"
-            loginRedirect={redirect}
-          />
-        );
-      }
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
     }
-    // members-only events 404 for signed-out visitors, indistinguishable from a missing one
+    // non-public events 404 for signed-out visitors, indistinguishable from a missing one
     if (status === 404) {
       if (!isAuthed) {
+        const redirect = encodeURIComponent(location.pathname + location.search);
         return (
           <ForbiddenNotice
             message="log in to see this event"
-            subtext="this link may go to a members-only event — sign in to check"
+            subtext="this link may go to a private event — sign in to check"
             loginRedirect={redirect}
           />
         );
