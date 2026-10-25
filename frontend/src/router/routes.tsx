@@ -64,6 +64,7 @@ const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminL
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
+const SurveyPreview = lazyWithRetry(() => import('@/screens/admin/SurveyPreviewScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -196,6 +197,7 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/new', element: el(<SurveyCreate />) },
                   { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
+                  { path: '/admin/surveys/:id/preview', element: el(<SurveyPreview />) },
                 ],
               },
 

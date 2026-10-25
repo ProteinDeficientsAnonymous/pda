@@ -116,23 +116,6 @@ describe('SurveyScreen', () => {
     expect(screen.queryByLabelText('thoughts · required')).not.toBeInTheDocument();
   });
 
-  it('previews the questions of a closed survey without a submit button', async () => {
-    mockedGet.mockResolvedValueOnce({ data: { ...baseWireSurvey, is_active: false } });
-    renderScreen('feedback?preview=1');
-
-    expect(await screen.findByRole('status')).toHaveTextContent('preview — this survey is closed');
-    expect(screen.getByLabelText('thoughts · required')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
-  });
-
-  it('keeps the normal form when previewing an active survey', async () => {
-    mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
-    renderScreen('feedback?preview=1');
-
-    expect(await screen.findByRole('button', { name: 'submit' })).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
-
   it('renders a scheduled state for a survey that has not opened yet', async () => {
     mockedGet.mockResolvedValueOnce({
       data: { ...baseWireSurvey, opens_at: '2999-01-01T00:00:00Z' },

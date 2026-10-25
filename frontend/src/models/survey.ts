@@ -1,5 +1,3 @@
-export const SURVEY_PREVIEW_PARAM = 'preview';
-
 export type SurveyStatus = 'active' | 'scheduled' | 'capped' | 'closed';
 
 export interface SurveyScheduleFields {
