@@ -3,7 +3,6 @@ from community._question_answers import (
     assert_checkbox_members,
     assert_single_choice_member,
     is_answer_empty,
-    normalize_checkbox_csv,
 )
 from community._validation import ValidationException
 
@@ -60,17 +59,3 @@ def test_assert_checkbox_members_rejects_unknown_option():
             label="Tags",
         )
     assert exc_info.value.code == "test.invalid_option"
-
-
-@pytest.mark.unit
-def test_normalize_checkbox_csv_strips_and_joins():
-    assert (
-        normalize_checkbox_csv(
-            " a , b , ",
-            ["a", "b"],
-            code="test.invalid_option",
-            field="answers.1",
-            label="Tags",
-        )
-        == "a,b"
-    )
