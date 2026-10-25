@@ -30,3 +30,9 @@ export function surveyStatus(
 export function surveyVisibilityLabel(visibility: string): string {
   return visibility.replaceAll('_', ' ');
 }
+
+export const DEFAULT_THANK_YOU_MESSAGE = 'thanks for filling out our survey!';
+
+export function thankYouMessage(confirmationMessage: string): string {
+  return confirmationMessage.trim() ? confirmationMessage.toLowerCase() : DEFAULT_THANK_YOU_MESSAGE;
+}

@@ -51,7 +51,7 @@ def backwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0112_eventfeedbackrequest_survey_feedback_event_type_and_more"),
+        ("community", "0116_eventrsvp_status_changed_at"),
     ]
 
     operations = [

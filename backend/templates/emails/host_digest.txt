@@ -1,0 +1,16 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+here's what happened on your events:
+{% for event in events %}
+{{ event.title|lower }}
+{{ event.when|lower }}
+{{ event.capacity_line }}{% for label, names in event.rsvp_groups %}
+{{ label }}: {{ names|join:", "|lower }}{% endfor %}{% if event.new_comment_count %}
+{{ event.new_comment_count }} new comment{{ event.new_comment_count|pluralize }}{% endif %}
+view event: {{ event.url }}
+{% endfor %}
+— pda
+
+don't want emails like this? update your preferences: {{ settings_url }}
+
+{% include "emails/_no_reply_footer.txt" %}{% endautoescape %}

@@ -22,6 +22,7 @@ interface Props {
   focusOnMount: boolean;
   onDuplicate: () => void;
   onDelete: () => void;
+  confirmTypeChange: (fieldType: SurveyQuestionType) => Promise<boolean>;
 }
 
 export function SurveyQuestionCard({
@@ -31,12 +32,14 @@ export function SurveyQuestionCard({
   focusOnMount,
   onDuplicate,
   onDelete,
+  confirmTypeChange,
 }: Props) {
   const update = useUpdateSurveyQuestion(surveyId, question.id);
   const initial: QuestionAuthorValues = {
     label: question.label,
     fieldType: question.fieldType,
     options: question.options,
+    description: question.description ?? '',
     required: question.required,
   };
   // Last-sent values, so a condition save during an in-flight label save keeps the new label.
@@ -75,6 +78,7 @@ export function SurveyQuestionCard({
       focusOnMount={focusOnMount}
       onDuplicate={onDuplicate}
       onDelete={onDelete}
+      confirmTypeChange={confirmTypeChange}
       onSave={(values) => enqueue(values, latestShowIf.current)}
       extraFields={
         <div className="flex flex-col gap-1">

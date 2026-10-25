@@ -51,6 +51,7 @@ from community._member_promotion_email import (
 from community._member_promotion_message import (
     router as member_promotion_message_router,
 )
+from community._official_event_defaults import router as official_event_defaults_router
 from community._pages import router as pages_router
 from community._poll_options import router as poll_options_router
 from community._polls import router as polls_router
@@ -88,6 +89,7 @@ router.add_router("", event_feedback_host_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_description_templates_router)
+router.add_router("", official_event_defaults_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)

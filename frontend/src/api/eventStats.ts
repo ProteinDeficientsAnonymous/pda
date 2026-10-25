@@ -139,10 +139,10 @@ export function withWaitlistOrder(event: Event, userIds: string[]): Event {
 export function useSetGuestPayment(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { userId: string; paidConfirmed: boolean }) => {
+    mutationFn: async (args: { userId: string; verified: boolean }) => {
       const { data } = await apiClient.patch<WireEvent>(
         `/api/community/events/${eventId}/rsvps/${args.userId}/payment/`,
-        { paid_confirmed: args.paidConfirmed },
+        { paid_confirmed: args.verified },
       );
       return mapEvent(data);
     },

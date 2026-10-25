@@ -192,12 +192,15 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
 def _resolve_paid_confirmed_at(
     existing: EventRSVP | None, paid_confirmed: bool, final_status: str
 ) -> datetime | None:
-    """Preserve a standing stamp; otherwise stamp only on a confirmed attending/waitlisted write."""
+    """Preserve a standing stamp; otherwise stamp only on a confirmed attending/waitlisted write.
+
+    A guest confirming over a host-stamped mark gets a fresh stamp, so the claim becomes theirs.
+    """
+    claims = paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED)
     if existing is not None and existing.paid_confirmed_at is not None:
-        return existing.paid_confirmed_at
-    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
-        return timezone.now()
-    return None
+        host_stamped = existing.paid_confirmed_at == existing.payment_verified_at
+        return timezone.now() if claims and host_stamped else existing.paid_confirmed_at
+    return timezone.now() if claims else None
 
 
 def payment_audit_details(event_id, user_id) -> dict:
@@ -207,14 +210,25 @@ def payment_audit_details(event_id, user_id) -> dict:
     `paid_confirmed: true` on an already-stamped or ungated write changes
     nothing, and the audit trail has to record what happened, not what was asked.
     """
-    stamped_at = (
+    row = (
         EventRSVP.objects.filter(event_id=event_id, user_id=user_id)
-        .values_list("paid_confirmed_at", flat=True)
+        .values("paid_confirmed_at", "payment_verified_at", "payment_verified_by_id")
         .first()
+    ) or {}
+    return payment_audit_fields(
+        row.get("paid_confirmed_at"),
+        row.get("payment_verified_at"),
+        row.get("payment_verified_by_id"),
     )
+
+
+def payment_audit_fields(stamped_at, verified_at, verified_by_id) -> dict:
     return {
         "paid_confirmed": stamped_at is not None,
         "paid_confirmed_at": stamped_at.isoformat() if stamped_at else None,
+        "payment_verified": verified_at is not None,
+        "payment_verified_at": verified_at.isoformat() if verified_at else None,
+        "payment_verified_by": str(verified_by_id) if verified_by_id else None,
     }
 
 

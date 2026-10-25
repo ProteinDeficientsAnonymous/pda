@@ -115,6 +115,7 @@ export interface EventGuest {
   plusOneAttendance: AttendanceStatusValue;
   isMember: boolean;
   paidConfirmed: boolean;
+  paymentVerified: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
   questionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
 }

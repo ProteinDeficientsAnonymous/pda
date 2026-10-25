@@ -308,6 +308,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         label=payload.label,
         field_type=payload.field_type,
         options=payload.options,
+        description=payload.description,
         required=payload.required,
         display_order=max_order,
         show_if=show_if,
@@ -397,6 +398,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.label = payload.label
     q.field_type = payload.field_type
     q.options = payload.options
+    q.description = payload.description
     q.required = payload.required
     q.show_if = validate_show_if(
         payload.show_if, survey_id=survey_id, display_order=q.display_order

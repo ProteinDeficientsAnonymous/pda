@@ -100,6 +100,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.PaymentVerifyNotGuests:
+      return "some of those people aren't attending or waitlisted for this event — nothing was verified";
     case Code.Event.WaitlistOrderStale:
       return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
@@ -510,6 +512,22 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'pick official or club for the new event';
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
+
+    // Cash App import
+    case Code.CashAppImport.CsvEmpty:
+      return "that csv doesn't have any rows — export your cash app activity and try again";
+    case Code.CashAppImport.CsvMissingColumns: {
+      const columns = typeof err.params?.columns === 'string' ? err.params.columns : null;
+      return columns
+        ? `that csv is missing columns: ${columns} — use the raw cash app export`
+        : "couldn't read that csv — use the raw cash app export";
+    }
+    case Code.CashAppImport.CsvTooManyRows: {
+      const maxRows = typeof err.params?.max_rows === 'number' ? err.params.max_rows : null;
+      return maxRows !== null
+        ? `that csv has more than ${String(maxRows)} rows — narrow the date range and try again`
+        : 'that csv is too big — narrow the date range and try again';
+    }
 
     // Attendance mark
     case Code.AttendanceMark.EventOrTitleRequired:

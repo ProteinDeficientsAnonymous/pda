@@ -61,7 +61,9 @@ def _option_time(option: str) -> str | None:
 def _question(
     q: dict[str, Any], position: int, sources: dict[str, tuple[int, str]]
 ) -> dict[str, Any]:
-    row = {key: q[key] for key in ("id", "label", "field_type", "options", "required")}
+    row = {
+        key: q[key] for key in ("id", "label", "field_type", "options", "description", "required")
+    }
     if q["field_type"] == SurveyQuestionType.DATETIME_POLL:
         row["option_times"] = [_option_time(option) for option in q["options"]]
     show_if = q["show_if"]
