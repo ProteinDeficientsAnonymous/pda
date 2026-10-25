@@ -10,6 +10,7 @@ from config.ratelimit import auth_or_ip_key, rate_limit
 from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
+from notifications._survey_response_notifications import notify_survey_response
 from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
@@ -124,6 +125,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
             survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
         audit_log(logging.INFO, "survey_response_submitted", request, target=target)
+        transaction.on_commit(lambda: notify_survey_response(survey, response_user))
         return Status(201, _submit_out(response, user_name))
 
 

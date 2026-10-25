@@ -22,6 +22,7 @@ def _notification_out(n: Notification) -> NotificationOut:
         id=str(n.id),
         notification_type=n.notification_type,
         event_id=str(n.event_id) if n.event_id else None,  # ty: ignore[unresolved-attribute]
+        survey_id=str(n.survey_id) if n.survey_id else None,  # ty: ignore[unresolved-attribute]
         related_user_id=str(n.related_user_id) if n.related_user_id else None,  # ty: ignore[unresolved-attribute]
         message=n.message,
         is_read=n.is_read,

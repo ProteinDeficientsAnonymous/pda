@@ -5495,12 +5495,24 @@
               }
             ],
             "title": "Related User Id"
+          },
+          "survey_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Id"
           }
         },
         "required": [
           "id",
           "notification_type",
           "event_id",
+          "survey_id",
           "related_user_id",
           "message",
           "is_read",
