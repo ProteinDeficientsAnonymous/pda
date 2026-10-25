@@ -119,10 +119,10 @@ function GuestRow({
           </span>
           {onTogglePaid ? (
             <PaidBadge
-              paidConfirmed={guest.paidConfirmed}
+              paidConfirmed={guest.paymentVerified}
               isPending={isPending}
               onToggle={() => {
-                onTogglePaid(guest.userId, !guest.paidConfirmed);
+                onTogglePaid(guest.userId, !guest.paymentVerified);
               }}
             />
           ) : null}

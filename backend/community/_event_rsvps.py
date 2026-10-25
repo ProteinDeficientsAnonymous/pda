@@ -203,14 +203,20 @@ def payment_audit_details(event_id, user_id) -> dict:
     `paid_confirmed: true` on an already-stamped or ungated write changes
     nothing, and the audit trail has to record what happened, not what was asked.
     """
-    stamped_at = (
+    row = (
         EventRSVP.objects.filter(event_id=event_id, user_id=user_id)
-        .values_list("paid_confirmed_at", flat=True)
+        .values("paid_confirmed_at", "payment_verified_at", "payment_verified_by_id")
         .first()
-    )
+    ) or {}
+    stamped_at = row.get("paid_confirmed_at")
+    verified_at = row.get("payment_verified_at")
+    verified_by_id = row.get("payment_verified_by_id")
     return {
         "paid_confirmed": stamped_at is not None,
         "paid_confirmed_at": stamped_at.isoformat() if stamped_at else None,
+        "payment_verified": verified_at is not None,
+        "payment_verified_at": verified_at.isoformat() if verified_at else None,
+        "payment_verified_by": str(verified_by_id) if verified_by_id else None,
     }
 
 

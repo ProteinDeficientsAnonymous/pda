@@ -1381,7 +1381,7 @@ export interface paths {
         head?: never;
         /**
          * Set Guest Payment
-         * @description Let a host confirm or retract a guest's payment without touching their rsvp status.
+         * @description Let a host verify or un-verify a guest's payment without touching their rsvp status.
          */
         patch: operations["community__event_host_rsvps_set_guest_payment"];
         trace?: never;

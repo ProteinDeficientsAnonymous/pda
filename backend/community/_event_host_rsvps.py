@@ -1,14 +1,13 @@
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
-from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import create_payment_revoked_notification
 from users.models import User as UserModel
 
 from community._event_helpers import (
@@ -19,13 +18,17 @@ from community._event_helpers import (
 )
 from community._event_rsvps import (
     _resolve_cancelled_at,
-    _resolve_paid_confirmed_at,
     _resolve_pre_cancel_status,
     _resolve_rsvp_status,
     _validate_rsvp_status,
     payment_audit_details,
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
+from community._payment_verification import (
+    PaymentVerificationChange,
+    apply_payment_verification,
+    record_payment_verification,
+)
 from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -44,10 +47,35 @@ def _resolve_host_rsvp_status(
     return _resolve_rsvp_status(event, target_user, status, has_plus_one)
 
 
+def _needs_host_verification(existing: EventRSVP | None, paid_confirmed: bool) -> bool:
+    # False means "not asserting payment", so it never clears an existing verification.
+    return paid_confirmed and (existing is None or existing.payment_verified_at is None)
+
+
+def _host_rsvp_unchanged(
+    existing: EventRSVP | None,
+    final_status: str,
+    final_plus_one: bool,
+    new_confirmed_at: datetime | None,
+) -> bool:
+    return (
+        existing is not None
+        and existing.status == final_status
+        and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_confirmed_at
+    )
+
+
+def _host_spot_freed(existing: EventRSVP | None, final_status: str, final_plus_one: bool) -> bool:
+    if existing is None or existing.status != RSVPStatus.ATTENDING:
+        return False
+    return final_status != RSVPStatus.ATTENDING or (existing.has_plus_one and not final_plus_one)
+
+
 def _apply_host_rsvp_in_transaction(
-    event_id, target_user, status: str, has_plus_one: bool, paid_confirmed: bool = False
+    event_id, target_user, payload: HostRSVPIn, actor
 ) -> tuple[str, list[str], str | None]:
-    """Host-driven RSVP upsert; unlike _apply_rsvp_in_transaction, never subject to the payment gate."""
+    """Host-driven RSVP upsert; never payment-gated, and paid_confirmed marks the payment host-verified."""
     event = (
         Event.objects.select_for_update()
         .prefetch_related("co_hosts", "invited_users")
@@ -60,24 +88,21 @@ def _apply_host_rsvp_in_transaction(
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
 
     final_status, final_plus_one = _resolve_host_rsvp_status(
-        event, target_user, status, has_plus_one
+        event, target_user, payload.status, payload.has_plus_one
     )
 
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
     previous_status = getattr(existing, "status", None)
-    was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
-    had_plus_one = existing is not None and existing.has_plus_one
-    new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
+    # Never stamp here: verification stamps paid_confirmed_at == payment_verified_at itself.
+    new_confirmed_at = existing.paid_confirmed_at if existing is not None else None
+    needs_verification = _needs_host_verification(existing, payload.paid_confirmed)
 
-    if (
-        existing is not None
-        and existing.status == final_status
-        and existing.has_plus_one == final_plus_one
-        and existing.paid_confirmed_at == new_confirmed_at
+    if not needs_verification and _host_rsvp_unchanged(
+        existing, final_status, final_plus_one, new_confirmed_at
     ):
         return final_status, [], previous_status
 
-    EventRSVP.objects.update_or_create(
+    rsvp, _ = EventRSVP.objects.update_or_create(
         event=event,
         user=target_user,
         defaults={
@@ -88,10 +113,10 @@ def _apply_host_rsvp_in_transaction(
             "paid_confirmed_at": new_confirmed_at,
         },
     )
+    if needs_verification:
+        apply_payment_verification(rsvp, verified=True, actor=actor)
 
-    spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
-        was_attending and had_plus_one and not final_plus_one
-    )
+    spot_freed = _host_spot_freed(existing, final_status, final_plus_one)
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
     return final_status, promoted_user_ids, previous_status
@@ -125,7 +150,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids, previous_status = _apply_host_rsvp_in_transaction(
-            event_id, target_user, payload.status, payload.has_plus_one, payload.paid_confirmed
+            event_id, target_user, payload, request.auth
         )
 
     audit_log(
@@ -152,22 +177,14 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     return Status(200, _event_out(event, request.auth))
 
 
-def _apply_payment_change_in_transaction(event_id, user_id, paid_confirmed: bool) -> bool:
-    """Set or clear the payment stamp on a locked rsvp row. Returns whether it was paid before.
-
-    Clearing re-gates the guest on their next attending write. The record that
-    they once paid, and who retracted it, lives in the audit log.
-    """
+def _apply_payment_change_in_transaction(
+    event_id, user_id, verified: bool, actor
+) -> PaymentVerificationChange:
+    """Lock one rsvp and set or clear its host-verified mark; the guest's own attestation stays."""
     rsvp = EventRSVP.objects.select_for_update().filter(event_id=event_id, user_id=user_id).first()
     if rsvp is None:
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
-    was_paid = rsvp.paid_confirmed_at is not None
-    if paid_confirmed:
-        rsvp.paid_confirmed_at = rsvp.paid_confirmed_at or timezone.now()
-    else:
-        rsvp.paid_confirmed_at = None
-    rsvp.save(update_fields=["paid_confirmed_at", "updated_at"])
-    return was_paid
+    return apply_payment_verification(rsvp, verified=verified, actor=actor)
 
 
 @router.patch(
@@ -177,7 +194,7 @@ def _apply_payment_change_in_transaction(event_id, user_id, paid_confirmed: bool
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPPaymentIn):
-    """Let a host confirm or retract a guest's payment without touching their rsvp status."""
+    """Let a host verify or un-verify a guest's payment without touching their rsvp status."""
     event = (
         Event.objects.select_related("created_by")
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
@@ -190,25 +207,11 @@ def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPP
         raise_validation(Code.Perm.DENIED, status_code=403, action="set_guest_payment")
 
     with transaction.atomic():
-        was_paid = _apply_payment_change_in_transaction(event_id, user_id, payload.paid_confirmed)
+        change = _apply_payment_change_in_transaction(
+            event_id, user_id, payload.paid_confirmed, request.auth
+        )
 
-    is_revoke = was_paid and not payload.paid_confirmed
-    audit_log(
-        logging.INFO,
-        "guest_payment_revoked" if is_revoke else "guest_payment_changed",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.EVENT,
-            id=str(event_id),
-            details={
-                "user_id": str(user_id),
-                "was_paid": was_paid,
-                **payment_audit_details(event_id, user_id),
-            },
-        ),
-    )
-    if is_revoke:
-        create_payment_revoked_notification(event, str(user_id))
+    record_payment_verification(request, event, change)
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)

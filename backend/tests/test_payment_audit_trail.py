@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
 from community.models import Event, EventRSVP, RSVPStatus
@@ -125,9 +127,16 @@ class TestHostPaymentChangeAudit:
     def test_revoking_is_audited_with_the_transition(
         self, commit, api_client, auth_headers, test_user, django_user_model
     ):
-        """The row is left with no stamp, so only the audit row records that they had paid."""
+        """The row loses its verified mark, so only the audit row records who had verified it."""
         event = _paid_event(test_user)
-        guest = self._guest(django_user_model, event, paid_confirmed_at=timezone.now())
+        now = timezone.now()
+        guest = self._guest(
+            django_user_model,
+            event,
+            paid_confirmed_at=now - timedelta(hours=1),
+            payment_verified_at=now,
+            payment_verified_by=test_user,
+        )
 
         _patch(
             commit,
@@ -141,8 +150,10 @@ class TestHostPaymentChangeAudit:
         assert entry.actor_id == test_user.pk, "the host who revoked must be recorded"
         assert entry.details["user_id"] == str(guest.id)
         assert entry.details["was_paid"] is True
-        assert entry.details["paid_confirmed"] is False
-        assert entry.details["paid_confirmed_at"] is None
+        assert entry.details["was_verified"] is True
+        assert entry.details["payment_verified"] is False
+        assert entry.details["payment_verified_by"] is None
+        assert entry.details["paid_confirmed"] is True, "the guest's attestation stays"
         assert not AuditLogEntry.objects.filter(action="guest_payment_changed").exists(), (
             "a real revoke must not also log under the generic action name"
         )
@@ -163,8 +174,30 @@ class TestHostPaymentChangeAudit:
 
         entry = _entry("guest_payment_changed")
         assert entry.details["was_paid"] is False
+        assert entry.details["was_verified"] is False
         assert entry.details["paid_confirmed"] is True
         assert entry.details["paid_confirmed_at"] is not None
+        assert entry.details["payment_verified"] is True
+        assert entry.details["payment_verified_by"] == str(test_user.pk)
+
+    def test_unverifying_a_self_attested_guest_is_not_a_revoke(
+        self, commit, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user)
+        guest = self._guest(django_user_model, event, paid_confirmed_at=timezone.now())
+
+        _patch(
+            commit,
+            api_client,
+            PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
+            {"paid_confirmed": False},
+            auth_headers,
+        )
+
+        entry = _entry("guest_payment_changed")
+        assert entry.details["was_paid"] is True
+        assert entry.details["was_verified"] is False
+        assert not AuditLogEntry.objects.filter(action="guest_payment_revoked").exists()
 
     def test_redundant_revoke_records_no_prior_payment(
         self, commit, api_client, auth_headers, test_user, django_user_model
@@ -204,6 +237,8 @@ class TestHostPaymentChangeAudit:
         entry = _entry("guest_rsvp_changed")
         assert entry.details["paid_confirmed"] is True
         assert entry.details["paid_confirmed_at"] is not None
+        assert entry.details["payment_verified"] is True
+        assert entry.details["payment_verified_by"] == str(test_user.pk)
 
 
 @pytest.mark.django_db
