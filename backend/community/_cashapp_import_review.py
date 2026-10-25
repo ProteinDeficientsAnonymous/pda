@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from community._cashapp_import_csv import CashAppRow, parse_cashapp_csv
 from community._cashapp_import_filter import filter_payments
 from community._cashapp_import_matching import (
-    MATCHABLE_STATUSES,
     amount_mismatch_leads,
     match_payments,
 )
@@ -21,7 +20,7 @@ from community._cashapp_import_types import (
     UnreadableRow,
 )
 from community._rsvp_payment import event_requires_payment_confirmation
-from community.models import Event, RSVPStatus
+from community.models import MATCHABLE_RSVP_STATUSES, Event, RSVPStatus
 
 NO_END_GRACE = timedelta(hours=6)
 
@@ -58,7 +57,7 @@ def build_gap_list(
     for guest in guests:
         if guest.user_id in covered or guest.user_id in verified_user_ids:
             continue
-        reason = _gap_reason(guest, event) if guest.status in MATCHABLE_STATUSES else None
+        reason = _gap_reason(guest, event) if guest.status in MATCHABLE_RSVP_STATUSES else None
         if reason is None:
             continue
         pending_ids = pending.get(guest.user_id, [])
@@ -136,7 +135,7 @@ def load_payment_context(event: Event) -> EventPaymentContext:
 
 
 def load_guest_records(event: Event) -> list[GuestRecord]:
-    rsvps = event.rsvps.filter(status__in=MATCHABLE_STATUSES).select_related("user")
+    rsvps = event.rsvps.filter(status__in=MATCHABLE_RSVP_STATUSES).select_related("user")
     return [
         GuestRecord(
             user_id=str(rsvp.user_id),

@@ -219,3 +219,19 @@ class TestAmbiguity:
         assert p.user_ids == ["u-alex"]
         assert p.reason == "price couldn't be read"
         assert (p.people_low, p.people_high) == (None, None)
+
+
+def test_matching_shares_the_bulk_verify_statuses_without_its_side_effects():
+    import ast
+    import inspect
+
+    import community._cashapp_import_matching as matching
+    from community.models import MATCHABLE_RSVP_STATUSES
+
+    imported = {
+        node.module
+        for node in ast.walk(ast.parse(inspect.getsource(matching)))
+        if isinstance(node, ast.ImportFrom)
+    }
+    assert "community._payment_verification" not in imported
+    assert matching.MATCHABLE_RSVP_STATUSES is MATCHABLE_RSVP_STATUSES
