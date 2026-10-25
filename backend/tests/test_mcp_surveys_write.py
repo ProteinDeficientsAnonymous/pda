@@ -10,7 +10,7 @@ from community._validation import Code
 from community.models import Survey, SurveyQuestion
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
-from mcp_gateway.server import pda_mcp
+from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools import surveys_write
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -133,3 +133,49 @@ def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
     finally:
         auth_context_var.reset(reset)
     assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
+
+
+def _failing_delete():
+    return patch("mcp_gateway.tools.surveys_write.delete_survey_view", side_effect=RuntimeError)
+
+
+def test_failed_cleanup_points_at_the_partial_survey(surveys_admin, caplog):
+    with _second_question_fails(ToolError("bad question")), _failing_delete():
+        error = _create_refused(surveys_admin)
+    survey_id = Survey.objects.get().pk
+    assert error == (
+        f"creating the survey failed (question 2: bad question) and the partial survey "
+        f"{survey_id} couldn't be removed; delete it at {BASE_URL}/admin/surveys/{survey_id}"
+    )
+    record = next(r for r in caplog.records if r.name == surveys_write.__name__)
+    assert (record.levelname, str(survey_id) in record.getMessage()) == ("ERROR", True)
+    assert record.exc_info
+
+
+def test_failed_cleanup_hides_internal_error_details(surveys_admin, caplog):
+    with _second_question_fails(RuntimeError("relation secret_table is locked")), _failing_delete():
+        error = _create_refused(surveys_admin)
+    assert "creating the survey failed (an internal error)" in error
+    assert "secret_table" not in error and "RuntimeError" not in error
+    assert any("secret_table" in r.getMessage() for r in caplog.records if r.levelname == "ERROR")
+
+
+def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, caplog):
+    def slow(*args, **kwargs):
+        time.sleep(0.3)
+        return create_question_view(*args, **kwargs)
+
+    async def cancel() -> bool:
+        with anyio.move_on_after(0.1) as scope:
+            arguments = {"settings": SETTINGS, "questions": [NAME, NOTES]}
+            await pda_mcp.call_tool("create_survey", arguments)
+        return scope.cancelled_caught
+
+    reset = _signed_in(surveys_admin)
+    try:
+        with patch.object(surveys_write, "create_question_view", slow), _failing_delete():
+            assert anyio.run(cancel)
+    finally:
+        auth_context_var.reset(reset)
+    survey_id = str(Survey.objects.get().pk)
+    assert any(survey_id in r.getMessage() for r in caplog.records if r.levelname == "ERROR")
