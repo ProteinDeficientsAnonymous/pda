@@ -49,6 +49,7 @@ export const Code = {
     RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
     RsvpAnswerRequired: 'event.rsvp_answer_required',
     RsvpAnswerInvalidOption: 'event.rsvp_answer_invalid_option',
+    RsvpAnswerInvalidFormat: 'event.rsvp_answer_invalid_format',
     RsvpAnswerTooLong: 'event.rsvp_answer_too_long',
     PaymentConfirmationRequired: 'event.payment_confirmation_required',
     CheckInReportNotYetAvailable: 'event.check_in_report_not_yet_available',
@@ -336,6 +337,7 @@ export type ValidationCode =
   | 'event.rsvp_question_option_no_comma'
   | 'event.rsvp_answer_required'
   | 'event.rsvp_answer_invalid_option'
+  | 'event.rsvp_answer_invalid_format'
   | 'event.rsvp_answer_too_long'
   | 'event.payment_confirmation_required'
   | 'event.check_in_report_not_yet_available'
@@ -553,6 +555,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_question_option_no_comma': [],
   'event.rsvp_answer_required': ['label'],
   'event.rsvp_answer_invalid_option': ['label'],
+  'event.rsvp_answer_invalid_format': ['label'],
   'event.rsvp_answer_too_long': ['label', 'max'],
   'event.payment_confirmation_required': [],
   'event.check_in_report_not_yet_available': [],

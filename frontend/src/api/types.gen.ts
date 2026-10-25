@@ -5112,10 +5112,10 @@ export interface components {
             phone_number: string;
             /**
              * Questionnaire Responses
-             * @description Question UUID to answer; checkbox values are comma-separated.
+             * @description Question UUID to answer; checkbox answers are a list of ticked options.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             /** Status */
             status: string;
@@ -5144,7 +5144,7 @@ export interface components {
              * @description Question UUID to answer; omit or send null to preserve saved answers.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             } | null;
             /** Status */
             status: string;
@@ -5289,10 +5289,10 @@ export interface components {
             paid_confirmed: boolean;
             /**
              * Questionnaire Responses
-             * @description Question UUID to answer; checkbox values are comma-separated.
+             * @description Question UUID to answer; checkbox answers are a list of ticked options.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             status: components["schemas"]["RSVPStatus"];
         };

@@ -144,6 +144,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `invalid option for "${label}"` : 'invalid option';
     }
+    case Code.Event.RsvpAnswerInvalidFormat: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid answer format for "${label}"` : 'invalid answer format';
+    }
     case Code.Event.RsvpAnswerTooLong: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       const max = typeof err.params?.max === 'number' ? err.params.max : null;

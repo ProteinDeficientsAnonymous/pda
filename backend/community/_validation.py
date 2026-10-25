@@ -47,6 +47,7 @@ class Code:
         RSVP_QUESTION_OPTION_NO_COMMA = "event.rsvp_question_option_no_comma"
         RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }
         RSVP_ANSWER_INVALID_OPTION = "event.rsvp_answer_invalid_option"  # params: { label: str }
+        RSVP_ANSWER_INVALID_FORMAT = "event.rsvp_answer_invalid_format"  # params: { label: str }
         RSVP_ANSWER_TOO_LONG = "event.rsvp_answer_too_long"  # params: { label: str, max: int }
         PAYMENT_CONFIRMATION_REQUIRED = "event.payment_confirmation_required"
         CHECK_IN_REPORT_NOT_YET_AVAILABLE = "event.check_in_report_not_yet_available"

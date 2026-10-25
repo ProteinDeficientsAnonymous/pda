@@ -86,6 +86,19 @@ describe('messageForCode', () => {
     expect(out).toContain('5 mb');
   });
 
+  it('names the question for an invalid rsvp answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.Event.RsvpAnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'dietary needs' },
+      }),
+    ).toBe('invalid answer format for "dietary needs"');
+    expect(messageForCode({ code: Code.Event.RsvpAnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
