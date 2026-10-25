@@ -131,7 +131,7 @@ def get_survey_summary(request, survey_id: UUID, event_id: UUID | None = None):
 )
 def get_survey_responses_csv(request, survey_id: UUID):
     survey = _load_survey_for_responses(request, survey_id, "get_survey_responses_csv")
-    questions = list(survey.questions.all())
+    questions = [q for q in survey.questions.all() if q.field_type != SurveyQuestionType.SECTION]
     buf = io.StringIO()
     writer = csv.writer(buf)
     labels = [csv_safe(q.label) for q in questions]
