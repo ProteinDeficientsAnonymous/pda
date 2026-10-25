@@ -1,9 +1,10 @@
-from typing import Annotated, Literal, Self
+from datetime import UTC, datetime
+from typing import Annotated, Self
 from uuid import UUID
 
 from community._field_limits import FieldLimit
 from community._survey_schemas import SurveyIn, SurveyQuestionIn
-from community.models import ShowIfOperator, SurveyVisibility
+from community.models import QuestionType, ShowIfOperator, SurveyVisibility
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import (
@@ -15,11 +16,13 @@ from pydantic import (
     model_validator,
 )
 
-from mcp_gateway.fields import WHEN, NewYorkTime, build
+from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 
-_NEEDS_OPTIONS = ("radio", "select", "checkbox")
+_NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
+_RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
-_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any"
+_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; rating: 1-5 stars; "
+_TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 # A real id only exists once the source question is created; validation just needs a UUID.
 _PENDING_ID = UUID(int=0)
@@ -37,10 +40,15 @@ class SurveyQuestionFields(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     label: Text = Field(description="the question as respondents see it")
-    field_type: Literal["text", "textarea", "number", "boolean", "radio", "select", "checkbox"] = (
-        Field("text", description=_TYPES)
+    field_type: QuestionType = Field(QuestionType.TEXT, description=_TYPES)
+    options: list[str] = Field(
+        [],
+        description=(
+            "radio/select/checkbox: the choices. rating: optional labels for stars 1-5 in order, "
+            f"'' for a star with no label. datetime_poll: candidate times, {WHEN} (saved as utc "
+            "like the survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
+        ),
     )
-    options: list[str] = Field([], description="radio/select/checkbox: the choices; else none")
     required: bool = Field(False, description="respondents must answer it")
     show_if: ShowIf | None = Field(
         None,
@@ -49,12 +57,30 @@ class SurveyQuestionFields(BaseModel):
 
     @model_validator(mode="after")
     def _shape_options(self) -> Self:
+        if self.field_type == QuestionType.RATING:
+            self.options = _rating_labels(self.options)
+            return self
         kind, self.options = self.field_type, [o.strip() for o in self.options if o.strip()]
         if kind in _NEEDS_OPTIONS and not self.options:
             raise ValueError(f"{kind} questions need at least one option")
         if kind not in _NEEDS_OPTIONS and self.options:
             raise ValueError(f"{kind} questions take no options")
+        if kind == QuestionType.DATETIME_POLL:
+            self.options = [_poll_option(option) for option in self.options]
         return self
+
+
+def _rating_labels(options: list[str]) -> list[str]:
+    if len(options) > _RATING_STARS:
+        raise ValueError(f"rating questions take at most {_RATING_STARS} star labels")
+    labels = [label.strip() for label in options]
+    labels += [""] * (_RATING_STARS - len(labels))
+    return labels if any(labels) else []
+
+
+def _poll_option(option: str) -> str:
+    when = new_york(datetime.fromisoformat(option)).astimezone(UTC)
+    return when.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
 def _sources_are_earlier(questions: list[SurveyQuestionFields]) -> list[SurveyQuestionFields]:
