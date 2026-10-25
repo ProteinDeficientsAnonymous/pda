@@ -1,3 +1,15 @@
+# [0.182.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.181.0...v0.182.0) (2026-10-25)
+
+
+### Bug Fixes
+
+* **attendance:** align reminder clock with analytics qualifying attendance ([#1865](https://github.com/ProteinDeficientsAnonymous/pda/issues/1865)) ([6bd6ef1](https://github.com/ProteinDeficientsAnonymous/pda/commit/6bd6ef1b88cc95b93f9fba8b1a2a4bf74d60fe7d))
+
+
+### Features
+
+* **mcp:** let create_survey add text, textarea, number and yes/no questions ([#1853](https://github.com/ProteinDeficientsAnonymous/pda/issues/1853)) ([04d9f2b](https://github.com/ProteinDeficientsAnonymous/pda/commit/04d9f2b39e908893744960abf9f8d6585f5b0924))
+
 # [0.181.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.180.1...v0.181.0) (2026-10-25)
 
 
