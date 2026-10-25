@@ -9,7 +9,7 @@ from pydantic import Field
 from users.models import User
 from users.permissions import PermissionKey
 
-from mcp_gateway.event_fields import _local
+from mcp_gateway.fields import local_time
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
 from mcp_gateway.view_calls import _tool_error, call_view
 
@@ -39,8 +39,8 @@ def _status(survey: dict[str, Any]) -> str:
 def _overview(survey: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": _status(survey),
-        "opens_at": _local(survey["opens_at"]),
-        "closes_at": _local(survey["closes_at"]),
+        "opens_at": local_time(survey["opens_at"]),
+        "closes_at": local_time(survey["closes_at"]),
         "edit_url": f"{BASE_URL}/admin/surveys/{survey['id']}",
     }
 
@@ -55,7 +55,7 @@ def _option_time(option: str) -> str | None:
         aware = datetime.fromisoformat(option).tzinfo is not None
     except ValueError:
         return None
-    return _local(option) if aware else None
+    return local_time(option) if aware else None
 
 
 def _question(
@@ -133,6 +133,11 @@ async def get_survey(
 ) -> dict[str, Any]:
     user = await current_user()
     body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey, user))
+    return survey_detail(body)
+
+
+def survey_detail(body: dict[str, Any]) -> dict[str, Any]:
+    """return(dict): a get_survey_admin body as the survey tools show it."""
     public = not body["feedback_event_type"]
     return {
         **{key: body[key] for key in _SETTINGS},

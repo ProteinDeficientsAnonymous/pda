@@ -11,7 +11,7 @@ from community.models import EventStatus, EventType
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
-from mcp_gateway.confirm import Confirmed, issue_confirm_token, use_confirm_token
+from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.event_fields import (
     EventChanges,
     EventFields,
@@ -67,9 +67,6 @@ async def find_location(
 
 
 EventRef = Annotated[str, Field(description="event id (uuid) or slug, e.g. from list_my_events")]
-ConfirmToken = Annotated[
-    str | None, Field(description="from the preview; send only after the user said yes")
-]
 
 
 async def _apply(user: Any, event_id: str, payload: EventPatchIn) -> dict[str, Any]:
