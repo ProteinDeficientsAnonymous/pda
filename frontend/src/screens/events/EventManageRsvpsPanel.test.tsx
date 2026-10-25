@@ -213,25 +213,7 @@ describe('EventManageRsvpsPanel', () => {
     expect(screen.queryByText(/^paid$/i)).not.toBeInTheDocument();
   });
 
-  it('shows an unpaid indicator for a paid event guest who has not confirmed', () => {
-    renderPanel(
-      makeEvent({
-        price: '$10',
-        venmoLink: 'https://venmo.com/u/host',
-        guests: [
-          makeGuest({
-            userId: 'u1',
-            name: 'Alex',
-            status: RsvpServerStatus.Attending,
-            paidConfirmed: false,
-          }),
-        ],
-      }),
-    );
-    expect(screen.getByRole('button', { name: /unpaid/i })).toBeInTheDocument();
-  });
-
-  it('shows a paid indicator for a paid event guest who has confirmed', () => {
+  it('shows an unpaid indicator for a paid event guest no host has verified', () => {
     renderPanel(
       makeEvent({
         price: '$10',
@@ -242,6 +224,26 @@ describe('EventManageRsvpsPanel', () => {
             name: 'Alex',
             status: RsvpServerStatus.Attending,
             paidConfirmed: true,
+            paymentVerified: false,
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByRole('button', { name: /unpaid/i })).toBeInTheDocument();
+  });
+
+  it('shows a paid indicator for a paid event guest a host has verified', () => {
+    renderPanel(
+      makeEvent({
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Alex',
+            status: RsvpServerStatus.Attending,
+            paidConfirmed: true,
+            paymentVerified: true,
           }),
         ],
       }),
@@ -259,7 +261,8 @@ describe('EventManageRsvpsPanel', () => {
             userId: 'u1',
             name: 'Alex',
             status: RsvpServerStatus.Attending,
-            paidConfirmed: false,
+            paidConfirmed: true,
+            paymentVerified: false,
           }),
         ],
       }),
@@ -283,6 +286,7 @@ describe('EventManageRsvpsPanel', () => {
             status: RsvpServerStatus.Attending,
             isMember: false,
             paidConfirmed: true,
+            paymentVerified: true,
           }),
         ],
       }),

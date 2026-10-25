@@ -44,6 +44,19 @@ describe('mapEvent', () => {
     expect(result.guests[1]!.paidConfirmed).toBe(false);
   });
 
+  it('maps payment_verified on guests', () => {
+    const result = mapEvent(
+      wireEvent({
+        guests: [
+          { user_id: 'u1', name: 'Verified', status: 'attending', payment_verified: true },
+          { user_id: 'u2', name: 'Unverified', status: 'attending', paid_confirmed: true },
+        ],
+      }),
+    );
+    expect(result.guests[0]!.paymentVerified).toBe(true);
+    expect(result.guests[1]!.paymentVerified).toBe(false);
+  });
+
   it('should map rsvp_questions and my_questionnaire_responses', () => {
     const result = mapEvent(
       wireEvent({

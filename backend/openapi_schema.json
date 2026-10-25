@@ -473,6 +473,55 @@
         "title": "BirthdayOut",
         "type": "object"
       },
+      "BulkPaymentVerifyIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "BulkPaymentVerifyIn",
+        "type": "object"
+      },
+      "BulkPaymentVerifyOut": {
+        "properties": {
+          "already_verified_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Already Verified User Ids",
+            "type": "array"
+          },
+          "event_verified_total": {
+            "description": "Rsvps on the event with a verified payment now.",
+            "title": "Event Verified Total",
+            "type": "integer"
+          },
+          "verified_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Verified User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "verified_user_ids",
+          "already_verified_user_ids",
+          "event_verified_total"
+        ],
+        "title": "BulkPaymentVerifyOut",
+        "type": "object"
+      },
       "BulkUserCreateIn": {
         "properties": {
           "phone_numbers": {
@@ -14033,6 +14082,95 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/rsvps/payments/verify/": {
+      "post": {
+        "description": "Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.",
+        "operationId": "community__event_host_rsvps_verify_guest_payments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkPaymentVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkPaymentVerifyOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Verify Guest Payments",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
       "post": {
         "operationId": "community__event_host_actions_set_attendance",
@@ -14133,7 +14271,7 @@
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/payment/": {
       "patch": {
-        "description": "Let a host confirm or retract a guest's payment without touching their rsvp status.",
+        "description": "Let a host verify or un-verify a guest's payment without touching their rsvp status.",
         "operationId": "community__event_host_rsvps_set_guest_payment",
         "parameters": [
           {
