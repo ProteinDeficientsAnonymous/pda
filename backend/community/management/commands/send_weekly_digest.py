@@ -5,7 +5,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from notifications._email_helpers import format_eastern_datetime, send_weekly_digest_email
+from notifications._digest_emails import send_weekly_digest_email
+from notifications._email_helpers import format_eastern_datetime
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import HAS_EMAIL, User
 
