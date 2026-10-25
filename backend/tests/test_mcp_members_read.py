@@ -2,6 +2,7 @@ import asyncio
 from datetime import timedelta
 
 import pytest
+from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
@@ -14,6 +15,7 @@ from tests.test_mcp_server import _signed_in
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 
 _phones = iter(f"+1202555{n:04d}" for n in range(2000, 3000))
+_BUCKETS = ("active", "still_onboarding", "paused", "archived")
 
 
 def _call(user, **arguments):
@@ -32,6 +34,16 @@ def _joined(days_ago: float, **fields) -> User:
     user = _member(**fields)
     User.objects.filter(pk=user.pk).update(date_joined=timezone.now() - timedelta(days=days_ago))
     return user
+
+
+def _join_request(user, days_ago: float, status=JoinRequestStatus.APPROVED, linked=True):
+    return JoinRequest.objects.create(
+        phone_number=user.phone_number,
+        email="j@e.com",
+        user=user if linked else None,
+        status=status,
+        approved_at=timezone.now() - timedelta(days=days_ago),
+    )
 
 
 def test_hidden_and_forbidden_without_manage_users(test_user):
@@ -54,13 +66,37 @@ def test_buckets_are_disjoint_and_match_app_definitions(manage_users_user):
     _member(archived_at=timezone.now())
     _member(archived_at=timezone.now(), is_paused=True)
     body = _call(manage_users_user)
-    assert {k: body[k] for k in ("total", "active", "still_onboarding", "paused", "archived")} == {
+    assert {k: body[k] for k in ("total", *_BUCKETS)} == {
         "total": 8,
         "active": 3,
         "still_onboarding": 1,
         "paused": 2,
         "archived": 2,
     }
+    assert sum(body[k] for k in _BUCKETS) == body["total"]
+
+
+def test_admin_deactivated_member_is_in_no_bucket(manage_users_user):
+    _member(is_active=False)
+    body = _call(manage_users_user)
+    assert body["total"] == 2
+    assert {k: body[k] for k in _BUCKETS} == {
+        "active": 1,
+        "still_onboarding": 0,
+        "paused": 0,
+        "archived": 0,
+    }
+
+
+def test_self_deleted_member_counts_as_archived(
+    api_client, auth_headers, test_user, manage_users_user
+):
+    body = {"password": "testpass123"}
+    response = api_client.post(
+        "/api/auth/me/delete/", body, content_type="application/json", **auth_headers
+    )
+    assert response.status_code == 204
+    assert _call(manage_users_user)["archived"] == 1
 
 
 def test_non_members_are_not_counted(manage_users_user):
@@ -87,6 +123,22 @@ def test_new_in_period_boundary(manage_users_user):
     assert body["period_days"] == 30
     assert _call(manage_users_user, period_days=7)["new_in_period"] == 1
     assert _call(manage_users_user, period_days=365)["new_in_period"] == 3
+
+
+def test_new_in_period_counts_from_membership_approval(manage_users_user):
+    User.objects.filter(pk=manage_users_user.pk).update(
+        date_joined=timezone.now() - timedelta(days=400)
+    )
+    promoted = _joined(200)
+    _join_request(promoted, days_ago=200, status=JoinRequestStatus.REJECTED)
+    _join_request(promoted, days_ago=2)
+    # Re-approving an archived member links the request by phone only.
+    _join_request(_joined(300), days_ago=60)
+    _join_request(_joined(300), days_ago=3, linked=False)
+    _join_request(_joined(90), days_ago=1, status=JoinRequestStatus.PENDING)
+    # An approval older than the account (e.g. a deleted user's phone reused) doesn't backdate it.
+    _join_request(_joined(1), days_ago=100, linked=False)
+    assert _call(manage_users_user)["new_in_period"] == 3
 
 
 @pytest.mark.parametrize("period_days", [0, 366])
