@@ -34,7 +34,11 @@ export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
         }}
       />
       <Toggle
-        label="monthly digest of events and veganniversaries"
+        label={
+          user.isMember
+            ? 'monthly digest of events and veganniversaries'
+            : 'monthly digest of events'
+        }
         checked={!user.monthlyDigestOptOut}
         onChange={(v) => {
           onChange({ monthlyDigestOptOut: !v });

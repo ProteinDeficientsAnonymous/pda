@@ -44,7 +44,7 @@ def digest_urls() -> dict[str, str]:
     }
 
 
-def digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
+def weekly_digest_recipients(users: QuerySet[User]) -> QuerySet[User]:
     return users.filter(HAS_EMAIL, weekly_digest_opt_out=False)
 
 
@@ -58,7 +58,7 @@ def monthly_digest_recipients(users: QuerySet[User], today: date) -> QuerySet[Us
 def send_digest_to_all(
     send: SendDigest,
     sender: EmailSender,
-    recipients,
+    recipients: QuerySet[User],
     payload: dict,
     on_sent: Callable[[User], None] | None = None,
 ) -> tuple[int, int]:
@@ -103,4 +103,5 @@ def shoutout_members() -> QuerySet[User]:
             veganniversary_shoutout_opt_in=True,
         )
         .exclude(first_name="")
+        .order_by("first_name")
     )

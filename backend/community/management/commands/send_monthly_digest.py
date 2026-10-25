@@ -30,7 +30,8 @@ def _start_of_next_month(today) -> datetime:
 class Command(BaseCommand):
     help = (
         "On the 1st of the month, email active and tentative members this month's "
-        "upcoming events and members this month's veganniversaries. Runs from the daily cron."
+        "upcoming events and members this month's veganniversaries. Runs from the "
+        "cron-monthly-digest Railway service."
     )
 
     def add_arguments(self, parser):
