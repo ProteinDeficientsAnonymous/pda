@@ -27,6 +27,7 @@ NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
 FOOD = {"label": "food?", "field_type": "radio", "options": ["vegan", "very vegan"]}
 WHY = {"label": "why?", "show_if": {"position": 1, "value": "very vegan"}}
+SECTION = {"label": "about you", "field_type": "section", "description": " optional "}
 POLL = {"label": "when", "field_type": "datetime_poll", "options": ["2099-11-07T11:00"]}
 
 
@@ -153,6 +154,9 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
     [
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
+        (({**SECTION, "options": ["x"]},), {}, "section questions take no options"),
+        (({**SECTION, "required": True},), {}, "section headers can't be required"),
+        (({**NAME, "description": "x"},), {}, "only section headers take a description"),
         (({"label": "rate", "field_type": "rating", "options": ["a"] * 6},), {}, "at most 5"),
         (({**POLL, "options": ["2099-07-04T11:00Z"]},), {}, "new york is at -04:00 on"),
         ((FOOD, {**WHY, "show_if": {"position": 2, "value": "vegan"}}), {}, "earlier question"),
@@ -170,6 +174,14 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
 def test_bad_input_refused_before_writing(surveys_admin, questions, changes, message):
     assert message in _create_refused(surveys_admin, questions, **changes)
     assert not Survey.objects.exists()
+
+
+def test_creates_section_headers(surveys_admin):
+    summary = _create(surveys_admin, (SECTION, NAME))
+    section, name = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
+    assert (section.field_type, section.description) == ("section", "optional")
+    assert (name.field_type, name.description) == ("text", "")
+    assert summary["questions"][0]["description"] == "optional"
 
 
 def test_show_if_wired_to_the_created_source(surveys_admin):

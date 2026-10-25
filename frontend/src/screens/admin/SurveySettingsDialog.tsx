@@ -29,7 +29,6 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
     visibility: survey.visibility,
     oneResponsePerUser: survey.oneResponsePerUser,
     anonymous: survey.anonymous,
-    confirmationMessage: survey.confirmationMessage,
     opensAt: survey.opensAt,
     closesAt: survey.closesAt,
     maxResponses: survey.maxResponses,

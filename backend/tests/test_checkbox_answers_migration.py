@@ -16,7 +16,7 @@ from django.apps import apps
 from tests._survey_condition_helpers import make_question
 from tests.conftest import future_iso
 
-migration = importlib.import_module("community.migrations.0113_checkbox_answers_to_lists")
+migration = importlib.import_module("community.migrations.0117_checkbox_answers_to_lists")
 
 
 @pytest.mark.django_db

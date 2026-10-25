@@ -31,6 +31,7 @@ class NotificationType(models.TextChoices):
     PAYMENT_REVOKED = "payment_revoked", "Payment Confirmation Revoked"
     ACCOUNT_DELETED = "account_deleted", "Account Deleted"
     EVENT_FEEDBACK = "event_feedback", "Event Feedback"
+    SURVEY_RESPONSE = "survey_response", "Survey Response"
 
 
 class Notification(models.Model):
@@ -47,6 +48,13 @@ class Notification(models.Model):
     )
     event = models.ForeignKey(
         "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="notifications",
+    )
+    survey = models.ForeignKey(
+        "community.Survey",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

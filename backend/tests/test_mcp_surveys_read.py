@@ -199,6 +199,7 @@ def test_get_survey_questions_in_order_with_show_if_source(surveys_admin):
             "label": "came?",
             "field_type": "radio",
             "options": ["yes", "no"],
+            "description": "",
             "required": False,
             "position": 1,
             "show_if": None,
@@ -208,6 +209,7 @@ def test_get_survey_questions_in_order_with_show_if_source(surveys_admin):
             "label": "why?",
             "field_type": "text",
             "options": [],
+            "description": "",
             "required": False,
             "position": 2,
             "show_if": {

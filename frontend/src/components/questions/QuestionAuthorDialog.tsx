@@ -19,6 +19,7 @@ export interface QuestionAuthorValues<T extends string = QuestionType> {
   label: string;
   fieldType: T;
   options: string[];
+  description?: string;
   required: boolean;
 }
 

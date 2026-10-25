@@ -32,6 +32,7 @@ export const Code = {
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
+    PaymentVerifyNotGuests: 'event.payment_verify_not_guests',
     WaitlistOrderStale: 'event.waitlist_order_stale',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
@@ -216,6 +217,11 @@ export const Code = {
     InvalidEventType: 'attendance_import.invalid_event_type',
     AmbiguousUserPick: 'attendance_import.ambiguous_user_pick',
   },
+  CashAppImport: {
+    CsvEmpty: 'cashapp_import.csv_empty',
+    CsvMissingColumns: 'cashapp_import.csv_missing_columns',
+    CsvTooManyRows: 'cashapp_import.csv_too_many_rows',
+  },
   AttendanceMark: {
     EventOrTitleRequired: 'attendance_mark.event_or_title_required',
     InvalidEventType: 'attendance_mark.invalid_event_type',
@@ -314,6 +320,7 @@ export type ValidationCode =
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
+  | 'event.payment_verify_not_guests'
   | 'event.waitlist_order_stale'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
@@ -463,6 +470,9 @@ export type ValidationCode =
   | 'attendance_import.event_or_title_required'
   | 'attendance_import.invalid_event_type'
   | 'attendance_import.ambiguous_user_pick'
+  | 'cashapp_import.csv_empty'
+  | 'cashapp_import.csv_missing_columns'
+  | 'cashapp_import.csv_too_many_rows'
   | 'attendance_mark.event_or_title_required'
   | 'attendance_mark.invalid_event_type'
   | 'attendance_mark.no_members_selected'
@@ -528,6 +538,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
+  'event.payment_verify_not_guests': ['user_ids'],
   'event.waitlist_order_stale': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
@@ -677,6 +688,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'attendance_import.event_or_title_required': [],
   'attendance_import.invalid_event_type': [],
   'attendance_import.ambiguous_user_pick': ['row_index'],
+  'cashapp_import.csv_empty': [],
+  'cashapp_import.csv_missing_columns': ['columns'],
+  'cashapp_import.csv_too_many_rows': ['max_rows'],
   'attendance_mark.event_or_title_required': [],
   'attendance_mark.invalid_event_type': [],
   'attendance_mark.no_members_selected': [],

@@ -1349,6 +1349,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/rsvps/payments/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Guest Payments
+         * @description Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.
+         */
+        post: operations["community__event_host_rsvps_verify_guest_payments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
         parameters: {
             query?: never;
@@ -1381,7 +1401,7 @@ export interface paths {
         head?: never;
         /**
          * Set Guest Payment
-         * @description Let a host confirm or retract a guest's payment without touching their rsvp status.
+         * @description Let a host verify or un-verify a guest's payment without touching their rsvp status.
          */
         patch: operations["community__event_host_rsvps_set_guest_payment"];
         trace?: never;
@@ -1773,6 +1793,23 @@ export interface paths {
         head?: never;
         /** Update Member Promotion Message */
         patch: operations["community__member_promotion_message_update_member_promotion_message"];
+        trace?: never;
+    };
+    "/api/community/official-event-defaults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Official Event Defaults */
+        get: operations["community__official_event_defaults_get_official_event_defaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/pages/{slug}/": {
@@ -2651,6 +2688,23 @@ export interface components {
             month: number;
             /** Year */
             year?: number | null;
+        };
+        /** BulkPaymentVerifyIn */
+        BulkPaymentVerifyIn: {
+            /** User Ids */
+            user_ids: string[];
+        };
+        /** BulkPaymentVerifyOut */
+        BulkPaymentVerifyOut: {
+            /** Already Verified User Ids */
+            already_verified_user_ids: string[];
+            /**
+             * Event Verified Total
+             * @description Rsvps on the event with a verified payment now.
+             */
+            event_verified_total: number;
+            /** Verified User Ids */
+            verified_user_ids: string[];
         };
         /** BulkUserCreateIn */
         BulkUserCreateIn: {
@@ -4699,8 +4753,12 @@ export interface components {
             has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
+            /** Host Digest Opt Out */
+            host_digest_opt_out?: boolean | null;
             /** Last Name */
             last_name?: string | null;
+            /** Monthly Digest Opt Out */
+            monthly_digest_opt_out?: boolean | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
             /** Nickname */
@@ -4935,6 +4993,15 @@ export interface components {
             notification_type: string;
             /** Related User Id */
             related_user_id: string | null;
+            /** Survey Id */
+            survey_id: string | null;
+        };
+        /** OfficialEventDefaultsOut */
+        OfficialEventDefaultsOut: {
+            /** Cashapp Link */
+            cashapp_link: string;
+            /** Rsvp Questions */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
         };
         /** OnboardingIn */
         OnboardingIn: {
@@ -5152,7 +5219,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -5173,9 +5240,16 @@ export interface components {
             name: string;
             /**
              * Paid Confirmed
+             * @description Guest says they paid, or a host verified it.
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Payment Verified
+             * @description A host verified the payment.
+             * @default false
+             */
+            payment_verified: boolean;
             /** Phone */
             phone?: string | null;
             /**
@@ -5558,6 +5632,11 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** @default text */
             field_type: components["schemas"]["QuestionType"];
             /** Label */
@@ -5581,6 +5660,11 @@ export interface components {
         };
         /** SurveyQuestionOut */
         SurveyQuestionOut: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** Display Order */
             display_order: number;
             field_type: components["schemas"]["QuestionType"];
@@ -5828,6 +5912,11 @@ export interface components {
              * @default false
              */
             hide_last_name: boolean;
+            /**
+             * Host Digest Opt Out
+             * @default false
+             */
+            host_digest_opt_out: boolean;
             /** Id */
             id: string;
             /**
@@ -5857,6 +5946,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Monthly Digest Opt Out
+             * @default false
+             */
+            monthly_digest_opt_out: boolean;
             /**
              * Needs Contact Privacy Consent
              * @default false
@@ -10148,6 +10242,68 @@ export interface operations {
             };
         };
     };
+    community__event_host_rsvps_verify_guest_payments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkPaymentVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPaymentVerifyOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__event_host_actions_set_attendance: {
         parameters: {
             query?: never;
@@ -11329,6 +11485,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__official_event_defaults_get_official_event_defaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficialEventDefaultsOut"];
                 };
             };
         };

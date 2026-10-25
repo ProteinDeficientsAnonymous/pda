@@ -82,7 +82,6 @@ describe('SurveySettingsDialog', () => {
         visibility: 'public',
         oneResponsePerUser: true,
         anonymous: false,
-        confirmationMessage: '',
         opensAt: null,
         closesAt: null,
         maxResponses: null,
@@ -165,17 +164,15 @@ describe('SurveySettingsDialog', () => {
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('saves anonymous and confirmation message edits', async () => {
+  it('saves anonymous edits', async () => {
     renderDialog();
     await userEvent.click(screen.getByLabelText(/anonymous responses/));
-    await userEvent.type(screen.getByLabelText('confirmation message'), 'thanks!');
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ anonymous: true, confirmationMessage: 'thanks!' }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ anonymous: true }));
     });
+    expect(screen.queryByLabelText('confirmation message')).not.toBeInTheDocument();
   });
 
   it('disables one response per user while anonymous is checked', async () => {
