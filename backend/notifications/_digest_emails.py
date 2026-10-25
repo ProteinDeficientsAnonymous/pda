@@ -32,3 +32,29 @@ def send_weekly_digest_email(  # noqa: PLR0913
         html=html,
         text=text,
     )
+
+
+def send_monthly_digest_email(  # noqa: PLR0913
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    month: str,
+    events: list[dict],
+    urls: dict[str, str],
+) -> SendResult:
+    """Render and send the monthly "what's coming up" digest to one member.
+
+    param month(str): month name shown in the subject and intro
+    param events(list[dict]): this month's events, each with title/when/url keys
+    param urls: calendar_url and settings_url
+    """
+    context = {"display_name": display_name or "", "month": month.lower(), "events": events, **urls}
+    html = render_to_string("emails/monthly_digest.html", context)
+    text = render_to_string("emails/monthly_digest.txt", context)
+    return sender.send(
+        to=to,
+        subject=f"what's coming up in {month.lower()} at pda",
+        html=html,
+        text=text,
+    )

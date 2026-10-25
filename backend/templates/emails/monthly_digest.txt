@@ -1,0 +1,17 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+{% if events %}
+here's what's coming up in {{ month }}:
+{% for event in events %}
+{{ event.title|lower }}{% if event.when %}
+{{ event.when|lower }}{% endif %}
+{{ event.url }}
+{% endfor %}{% endif %}
+see the full calendar:
+
+{{ calendar_url }}
+
+— pda
+
+don't want emails like this? update your preferences: {{ settings_url }}
+
+{% include "emails/_no_reply_footer.txt" %}
