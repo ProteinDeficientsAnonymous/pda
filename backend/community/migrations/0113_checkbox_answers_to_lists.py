@@ -17,6 +17,7 @@ def _convert(snapshots: dict, checkbox_ids: set[str], *, to_list: bool) -> bool:
             snap["answer"] = [v.strip() for v in answer.split(",") if v.strip()]
             changed = True
         elif not to_list and isinstance(answer, list):
+            # Lossy for options containing commas: the old format has no way to represent them.
             snap["answer"] = ",".join(answer)
             changed = True
     return changed
