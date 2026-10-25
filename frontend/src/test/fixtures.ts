@@ -27,6 +27,7 @@ export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
     plusOneAttendance: AttendanceStatus.Unknown,
     isMember: true,
     paidConfirmed: false,
+    paymentVerified: false,
     questionnaireResponses: {},
     ...overrides,
   };

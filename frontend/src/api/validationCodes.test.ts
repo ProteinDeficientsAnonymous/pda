@@ -29,6 +29,12 @@ describe('messageForCode', () => {
     expect(out).toContain('must contain a number');
   });
 
+  it('says a bulk payment verify only covers attending or waitlisted guests', () => {
+    expect(messageForCode({ code: Code.Event.PaymentVerifyNotGuests, field: null })).toMatch(
+      /attending or waitlisted/,
+    );
+  });
+
   it('explains an unsafe photo', () => {
     expect(
       messageForCode({

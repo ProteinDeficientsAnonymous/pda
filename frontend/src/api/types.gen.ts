@@ -1349,6 +1349,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/rsvps/payments/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Guest Payments
+         * @description Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.
+         */
+        post: operations["community__event_host_rsvps_verify_guest_payments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
         parameters: {
             query?: never;
@@ -1381,7 +1401,7 @@ export interface paths {
         head?: never;
         /**
          * Set Guest Payment
-         * @description Let a host confirm or retract a guest's payment without touching their rsvp status.
+         * @description Let a host verify or un-verify a guest's payment without touching their rsvp status.
          */
         patch: operations["community__event_host_rsvps_set_guest_payment"];
         trace?: never;
@@ -2651,6 +2671,23 @@ export interface components {
             month: number;
             /** Year */
             year?: number | null;
+        };
+        /** BulkPaymentVerifyIn */
+        BulkPaymentVerifyIn: {
+            /** User Ids */
+            user_ids: string[];
+        };
+        /** BulkPaymentVerifyOut */
+        BulkPaymentVerifyOut: {
+            /** Already Verified User Ids */
+            already_verified_user_ids: string[];
+            /**
+             * Event Verified Total
+             * @description Rsvps on the event with a verified payment now.
+             */
+            event_verified_total: number;
+            /** Verified User Ids */
+            verified_user_ids: string[];
         };
         /** BulkUserCreateIn */
         BulkUserCreateIn: {
@@ -5173,9 +5210,16 @@ export interface components {
             name: string;
             /**
              * Paid Confirmed
+             * @description Guest says they paid, or a host verified it.
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Payment Verified
+             * @description A host verified the payment.
+             * @default false
+             */
+            payment_verified: boolean;
             /** Phone */
             phone?: string | null;
             /**
@@ -10109,6 +10153,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_host_rsvps_verify_guest_payments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkPaymentVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPaymentVerifyOut"];
+                };
             };
             /** @description Bad Request */
             400: {
