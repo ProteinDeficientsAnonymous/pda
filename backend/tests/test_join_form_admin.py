@@ -1,6 +1,7 @@
 """Tests for join-form question admin endpoints (CRUD + reorder)."""
 
 import json
+from uuid import uuid4
 
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
@@ -67,6 +68,33 @@ class TestReorderJoinFormQuestions:
         # Re-read from db; check display_order matches new position.
         for idx, qid in enumerate(new_order):
             assert JoinFormQuestion.objects.get(id=qid).display_order == idx
+
+    def test_reorder_ignores_unknown_ids(self, api_client, form_admin_headers):
+        qs = _make_questions(2)
+        new_order = [str(uuid4()), str(qs[1].id), str(qs[0].id)]
+        response = api_client.put(
+            "/api/community/join-form/questions/order/",
+            data=json.dumps({"question_ids": new_order}),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 200
+        assert JoinFormQuestion.objects.get(id=qs[1].id).display_order == 1
+        assert JoinFormQuestion.objects.get(id=qs[0].id).display_order == 2
+
+    def test_reorder_duplicate_id_takes_last_position(self, api_client, form_admin_headers):
+        qs = _make_questions(2)
+        first = qs[0].id
+        new_order = [str(first), str(qs[1].id), first.hex.upper()]
+        response = api_client.put(
+            "/api/community/join-form/questions/order/",
+            data=json.dumps({"question_ids": new_order}),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 200
+        assert JoinFormQuestion.objects.get(id=first).display_order == 2
+        assert JoinFormQuestion.objects.get(id=qs[1].id).display_order == 1
 
     def test_reorder_query_count_is_constant(self, api_client, form_admin_headers):
         def reorder_queries() -> int:
