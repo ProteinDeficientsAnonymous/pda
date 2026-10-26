@@ -1,3 +1,10 @@
+## [0.204.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.1...v0.204.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** edit the loaded response instead of adding a new one ([#1913](https://github.com/ProteinDeficientsAnonymous/pda/issues/1913)) ([89a097c](https://github.com/ProteinDeficientsAnonymous/pda/commit/89a097cb7e460a471961ebb01f07f916d569ff33))
+
 ## [0.204.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.0...v0.204.1) (2026-10-26)
 
 
