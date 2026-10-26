@@ -8,6 +8,7 @@ from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
+from users.roles import Role
 
 from tests.conftest import future_iso
 
@@ -31,13 +32,25 @@ def _roles_queries(ctx: CaptureQueriesContext) -> int:
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("auth", [gated_jwt, _optional_jwt], ids=["gated", "optional"])
-def test_has_permission_is_free_after_auth(auth, test_user, django_assert_num_queries):
+def test_has_permission_loads_roles_once(auth, test_user, django_assert_num_queries):
     token = str(RefreshToken.for_user(test_user).access_token)
-    request = RequestFactory().get("/api/community/events/")
-    user = auth.authenticate(request, token)
-    with django_assert_num_queries(0):
+    user = auth.authenticate(RequestFactory().get("/api/community/events/"), token)
+    with django_assert_num_queries(1):
         user.has_permission(PermissionKey.MANAGE_EVENTS)
         user.has_permission(PermissionKey.MANAGE_USERS)
+
+
+@pytest.mark.django_db
+def test_roles_add_invalidates_cached_roles(test_user):
+    assert not test_user.has_permission(PermissionKey.MANAGE_USERS)
+    test_user.roles.add(Role.objects.get(name="admin", is_default=True))
+    assert test_user.has_permission(PermissionKey.MANAGE_USERS)
+
+
+@pytest.mark.django_db
+def test_unread_count_skips_roles(api_client, auth_headers):
+    ctx = _capture(api_client, "/api/notifications/unread-count/", auth_headers)
+    assert _roles_queries(ctx) == 0
 
 
 @pytest.mark.django_db

@@ -8,7 +8,7 @@ from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -218,14 +218,11 @@ class User(AbstractUser):
         return self.full_name or self.phone_number
 
     def has_permission(self, key: str) -> bool:
-        """Return True if any of the user's roles grants this permission key.
-
-        Uses the prefetch cache when available (avoids N+1 in list views),
-        otherwise falls back to a queryset.
-        """
-        cache = getattr(self, "_prefetched_objects_cache", {})
-        roles = cache["roles"] if "roles" in cache else self.roles.all()
-        for role in roles:
+        """Return True if any of the user's roles grants this permission key."""
+        # Cached after the first call; roles.add/remove/set/clear invalidate it.
+        if "roles" not in getattr(self, "_prefetched_objects_cache", {}):
+            prefetch_related_objects([self], "roles")
+        for role in self._prefetched_objects_cache["roles"]:
             # effective_permissions expands the admin role and guards corrupt rows
             if key in role.effective_permissions:
                 return True

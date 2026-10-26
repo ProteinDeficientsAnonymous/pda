@@ -4,7 +4,7 @@ import secrets
 from datetime import timedelta
 
 import icalendar
-from config.auth import gated_jwt, with_roles
+from config.auth import gated_jwt
 from django.db.models import Prefetch, Q
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
@@ -127,7 +127,7 @@ def _feed_user(token: str):
     # The feed carries member-only data, so it must stop when site access does.
     if user.archived_at is not None or user.is_paused:
         return None
-    return with_roles(user)
+    return user
 
 
 @router.get("/calendar/feed/", auth=None)
