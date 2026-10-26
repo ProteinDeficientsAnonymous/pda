@@ -72,14 +72,10 @@ def _response_to_update(
     if survey.one_response_per_user:
         return _find_my_response(survey, responder, response_token)
     # multi-response surveys only edit the row the form loaded; a fresh submit adds one
-    if response_id is None:
+    # no token is minted on multi-response surveys, so there's no way to prove a logged-out owner
+    if response_id is None or responder is None:
         return None
-    rows = survey.responses.filter(id=response_id)
-    if responder is not None:
-        return rows.filter(user=responder).first()
-    if not response_token or len(response_token) > _MAX_ANONYMOUS_TOKEN_LENGTH:
-        return None
-    return rows.filter(user__isnull=True, anonymous_token=response_token).first()
+    return survey.responses.filter(id=response_id, user=responder).first()
 
 
 def _survey_out(

@@ -56,3 +56,12 @@ class TestMultiResponseEdit:
         assert response.status_code == 201
         assert response.json()["id"] != theirs["id"]
         assert _answer(SurveyResponse.objects.get(id=theirs["id"]), repeat_survey) == "mine"
+
+    def test_logged_out_submit_with_response_id_adds_a_row(
+        self, api_client, auth_headers, repeat_survey
+    ):
+        mine = _submit(api_client, repeat_survey, "mine", auth_headers).json()
+        response = _submit(api_client, repeat_survey, "anon", {}, mine["id"])
+        assert response.status_code == 201
+        assert response.json()["id"] != mine["id"]
+        assert _answer(SurveyResponse.objects.get(id=mine["id"]), repeat_survey) == "mine"
