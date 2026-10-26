@@ -11,7 +11,7 @@ from users.models import User
 from users.permissions import PermissionKey
 
 from community._attendance_mark_schemas import AttendanceMarkIn, AttendanceMarkOut
-from community._attendance_shared import require_permission
+from community._attendance_shared import require_permission, upsert_attendance_rsvps
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
@@ -79,22 +79,10 @@ def mark_attendance(request, payload: AttendanceMarkIn):
     event = _resolve_event(payload, request)
     users_by_id = {str(u.id): u for u in User.objects.filter(id__in=user_ids)}
 
-    created_count = updated_count = 0
-    for user_id in user_ids:
-        user = users_by_id.get(user_id)
-        if user is None:
-            continue
-        _, created = event.rsvps.update_or_create(
-            user=user,
-            defaults={
-                "status": RSVPStatus.ATTENDING,
-                "attendance": AttendanceStatus.ATTENDED,
-            },
-        )
-        if created:
-            created_count += 1
-        else:
-            updated_count += 1
+    attended = (RSVPStatus.ATTENDING, AttendanceStatus.ATTENDED)
+    marks = {users_by_id[uid].pk: attended for uid in user_ids if uid in users_by_id}
+    updated_count = len(upsert_attendance_rsvps(event, marks))
+    created_count = len(marks) - updated_count
     skipped_count = len(user_ids) - len(users_by_id)
 
     audit_log(

@@ -17,7 +17,7 @@ from community._attendance_import_schemas import (
     AttendanceImportPreviewOut,
     EventOptionOut,
 )
-from community._attendance_shared import require_permission
+from community._attendance_shared import require_permission, upsert_attendance_rsvps
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
@@ -140,16 +140,6 @@ def _resolve_status_and_attendance(row) -> tuple[str, str]:
     return RSVPStatus.MAYBE, AttendanceStatus.UNKNOWN
 
 
-def _apply_row(event: Event, row, user: User) -> bool:
-    """Upsert one EventRSVP for a resolved import row. return(bool): True if created."""
-    rsvp_status, attendance = _resolve_status_and_attendance(row)
-    _, created = event.rsvps.update_or_create(
-        user=user,
-        defaults={"status": rsvp_status, "attendance": attendance},
-    )
-    return created
-
-
 @router.post(
     "/events/attendance-import/commit/",
     response={
@@ -170,19 +160,21 @@ def commit_attendance_import(request, payload: AttendanceImportCommitIn):
     user_ids = {r.user_id for r in payload.rows if r.user_id and not r.skip}
     users_by_id = {str(u.id): u for u in User.objects.filter(id__in=user_ids)}
 
-    created_count = updated_count = skipped_count = 0
-    for row in payload.rows:
-        if row.skip or not row.user_id:
-            skipped_count += 1
-            continue
-        user = users_by_id.get(row.user_id)
-        if user is None:
-            skipped_count += 1
-            continue
-        if _apply_row(event, row, user):
-            created_count += 1
-        else:
+    resolved = [
+        (row, users_by_id[row.user_id])
+        for row in payload.rows
+        if not row.skip and row.user_id and row.user_id in users_by_id
+    ]
+    marks = {user.pk: _resolve_status_and_attendance(row) for row, user in resolved}
+    seen = upsert_attendance_rsvps(event, marks)
+    created_count = updated_count = 0
+    for _, user in resolved:
+        if user.pk in seen:
             updated_count += 1
+        else:
+            created_count += 1
+            seen.add(user.pk)
+    skipped_count = len(payload.rows) - len(resolved)
 
     audit_log(
         logging.INFO,
