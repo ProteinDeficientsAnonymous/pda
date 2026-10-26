@@ -26,6 +26,7 @@ from community._event_helpers import (
     _set_event_tags,
     broadcast_capacity_change,
     is_cohost,
+    reload_event_or_404,
 )
 from community._event_list import (
     EventListQuery,
@@ -351,6 +352,4 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     email_removed_non_members(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
-    # Re-fetch to pick up any M2M changes
-    event.refresh_from_db()
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))
