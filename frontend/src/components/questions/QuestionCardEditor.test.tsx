@@ -172,6 +172,18 @@ describe('QuestionCardEditor', () => {
     });
   });
 
+  it('saves a 1–5 scale with no options to fill in yet', async () => {
+    const { onSave } = renderCard();
+    fireEvent.change(screen.getByLabelText('question type'), {
+      target: { value: QuestionType.Scale },
+    });
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldType: QuestionType.Scale, options: [] }),
+      );
+    });
+  });
+
   it('shows the server error when a save fails', async () => {
     const onSave = vi.fn().mockRejectedValue(new Error('boom'));
     render(

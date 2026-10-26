@@ -38,6 +38,7 @@ def test_survey_question_schemas_use_catalog_question_type():
         "number",
         "boolean",
         "stars",
+        "scale",
         "datetime_poll",
         "section",
     }

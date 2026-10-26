@@ -151,6 +151,8 @@ class SurveyQuestionIn(BaseModel):
             self.options, self.required = [], False
         else:
             self.description = ""
+        if self.field_type == SurveyQuestionType.SCALE:
+            self.options = []
         return self
 
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { QuestionType } from '@/api/questionTypes';
@@ -44,6 +44,20 @@ describe('QuestionField', () => {
     expect(screen.getByRole('radiogroup')).toHaveClass('flex-col');
     expect(screen.getByRole('radio', { name: 'loved it' })).toHaveTextContent('loved it');
     expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
+  });
+
+  it('renders a 1–5 scale and reports the picked point', () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: QuestionType.Scale }}
+        value="3"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: '3' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: '5' }));
+    expect(onChange).toHaveBeenCalledWith('5');
   });
 
   it('renders a single-line text field for text type', () => {

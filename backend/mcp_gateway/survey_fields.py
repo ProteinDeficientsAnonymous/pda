@@ -22,6 +22,7 @@ _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
 _RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
 _TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; stars: 1-5 stars; "
+_TYPES += "scale: pick 1-5 on numbered buttons; "
 _TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time; section: a heading "
 _TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
