@@ -1,3 +1,10 @@
+## [0.205.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.6...v0.205.7) (2026-10-26)
+
+
+### Performance Improvements
+
+* 1923 - reload edited events with prefetches ([#1936](https://github.com/ProteinDeficientsAnonymous/pda/issues/1936)) ([1738d62](https://github.com/ProteinDeficientsAnonymous/pda/commit/1738d625d56e3683f4399cebaabf19f4cec13582))
+
 ## [0.205.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.5...v0.205.6) (2026-10-26)
 
 
