@@ -8,7 +8,7 @@ from notifications._email_helpers import send_whatsapp_join_reminder_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._whatsapp_join_reminder import due_reminder_number
+from community._whatsapp_join_reminder import MAX_REMINDERS, due_reminder_number
 from community.models import WhatsAppJoinReminder, WhatsAppLinkConfig
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ def _recipients():
             reminder_count=Count("whatsapp_join_reminders"),
             last_reminder_at=Max("whatsapp_join_reminders__sent_at"),
         )
+        .filter(reminder_count__lt=MAX_REMINDERS)
     )
 
 

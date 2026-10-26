@@ -7,7 +7,9 @@ from unittest.mock import MagicMock
 import pytest
 from community.models import AttendanceReminder
 from django.core.management import call_command
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
@@ -131,3 +133,25 @@ class TestSendAttendanceRemindersCommand:
         reminders = AttendanceReminder.objects.filter(user=user)
         assert reminders.count() == 1
         assert reminders.first().milestone == "m11"
+
+
+def _run_counting_queries(new_members: int, start: int) -> int:
+    for i in range(start, start + new_members):
+        user = _make_member(f"+1202555{i:04d}")
+        AttendanceReminder.objects.create(
+            user=user, milestone="m12", anchor_date=_PAST_JOINED.date()
+        )
+    with (
+        override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()),
+        CaptureQueriesContext(connection) as ctx,
+    ):
+        call_command("send_attendance_reminders")
+    return len(ctx.captured_queries)
+
+
+@pytest.mark.django_db
+def test_query_count_is_constant_in_member_count(fake_sender):
+    small = _run_counting_queries(2, 1000)
+    large = _run_counting_queries(6, 2000)
+    assert large == small
+    fake_sender.send.assert_not_called()
