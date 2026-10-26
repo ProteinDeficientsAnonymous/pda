@@ -35,6 +35,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says only members can be co-hosts', () => {
+    expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
+      'only members can be co-hosts',
+    );
+  });
+
   it('explains an empty cash app csv', () => {
     expect(messageForCode({ code: Code.CashAppImport.CsvEmpty, field: null })).toMatch(
       /doesn't have any rows/,
