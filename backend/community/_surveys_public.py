@@ -15,8 +15,8 @@ from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
-    _find_my_response,
     _has_finalize_permission,
+    _response_to_update,
     _submit_out,
     _survey_out,
     _tally_question,
@@ -90,7 +90,13 @@ def get_survey_public(request, slug: str, response_token: str = ""):
     auth=_optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
-def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, response_token: str = ""):
+def submit_survey_response(
+    request,
+    slug: str,
+    payload: SurveyAnswersIn,
+    response_token: str = "",
+    response_id: UUID | None = None,
+):
     auth_user = _authenticated_user(request.auth)
     # select_for_update() serializes concurrent submits against the same survey row,
     # so the max_responses check-then-create can't race past the cap (issue #1465).
@@ -101,11 +107,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn, respons
         if survey.anonymous:
             # Audit rows and request log lines would re-link the submitter by timestamp.
             mark_request_anonymized(request)
-        existing = (
-            _find_my_response(survey, response_user, response_token)
-            if survey.one_response_per_user
-            else None
-        )
+        existing = _response_to_update(survey, response_user, response_token, response_id)
         if not survey_is_open(survey, check_cap=existing is None):
             raise_validation(Code.Survey.CLOSED, status_code=400)
         questions = {str(q.id): q for q in survey.questions.all()}

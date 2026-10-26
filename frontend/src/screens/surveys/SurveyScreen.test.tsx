@@ -300,6 +300,64 @@ describe('SurveyScreen post-submit confirmation', () => {
   });
 });
 
+describe('SurveyScreen multi-response survey', () => {
+  const answeredSurvey = {
+    ...baseWireSurvey,
+    one_response_per_user: false,
+    my_response_id: 'resp-1',
+    my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+  };
+  const submitted = {
+    data: { id: 'resp-2', user_id: 'u1', user_name: 'x', answers: {}, submitted_at: '2026-01-01' },
+  };
+
+  it('updates the loaded response instead of adding a new one', async () => {
+    mockedGet.mockResolvedValue({ data: answeredSurvey });
+    mockedPost.mockResolvedValueOnce(submitted);
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'update response' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'previous answer' } },
+        { params: { response_id: 'resp-1' } },
+      );
+    });
+  });
+
+  it('starts a blank response that is submitted as a new one', async () => {
+    mockedGet.mockResolvedValue({ data: answeredSurvey });
+    mockedPost.mockResolvedValueOnce(submitted);
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'submit another response' }));
+    const field = screen.getByLabelText('thoughts · required');
+    expect(field).toHaveValue('');
+    fireEvent.change(field, { target: { value: 'second take' } });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'second take' } },
+        { params: undefined },
+      );
+    });
+  });
+
+  it('hides submit-another on a one-response-per-person survey', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...answeredSurvey, one_response_per_user: true } });
+    renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'submit another response' }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('SurveyScreen anonymous response token', () => {
   const respondedSurvey = {
     ...baseWireSurvey,
@@ -333,7 +391,7 @@ describe('SurveyScreen anonymous response token', () => {
       expect(mockedPost).toHaveBeenCalledWith(
         '/api/community/surveys/view/feedback/respond/',
         { answers: { q1: 'previous answer' } },
-        { params: { response_token: 'tok-1' } },
+        { params: { response_token: 'tok-1', response_id: 'resp-1' } },
       );
     });
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/view/feedback/', {

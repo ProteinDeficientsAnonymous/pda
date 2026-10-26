@@ -76,7 +76,8 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
 
 function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
   const qc = useQueryClient();
-  const submit = useSubmitSurvey(survey.slug);
+  const [editingId, setEditingId] = useState(survey.myResponseId);
+  const submit = useSubmitSurvey(survey.slug, editingId);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   // Lazy init so the user's prior response loads exactly once when the form
   // mounts. Subsequent server updates (e.g. poll finalized) re-render the
@@ -141,16 +142,22 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
     }
   }
 
-  const submitLabel = survey.myResponseId ? 'update response' : 'submit';
+  const submitLabel = editingId ? 'update response' : 'submit';
+  const canSubmitAnother = !readOnly && !survey.oneResponsePerUser && editingId !== null;
   const canStartFresh =
     !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
 
-  function startNewResponse() {
-    clearStoredSurveyToken(survey.slug);
+  function resetForm() {
+    setEditingId(null);
     setAnswers({});
     setErrors({});
     setServerError(null);
     submit.reset();
+  }
+
+  function startNewResponse() {
+    clearStoredSurveyToken(survey.slug);
+    resetForm();
     void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
   }
 
@@ -203,6 +210,16 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
           <Button type="submit" disabled={submit.isPending}>
             {submit.isPending ? 'saving…' : submitLabel}
           </Button>
+        ) : null}
+
+        {canSubmitAnother ? (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="text-foreground-tertiary self-start text-sm underline"
+          >
+            submit another response
+          </button>
         ) : null}
 
         {canStartFresh ? (
