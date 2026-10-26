@@ -1,6 +1,8 @@
 from uuid import uuid4
 
 import pytest
+from community._field_limits import FieldLimit
+from community._survey_schemas import SurveyAnswersIn
 from community._survey_validators import (
     _build_survey_answers,
     _validate_boolean_answer,
@@ -13,6 +15,7 @@ from community._survey_validators import (
 )
 from community._validation import Code, ValidationException
 from community.models import SurveyQuestion, SurveyQuestionType
+from pydantic import ValidationError as PydanticValidationError
 
 SLOT_A = "2030-01-01T18:00:00+00:00"
 SLOT_B = "2030-01-02T18:00:00+00:00"
@@ -214,3 +217,12 @@ class TestBuildSurveyAnswers:
     def test_empty_input_builds_empty_dict(self):
         q = make_question(SurveyQuestionType.TEXT)
         assert _build_survey_answers({}, {str(q.id): q}) == {}
+
+
+class TestAnswerLengthLimit:
+    def test_accepts_answer_at_limit(self):
+        SurveyAnswersIn(answers={"q": "x" * FieldLimit.DESCRIPTION})
+
+    def test_rejects_answer_over_limit(self):
+        with pytest.raises(PydanticValidationError, match="exceeds"):
+            SurveyAnswersIn(answers={"q": "x" * (FieldLimit.DESCRIPTION + 1)})

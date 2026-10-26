@@ -13,6 +13,9 @@ import { ScaleRating } from './ScaleRating';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
 
+// mirrors backend FieldLimit.DESCRIPTION, the server-side cap on answers
+const ANSWER_MAX_LENGTH = 2000;
+
 interface Props {
   question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required' | 'description'>;
   value: AnswerValue | undefined;
@@ -26,18 +29,23 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
   const { label } = question;
   const labelSuffix = question.required ? '· required' : undefined;
   const common = { label, labelSuffix, error, disabled: readOnly };
+  const text = asString(value);
+  const textProps = {
+    ...common,
+    value: text,
+    maxLength: ANSWER_MAX_LENGTH,
+    hint: readOnly ? undefined : `${String(text.length)}/${String(ANSWER_MAX_LENGTH)}`,
+  };
 
   switch (question.fieldType) {
     case QuestionType.Textarea:
       return (
         <Textarea
-          {...common}
-          value={asString(value)}
+          {...textProps}
           onChange={(e) => {
             onChange(e.target.value);
           }}
           rows={5}
-          maxLength={2000}
         />
       );
     case QuestionType.Number:
@@ -132,12 +140,10 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
     default:
       return (
         <TextField
-          {...common}
-          value={asString(value)}
+          {...textProps}
           onChange={(e) => {
             onChange(e.target.value);
           }}
-          maxLength={2000}
         />
       );
   }
