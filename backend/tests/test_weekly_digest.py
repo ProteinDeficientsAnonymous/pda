@@ -26,6 +26,11 @@ def _freeze_digest(monkeypatch, when: datetime) -> None:
     monkeypatch.setattr("django.utils.timezone.now", lambda: frozen)
 
 
+@pytest.fixture(autouse=True)
+def _not_the_first(monkeypatch):
+    _freeze_digest(monkeypatch, datetime(2026, 6, 10, 16, 0, 0))
+
+
 @pytest.mark.django_db
 class TestSendWeeklyDigestCommand:
     def test_no_events_in_range_sends_nothing(self, fake_sender):
@@ -238,3 +243,39 @@ class TestWeeklyDigestTentativeMembers:
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestWeeklyDigestOnFirstOfMonth:
+    def test_skips_digest_on_the_first(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
+        make_member("+12025550280")
+        make_event("potluck", 2)
+        out = StringIO()
+        call_command("send_weekly_digest", stdout=out)
+        fake_sender.send.assert_not_called()
+        assert "1st of the month; sent 0 digest(s)." in out.getvalue()
+
+    def test_first_uses_community_timezone(self, fake_sender, monkeypatch):
+        # 2am UTC on the 1st is still the 30th in New York.
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 2, 0, 0))
+        make_member("+12025550281")
+        make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_called_once()
+
+    def test_to_still_sends_on_the_first(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
+        make_event("potluck", 2)
+        call_command("send_weekly_digest", to="probe@example.com")
+        fake_sender.send.assert_called_once()
+
+    def test_reminders_still_run_on_the_first(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
+        reminders = MagicMock(return_value=(0, 0))
+        nudges = MagicMock(return_value=(0, 0))
+        monkeypatch.setattr(digest_command, "send_login_reminders", reminders)
+        monkeypatch.setattr(digest_command, "send_attendance_nudges", nudges)
+        call_command("send_weekly_digest")
+        reminders.assert_called_once()
+        nudges.assert_called_once()
