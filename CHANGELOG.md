@@ -1,3 +1,11 @@
+## [0.205.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.1...v0.205.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** address first round of survey feedback ([#1959](https://github.com/ProteinDeficientsAnonymous/pda/issues/1959)) ([4fa6eae](https://github.com/ProteinDeficientsAnonymous/pda/commit/4fa6eae3643a29f5e52cebf818cae419fd95451c))
+* **surveys:** clamp long answers in responses table with show more ([#1966](https://github.com/ProteinDeficientsAnonymous/pda/issues/1966)) ([7ba5c10](https://github.com/ProteinDeficientsAnonymous/pda/commit/7ba5c10e0a46be24a4ece090b7ac985de591a3c1))
+
 ## [0.205.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.0...v0.205.1) (2026-10-26)
 
 
