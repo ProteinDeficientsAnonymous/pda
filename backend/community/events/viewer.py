@@ -7,9 +7,7 @@ from community.models import Event
 from community.shared import _authenticated_user
 
 
-def resolve_event_viewer(
-    request: HttpRequest, event_id: UUID, *, event: Event | None = None
-) -> "User | None":
+def resolve_event_viewer(request: HttpRequest, event: Event | UUID) -> "User | None":
     """Resolve the effective viewer for one event: real member, or a non-member
     RSVP-token holder on any public-RSVP-eligible event, or None.
 
@@ -32,8 +30,7 @@ def resolve_event_viewer(
         return None
     # Re-derive eligibility per request so an event that drops out of public-RSVP
     # eligibility (MEMBERS_ONLY, cancelled, past, …) stops unlocking immediately.
-    if event is None:
-        event = Event.objects.filter(id=event_id).first()
-    if event is None or not event.is_public_rsvp_eligible:
+    loaded = event if isinstance(event, Event) else Event.objects.filter(id=event).first()
+    if loaded is None or not loaded.is_public_rsvp_eligible:
         return None
     return user
