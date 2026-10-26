@@ -1,3 +1,10 @@
+## [0.205.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.3...v0.205.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1919 - prefill edits on anonymous multi-response surveys ([#1956](https://github.com/ProteinDeficientsAnonymous/pda/issues/1956)) ([d6f7da4](https://github.com/ProteinDeficientsAnonymous/pda/commit/d6f7da4615afc3395a20063dd3ddfd8d7d7ea475))
+
 ## [0.205.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.2...v0.205.3) (2026-10-26)
 
 
