@@ -12023,6 +12023,7 @@ export interface operations {
         parameters: {
             query?: {
                 response_token?: string;
+                response_id?: string | null;
             };
             header?: never;
             path: {

@@ -187,14 +187,19 @@ export function useSurvey(slug: string | undefined) {
 
 export type AnswerValue = string | string[] | Record<string, string>;
 
-export function useSubmitSurvey(slug: string) {
+function submitParams(slug: string, responseId: string | null) {
+  const params = { ...tokenParams(slug), ...(responseId ? { response_id: responseId } : {}) };
+  return Object.keys(params).length > 0 ? params : undefined;
+}
+
+export function useSubmitSurvey(slug: string, responseId: string | null = null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (answers: Record<string, AnswerValue>) => {
       const { data } = await apiClient.post<WireSurveyResponse>(
         `/api/community/surveys/view/${slug}/respond/`,
         { answers },
-        { params: tokenParams(slug) },
+        { params: submitParams(slug, responseId) },
       );
       if (data.response_token) setStoredSurveyToken(slug, data.response_token);
       return data;

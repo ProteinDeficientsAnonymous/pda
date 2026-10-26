@@ -94,7 +94,8 @@ function SurveyForm({
   onSubmitted: () => void;
 }) {
   const qc = useQueryClient();
-  const submit = useSubmitSurvey(survey.slug);
+  const [editingId, setEditingId] = useState(survey.myResponseId);
+  const submit = useSubmitSurvey(survey.slug, editingId);
   // lazy init: later server updates (e.g. poll finalized) keep what the user is typing
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -156,16 +157,22 @@ function SurveyForm({
     }
   }
 
-  const submitLabel = survey.myResponseId ? 'update response' : 'submit';
+  const submitLabel = editingId ? 'update response' : 'submit';
+  const canSubmitAnother = !readOnly && !survey.oneResponsePerUser && editingId !== null;
   const canStartFresh =
     !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
 
-  function startNewResponse() {
-    clearStoredSurveyToken(survey.slug);
+  function resetForm() {
+    setEditingId(null);
     setAnswers({});
     setErrors({});
     setServerError(null);
     submit.reset();
+  }
+
+  function startNewResponse() {
+    clearStoredSurveyToken(survey.slug);
+    resetForm();
     void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
   }
 
@@ -220,6 +227,16 @@ function SurveyForm({
           <Button type="submit" disabled={submit.isPending}>
             {submit.isPending ? 'saving…' : submitLabel}
           </Button>
+        ) : null}
+
+        {canSubmitAnother ? (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="text-foreground-tertiary self-start text-sm underline"
+          >
+            submit another response
+          </button>
         ) : null}
 
         {canStartFresh ? (
