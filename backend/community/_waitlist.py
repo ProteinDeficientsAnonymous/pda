@@ -32,15 +32,13 @@ def _promotable_waitlist_rsvps(event: Event) -> list[EventRSVP]:
 
 
 def _mark_attending(rsvps: list[EventRSVP]) -> None:
-    # bulk_update skips EventRSVP.save(), so apply what it would: clear the position, stamp the change.
+    # .update() skips EventRSVP.save(), so apply what it would: clear the position, stamp the change.
     now = timezone.now()
-    for rsvp in rsvps:
-        rsvp.status = RSVPStatus.ATTENDING
-        rsvp.waitlist_position = None
-        rsvp.status_changed_at = now
-        rsvp.updated_at = now
-    EventRSVP.objects.bulk_update(
-        rsvps, ["status", "waitlist_position", "status_changed_at", "updated_at"]
+    EventRSVP.objects.filter(pk__in=[r.pk for r in rsvps]).update(
+        status=RSVPStatus.ATTENDING,
+        waitlist_position=None,
+        status_changed_at=now,
+        updated_at=now,
     )
 
 

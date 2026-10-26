@@ -4,6 +4,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from notifications.models import Notification, NotificationType
+from notifications.service import notify_users
 from users.models import User
 
 from tests.conftest import future_iso
@@ -68,3 +69,9 @@ def test_promotion_stamps_rows_and_keeps_line_order(test_user):
     assert Notification.objects.filter(
         notification_type=NotificationType.WAITLIST_PROMOTED, recipient_id=third.user_id
     ).exists()
+
+
+@pytest.mark.django_db
+def test_notify_users_pings_everyone_in_one_statement(django_assert_num_queries):
+    with django_assert_num_queries(1 if connection.vendor == "postgresql" else 0):
+        notify_users(["user-1", "user-2", "user-3"])

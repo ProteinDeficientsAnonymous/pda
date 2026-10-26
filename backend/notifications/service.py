@@ -21,10 +21,14 @@ def notify_users(user_ids: Iterable[str]) -> None:
     """Fire pg_notify on the notifications channel (for new notification rows)."""
     if connection.vendor != "postgresql":
         return
+    payloads = [str(uid) for uid in user_ids]
+    if not payloads:
+        return
 
     with connection.cursor() as cursor:
-        for uid in user_ids:
-            cursor.execute("SELECT pg_notify('notifications', %s)", [str(uid)])
+        cursor.execute(
+            "SELECT pg_notify('notifications', uid) FROM unnest(%s::text[]) AS uid", [payloads]
+        )
 
 
 _EVENT_UPDATES_CHANNEL = "event_updates"
