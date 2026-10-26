@@ -46,12 +46,12 @@ router = Router()
 
 
 def _resolve_host_rsvp_status(
-    event: Event, target_user, status: str, has_plus_one: bool
+    event: Event, target_user, status: str, has_plus_one: bool, existing: EventRSVP | None
 ) -> tuple[str, bool]:
     if event.is_past:
         # Capacity is moot once the event is over — never waitlist an after-the-fact add.
         return status, has_plus_one and event.allow_plus_ones
-    return _resolve_rsvp_status(event, target_user, status, has_plus_one)
+    return _resolve_rsvp_status(event, target_user, status, has_plus_one, existing)
 
 
 def _needs_host_verification(existing: EventRSVP | None, paid_confirmed: bool) -> bool:
@@ -90,11 +90,10 @@ def _apply_host_rsvp_in_transaction(
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
 
-    final_status, final_plus_one = _resolve_host_rsvp_status(
-        event, target_user, payload.status, payload.has_plus_one
-    )
-
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
+    final_status, final_plus_one = _resolve_host_rsvp_status(
+        event, target_user, payload.status, payload.has_plus_one, existing
+    )
     previous_status = getattr(existing, "status", None)
     # Never stamp here: verification stamps paid_confirmed_at == payment_verified_at itself.
     new_confirmed_at = existing.paid_confirmed_at if existing is not None else None

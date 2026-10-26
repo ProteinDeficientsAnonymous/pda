@@ -64,7 +64,7 @@ def _validate_rsvp_access(user, event) -> None:
 
 
 def _resolve_rsvp_status(
-    event: Event, user, requested_status: str, has_plus_one: bool
+    event: Event, user, requested_status: str, has_plus_one: bool, existing: EventRSVP | None
 ) -> tuple[str, bool]:
     """Resolve final RSVP status accounting for capacity limits.
 
@@ -85,7 +85,6 @@ def _resolve_rsvp_status(
         return requested_status, has_plus_one
 
     # Over capacity — check if user is already attending (just toggling +1)
-    existing = EventRSVP.objects.filter(event=event, user=user).first()
     if existing and existing.status == RSVPStatus.ATTENDING:
         if has_plus_one:
             raise_validation(Code.Event.NO_PLUS_ONE_SPOTS, status_code=400)
@@ -312,7 +311,7 @@ def _apply_rsvp_in_transaction(
     # is locked under select_for_update.
     event = (
         Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users", "rsvp_questions")
+        .prefetch_related("co_hosts", "rsvp_questions")
         .get(id=event_id)
     )
 
@@ -326,7 +325,9 @@ def _apply_rsvp_in_transaction(
     if not gate_exempt and requires_payment_gate(event, existing, rsvp.status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
+    final_status, final_plus_one = _resolve_rsvp_status(
+        event, user, rsvp.status, rsvp.has_plus_one, existing
+    )
     final_status = _keep_waitlist_place(event, existing, final_status)
     answers_snapshot = _snapshot_rsvp_answers(
         event, existing, final_status, rsvp.answers, require_answers=not rsvp.skip_host_gates
@@ -465,7 +466,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
     """
     event = (
         Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users", "rsvp_questions")
+        .prefetch_related("co_hosts", "rsvp_questions")
         .get(id=event_id)
     )
     if event.is_deleted:
