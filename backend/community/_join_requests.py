@@ -216,7 +216,7 @@ class PhoneLookups(NamedTuple):
 
 
 def _phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
-    """Users and rejected-request counts for every phone in the batch, in two queries."""
+    """Users (with rsvps) and rejected-request counts for every phone in the batch."""
     phones = {jr.phone_number for jr in join_requests}
     users = User.objects.filter(phone_number__in=phones).prefetch_related(
         Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
