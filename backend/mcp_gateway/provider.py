@@ -18,6 +18,7 @@ from mcp.server.auth.provider import (
 )
 from mcp.shared.auth import OAuthClientInformationFull
 from mcp.shared.auth import OAuthToken as TokenResponse
+from pydantic import ConfigDict, Field
 from users.models import User
 
 from mcp_gateway.models import (
@@ -39,6 +40,12 @@ from mcp_gateway.tokens import (
 SCOPE = "pda"
 LAST_USED_RESOLUTION = timedelta(minutes=1)
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+class PdaAccessToken(AccessToken):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    user: User = Field(exclude=True, repr=False)
 
 
 def _user_may_act(user: User) -> bool:
@@ -128,7 +135,7 @@ async def _revoke_grant_on_refresh_reuse(token_hash: str, client_id: str) -> Non
 
 
 class PdaOAuthProvider(
-    OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, AccessToken]
+    OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, PdaAccessToken]
 ):
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
         row = await OAuthClient.objects.filter(client_id=client_id).afirst()
@@ -199,7 +206,7 @@ class PdaOAuthProvider(
             raise TokenError(error="invalid_grant", error_description="code already used")
         return await _issue_token_pair(row.grant_id, row.scopes, row.resource)
 
-    async def load_access_token(self, token: str) -> AccessToken | None:
+    async def load_access_token(self, token: str) -> PdaAccessToken | None:
         now = timezone.now()
         row = await (
             OAuthToken.objects.select_related("grant__user", "grant__client")
@@ -217,13 +224,14 @@ class PdaOAuthProvider(
         grant = row.grant
         if grant.last_used_at is None or now - grant.last_used_at >= LAST_USED_RESOLUTION:
             await OAuthGrant.objects.filter(pk=grant.pk).aupdate(last_used_at=now)
-        return AccessToken(
+        return PdaAccessToken(
             token=token,
             client_id=grant.client.client_id,
             scopes=row.scopes,
             expires_at=int(row.expires_at.timestamp()),
             resource=row.resource or None,
             subject=str(grant.user.pk),
+            user=grant.user,
         )
 
     async def load_refresh_token(
