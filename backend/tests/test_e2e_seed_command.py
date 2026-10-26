@@ -249,3 +249,19 @@ def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
 def test_e2e_seed_unknown_scenario():
     with pytest.raises(CommandError):
         call_command("e2e_seed", "not-a-real-scenario")
+
+
+@pytest.mark.django_db
+def test_e2e_seed_event_feedback_link_loads_logged_out(api_client, capsys):
+    call_command("e2e_seed", "event-feedback")
+    call_command("e2e_seed", "event-feedback")
+    out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert "/feedback#" in out["feedback_url"]
+    token = out["feedback_url"].split("#", 1)[1]
+    response = api_client.get("/api/community/event-feedback/", HTTP_X_FEEDBACK_TOKEN=token)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["event_title"] == out["event_title"]
+    assert body["is_open"] is True
+    assert body["already_responded"] is False
+    assert [q["label"] for q in body["survey"]["questions"]] == [out["question_label"]]

@@ -1,6 +1,7 @@
 import calendar
 import json
-from datetime import UTC, datetime
+import secrets
+from datetime import UTC, datetime, timedelta
 
 from django.core.cache import caches
 from django.core.management.base import BaseCommand
@@ -11,10 +12,13 @@ from notifications._email_helpers import format_eastern_datetime
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
+from community._event_feedback_send import feedback_url
 from community.models import (
+    AttendanceStatus,
     DocFolder,
     Document,
     Event,
+    EventFeedbackRequest,
     EventRSVP,
     EventRsvpQuestion,
     EventStatus,
@@ -25,6 +29,8 @@ from community.models import (
     RsvpQuestionType,
     RSVPStatus,
     Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
 )
 
 from ._e2e_attendance import _seed_attendance_analytics, _seed_attendance_report
@@ -404,6 +410,49 @@ def _seed_waitlist_screens() -> dict:
     }
 
 
+_FEEDBACK_QUESTION = "e2e: how was it?"
+
+
+def _seed_event_feedback() -> dict:
+    # club, not official: the dev seed already owns the official feedback survey slot
+    start = timezone.now() - timedelta(days=1)
+    event = _random_event(
+        "event-feedback",
+        start_datetime=start,
+        end_datetime=start + timedelta(hours=2),
+        event_type=EventType.CLUB,
+    )
+    survey, _ = Survey.objects.update_or_create(
+        feedback_event_type=EventType.CLUB,
+        defaults={"is_active": True, "opens_at": None, "closes_at": None, "max_responses": None},
+        create_defaults={
+            "title": "e2e club feedback",
+            "slug": f"e2e-club-feedback-{secrets.token_hex(4)}",
+            "anonymous": True,
+        },
+    )
+    SurveyQuestion.objects.get_or_create(
+        survey=survey,
+        label=_FEEDBACK_QUESTION,
+        defaults={"field_type": SurveyQuestionType.TEXT, "required": True},
+    )
+    attendee = _member_user(_random_phone())
+    EventRSVP.objects.create(
+        event=event,
+        user=attendee,
+        status=RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    )
+    request = EventFeedbackRequest.objects.create(
+        event=event, user=attendee, token=EventFeedbackRequest.new_token()
+    )
+    return {
+        "event_title": event.title,
+        "question_label": _FEEDBACK_QUESTION,
+        "feedback_url": feedback_url(request.token),
+    }
+
+
 SCENARIOS = {
     "member": _seed_member,
     "member-screens": _seed_member_screens,
@@ -416,6 +465,7 @@ SCENARIOS = {
     "attendance-report": _seed_attendance_report,
     "attendance-analytics": _seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
+    "event-feedback": _seed_event_feedback,
 }
 
 
