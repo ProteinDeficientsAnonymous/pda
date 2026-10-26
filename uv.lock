@@ -1173,7 +1173,7 @@ wheels = [
 
 [[package]]
 name = "pda"
-version = "0.204.4"
+version = "0.204.5"
 source = { virtual = "." }
 dependencies = [
     { name = "dj-database-url" },

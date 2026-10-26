@@ -1,3 +1,10 @@
+## [0.204.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.4...v0.204.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1920 - keep responses table from widening the page ([#1955](https://github.com/ProteinDeficientsAnonymous/pda/issues/1955)) ([10d0322](https://github.com/ProteinDeficientsAnonymous/pda/commit/10d0322a868331ef717641122fb094e701d44ce4))
+
 ## [0.204.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.3...v0.204.4) (2026-10-26)
 
 
