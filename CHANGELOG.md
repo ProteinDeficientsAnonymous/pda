@@ -1,3 +1,10 @@
+## [0.202.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.9...v0.202.10) (2026-10-26)
+
+
+### Bug Fixes
+
+* stop leaking host info to logged-out viewers ([#1907](https://github.com/ProteinDeficientsAnonymous/pda/issues/1907)) ([23cf26a](https://github.com/ProteinDeficientsAnonymous/pda/commit/23cf26ae6834db0fb434a9b647efddb37101a01d))
+
 ## [0.202.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.8...v0.202.9) (2026-10-26)
 
 
