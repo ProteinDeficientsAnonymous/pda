@@ -82,8 +82,8 @@ export default function SurveyResponsesScreen() {
   return (
     <ContentContainer>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-medium tracking-tight">{survey.data.title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium tracking-tight break-words">{survey.data.title}</h1>
           <p className="text-muted text-sm">
             {responseCountLabel(visibleResponses.length, responses.data.length)}
           </p>
