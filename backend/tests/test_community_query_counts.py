@@ -98,7 +98,7 @@ class TestContentEndpointsQueryCount:
         admin = make_user_with(PermissionKey.MANAGE_SURVEYS)
         survey = Survey.objects.create(title="Summary", slug="summary")
         q = SurveyQuestion.objects.create(
-            survey=survey, label="Rate it", field_type=SurveyQuestionType.RATING
+            survey=survey, label="Rate it", field_type=SurveyQuestionType.STARS
         )
 
         def grow(n: int) -> None:
