@@ -126,10 +126,10 @@ def _folder_to_out(folder: DocFolder) -> DocFolderOut:
 
 
 def _apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]) -> None:
-    order = {str(pk): i for i, pk in enumerate(ids)}
     rows = list(model.objects.filter(pk__in=ids).only("id", "display_order"))
+    order = {UUID(pk): i for i, pk in enumerate(ids)}
     for row in rows:
-        row.display_order = order[str(row.pk)]
+        row.display_order = order[row.pk]
     model.objects.bulk_update(rows, ["display_order"])
 
 

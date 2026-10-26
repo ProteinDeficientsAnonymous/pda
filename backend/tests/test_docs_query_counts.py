@@ -59,3 +59,15 @@ class TestDocsQueryCounts:
         assert reorder(ids[:2]) == reorder(ids[::-1])
         orders = {str(pk): o for pk, o in model.objects.values_list("id", "display_order")}
         assert [orders[pk] for pk in ids[::-1]] == list(range(len(ids)))
+
+    def test_reorder_accepts_non_canonical_ids(self, api_client, manage_docs_headers):  # noqa: F811
+        first, second = (DocFolder.objects.create(name=n) for n in ("a", "b"))
+        response = api_client.put(
+            f"{BASE}/folders/reorder/",
+            data={"ids": [second.id.hex.upper(), str(first.id).upper()]},
+            content_type="application/json",
+            **manage_docs_headers,
+        )
+        assert response.status_code == 200
+        orders = dict(DocFolder.objects.values_list("name", "display_order"))
+        assert orders == {"a": 1, "b": 0}
