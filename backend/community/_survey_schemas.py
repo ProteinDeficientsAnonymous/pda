@@ -164,6 +164,8 @@ class SurveyQuestionIn(BaseModel):
             self.description = ""
         if self.field_type == SurveyQuestionType.SCALE:
             self.options = scale_end_labels(self.options)
+        elif self.field_type == SurveyQuestionType.STARS:
+            self.options = []
         return self
 
 

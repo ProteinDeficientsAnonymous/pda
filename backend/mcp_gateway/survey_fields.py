@@ -19,7 +19,6 @@ from pydantic import (
 from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 
 _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
-_RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
 _TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; stars: 1-5 stars; "
 _TYPES += "scale: pick 1-5 on numbered buttons, with optional end labels; "
@@ -47,9 +46,8 @@ class SurveyQuestionFields(BaseModel):
         [],
         description=(
             "radio/select/checkbox: the choices. scale: optional [low, high] end labels, e.g. "
-            "['bad', 'great']. stars: optional labels for stars 1-5 in order, "
-            f"'' for a star with no label. datetime_poll: candidate times, {WHEN} (saved as utc "
-            "like the survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
+            "['bad', 'great']. datetime_poll: candidate times, {WHEN} (saved as utc like the "
+            "survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
         ),
     )
     description: str = Field(
@@ -63,8 +61,8 @@ class SurveyQuestionFields(BaseModel):
 
     @model_validator(mode="after")
     def _shape_options(self) -> Self:
-        if shape := _LABELED.get(self.field_type):
-            self.options = shape(self.options)
+        if self.field_type == QuestionType.SCALE:
+            self.options = scale_end_labels(self.options)
             return self
         kind, self.options = self.field_type, [o.strip() for o in self.options if o.strip()]
         if kind in _NEEDS_OPTIONS and not self.options:
@@ -83,17 +81,6 @@ class SurveyQuestionFields(BaseModel):
         if self.field_type != QuestionType.SECTION and self.description:
             raise ValueError("only section headers take a description")
         return self
-
-
-def _rating_labels(options: list[str]) -> list[str]:
-    if len(options) > _RATING_STARS:
-        raise ValueError(f"stars questions take at most {_RATING_STARS} star labels")
-    labels = [label.strip() for label in options]
-    labels += [""] * (_RATING_STARS - len(labels))
-    return labels if any(labels) else []
-
-
-_LABELED = {QuestionType.STARS: _rating_labels, QuestionType.SCALE: scale_end_labels}
 
 
 def _poll_option(option: str) -> str:
