@@ -28,6 +28,8 @@ export default function SurveyScreen() {
   }
   return (
     <SurveyForm
+      // remount to re-hydrate when the response lands after mounting from a stale cache
+      key={survey.myResponseId ?? ''}
       survey={survey}
       onSubmitted={() => {
         void navigate(`/surveys/${survey.slug}/thanks`);
@@ -78,9 +80,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
-  // Lazy init so the user's prior response loads exactly once when the form
-  // mounts. Subsequent server updates (e.g. poll finalized) re-render the
-  // parent but preserve what the user is currently typing.
+  // lazy init: later server updates (e.g. poll finalized) keep what the user is typing
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
