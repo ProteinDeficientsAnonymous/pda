@@ -238,8 +238,9 @@ def _verify_payments_in_transaction(
         raise_validation(
             Code.Event.PAYMENT_VERIFY_NOT_GUESTS, status_code=400, user_ids=", ".join(missing)
         )
-    to_verify = [rsvps[str(uid)] for uid in user_ids if rsvps[str(uid)].payment_verified_at is None]
-    skipped = [str(uid) for uid in user_ids if rsvps[str(uid)].payment_verified_at is not None]
+    picked = [rsvps[str(uid)] for uid in user_ids]
+    to_verify = [r for r in picked if r.payment_verified_at is None]
+    skipped = [str(r.user_id) for r in picked if r.payment_verified_at is not None]
     return list(zip(to_verify, verify_payments(to_verify, actor), strict=True)), skipped
 
 
