@@ -15,6 +15,15 @@ vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
 }));
 
+const toastError = vi.fn();
+vi.mock('sonner', () => ({
+  toast: {
+    error: (m: string) => {
+      toastError(m);
+    },
+  },
+}));
+
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 
@@ -55,12 +64,15 @@ beforeEach(() => {
 
 describe('SurveyScreen', () => {
   it('shows a required error and blocks submit when a required question is empty', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
     renderScreen();
 
     fireEvent.click(await screen.findByRole('button', { name: 'submit' }));
 
     expect(await screen.findByText('required', { selector: 'p' })).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith('answer the required questions before submitting');
+    expect(scroll).toHaveBeenCalled();
     expect(mockedPost).not.toHaveBeenCalled();
   });
 
