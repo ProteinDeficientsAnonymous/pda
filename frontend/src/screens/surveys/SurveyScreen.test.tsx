@@ -123,6 +123,25 @@ describe('SurveyScreen', () => {
     expect(screen.getByLabelText('thoughts · required')).toHaveValue('previous answer');
   });
 
+  it('loads the answer when the response arrives after the form mounted from a stale cache', async () => {
+    mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
+    mockedGet.mockResolvedValueOnce({
+      data: {
+        ...baseWireSurvey,
+        my_response_id: 'resp-1',
+        my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+      },
+    });
+    const qc = makeQueryClient();
+    renderScreen('feedback', qc);
+    await screen.findByRole('button', { name: 'submit' });
+
+    await qc.invalidateQueries({ queryKey: ['survey', 'feedback'] });
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(screen.getByLabelText('thoughts · required')).toHaveValue('previous answer');
+  });
+
   it('renders a closed state instead of the form for an inactive survey', async () => {
     mockedGet.mockResolvedValueOnce({ data: { ...baseWireSurvey, is_active: false } });
     renderScreen();
