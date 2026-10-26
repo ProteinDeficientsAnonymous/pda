@@ -4,6 +4,8 @@ import json
 
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -65,6 +67,25 @@ class TestReorderJoinFormQuestions:
         # Re-read from db; check display_order matches new position.
         for idx, qid in enumerate(new_order):
             assert JoinFormQuestion.objects.get(id=qid).display_order == idx
+
+    def test_reorder_query_count_is_constant(self, api_client, form_admin_headers):
+        def reorder_queries() -> int:
+            ids = [str(q.id) for q in JoinFormQuestion.objects.order_by("-display_order")]
+            with CaptureQueriesContext(connection) as ctx:
+                response = api_client.put(
+                    "/api/community/join-form/questions/order/",
+                    data=json.dumps({"question_ids": ids}),
+                    content_type="application/json",
+                    **form_admin_headers,
+                )
+            assert response.status_code == 200
+            return len(ctx.captured_queries)
+
+        _make_questions(2)
+        small = reorder_queries()
+        _make_questions(6)
+        large = reorder_queries()
+        assert large == small
 
     def test_reorder_requires_permission(self, api_client, auth_headers):
         qs = _make_questions(2)
