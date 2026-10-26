@@ -136,7 +136,8 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
 }
 
 function renderAnswer(answer: RsvpAnswerValue | undefined): string {
-  if (Array.isArray(answer)) return answer.length ? answer.join(', ') : '—';
+  // One option per line: options themselves may contain commas.
+  if (Array.isArray(answer)) return answer.length ? answer.join('\n') : '—';
   const trimmed = answer?.trim();
   if (!trimmed) return '—';
   return trimmed.replaceAll(',', ', ');
