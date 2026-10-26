@@ -36,6 +36,7 @@ export default function SurveyScreen() {
   return (
     <SurveyForm
       survey={survey}
+      isAuthed={isAuthed}
       onSubmitted={() => {
         void navigate(`/surveys/${survey.slug}/thanks`);
       }}
@@ -81,10 +82,17 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
   return out;
 }
 
-function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
+function SurveyForm({
+  survey,
+  isAuthed,
+  onSubmitted,
+}: {
+  survey: Survey;
+  isAuthed: boolean;
+  onSubmitted: () => void;
+}) {
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
   // Lazy init so the user's prior response loads exactly once when the form
   // mounts. Subsequent server updates (e.g. poll finalized) re-render the
   // parent but preserve what the user is currently typing.
