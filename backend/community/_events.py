@@ -25,7 +25,7 @@ from community._event_helpers import (
     _set_event_tags,
     broadcast_capacity_change,
     is_cohost,
-    load_event_with_stats_prefetch,
+    reload_event_or_404,
 )
 from community._event_list import (
     EventListQuery,
@@ -350,7 +350,4 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     email_removed_non_members(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
-    event = load_event_with_stats_prefetch(event_id)
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))

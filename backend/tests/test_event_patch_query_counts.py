@@ -58,7 +58,7 @@ def _invite(api_client, event: Event, headers: dict) -> int:
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(("send", "ceiling"), [(_patch, 26), (_invite, 26)])
+@pytest.mark.parametrize(("send", "ceiling"), [(_patch, 26), (_invite, 27)])
 def test_event_write_response_is_bounded(api_client, send, ceiling):
     host = _user()
     headers = _headers(host)

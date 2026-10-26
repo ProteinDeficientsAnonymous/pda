@@ -56,6 +56,14 @@ def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     )
 
 
+def reload_event_or_404(event_id: UUID) -> Event:
+    """Reload an event after a write with what _event_out needs prefetched."""
+    event = load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    return event
+
+
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
     """Post-commit, silently refresh stakeholders' cached event so capacity shows live (no notification)."""
     excluded = exclude_user_ids or set()
