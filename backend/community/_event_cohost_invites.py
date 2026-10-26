@@ -110,6 +110,8 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
         raise_validation(Code.CoHostInvite.NOT_INVITEE, status_code=403)
     if invite.status != CoHostInviteStatus.PENDING:
         raise_validation(Code.CoHostInvite.NOT_PENDING, status_code=400)
+    if not request.auth.is_member:
+        raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=403)
 
     inviter_id = str(invite.invited_by_id) if invite.invited_by_id else None
     with transaction.atomic():

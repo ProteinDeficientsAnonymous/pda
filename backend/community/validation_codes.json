@@ -1130,6 +1130,11 @@
         "name": "EVENT_IS_PAST",
         "value": "cohost_invite.event_is_past",
         "params": []
+      },
+      {
+        "name": "NOT_MEMBER",
+        "value": "cohost_invite.not_member",
+        "params": []
       }
     ],
     "WelcomeTemplate": [

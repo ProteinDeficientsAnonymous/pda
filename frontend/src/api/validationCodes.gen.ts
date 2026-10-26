@@ -262,6 +262,7 @@ export const Code = {
     NotRemovable: 'cohost_invite.not_removable',
     WouldLeaveHostless: 'cohost_invite.would_leave_hostless',
     EventIsPast: 'cohost_invite.event_is_past',
+    NotMember: 'cohost_invite.not_member',
   },
   WelcomeTemplate: {
     BodyRequired: 'welcome_template.body_required',
@@ -493,6 +494,7 @@ export type ValidationCode =
   | 'cohost_invite.not_removable'
   | 'cohost_invite.would_leave_hostless'
   | 'cohost_invite.event_is_past'
+  | 'cohost_invite.not_member'
   | 'welcome_template.body_required'
   | 'welcome_template.body_too_long'
   | 'tentative_approval_message.body_required'
@@ -710,6 +712,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'cohost_invite.not_removable': [],
   'cohost_invite.would_leave_hostless': [],
   'cohost_invite.event_is_past': [],
+  'cohost_invite.not_member': [],
   'welcome_template.body_required': [],
   'welcome_template.body_too_long': ['max_length'],
   'tentative_approval_message.body_required': [],
