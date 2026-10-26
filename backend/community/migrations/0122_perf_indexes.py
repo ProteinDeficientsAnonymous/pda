@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0118_joinrequest_phone_number_index"),
+        ("community", "0121_clear_star_labels"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
