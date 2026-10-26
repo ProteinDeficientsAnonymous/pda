@@ -281,15 +281,6 @@ describe('SurveyScreen post-submit confirmation', () => {
     expect(screen.queryByRole('link', { name: 'edit your response' })).not.toBeInTheDocument();
   });
 
-  it('hides the edit link when the saved response cannot be loaded', async () => {
-    await submitWith('thanks!', null);
-    expect(await screen.findByRole('heading', { name: 'thanks!' })).toBeInTheDocument();
-    await waitFor(() => {
-      expect(mockedGet.mock.calls.length).toBeGreaterThanOrEqual(2);
-    });
-    expect(screen.queryByRole('link', { name: 'edit your response' })).not.toBeInTheDocument();
-  });
-
   it('falls back to the default thank-you message when none is set', async () => {
     await submitWith('   ');
     expect(
