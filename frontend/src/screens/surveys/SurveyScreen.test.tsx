@@ -238,10 +238,14 @@ describe('SurveyScreen', () => {
 });
 
 describe('SurveyScreen post-submit confirmation', () => {
-  async function submitWith(confirmationMessage: string) {
-    mockedGet.mockResolvedValue({
-      data: { ...baseWireSurvey, confirmation_message: confirmationMessage },
-    });
+  async function submitWith(
+    confirmationMessage: string,
+    savedResponseId: string | null = 'resp-1',
+  ) {
+    const survey = { ...baseWireSurvey, confirmation_message: confirmationMessage };
+    mockedGet
+      .mockResolvedValueOnce({ data: survey })
+      .mockResolvedValue({ data: { ...survey, my_response_id: savedResponseId } });
     mockedPost.mockResolvedValueOnce({
       data: {
         id: 'resp-1',
@@ -264,10 +268,17 @@ describe('SurveyScreen post-submit confirmation', () => {
       await screen.findByRole('heading', { name: 'thanks for your feedback!' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'submit' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'edit your response' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'edit your response' })).toHaveAttribute(
       'href',
       '/surveys/feedback',
     );
+    expect(screen.getByRole('link', { name: 'back to home' })).toHaveAttribute('href', '/');
+  });
+
+  it('hides the edit link when the response cannot be found again', async () => {
+    await submitWith('thanks!', null);
+    expect(await screen.findByRole('heading', { name: 'thanks!' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'edit your response' })).not.toBeInTheDocument();
   });
 
   it('falls back to the default thank-you message when none is set', async () => {

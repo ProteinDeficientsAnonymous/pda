@@ -47,6 +47,19 @@ describe('QuestionField', () => {
     expect(onChange).toHaveBeenCalledWith('5');
   });
 
+  it('lets a datetime poll answer no for a time', () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: 'datetime_poll', options: ['2026-11-07T16:00:00Z'] }}
+        value={{}}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: 'no' }));
+    expect(onChange).toHaveBeenCalledWith({ '2026-11-07T16:00:00Z': 'no' });
+  });
+
   it('renders a single-line text field for text type', () => {
     render(<QuestionField question={base} value="" onChange={vi.fn()} />);
     expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('INPUT');

@@ -71,7 +71,7 @@ def _validate_rating_answer(answer: str, q: SurveyQuestion) -> None:
 
 
 def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) -> None:
-    """Validate a datetime poll answer (option -> "yes"|"maybe")."""
+    """Validate a datetime poll answer (option -> "yes"|"maybe"|"no")."""
     valid_options = set(q.options or [])
     for option, availability in answer.items():
         if option not in valid_options:

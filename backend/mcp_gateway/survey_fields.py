@@ -20,9 +20,9 @@ from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 
 _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
-_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; stars: 1-5 stars; "
+_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick multiple; stars: 1-5 stars; "
 _TYPES += "scale: pick 1-5 on numbered buttons, with optional end labels; "
-_TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time; section: a heading "
+_TYPES += "datetime_poll: respondents mark yes/maybe/no on each candidate time; section: a heading "
 _TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 # A real id only exists once the source question is created; validation just needs a UUID.
