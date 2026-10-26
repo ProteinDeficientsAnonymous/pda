@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
-const QUESTION_WIDTH = 'min-w-48 max-w-80';
+const QUESTION_WIDTH = 'min-w-48 max-w-80 break-words';
 const STICKY_CELL = 'border-border sticky left-0 z-10 border-r px-3 py-2';
 
 export function SurveyResponsesTable({
@@ -20,8 +20,9 @@ export function SurveyResponsesTable({
 }) {
   const showEvent = Boolean(survey.feedbackEventType);
   const questions = survey.questions.filter((q) => q.fieldType !== QuestionType.Section);
+  // relative keeps the absolute sr-only header inside the scroller; without it the page widens (#1920).
   return (
-    <div className="border-border bg-surface overflow-x-auto rounded-lg border">
+    <div className="border-border bg-surface relative overflow-x-auto rounded-lg border">
       <table className="w-full text-left text-sm">
         <thead className="bg-background text-muted text-xs">
           <tr>
