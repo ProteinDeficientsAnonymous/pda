@@ -1,3 +1,10 @@
+## [0.205.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.2...v0.205.3) (2026-10-26)
+
+
+### Performance Improvements
+
+* bound list_my_events in sql and look up survey slugs directly ([#1943](https://github.com/ProteinDeficientsAnonymous/pda/issues/1943)) ([69b9792](https://github.com/ProteinDeficientsAnonymous/pda/commit/69b9792dfa95453046d22a49d078fe08c80f2ae4))
+
 ## [0.205.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.1...v0.205.2) (2026-10-26)
 
 
