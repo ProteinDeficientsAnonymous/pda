@@ -6,7 +6,9 @@ helpers stay here so they're imported from a single place.
 """
 
 import logging
+from collections import defaultdict
 from datetime import datetime
+from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
@@ -89,25 +91,46 @@ class ReorderIn(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+def _folder_trees(root: DocFolder | None = None) -> list[DocFolderOut]:
+    """param(root): subtree to build; None builds every top-level folder."""
+    children: defaultdict[UUID | None, list[DocFolder]] = defaultdict(list)
+    for f in DocFolder.objects.all():
+        children[f.parent_id].append(f)  # ty: ignore[unresolved-attribute]
+    documents: defaultdict[UUID, list[Document]] = defaultdict(list)
+    for d in Document.objects.only("id", "title", "display_order", "updated_at", "folder"):
+        documents[d.folder_id].append(d)
+
+    def build(folder: DocFolder) -> DocFolderOut:
+        return DocFolderOut(
+            id=str(folder.id),
+            name=folder.name,
+            parent_id=str(folder.parent_id) if folder.parent_id else None,  # ty: ignore[unresolved-attribute]
+            display_order=folder.display_order,
+            children=[build(c) for c in children[folder.id]],
+            documents=[
+                DocumentSummaryOut(
+                    id=str(d.id),
+                    title=d.title,
+                    display_order=d.display_order,
+                    updated_at=d.updated_at,
+                )
+                for d in documents[folder.id]
+            ],
+        )
+
+    return [build(f) for f in ([root] if root is not None else children[None])]
+
+
 def _folder_to_out(folder: DocFolder) -> DocFolderOut:
-    children = folder.children.prefetch_related("children", "documents").all()
-    documents = folder.documents.all()
-    return DocFolderOut(
-        id=str(folder.id),
-        name=folder.name,
-        parent_id=str(folder.parent_id) if folder.parent_id else None,  # ty: ignore[unresolved-attribute]
-        display_order=folder.display_order,
-        children=[_folder_to_out(c) for c in children],
-        documents=[
-            DocumentSummaryOut(
-                id=str(d.id),
-                title=d.title,
-                display_order=d.display_order,
-                updated_at=d.updated_at,
-            )
-            for d in documents
-        ],
-    )
+    return _folder_trees(folder)[0]
+
+
+def _apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]) -> None:
+    order = {str(pk): i for i, pk in enumerate(ids)}
+    rows = list(model.objects.filter(pk__in=ids).only("id", "display_order"))
+    for row in rows:
+        row.display_order = order[str(row.pk)]
+    model.objects.bulk_update(rows, ["display_order"])
 
 
 def _doc_to_out(doc: Document) -> DocumentOut:
@@ -154,10 +177,7 @@ def list_folders(request):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
-    top_level = DocFolder.objects.filter(parent__isnull=True).prefetch_related(
-        "children", "documents", "children__documents"
-    )
-    return Status(200, [_folder_to_out(f) for f in top_level])
+    return Status(200, _folder_trees())
 
 
 @router.post(
@@ -223,8 +243,7 @@ def reorder_folders(request, payload: ReorderIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
-    for i, fid in enumerate(payload.ids):
-        DocFolder.objects.filter(pk=fid).update(display_order=i)
+    _apply_display_order(DocFolder, payload.ids)
     audit_log(logging.INFO, "doc_folders_reordered", request)
     return Status(200, {"detail": "Folders reordered."})
 
