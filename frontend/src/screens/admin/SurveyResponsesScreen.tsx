@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
@@ -16,6 +17,7 @@ import {
   useSurveyResponses,
 } from '@/api/surveyAdmin';
 import { formatPollOption } from '@/components/questions/pollOption';
+import { scalePointLabel } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -196,11 +198,23 @@ function orderedCounts(counts: Record<string, number>, options: string[]): [stri
   return [...known, ...rest].map((o): [string, number] => [o, counts[o] ?? 0]);
 }
 
+function bucketLabel(option: string, question: SummaryQuestion | undefined): string {
+  if (question?.fieldType !== QuestionType.Scale) return option;
+  return scalePointLabel(Number(option), question.options);
+}
+
+interface SummaryQuestion {
+  id: string;
+  label: string;
+  fieldType: string;
+  options: string[];
+}
+
 function QuestionSummaries({
   questions,
   rows,
 }: {
-  questions: { id: string; label: string; options: string[] }[];
+  questions: SummaryQuestion[];
   rows: SurveyQuestionSummary[];
 }) {
   const byId = new Map(questions.map((q) => [q.id, q]));
@@ -229,7 +243,7 @@ function QuestionSummaries({
                 {orderedCounts(row.counts, question?.options ?? []).map(([option, count]) => (
                   <tr key={option} className="border-border border-t">
                     <td className="text-foreground py-1 pe-2 wrap-anywhere">
-                      {option.toLowerCase()}
+                      {bucketLabel(option, question).toLowerCase()}
                     </td>
                     <td className="px-2 py-1">{String(count)}</td>
                     <td className="text-muted px-2 py-1">
