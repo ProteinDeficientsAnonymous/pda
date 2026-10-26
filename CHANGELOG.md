@@ -1,3 +1,10 @@
+## [0.204.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.2...v0.204.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* batch phone lookups in join requests list ([#1916](https://github.com/ProteinDeficientsAnonymous/pda/issues/1916)) ([75ba9ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/75ba9ef495f7ce6213371878a8ebbdee51dd4283))
+
 ## [0.204.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.1...v0.204.2) (2026-10-26)
 
 
