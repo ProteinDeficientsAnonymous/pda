@@ -1,3 +1,10 @@
+## [0.202.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.7...v0.202.8) (2026-10-26)
+
+
+### Bug Fixes
+
+* **digest:** skip weekly digest on the 1st of the month ([#1906](https://github.com/ProteinDeficientsAnonymous/pda/issues/1906)) ([181e7ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/181e7ac2c63165729bc555cca09981918b6677ed))
+
 ## [0.202.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.6...v0.202.7) (2026-10-26)
 
 
