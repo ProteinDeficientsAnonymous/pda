@@ -77,7 +77,7 @@ def mixed_survey(db, survey_owner):
         survey, "Toppings", SurveyQuestionType.CHECKBOX, ["tofu", "kale", "salsa"], 1
     )
     boolean = _question(survey, "Coming?", SurveyQuestionType.BOOLEAN, order=2)
-    rating = _question(survey, "Vibes", SurveyQuestionType.RATING, order=3)
+    rating = _question(survey, "Vibes", SurveyQuestionType.STARS, order=3)
     text = _question(survey, "Notes", SurveyQuestionType.TEXT, order=4)
     poll = _question(survey, "When", SurveyQuestionType.DATETIME_POLL, [POLL_A, POLL_B], 5)
     SurveyResponse.objects.create(
@@ -164,13 +164,13 @@ class TestSurveySummary:
         self, api_client, survey_owner, surveys_admin_headers
     ):
         survey = Survey.objects.create(title="Empty", slug="empty", created_by=survey_owner)
-        _question(survey, "Vibes", SurveyQuestionType.RATING)
+        _question(survey, "Vibes", SurveyQuestionType.STARS)
         response = api_client.get(self._url(survey), **surveys_admin_headers)
         assert response.status_code == 200
         assert response.json() == [
             {
                 "question_id": str(survey.questions.get().id),
-                "field_type": "rating",
+                "field_type": SurveyQuestionType.STARS,
                 "counts": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0},
                 "answered": 0,
                 "mean": None,

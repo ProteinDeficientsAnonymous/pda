@@ -331,7 +331,7 @@ def test_section_cannot_be_made_required_via_mcp(surveys_admin):
 def test_label_change_leaves_stored_options_alone(surveys_admin):
     survey = _survey(is_active=False)
     stars = ["bad", "", "good"]
-    SurveyQuestion.objects.create(survey=survey, label="r", field_type="rating", options=stars)
+    SurveyQuestion.objects.create(survey=survey, label="r", field_type="stars", options=stars)
     SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
     _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
     assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]

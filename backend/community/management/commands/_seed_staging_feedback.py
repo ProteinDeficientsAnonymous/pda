@@ -92,7 +92,7 @@ _ANSWER_BUILDERS: dict[str, Callable[[SurveyQuestion, int], str | list[str] | No
     SurveyQuestionType.CHECKBOX: _checkbox_answer,
     SurveyQuestionType.TEXT: _text_answer,
     SurveyQuestionType.TEXTAREA: _text_answer,
-    SurveyQuestionType.RATING: lambda _q, i: str(5 - CHOICE_SKEW[i % len(CHOICE_SKEW)]),
+    SurveyQuestionType.STARS: lambda _q, i: str(5 - CHOICE_SKEW[i % len(CHOICE_SKEW)]),
     SurveyQuestionType.BOOLEAN: lambda _q, i: "no" if i % 4 == 3 else "yes",
     SurveyQuestionType.NUMBER: lambda _q, i: str(i + 1),
 }

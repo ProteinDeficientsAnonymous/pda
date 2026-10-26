@@ -88,11 +88,11 @@ class TestBooleanAnswer:
 class TestRatingAnswer:
     @pytest.mark.parametrize("value", ["1", "3", "5"])
     def test_accepts_one_to_five(self, value):
-        _validate_rating_answer(value, make_question(SurveyQuestionType.RATING))
+        _validate_rating_answer(value, make_question(SurveyQuestionType.STARS))
 
     @pytest.mark.parametrize("value", ["0", "6", "-1", "3.5", "great"])
     def test_rejects_out_of_range_or_non_integer(self, value):
-        q = make_question(SurveyQuestionType.RATING)
+        q = make_question(SurveyQuestionType.STARS)
         assert_raises(Code.Survey.ANSWER_RATING_OUT_OF_RANGE, _validate_rating_answer, value, q)
 
 
@@ -140,7 +140,7 @@ class TestOneAnswer:
         _validate_one_answer("anything goes", make_question(field_type))
 
     def test_dispatches_to_typed_validator(self):
-        q = make_question(SurveyQuestionType.RATING)
+        q = make_question(SurveyQuestionType.STARS)
         assert_raises(Code.Survey.ANSWER_RATING_OUT_OF_RANGE, _validate_one_answer, "9", q)
 
     def test_dispatches_to_dict_validator(self):

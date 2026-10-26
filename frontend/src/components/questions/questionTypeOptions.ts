@@ -17,7 +17,7 @@ const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>
   [QuestionType.Select]: { label: 'select', wantsOptions: true },
   [QuestionType.Checkbox]: { label: 'checkbox', wantsOptions: true },
   [QuestionType.Boolean]: { label: 'yes / no', wantsOptions: false },
-  [QuestionType.Rating]: { label: '1–5 rating', wantsOptions: true },
+  [QuestionType.Stars]: { label: 'star rating', wantsOptions: true },
   [QuestionType.DatetimePoll]: { label: 'datetime poll', wantsOptions: true },
   [QuestionType.Section]: { label: 'section header', wantsOptions: false },
 };
