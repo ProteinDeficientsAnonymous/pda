@@ -124,7 +124,7 @@ def _get_visible_event(request, event_id: str):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
+    viewer = event_viewer_for(resolve_event_viewer(request, event.id, event=event), event)
     _enforce_event_read_visibility(event, viewer)
     return event, viewer
 

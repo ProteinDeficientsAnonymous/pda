@@ -26,17 +26,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger("pda.community.cohost_invite_helpers")
 
 
+_EXPIRED_FLAG = "_stale_cohost_invites_expired"
+
+
 def expire_stale_cohost_invites(event: Event) -> None:
     """Flip PENDING invites to EXPIRED once the event is past.
 
     Called from any read path that returns invite data so the UI never sees
-    actionable invites for a past event.
+    actionable invites for a past event. Runs once per loaded event instance,
+    since one read can reach it from several invite helpers.
     """
-    if not event.is_past:
+    if not event.is_past or event.__dict__.get(_EXPIRED_FLAG):
         return
     EventCoHostInvite.objects.filter(event=event, status=CoHostInviteStatus.PENDING).update(
         status=CoHostInviteStatus.EXPIRED, decided_at=timezone.now()
     )
+    event.__dict__[_EXPIRED_FLAG] = True
 
 
 _ACTIVE_OR_PENDING = (CoHostInviteStatus.PENDING, CoHostInviteStatus.ACCEPTED)
