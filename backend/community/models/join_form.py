@@ -92,6 +92,9 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["phone_number", "status"], name="joinrequest_phone_status_idx"),
+        ]
 
     @property
     def full_name(self) -> str:
