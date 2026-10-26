@@ -16,6 +16,7 @@ describe('QuestionType', () => {
       'number',
       'boolean',
       'stars',
+      'scale',
       'datetime_poll',
       'section',
     ];
@@ -28,6 +29,7 @@ describe('QuestionType', () => {
     expect(QuestionType.Number).toBe('number');
     expect(QuestionType.Boolean).toBe('boolean');
     expect(QuestionType.Stars).toBe('stars');
+    expect(QuestionType.Scale).toBe('scale');
     expect(QuestionType.DatetimePoll).toBe('datetime_poll');
     expect(QuestionType.Section).toBe('section');
     expect(Object.values(QuestionType).sort()).toEqual([...expected].sort());

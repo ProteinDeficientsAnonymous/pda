@@ -9,7 +9,6 @@ from community._survey_validators import (
     _validate_datetime_poll_answer,
     _validate_number_answer,
     _validate_one_answer,
-    _validate_rating_answer,
     _validate_survey_answers,
 )
 from community._validation import Code, ValidationException
@@ -85,15 +84,16 @@ class TestBooleanAnswer:
         assert_raises(Code.Survey.ANSWER_MUST_BE_BOOLEAN, _validate_boolean_answer, value, q)
 
 
+@pytest.mark.parametrize("field_type", [SurveyQuestionType.STARS, SurveyQuestionType.SCALE])
 class TestRatingAnswer:
     @pytest.mark.parametrize("value", ["1", "3", "5"])
-    def test_accepts_one_to_five(self, value):
-        _validate_rating_answer(value, make_question(SurveyQuestionType.STARS))
+    def test_accepts_one_to_five(self, field_type, value):
+        _validate_one_answer(value, make_question(field_type))
 
     @pytest.mark.parametrize("value", ["0", "6", "-1", "3.5", "great"])
-    def test_rejects_out_of_range_or_non_integer(self, value):
-        q = make_question(SurveyQuestionType.STARS)
-        assert_raises(Code.Survey.ANSWER_RATING_OUT_OF_RANGE, _validate_rating_answer, value, q)
+    def test_rejects_out_of_range_or_non_integer(self, field_type, value):
+        q = make_question(field_type)
+        assert_raises(Code.Survey.ANSWER_RATING_OUT_OF_RANGE, _validate_one_answer, value, q)
 
 
 class TestDatetimePollAnswer:

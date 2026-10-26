@@ -6029,6 +6029,7 @@
           "number",
           "boolean",
           "stars",
+          "scale",
           "datetime_poll",
           "section"
         ],

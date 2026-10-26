@@ -7,6 +7,7 @@ export const QuestionType = {
   Number: 'number',
   Boolean: 'boolean',
   Stars: 'stars',
+  Scale: 'scale',
   DatetimePoll: 'datetime_poll',
   Section: 'section',
 } as const;

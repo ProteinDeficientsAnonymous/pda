@@ -160,22 +160,34 @@ class TestSurveySummary:
         assert rows["Colour"]["counts"] == {"red": 0, "blue": 1}
         assert rows["Colour"]["answered"] == 1
 
+    @pytest.mark.parametrize("field_type", [SurveyQuestionType.STARS, SurveyQuestionType.SCALE])
     def test_rating_mean_is_none_without_answers(
-        self, api_client, survey_owner, surveys_admin_headers
+        self, api_client, survey_owner, surveys_admin_headers, field_type
     ):
         survey = Survey.objects.create(title="Empty", slug="empty", created_by=survey_owner)
-        _question(survey, "Vibes", SurveyQuestionType.STARS)
+        _question(survey, "Vibes", field_type)
         response = api_client.get(self._url(survey), **surveys_admin_headers)
         assert response.status_code == 200
         assert response.json() == [
             {
                 "question_id": str(survey.questions.get().id),
-                "field_type": SurveyQuestionType.STARS,
+                "field_type": field_type,
                 "counts": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0},
                 "answered": 0,
                 "mean": None,
             }
         ]
+
+    def test_scale_counts_and_mean(self, api_client, survey_owner, surveys_admin_headers):
+        survey = Survey.objects.create(title="Pace", slug="pace", created_by=survey_owner)
+        pace = _question(survey, "Pace", SurveyQuestionType.SCALE)
+        for answer in ("1", "4"):
+            SurveyResponse.objects.create(
+                survey=survey, user=None, answers=_answers({pace: answer})
+            )
+        [row] = api_client.get(self._url(survey), **surveys_admin_headers).json()
+        assert row["counts"] == {"1": 1, "2": 0, "3": 0, "4": 1, "5": 0}
+        assert row["mean"] == 2.5
 
     def test_answers_outside_current_options_keep_their_own_buckets(
         self, api_client, surveys_admin_headers, mixed_survey

@@ -156,6 +156,11 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({**SECTION, "options": ["x"]},), {}, "section questions take no options"),
+        (
+            ({"label": "pace", "field_type": "scale", "options": ["x"]},),
+            {},
+            "scale questions take no",
+        ),
         (({**SECTION, "required": True},), {}, "section headers can't be required"),
         (({**NAME, "description": "x"},), {}, "only section headers take a description"),
         (({"label": "rate", "field_type": "stars", "options": ["a"] * 6},), {}, "at most 5"),

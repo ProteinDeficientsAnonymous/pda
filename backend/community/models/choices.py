@@ -71,6 +71,7 @@ class QuestionType(models.TextChoices):
     NUMBER = "number", "Number"
     BOOLEAN = "boolean", "Yes / No"
     STARS = "stars", "Stars"
+    SCALE = "scale", "Scale"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
     SECTION = "section", "Section"
 
