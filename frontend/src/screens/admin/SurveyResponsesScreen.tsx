@@ -210,7 +210,7 @@ function QuestionSummaries({
         const question = byId.get(row.questionId);
         return (
           <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
-            <p className="text-foreground mb-1 text-sm font-medium">
+            <p className="text-foreground mb-1 text-sm font-medium break-words">
               {(question?.label ?? row.questionId).toLowerCase()}
             </p>
             <p className="text-muted mb-2 text-xs">
@@ -228,7 +228,9 @@ function QuestionSummaries({
               <tbody>
                 {orderedCounts(row.counts, question?.options ?? []).map(([option, count]) => (
                   <tr key={option} className="border-border border-t">
-                    <td className="text-foreground py-1 pe-2">{option.toLowerCase()}</td>
+                    <td className="text-foreground py-1 pe-2 wrap-anywhere">
+                      {option.toLowerCase()}
+                    </td>
                     <td className="px-2 py-1">{String(count)}</td>
                     <td className="text-muted px-2 py-1">
                       {row.answered === 0
@@ -258,7 +260,7 @@ function TalliesTables({
     <div className="flex flex-col gap-4">
       {rows.map((row) => (
         <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
-          <p className="text-foreground mb-2 text-sm font-medium">
+          <p className="text-foreground mb-2 text-sm font-medium break-words">
             {(labelById.get(row.questionId) ?? row.questionId).toLowerCase()}
           </p>
           <p className="text-muted mb-2 text-xs">

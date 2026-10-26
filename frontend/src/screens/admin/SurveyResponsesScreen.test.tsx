@@ -142,6 +142,12 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(colour).getByText('4 answered')).toBeInTheDocument();
   });
 
+  it('should let long unbroken options wrap instead of widening the page', () => {
+    setup();
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByRole('cell', { name: 'red' })).toHaveClass('wrap-anywhere');
+  });
+
   it('should render the rating distribution with its mean', () => {
     setup();
     const section = screen.getByText('question summaries').closest('section')!;
