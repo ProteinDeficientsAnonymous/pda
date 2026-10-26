@@ -11,6 +11,7 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
+from django.conf import settings
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -126,16 +127,17 @@ class TestListSurveyResponsesAnonymity:
         assert row["user_id"] is None
         assert row["user_name"] is None
 
-    def test_anonymous_submitted_at_is_day_only(self, api_client, admin_headers):
+    def test_anonymous_submitted_at_is_community_day_only(self, api_client, admin_headers):
         survey = Survey.objects.create(title="Anon", slug="anon-day-1466", anonymous=True)
         r = SurveyResponse.objects.create(survey=survey, answers={})
+        # 10:30pm in new york is already the next day in utc
         SurveyResponse.objects.filter(id=r.id).update(
-            submitted_at=datetime(2026, 3, 4, 15, 27, 11, tzinfo=UTC)
+            submitted_at=datetime(2026, 10, 26, 2, 30, tzinfo=UTC)
         )
         resp = api_client.get(self._url(survey.id), **admin_headers)
         assert resp.status_code == 200
         submitted = datetime.fromisoformat(resp.json()[0]["submitted_at"])
-        assert submitted == datetime(2026, 3, 4, tzinfo=UTC)
+        assert submitted == datetime(2026, 10, 25, tzinfo=settings.COMMUNITY_TZ)
 
 
 @pytest.mark.django_db

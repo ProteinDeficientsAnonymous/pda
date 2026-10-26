@@ -6,6 +6,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.conf import settings
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -21,7 +22,9 @@ router = Router()
 
 
 def _day_only(dt: datetime) -> datetime:
-    return timezone.localtime(dt).replace(hour=0, minute=0, second=0, microsecond=0)
+    return timezone.localtime(dt, settings.COMMUNITY_TZ).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
 
 def _ordered_responses(survey: Survey, event_id: UUID | None = None) -> list[SurveyResponse]:
