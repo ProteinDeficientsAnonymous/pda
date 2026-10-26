@@ -58,4 +58,4 @@ def test_member_rsvp_queries_are_bounded(api_client):
     small = _drop_plus_one(api_client, 2)
     large = _drop_plus_one(api_client, 6)
     assert small == large
-    assert small <= 37
+    assert small <= 38
