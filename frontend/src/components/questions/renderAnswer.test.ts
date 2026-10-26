@@ -13,8 +13,8 @@ describe('renderAnswer', () => {
     expect(renderAnswer('plain')).toBe('plain');
   });
 
-  it('joins list answers with commas', () => {
-    expect(renderAnswer({ label: 'q', answer: ['a, b', 'c'] })).toBe('a, b, c');
+  it('puts each list answer on its own line so commas inside options stay readable', () => {
+    expect(renderAnswer({ label: 'q', answer: ['a, b', 'c'] })).toBe('a, b\nc');
   });
 
   it('joins object answers one pair per line', () => {

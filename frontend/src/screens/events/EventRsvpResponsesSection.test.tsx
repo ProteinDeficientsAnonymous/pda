@@ -90,7 +90,7 @@ describe('EventRsvpResponsesSection', () => {
           id: 'q1',
           label: 'bringing',
           fieldType: QuestionType.Checkbox,
-          options: ['mains', 'desserts'],
+          options: ['mains, sides', 'desserts'],
           required: false,
         },
       ],
@@ -99,16 +99,21 @@ describe('EventRsvpResponsesSection', () => {
           userId: 'a',
           name: 'alice',
           status: RsvpServerStatus.Attending,
-          questionnaireResponses: { q1: { label: 'bringing', answer: ['mains', 'desserts'] } },
+          questionnaireResponses: {
+            q1: { label: 'bringing', answer: ['mains, sides', 'desserts'] },
+          },
         }),
       ],
     });
 
     render(<EventRsvpResponsesSection event={event} />);
 
-    expect(screen.getByText('mains, desserts')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: /mains, sides/ })).toHaveTextContent(
+      /^mains, sides\ndesserts$/,
+      { normalizeWhitespace: false },
+    );
     const tallies = screen.getByRole('list');
-    expect(tallies).toHaveTextContent(/mains\s*1/);
+    expect(tallies).toHaveTextContent(/mains, sides\s*1/);
     expect(tallies).toHaveTextContent(/desserts\s*1/);
   });
 

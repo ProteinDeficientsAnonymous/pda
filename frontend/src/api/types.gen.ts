@@ -3526,34 +3526,10 @@ export interface components {
              */
             attending_count: number;
             /**
-             * Cashapp Link
-             * @default
-             */
-            cashapp_link: string;
-            /**
              * Co Host Ids
              * @default []
              */
             co_host_ids: string[];
-            /**
-             * Co Host Names
-             * @default []
-             */
-            co_host_names: string[];
-            /**
-             * Co Host Photo Urls
-             * @default []
-             */
-            co_host_photo_urls: string[];
-            /** Created By Id */
-            created_by_id?: string | null;
-            /** Created By Name */
-            created_by_name?: string | null;
-            /**
-             * Created By Photo Url
-             * @default
-             */
-            created_by_photo_url: string;
             /**
              * Datetime Tbd
              * @default false
@@ -3576,11 +3552,6 @@ export interface components {
             /** Id */
             id: string;
             /**
-             * Invited Count
-             * @default 0
-             */
-            invited_count: number;
-            /**
              * Is Legacy
              * @default false
              */
@@ -3595,12 +3566,8 @@ export interface components {
              * @default false
              */
             is_past: boolean;
-            /** Latitude */
-            latitude?: number | null;
             /** Location */
             location: string;
-            /** Longitude */
-            longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
             /**
@@ -3610,23 +3577,6 @@ export interface components {
             my_paid_confirmed: boolean;
             /** My Rsvp */
             my_rsvp?: string | null;
-            /**
-             * Other Link
-             * @default
-             */
-            other_link: string;
-            /**
-             * Partiful Link
-             * @default
-             */
-            partiful_link: string;
-            /** Photo Updated At */
-            photo_updated_at?: string | null;
-            /**
-             * Photo Url
-             * @default
-             */
-            photo_url: string;
             /**
              * Price
              * @default
@@ -3652,11 +3602,6 @@ export interface components {
             /** Title */
             title: string;
             /**
-             * Venmo Link
-             * @default
-             */
-            venmo_link: string;
-            /**
              * Visibility
              * @default public
              */
@@ -3666,16 +3611,6 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
-            /**
-             * Whatsapp Link
-             * @default
-             */
-            whatsapp_link: string;
-            /**
-             * Zelle Info
-             * @default
-             */
-            zelle_info: string;
         };
         /** EventListQuery */
         EventListQuery: {

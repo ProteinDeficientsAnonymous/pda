@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from notifications._digest_emails import send_weekly_digest_email
@@ -22,7 +23,8 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = (
         "Remind anyone who hasn't finished first login, nudge tentative members to come "
-        "in person, then email active and tentative members a digest of upcoming events."
+        "in person, then email active and tentative members a digest of upcoming events "
+        "(on the 1st, only to monthly digest opt-outs)."
     )
 
     def add_arguments(self, parser):
@@ -90,16 +92,23 @@ class Command(BaseCommand):
             self._send_test(sender, options["to"], payload)
             return
 
+        # On the 1st the monthly digest covers this week, so only its opt-outs get the weekly.
+        first_of_month = timezone.localtime(now, settings.COMMUNITY_TZ).day == 1
+
+        def recipients(users):
+            users = weekly_digest_recipients(users)
+            return users.filter(monthly_digest_opt_out=True) if first_of_month else users
+
         sent_count, failed_count = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            weekly_digest_recipients(User.objects.active_members()),
+            recipients(User.objects.active_members()),
             payload,
         )
         tentative_sent, tentative_failed = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            weekly_digest_recipients(User.objects.active_tentative_members()),
+            recipients(User.objects.active_tentative_members()),
             payload,
         )
         sent_count += tentative_sent

@@ -69,28 +69,6 @@ class TestEventVisibility:
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    def test_events_strips_private_fields_for_anonymous(self, api_client, auth_headers, test_user):
-        event = Event.objects.create(
-            title="Test",
-            start_datetime=timezone.now(),
-            end_datetime=timezone.now(),
-            location="",
-            whatsapp_link="https://chat.whatsapp.com/abc",
-            partiful_link="https://partiful.com/e/abc",
-            rsvp_enabled=False,
-            created_by=test_user,
-        )
-        anon_res = api_client.get("/api/community/events/")
-        authed_res = api_client.get("/api/community/events/", **auth_headers)
-
-        anon_event = next(e for e in anon_res.json() if e["id"] == str(event.id))
-        authed_event = next(e for e in authed_res.json() if e["id"] == str(event.id))
-
-        assert anon_event["whatsapp_link"] == ""
-        assert anon_event["partiful_link"] == ""
-        assert authed_event["whatsapp_link"] == "https://chat.whatsapp.com/abc"
-        assert authed_event["partiful_link"] == "https://partiful.com/e/abc"
-
     def test_events_hide_location_from_anonymous(self, api_client, auth_headers, test_user):
         event = Event.objects.create(
             title="A",
@@ -105,13 +83,15 @@ class TestEventVisibility:
         def pick(path, **headers):
             body = api_client.get(path, **headers).json()
             body = next(row for row in body if row["id"] == eid) if isinstance(body, list) else body
-            return body["location"], body["latitude"], body["longitude"]
+            return body["location"], body.get("latitude"), body.get("longitude")
 
-        for path in ("/api/community/events/", f"/api/community/events/{eid}/"):
-            assert pick(path) == ("", None, None)
-            location, latitude, longitude = pick(path, **auth_headers)
-            assert location == "18 Willow House"
-            assert (latitude, longitude) == pytest.approx((40.712776, -74.005974))
+        assert pick("/api/community/events/") == ("", None, None)
+        assert pick("/api/community/events/", **auth_headers)[0] == "18 Willow House"
+        path = f"/api/community/events/{eid}/"
+        assert pick(path) == ("", None, None)
+        location, latitude, longitude = pick(path, **auth_headers)
+        assert location == "18 Willow House"
+        assert (latitude, longitude) == pytest.approx((40.712776, -74.005974))
         ics = api_client.get(f"/api/community/events/{eid}/ics/").content
         assert b"18 Willow House" not in ics and b"LOCATION" not in ics
 
