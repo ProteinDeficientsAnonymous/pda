@@ -82,8 +82,42 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && pnpm install --frozen-lockfile
 
+      - name: Read Playwright version
+        id: playwright
+        run: |
+          version=$(cd frontend && pnpm exec playwright --version | awk '{print $2}')
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-shell
+
+      # The azure mirror sometimes serves these fonts at ~100 kB/s; they affect pixels, so cache, don't skip.
+      - name: Cache Playwright apt packages
+        uses: actions/cache@v6
+        with:
+          path: ~/apt-archives
+          key: playwright-apt-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}
+          restore-keys: playwright-apt-
+
+      - name: Install Playwright system dependencies
+        run: |
+          mkdir -p ~/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99playwright-archives
+          cd frontend && pnpm exec playwright install-deps chromium
+          sudo apt-get autoclean -qq
+          # apt leaves a root-only lock and partial/ that actions/cache can't tar.
+          sudo rm -rf ~/apt-archives/lock ~/apt-archives/partial
+
+      # Screenshots run headless, which uses the headless shell, not full Chrome.
       - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: cd frontend && pnpm exec playwright install --only-shell chromium
 
       - name: Migrate database
         run: cd backend && uv run python manage.py migrate
