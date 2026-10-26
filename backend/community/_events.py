@@ -15,6 +15,7 @@ from notifications.service import broadcast_event_created
 from pydantic import BaseModel
 from users._helpers import visible_display_name
 
+from community._cohost_invite_helpers import reject_non_member_cohosts
 from community._event_helpers import (
     _build_guest_list,
     _enforce_type_tag_permission,
@@ -227,6 +228,7 @@ def create_event(request, payload: EventIn):
 
     for question in payload.rsvp_questions:
         validate_event_rsvp_question(question)
+    reject_non_member_cohosts(payload.co_host_ids)
 
     event = Event.objects.create(
         title=payload.title,

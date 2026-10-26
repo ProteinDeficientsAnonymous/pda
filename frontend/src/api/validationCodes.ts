@@ -578,6 +578,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't step down — every event needs at least one host";
     case Code.CoHostInvite.EventIsPast:
       return "can't invite co-hosts to a past event";
+    case Code.CoHostInvite.NotMember:
+      return 'only members can be co-hosts';
 
     // Welcome template
     case Code.WelcomeTemplate.BodyRequired:
