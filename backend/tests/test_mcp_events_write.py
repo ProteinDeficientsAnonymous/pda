@@ -1,12 +1,13 @@
-import asyncio
 import json
 from functools import partial
 from unittest.mock import patch
 
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import Event, EventTag
+from django.test import TestCase
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
@@ -15,14 +16,15 @@ from users.models import User
 from tests.test_geocode import _FakeResp
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
 
 
 def _run(user, tool, **arguments):
     reset = _signed_in(user)
     try:
-        return asyncio.run(pda_mcp.call_tool(tool, arguments)).structured_content  # type: ignore[union-attr]
+        with TestCase.captureOnCommitCallbacks(execute=True):
+            return async_to_sync(pda_mcp.call_tool)(tool, arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(reset)
 

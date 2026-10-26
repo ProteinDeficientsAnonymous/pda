@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 
 import { checkboxValues } from './checkboxAnswer';
 import { FieldError } from './FieldError';
+import { formatPollOption } from './pollOption';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
 
@@ -261,7 +262,7 @@ function DatetimePoll({
             key={option}
             className="border-border bg-surface flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
           >
-            <span className="text-sm">{new Date(option).toLocaleString()}</span>
+            <span className="text-sm">{formatPollOption(option)}</span>
             <div className="flex gap-1" role="radiogroup">
               {(['yes', 'maybe'] as const).map((a) => (
                 <button

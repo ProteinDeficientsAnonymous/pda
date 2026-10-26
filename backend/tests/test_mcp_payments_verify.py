@@ -23,7 +23,7 @@ from tests._mcp_payments_helpers import (
 from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture

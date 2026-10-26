@@ -1,3 +1,5 @@
+import { formatPollOption } from './pollOption';
+
 export function renderAnswer(raw: unknown): string {
   if (raw === undefined || raw === null) return '—';
   if (typeof raw === 'object' && 'answer' in (raw as Record<string, unknown>)) {
@@ -7,7 +9,7 @@ export function renderAnswer(raw: unknown): string {
     if (Array.isArray(a)) return a.join('\n');
     if (typeof a === 'object' && a !== null) {
       return Object.entries(a as Record<string, string>)
-        .map(([k, v]) => `${k}: ${v}`)
+        .map(([k, v]) => `${formatPollOption(k)}: ${v}`)
         .join('\n');
     }
     return JSON.stringify(a);

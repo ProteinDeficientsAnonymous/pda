@@ -1,9 +1,9 @@
-import asyncio
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from asgiref.sync import async_to_sync
 from community.models import EventType, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
@@ -14,7 +14,7 @@ from users.roles import Role
 
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def _survey(slug, days_ago=0, **fields):
 def _call(user, name, **arguments):
     token = _signed_in(user)
     try:
-        return asyncio.run(pda_mcp.call_tool(name, arguments)).structured_content  # type: ignore[union-attr]
+        return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
 
@@ -44,7 +44,7 @@ def _call(user, name, **arguments):
 def _tool_names(user) -> set[str]:
     token = _signed_in(user)
     try:
-        return {tool.name for tool in asyncio.run(pda_mcp.list_tools())}
+        return {tool.name for tool in async_to_sync(pda_mcp.list_tools)()}
     finally:
         auth_context_var.reset(token)
 

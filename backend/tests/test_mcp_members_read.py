@@ -1,7 +1,7 @@
-import asyncio
 from datetime import timedelta
 
 import pytest
+from asgiref.sync import async_to_sync
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
@@ -12,7 +12,7 @@ from users.models import User
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 _phones = iter(f"+1202555{n:04d}" for n in range(2000, 3000))
 _BUCKETS = ("active", "still_onboarding", "paused", "archived")
@@ -21,7 +21,7 @@ _BUCKETS = ("active", "still_onboarding", "paused", "archived")
 def _call(user, **arguments):
     token = _signed_in(user)
     try:
-        return asyncio.run(pda_mcp.call_tool("member_totals", arguments)).structured_content  # type: ignore[union-attr]
+        return async_to_sync(pda_mcp.call_tool)("member_totals", arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
 
@@ -51,7 +51,7 @@ def _join_request(
 def test_hidden_and_forbidden_without_manage_users(test_user):
     token = _signed_in(test_user)
     try:
-        assert "member_totals" not in {t.name for t in asyncio.run(pda_mcp.list_tools())}
+        assert "member_totals" not in {t.name for t in async_to_sync(pda_mcp.list_tools)()}
     finally:
         auth_context_var.reset(token)
     with pytest.raises(ToolError, match="permission"):
