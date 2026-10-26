@@ -204,7 +204,7 @@ class User(AbstractUser):
 
     @property
     def needs_contact_privacy_consent(self) -> bool:
-        # Already hiding something means they've seen the privacy toggles in settings.
+        # Already hiding something means they've seen the toggles; PATCH /me/ stamps consent on toggle.
         if not self.show_phone or not self.show_email:
             return False
         return self.contact_privacy_consent_at is None
