@@ -74,6 +74,23 @@ def test_list_my_events_bounds_the_page_in_sql(test_user, django_assert_num_quer
     assert [r["title"] for r in rows] == ["mine 0", "mine 1", "mine 2"]
 
 
+def test_list_my_events_hides_a_tentative_hosts_members_only_community_event(db):
+    tentative = make_tentative_member("+12025550177", "t@e.com")
+    hidden, community = PageVisibility.MEMBERS_ONLY, EventType.COMMUNITY
+    _event(tentative, "members", days=1, event_type=community, visibility=hidden)
+    _event(tentative, "official", days=2, event_type=EventType.OFFICIAL, visibility=hidden)
+    _event(
+        tentative,
+        "draft",
+        days=3,
+        event_type=community,
+        visibility=hidden,
+        status=EventStatus.DRAFT,
+    )
+    titles = [r["title"] for r in _call(tentative, "list_my_events")["events"]]
+    assert titles == ["official", "draft"]
+
+
 def test_list_my_events_pages(test_user):
     for day in range(1, 6):
         _event(test_user, f"day {day}", days=day)

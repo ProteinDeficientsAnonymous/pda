@@ -2,13 +2,12 @@ from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
 from community._event_description_templates import get_event_description_templates
-from community._event_list import _hosted_by
+from community._event_list import hosted_events_q
 from community._event_tags import list_event_tags as list_event_tags_view
 from community._events import get_event as get_event_view
-from community._tentative_member_access import is_tentative_member, tentative_member_event_q
-from community.models import Event, EventStatus
+from community.models import Event
 from community.models.event import _is_past_q
-from django.db.models import BooleanField, Case, F, Q, When
+from django.db.models import BooleanField, Case, F, When
 from django.utils import timezone
 from pydantic import Field
 from pydantic_core import to_jsonable_python
@@ -36,16 +35,11 @@ def _summary(event: Event) -> dict[str, Any]:
 
 def _my_events(user: User, include_past: bool, limit: int, offset: int) -> list[dict[str, Any]]:
     """Upcoming first, undated (tbd) last, then past newest first; id breaks ties for paging."""
-    now = timezone.now()
-    active = Q(status=EventStatus.ACTIVE)
-    if not include_past:
-        active &= ~_is_past_q(now)
-    if is_tentative_member(user):
-        active &= tentative_member_event_q()
-    past = Case(When(_is_past_q(now), then=True), default=False, output_field=BooleanField())
+    past = Case(
+        When(_is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
+    )
     rows = (
-        Event.objects.filter(_hosted_by(user))
-        .filter(Q(status=EventStatus.DRAFT) | active)
+        Event.objects.filter(hosted_events_q(user, upcoming=not include_past))
         .annotate(
             listed_past=past,
             upcoming_start=Case(When(listed_past=False, datetime_tbd=False, then="start_datetime")),
