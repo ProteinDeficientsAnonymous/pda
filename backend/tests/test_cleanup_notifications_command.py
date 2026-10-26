@@ -7,16 +7,23 @@ from django.utils import timezone
 from notifications.models import SseTicket
 
 
+def _ticket(user, *, used: bool, expired: bool) -> SseTicket:
+    ticket = SseTicket.mint_for_user(user)
+    expires_at = timezone.now() - timedelta(seconds=1) if expired else ticket.expires_at
+    SseTicket.objects.filter(pk=ticket.pk).update(used=used, expires_at=expires_at)
+    return ticket
+
+
 @pytest.mark.django_db
-def test_purges_used_and_expired_sse_tickets(test_user):
-    fresh = SseTicket.mint_for_user(test_user)
-    used = SseTicket.mint_for_user(test_user)
-    SseTicket.objects.filter(pk=used.pk).update(used=True)
-    expired = SseTicket.mint_for_user(test_user)
-    SseTicket.objects.filter(pk=expired.pk).update(expires_at=timezone.now() - timedelta(seconds=1))
+def test_purges_expired_sse_tickets_only(test_user):
+    fresh = _ticket(test_user, used=False, expired=False)
+    # Used tickets expire within the 60s TTL, so expiry alone catches them on a later run.
+    used_unexpired = _ticket(test_user, used=True, expired=False)
+    _ticket(test_user, used=True, expired=True)
+    _ticket(test_user, used=False, expired=True)
     out = StringIO()
 
     call_command("cleanup_notifications", stdout=out)
 
-    assert list(SseTicket.objects.values_list("pk", flat=True)) == [fresh.pk]
-    assert "Deleted 2 used or expired SSE tickets" in out.getvalue()
+    assert set(SseTicket.objects.values_list("pk", flat=True)) == {fresh.pk, used_unexpired.pk}
+    assert "Deleted 2 expired SSE tickets" in out.getvalue()
