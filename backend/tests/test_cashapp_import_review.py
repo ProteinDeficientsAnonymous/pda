@@ -4,7 +4,6 @@ import pytest
 from community._cashapp_import_price import PriceKind
 from community._cashapp_import_review import (
     NO_END_GRACE,
-    load_guest_records,
     load_guests_and_verified,
     load_payment_context,
     review_cashapp_csv,
@@ -150,7 +149,7 @@ class TestLoaders:
         EventRSVP.objects.create(event=event, user=wren, status=RSVPStatus.WAITLISTED)
         EventRSVP.objects.create(event=event, user=gone, status=RSVPStatus.CANT_GO)
 
-        records = {r.user_id: r for r in load_guest_records(event)}
+        records = {r.user_id: r for r in load_guests_and_verified(event)[0]}
 
         assert set(records) == {str(alex.id), str(wren.id)}
         a = records[str(alex.id)]
@@ -197,7 +196,9 @@ class TestLoaders:
         when = event.start_datetime + timedelta(hours=2)
         csv = make_csv(csv_line(date=when.strftime("%Y-%m-%d %H:%M:%S %z"), name="Alex Kim"))
 
-        review = review_cashapp_csv(csv, load_payment_context(event), load_guest_records(event))
+        review = review_cashapp_csv(
+            csv, load_payment_context(event), load_guests_and_verified(event)[0]
+        )
 
         assert review.filtered == {}
         assert review.proposals[0].user_ids == [str(alex.id)]
@@ -218,7 +219,9 @@ class TestLoaders:
         when = timezone.now().astimezone(timezone.get_default_timezone())
         csv = make_csv(csv_line(date=when.strftime("%Y-%m-%d %H:%M:%S %z"), name="Alex Kim"))
 
-        review = review_cashapp_csv(csv, load_payment_context(event), load_guest_records(event))
+        review = review_cashapp_csv(
+            csv, load_payment_context(event), load_guests_and_verified(event)[0]
+        )
 
         assert review.proposals[0].user_ids == [str(alex.id)]
         assert review.proposals[0].confidence == MatchConfidence.CONFIDENT

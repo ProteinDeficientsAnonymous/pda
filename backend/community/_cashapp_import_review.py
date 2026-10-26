@@ -148,11 +148,6 @@ def _guest_record(rsvp: EventRSVP) -> GuestRecord:
     )
 
 
-def load_guest_records(event: Event) -> list[GuestRecord]:
-    rsvps = event.rsvps.filter(status__in=MATCHABLE_RSVP_STATUSES).select_related("user")
-    return [_guest_record(rsvp) for rsvp in rsvps]
-
-
 def load_guests_and_verified(event: Event) -> tuple[list[GuestRecord], set[str]]:
     """One query for the guest list plus every host-verified user id, guest or not."""
     rsvps = list(
