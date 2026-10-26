@@ -16830,6 +16830,23 @@
               "title": "Response Token",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "response_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Response Id"
+            }
           }
         ],
         "requestBody": {
