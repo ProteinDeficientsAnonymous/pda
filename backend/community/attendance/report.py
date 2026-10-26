@@ -11,12 +11,12 @@ from users.models import User
 from users.permissions import PermissionKey
 
 from community.attendance.analytics import (
-    compute_member_stats,
+    EMPTY_MEMBER_STATS,
+    MemberAttendanceStats,
     is_compliant,
     is_pause_candidate,
-    member_rsvps_prefetch,
+    member_stats_by_user,
     months_since,
-    user_rsvps_for_attendance,
 )
 from community.events.schemas import AttendanceReportOut, EventAttendanceRowOut
 from community.models import AttendanceStatus, Event, EventType
@@ -115,9 +115,7 @@ class MemberAttendanceAnalyticsOut(BaseModel):
     members: list[MemberAttendanceRowOut] = []
 
 
-def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
-    rsvps = user_rsvps_for_attendance(user)
-    stats = compute_member_stats(rsvps)
+def _member_attendance_row(user: User, stats: MemberAttendanceStats) -> MemberAttendanceRowOut:
     return MemberAttendanceRowOut(
         user_id=str(user.id),
         full_name=user.full_name,
@@ -148,12 +146,11 @@ def member_attendance_analytics(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
 
-    users = (
-        User.objects.members()
-        .filter(archived_at__isnull=True)
-        .prefetch_related(member_rsvps_prefetch())
-        .order_by("first_name", "last_name")
-    )
-    rows = [_member_attendance_row(u) for u in users]
+    users = User.objects.members().filter(archived_at__isnull=True)
+    stats = member_stats_by_user(users)
+    rows = [
+        _member_attendance_row(u, stats.get(u.pk, EMPTY_MEMBER_STATS))
+        for u in users.order_by("first_name", "last_name")
+    ]
     rows.sort(key=lambda r: not r.is_pause_candidate)
     return Status(200, MemberAttendanceAnalyticsOut(members=rows))
