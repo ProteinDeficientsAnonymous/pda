@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
@@ -83,6 +84,7 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const finalized = survey.pollResult !== null;
   const readOnly = finalized;
@@ -104,7 +106,15 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
       }
     }
     setErrors(next);
-    return Object.keys(next).length === 0;
+    const firstMissing = shownQuestions.find((q) => next[q.id]);
+    if (!firstMissing) return true;
+    toast.error('answer the required questions before submitting', { id: 'survey-required' });
+    const field = formRef.current?.querySelector(`[data-question-id="${firstMissing.id}"]`);
+    field?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    field
+      ?.querySelector<HTMLElement>('input, select, textarea, button')
+      ?.focus({ preventScroll: true });
+    return false;
   }
 
   async function onSubmit(e: SyntheticEvent) {
@@ -163,18 +173,24 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
         </div>
       ) : null}
 
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5" noValidate>
+      <form
+        ref={formRef}
+        onSubmit={(e) => void onSubmit(e)}
+        className="flex flex-col gap-5"
+        noValidate
+      >
         {shownQuestions.map((q) => (
-          <QuestionField
-            key={q.id}
-            question={q}
-            value={answers[q.id]}
-            onChange={(v) => {
-              setAnswers((a) => ({ ...a, [q.id]: v }));
-            }}
-            error={errors[q.id]}
-            readOnly={readOnly}
-          />
+          <div key={q.id} data-question-id={q.id}>
+            <QuestionField
+              question={q}
+              value={answers[q.id]}
+              onChange={(v) => {
+                setAnswers((a) => ({ ...a, [q.id]: v }));
+              }}
+              error={errors[q.id]}
+              readOnly={readOnly}
+            />
+          </div>
         ))}
 
         {serverError ? (
