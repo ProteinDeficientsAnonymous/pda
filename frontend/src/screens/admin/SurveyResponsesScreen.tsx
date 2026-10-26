@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -16,6 +15,7 @@ import {
   useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
+import { formatPollOption } from '@/components/questions/pollOption';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -276,9 +276,7 @@ function TalliesTables({
               <tbody>
                 {Object.entries(row.tallies).map(([opt, counts]) => (
                   <tr key={opt} className="border-border border-t">
-                    <td className="text-foreground py-1 pe-2 font-mono">
-                      {formatOptionLabel(opt)}
-                    </td>
+                    <td className="text-foreground py-1 pe-2 font-mono">{formatPollOption(opt)}</td>
                     <td className="px-2 py-1">{String(counts.yes ?? 0)}</td>
                     <td className="px-2 py-1">{String(counts.maybe ?? 0)}</td>
                   </tr>
@@ -290,12 +288,6 @@ function TalliesTables({
       ))}
     </div>
   );
-}
-
-function formatOptionLabel(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.toLowerCase();
-  return format(d, 'MMM d, yyyy h:mm a').toLowerCase();
 }
 
 function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; options: string[] }) {
@@ -356,7 +348,7 @@ function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; optio
                   }}
                   className="mt-1"
                 />
-                <span className="font-mono text-xs">{formatOptionLabel(opt)}</span>
+                <span className="font-mono text-xs">{formatPollOption(opt)}</span>
               </label>
             ))}
           </div>

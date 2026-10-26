@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { format } from 'date-fns';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -90,7 +91,9 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByText('great')).toBeInTheDocument();
     expect(screen.getByText('vanilla,choc')).toBeInTheDocument();
     expect(
-      screen.getByRole('cell', { name: '2030-01-01T18:00:00+00:00: yes' }),
+      screen.getByRole('cell', {
+        name: `${format(new Date('2030-01-01T18:00:00+00:00'), 'MMM d, yyyy h:mm a').toLowerCase()}: yes`,
+      }),
     ).toBeInTheDocument();
 
     expect(screen.getByRole('columnheader', { name: 'mood' })).toBeInTheDocument();
