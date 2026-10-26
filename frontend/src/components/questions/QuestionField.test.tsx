@@ -46,17 +46,18 @@ describe('QuestionField', () => {
     expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
   });
 
-  it('renders a 1–5 scale and reports the picked point', () => {
+  it('renders a 1–5 scale with its end labels and reports the picked point', () => {
     const onChange = vi.fn();
     render(
       <QuestionField
-        question={{ ...base, fieldType: QuestionType.Scale }}
+        question={{ ...base, fieldType: QuestionType.Scale, options: ['bad', 'great'] }}
         value="3"
         onChange={onChange}
       />,
     );
     expect(screen.getByRole('radio', { name: '3' })).toBeChecked();
-    fireEvent.click(screen.getByRole('radio', { name: '5' }));
+    expect(screen.getByText('bad')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: '5 — great' }));
     expect(onChange).toHaveBeenCalledWith('5');
   });
 

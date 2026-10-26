@@ -86,3 +86,15 @@ export function normalizeRatingLabels(options: readonly string[]): string[] {
   const labels = ratingLabelSlots(options).map((label) => label.trim());
   return labels.some(Boolean) ? labels : [];
 }
+
+/** [low, high] labels for the two ends of a 1–5 scale. */
+export function scaleEndLabels(options: readonly string[]): [string, string] {
+  return [options[0] ?? '', options[1] ?? ''];
+}
+
+/** Accessible name for a scale point, e.g. "5 — great" at a labeled end. */
+export function scalePointLabel(n: number, options: readonly string[]): string {
+  const [low, high] = scaleEndLabels(options);
+  const end = n === 1 ? low : n === RATING_SCALE_SIZE ? high : '';
+  return end ? `${String(n)} — ${end}` : String(n);
+}

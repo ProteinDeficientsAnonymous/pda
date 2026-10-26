@@ -68,6 +68,8 @@ function sharesOptions(from: string, to: string): boolean {
 
 function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
   if (fieldType === QuestionType.Stars) return normalizeRatingLabels(options);
+  // Scale end labels are authored over mcp until the editor can edit them.
+  if (fieldType === QuestionType.Scale) return [...options];
   if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
   return normalizeQuestionOptions(options);
 }

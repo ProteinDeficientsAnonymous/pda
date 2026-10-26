@@ -156,11 +156,7 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({**SECTION, "options": ["x"]},), {}, "section questions take no options"),
-        (
-            ({"label": "pace", "field_type": "scale", "options": ["x"]},),
-            {},
-            "scale questions take no",
-        ),
+        (({"label": "pace", "field_type": "scale", "options": ["a"] * 3},), {}, "at most 2"),
         (({**SECTION, "required": True},), {}, "section headers can't be required"),
         (({**NAME, "description": "x"},), {}, "only section headers take a description"),
         (({"label": "rate", "field_type": "stars", "options": ["a"] * 6},), {}, "at most 5"),
@@ -211,14 +207,16 @@ def test_condition_the_website_refuses_leaves_no_survey(surveys_admin):
 def test_rating_labels_and_poll_times_stored_like_the_builder(surveys_admin):
     stars = {"label": "stars", "field_type": "stars", "options": ["meh", "", "", "great"]}
     blank = {"label": "blank", "field_type": "stars", "options": ["", " "]}
-    summary = _create(surveys_admin, (stars, blank, POLL))
+    scale = {"label": "pace", "field_type": "scale", "options": ["", " fast "]}
+    summary = _create(surveys_admin, (stars, blank, scale, POLL))
     saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
     assert [q.options for q in saved] == [
         ["meh", "", "", "great", ""],
         [],
+        ["", "fast"],
         ["2099-11-07T16:00:00.000Z"],
     ]
-    assert summary["questions"][2]["option_times"] == ["2099-11-07T11:00:00-05:00"]
+    assert summary["questions"][3]["option_times"] == ["2099-11-07T11:00:00-05:00"]
 
 
 def test_duplicate_slug_refused(surveys_admin):
