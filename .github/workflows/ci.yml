@@ -187,8 +187,24 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && pnpm install --frozen-lockfile
 
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          version=$(cd frontend && pnpm exec playwright --version | awk '{print $2}')
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-chromium-shell
+
+      # No --with-deps: the runner has chromium's libs; the apt step only added fonts and sometimes crawled for minutes
       - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: cd frontend && pnpm exec playwright install --only-shell chromium
 
       # Only migrate — each spec seeds its own data via the e2e_seed command;
       # the global demo seed isn't needed and would just add a failure surface.
