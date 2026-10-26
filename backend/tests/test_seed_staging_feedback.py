@@ -42,7 +42,7 @@ def test_seed_staging_reuses_existing_official_feedback_survey():
         title="real feedback", slug="real-feedback", feedback_event_type=EventType.OFFICIAL
     )
     SurveyQuestion.objects.create(
-        survey=survey, label="rate it", field_type=SurveyQuestionType.RATING
+        survey=survey, label="rate it", field_type=SurveyQuestionType.STARS
     )
     call_command("seed_staging")
     assert not Survey.objects.filter(slug=FEEDBACK_SURVEY_SLUG).exists()

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import anyio
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from community._surveys import create_survey_question as create_question_view
 from community._validation import Code
@@ -21,7 +22,7 @@ from users.roles import Role
 from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 SETTINGS = {"title": "Retreat Planning!"}
 NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
@@ -155,9 +156,14 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({**SECTION, "options": ["x"]},), {}, "section questions take no options"),
+        (({"label": "pace", "field_type": "scale", "options": ["a"] * 3},), {}, "at most 2"),
         (({**SECTION, "required": True},), {}, "section headers can't be required"),
         (({**NAME, "description": "x"},), {}, "only section headers take a description"),
-        (({"label": "rate", "field_type": "rating", "options": ["a"] * 6},), {}, "at most 5"),
+        (
+            ({"label": "rate", "field_type": "stars", "options": ["a"]},),
+            {},
+            "stars questions take no",
+        ),
         (({**POLL, "options": ["2099-07-04T11:00Z"]},), {}, "new york is at -04:00 on"),
         ((FOOD, {**WHY, "show_if": {"position": 2, "value": "vegan"}}), {}, "earlier question"),
         ((FOOD, {**WHY, "show_if": {"position": 3, "value": "vegan"}}), {}, "earlier question"),
@@ -202,16 +208,12 @@ def test_condition_the_website_refuses_leaves_no_survey(surveys_admin):
     assert not Survey.objects.exists()
 
 
-def test_rating_labels_and_poll_times_stored_like_the_builder(surveys_admin):
-    stars = {"label": "stars", "field_type": "rating", "options": ["meh", "", "", "great"]}
-    blank = {"label": "blank", "field_type": "rating", "options": ["", " "]}
-    summary = _create(surveys_admin, (stars, blank, POLL))
+def test_scale_labels_and_poll_times_stored_like_the_builder(surveys_admin):
+    scale = {"label": "pace", "field_type": "scale", "options": ["", " fast "]}
+    blank = {"label": "blank", "field_type": "scale", "options": ["", " "]}
+    summary = _create(surveys_admin, (scale, blank, POLL))
     saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
-    assert [q.options for q in saved] == [
-        ["meh", "", "", "great", ""],
-        [],
-        ["2099-11-07T16:00:00.000Z"],
-    ]
+    assert [q.options for q in saved] == [["", "fast"], [], ["2099-11-07T16:00:00.000Z"]]
     assert summary["questions"][2]["option_times"] == ["2099-11-07T11:00:00-05:00"]
 
 
@@ -264,7 +266,7 @@ def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
     reset = _signed_in(surveys_admin)
     try:
         with patch(f"mcp_gateway.tools.surveys_write.{view}", slow):
-            anyio.run(cancel_midway)
+            async_to_sync(cancel_midway)()
     finally:
         auth_context_var.reset(reset)
     assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
@@ -309,7 +311,7 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
     reset = _signed_in(surveys_admin)
     try:
         with patch.object(surveys_write, "create_question_view", slow), _failing_delete():
-            assert anyio.run(cancel)
+            assert async_to_sync(cancel)()
     finally:
         auth_context_var.reset(reset)
     survey_id = str(Survey.objects.get().pk)

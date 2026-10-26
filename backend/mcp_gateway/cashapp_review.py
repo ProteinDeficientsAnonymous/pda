@@ -8,7 +8,7 @@ from typing import Any
 from asgiref.sync import sync_to_async
 from community._cashapp_import_price import PriceSpec
 from community._cashapp_import_review import (
-    load_guest_records,
+    load_guests_and_verified,
     load_payment_context,
     review_cashapp_csv,
 )
@@ -22,16 +22,17 @@ from community._cashapp_import_types import (
     UnreadableRow,
 )
 from community._event_helpers import _can_edit_event
-from community._events import get_event as get_event_view
+from community._event_read_visibility import _enforce_event_read_visibility
+from community._tentative_member_access import event_viewer_for
 from community._validation import Code, ValidationException, raise_validation
-from community.models import Event, EventRSVP
+from community.models import Event, parse_event_ref
 from django.conf import settings
 from django.core.cache import caches
 from mcp.server.mcpserver.exceptions import ToolError
 from users.models import User
 
 from mcp_gateway.server import BASE_URL
-from mcp_gateway.view_calls import call_view, validation_tool_error
+from mcp_gateway.view_calls import validation_tool_error
 
 REVIEW_TTL_SECONDS = 60 * 60
 
@@ -52,6 +53,7 @@ class LoadedReview:
     verified: frozenset[str]
     review_id: str
     csv_text: str = field(repr=False)
+    record: Event = field(repr=False, compare=False)
 
     @property
     def event_id(self) -> str:
@@ -67,55 +69,67 @@ class LoadedReview:
         }
 
 
-def _verified_user_ids(event: Event) -> set[str]:
-    rows = EventRSVP.objects.filter(event=event, payment_verified_at__isnull=False)
-    return {str(uid) for uid in rows.values_list("user_id", flat=True)}
+def _visible_event(user: User, event_ref: str) -> Event:
+    """The website's event read rules, without serializing the event."""
+    event = (
+        Event.objects.prefetch_related("co_hosts").filter(parse_event_ref(event_ref).as_q()).first()
+    )
+    try:
+        if event is None:
+            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        _enforce_event_read_visibility(event, event_viewer_for(user, event))
+    except ValidationException as exc:
+        raise validation_tool_error(exc) from exc
+    return event
 
 
 def _review_event(
-    user: User, event_id: str, csv_text: str
+    user: User, event: Event, csv_text: str
 ) -> tuple[CashAppReview, list[GuestRecord], set[str]]:
     """Payment status follows the guest list's rule: co-hosts and manage_events only."""
-    event = Event.objects.prefetch_related("co_hosts").get(pk=event_id)
     try:
         if not _can_edit_event(user, event):
             raise_validation(Code.Perm.DENIED, status_code=403, action="review_cashapp_payments")
-        guests = load_guest_records(event)
-        verified = _verified_user_ids(event)
+        guests, verified = load_guests_and_verified(event)
         review = review_cashapp_csv(csv_text, load_payment_context(event), guests, verified)
     except ValidationException as exc:
         raise validation_tool_error(exc) from exc
     return review, guests, verified
 
 
-async def _review_body(user: User, body: dict[str, Any], csv_text: str) -> LoadedReview:
-    review, guests, verified = await sync_to_async(_review_event)(user, body["id"], csv_text)
-    event = {
-        "id": body["id"],
-        "title": body["title"],
-        "price": body["price"],
-        "url": f"{BASE_URL}/events/{body['slug'] or body['id']}",
+async def _review(user: User, event: Event, csv_text: str) -> LoadedReview:
+    review, guests, verified = await sync_to_async(_review_event)(user, event, csv_text)
+    summary = {
+        "id": str(event.id),
+        "title": event.title,
+        "price": event.price,
+        "url": f"{BASE_URL}/events/{event.slug or event.id}",
     }
     guest_map = {g.user_id: g for g in guests}
     return LoadedReview(
-        event, review, guest_map, frozenset(verified), csv_digest(csv_text), csv_text
+        summary, review, guest_map, frozenset(verified), csv_digest(csv_text), csv_text, event
     )
 
 
 async def load_review(user: User, event_ref: str, csv_text: str) -> LoadedReview:
     """Resolve the event through the website's read rules, then review the csv against it."""
-    body = await call_view(get_event_view, user, event_id=event_ref)
-    return await _review_body(user, body, csv_text)
+    event = await sync_to_async(_visible_event)(user, event_ref)
+    return await _review(user, event, csv_text)
 
 
 async def load_cached_review(user: User, event_ref: str, review_id: str) -> LoadedReview:
     """Re-run a review on the csv this user cached for this event; refuse once it's gone."""
-    body = await call_view(get_event_view, user, event_id=event_ref)
-    key = review_cache_key(user.pk, body["id"], review_id)
+    event = await sync_to_async(_visible_event)(user, event_ref)
+    key = review_cache_key(user.pk, str(event.id), review_id)
     csv_text = await caches["ratelimit"].aget(key)
     if csv_text is None:
         raise ToolError("review expired — run review_cashapp_payments again")
-    return await _review_body(user, body, csv_text)
+    return await _review(user, event, csv_text)
+
+
+async def rerun_review(user: User, loaded: LoadedReview) -> LoadedReview:
+    """Review the same csv again against the event's current rsvps."""
+    return await _review(user, loaded.record, loaded.csv_text)
 
 
 async def remember_csv(user: User, loaded: LoadedReview, csv_text: str) -> None:

@@ -13,9 +13,9 @@ from mcp_gateway.cashapp_review import (
     LoadedReview,
     gap_out,
     load_cached_review,
-    load_review,
     payment_summary,
     proposals_by_confidence,
+    rerun_review,
 )
 from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.server import current_user, pda_tool
@@ -158,7 +158,7 @@ async def _apply(user: Any, loaded: LoadedReview, pending: dict[str, list[str]])
     result = await call_view(
         verify_guest_payments_view, user, event_id=UUID(loaded.event_id), payload=payload
     )
-    after = await load_review(user, loaded.event_id, loaded.csv_text)
+    after = await rerun_review(user, loaded)
     grouped = proposals_by_confidence(after)
     return {
         "event": after.event,

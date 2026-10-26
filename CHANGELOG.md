@@ -1,3 +1,31 @@
+# [0.205.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.5...v0.205.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **perf:** run 2 gunicorn workers and pool postgres connections ([#1928](https://github.com/ProteinDeficientsAnonymous/pda/issues/1928)) ([e1f52ae](https://github.com/ProteinDeficientsAnonymous/pda/commit/e1f52ae3486fa2a51b9004f92d0fa3c1da3e5de6))
+
+
+### Features
+
+* **surveys:** add a 1-5 scale question type ([#1961](https://github.com/ProteinDeficientsAnonymous/pda/issues/1961)) ([229e316](https://github.com/ProteinDeficientsAnonymous/pda/commit/229e3168d9aa219d6da3be863b0146855506547f))
+* **surveys:** edit scale end labels in the survey builder ([#1963](https://github.com/ProteinDeficientsAnonymous/pda/issues/1963)) ([c64d813](https://github.com/ProteinDeficientsAnonymous/pda/commit/c64d81329e03aa85033278898c8799b62b87e2ff))
+* **surveys:** optional end labels on a 1-5 scale ([#1962](https://github.com/ProteinDeficientsAnonymous/pda/issues/1962)) ([3c4e288](https://github.com/ProteinDeficientsAnonymous/pda/commit/3c4e288267ea8db5073057ce3523a397b33ecc5a))
+* **surveys:** star ratings take no per-star labels ([#1964](https://github.com/ProteinDeficientsAnonymous/pda/issues/1964)) ([7859713](https://github.com/ProteinDeficientsAnonymous/pda/commit/78597138c6159380613042413fe409758190b80d))
+
+
+### Performance Improvements
+
+* reuse the token lookup's user for each mcp tool call ([#1944](https://github.com/ProteinDeficientsAnonymous/pda/issues/1944)) ([3f490b5](https://github.com/ProteinDeficientsAnonymous/pda/commit/3f490b513486d6993951d2dc4e35afc04ec23aea))
+* slim cash app review event lookup and load rsvps once ([#1942](https://github.com/ProteinDeficientsAnonymous/pda/issues/1942)) ([f86725f](https://github.com/ProteinDeficientsAnonymous/pda/commit/f86725f6be749425b72f5fd2d7d0ab7479d31e7f))
+
+## [0.204.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.4...v0.204.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1920 - keep responses table from widening the page ([#1955](https://github.com/ProteinDeficientsAnonymous/pda/issues/1955)) ([10d0322](https://github.com/ProteinDeficientsAnonymous/pda/commit/10d0322a868331ef717641122fb094e701d44ce4))
+
 ## [0.204.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.3...v0.204.4) (2026-10-26)
 
 
