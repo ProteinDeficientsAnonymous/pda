@@ -1,3 +1,10 @@
+## [0.202.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.10...v0.202.11) (2026-10-26)
+
+
+### Bug Fixes
+
+* **questions:** show each checkbox answer on its own line ([#1905](https://github.com/ProteinDeficientsAnonymous/pda/issues/1905)) ([f8b4417](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8b44175f63047f8f910110f25562faa0185e798))
+
 ## [0.202.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.9...v0.202.10) (2026-10-26)
 
 
