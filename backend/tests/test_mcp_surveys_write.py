@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import anyio
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from community._surveys import create_survey_question as create_question_view
 from community._validation import Code
@@ -21,7 +22,7 @@ from users.roles import Role
 from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 SETTINGS = {"title": "Retreat Planning!"}
 NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
@@ -264,7 +265,7 @@ def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
     reset = _signed_in(surveys_admin)
     try:
         with patch(f"mcp_gateway.tools.surveys_write.{view}", slow):
-            anyio.run(cancel_midway)
+            async_to_sync(cancel_midway)()
     finally:
         auth_context_var.reset(reset)
     assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
@@ -309,7 +310,7 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
     reset = _signed_in(surveys_admin)
     try:
         with patch.object(surveys_write, "create_question_view", slow), _failing_delete():
-            assert anyio.run(cancel)
+            assert async_to_sync(cancel)()
     finally:
         auth_context_var.reset(reset)
     survey_id = str(Survey.objects.get().pk)
