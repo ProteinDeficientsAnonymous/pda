@@ -15,9 +15,11 @@ import { QuestionCardOptions } from './QuestionCardOptions';
 import {
   normalizeQuestionOptions,
   normalizeRatingLabels,
+  normalizeScaleEndLabels,
   questionTypeWantsOptions,
 } from './questionTypeOptions';
 import { RatingLabelFields } from './RatingLabelFields';
+import { ScaleLabelFields } from './ScaleLabelFields';
 
 interface TypeOption<T extends string> {
   value: T;
@@ -61,15 +63,14 @@ const CHOICE_TYPES: ReadonlySet<string> = new Set([
   QuestionType.Checkbox,
 ]);
 
-// Choice options carry over between choice types; poll dates and star labels don't.
+// Choice options carry over between choice types; poll dates and rating labels don't.
 function sharesOptions(from: string, to: string): boolean {
   return CHOICE_TYPES.has(from) && CHOICE_TYPES.has(to);
 }
 
 function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
   if (fieldType === QuestionType.Stars) return normalizeRatingLabels(options);
-  // Scale end labels are authored over mcp until the editor can edit them.
-  if (fieldType === QuestionType.Scale) return [...options];
+  if (fieldType === QuestionType.Scale) return normalizeScaleEndLabels(options);
   if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
   return normalizeQuestionOptions(options);
 }
@@ -226,6 +227,18 @@ export function QuestionCardEditor<T extends string>({
         />
       ) : draft.fieldType === QuestionType.Stars ? (
         <RatingLabelFields
+          id={id}
+          options={draft.options}
+          disabled={disabled}
+          onChange={(options) => {
+            setDraft((d) => ({ ...d, options }));
+          }}
+          onCommit={(options) => {
+            commit({ ...draft, options });
+          }}
+        />
+      ) : draft.fieldType === QuestionType.Scale ? (
+        <ScaleLabelFields
           id={id}
           options={draft.options}
           disabled={disabled}

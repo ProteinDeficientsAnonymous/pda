@@ -172,7 +172,7 @@ describe('QuestionCardEditor', () => {
     });
   });
 
-  it('saves a 1–5 scale with no options to fill in yet', async () => {
+  it('saves a 1–5 scale with blank end labels as no options', async () => {
     const { onSave } = renderCard();
     fireEvent.change(screen.getByLabelText('question type'), {
       target: { value: QuestionType.Scale },
@@ -181,6 +181,16 @@ describe('QuestionCardEditor', () => {
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({ fieldType: QuestionType.Scale, options: [] }),
       );
+    });
+  });
+
+  it('saves scale end labels as [low, high], keeping a blank low end', async () => {
+    const { onSave } = renderCard({ fieldType: QuestionType.Scale });
+    const high = screen.getByLabelText('label for 5');
+    fireEvent.change(high, { target: { value: ' great ' } });
+    fireEvent.blur(high);
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ options: ['', 'great'] }));
     });
   });
 

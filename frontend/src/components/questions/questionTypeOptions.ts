@@ -98,3 +98,8 @@ export function scalePointLabel(n: number, options: readonly string[]): string {
   const end = n === 1 ? low : n === RATING_SCALE_SIZE ? high : '';
   return end ? `${String(n)} — ${end}` : String(n);
 }
+
+export function normalizeScaleEndLabels(options: readonly string[]): string[] {
+  const labels = scaleEndLabels(options).map((label) => label.trim());
+  return labels.some(Boolean) ? labels : [];
+}
