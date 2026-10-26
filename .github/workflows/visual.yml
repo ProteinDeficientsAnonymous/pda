@@ -111,6 +111,8 @@ jobs:
           echo "Dir::Cache::Archives \"$HOME/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99playwright-archives
           cd frontend && pnpm exec playwright install-deps chromium
           sudo apt-get autoclean -qq
+          # apt leaves a root-only lock and partial/ that actions/cache can't tar.
+          sudo rm -rf ~/apt-archives/lock ~/apt-archives/partial
 
       # Screenshots run headless, which uses the headless shell, not full Chrome.
       - name: Install Playwright browsers
