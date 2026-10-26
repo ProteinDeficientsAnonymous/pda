@@ -2,7 +2,7 @@ import logging
 import re
 from urllib.parse import urlparse
 
-from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code
+from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code, with_roles
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
@@ -41,7 +41,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
             return user
         code = account_block_code(user)
         if code is None:
-            return user
+            return with_roles(user)
         if request.method in _SAFE_METHODS or (
             code not in _HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
         ):

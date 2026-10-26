@@ -18,6 +18,7 @@ endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
 from community._validation import Code, ValidationException
+from django.db.models import prefetch_related_objects
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
 from users.models import User
@@ -57,6 +58,12 @@ def account_block_code(user: User) -> str | None:
     return None
 
 
+def with_roles(user: User) -> User:
+    """Prefetch roles so has_permission() is query-free for the rest of the request."""
+    prefetch_related_objects([user], "roles")
+    return user
+
+
 class GatedJWTAuth(JWTAuth):
     """JWTAuth that also rejects tokens whose account is in a blocked state.
 
@@ -75,7 +82,7 @@ class GatedJWTAuth(JWTAuth):
         if code is None or (
             request.path in _PENDING_ALLOWLIST and code not in _HARD_ACCOUNT_BLOCKS
         ):
-            return user
+            return with_roles(user)
         raise ValidationException(code, status_code=403)
 
 

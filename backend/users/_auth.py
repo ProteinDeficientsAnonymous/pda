@@ -136,7 +136,7 @@ def logout(request, response: HttpResponse):
 
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=gated_jwt)
 def me(request):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     if user.is_paused:
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
@@ -227,7 +227,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
 
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=gated_jwt)
 def update_me(request, payload: MePatchIn):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     changed = _apply_me_patch(user, payload)
     # Setting either contact toggle means they've made the privacy choice the consent gate asks for.
     stamped: list[str] = []
@@ -276,7 +276,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
             status_code=400,
             max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
         )
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     try:
         body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
     except UnsafeImageError:
@@ -293,7 +293,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
 
 @router.delete("/me/photo/", response={200: UserOut}, auth=gated_jwt)
 def delete_photo(request):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     if user.profile_photo:
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
@@ -319,7 +319,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         raise_validation(
             Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
         )
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     # Reject reusing the current password. Only meaningful when the user still
     # has a usable one — a forced-reset user has an unusable password, so
     # check_password always fails and this is correctly skipped.
@@ -356,7 +356,7 @@ def complete_onboarding(request, payload: OnboardingIn):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def accept_consents(request, payload: AcceptConsentsIn):
     """Record the consents the caller is accepting, clearing the relevant gates."""
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     changed = stamp_consents(user, payload.consent_types)
     if changed:
         user.save(update_fields=changed)
@@ -375,7 +375,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
 
 @router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=gated_jwt)
 def change_password(request, payload: ChangePasswordIn):
-    user = User.objects.get(pk=request.auth.pk)
+    user = request.auth
     if not user.check_password(payload.current_password):
         audit_log(
             logging.WARNING,
