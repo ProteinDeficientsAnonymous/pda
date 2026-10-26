@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { updateProfile } from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { ConsentType } from '@/models/consent';
@@ -15,7 +16,6 @@ import { useConsentChecklist } from './useConsentChecklist';
 export default function ConsentScreen() {
   const user = useAuthStore((s) => s.user);
   const acceptConsents = useAuthStore((s) => s.acceptConsents);
-  const updateProfile = useAuthStore((s) => s.updateProfile);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const { consents, checked, toggle, allChecked, acceptedTypes } = useConsentChecklist(user);
@@ -31,6 +31,7 @@ export default function ConsentScreen() {
     setSubmitting(true);
     try {
       if (needsContactPrivacyStep) {
+        // bypass the store: its user update would clear the gate and unmount this screen mid-submit
         await updateProfile({ showPhone, showEmail });
       }
       const consentTypes = needsContactPrivacyStep
@@ -92,11 +93,7 @@ export default function ConsentScreen() {
         >
           not now
         </Button>
-        {needsContactPrivacyStep ? (
-          <p className="text-muted-foreground text-center text-sm">
-            hit continue to save your settings and log in — not now logs you out
-          </p>
-        ) : null}
+        <p className="text-muted-foreground text-center text-sm">"not now" logs you out</p>
       </div>
     </AuthLayout>
   );

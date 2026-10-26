@@ -228,9 +228,22 @@ def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
     # Setting either contact toggle means they've made the privacy choice the consent gate asks for.
+    stamped: list[str] = []
     if payload.show_phone is not None or payload.show_email is not None:
-        changed.extend(stamp_consents(user, [ConsentType.CONTACT_PRIVACY]))
+        stamped = stamp_consents(user, [ConsentType.CONTACT_PRIVACY])
+        changed.extend(stamped)
     _save_me_patch(user, changed)
+    if stamped:
+        audit_log(
+            logging.INFO,
+            "consents_accepted",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(user.pk),
+                details={"consent_types": [str(ConsentType.CONTACT_PRIVACY)]},
+            ),
+        )
     user = User.objects.prefetch_related("roles").get(pk=user.pk)
     if changed:
         audit_log(
