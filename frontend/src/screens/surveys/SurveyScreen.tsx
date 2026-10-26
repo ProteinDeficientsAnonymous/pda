@@ -108,10 +108,12 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
     setErrors(next);
     const firstMissing = shownQuestions.find((q) => next[q.id]);
     if (!firstMissing) return true;
-    toast.error('answer the required questions before submitting');
-    formRef.current
-      ?.querySelector(`[data-question-id="${firstMissing.id}"]`)
-      ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    toast.error('answer the required questions before submitting', { id: 'survey-required' });
+    const field = formRef.current?.querySelector(`[data-question-id="${firstMissing.id}"]`);
+    field?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    field
+      ?.querySelector<HTMLElement>('input, select, textarea, button')
+      ?.focus({ preventScroll: true });
     return false;
   }
 

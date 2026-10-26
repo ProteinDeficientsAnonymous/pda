@@ -18,8 +18,8 @@ vi.mock('@/api/client', () => ({
 const toastError = vi.fn();
 vi.mock('sonner', () => ({
   toast: {
-    error: (m: string) => {
-      toastError(m);
+    error: (m: string, opts?: { id?: string }) => {
+      toastError(m, opts);
     },
   },
 }));
@@ -71,9 +71,13 @@ describe('SurveyScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'submit' }));
 
     expect(await screen.findByText('required', { selector: 'p' })).toBeInTheDocument();
-    expect(toastError).toHaveBeenCalledWith('answer the required questions before submitting');
+    expect(toastError).toHaveBeenCalledWith('answer the required questions before submitting', {
+      id: 'survey-required',
+    });
     expect(scroll).toHaveBeenCalled();
+    expect(screen.getByLabelText('thoughts · required')).toHaveFocus();
     expect(mockedPost).not.toHaveBeenCalled();
+    scroll.mockRestore();
   });
 
   it('submits answers for a first-time response', async () => {
