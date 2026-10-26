@@ -4,17 +4,20 @@ from datetime import timedelta
 
 import pytest
 from asgiref.sync import async_to_sync
-from community import _events as community_events
 from community._event_description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
+from community._event_list import EventListQuery
+from community._events import list_events
 from community.models import Event, EventStatus, EventTag, EventType, PageVisibility
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
+from mcp_gateway.tools.events_read import _my_events
+from mcp_gateway.view_calls import call_view
 
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.test_mcp_server import _signed_in
@@ -33,6 +36,10 @@ def _call(user, name, **arguments):
         return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
+
+
+def _listed(user, params: EventListQuery) -> list[dict]:
+    return async_to_sync(call_view)(list_events, user, params=params)
 
 
 def _error(user, name, **arguments) -> dict:
@@ -62,21 +69,33 @@ def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
     assert [r["title"] for r in with_past][-1] == "past"
 
 
-def test_list_my_events_serializes_only_hosted_rows(test_user, monkeypatch):
+def test_list_my_events_bounds_the_page_in_sql(test_user, django_assert_num_queries):
     other = make_non_member("+12025550199", "o@e.com")
-    _event(test_user, "mine")
-    _event(test_user, "past", days=-3)
     for i in range(5):
+        _event(test_user, f"mine {i}", days=i + 1)
         _event(other, f"public {i}", visibility=PageVisibility.PUBLIC)
-    serialized = []
-    real = community_events._event_list_out
-    monkeypatch.setattr(
-        community_events,
-        "_event_list_out",
-        lambda e, *args: serialized.append(e.title) or real(e, *args),
-    )
-    assert [r["title"] for r in _call(test_user, "list_my_events")["events"]] == ["mine"]
-    assert serialized == ["mine"]
+    _event(test_user, "past", days=-3)
+    _event(test_user, "draft", status=EventStatus.DRAFT)
+    with django_assert_num_queries(2):
+        rows = _my_events(test_user, include_past=False, limit=2, offset=0)
+    assert [r["title"] for r in rows] == ["mine 0", "mine 1", "mine 2"]
+
+
+def test_list_my_events_matches_list_events_tentative_filter(test_user):
+    # Tentative members can't host through the API; this only guards parity with list_events.
+    tentative = make_tentative_member("+12025550177", "t@e.com")
+    hidden, community = PageVisibility.MEMBERS_ONLY, EventType.COMMUNITY
+    draft = {"event_type": community, "visibility": hidden, "status": EventStatus.DRAFT}
+    for event in (
+        _event(test_user, "members", days=1, event_type=community, visibility=hidden),
+        _event(test_user, "official", days=2, event_type=EventType.OFFICIAL, visibility=hidden),
+        _event(test_user, "draft", days=3, **draft),
+    ):
+        event.co_hosts.add(tentative)
+    hosted = _listed(tentative, EventListQuery(hosted=True, upcoming=True))
+    drafts = _listed(tentative, EventListQuery(status=EventStatus.DRAFT))
+    mine = {r["title"] for r in _call(tentative, "list_my_events")["events"]}
+    assert mine == {e["title"] for e in [*hosted, *drafts]} == {"official", "draft"}
 
 
 def test_list_my_events_pages(test_user):

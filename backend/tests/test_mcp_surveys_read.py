@@ -8,6 +8,7 @@ from community.models import EventType, Survey, SurveyQuestion, SurveyQuestionTy
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
+from mcp_gateway.tools.surveys_read import _survey_id
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -124,6 +125,13 @@ def test_get_survey_unknown_ref(surveys_admin):
         "detail": "no survey with id or slug nope",
     }
     assert _error(surveys_admin, survey=str(uuid.uuid4()))["status"] == 404
+
+
+def test_slug_lookup_is_one_query(django_assert_num_queries):
+    surveys = [_survey(f"s{i}") for i in range(3)]
+    # async_to_sync keeps the ORM on this thread, so the query is counted.
+    with django_assert_num_queries(1):
+        assert async_to_sync(_survey_id)("s1") == surveys[1].pk
 
 
 def test_get_survey_by_uppercase_uuid(surveys_admin):

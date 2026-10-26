@@ -113,7 +113,7 @@ async def update_survey(
     confirm_token: ConfirmToken = None,
 ) -> dict[str, Any]:
     user = await current_user()
-    survey_id = await _survey_id(survey, user)
+    survey_id = await _survey_id(survey)
     before = await call_view(get_survey_view, user, survey_id)
     changed = settings.model_dump(mode="json", exclude_unset=True) if settings else {}
     if not (changed or questions):
