@@ -12,6 +12,7 @@ import { formatPollOption } from './pollOption';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
 
+// mirrors backend FieldLimit.DESCRIPTION, the server-side cap on answers
 const ANSWER_MAX_LENGTH = 2000;
 
 interface Props {
