@@ -116,6 +116,36 @@ describe('SurveyResponsesScreen', () => {
     expect(within(dialog).getByRole('heading', { name: 'about you' })).toBeInTheDocument();
   });
 
+  it('clamps long text answers but not long choice lists', async () => {
+    const longText = 'a\n\n\n\n\nb';
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('/responses/'))
+        return Promise.resolve({
+          data: [
+            {
+              ...wireResponse,
+              answers: {
+                qt: { label: 'mood', answer: longText },
+                qc: { label: 'flavors', answer: ['a', 'b', 'c', 'd', 'e'] },
+              },
+            },
+          ],
+        });
+      if (url.includes('/summary/') || url.includes('/tallies/'))
+        return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: wireSurvey });
+    });
+    renderScreen();
+
+    await screen.findByText('ada');
+    expect(screen.getAllByRole('button', { name: 'show more' })).toHaveLength(1);
+    const toggle = screen.getByRole('button', { name: 'show more' });
+    expect(document.getElementById(toggle.getAttribute('aria-controls') ?? '')).toHaveTextContent(
+      longText,
+      { normalizeWhitespace: false },
+    );
+  });
+
   it('labels anonymous submitters', async () => {
     mockedGet.mockImplementation((url: string) => {
       if (url.includes('/responses/'))
