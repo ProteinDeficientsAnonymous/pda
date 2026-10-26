@@ -2,7 +2,12 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community.attendance.analytics import is_compliant, is_pause_candidate
+from community.attendance.analytics import (
+    EMPTY_MEMBER_STATS,
+    is_compliant,
+    is_pause_candidate,
+    member_stats_by_user,
+)
 from community.management.commands._e2e_common import _random_phone
 from community.management.commands.e2e_seed import _month_end
 from community.models import (
@@ -19,8 +24,6 @@ from django.core.management.base import CommandError
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
-
-from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 
 
 @pytest.mark.django_db
@@ -210,9 +213,8 @@ def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
     assert admin.has_permission(PermissionKey.MANAGE_EVENTS)
     assert admin.has_permission(PermissionKey.MANAGE_USERS)
     members = User.objects.filter(first_name__icontains=out["search"])
-    stats = {
-        u.full_name.lower(): compute_member_stats(user_rsvps_for_attendance(u)) for u in members
-    }
+    by_user = member_stats_by_user(members)
+    stats = {u.full_name.lower(): by_user.get(u.pk, EMPTY_MEMBER_STATS) for u in members}
     assert is_compliant(stats[out["compliant_name"]])
     assert is_pause_candidate(stats[out["at_risk_name"]])
     assert out["at_risk_name"] > out["compliant_name"]

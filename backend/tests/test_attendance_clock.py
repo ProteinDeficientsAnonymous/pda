@@ -3,6 +3,7 @@
 from datetime import UTC, date, datetime
 
 import pytest
+from community.attendance.analytics import EMPTY_MEMBER_STATS, member_stats_by_user
 from community.attendance.clock import (
     compute_anchor,
     last_qualifying_attendance_date,
@@ -19,7 +20,6 @@ from community.models import (
 )
 from users.models import User
 
-from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 from tests._users import make_user
 
 
@@ -116,7 +116,9 @@ class TestComputeAnchor:
 @pytest.mark.django_db
 class TestMatchesMemberAnalytics:
     def _assert_matches_analytics(self, user: User) -> None:
-        stats = compute_member_stats(user_rsvps_for_attendance(user))
+        stats = member_stats_by_user(User.objects.filter(pk=user.pk)).get(
+            user.pk, EMPTY_MEMBER_STATS
+        )
         expected = stats.last_qualifying_at.date() if stats.last_qualifying_at else None
         assert last_qualifying_attendance_date(user) == expected
 
