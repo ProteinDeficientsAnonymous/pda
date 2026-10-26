@@ -87,6 +87,7 @@ class TestAttendanceBulkUpsert:
         EventRSVP.objects.create(
             event=event, user=waitlisted, status=RSVPStatus.WAITLISTED, waitlist_position=1
         )
+        EventRSVP.objects.filter(event=event, user=waitlisted).update(status_changed_at=stamp)
         EventRSVP.objects.filter(event=event, user=same).update(
             status=RSVPStatus.ATTENDING, status_changed_at=stamp
         )

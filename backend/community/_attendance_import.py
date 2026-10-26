@@ -166,14 +166,9 @@ def commit_attendance_import(request, payload: AttendanceImportCommitIn):
         if not row.skip and row.user_id and row.user_id in users_by_id
     ]
     marks = {user.pk: _resolve_status_and_attendance(row) for row, user in resolved}
-    seen = upsert_attendance_rsvps(event, marks)
-    created_count = updated_count = 0
-    for _, user in resolved:
-        if user.pk in seen:
-            updated_count += 1
-        else:
-            created_count += 1
-            seen.add(user.pk)
+    existing = upsert_attendance_rsvps(event, marks)
+    created_count = len(marks) - len(existing)
+    updated_count = len(resolved) - created_count
     skipped_count = len(payload.rows) - len(resolved)
 
     audit_log(
