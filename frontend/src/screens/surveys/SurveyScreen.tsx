@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
 import { clearStoredSurveyToken, getStoredSurveyToken } from '@/api/surveyTokenStorage';
 import { Code } from '@/api/validationCodes';
@@ -15,12 +15,19 @@ import { Button } from '@/components/ui/Button';
 import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SurveyLoginLink, SurveyLoginNotice } from './SurveyLoginPrompt';
+
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: survey, isPending, isError } = useSurvey(slug);
+  const { data: survey, isPending, isError, error } = useSurvey(slug);
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
   const navigate = useNavigate();
   if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
+  if (isError) {
+    // members-only surveys 404 for signed-out visitors, indistinguishable from a missing one
+    if (!isAuthed && getApiStatus(error) === 404) return <SurveyLoginNotice />;
+    return <ContentError message="couldn't load the survey — try refreshing" />;
+  }
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
   // A finalized poll keeps rendering its result rather than a shut-door message.
   if (status !== 'active' && survey.pollResult === null) {
@@ -31,6 +38,7 @@ export default function SurveyScreen() {
       // remount to re-hydrate when the response lands after mounting from a stale cache
       key={survey.myResponseId ?? ''}
       survey={survey}
+      isAuthed={isAuthed}
       onSubmitted={() => {
         void navigate(`/surveys/${survey.slug}/thanks`);
       }}
@@ -76,10 +84,17 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
   return out;
 }
 
-function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
+function SurveyForm({
+  survey,
+  isAuthed,
+  onSubmitted,
+}: {
+  survey: Survey;
+  isAuthed: boolean;
+  onSubmitted: () => void;
+}) {
   const qc = useQueryClient();
   const submit = useSubmitSurvey(survey.slug);
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
   // lazy init: later server updates (e.g. poll finalized) keep what the user is typing
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -160,6 +175,8 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
       {survey.description ? (
         <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
       ) : null}
+
+      {!isAuthed && !readOnly ? <SurveyLoginLink anonymous={survey.anonymous} /> : null}
 
       {survey.anonymous ? (
         <p className="text-foreground-secondary mb-6 text-sm">
