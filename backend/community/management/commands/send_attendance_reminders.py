@@ -9,18 +9,15 @@ from notifications.email_sender import get_email_sender
 from users._member_search import with_last_qualifying_at
 from users.models import User
 
-from community._attendance_clock import latest_due_milestone
+from community._attendance_clock import anchor_from, latest_due_milestone
 from community.models import AttendanceReminder
 
 logger = logging.getLogger(__name__)
 
 
 def _anchor(user: User) -> date:
-    """Same anchor as compute_anchor, from the annotated last_qualifying_at."""
-    candidates = [settings.ATTENDANCE_CLOCK_FLOOR, user.date_joined.date()]
-    if user.last_qualifying_at is not None:
-        candidates.append(user.last_qualifying_at.date())
-    return max(candidates)
+    last = user.last_qualifying_at
+    return anchor_from(user.date_joined.date(), last.date() if last else None)
 
 
 class Command(BaseCommand):

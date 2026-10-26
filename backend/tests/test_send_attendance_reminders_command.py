@@ -5,7 +5,7 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import AttendanceReminder
+from community.models import AttendanceReminder, AttendanceStatus, Event, EventRSVP, EventType
 from django.core.management import call_command
 from django.db import connection
 from django.test import override_settings
@@ -133,6 +133,24 @@ class TestSendAttendanceRemindersCommand:
         reminders = AttendanceReminder.objects.filter(user=user)
         assert reminders.count() == 1
         assert reminders.first().milestone == "m11"
+
+
+@pytest.mark.django_db
+def test_anchors_on_last_qualifying_attendance(fake_sender):
+    user = _make_member("+12025550123")
+    attended_at = datetime.now(tz=UTC) - timedelta(days=320)
+    event = Event.objects.create(
+        title="official", event_type=EventType.OFFICIAL, start_datetime=attended_at
+    )
+    EventRSVP.objects.create(
+        user=user, event=event, status="attending", attendance=AttendanceStatus.ATTENDED
+    )
+    with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
+        call_command("send_attendance_reminders")
+    fake_sender.send.assert_called_once()
+    reminder = AttendanceReminder.objects.get(user=user)
+    assert reminder.milestone == "m10"
+    assert reminder.anchor_date == attended_at.date()
 
 
 def _run_counting_queries(new_members: int, start: int) -> int:
