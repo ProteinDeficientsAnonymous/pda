@@ -77,11 +77,6 @@ export function normalizeQuestionOptions(options: readonly string[]): string[] {
 
 export const RATING_SCALE_SIZE = 5;
 
-/** One label slot per star; blanks keep their position so labels stay on the right star. */
-export function ratingLabelSlots(options: readonly string[]): string[] {
-  return Array.from({ length: RATING_SCALE_SIZE }, (_, i) => options[i] ?? '');
-}
-
 /** [low, high] labels for the two ends of a 1–5 scale. */
 export function scaleEndLabels(options: readonly string[]): [string, string] {
   return [options[0] ?? '', options[1] ?? ''];

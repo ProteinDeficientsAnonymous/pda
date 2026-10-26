@@ -17,33 +17,19 @@ const base: SurveyQuestion = {
 };
 
 describe('QuestionField', () => {
-  it('renders bare stars when a rating has no labels', () => {
+  it('renders five stars in a row and reports the picked one', () => {
+    const onChange = vi.fn();
     render(
       <QuestionField
         question={{ ...base, fieldType: QuestionType.Stars }}
-        value=""
-        onChange={vi.fn()}
+        value="2"
+        onChange={onChange}
       />,
     );
-    expect(screen.getByRole('radio', { name: '3 stars' })).toHaveTextContent('★');
-    expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
-  });
-
-  it('stacks stars vertically with labels beside them when any label is set', () => {
-    render(
-      <QuestionField
-        question={{
-          ...base,
-          fieldType: QuestionType.Stars,
-          options: ['meh', '', '', '', 'loved it'],
-        }}
-        value=""
-        onChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole('radiogroup')).toHaveClass('flex-col');
-    expect(screen.getByRole('radio', { name: 'loved it' })).toHaveTextContent('loved it');
-    expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
+    expect(screen.getAllByRole('radio')).toHaveLength(5);
+    expect(screen.getByRole('radio', { name: '2 stars' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: '4 stars' }));
+    expect(onChange).toHaveBeenCalledWith('4');
   });
 
   it('renders a 1–5 scale with its end labels and reports the picked point', () => {
