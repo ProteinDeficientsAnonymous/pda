@@ -250,11 +250,27 @@ class TestWeeklyDigestOnFirstOfMonth:
     def test_skips_digest_on_the_first(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
         make_member("+12025550280")
+        make_tentative("+12025550282")
         make_event("potluck", 2)
-        out = StringIO()
-        call_command("send_weekly_digest", stdout=out)
+        call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
-        assert "1st of the month; sent 0 digest(s)." in out.getvalue()
+
+    def test_sends_to_monthly_opt_outs_on_the_first(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
+        member = make_member("+12025550283", monthly_digest_opt_out=True)
+        tentative = make_tentative("+12025550284", monthly_digest_opt_out=True)
+        make_member("+12025550285")
+        make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        sent_to = {c.kwargs["to"] for c in fake_sender.send.call_args_list}
+        assert sent_to == {member.email, tentative.email}
+
+    def test_skips_double_opt_out_on_the_first(self, fake_sender, monkeypatch):
+        _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
+        make_member("+12025550286", monthly_digest_opt_out=True, weekly_digest_opt_out=True)
+        make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_sender.send.assert_not_called()
 
     def test_first_uses_community_timezone(self, fake_sender, monkeypatch):
         # 2am UTC on the 1st is still the 30th in New York.

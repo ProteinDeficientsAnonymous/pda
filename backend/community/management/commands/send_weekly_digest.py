@@ -24,7 +24,7 @@ class Command(BaseCommand):
     help = (
         "Remind anyone who hasn't finished first login, nudge tentative members to come "
         "in person, then email active and tentative members a digest of upcoming events "
-        "(skipped on the 1st, when the monthly digest goes out)."
+        "(on the 1st, only to monthly digest opt-outs)."
     )
 
     def add_arguments(self, parser):
@@ -80,11 +80,6 @@ class Command(BaseCommand):
 
     def _send_digest(self, options) -> None:
         now = timezone.now()
-        # The monthly digest already covers this week's events on the 1st.
-        if timezone.localtime(now, settings.COMMUNITY_TZ).day == 1 and not options["to"]:
-            logger.info("send_weekly_digest: 1st of the month, skipped for monthly digest")
-            self.stdout.write(self.style.SUCCESS("1st of the month; sent 0 digest(s)."))
-            return
         events = digest_events(start=now, end=now + timedelta(days=7))
         if not events:
             logger.info("send_weekly_digest: no upcoming events, skipped")
@@ -97,16 +92,23 @@ class Command(BaseCommand):
             self._send_test(sender, options["to"], payload)
             return
 
+        # On the 1st the monthly digest covers this week, so only its opt-outs get the weekly.
+        first_of_month = timezone.localtime(now, settings.COMMUNITY_TZ).day == 1
+
+        def recipients(users):
+            users = weekly_digest_recipients(users)
+            return users.filter(monthly_digest_opt_out=True) if first_of_month else users
+
         sent_count, failed_count = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            weekly_digest_recipients(User.objects.active_members()),
+            recipients(User.objects.active_members()),
             payload,
         )
         tentative_sent, tentative_failed = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            weekly_digest_recipients(User.objects.active_tentative_members()),
+            recipients(User.objects.active_tentative_members()),
             payload,
         )
         sent_count += tentative_sent
