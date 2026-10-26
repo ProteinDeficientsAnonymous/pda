@@ -28,7 +28,7 @@ import {
   responseCountLabel,
 } from './surveyResponseEvents';
 import { SurveyResponsesEventFilter } from './SurveyResponsesEventFilter';
-import { SurveyResponsesTable } from './SurveyResponsesTable';
+import { SurveyResponsesView } from './SurveyResponsesView';
 
 export default function SurveyResponsesScreen() {
   const { id } = useParams<{ id: string }>();
@@ -141,7 +141,7 @@ export default function SurveyResponsesScreen() {
       {responses.data.length === 0 ? (
         <p className="text-muted text-sm">no responses yet</p>
       ) : (
-        <SurveyResponsesTable
+        <SurveyResponsesView
           survey={survey.data}
           responses={visibleResponses}
           onDelete={(r) => {

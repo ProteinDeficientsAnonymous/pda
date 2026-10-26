@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -96,5 +97,35 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByRole('columnheader', { name: 'flavors' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'availability' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'about you' })).not.toBeInTheDocument();
+  });
+
+  it('pages through responses one at a time in the individual view', async () => {
+    const second = {
+      ...wireResponse,
+      id: 'r2',
+      user_name: 'grace',
+      answers: { qt: { answer: 'sleepy' } },
+    };
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('/responses/')) return Promise.resolve({ data: [wireResponse, second] });
+      if (url.includes('/tallies/') || url.includes('/summary/'))
+        return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: wireSurvey });
+    });
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole('radio', { name: 'individual' }));
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'about you' })).toBeInTheDocument();
+    expect(screen.getByText('great')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'previous response' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'next response' }));
+    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('sleepy')).toBeInTheDocument();
+    expect(screen.getByText(/^grace · /)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'next response' })).toBeDisabled();
   });
 });

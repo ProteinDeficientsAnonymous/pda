@@ -1,9 +1,9 @@
-import { format, parseISO } from 'date-fns';
-
 import { QuestionType } from '@/api/questionTypes';
 import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
+
+import { formatSubmittedAt } from './formatSubmittedAt';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
 const QUESTION_WIDTH = 'min-w-48 max-w-80';
@@ -71,10 +71,4 @@ export function SurveyResponsesTable({
       </table>
     </div>
   );
-}
-
-function formatSubmittedAt(iso: string, anonymous: boolean): string {
-  // Anonymous surveys get a server-local date only; its yyyy-mm-dd prefix is that day.
-  if (anonymous) return format(parseISO(iso.slice(0, 10)), 'MMM d, yyyy').toLowerCase();
-  return format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
 }
