@@ -11,6 +11,7 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
+from django.conf import settings
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -81,7 +82,7 @@ class TestAnonymousSurveyReports:
         rows = _csv_rows(response)
         assert rows[0] == ["submitted_at", "Coming?"]
         days = {
-            timezone.localtime(r.submitted_at)
+            timezone.localtime(r.submitted_at, settings.COMMUNITY_TZ)
             .replace(hour=0, minute=0, second=0, microsecond=0)
             .isoformat()
             for r in anonymous_survey.responses.all()
