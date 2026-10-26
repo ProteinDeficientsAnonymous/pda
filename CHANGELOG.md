@@ -1,3 +1,10 @@
+## [0.205.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.0...v0.205.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1917 - show char limits on open-ended answers ([#1954](https://github.com/ProteinDeficientsAnonymous/pda/issues/1954)) ([cf72db9](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf72db9693dc2c81dbeff22ec7deda837528fc12))
+
 # [0.205.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.5...v0.205.0) (2026-10-26)
 
 
