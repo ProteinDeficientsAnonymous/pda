@@ -24,7 +24,11 @@ class TestEventHostPrivacy:
         self, api_client, auth_headers, test_user, hosted_event
     ):
         anon, authed = (
-            next(e for e in api_client.get("/api/community/events/", **h).json())
+            next(
+                e
+                for e in api_client.get("/api/community/events/", **h).json()
+                if e["id"] == str(hosted_event.id)
+            )
             for h in ({}, auth_headers)
         )
         assert not OMITTED_FROM_LIST & (anon.keys() | authed.keys())

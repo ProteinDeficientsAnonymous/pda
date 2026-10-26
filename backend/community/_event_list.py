@@ -73,7 +73,9 @@ def _hosted_by(auth_user):
 
 def _build_events_queryset(status: str, auth_user, is_authed):
     """Build the events queryset for list_events based on status and auth state."""
-    related = ["co_hosts", "poll", "tags", _list_rsvp_prefetch(auth_user)]
+    related = ["poll", "tags", _list_rsvp_prefetch(auth_user)]
+    if is_authed:
+        related.append("co_hosts")
     if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
         return (
             Event.objects.prefetch_related(*related)
@@ -150,7 +152,7 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         event_type=e.event_type,
         visibility=e.visibility,
         price=e.price,
-        co_host_ids=_gated([str(c.id) for c in e.co_hosts.all()], [], is_authed),
+        co_host_ids=[str(c.id) for c in e.co_hosts.all()] if is_authed else [],
         datetime_tbd=e.datetime_tbd,
         has_poll=hasattr(e, "poll"),
         allow_plus_ones=e.allow_plus_ones,
