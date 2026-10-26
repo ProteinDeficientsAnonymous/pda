@@ -104,3 +104,10 @@ class TestTokenMultiResponseEdit:
         response = _submit_with_token(api_client, repeat_survey, "hijack", "wrong", mine["id"])
         assert response.status_code == 201
         assert _answer(SurveyResponse.objects.get(id=mine["id"]), repeat_survey) == "mine"
+
+    def test_token_cannot_edit_a_different_row(self, api_client, repeat_survey):
+        theirs = _submit(api_client, repeat_survey, "theirs", {}).json()
+        token = _submit(api_client, repeat_survey, "mine", {}).json()["response_token"]
+        response = _submit_with_token(api_client, repeat_survey, "hijack", token, theirs["id"])
+        assert response.status_code == 201
+        assert _answer(SurveyResponse.objects.get(id=theirs["id"]), repeat_survey) == "theirs"
