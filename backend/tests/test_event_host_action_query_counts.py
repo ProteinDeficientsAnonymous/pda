@@ -1,3 +1,4 @@
+import itertools
 from datetime import timedelta
 
 import pytest
@@ -9,13 +10,13 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-_seq = {"n": 0}
+_seq = itertools.count(1)
 
 
 def _user() -> User:
-    _seq["n"] += 1
+    n = next(_seq)
     return User.objects.create_user(
-        phone_number=f"+1415222{_seq['n']:04d}", password="x", first_name=f"U{_seq['n']}"
+        phone_number=f"+1415222{n:04d}", password="x", first_name=f"U{n}"
     )
 
 
