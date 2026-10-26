@@ -48,7 +48,7 @@ type SaveStatus =
 
 // Rating options are optional star labels, so only the choice types need one.
 function optionsRequired(fieldType: string): boolean {
-  return questionTypeWantsOptions(fieldType as QuestionType) && fieldType !== QuestionType.Rating;
+  return questionTypeWantsOptions(fieldType as QuestionType) && fieldType !== QuestionType.Stars;
 }
 
 function seedOptions(fieldType: string): string[] {
@@ -67,7 +67,7 @@ function sharesOptions(from: string, to: string): boolean {
 }
 
 function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
-  if (fieldType === QuestionType.Rating) return normalizeRatingLabels(options);
+  if (fieldType === QuestionType.Stars) return normalizeRatingLabels(options);
   if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
   return normalizeQuestionOptions(options);
 }
@@ -222,7 +222,7 @@ export function QuestionCardEditor<T extends string>({
             commit(draft);
           }}
         />
-      ) : draft.fieldType === QuestionType.Rating ? (
+      ) : draft.fieldType === QuestionType.Stars ? (
         <RatingLabelFields
           id={id}
           options={draft.options}

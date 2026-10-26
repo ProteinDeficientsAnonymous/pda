@@ -70,7 +70,7 @@ class QuestionType(models.TextChoices):
     CHECKBOX = "checkbox", "Checkbox"
     NUMBER = "number", "Number"
     BOOLEAN = "boolean", "Yes / No"
-    RATING = "rating", "Rating"
+    STARS = "stars", "Stars"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
     SECTION = "section", "Section"
 

@@ -6,7 +6,7 @@ export const QuestionType = {
   Checkbox: 'checkbox',
   Number: 'number',
   Boolean: 'boolean',
-  Rating: 'rating',
+  Stars: 'stars',
   DatetimePoll: 'datetime_poll',
   Section: 'section',
 } as const;

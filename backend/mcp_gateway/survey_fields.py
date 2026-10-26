@@ -21,7 +21,7 @@ from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
 _RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
-_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; rating: 1-5 stars; "
+_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; stars: 1-5 stars; "
 _TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time; section: a heading "
 _TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -45,7 +45,7 @@ class SurveyQuestionFields(BaseModel):
     options: list[str] = Field(
         [],
         description=(
-            "radio/select/checkbox: the choices. rating: optional labels for stars 1-5 in order, "
+            "radio/select/checkbox: the choices. stars: optional labels for stars 1-5 in order, "
             f"'' for a star with no label. datetime_poll: candidate times, {WHEN} (saved as utc "
             "like the survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
         ),
@@ -61,7 +61,7 @@ class SurveyQuestionFields(BaseModel):
 
     @model_validator(mode="after")
     def _shape_options(self) -> Self:
-        if self.field_type == QuestionType.RATING:
+        if self.field_type == QuestionType.STARS:
             self.options = _rating_labels(self.options)
             return self
         kind, self.options = self.field_type, [o.strip() for o in self.options if o.strip()]
@@ -85,7 +85,7 @@ class SurveyQuestionFields(BaseModel):
 
 def _rating_labels(options: list[str]) -> list[str]:
     if len(options) > _RATING_STARS:
-        raise ValueError(f"rating questions take at most {_RATING_STARS} star labels")
+        raise ValueError(f"stars questions take at most {_RATING_STARS} star labels")
     labels = [label.strip() for label in options]
     labels += [""] * (_RATING_STARS - len(labels))
     return labels if any(labels) else []

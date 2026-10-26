@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const toastError = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({ toast: { error: toastError, success: vi.fn() } }));
 
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   useAdminSurvey,
@@ -50,7 +51,7 @@ interface SummaryRow {
 
 const QUESTIONS: Question[] = [
   { id: 'q-colour', label: 'Colour', fieldType: 'radio', options: ['red', 'blue'] },
-  { id: 'q-vibes', label: 'Vibes', fieldType: 'rating', options: [] },
+  { id: 'q-vibes', label: 'Vibes', fieldType: QuestionType.Stars, options: [] },
   { id: 'q-notes', label: 'Notes', fieldType: 'text', options: [] },
 ];
 
@@ -64,7 +65,7 @@ const SUMMARY_ROWS: SummaryRow[] = [
   },
   {
     questionId: 'q-vibes',
-    fieldType: 'rating',
+    fieldType: QuestionType.Stars,
     counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
     answered: 2,
     mean: 3.5,

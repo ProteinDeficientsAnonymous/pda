@@ -147,11 +147,11 @@ describe('QuestionCardEditor', () => {
   it('shows five empty star label slots and saves a rating with no labels', async () => {
     const { onSave } = renderCard();
     fireEvent.change(screen.getByLabelText('question type'), {
-      target: { value: QuestionType.Rating },
+      target: { value: QuestionType.Stars },
     });
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ fieldType: QuestionType.Rating, options: [] }),
+        expect.objectContaining({ fieldType: QuestionType.Stars, options: [] }),
       );
     });
     for (const n of [1, 2, 3, 4, 5]) {
@@ -161,7 +161,7 @@ describe('QuestionCardEditor', () => {
   });
 
   it('keeps blank star labels in place so labels stay on their star', async () => {
-    const { onSave } = renderCard({ fieldType: QuestionType.Rating });
+    const { onSave } = renderCard({ fieldType: QuestionType.Stars });
     const third = screen.getByLabelText('star 3 label');
     fireEvent.change(third, { target: { value: ' great ' } });
     fireEvent.blur(third);

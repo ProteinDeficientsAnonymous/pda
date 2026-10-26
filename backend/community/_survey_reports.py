@@ -28,13 +28,13 @@ RATING_SCALE = tuple(str(n) for n in range(1, 6))
 CHOICE_TYPES = frozenset(
     {SurveyQuestionType.RADIO, SurveyQuestionType.SELECT, SurveyQuestionType.CHECKBOX}
 )
-SUMMARIZED_TYPES = CHOICE_TYPES | {SurveyQuestionType.BOOLEAN, SurveyQuestionType.RATING}
+SUMMARIZED_TYPES = CHOICE_TYPES | {SurveyQuestionType.BOOLEAN, SurveyQuestionType.STARS}
 
 
 def _summary_buckets(q: SurveyQuestion) -> list[str]:
     if q.field_type == SurveyQuestionType.BOOLEAN:
         return ["yes", "no"]
-    if q.field_type == SurveyQuestionType.RATING:
+    if q.field_type == SurveyQuestionType.STARS:
         return list(RATING_SCALE)
     return list(q.options or [])
 
@@ -78,7 +78,7 @@ def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> Q
                 counts[val] = counts.get(val, 0) + 1
                 landed = True
         answered += landed
-    mean = _rating_mean(counts) if q.field_type == SurveyQuestionType.RATING else None
+    mean = _rating_mean(counts) if q.field_type == SurveyQuestionType.STARS else None
     return QuestionSummaryOut(
         question_id=str(q.id),
         field_type=q.field_type,

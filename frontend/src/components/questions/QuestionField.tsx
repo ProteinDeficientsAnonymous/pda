@@ -89,7 +89,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={onChange}
         />
       );
-    case QuestionType.Rating:
+    case QuestionType.Stars:
       return (
         <StarRating
           label={label}

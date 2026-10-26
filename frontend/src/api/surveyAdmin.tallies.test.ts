@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { QuestionType } from '@/api/questionTypes';
 
 import {
   useFinalizeSurveyPoll,
@@ -120,7 +121,7 @@ describe('useSurveyQuestionSummaries', () => {
       data: [
         {
           question_id: 'q1',
-          field_type: 'rating',
+          field_type: QuestionType.Stars,
           counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
           answered: 2,
           mean: 3.5,
@@ -139,7 +140,7 @@ describe('useSurveyQuestionSummaries', () => {
     const [rating, radio] = result.current.data!;
     expect(rating).toEqual({
       questionId: 'q1',
-      fieldType: 'rating',
+      fieldType: QuestionType.Stars,
       counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
       answered: 2,
       mean: 3.5,

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { QuestionType } from '@/api/questionTypes';
 import type { SurveyQuestion } from '@/api/surveys';
 
 import { QuestionField } from './QuestionField';
@@ -18,7 +19,11 @@ const base: SurveyQuestion = {
 describe('QuestionField', () => {
   it('renders bare stars when a rating has no labels', () => {
     render(
-      <QuestionField question={{ ...base, fieldType: 'rating' }} value="" onChange={vi.fn()} />,
+      <QuestionField
+        question={{ ...base, fieldType: QuestionType.Stars }}
+        value=""
+        onChange={vi.fn()}
+      />,
     );
     expect(screen.getByRole('radio', { name: '3 stars' })).toHaveTextContent('★');
     expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
@@ -27,7 +32,11 @@ describe('QuestionField', () => {
   it('stacks stars vertically with labels beside them when any label is set', () => {
     render(
       <QuestionField
-        question={{ ...base, fieldType: 'rating', options: ['meh', '', '', '', 'loved it'] }}
+        question={{
+          ...base,
+          fieldType: QuestionType.Stars,
+          options: ['meh', '', '', '', 'loved it'],
+        }}
         value=""
         onChange={vi.fn()}
       />,
