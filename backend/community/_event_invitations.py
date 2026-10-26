@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, load_event_with_stats_prefetch
 from community._event_invite_email import email_invited_members
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
@@ -106,5 +106,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             },
         ),
     )
-    event.refresh_from_db()
+    event = load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return Status(200, _event_out(event, request.auth))
