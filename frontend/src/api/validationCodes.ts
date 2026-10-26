@@ -409,8 +409,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Survey.AnswerInvalidAvailability: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label
-        ? `availability for "${label}" must be "yes" or "maybe"`
-        : 'availability must be "yes" or "maybe"';
+        ? `availability for "${label}" must be "yes", "maybe", or "no"`
+        : 'availability must be "yes", "maybe", or "no"';
     }
     case Code.Survey.ConditionQuestionNotFound:
       return 'the question this condition depends on no longer exists';
