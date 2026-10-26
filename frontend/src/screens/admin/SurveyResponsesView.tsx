@@ -33,7 +33,7 @@ export function SurveyResponsesView(props: {
       {view === ResponsesView.Table ? (
         <SurveyResponsesTable {...props} />
       ) : (
-        <SurveyResponseEntries {...props} />
+        <SurveyResponseEntries survey={props.survey} responses={props.responses} />
       )}
     </section>
   );

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { QuestionType } from '@/api/questionTypes';
 import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
-import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
@@ -11,11 +10,9 @@ import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 export function SurveyResponseEntries({
   survey,
   responses,
-  onDelete,
 }: {
   survey: Survey;
   responses: SurveyResponseAdmin[];
-  onDelete: (response: SurveyResponseAdmin) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const opened = responses.find((r) => r.id === openId);
@@ -69,17 +66,6 @@ export function SurveyResponseEntries({
                 </div>
               ),
             )}
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setOpenId(null);
-                onDelete(opened);
-              }}
-            >
-              delete
-            </Button>
           </div>
         </Dialog>
       ) : null}
