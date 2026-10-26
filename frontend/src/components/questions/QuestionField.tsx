@@ -224,6 +224,9 @@ function CheckboxGroup({
   );
 }
 
+const AVAILABILITIES = ['yes', 'maybe', 'no'] as const;
+type Availability = (typeof AVAILABILITIES)[number];
+
 function DatetimePoll({
   label,
   labelSuffix,
@@ -241,7 +244,7 @@ function DatetimePoll({
   error?: string | undefined;
   disabled?: boolean | undefined;
 }) {
-  function pick(option: string, availability: 'yes' | 'maybe') {
+  function pick(option: string, availability: Availability) {
     if (value[option] === availability) {
       const { [option]: _removed, ...rest } = value;
       onChange(rest);
@@ -264,7 +267,7 @@ function DatetimePoll({
           >
             <span className="text-sm">{formatPollOption(option)}</span>
             <div className="flex gap-1" role="radiogroup">
-              {(['yes', 'maybe'] as const).map((a) => (
+              {AVAILABILITIES.map((a) => (
                 <button
                   key={a}
                   type="button"

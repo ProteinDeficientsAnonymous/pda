@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SurveyQuestion } from '@/api/surveys';
@@ -24,7 +24,7 @@ describe('QuestionField', () => {
     expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
   });
 
-  it('stacks stars vertically with labels beside them when any label is set', () => {
+  it('keeps labeled stars in one row with each label under its star', () => {
     render(
       <QuestionField
         question={{ ...base, fieldType: 'rating', options: ['meh', '', '', '', 'loved it'] }}
@@ -32,9 +32,22 @@ describe('QuestionField', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole('radiogroup')).toHaveClass('flex-col');
+    expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
     expect(screen.getByRole('radio', { name: 'loved it' })).toHaveTextContent('loved it');
     expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
+  });
+
+  it('lets a datetime poll answer no for a time', () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: 'datetime_poll', options: ['2026-11-07T16:00:00Z'] }}
+        value={{}}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: 'no' }));
+    expect(onChange).toHaveBeenCalledWith({ '2026-11-07T16:00:00Z': 'no' });
   });
 
   it('renders a single-line text field for text type', () => {

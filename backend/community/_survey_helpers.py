@@ -233,7 +233,7 @@ def _tally_dict_answer(
     voter: VoterOut | None,
 ) -> None:
     for opt, availability in answer.items():
-        if opt in counts and availability in PollAvailability.VALID:
+        if opt in counts and availability in counts[opt]:
             counts[opt][availability] += 1
             if voter:
                 voters[opt].append(voter)

@@ -175,7 +175,7 @@ class SurveySubmitOut(SurveyResponseOut):
 
 # str for standard question types (text, select, number, etc.)
 # list[str] for checkbox answers (ticked options)
-# dict[str, str] for availability answers (option -> "yes"|"maybe")
+# dict[str, str] for availability answers (option -> "yes"|"maybe"|"no")
 TextAnswer = str
 ChoiceListAnswer = list[str]
 AvailabilityAnswer = dict[str, str]

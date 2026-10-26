@@ -32,11 +32,7 @@ export function StarRating({
         {label}
         {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className={cn('flex gap-1', labeled && 'flex-col items-start')}
-      >
+      <div role="radiogroup" aria-label={label} className="flex gap-1">
         {slots.map((starLabel, i) => {
           const n = i + 1;
           return (
@@ -50,7 +46,10 @@ export function StarRating({
               onClick={() => {
                 onChange(n);
               }}
-              className="flex items-center gap-2 text-start disabled:cursor-not-allowed"
+              className={cn(
+                'flex flex-col items-center gap-1 disabled:cursor-not-allowed',
+                labeled && 'w-16',
+              )}
             >
               <span
                 aria-hidden="true"
@@ -64,7 +63,10 @@ export function StarRating({
               {labeled && starLabel ? (
                 <span
                   aria-hidden="true"
-                  className={cn('text-sm', n === value ? 'text-foreground' : 'text-muted')}
+                  className={cn(
+                    'text-center text-xs break-words',
+                    n === value ? 'text-foreground' : 'text-muted',
+                  )}
                 >
                   {starLabel}
                 </span>

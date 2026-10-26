@@ -237,3 +237,19 @@ class TestSurveySummary:
             POLL_A: {"yes": 1, "maybe": 0},
             POLL_B: {"yes": 0, "maybe": 1},
         }
+
+    def test_no_availability_is_not_tallied_as_a_vote(
+        self, api_client, survey_owner_headers, mixed_survey
+    ):
+        poll = mixed_survey.questions.get(field_type=SurveyQuestionType.DATETIME_POLL)
+        voter = User.objects.create_user(phone_number="+12025557099", password="x")
+        SurveyResponse.objects.create(
+            survey=mixed_survey, user=voter, answers=_answers({poll: {POLL_A: "no"}})
+        )
+        response = api_client.get(
+            f"/api/community/surveys/{mixed_survey.id}/tallies/", **survey_owner_headers
+        )
+        assert response.status_code == 200
+        body = response.json()[0]
+        assert body["tallies"][POLL_A] == {"yes": 1, "maybe": 0}
+        assert len(body["voters"][POLL_A]) == 1
