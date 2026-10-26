@@ -120,9 +120,8 @@ def submit_survey_response(
             existing.save(update_fields=["answers"])
             audit_log(logging.INFO, "survey_response_updated", request, target=target)
             return Status(200, _submit_out(existing, user_name))
-        anonymous_token = None
-        if response_user is None and survey.one_response_per_user:
-            anonymous_token = secrets.token_urlsafe(32)
+        # without a member link the token is the only way back to this row for editing
+        anonymous_token = secrets.token_urlsafe(32) if response_user is None else None
         response = SurveyResponse.objects.create(
             survey=survey, user=response_user, answers=answers, anonymous_token=anonymous_token
         )
