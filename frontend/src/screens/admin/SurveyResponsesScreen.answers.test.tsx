@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -96,5 +97,32 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByRole('columnheader', { name: 'flavors' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'availability' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'about you' })).not.toBeInTheDocument();
+  });
+
+  it('lists entries in the individual view and opens one on click', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole('radio', { name: 'individual' }));
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('great')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^ada/ }));
+    const dialog = screen.getByRole('dialog', { name: 'ada' });
+    expect(within(dialog).getByText('great')).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'about you' })).toBeInTheDocument();
+  });
+
+  it('labels anonymous submitters', async () => {
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('/responses/'))
+        return Promise.resolve({ data: [{ ...wireResponse, user_name: null }] });
+      if (url.includes('/summary/') || url.includes('/tallies/'))
+        return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: { ...wireSurvey, anonymous: true } });
+    });
+    renderScreen();
+
+    expect(await screen.findByText('anonymous')).toBeInTheDocument();
   });
 });
