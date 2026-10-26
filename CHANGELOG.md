@@ -1,3 +1,16 @@
+## [0.205.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.4...v0.205.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* only members can be co-hosts ([#1967](https://github.com/ProteinDeficientsAnonymous/pda/issues/1967)) ([7324826](https://github.com/ProteinDeficientsAnonymous/pda/commit/7324826786d49ca770ad2ce7db72729f8c0ff800))
+
+
+### Performance Improvements
+
+* 1922 - prefetch roles once per authenticated request ([#1933](https://github.com/ProteinDeficientsAnonymous/pda/issues/1933)) ([2aff405](https://github.com/ProteinDeficientsAnonymous/pda/commit/2aff405c718ffe2f06ce6790d0a53b6e932de67a))
+* 1925 - constant query count for reminder crons ([#1935](https://github.com/ProteinDeficientsAnonymous/pda/issues/1935)) ([e6f81ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6f81ef3c1f37f3066c504cdc5030a0cbff79f7f))
+
 ## [0.205.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.3...v0.205.4) (2026-10-26)
 
 
