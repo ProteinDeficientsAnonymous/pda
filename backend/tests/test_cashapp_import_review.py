@@ -5,6 +5,7 @@ from community._cashapp_import_price import PriceKind
 from community._cashapp_import_review import (
     NO_END_GRACE,
     load_guest_records,
+    load_guests_and_verified,
     load_payment_context,
     review_cashapp_csv,
 )
@@ -157,6 +158,23 @@ class TestLoaders:
         assert a.has_plus_one and a.said_paid
         assert records[str(wren.id)].status == RSVPStatus.WAITLISTED
         assert not records[str(wren.id)].said_paid
+
+    def test_verified_ids_include_verified_non_guests(self):
+        event = create_paid_event(price="$15")
+        alex = self._user("+12025550201", "Alex", "Kim")
+        gone = self._user("+12025550203", "Gone", "Person")
+        verified_at = timezone.now()
+        EventRSVP.objects.create(
+            event=event, user=alex, status=RSVPStatus.ATTENDING, payment_verified_at=verified_at
+        )
+        EventRSVP.objects.create(
+            event=event, user=gone, status=RSVPStatus.CANT_GO, payment_verified_at=verified_at
+        )
+
+        guests, verified = load_guests_and_verified(event)
+
+        assert [g.user_id for g in guests] == [str(alex.id)]
+        assert verified == {str(alex.id), str(gone.id)}
 
     def test_payment_context_uses_end_then_start(self):
         event = create_paid_event()

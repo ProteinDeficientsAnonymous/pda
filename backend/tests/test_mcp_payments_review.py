@@ -2,8 +2,10 @@ import json
 import uuid
 
 import pytest
+from asgiref.sync import async_to_sync
 from django.core.cache import caches
-from mcp_gateway.cashapp_review import csv_digest, review_cache_key
+from django.db.models import prefetch_related_objects
+from mcp_gateway.cashapp_review import csv_digest, load_review, rerun_review, review_cache_key
 from mcp_gateway.server import pda_mcp
 from mcp_gateway.tools.payments_review import MAX_CSV_CHARS
 from users.permissions import PermissionKey
@@ -121,3 +123,21 @@ def test_description_says_the_csv_is_kept_not_that_nothing_is_saved():
     description = pda_mcp._tool_manager.get_tool("review_cashapp_payments").description
     assert "nothing is saved" not in description
     assert "kept on the server for an hour" in description
+
+
+def _rsvp_loads(captured) -> int:
+    return sum('FROM "community_eventrsvp"' in q["sql"] for q in captured.captured_queries)
+
+
+def test_review_loads_the_event_and_guest_list_once(
+    importer, event, guests, csv_text, django_assert_max_num_queries
+):
+    prefetch_related_objects([importer], "roles")
+    # async_to_sync keeps the ORM on this thread, so the queries are counted.
+    with django_assert_max_num_queries(4) as captured:
+        loaded = async_to_sync(load_review)(importer, str(event.pk), csv_text)
+    assert _rsvp_loads(captured) == 1
+    with django_assert_max_num_queries(2) as captured:
+        again = async_to_sync(rerun_review)(importer, loaded)
+    assert _rsvp_loads(captured) == 1
+    assert again.review == loaded.review

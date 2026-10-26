@@ -2,6 +2,8 @@ from collections import defaultdict
 from collections.abc import Collection
 from datetime import datetime, timedelta
 
+from django.db.models import Q
+
 from community._cashapp_import_csv import CashAppRow, parse_cashapp_csv
 from community._cashapp_import_filter import filter_payments
 from community._cashapp_import_matching import (
@@ -20,7 +22,7 @@ from community._cashapp_import_types import (
     UnreadableRow,
 )
 from community._rsvp_payment import event_requires_payment_confirmation
-from community.models import MATCHABLE_RSVP_STATUSES, Event, RSVPStatus
+from community.models import MATCHABLE_RSVP_STATUSES, Event, EventRSVP, RSVPStatus
 
 NO_END_GRACE = timedelta(hours=6)
 
@@ -134,17 +136,29 @@ def load_payment_context(event: Event) -> EventPaymentContext:
     )
 
 
+def _guest_record(rsvp: EventRSVP) -> GuestRecord:
+    return GuestRecord(
+        user_id=str(rsvp.user_id),
+        first_name=rsvp.user.first_name,
+        last_name=rsvp.user.last_name,
+        nickname=rsvp.user.nickname,
+        status=RSVPStatus(rsvp.status),
+        has_plus_one=rsvp.has_plus_one,
+        said_paid=rsvp.paid_confirmed_at is not None,
+    )
+
+
 def load_guest_records(event: Event) -> list[GuestRecord]:
     rsvps = event.rsvps.filter(status__in=MATCHABLE_RSVP_STATUSES).select_related("user")
-    return [
-        GuestRecord(
-            user_id=str(rsvp.user_id),
-            first_name=rsvp.user.first_name,
-            last_name=rsvp.user.last_name,
-            nickname=rsvp.user.nickname,
-            status=RSVPStatus(rsvp.status),
-            has_plus_one=rsvp.has_plus_one,
-            said_paid=rsvp.paid_confirmed_at is not None,
-        )
-        for rsvp in rsvps
-    ]
+    return [_guest_record(rsvp) for rsvp in rsvps]
+
+
+def load_guests_and_verified(event: Event) -> tuple[list[GuestRecord], set[str]]:
+    """One query for the guest list plus every host-verified user id, guest or not."""
+    rsvps = list(
+        event.rsvps.filter(
+            Q(status__in=MATCHABLE_RSVP_STATUSES) | Q(payment_verified_at__isnull=False)
+        ).select_related("user")
+    )
+    guests = [_guest_record(r) for r in rsvps if r.status in MATCHABLE_RSVP_STATUSES]
+    return guests, {str(r.user_id) for r in rsvps if r.payment_verified_at is not None}
