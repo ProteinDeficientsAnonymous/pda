@@ -1,7 +1,7 @@
-import asyncio
 from datetime import datetime, timedelta
 
 import pytest
+from asgiref.sync import async_to_sync
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
@@ -14,7 +14,7 @@ from tests._public_rsvp_helpers import make_non_member
 from tests.test_mcp_members_read import _BUCKETS, _call, _join_request, _joined, _member
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def admin(manage_users_user):
 def _find(user, **arguments):
     token = _signed_in(user)
     try:
-        return asyncio.run(pda_mcp.call_tool("find_members", arguments)).structured_content  # type: ignore[union-attr]
+        return async_to_sync(pda_mcp.call_tool)("find_members", arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
 
@@ -58,7 +58,7 @@ def _logged_in(days_ago: float, **fields) -> User:
 def test_hidden_and_forbidden_without_manage_users(test_user):
     token = _signed_in(test_user)
     try:
-        assert "find_members" not in {t.name for t in asyncio.run(pda_mcp.list_tools())}
+        assert "find_members" not in {t.name for t in async_to_sync(pda_mcp.list_tools)()}
     finally:
         auth_context_var.reset(token)
     with pytest.raises(ToolError, match="permission"):

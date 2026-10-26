@@ -1,6 +1,5 @@
-import asyncio
-
 import pytest
+from asgiref.sync import async_to_sync
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 from mcp.server.auth.provider import AccessToken
@@ -14,7 +13,7 @@ from mcp_gateway.server import (
 )
 from users.permissions import PermissionKey
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 def _signed_in(user):
@@ -43,26 +42,24 @@ def admin_only_tool():
 
 def test_current_user_requires_token():
     with pytest.raises(ToolError):
-        asyncio.run(current_user())
+        async_to_sync(current_user)()
 
 
 def test_current_user_loads_subject(test_user, as_user):
     as_user(test_user)
-    assert asyncio.run(current_user()).pk == test_user.pk
+    assert async_to_sync(current_user)().pk == test_user.pk
 
 
 def test_require_tool_permission(test_user, manage_users_user):
     with pytest.raises(ToolError, match="you don't have permission to do that"):
-        asyncio.run(require_tool_permission(test_user, PermissionKey.MANAGE_USERS))
-    asyncio.run(
-        require_tool_permission(
-            manage_users_user, PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS
-        )
+        async_to_sync(require_tool_permission)(test_user, PermissionKey.MANAGE_USERS)
+    async_to_sync(require_tool_permission)(
+        manage_users_user, PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS
     )
 
 
 def _tool_names() -> set[str]:
-    return {tool.name for tool in asyncio.run(pda_mcp.list_tools())}
+    return {tool.name for tool in async_to_sync(pda_mcp.list_tools)()}
 
 
 def test_list_tools_filters_by_permission(test_user, manage_users_user, as_user, admin_only_tool):
@@ -75,9 +72,9 @@ def test_list_tools_filters_by_permission(test_user, manage_users_user, as_user,
 def test_call_tool_rechecks_permission(test_user, manage_users_user, as_user, admin_only_tool):
     as_user(test_user)
     with pytest.raises(ToolError, match="permission"):
-        asyncio.run(pda_mcp.call_tool(admin_only_tool, {}))
+        async_to_sync(pda_mcp.call_tool)(admin_only_tool, {})
     as_user(manage_users_user)
-    result = asyncio.run(pda_mcp.call_tool(admin_only_tool, {}))
+    result = async_to_sync(pda_mcp.call_tool)(admin_only_tool, {})
     assert result.content[0].text == "secret"  # type: ignore[union-attr]
 
 
@@ -87,14 +84,14 @@ def test_tool_registered_outside_pda_tool_is_hidden_and_denied(test_user, as_use
         as_user(test_user)
         assert "unguarded" not in _tool_names()
         with pytest.raises(ToolError):
-            asyncio.run(pda_mcp.call_tool("unguarded", {}))
+            async_to_sync(pda_mcp.call_tool)("unguarded", {})
     finally:
         pda_mcp.remove_tool("unguarded")
 
 
 def test_whoami_reports_name_roles_and_permissions(manage_users_user, as_user):
     as_user(manage_users_user)
-    result = asyncio.run(pda_mcp.call_tool("whoami", {}))
+    result = async_to_sync(pda_mcp.call_tool)("whoami", {})
     assert result.structured_content == {  # type: ignore[union-attr]
         "name": "Admin User",
         "roles": ["admin_mgr"],

@@ -1,9 +1,9 @@
-import asyncio
 import json
 import re
 from datetime import timedelta
 
 import pytest
+from asgiref.sync import async_to_sync
 from community import _events as community_events
 from community._event_description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
@@ -19,7 +19,7 @@ from mcp_gateway.server import pda_mcp
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.test_mcp_server import _signed_in
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 def _event(user, title, days=7, **fields):
@@ -30,7 +30,7 @@ def _event(user, title, days=7, **fields):
 def _call(user, name, **arguments):
     token = _signed_in(user)
     try:
-        return asyncio.run(pda_mcp.call_tool(name, arguments)).structured_content  # type: ignore[union-attr]
+        return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
 

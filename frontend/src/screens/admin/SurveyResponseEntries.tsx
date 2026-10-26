@@ -60,7 +60,7 @@ export function SurveyResponseEntries({
               ) : (
                 <div key={q.id}>
                   <p className="text-muted text-xs">{q.label}</p>
-                  <p className="text-foreground text-sm whitespace-pre-wrap">
+                  <p className="text-foreground text-sm break-words whitespace-pre-wrap">
                     {renderAnswer(opened.answers[q.id])}
                   </p>
                 </div>

@@ -5154,7 +5154,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "stars" | "scale" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */

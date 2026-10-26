@@ -9,6 +9,7 @@ import { cn } from '@/utils/cn';
 import { checkboxValues } from './checkboxAnswer';
 import { FieldError } from './FieldError';
 import { formatPollOption } from './pollOption';
+import { ScaleRating } from './ScaleRating';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
 
@@ -89,14 +90,27 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={onChange}
         />
       );
-    case QuestionType.Rating:
+    case QuestionType.Stars:
       return (
         <StarRating
           label={label}
           labelSuffix={labelSuffix}
           error={error}
           value={Number(asString(value)) || 0}
-          labels={question.options}
+          readOnly={readOnly}
+          onChange={(n) => {
+            onChange(String(n));
+          }}
+        />
+      );
+    case QuestionType.Scale:
+      return (
+        <ScaleRating
+          label={label}
+          labelSuffix={labelSuffix}
+          error={error}
+          value={Number(asString(value)) || 0}
+          endLabels={question.options}
           readOnly={readOnly}
           onChange={(n) => {
             onChange(String(n));

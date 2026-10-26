@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   type SurveyPollTallyRow,
@@ -16,6 +17,7 @@ import {
   useSurveyResponses,
 } from '@/api/surveyAdmin';
 import { formatPollOption } from '@/components/questions/pollOption';
+import { scalePointLabel } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -82,8 +84,8 @@ export default function SurveyResponsesScreen() {
   return (
     <ContentContainer>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-medium tracking-tight">{survey.data.title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium tracking-tight break-words">{survey.data.title}</h1>
           <p className="text-muted text-sm">
             {responseCountLabel(visibleResponses.length, responses.data.length)}
           </p>
@@ -196,11 +198,23 @@ function orderedCounts(counts: Record<string, number>, options: string[]): [stri
   return [...known, ...rest].map((o): [string, number] => [o, counts[o] ?? 0]);
 }
 
+function bucketLabel(option: string, question: SummaryQuestion | undefined): string {
+  if (question?.fieldType !== QuestionType.Scale) return option;
+  return scalePointLabel(Number(option), question.options);
+}
+
+interface SummaryQuestion {
+  id: string;
+  label: string;
+  fieldType: string;
+  options: string[];
+}
+
 function QuestionSummaries({
   questions,
   rows,
 }: {
-  questions: { id: string; label: string; options: string[] }[];
+  questions: SummaryQuestion[];
   rows: SurveyQuestionSummary[];
 }) {
   const byId = new Map(questions.map((q) => [q.id, q]));
@@ -210,7 +224,7 @@ function QuestionSummaries({
         const question = byId.get(row.questionId);
         return (
           <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
-            <p className="text-foreground mb-1 text-sm font-medium">
+            <p className="text-foreground mb-1 text-sm font-medium break-words">
               {(question?.label ?? row.questionId).toLowerCase()}
             </p>
             <p className="text-muted mb-2 text-xs">
@@ -228,7 +242,9 @@ function QuestionSummaries({
               <tbody>
                 {orderedCounts(row.counts, question?.options ?? []).map(([option, count]) => (
                   <tr key={option} className="border-border border-t">
-                    <td className="text-foreground py-1 pe-2">{option.toLowerCase()}</td>
+                    <td className="text-foreground py-1 pe-2 wrap-anywhere">
+                      {bucketLabel(option, question).toLowerCase()}
+                    </td>
                     <td className="px-2 py-1">{String(count)}</td>
                     <td className="text-muted px-2 py-1">
                       {row.answered === 0
@@ -258,7 +274,7 @@ function TalliesTables({
     <div className="flex flex-col gap-4">
       {rows.map((row) => (
         <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
-          <p className="text-foreground mb-2 text-sm font-medium">
+          <p className="text-foreground mb-2 text-sm font-medium break-words">
             {(labelById.get(row.questionId) ?? row.questionId).toLowerCase()}
           </p>
           <p className="text-muted mb-2 text-xs">

@@ -14,7 +14,7 @@ from users.roles import Role
 from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 NEW = {"title": "new", "description": ""}
 NOTES = {"label": "notes", "field_type": "textarea"}
 LABELS = ["food?", "why?", "notes"]
@@ -330,11 +330,9 @@ def test_section_cannot_be_made_required_via_mcp(surveys_admin):
 
 def test_label_change_leaves_stored_options_alone(surveys_admin):
     survey = _survey(is_active=False)
-    stars = ["bad", "", "good"]
-    SurveyQuestion.objects.create(survey=survey, label="r", field_type="rating", options=stars)
-    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
-    _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
-    assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]
+    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"])
+    _edit(surveys_admin, survey, questions=[_update(1, label="t2")])
+    assert SurveyQuestion.objects.get().options == ["legacy"]
 
 
 def test_unchanged_condition_cleared_when_its_source_is_removed(surveys_admin):

@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const toastError = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({ toast: { error: toastError, success: vi.fn() } }));
 
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   useAdminSurvey,
@@ -50,7 +51,7 @@ interface SummaryRow {
 
 const QUESTIONS: Question[] = [
   { id: 'q-colour', label: 'Colour', fieldType: 'radio', options: ['red', 'blue'] },
-  { id: 'q-vibes', label: 'Vibes', fieldType: 'rating', options: [] },
+  { id: 'q-vibes', label: 'Vibes', fieldType: QuestionType.Stars, options: [] },
   { id: 'q-notes', label: 'Notes', fieldType: 'text', options: [] },
 ];
 
@@ -64,7 +65,7 @@ const SUMMARY_ROWS: SummaryRow[] = [
   },
   {
     questionId: 'q-vibes',
-    fieldType: 'rating',
+    fieldType: QuestionType.Stars,
     counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
     answered: 2,
     mean: 3.5,
@@ -142,6 +143,12 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(colour).getByText('4 answered')).toBeInTheDocument();
   });
 
+  it('should let long unbroken options wrap instead of widening the page', () => {
+    setup();
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByRole('cell', { name: 'red' })).toHaveClass('wrap-anywhere');
+  });
+
   it('should render the rating distribution with its mean', () => {
     setup();
     const section = screen.getByText('question summaries').closest('section')!;
@@ -149,6 +156,19 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(vibes).getByText('2 answered · average 3.50')).toBeInTheDocument();
     const five = within(vibes).getByText('5').closest('tr')!;
     expect(within(five).getByText('1')).toBeInTheDocument();
+  });
+
+  it('should name scale rows by their end labels', () => {
+    setup({
+      questions: [
+        { id: 'q-pace', label: 'Pace', fieldType: QuestionType.Scale, options: ['Slow', 'Fast'] },
+      ],
+      summaries: [{ ...SUMMARY_ROWS[1]!, questionId: 'q-pace', fieldType: QuestionType.Scale }],
+    });
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByText('1 — slow')).toBeInTheDocument();
+    expect(within(section).getByText('3')).toBeInTheDocument();
+    expect(within(section).getByText('5 — fast')).toBeInTheDocument();
   });
 
   it('should share checkbox options across respondents, not across selections', () => {

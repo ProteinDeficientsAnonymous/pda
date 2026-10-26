@@ -9,6 +9,17 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from community._field_limits import FieldLimit
 from community.models import EventType, ShowIfOperator, SurveyQuestionType, SurveyVisibility
 
+SCALE_END_LABELS = 2
+
+
+def scale_end_labels(options: list[str]) -> list[str]:
+    """return(list): [low, high] labels for a 1-5 scale, or [] when both are blank."""
+    if len(options) > SCALE_END_LABELS:
+        raise ValueError("scale questions take at most 2 end labels: low, high")
+    labels = [label.strip() for label in options]
+    labels += [""] * (SCALE_END_LABELS - len(labels))
+    return labels if any(labels) else []
+
 
 class ShowIfIn(BaseModel):
     question_id: UUID
@@ -151,6 +162,10 @@ class SurveyQuestionIn(BaseModel):
             self.options, self.required = [], False
         else:
             self.description = ""
+        if self.field_type == SurveyQuestionType.SCALE:
+            self.options = scale_end_labels(self.options)
+        elif self.field_type == SurveyQuestionType.STARS:
+            self.options = []
         return self
 
 

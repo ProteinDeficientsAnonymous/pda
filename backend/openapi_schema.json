@@ -6028,7 +6028,8 @@
           "checkbox",
           "number",
           "boolean",
-          "rating",
+          "stars",
+          "scale",
           "datetime_poll",
           "section"
         ],
