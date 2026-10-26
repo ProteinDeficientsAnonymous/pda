@@ -137,15 +137,23 @@ class TestAnonymousResponseToken:
         assert without.json()["my_response_id"] is None
         assert without.json()["my_answers"] is None
 
-    def test_no_token_when_multiple_responses_allowed(self, api_client, public_text_survey):
-        resp = api_client.post(
+    def test_token_does_not_dedupe_when_multiple_responses_allowed(
+        self, api_client, public_text_survey
+    ):
+        first = api_client.post(
             _respond_url(public_text_survey),
             data=_answers(public_text_survey, "free"),
             content_type="application/json",
         )
-        assert resp.status_code == 201
-        assert resp.json()["response_token"] is None
-        assert SurveyResponse.objects.get(id=resp.json()["id"]).anonymous_token is None
+        token = first.json()["response_token"]
+        assert SurveyResponse.objects.get(id=first.json()["id"]).anonymous_token == token
+        again = api_client.post(
+            _respond_url(public_text_survey) + f"?response_token={token}",
+            data=_answers(public_text_survey, "again"),
+            content_type="application/json",
+        )
+        assert again.status_code == 201
+        assert public_text_survey.responses.count() == 2
 
     def test_authenticated_path_unchanged(self, api_client, auth_headers, one_per_user_survey):
         first = api_client.post(
@@ -229,9 +237,7 @@ class TestAnonymousResponseToken:
         assert resp.json()["response_token"] != token
         assert one_per_user_survey.responses.count() == 1
 
-    def test_token_ignored_when_dedupe_is_disabled(self, api_client, one_per_user_survey):
-        # Flipping one_response_per_user off must not leave a stale token able to
-        # prefill a form whose submit path no longer reuses the row.
+    def test_token_still_edits_when_dedupe_is_disabled(self, api_client, one_per_user_survey):
         first = api_client.post(
             _respond_url(one_per_user_survey),
             data=_answers(one_per_user_survey, "mine"),
@@ -241,8 +247,15 @@ class TestAnonymousResponseToken:
         one_per_user_survey.one_response_per_user = False
         one_per_user_survey.save(update_fields=["one_response_per_user"])
         view = api_client.get(_view_url(one_per_user_survey), {"response_token": token})
-        assert view.json()["my_response_id"] is None
-        assert view.json()["my_answers"] is None
+        assert view.json()["my_response_id"] == first.json()["id"]
+        edited = api_client.post(
+            _respond_url(one_per_user_survey)
+            + f"?response_token={token}&response_id={first.json()['id']}",
+            data=_answers(one_per_user_survey, "edited"),
+            content_type="application/json",
+        )
+        assert edited.status_code == 200
+        assert one_per_user_survey.responses.count() == 1
 
     def test_oversized_token_is_not_queried(self, api_client, one_per_user_survey):
         oversized = "a" * 5000
