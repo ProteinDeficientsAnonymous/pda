@@ -102,7 +102,7 @@ def _can_manage_poll(user, event: Event) -> bool:
         return True
     if user.has_permission(PermissionKey.MANAGE_SURVEYS):
         return True
-    return event.co_hosts.filter(pk=user.pk).exists()
+    return any(u.pk == user.pk for u in event.co_hosts.all())
 
 
 def _voter_out(user, viewer) -> VoterOut:
@@ -198,8 +198,10 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
         with _duplicate_option_time_guard():
-            for i, dt in enumerate(payload.options):
-                PollOption.objects.create(poll=poll, datetime=dt, display_order=i)
+            PollOption.objects.bulk_create(
+                PollOption(poll=poll, datetime=dt, display_order=i)
+                for i, dt in enumerate(payload.options)
+            )
         # While a poll is active, the poll is the source of truth for when. Clear
         # any previously set start/end so the event can't have a stale time that
         # doesn't match any poll option.
@@ -249,11 +251,7 @@ def get_event_poll(request, event_id: UUID):
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
     _enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
     try:
-        poll = (
-            EventPoll.objects.select_related("winning_option", "event")
-            .prefetch_related("options__votes__user")
-            .get(event_id=event_id, is_active=True)
-        )
+        poll = EventPoll.objects.select_related("event").get(event_id=event_id, is_active=True)
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.event.status == EventStatus.CANCELLED:
@@ -266,7 +264,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
                 status_code=400,
                 value=availability,
             )
-    option_ids = {str(pk) for pk in poll.options.values_list("id", flat=True)}
+    option_ids = {str(pk): pk for pk in poll.options.values_list("id", flat=True)}
     for option_id in payload.votes:
         if option_id not in option_ids:
             raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=400, option_id=option_id)
@@ -276,13 +274,15 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
             option__poll=poll,
             user=request.auth,
         ).exclude(option_id__in=list(payload.votes.keys())).delete()
-        for option_id, availability in payload.votes.items():
-            option = poll.options.get(id=option_id)
-            PollVote.objects.update_or_create(
-                option=option,
-                user=request.auth,
-                defaults={"availability": availability},
-            )
+        PollVote.objects.bulk_create(
+            [
+                PollVote(option_id=option_ids[option_id], user=request.auth, availability=a)
+                for option_id, a in payload.votes.items()
+            ],
+            update_conflicts=True,
+            unique_fields=["option", "user"],
+            update_fields=["availability", "voted_at"],
+        )
     audit_log(
         logging.INFO,
         "poll_vote",
@@ -291,7 +291,6 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
             type=AuditTargetType.EVENT_POLL, id=str(poll.id), details={"event_id": str(event_id)}
         ),
     )
-    poll.refresh_from_db()
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
         .prefetch_related("options__votes__user")
@@ -408,11 +407,7 @@ def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOptio
         # winning_option is a nullable FK, so select_related on it produces an outer
         # join — Postgres rejects FOR UPDATE there. Lock the poll row on its own first.
         EventPoll.objects.select_for_update().get(event=event)
-        poll = (
-            EventPoll.objects.select_related("winning_option")
-            .prefetch_related("options__votes__user")
-            .get(event=event)
-        )
+        poll = EventPoll.objects.get(event=event)
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.winning_option_id is not None:
