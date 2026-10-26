@@ -50,6 +50,10 @@ def _viewer_has_rsvp(event: Event, user) -> bool:
     return EventRSVP.objects.filter(event=event, user=user).exists()
 
 
+def _co_host_pks(event: Event) -> set[str]:
+    return {str(u.pk) for u in event.co_hosts.all()}
+
+
 def _can_post_comments(
     event: Event,
     user,
@@ -60,10 +64,7 @@ def _can_post_comments(
         return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if co_host_pks is not None:
-        if str(user.pk) in co_host_pks:
-            return True
-    elif event.co_hosts.filter(pk=user.pk).exists():
+    if str(user.pk) in (_co_host_pks(event) if co_host_pks is None else co_host_pks):
         return True
     return _viewer_has_rsvp(event, user)
 
@@ -81,9 +82,7 @@ def _can_delete_comment(
         return True
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if co_host_pks is not None:
-        return str(user.pk) in co_host_pks
-    return event.co_hosts.filter(pk=user.pk).exists()
+    return str(user.pk) in (_co_host_pks(event) if co_host_pks is None else co_host_pks)
 
 
 def _reactions_summary(
@@ -153,7 +152,7 @@ def _comment_out(
 
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
-    co_host_pks = {str(u.pk) for u in event.co_hosts.all()}  # uses prefetch cache
+    co_host_pks = _co_host_pks(event)
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
