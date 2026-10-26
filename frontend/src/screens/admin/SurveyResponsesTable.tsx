@@ -3,7 +3,7 @@ import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 
-import { formatSubmittedAt } from './formatSubmittedAt';
+import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
 const QUESTION_WIDTH = 'min-w-48 max-w-80';
@@ -46,7 +46,9 @@ export function SurveyResponsesTable({
                   <div className="min-w-40">{r.eventTitle?.toLowerCase() ?? '—'}</div>
                 </td>
               ) : null}
-              <td className="text-foreground px-3 py-2">{r.userName ?? '—'}</td>
+              <td className="text-foreground px-3 py-2">
+                {submitterLabel(r.userName, survey.anonymous)}
+              </td>
               <td className="text-muted px-3 py-2 text-xs whitespace-nowrap">
                 {formatSubmittedAt(r.submittedAt, survey.anonymous)}
               </td>

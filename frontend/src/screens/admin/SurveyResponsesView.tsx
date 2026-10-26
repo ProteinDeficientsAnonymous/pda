@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
-import { SurveyIndividualResponse } from './SurveyIndividualResponse';
+import { SurveyResponseEntries } from './SurveyResponseEntries';
 import { SurveyResponsesTable } from './SurveyResponsesTable';
 
 const ResponsesView = { Table: 'table', Individual: 'individual' } as const;
@@ -33,7 +33,7 @@ export function SurveyResponsesView(props: {
       {view === ResponsesView.Table ? (
         <SurveyResponsesTable {...props} />
       ) : (
-        <SurveyIndividualResponse {...props} />
+        <SurveyResponseEntries {...props} />
       )}
     </section>
   );
