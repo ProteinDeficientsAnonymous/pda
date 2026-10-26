@@ -14,7 +14,7 @@ from users.roles import Role
 from tests.test_mcp_events_write import _error, _run
 from tests.test_mcp_surveys_read import _tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 NEW = {"title": "new", "description": ""}
 NOTES = {"label": "notes", "field_type": "textarea"}
 LABELS = ["food?", "why?", "notes"]

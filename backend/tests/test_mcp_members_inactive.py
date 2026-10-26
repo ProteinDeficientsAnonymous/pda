@@ -22,7 +22,7 @@ from users.models import User
 
 from tests.test_mcp_members_find import _find, _ids, _new, _of, _set_up
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 _OFFICIAL, _CLUB, _COMMUNITY = EventType.OFFICIAL, EventType.CLUB, EventType.COMMUNITY
 
