@@ -523,10 +523,11 @@ describe('EventMemberSection — token-holding non-member (Issue 904)', () => {
     expect(screen.getByTestId('comments-card')).toBeInTheDocument();
   });
 
-  it('never shows the host row for a token holder, even on an event with hosts', () => {
+  it('shows hosts read-only — no profile links, remove, or add', () => {
     renderSection(TOKEN_EVENT, 'tok-123');
-    expect(screen.queryByText('hosts')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('add co-host')).not.toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /bob/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /co-host/i })).not.toBeInTheDocument();
   });
 
   it('never shows invite members, email blast, or group text to a token holder', () => {

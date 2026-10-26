@@ -38,13 +38,13 @@ export function EventMemberSection({ event, token }: Props) {
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      {user && (hostCount > 0 || isHostOrEventManager) ? (
+      {hostCount > 0 || isHostOrEventManager ? (
         <Card label={hostCount > 1 ? 'hosts' : 'host'}>
           <EventHostSection
             event={event}
             isHostOrEventManager={isHostOrEventManager}
             canEdit={canEdit}
-            viewerId={user.id}
+            viewerId={user?.id ?? null}
           />
         </Card>
       ) : null}
