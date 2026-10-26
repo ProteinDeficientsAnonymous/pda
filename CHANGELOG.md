@@ -1,3 +1,10 @@
+## [0.202.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.6...v0.202.7) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** show toast and scroll to missing required answer ([#1904](https://github.com/ProteinDeficientsAnonymous/pda/issues/1904)) ([ac208d5](https://github.com/ProteinDeficientsAnonymous/pda/commit/ac208d5d1e80d190c08f174753bfd286c902fbde))
+
 ## [0.202.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.5...v0.202.6) (2026-10-26)
 
 
