@@ -4,9 +4,7 @@ from itertools import product
 import pytest
 from community.attendance.analytics import (
     EMPTY_MEMBER_STATS,
-    compute_member_stats,
     member_stats_by_user,
-    user_rsvps_for_attendance,
 )
 from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, EventType, RSVPStatus
 from django.db import connection
@@ -15,6 +13,7 @@ from django.utils import timezone
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 from tests._users import make_user
 from tests.test_member_attendance_analytics import MEMBERS_URL, events_admin  # noqa: F401
 

@@ -3,7 +3,6 @@
 from datetime import UTC, date, datetime
 
 import pytest
-from community.attendance.analytics import compute_member_stats, user_rsvps_for_attendance
 from community.attendance.clock import (
     compute_anchor,
     last_qualifying_attendance_date,
@@ -20,6 +19,7 @@ from community.models import (
 )
 from users.models import User
 
+from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 from tests._users import make_user
 
 

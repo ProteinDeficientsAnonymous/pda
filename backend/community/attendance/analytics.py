@@ -14,7 +14,6 @@ from community.rsvps.counts import (
     NON_REPORTABLE_EVENT_STATUSES,
     attendance_q,
     is_attended,
-    is_didnt_go,
     reportable_events_q,
 )
 
@@ -27,12 +26,8 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
     return rsvp.event.status not in NON_REPORTABLE_EVENT_STATUSES
 
 
-def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
-    return is_attended(rsvp) and rsvp.event.event_type in QUALIFYING_EVENT_TYPES
-
-
 def qualifying_attendance_q() -> Q:
-    """EventRSVP filter matching the rsvps compute_member_stats counts as qualifying.
+    """EventRSVP filter matching the rsvps the members analytics counts as qualifying.
 
     return(Q): reportable, attended, qualifying type, known start
     """
@@ -57,7 +52,7 @@ EMPTY_MEMBER_STATS = MemberAttendanceStats(None, 0, 0, 0, 0)
 def member_stats_by_user(
     users: QuerySet, now: datetime | None = None
 ) -> dict[UUID, MemberAttendanceStats]:
-    """compute_member_stats for many users in one grouped query; users with no rsvps are absent."""
+    """Attendance analytics per user in one grouped query; users with no rsvps are absent."""
     window_start = (now or timezone.now()) - timedelta(days=QUALIFYING_WINDOW_DAYS)
     qualifying = qualifying_attendance_q()
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="") & reportable_events_q()
@@ -79,38 +74,6 @@ def member_stats_by_user(
         )
     )
     return {row.pop("user_id"): MemberAttendanceStats(**row) for row in rows}
-
-
-def compute_member_stats(
-    rsvps: Iterable[EventRSVP], now: datetime | None = None
-) -> MemberAttendanceStats:
-    """Aggregate a member's rsvps into the analytics fields. Pure function over prefetched rows."""
-    now = now or timezone.now()
-    window_start = now - timedelta(days=QUALIFYING_WINDOW_DAYS)
-    reportable_rsvps = [rsvp for rsvp in rsvps if _is_reportable(rsvp)]
-
-    qualifying_dates = [
-        rsvp.event.start_datetime for rsvp in reportable_rsvps if _is_qualifying_attended(rsvp)
-    ]
-    qualifying_dates_known = [d for d in qualifying_dates if d is not None]
-    last_qualifying_at = max(qualifying_dates_known) if qualifying_dates_known else None
-    qualifying_count_12mo = sum(1 for d in qualifying_dates_known if d >= window_start)
-
-    community_count = sum(
-        1
-        for rsvp in reportable_rsvps
-        if is_attended(rsvp) and rsvp.event.event_type == EventType.COMMUNITY
-    )
-    didnt_go_count = sum(1 for rsvp in reportable_rsvps if is_didnt_go(rsvp))
-    cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
-
-    return MemberAttendanceStats(
-        last_qualifying_at=last_qualifying_at,
-        qualifying_count_12mo=qualifying_count_12mo,
-        community_count=community_count,
-        didnt_go_count=didnt_go_count,
-        cancel_count=cancel_count,
-    )
 
 
 def is_compliant(stats: MemberAttendanceStats) -> bool:
@@ -152,13 +115,3 @@ def attended_events(rsvps: Iterable[EventRSVP]) -> list[AttendedEvent]:
     ]
     events.sort(key=lambda e: (e.start_datetime is None, e.start_datetime))
     return events
-
-
-def user_rsvps_for_attendance(user) -> list[EventRSVP]:
-    """Rsvps for a user, reading the prefetch cache when the caller supplied one."""
-    prefetched = getattr(user, "_prefetched_objects_cache", {})
-    return (
-        list(user.event_rsvps.all())
-        if "event_rsvps" in prefetched
-        else list(EventRSVP.objects.filter(user_id=user.id).select_related("event"))
-    )

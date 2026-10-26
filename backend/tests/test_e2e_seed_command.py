@@ -2,12 +2,7 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community.attendance.analytics import (
-    compute_member_stats,
-    is_compliant,
-    is_pause_candidate,
-    user_rsvps_for_attendance,
-)
+from community.attendance.analytics import is_compliant, is_pause_candidate
 from community.management.commands._e2e_common import _random_phone
 from community.management.commands.e2e_seed import _month_end
 from community.models import (
@@ -24,6 +19,8 @@ from django.core.management.base import CommandError
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
+
+from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 
 
 @pytest.mark.django_db

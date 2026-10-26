@@ -1,11 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community.attendance.analytics import (
-    compute_member_stats,
-    is_pause_candidate,
-    user_rsvps_for_attendance,
-)
+from community.attendance.analytics import is_pause_candidate
 from community.models import (
     AttendanceStatus,
     Event,
@@ -27,6 +23,7 @@ from tests._mcp_members_helpers import (
     make_onboarding,
     member_ids,
 )
+from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 
 pytestmark = pytest.mark.django_db
 
