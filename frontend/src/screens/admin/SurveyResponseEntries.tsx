@@ -5,6 +5,7 @@ import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Dialog } from '@/components/ui/Dialog';
 
+import { WRAP_TEXT } from './ExpandableAnswer';
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 export function SurveyResponseEntries({
@@ -60,7 +61,7 @@ export function SurveyResponseEntries({
               ) : (
                 <div key={q.id}>
                   <p className="text-muted text-xs">{q.label}</p>
-                  <p className="text-foreground text-sm whitespace-pre-wrap">
+                  <p className={`text-foreground text-sm ${WRAP_TEXT}`}>
                     {renderAnswer(opened.answers[q.id])}
                   </p>
                 </div>

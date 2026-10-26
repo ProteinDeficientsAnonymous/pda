@@ -3,6 +3,7 @@ import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 
+import { ExpandableAnswer } from './ExpandableAnswer';
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
@@ -53,8 +54,10 @@ export function SurveyResponsesTable({
                 {formatSubmittedAt(r.submittedAt, survey.anonymous)}
               </td>
               {questions.map((q) => (
-                <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
-                  <div className={QUESTION_WIDTH}>{renderAnswer(r.answers[q.id])}</div>
+                <td key={q.id} className="text-foreground px-3 py-2">
+                  <div className={QUESTION_WIDTH}>
+                    <ExpandableAnswer text={renderAnswer(r.answers[q.id])} />
+                  </div>
                 </td>
               ))}
               <td className="px-3 py-2 text-right">
