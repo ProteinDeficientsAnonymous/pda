@@ -1,3 +1,10 @@
+## [0.202.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.5...v0.202.6) (2026-10-26)
+
+
+### Bug Fixes
+
+* stop privacy check reprompting after settings toggle ([#1873](https://github.com/ProteinDeficientsAnonymous/pda/issues/1873)) ([593f13d](https://github.com/ProteinDeficientsAnonymous/pda/commit/593f13d9152bd34f9577646498e874150d3abd7c))
+
 ## [0.202.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.4...v0.202.5) (2026-10-25)
 
 
