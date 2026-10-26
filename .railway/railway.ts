@@ -1,6 +1,8 @@
 import { defineRailway, github, preserve, project, service } from "railway/iac";
 
-export const partial = "pda";
+const SERVICE_NAME = "pda";
+
+export const partial = SERVICE_NAME;
 
 const PRESERVED_VARIABLES = [
   "ALLOWED_HOSTS",
@@ -27,7 +29,7 @@ const PRESERVED_VARIABLES = [
 ];
 
 export default defineRailway(() => {
-  const pda = service("pda", {
+  const pda = service(SERVICE_NAME, {
     source: github("ProteinDeficientsAnonymous/pda"),
     build: {
       builder: "DOCKERFILE",
