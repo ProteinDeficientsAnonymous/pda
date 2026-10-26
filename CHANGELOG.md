@@ -1,3 +1,10 @@
+# [0.203.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.12...v0.203.0) (2026-10-26)
+
+
+### Features
+
+* add individual response view to survey results ([#1910](https://github.com/ProteinDeficientsAnonymous/pda/issues/1910)) ([6d94f8d](https://github.com/ProteinDeficientsAnonymous/pda/commit/6d94f8dd89b06fde997583844d14ebf4f9ea8d73))
+
 ## [0.202.12](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.11...v0.202.12) (2026-10-26)
 
 
