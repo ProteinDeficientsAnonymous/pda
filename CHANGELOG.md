@@ -1,3 +1,10 @@
+## [0.202.12](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.11...v0.202.12) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** show log in button on survey links when signed out ([#1908](https://github.com/ProteinDeficientsAnonymous/pda/issues/1908)) ([a2b90a3](https://github.com/ProteinDeficientsAnonymous/pda/commit/a2b90a333141a101836cd9feb84a3c86a6be9ef8))
+
 ## [0.202.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.10...v0.202.11) (2026-10-26)
 
 
