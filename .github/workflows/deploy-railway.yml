@@ -73,7 +73,8 @@ jobs:
 
           wait_for_deployment() {
             local service="$1" deployment_id="$2" status
-            for _ in $(seq 1 90); do
+            local poll_seconds=10 max_polls=90
+            for _ in $(seq 1 "${max_polls}"); do
               status="$("${docker_run[@]}" railway deployment list --json --limit 20 \
                 --environment "${RAILWAY_ENVIRONMENT}" \
                 --service "${service}" \
@@ -83,9 +84,9 @@ jobs:
                 SUCCESS|SLEEPING) return 0 ;;
                 FAILED|CRASHED|REMOVED|SKIPPED) return 1 ;;
               esac
-              sleep 10
+              sleep "${poll_seconds}"
             done
-            echo "timed out waiting for deployment ${deployment_id}"
+            echo "timed out after $((poll_seconds * max_polls))s waiting for deployment ${deployment_id}"
             return 1
           }
 
