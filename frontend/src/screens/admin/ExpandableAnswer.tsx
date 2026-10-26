@@ -3,6 +3,7 @@ import { useId, useState } from 'react';
 import { cn } from '@/utils/cn';
 
 const MAX_LINES = 4;
+const CLAMP = 'line-clamp-4';
 const MAX_CHARS = 200;
 
 export const WRAP_TEXT = '[overflow-wrap:anywhere] break-words whitespace-pre-wrap';
@@ -15,7 +16,7 @@ export function ExpandableAnswer({ text }: { text: string }) {
   if (!long) return <div className={WRAP_TEXT}>{text}</div>;
   return (
     <div>
-      <div id={textId} className={cn(WRAP_TEXT, !expanded && 'line-clamp-4')}>
+      <div id={textId} className={cn(WRAP_TEXT, !expanded && CLAMP)}>
         {text}
       </div>
       <button

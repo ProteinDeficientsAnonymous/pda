@@ -3,11 +3,13 @@ import type { Survey, SurveyResponseAdmin } from '@/api/surveyAdmin';
 import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 
-import { ExpandableAnswer } from './ExpandableAnswer';
+import { ExpandableAnswer, WRAP_TEXT } from './ExpandableAnswer';
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
 const QUESTION_WIDTH = 'min-w-48 max-w-80';
+// Choice answers are one option per line, so line counts would clamp short lists.
+const FREE_TEXT_TYPES = new Set<string>([QuestionType.Text, QuestionType.Textarea]);
 const STICKY_CELL = 'border-border sticky left-0 z-10 border-r px-3 py-2';
 
 export function SurveyResponsesTable({
@@ -56,7 +58,11 @@ export function SurveyResponsesTable({
               {questions.map((q) => (
                 <td key={q.id} className="text-foreground px-3 py-2">
                   <div className={QUESTION_WIDTH}>
-                    <ExpandableAnswer text={renderAnswer(r.answers[q.id])} />
+                    {FREE_TEXT_TYPES.has(q.fieldType) ? (
+                      <ExpandableAnswer text={renderAnswer(r.answers[q.id])} />
+                    ) : (
+                      <div className={WRAP_TEXT}>{renderAnswer(r.answers[q.id])}</div>
+                    )}
                   </div>
                 </td>
               ))}

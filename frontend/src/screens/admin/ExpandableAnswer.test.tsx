@@ -30,8 +30,9 @@ describe('ExpandableAnswer', () => {
     const user = userEvent.setup();
     render(<ExpandableAnswer text={text} />);
 
-    const answer = screen.getByText((_c, el) => el?.textContent === text && el.id !== '');
     const toggle = screen.getByRole('button', { name: 'show more' });
+    const answer = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(answer).toHaveTextContent(text, { normalizeWhitespace: false });
     expect(answer).toHaveClass('line-clamp-4');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
