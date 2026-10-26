@@ -49,6 +49,18 @@ describe('QuestionField', () => {
     expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('TEXTAREA');
   });
 
+  it.each(['text', 'textarea'] as const)('shows a live char count for %s answers', (fieldType) => {
+    render(<QuestionField question={{ ...base, fieldType }} value="hello" onChange={vi.fn()} />);
+    const field = screen.getByRole('textbox', { name: 'notes · required' });
+    expect(field).toHaveAttribute('maxLength', '2000');
+    expect(field).toHaveAccessibleDescription('5/2000');
+  });
+
+  it('hides the char count when read-only', () => {
+    render(<QuestionField question={base} value="hello" onChange={vi.fn()} readOnly />);
+    expect(screen.queryByText('5/2000')).not.toBeInTheDocument();
+  });
+
   it('marks required questions as required', () => {
     render(<QuestionField question={base} value="" onChange={vi.fn()} />);
     expect(screen.getByRole('textbox', { name: 'notes · required' })).toBeInTheDocument();
