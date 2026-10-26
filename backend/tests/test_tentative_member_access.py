@@ -139,8 +139,8 @@ class TestTentativeEventAccess:
         _event("Potluck", EventType.COMMUNITY, host=host)
         response = api_client.get("/api/community/events/", **_auth(tentative_user))
         by_title = {e["title"]: e for e in response.json()}
-        assert by_title["Official"]["whatsapp_link"] == "https://chat.whatsapp.com/abc"
-        assert by_title["Potluck"]["whatsapp_link"] == ""
+        assert by_title["Official"]["location"] == "123 Sprout Lane"
+        assert by_title["Potluck"]["location"] == ""
 
     def test_can_rsvp_to_official_event(self, api_client, tentative_user, host):
         event = _event("Official", EventType.OFFICIAL, host=host)

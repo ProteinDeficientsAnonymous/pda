@@ -62,6 +62,13 @@ class TestListEventsQueryCount:
     def test_anonymous(self, api_client):
         self._assert_constant(api_client, None, {})
 
+    def test_anonymous_skips_co_hosts(self, api_client):
+        _make_events(1, None)
+        with CaptureQueriesContext(connection) as ctx:
+            api_client.get("/api/community/events/")
+        table = Event.co_hosts.through._meta.db_table
+        assert not any(table in q["sql"] for q in ctx.captured_queries)
+
     def test_member(self, api_client, test_user, auth_headers):
         self._assert_constant(api_client, test_user, auth_headers)
 

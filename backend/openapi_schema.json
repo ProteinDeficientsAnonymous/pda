@@ -2253,11 +2253,6 @@
             "title": "Attending Count",
             "type": "integer"
           },
-          "cashapp_link": {
-            "default": "",
-            "title": "Cashapp Link",
-            "type": "string"
-          },
           "co_host_ids": {
             "default": [],
             "items": {
@@ -2265,49 +2260,6 @@
             },
             "title": "Co Host Ids",
             "type": "array"
-          },
-          "co_host_names": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Co Host Names",
-            "type": "array"
-          },
-          "co_host_photo_urls": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Co Host Photo Urls",
-            "type": "array"
-          },
-          "created_by_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By Id"
-          },
-          "created_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By Name"
-          },
-          "created_by_photo_url": {
-            "default": "",
-            "title": "Created By Photo Url",
-            "type": "string"
           },
           "datetime_tbd": {
             "default": false,
@@ -2344,11 +2296,6 @@
             "title": "Id",
             "type": "string"
           },
-          "invited_count": {
-            "default": 0,
-            "title": "Invited Count",
-            "type": "integer"
-          },
           "is_legacy": {
             "default": false,
             "title": "Is Legacy",
@@ -2364,31 +2311,9 @@
             "title": "Is Past",
             "type": "boolean"
           },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude"
-          },
           "location": {
             "title": "Location",
             "type": "string"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude"
           },
           "max_attendees": {
             "anyOf": [
@@ -2416,32 +2341,6 @@
               }
             ],
             "title": "My Rsvp"
-          },
-          "other_link": {
-            "default": "",
-            "title": "Other Link",
-            "type": "string"
-          },
-          "partiful_link": {
-            "default": "",
-            "title": "Partiful Link",
-            "type": "string"
-          },
-          "photo_updated_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Photo Updated At"
-          },
-          "photo_url": {
-            "default": "",
-            "title": "Photo Url",
-            "type": "string"
           },
           "price": {
             "default": "",
@@ -2482,11 +2381,6 @@
             "title": "Title",
             "type": "string"
           },
-          "venmo_link": {
-            "default": "",
-            "title": "Venmo Link",
-            "type": "string"
-          },
           "visibility": {
             "default": "public",
             "title": "Visibility",
@@ -2496,16 +2390,6 @@
             "default": 0,
             "title": "Waitlisted Count",
             "type": "integer"
-          },
-          "whatsapp_link": {
-            "default": "",
-            "title": "Whatsapp Link",
-            "type": "string"
-          },
-          "zelle_info": {
-            "default": "",
-            "title": "Zelle Info",
-            "type": "string"
           }
         },
         "required": [
