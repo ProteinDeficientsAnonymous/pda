@@ -35,6 +35,7 @@ from community._payment_verification import (
     PaymentVerificationChange,
     apply_payment_verification,
     record_payment_verification,
+    verify_payments,
 )
 from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
@@ -237,15 +238,9 @@ def _verify_payments_in_transaction(
         raise_validation(
             Code.Event.PAYMENT_VERIFY_NOT_GUESTS, status_code=400, user_ids=", ".join(missing)
         )
-    applied: list[tuple[EventRSVP, PaymentVerificationChange]] = []
-    skipped: list[str] = []
-    for uid in user_ids:
-        rsvp = rsvps[str(uid)]
-        if rsvp.payment_verified_at is not None:
-            skipped.append(str(uid))
-        else:
-            applied.append((rsvp, apply_payment_verification(rsvp, verified=True, actor=actor)))
-    return applied, skipped
+    to_verify = [rsvps[str(uid)] for uid in user_ids if rsvps[str(uid)].payment_verified_at is None]
+    skipped = [str(uid) for uid in user_ids if rsvps[str(uid)].payment_verified_at is not None]
+    return list(zip(to_verify, verify_payments(to_verify, actor), strict=True)), skipped
 
 
 def _load_payment_import_event(request, event_id: UUID) -> Event:

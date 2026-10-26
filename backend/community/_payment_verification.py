@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.utils import timezone
@@ -39,11 +39,17 @@ def _host_stamped(rsvp: EventRSVP) -> bool:
     )
 
 
-def apply_payment_verification(
-    rsvp: EventRSVP, *, verified: bool, actor: User
+_VERIFICATION_FIELDS = [
+    "paid_confirmed_at",
+    "payment_verified_at",
+    "payment_verified_by",
+    "updated_at",
+]
+
+
+def _set_payment_verification(
+    rsvp: EventRSVP, *, verified: bool, actor: User, now: datetime
 ) -> PaymentVerificationChange:
-    """Set or clear the host-verified mark on a caller-locked rsvp; clearing keeps a guest's own attestation."""
-    now = timezone.now()
     host_stamped = _host_stamped(rsvp)
     verified_at = rsvp.payment_verified_at
     change = PaymentVerificationChange(
@@ -70,15 +76,26 @@ def apply_payment_verification(
             rsvp.paid_confirmed_at = None
         rsvp.payment_verified_at = None
         rsvp.payment_verified_by = None
-    rsvp.save(
-        update_fields=[
-            "paid_confirmed_at",
-            "payment_verified_at",
-            "payment_verified_by",
-            "updated_at",
-        ]
-    )
     return change
+
+
+def apply_payment_verification(
+    rsvp: EventRSVP, *, verified: bool, actor: User
+) -> PaymentVerificationChange:
+    """Set or clear the host-verified mark on a caller-locked rsvp; clearing keeps a guest's own attestation."""
+    change = _set_payment_verification(rsvp, verified=verified, actor=actor, now=timezone.now())
+    rsvp.save(update_fields=_VERIFICATION_FIELDS)
+    return change
+
+
+def verify_payments(rsvps: list[EventRSVP], actor: User) -> list[PaymentVerificationChange]:
+    """Host-verify caller-locked rsvps in one UPDATE; status is untouched, so save() has nothing to add."""
+    now = timezone.now()
+    changes = [_set_payment_verification(r, verified=True, actor=actor, now=now) for r in rsvps]
+    for rsvp in rsvps:
+        rsvp.updated_at = now
+    EventRSVP.objects.bulk_update(rsvps, _VERIFICATION_FIELDS)
+    return changes
 
 
 def _rsvp_audit_details(rsvp: EventRSVP) -> dict:
