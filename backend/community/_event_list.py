@@ -3,13 +3,9 @@ from datetime import datetime
 from django.db.models import Exists, OuterRef, Prefetch, Q
 from django.utils import timezone
 from pydantic import BaseModel, Field
-from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._event_helpers import (
-    _float_or_none,
-    _get_creator_name,
-    _iso_or_none,
     _my_rsvp_fields,
     _tags_out,
     _viewer_rsvp_rows,
@@ -19,7 +15,6 @@ from community._rsvp_counts import (
     attending_count_annotation,
     waitlisted_count_annotation,
 )
-from community._rsvp_payment import can_see_payment_details
 from community._shared import _gated
 from community._tentative_member_access import (
     event_viewer_for,
@@ -81,15 +76,13 @@ def _build_events_queryset(status: str, auth_user, is_authed):
     related = ["co_hosts", "poll", "tags", _list_rsvp_prefetch(auth_user)]
     if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
         return (
-            Event.objects.select_related("created_by")
-            .prefetch_related(*related)
+            Event.objects.prefetch_related(*related)
             .annotate(**_list_count_annotations())
             .filter(status=status)
             .filter(_hosted_by(auth_user))
         )
     qs = (
-        Event.objects.select_related("created_by")
-        .prefetch_related(*related)
+        Event.objects.prefetch_related(*related)
         .annotate(**_list_count_annotations())
         .filter(status=EventStatus.ACTIVE)
     )
@@ -145,9 +138,7 @@ def _filter_scope(events, auth_user, hosted: bool, upcoming: bool):
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
     auth_user = event_viewer_for(auth_user, e)
     is_authed = is_authed and auth_user is not None
-    show_payment_details = can_see_payment_details(e, is_authed)
     my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(_viewer_rsvp_rows(e, auth_user), auth_user)
-    co_hosts = list(e.co_hosts.all())
     return EventListOut(
         id=str(e.id),
         slug=e.slug,
@@ -156,35 +147,18 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         start_datetime=e.start_datetime,
         end_datetime=e.end_datetime,
         location=_gated(e.location, "", is_authed),
-        latitude=_gated(_float_or_none(e.latitude), None, is_authed),
-        longitude=_gated(_float_or_none(e.longitude), None, is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
-        # Calendar/My Events never render these; skip media_path to avoid per-row presigns.
-        photo_url="",
-        photo_updated_at=_iso_or_none(e.photo_updated_at),
-        whatsapp_link=_gated(e.whatsapp_link, "", is_authed),
-        partiful_link=_gated(e.partiful_link, "", is_authed),
-        other_link=_gated(e.other_link, "", is_authed),
         price=e.price,
-        venmo_link=_gated(e.venmo_link, "", show_payment_details),
-        cashapp_link=_gated(e.cashapp_link, "", show_payment_details),
-        zelle_info=_gated(e.zelle_info, "", show_payment_details),
-        created_by_id=str(e.created_by_id) if e.created_by_id else None,
-        created_by_name=_get_creator_name(e.created_by, auth_user),
-        created_by_photo_url="",
-        co_host_photo_urls=[],
+        co_host_ids=_gated([str(c.id) for c in e.co_hosts.all()], [], is_authed),
         datetime_tbd=e.datetime_tbd,
         has_poll=hasattr(e, "poll"),
         allow_plus_ones=e.allow_plus_ones,
         max_attendees=e.max_attendees,
         attending_count=e.attending_count,
         waitlisted_count=e.waitlisted_count,
-        invited_count=0,  # host-only; filled on event detail, not the calendar list
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
-        co_host_ids=[str(c.id) for c in co_hosts],
-        co_host_names=[visible_display_name(c, auth_user) for c in co_hosts],
         is_past=e.is_past,
         status=e.status,
         is_partiful_import=e.is_partiful_import,

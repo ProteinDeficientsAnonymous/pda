@@ -317,6 +317,19 @@ def _float_or_none(value) -> float | None:
     return float(value) if value is not None else None
 
 
+def _host_fields(event: Event, creator, co_hosts, auth_user) -> dict:
+    if auth_user is None:
+        return {}
+    return {
+        "created_by_id": str(event.created_by_id) if event.created_by_id else None,
+        "created_by_name": _get_creator_name(creator, auth_user),
+        "created_by_photo_url": media_path(creator.profile_photo) if creator else "",
+        "co_host_ids": [str(u.id) for u in co_hosts],
+        "co_host_names": [visible_display_name(u, auth_user) for u in co_hosts],
+        "co_host_photo_urls": [media_path(u.profile_photo) for u in co_hosts],
+    }
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
@@ -365,12 +378,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
         guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
         invited_count=invited_count,
-        created_by_id=str(event.created_by_id) if event.created_by_id else None,
-        created_by_name=_get_creator_name(creator, auth_user),
-        created_by_photo_url=media_path(creator.profile_photo) if creator else "",
-        co_host_ids=[str(u.id) for u in co_hosts],
-        co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
-        co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
+        **_host_fields(event, creator, co_hosts, auth_user),
         guests=with_guest_photos(
             (
                 _build_guest_list(

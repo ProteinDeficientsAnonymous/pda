@@ -80,7 +80,6 @@ class TestListEventsMemory:
         row = next(e for e in response.json() if e["id"] == str(event.id))
         assert row["attending_count"] == 13  # 12 going, first has plus-one
         assert row["waitlisted_count"] == 2
-        assert row["invited_count"] == 0
         assert instantiated["n"] == 0
 
     def test_list_events_does_not_presign_photos(self, api_client, test_user, auth_headers):
@@ -100,9 +99,7 @@ class TestListEventsMemory:
         response = api_client.get("/api/community/events/", **auth_headers)
         assert response.status_code == 200
         row = next(e for e in response.json() if e["title"] == "Photo Skip")
-        assert row["photo_url"] == ""
-        assert row["created_by_photo_url"] == ""
-        assert row["co_host_photo_urls"] == []
+        assert not {"photo_url", "created_by_photo_url", "co_host_photo_urls"} & row.keys()
 
         detail = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
         assert detail.status_code == 200
