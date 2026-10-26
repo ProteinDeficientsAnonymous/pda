@@ -14,11 +14,9 @@ import type { QuestionAuthorValues } from './QuestionAuthorDialog';
 import { QuestionCardOptions } from './QuestionCardOptions';
 import {
   normalizeQuestionOptions,
-  normalizeRatingLabels,
   normalizeScaleEndLabels,
   questionTypeWantsOptions,
 } from './questionTypeOptions';
-import { RatingLabelFields } from './RatingLabelFields';
 import { ScaleLabelFields } from './ScaleLabelFields';
 
 interface TypeOption<T extends string> {
@@ -48,13 +46,11 @@ type SaveStatus =
   | { kind: 'saved' }
   | { kind: 'error'; message: string };
 
-// Rating options are optional star labels, so only the choice types need one.
-function optionsRequired(fieldType: string): boolean {
-  return questionTypeWantsOptions(fieldType as QuestionType) && fieldType !== QuestionType.Stars;
-}
-
 function seedOptions(fieldType: string): string[] {
-  return optionsRequired(fieldType) && fieldType !== QuestionType.DatetimePoll ? ['option 1'] : [];
+  return questionTypeWantsOptions(fieldType as QuestionType) &&
+    fieldType !== QuestionType.DatetimePoll
+    ? ['option 1']
+    : [];
 }
 
 const CHOICE_TYPES: ReadonlySet<string> = new Set([
@@ -63,13 +59,12 @@ const CHOICE_TYPES: ReadonlySet<string> = new Set([
   QuestionType.Checkbox,
 ]);
 
-// Choice options carry over between choice types; poll dates and rating labels don't.
+// Choice options carry over between choice types; poll dates and scale labels don't.
 function sharesOptions(from: string, to: string): boolean {
   return CHOICE_TYPES.has(from) && CHOICE_TYPES.has(to);
 }
 
 function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
-  if (fieldType === QuestionType.Stars) return normalizeRatingLabels(options);
   if (fieldType === QuestionType.Scale) return normalizeScaleEndLabels(options);
   if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
   return normalizeQuestionOptions(options);
@@ -94,7 +89,7 @@ function validationError<T extends string>(values: QuestionAuthorValues<T>): str
       ? 'heading required'
       : 'question text required';
   }
-  if (optionsRequired(values.fieldType) && values.options.length === 0) {
+  if (questionTypeWantsOptions(values.fieldType as QuestionType) && values.options.length === 0) {
     return 'add at least one option';
   }
   return null;
@@ -223,18 +218,6 @@ export function QuestionCardEditor<T extends string>({
           }}
           onBlur={() => {
             commit(draft);
-          }}
-        />
-      ) : draft.fieldType === QuestionType.Stars ? (
-        <RatingLabelFields
-          id={id}
-          options={draft.options}
-          disabled={disabled}
-          onChange={(options) => {
-            setDraft((d) => ({ ...d, options }));
-          }}
-          onCommit={(options) => {
-            commit({ ...draft, options });
           }}
         />
       ) : draft.fieldType === QuestionType.Scale ? (

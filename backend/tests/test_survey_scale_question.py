@@ -25,3 +25,8 @@ def test_scale_keeps_low_and_high_end_labels(options, saved):
 def test_scale_refuses_more_than_two_end_labels():
     with pytest.raises(ValidationError, match="at most 2 end labels"):
         _scale(["slow", "ok", "fast"])
+
+
+def test_stars_take_no_labels():
+    q = SurveyQuestionIn(label="vibes", field_type=SurveyQuestionType.STARS, options=["meh"])
+    assert q.options == []

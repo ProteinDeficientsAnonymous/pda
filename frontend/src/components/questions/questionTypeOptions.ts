@@ -17,7 +17,7 @@ const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>
   [QuestionType.Select]: { label: 'select', wantsOptions: true },
   [QuestionType.Checkbox]: { label: 'checkbox', wantsOptions: true },
   [QuestionType.Boolean]: { label: 'yes / no', wantsOptions: false },
-  [QuestionType.Stars]: { label: 'star rating', wantsOptions: true },
+  [QuestionType.Stars]: { label: 'star rating', wantsOptions: false },
   [QuestionType.Scale]: { label: '1–5 scale', wantsOptions: false },
   [QuestionType.DatetimePoll]: { label: 'datetime poll', wantsOptions: true },
   [QuestionType.Section]: { label: 'section header', wantsOptions: false },
@@ -80,11 +80,6 @@ export const RATING_SCALE_SIZE = 5;
 /** One label slot per star; blanks keep their position so labels stay on the right star. */
 export function ratingLabelSlots(options: readonly string[]): string[] {
   return Array.from({ length: RATING_SCALE_SIZE }, (_, i) => options[i] ?? '');
-}
-
-export function normalizeRatingLabels(options: readonly string[]): string[] {
-  const labels = ratingLabelSlots(options).map((label) => label.trim());
-  return labels.some(Boolean) ? labels : [];
 }
 
 /** [low, high] labels for the two ends of a 1–5 scale. */

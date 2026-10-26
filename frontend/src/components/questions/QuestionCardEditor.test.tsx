@@ -144,7 +144,7 @@ describe('QuestionCardEditor', () => {
     expect(onSave).toHaveBeenCalledTimes(2);
   });
 
-  it('shows five empty star label slots and saves a rating with no labels', async () => {
+  it('saves a star rating with no options to fill in', async () => {
     const { onSave } = renderCard();
     fireEvent.change(screen.getByLabelText('question type'), {
       target: { value: QuestionType.Stars },
@@ -154,22 +154,7 @@ describe('QuestionCardEditor', () => {
         expect.objectContaining({ fieldType: QuestionType.Stars, options: [] }),
       );
     });
-    for (const n of [1, 2, 3, 4, 5]) {
-      expect(screen.getByLabelText(`star ${String(n)} label`)).toHaveValue('');
-    }
-    expect(screen.queryByRole('button', { name: /^remove/ })).not.toBeInTheDocument();
-  });
-
-  it('keeps blank star labels in place so labels stay on their star', async () => {
-    const { onSave } = renderCard({ fieldType: QuestionType.Stars });
-    const third = screen.getByLabelText('star 3 label');
-    fireEvent.change(third, { target: { value: ' great ' } });
-    fireEvent.blur(third);
-    await waitFor(() => {
-      expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ options: ['', '', 'great', '', ''] }),
-      );
-    });
+    expect(screen.queryByRole('textbox', { name: /label/ })).not.toBeInTheDocument();
   });
 
   it('saves a 1–5 scale with blank end labels as no options', async () => {
