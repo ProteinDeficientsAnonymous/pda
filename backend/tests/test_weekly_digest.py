@@ -247,7 +247,7 @@ class TestWeeklyDigestTentativeMembers:
 
 @pytest.mark.django_db
 class TestWeeklyDigestOnFirstOfMonth:
-    def test_skips_digest_on_the_first(self, fake_sender, monkeypatch):
+    def test_skips_monthly_subscribers_on_the_first(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
         make_member("+12025550280")
         make_tentative("+12025550282")
