@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from community._surveys import get_survey_admin, list_surveys_admin
-from community.models import SurveyQuestionType
+from community.models import Survey, SurveyQuestionType
 from django.utils import timezone
 from pydantic import Field
 from users.models import User
@@ -85,7 +85,7 @@ async def _surveys(user: User) -> list[dict[str, Any]]:
     )
 
 
-async def _survey_id(ref: str, user: User) -> UUID:
+async def _survey_id(ref: str) -> UUID:
     try:
         parsed = UUID(ref)
     except ValueError:
@@ -93,10 +93,10 @@ async def _survey_id(ref: str, user: User) -> UUID:
     # UUID() also takes dashless and braced forms, which could be a hex-looking slug.
     if parsed is not None and str(parsed) == ref.lower():
         return parsed
-    match = next((s for s in await _surveys(user) if s["slug"] == ref), None)
+    match = await Survey.objects.filter(slug=ref).values_list("id", flat=True).afirst()
     if match is None:
         raise _tool_error(404, f"no survey with id or slug {ref}")
-    return UUID(match["id"])
+    return match
 
 
 @pda_tool(
@@ -134,7 +134,7 @@ async def get_survey(
     survey: Annotated[str, Field(description="survey id (uuid) or slug, e.g. from list_surveys")],
 ) -> dict[str, Any]:
     user = await current_user()
-    body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey, user))
+    body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey))
     return survey_detail(body)
 
 

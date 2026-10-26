@@ -4,7 +4,6 @@ from datetime import timedelta
 
 import pytest
 from asgiref.sync import async_to_sync
-from community import _events as community_events
 from community._event_description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
@@ -15,6 +14,7 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
+from mcp_gateway.tools.events_read import _my_events
 
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests.test_mcp_server import _signed_in
@@ -62,21 +62,16 @@ def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
     assert [r["title"] for r in with_past][-1] == "past"
 
 
-def test_list_my_events_serializes_only_hosted_rows(test_user, monkeypatch):
+def test_list_my_events_bounds_the_page_in_sql(test_user, django_assert_num_queries):
     other = make_non_member("+12025550199", "o@e.com")
-    _event(test_user, "mine")
-    _event(test_user, "past", days=-3)
     for i in range(5):
+        _event(test_user, f"mine {i}", days=i + 1)
         _event(other, f"public {i}", visibility=PageVisibility.PUBLIC)
-    serialized = []
-    real = community_events._event_list_out
-    monkeypatch.setattr(
-        community_events,
-        "_event_list_out",
-        lambda e, *args: serialized.append(e.title) or real(e, *args),
-    )
-    assert [r["title"] for r in _call(test_user, "list_my_events")["events"]] == ["mine"]
-    assert serialized == ["mine"]
+    _event(test_user, "past", days=-3)
+    _event(test_user, "draft", status=EventStatus.DRAFT)
+    with django_assert_num_queries(2):
+        rows = _my_events(test_user, include_past=False, limit=2, offset=0)
+    assert [r["title"] for r in rows] == ["mine 0", "mine 1", "mine 2"]
 
 
 def test_list_my_events_pages(test_user):
