@@ -1,3 +1,10 @@
+# [0.204.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.203.0...v0.204.0) (2026-10-26)
+
+
+### Features
+
+* show hosts to rsvp-token viewers ([#1911](https://github.com/ProteinDeficientsAnonymous/pda/issues/1911)) ([3547bf9](https://github.com/ProteinDeficientsAnonymous/pda/commit/3547bf99f68ca8d08678c82f773d219cd20793cd))
+
 # [0.203.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.202.12...v0.203.0) (2026-10-26)
 
 
