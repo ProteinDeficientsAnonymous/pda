@@ -135,7 +135,7 @@ async def _revoke_grant_on_refresh_reuse(token_hash: str, client_id: str) -> Non
 
 
 class PdaOAuthProvider(
-    OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, AccessToken]
+    OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, PdaAccessToken]
 ):
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
         row = await OAuthClient.objects.filter(client_id=client_id).afirst()

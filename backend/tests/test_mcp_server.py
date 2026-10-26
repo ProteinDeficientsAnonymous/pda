@@ -4,9 +4,8 @@ import pytest
 from asgiref.sync import async_to_sync
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
-from mcp.server.auth.provider import AccessToken
 from mcp.server.mcpserver.exceptions import ToolError
-from mcp_gateway.provider import PdaOAuthProvider
+from mcp_gateway.provider import PdaAccessToken, PdaOAuthProvider
 from mcp_gateway.server import (
     TOOL_PERMISSIONS,
     current_user,
@@ -14,6 +13,7 @@ from mcp_gateway.server import (
     pda_tool,
     require_tool_permission,
 )
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._mcp_helpers import make_grant, make_tokens
@@ -22,7 +22,11 @@ pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 
 
 def _signed_in(user):
-    token = AccessToken(token="t", client_id="c", scopes=["pda"], subject=str(user.pk))
+    # Fresh row per sign-in, like the per-request token lookup.
+    fresh = User.objects.get(pk=user.pk)
+    token = PdaAccessToken(
+        token="t", client_id="c", scopes=["pda"], subject=str(user.pk), user=fresh
+    )
     return auth_context_var.set(AuthenticatedUser(token))
 
 
@@ -50,7 +54,7 @@ def test_current_user_requires_token():
         asyncio.run(current_user())
 
 
-def test_current_user_loads_subject(test_user, as_user):
+def test_current_user_is_the_tokens_user(test_user, as_user):
     as_user(test_user)
     assert asyncio.run(current_user()).pk == test_user.pk
 

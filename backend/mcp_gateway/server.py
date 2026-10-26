@@ -26,16 +26,11 @@ _Fn = TypeVar("_Fn", bound=Callable[..., Any])
 
 async def current_user() -> User:
     token = get_access_token()
-    if isinstance(token, PdaAccessToken):
-        # The token lookup already loaded the user; prefetch roles once per request.
-        await aprefetch_related_objects([token.user], "roles")
-        return token.user
-    user = None
-    if token is not None and token.subject:
-        user = await User.objects.prefetch_related("roles").filter(pk=token.subject).afirst()
-    if user is None:
+    if not isinstance(token, PdaAccessToken):
         raise ToolError("you're not signed in")
-    return user
+    # The token lookup already loaded the user; prefetch roles once per request.
+    await aprefetch_related_objects([token.user], "roles")
+    return token.user
 
 
 def _has_any(user: User, keys: tuple[str, ...]) -> bool:
