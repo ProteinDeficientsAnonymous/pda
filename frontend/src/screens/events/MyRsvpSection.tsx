@@ -67,8 +67,6 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
-  // An attending member already holds a seat — re-saving "going" keeps it.
-  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
   // Token holders are non-members, and the public rsvp endpoints never save a +1 for them.
   const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
@@ -186,7 +184,6 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           allowPlusOnes={plusOneNote === null}
           plusOneNote={plusOneNote}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={goingWouldWaitlist}
           onWaitlist={onWaitlist}
           busy={busy}
           error={error}

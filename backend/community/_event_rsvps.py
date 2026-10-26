@@ -294,6 +294,7 @@ class _RsvpApply:
     answers: AnswersIn | None = None
     # Host auto-rsvps bypass the payment gate and required questions.
     skip_host_gates: bool = False
+    enforce_payment_gate: bool = True
 
 
 def _apply_rsvp_in_transaction(
@@ -321,13 +322,12 @@ def _apply_rsvp_in_transaction(
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     previous_status = existing.status if existing is not None else None
 
-    # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
-    gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates
-    if not gate_exempt and requires_payment_gate(event, existing, rsvp.status):
-        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
-
     final_status, final_plus_one = _resolve_rsvp_status(event, user, rsvp.status, rsvp.has_plus_one)
     final_status = _keep_waitlist_place(event, existing, final_status)
+    # Joining the waitlist is free; promotion asks the guest to pay.
+    gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates or not rsvp.enforce_payment_gate
+    if not gate_exempt and requires_payment_gate(event, existing, final_status):
+        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
     answers_snapshot = _snapshot_rsvp_answers(
         event, existing, final_status, rsvp.answers, require_answers=not rsvp.skip_host_gates
     )

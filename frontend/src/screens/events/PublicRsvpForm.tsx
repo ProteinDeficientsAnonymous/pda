@@ -168,7 +168,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
 
   function handleSubmitClick() {
     if (!status || !validate()) return;
-    if (needsPaymentFor(status)) {
+    if (needsPaymentFor(status, false)) {
       setShowPayment(true);
       return;
     }
