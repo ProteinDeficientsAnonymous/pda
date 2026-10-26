@@ -306,9 +306,8 @@ def _apply_rsvp_in_transaction(
 
     Raises ValidationException on failure.
     """
-    # Prefetch the relations _validate_rsvp_access → _enforce_event_read_visibility
-    # reads for invite-only events, so they don't fire lazy queries while the row
-    # is locked under select_for_update.
+    # Prefetch co_hosts (read by the visibility and draft checks) and rsvp_questions
+    # (read by the answer snapshot) so they don't lazy-load while the row is locked.
     event = (
         Event.objects.select_for_update()
         .prefetch_related("co_hosts", "rsvp_questions")

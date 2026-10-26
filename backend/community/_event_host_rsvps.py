@@ -79,11 +79,7 @@ def _apply_host_rsvp_in_transaction(
     event_id, target_user, payload: HostRSVPIn, actor
 ) -> tuple[str, list[str], str | None]:
     """Host-driven RSVP upsert; never payment-gated, and paid_confirmed marks the payment host-verified."""
-    event = (
-        Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users")
-        .get(id=event_id)
-    )
+    event = Event.objects.select_for_update().get(id=event_id)
 
     if not event.rsvp_enabled:
         raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
