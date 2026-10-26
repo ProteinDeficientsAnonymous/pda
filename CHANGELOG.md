@@ -1,3 +1,11 @@
+## [0.205.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.5...v0.205.6) (2026-10-26)
+
+
+### Performance Improvements
+
+* 1923 - bulk-verify guest payments in one update ([#1945](https://github.com/ProteinDeficientsAnonymous/pda/issues/1945)) ([d571e1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d571e1cd942ed81c337b7e818b5d8b60de60af48))
+* 1923 - drop unused invitee prefetches on rsvp writes ([#1949](https://github.com/ProteinDeficientsAnonymous/pda/issues/1949)) ([92c74d6](https://github.com/ProteinDeficientsAnonymous/pda/commit/92c74d6d83f4fb73b7ccc9e32cf00935155b985b))
+
 ## [0.205.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.4...v0.205.5) (2026-10-26)
 
 
