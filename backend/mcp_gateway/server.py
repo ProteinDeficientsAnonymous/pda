@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.db.models import aprefetch_related_objects
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 from mcp.server.mcpserver import Context, MCPServer
@@ -14,7 +15,7 @@ from mcp_types import Tool as MCPTool
 from starlette.applications import Starlette
 from users.models import User
 
-from mcp_gateway.provider import SCOPE, PdaOAuthProvider
+from mcp_gateway.provider import SCOPE, PdaAccessToken, PdaOAuthProvider
 
 BASE_URL = settings.FRONTEND_BASE_URL.rstrip("/")
 FORBIDDEN = "you don't have permission to do that"
@@ -25,6 +26,10 @@ _Fn = TypeVar("_Fn", bound=Callable[..., Any])
 
 async def current_user() -> User:
     token = get_access_token()
+    if isinstance(token, PdaAccessToken):
+        # The token lookup already loaded the user; prefetch roles once per request.
+        await aprefetch_related_objects([token.user], "roles")
+        return token.user
     user = None
     if token is not None and token.subject:
         user = await User.objects.prefetch_related("roles").filter(pk=token.subject).afirst()

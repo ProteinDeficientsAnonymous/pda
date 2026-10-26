@@ -1,10 +1,12 @@
 import asyncio
 
 import pytest
+from asgiref.sync import async_to_sync
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 from mcp.server.auth.provider import AccessToken
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp_gateway.provider import PdaOAuthProvider
 from mcp_gateway.server import (
     TOOL_PERMISSIONS,
     current_user,
@@ -13,6 +15,8 @@ from mcp_gateway.server import (
     require_tool_permission,
 )
 from users.permissions import PermissionKey
+
+from tests._mcp_helpers import make_grant, make_tokens
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
 
@@ -100,3 +104,19 @@ def test_whoami_reports_name_roles_and_permissions(manage_users_user, as_user):
         "roles": ["admin_mgr"],
         "permissions": sorted([PermissionKey.CREATE_USER, PermissionKey.MANAGE_USERS]),
     }
+
+
+def test_tool_call_reuses_the_user_the_token_lookup_loaded(
+    manage_users_user, django_assert_num_queries
+):
+    access = make_tokens(make_grant(manage_users_user))
+    token = async_to_sync(PdaOAuthProvider().load_access_token)(access)
+    assert token is not None
+    reset = auth_context_var.set(AuthenticatedUser(token))
+    try:
+        # async_to_sync keeps the ORM on this thread, so the queries are counted.
+        with django_assert_num_queries(1):
+            result = async_to_sync(pda_mcp.call_tool)("whoami", {})
+    finally:
+        auth_context_var.reset(reset)
+    assert result.structured_content["roles"] == ["admin_mgr"]  # type: ignore[union-attr]
