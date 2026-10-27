@@ -180,6 +180,7 @@ def get_survey_tallies(request, survey_id: UUID):
     "/surveys/{survey_id}/finalize/",
     response={200: SurveyOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
+    include_in_schema=False,
 )
 def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
     try:
