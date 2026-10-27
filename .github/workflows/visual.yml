@@ -46,8 +46,7 @@ jobs:
       ALLOWED_HOSTS: localhost,127.0.0.1
 
     steps:
-      # The default merge ref includes the latest main, but the baseline comes
-      # from the PR head's merge-base. Shoot the head so both sides match.
+      # Shoot the PR head, not the merge ref, so it matches the merge-base baseline.
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
