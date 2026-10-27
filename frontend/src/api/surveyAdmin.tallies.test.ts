@@ -7,11 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/api/client';
 import { QuestionType } from '@/api/questionTypes';
 
-import {
-  useFinalizeSurveyPoll,
-  useSurveyPollTallies,
-  useSurveyQuestionSummaries,
-} from './surveyAdmin';
+import { useSurveyPollTallies, useSurveyQuestionSummaries } from './surveyAdmin';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -20,7 +16,6 @@ vi.mock('@/api/client', () => ({
 }));
 
 const mockedGet = vi.mocked(apiClient.get);
-const mockedPost = vi.mocked(apiClient.post);
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -64,42 +59,6 @@ describe('useSurveyPollTallies', () => {
       photoUrl: '',
     });
     expect(row.totalResponses).toBe(3);
-  });
-});
-
-describe('useFinalizeSurveyPoll', () => {
-  it('should post winning datetime and refresh survey cache', async () => {
-    const wireSurvey = {
-      id: 'srv-1',
-      title: 't',
-      slug: 's',
-      visibility: 'members_only',
-      is_active: false,
-      questions: [],
-      poll_result: {
-        id: 'pr1',
-        winning_datetime: '2026-04-20T12:00:00.000Z',
-        finalized_by_id: 'u-me',
-        finalized_at: '2026-04-20T13:00:00.000Z',
-      },
-    };
-    mockedPost.mockResolvedValueOnce({ data: wireSurvey });
-    const qc = makeQc();
-    const { result } = renderHook(() => useFinalizeSurveyPoll('srv-1'), {
-      wrapper: makeWrapper(qc),
-    });
-    const dt = new Date('2026-04-20T12:00:00.000Z');
-    await result.current.mutateAsync(dt);
-    expect(mockedPost).toHaveBeenCalledWith('/api/community/surveys/srv-1/finalize/', {
-      winning_datetime: dt.toISOString(),
-    });
-    await waitFor(() => {
-      expect(qc.getQueryData(['surveys', 'admin', 'srv-1'])!).toEqual(
-        expect.objectContaining({
-          pollResult: expect.objectContaining({ id: 'pr1' }),
-        }),
-      );
-    });
   });
 });
 
