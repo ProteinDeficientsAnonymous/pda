@@ -3754,20 +3754,6 @@
         "title": "FeedbackType",
         "type": "string"
       },
-      "FinalizePollIn": {
-        "properties": {
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "winning_datetime"
-        ],
-        "title": "FinalizePollIn",
-        "type": "object"
-      },
       "FolderIn": {
         "properties": {
           "name": {
@@ -16987,84 +16973,6 @@
           }
         ],
         "summary": "Get Survey Admin",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/surveys/{survey_id}/finalize/": {
-      "post": {
-        "operationId": "community__surveys_public_finalize_poll",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "survey_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Survey Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FinalizePollIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SurveyOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Finalize Poll",
         "tags": [
           "community"
         ]
