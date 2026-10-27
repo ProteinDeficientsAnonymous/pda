@@ -1,3 +1,20 @@
+# [0.206.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.10...v0.206.0) (2026-10-27)
+
+
+### Bug Fixes
+
+* **surveys:** drop finalize poll from survey responses ([#1970](https://github.com/ProteinDeficientsAnonymous/pda/issues/1970)) ([5120f11](https://github.com/ProteinDeficientsAnonymous/pda/commit/5120f11a292e81a8879e8c05d7523bb9c371ccdc))
+* **surveys:** drop survey poll result model and output field ([#1977](https://github.com/ProteinDeficientsAnonymous/pda/issues/1977)) ([24f4bd5](https://github.com/ProteinDeficientsAnonymous/pda/commit/24f4bd5f8262af47b089e25c06f2b27ab46820a4))
+* **surveys:** remove survey poll finalize endpoint ([#1980](https://github.com/ProteinDeficientsAnonymous/pda/issues/1980)) ([76d1249](https://github.com/ProteinDeficientsAnonymous/pda/commit/76d12490b7b836eab16b0169874e67e3c27d5444))
+* **surveys:** show datetime poll results in survey order with a no column ([#1971](https://github.com/ProteinDeficientsAnonymous/pda/issues/1971)) ([ead869b](https://github.com/ProteinDeficientsAnonymous/pda/commit/ead869bdd678f11c4326edbed4cf6246fac80d47))
+* **surveys:** stop reading survey poll result in the frontend ([#1974](https://github.com/ProteinDeficientsAnonymous/pda/issues/1974)) ([1530b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/1530b13625527a68500361df552e5acee2458fdf))
+
+
+### Features
+
+* **surveys:** label every point of a 1-5 scale in the survey builder ([#1973](https://github.com/ProteinDeficientsAnonymous/pda/issues/1973)) ([80fe2a2](https://github.com/ProteinDeficientsAnonymous/pda/commit/80fe2a2cf1fedf21fdce3f52dfab8095258b3b70))
+* **surveys:** show a label under every point of a 1-5 scale ([#1972](https://github.com/ProteinDeficientsAnonymous/pda/issues/1972)) ([57d939b](https://github.com/ProteinDeficientsAnonymous/pda/commit/57d939b388dc65d28802b2959e30ccafb8a1fc40))
+
 ## [0.205.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.9...v0.205.10) (2026-10-27)
 
 
