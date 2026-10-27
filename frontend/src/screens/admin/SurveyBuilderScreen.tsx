@@ -174,12 +174,6 @@ export default function SurveyBuilderScreen() {
         </div>
       </header>
 
-      {currentSurvey.pollResult ? (
-        <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized
-        </div>
-      ) : null}
-
       <section className="mt-6">
         <h2 className="mb-3 text-base font-medium">questions</h2>
 

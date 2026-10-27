@@ -38,7 +38,6 @@ const survey: Survey = {
   questions: [],
   myResponseId: null,
   myAnswers: null,
-  pollResult: null,
 };
 
 function fieldError(code: string, field: string) {
