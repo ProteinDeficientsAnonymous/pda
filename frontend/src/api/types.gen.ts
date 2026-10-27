@@ -2073,23 +2073,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/community/surveys/{survey_id}/finalize/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Finalize Poll */
-        post: operations["community__surveys_public_finalize_poll"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/community/surveys/{survey_id}/questions/": {
         parameters: {
             query?: never;
@@ -4209,14 +4192,6 @@ export interface components {
          * @enum {string}
          */
         FeedbackType: "bug" | "feature request" | "improvement";
-        /** FinalizePollIn */
-        FinalizePollIn: {
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
-        };
         /** FolderIn */
         FolderIn: {
             /** Name */
@@ -12193,59 +12168,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__surveys_public_finalize_poll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                survey_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinalizePollIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SurveyOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */
