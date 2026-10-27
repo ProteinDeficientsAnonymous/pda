@@ -89,12 +89,6 @@ interface WireSurveyFull {
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
-  poll_result?: {
-    id: string;
-    winning_datetime: string;
-    finalized_by_id: string | null;
-    finalized_at: string;
-  } | null;
 }
 
 function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
@@ -117,14 +111,6 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
-    pollResult: w.poll_result
-      ? {
-          id: w.poll_result.id,
-          winningDatetime: w.poll_result.winning_datetime,
-          finalizedById: w.poll_result.finalized_by_id,
-          finalizedAt: w.poll_result.finalized_at,
-        }
-      : null,
   };
 }
 

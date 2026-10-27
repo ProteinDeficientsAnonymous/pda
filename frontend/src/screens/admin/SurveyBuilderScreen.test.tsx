@@ -72,7 +72,6 @@ const wireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 beforeEach(() => {
@@ -340,27 +339,6 @@ describe('SurveyBuilderScreen', () => {
       expect(mockedPut).toHaveBeenCalledTimes(1);
     });
     expect(mockedPost).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps questions editable after the poll is finalized', async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        ...wireSurvey,
-        poll_result: {
-          id: 'pr-1',
-          winning_datetime: '2026-11-01T18:00:00Z',
-          finalized_by_id: null,
-          finalized_at: '2026-10-30T18:00:00Z',
-        },
-      },
-    });
-    renderScreen();
-    const input = await screen.findByDisplayValue('first');
-
-    expect(screen.getByText('this poll has been finalized')).toBeInTheDocument();
-    expect(input).toBeEnabled();
-    expect(screen.getByRole('button', { name: '+ add question' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'delete' })).toHaveLength(2);
   });
 
   it('keeps a just-edited label when the condition is changed right after', async () => {

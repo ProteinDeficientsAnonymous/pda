@@ -41,7 +41,6 @@ const survey: Survey = {
   feedbackEventType: '',
   myResponseId: null,
   myAnswers: null,
-  pollResult: null,
   anonymous: false,
   confirmationMessage: '',
   questions: [
