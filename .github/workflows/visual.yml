@@ -46,7 +46,11 @@ jobs:
       ALLOWED_HOSTS: localhost,127.0.0.1
 
     steps:
+      # The default merge ref includes the latest main, but the baseline comes
+      # from the PR head's merge-base. Shoot the head so both sides match.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       # The merge-base is often a [skip ci] release commit, which never uploaded
       # a screenshots artifact. reg-actions then treats every image as new.
