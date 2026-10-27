@@ -58,7 +58,6 @@ const wireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 const wireResponse = {

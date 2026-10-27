@@ -96,7 +96,6 @@ function setup({
       title: 'feedback',
       slug: 'feedback',
       questions,
-      pollResult: null,
       feedbackEventType,
     }),
   );
@@ -231,7 +230,6 @@ describe('SurveyResponsesScreen summaries', () => {
         id: 'srv-1',
         title: 'feedback',
         questions: [QUESTIONS[2]],
-        pollResult: null,
       }),
     );
     mockResponses.mockReturnValue(mockQuery([]));

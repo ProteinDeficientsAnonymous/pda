@@ -55,7 +55,6 @@ const baseWireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 beforeEach(() => {
@@ -195,25 +194,6 @@ describe('SurveyScreen', () => {
 
     expect(await screen.findByRole('button', { name: 'submit' })).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
-
-  it('keeps the finalized-poll view for an inactive survey with a poll result', async () => {
-    mockedGet.mockResolvedValueOnce({
-      data: {
-        ...baseWireSurvey,
-        is_active: false,
-        poll_result: {
-          id: 'r1',
-          winning_datetime: '2030-01-01T10:00:00Z',
-          finalized_by_id: null,
-          finalized_at: '2029-12-01T10:00:00Z',
-        },
-      },
-    });
-    renderScreen();
-
-    expect(await screen.findByText(/this poll has been finalized/)).toBeInTheDocument();
-    expect(screen.queryByText(/this survey is closed/)).not.toBeInTheDocument();
   });
 
   it('refetches the survey when a submit is rejected because it closed', async () => {
