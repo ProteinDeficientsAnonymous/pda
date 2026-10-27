@@ -217,7 +217,7 @@ def _tally_dict_answer(
     for opt, availability in answer.items():
         if opt in counts and availability in counts[opt]:
             counts[opt][availability] += 1
-            if voter:
+            if voter and availability != PollAvailability.NO:
                 voters[opt].append(voter)
 
 
@@ -240,7 +240,8 @@ def _tally_question(
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
-        opt: {PollAvailability.YES: 0, PollAvailability.MAYBE: 0} for opt in options
+        opt: {PollAvailability.YES: 0, PollAvailability.MAYBE: 0, PollAvailability.NO: 0}
+        for opt in options
     }
     voters: dict[str, list[VoterOut]] = {opt: [] for opt in options}
     for r in responses:

@@ -15,6 +15,7 @@ import {
   useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
+import { formatPollOption } from '@/components/questions/pollOption';
 
 import SurveyResponsesScreen from './SurveyResponsesScreen';
 
@@ -79,6 +80,7 @@ function setup({
   questions = QUESTIONS,
   summaries = SUMMARY_ROWS,
   summaryState = {},
+  tallies = [],
   responseCount = 1,
   feedbackEventType = '',
   responses,
@@ -86,6 +88,7 @@ function setup({
   questions?: typeof QUESTIONS;
   summaries?: typeof SUMMARY_ROWS;
   summaryState?: Record<string, unknown>;
+  tallies?: unknown[];
   responseCount?: number;
   feedbackEventType?: string;
   responses?: unknown[];
@@ -111,7 +114,7 @@ function setup({
         })),
     ),
   );
-  mockTallies.mockReturnValue(mockQuery([]));
+  mockTallies.mockReturnValue(mockQuery(tallies));
   mockSummaries.mockReturnValue(mockQuery(summaries, summaryState));
 
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -276,6 +279,53 @@ describe('SurveyResponsesScreen summaries', () => {
       .slice(1)
       .map((tr) => tr.firstElementChild?.textContent);
     expect(options).toEqual(['red', 'blue', 'green']);
+  });
+});
+
+describe('SurveyResponsesScreen datetime poll', () => {
+  const POLL_A = '2026-11-07T16:00:00.000Z';
+  const POLL_B = '2026-11-08T19:00:00.000Z';
+  const pollSetup = () => {
+    setup({
+      questions: [
+        QUESTIONS[0]!,
+        {
+          id: 'q-when',
+          label: 'When',
+          fieldType: QuestionType.DatetimePoll,
+          options: [POLL_B, POLL_A],
+        },
+        QUESTIONS[1]!,
+      ],
+      tallies: [
+        {
+          questionId: 'q-when',
+          tallies: {
+            [POLL_A]: { yes: 2, maybe: 0, no: 1 },
+            [POLL_B]: { yes: 0, maybe: 1, no: 2 },
+          },
+          voters: {},
+          totalResponses: 3,
+        },
+      ],
+    });
+  };
+
+  it('should place the poll among the summaries in survey order', () => {
+    pollSetup();
+    const labels = ['colour', 'when', 'vibes'].map((l) => screen.getByText(l));
+    expect(labels[0]!.compareDocumentPosition(labels[1]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(labels[1]!.compareDocumentPosition(labels[2]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('should list options in survey order with a no column', () => {
+    pollSetup();
+    const rows = within(screen.getByText('when').closest('div')!).getAllByRole('row');
+    expect(rows.map((tr) => tr.textContent)).toEqual([
+      'optionyesmaybeno',
+      `${formatPollOption(POLL_B)}012`,
+      `${formatPollOption(POLL_A)}201`,
+    ]);
   });
 });
 
