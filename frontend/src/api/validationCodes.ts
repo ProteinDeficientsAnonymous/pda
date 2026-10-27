@@ -374,12 +374,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "this feedback link doesn't work anymore";
     case Code.Survey.FeedbackAlreadySubmitted:
       return 'you already sent feedback for this event — thank you!';
-    case Code.Survey.NoDatetimePollQuestion:
-      return 'survey has no datetime poll question';
-    case Code.Survey.WinningDatetimeNotInOptions:
-      return 'winning datetime is not one of the poll options';
-    case Code.Survey.PollAlreadyFinalized:
-      return 'this poll has already been finalized';
     case Code.Survey.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
