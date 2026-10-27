@@ -14,7 +14,7 @@ import type { QuestionAuthorValues } from './QuestionAuthorDialog';
 import { QuestionCardOptions } from './QuestionCardOptions';
 import {
   normalizeQuestionOptions,
-  normalizeScaleEndLabels,
+  normalizeScaleLabels,
   questionTypeWantsOptions,
 } from './questionTypeOptions';
 import { ScaleLabelFields } from './ScaleLabelFields';
@@ -65,7 +65,7 @@ function sharesOptions(from: string, to: string): boolean {
 }
 
 function normalizeOptions(fieldType: string, options: readonly string[]): string[] {
-  if (fieldType === QuestionType.Scale) return normalizeScaleEndLabels(options);
+  if (fieldType === QuestionType.Scale) return normalizeScaleLabels(options);
   if (!questionTypeWantsOptions(fieldType as QuestionType)) return [];
   return normalizeQuestionOptions(options);
 }

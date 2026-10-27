@@ -99,7 +99,8 @@ export function scalePointLabel(n: number, options: readonly string[]): string {
   return label ? `${String(n)} — ${label}` : String(n);
 }
 
-export function normalizeScaleEndLabels(options: readonly string[]): string[] {
-  const labels = scaleEndLabels(options).map((label) => label.trim());
+export function normalizeScaleLabels(options: readonly string[]): string[] {
+  const kept = labelsEveryScalePoint(options) ? options : scaleEndLabels(options);
+  const labels = kept.map((label) => label.trim());
   return labels.some(Boolean) ? labels : [];
 }
