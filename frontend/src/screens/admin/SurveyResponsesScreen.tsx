@@ -15,7 +15,7 @@ import {
   useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
-import { formatPollOption } from '@/components/questions/pollOption';
+import { formatPollOption, POLL_AVAILABILITIES } from '@/components/questions/pollOption';
 import { scalePointLabel } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -39,7 +39,7 @@ export default function SurveyResponsesScreen() {
 
   const datetimeQuestions = useMemo(() => {
     if (!survey.data) return [];
-    return survey.data.questions.filter((q) => q.fieldType === 'datetime_poll');
+    return survey.data.questions.filter((q) => q.fieldType === QuestionType.DatetimePoll);
   }, [survey.data]);
 
   const tallies = useSurveyPollTallies(
@@ -73,6 +73,9 @@ export default function SurveyResponsesScreen() {
   }
 
   const visibleResponses = filterResponsesByEvent(responses.data, eventFilter);
+  const summaryRows = summaries.data ?? [];
+  const tallyRows = tallies.data ?? [];
+  const resultsError = summaries.isError || tallies.isError;
 
   return (
     <ContentContainer>
@@ -98,26 +101,17 @@ export default function SurveyResponsesScreen() {
         </div>
       </header>
 
-      {datetimeQuestions.length > 0 ? (
-        <section className="mb-8">
-          <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">poll tallies</h2>
-          {tallies.isPending ? (
-            <p className="text-muted text-sm">loading tallies…</p>
-          ) : tallies.isError ? (
-            <p className="text-muted text-sm">couldn't load tallies</p>
-          ) : (
-            <TalliesTables questions={survey.data.questions} rows={tallies.data} />
-          )}
-        </section>
-      ) : null}
-
-      {summaries.isError || (summaries.data?.length ?? 0) > 0 ? (
+      {resultsError || summaryRows.length > 0 || tallyRows.length > 0 ? (
         <section className="mb-8">
           <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">question summaries</h2>
-          {summaries.isError ? (
+          {resultsError ? (
             <p className="text-muted text-sm">couldn't load summaries</p>
           ) : (
-            <QuestionSummaries questions={survey.data.questions} rows={summaries.data ?? []} />
+            <QuestionSummaries
+              questions={survey.data.questions}
+              rows={summaryRows}
+              tallies={tallyRows}
+            />
           )}
         </section>
       ) : null}
@@ -188,8 +182,8 @@ function orderedCounts(counts: Record<string, number>, options: string[]): [stri
   return [...known, ...rest].map((o): [string, number] => [o, counts[o] ?? 0]);
 }
 
-function bucketLabel(option: string, question: SummaryQuestion | undefined): string {
-  if (question?.fieldType !== QuestionType.Scale) return option;
+function bucketLabel(option: string, question: SummaryQuestion): string {
+  if (question.fieldType !== QuestionType.Scale) return option;
   return scalePointLabel(Number(option), question.options);
 }
 
@@ -203,19 +197,25 @@ interface SummaryQuestion {
 function QuestionSummaries({
   questions,
   rows,
+  tallies,
 }: {
   questions: SummaryQuestion[];
   rows: SurveyQuestionSummary[];
+  tallies: SurveyPollTallyRow[];
 }) {
-  const byId = new Map(questions.map((q) => [q.id, q]));
+  const rowById = new Map(rows.map((r) => [r.questionId, r]));
+  const tallyById = new Map(tallies.map((t) => [t.questionId, t]));
   return (
     <div className="flex flex-col gap-4">
-      {rows.map((row) => {
-        const question = byId.get(row.questionId);
+      {questions.map((question) => {
+        const tally = tallyById.get(question.id);
+        if (tally) return <PollTally key={question.id} question={question} row={tally} />;
+        const row = rowById.get(question.id);
+        if (!row) return null;
         return (
           <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
             <p className="text-foreground mb-1 text-sm font-medium break-words">
-              {(question?.label ?? row.questionId).toLowerCase()}
+              {question.label.toLowerCase()}
             </p>
             <p className="text-muted mb-2 text-xs">
               {String(row.answered)} answered
@@ -230,7 +230,7 @@ function QuestionSummaries({
                 </tr>
               </thead>
               <tbody>
-                {orderedCounts(row.counts, question?.options ?? []).map(([option, count]) => (
+                {orderedCounts(row.counts, question.options).map(([option, count]) => (
                   <tr key={option} className="border-border border-t">
                     <td className="text-foreground py-1 pe-2 wrap-anywhere">
                       {bucketLabel(option, question).toLowerCase()}
@@ -252,46 +252,39 @@ function QuestionSummaries({
   );
 }
 
-function TalliesTables({
-  questions,
-  rows,
-}: {
-  questions: { id: string; label: string }[];
-  rows: SurveyPollTallyRow[];
-}) {
-  const labelById = new Map(questions.map((q) => [q.id, q.label]));
+function PollTally({ question, row }: { question: SummaryQuestion; row: SurveyPollTallyRow }) {
   return (
-    <div className="flex flex-col gap-4">
-      {rows.map((row) => (
-        <div key={row.questionId} className="border-border bg-surface rounded-lg border p-3">
-          <p className="text-foreground mb-2 text-sm font-medium break-words">
-            {(labelById.get(row.questionId) ?? row.questionId).toLowerCase()}
-          </p>
-          <p className="text-muted mb-2 text-xs">
-            total responses recorded: {String(row.totalResponses)}
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-muted">
-                <tr>
-                  <th className="py-1 pe-2">option</th>
-                  <th className="px-2 py-1">yes</th>
-                  <th className="px-2 py-1">maybe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(row.tallies).map(([opt, counts]) => (
-                  <tr key={opt} className="border-border border-t">
-                    <td className="text-foreground py-1 pe-2 font-mono">{formatPollOption(opt)}</td>
-                    <td className="px-2 py-1">{String(counts.yes ?? 0)}</td>
-                    <td className="px-2 py-1">{String(counts.maybe ?? 0)}</td>
-                  </tr>
+    <div className="border-border bg-surface rounded-lg border p-3">
+      <p className="text-foreground mb-1 text-sm font-medium break-words">
+        {question.label.toLowerCase()}
+      </p>
+      <p className="text-muted mb-2 text-xs">{String(row.totalResponses)} responses</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead className="text-muted">
+            <tr>
+              <th className="py-1 pe-2">option</th>
+              {POLL_AVAILABILITIES.map((a) => (
+                <th key={a} className="px-2 py-1">
+                  {a}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {question.options.map((opt) => (
+              <tr key={opt} className="border-border border-t">
+                <td className="text-foreground py-1 pe-2 font-mono">{formatPollOption(opt)}</td>
+                {POLL_AVAILABILITIES.map((a) => (
+                  <td key={a} className="px-2 py-1">
+                    {String(row.tallies[opt]?.[a] ?? 0)}
+                  </td>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

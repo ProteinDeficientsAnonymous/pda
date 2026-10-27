@@ -246,11 +246,11 @@ class TestSurveySummary:
         body = response.json()
         assert len(body) == 1
         assert body[0]["tallies"] == {
-            POLL_A: {"yes": 1, "maybe": 0},
-            POLL_B: {"yes": 0, "maybe": 1},
+            POLL_A: {"yes": 1, "maybe": 0, "no": 0},
+            POLL_B: {"yes": 0, "maybe": 1, "no": 0},
         }
 
-    def test_no_availability_is_not_tallied_as_a_vote(
+    def test_no_availability_is_counted_but_not_listed_as_a_voter(
         self, api_client, survey_owner_headers, mixed_survey
     ):
         poll = mixed_survey.questions.get(field_type=SurveyQuestionType.DATETIME_POLL)
@@ -263,5 +263,5 @@ class TestSurveySummary:
         )
         assert response.status_code == 200
         body = response.json()[0]
-        assert body["tallies"][POLL_A] == {"yes": 1, "maybe": 0}
+        assert body["tallies"][POLL_A] == {"yes": 1, "maybe": 0, "no": 1}
         assert len(body["voters"][POLL_A]) == 1

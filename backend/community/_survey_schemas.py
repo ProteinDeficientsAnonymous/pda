@@ -52,7 +52,7 @@ class VoterOut(BaseModel):
 
 class PollResultsOut(BaseModel):
     question_id: str
-    tallies: dict[str, dict[str, int]]  # option -> {"yes": N, "maybe": M}
+    tallies: dict[str, dict[str, int]]  # option -> {"yes": N, "maybe": M, "no": K}
     voters: dict[str, list[VoterOut]] = {}
     total_responses: int
 

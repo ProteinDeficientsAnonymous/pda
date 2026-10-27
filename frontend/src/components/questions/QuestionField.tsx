@@ -8,7 +8,7 @@ import { cn } from '@/utils/cn';
 
 import { checkboxValues } from './checkboxAnswer';
 import { FieldError } from './FieldError';
-import { formatPollOption } from './pollOption';
+import { formatPollOption, POLL_AVAILABILITIES, type PollAvailability } from './pollOption';
 import { ScaleRating } from './ScaleRating';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
@@ -244,9 +244,6 @@ function CheckboxGroup({
   );
 }
 
-const AVAILABILITIES = ['yes', 'maybe', 'no'] as const;
-type Availability = (typeof AVAILABILITIES)[number];
-
 function DatetimePoll({
   label,
   labelSuffix,
@@ -264,7 +261,7 @@ function DatetimePoll({
   error?: string | undefined;
   disabled?: boolean | undefined;
 }) {
-  function pick(option: string, availability: Availability) {
+  function pick(option: string, availability: PollAvailability) {
     if (value[option] === availability) {
       const { [option]: _removed, ...rest } = value;
       onChange(rest);
@@ -287,7 +284,7 @@ function DatetimePoll({
           >
             <span className="text-sm">{formatPollOption(option)}</span>
             <div className="flex gap-1" role="radiogroup">
-              {AVAILABILITIES.map((a) => (
+              {POLL_AVAILABILITIES.map((a) => (
                 <button
                   key={a}
                   type="button"
