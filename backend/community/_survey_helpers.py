@@ -9,7 +9,6 @@ from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._survey_schemas import (
-    PollResultOut,
     PollResultsOut,
     SurveyOut,
     SurveyQuestionOut,
@@ -18,7 +17,6 @@ from community._survey_schemas import (
 )
 from community._validation import Code, raise_validation
 from community.models import (
-    DatetimePollResult,
     Event,
     PollAvailability,
     Survey,
@@ -37,15 +35,6 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
         required=q.required,
         display_order=q.display_order,
         show_if=q.show_if,
-    )
-
-
-def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
-    return PollResultOut(
-        id=str(result.id),
-        winning_datetime=result.winning_datetime,
-        finalized_by_id=str(result.finalized_by_id) if result.finalized_by_id else None,
-        finalized_at=result.finalized_at,
     )
 
 
@@ -86,11 +75,6 @@ def _survey_out(
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
     )
-    poll_result = None
-    try:
-        poll_result = _poll_result_out(survey.poll_result)
-    except DatetimePollResult.DoesNotExist:
-        pass
     # anonymous surveys never key on the member, so their row is found by token too
     responder = None if survey.anonymous else requesting_user
     existing = _find_my_response(survey, responder, response_token)
@@ -115,7 +99,6 @@ def _survey_out(
         created_at=survey.created_at,
         questions=questions,
         response_count=survey.responses.count(),
-        poll_result=poll_result,
         my_response_id=my_response_id,
         my_answers=my_answers,
     )

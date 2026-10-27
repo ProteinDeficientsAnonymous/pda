@@ -5600,42 +5600,6 @@
         "title": "PollOptionIn",
         "type": "object"
       },
-      "PollResultOut": {
-        "properties": {
-          "finalized_at": {
-            "format": "date-time",
-            "title": "Finalized At",
-            "type": "string"
-          },
-          "finalized_by_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finalized By Id"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "winning_datetime",
-          "finalized_at"
-        ],
-        "title": "PollResultOut",
-        "type": "object"
-      },
       "PollResultsOut": {
         "properties": {
           "question_id": {
@@ -6911,16 +6875,6 @@
               }
             ],
             "title": "Opens At"
-          },
-          "poll_result": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PollResultOut"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "questions": {
             "default": [],

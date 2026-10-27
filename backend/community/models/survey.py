@@ -1,4 +1,4 @@
-"""Survey, SurveyQuestion, SurveyResponse, SurveyAnswer, DatetimePollResult models."""
+"""Survey, SurveyQuestion, SurveyResponse, SurveyAnswer models."""
 
 import uuid
 from typing import TYPE_CHECKING
@@ -52,7 +52,6 @@ class Survey(models.Model):
         created_by_id: uuid.UUID | None
         questions: "Manager[SurveyQuestion]"
         responses: "Manager[SurveyResponse]"
-        poll_result: "DatetimePollResult"
 
     class Meta:
         app_label = "community"
@@ -123,25 +122,3 @@ class SurveyResponse(models.Model):
 
     def __str__(self):
         return f"Response to {self.survey.title} ({self.submitted_at:%Y-%m-%d})"
-
-
-class DatetimePollResult(models.Model):
-    if TYPE_CHECKING:
-        finalized_by_id: uuid.UUID | None
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    survey = models.OneToOneField(Survey, on_delete=models.CASCADE, related_name="poll_result")
-    winning_datetime = models.DateTimeField()
-    finalized_by = models.ForeignKey(
-        "users.User",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="finalized_polls",
-    )
-    finalized_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        app_label = "community"
-
-    def __str__(self):
-        return f"Poll result for {self.survey.title}: {self.winning_datetime:%Y-%m-%d %H:%M}"
