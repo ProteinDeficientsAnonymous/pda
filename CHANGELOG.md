@@ -1,3 +1,10 @@
+## [0.205.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.8...v0.205.9) (2026-10-27)
+
+
+### Bug Fixes
+
+* **ci:** screenshot the PR head so it matches the visual baseline ([#1969](https://github.com/ProteinDeficientsAnonymous/pda/issues/1969)) ([98fae7b](https://github.com/ProteinDeficientsAnonymous/pda/commit/98fae7b2ae20eee054d80547986715e3d023f1f7))
+
 ## [0.205.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.7...v0.205.8) (2026-10-27)
 
 
