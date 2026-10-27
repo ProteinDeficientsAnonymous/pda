@@ -10,12 +10,13 @@ from community._field_limits import FieldLimit
 from community.models import EventType, ShowIfOperator, SurveyQuestionType, SurveyVisibility
 
 SCALE_END_LABELS = 2
+SCALE_POINTS = 5
 
 
-def scale_end_labels(options: list[str]) -> list[str]:
-    """return(list): [low, high] labels for a 1-5 scale, or [] when both are blank."""
-    if len(options) > SCALE_END_LABELS:
-        raise ValueError("scale questions take at most 2 end labels: low, high")
+def scale_labels(options: list[str]) -> list[str]:
+    """return(list): [low, high] or one label per point 1-5, or [] when all are blank."""
+    if len(options) > SCALE_END_LABELS and len(options) != SCALE_POINTS:
+        raise ValueError("scale questions take 2 end labels (low, high) or 5 point labels")
     labels = [label.strip() for label in options]
     labels += [""] * (SCALE_END_LABELS - len(labels))
     return labels if any(labels) else []
@@ -151,7 +152,7 @@ class SurveyQuestionIn(BaseModel):
         else:
             self.description = ""
         if self.field_type == SurveyQuestionType.SCALE:
-            self.options = scale_end_labels(self.options)
+            self.options = scale_labels(self.options)
         elif self.field_type == SurveyQuestionType.STARS:
             self.options = []
         return self

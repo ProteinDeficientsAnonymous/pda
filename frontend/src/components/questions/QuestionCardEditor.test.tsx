@@ -179,6 +179,32 @@ describe('QuestionCardEditor', () => {
     });
   });
 
+  it('saves a label for every scale point once that mode is picked', async () => {
+    const { onSave } = renderCard({ fieldType: QuestionType.Scale, options: ['bad', 'great'] });
+    fireEvent.click(screen.getByRole('radio', { name: 'label every point' }));
+    const middle = screen.getByLabelText('label for 3');
+    fireEvent.change(middle, { target: { value: 'okay' } });
+    fireEvent.blur(middle);
+    await waitFor(() => {
+      expect(onSave).toHaveBeenLastCalledWith(
+        expect.objectContaining({ options: ['bad', '', 'okay', '', 'great'] }),
+      );
+    });
+  });
+
+  it('keeps only the ends when switching back from labeling every point', async () => {
+    const { onSave } = renderCard({
+      fieldType: QuestionType.Scale,
+      options: ['a', 'b', 'c', 'd', 'e'],
+    });
+    expect(screen.getByLabelText('label for 2')).toHaveValue('b');
+    fireEvent.click(screen.getByRole('radio', { name: 'label the ends' }));
+    expect(screen.queryByLabelText('label for 2')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ options: ['a', 'e'] }));
+    });
+  });
+
   it('shows the server error when a save fails', async () => {
     const onSave = vi.fn().mockRejectedValue(new Error('boom'));
     render(

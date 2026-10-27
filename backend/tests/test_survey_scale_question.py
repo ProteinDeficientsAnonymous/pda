@@ -16,15 +16,18 @@ def _scale(options: list[str]) -> SurveyQuestionIn:
         (["", "fast"], ["", "fast"]),
         ([" ", ""], []),
         ([], []),
+        ([" never ", "", "sometimes", "", "always"], ["never", "", "sometimes", "", "always"]),
+        ([""] * 5, []),
     ],
 )
-def test_scale_keeps_low_and_high_end_labels(options, saved):
+def test_scale_keeps_end_or_point_labels(options, saved):
     assert _scale(options).options == saved
 
 
-def test_scale_refuses_more_than_two_end_labels():
-    with pytest.raises(ValidationError, match="at most 2 end labels"):
-        _scale(["slow", "ok", "fast"])
+@pytest.mark.parametrize("count", [3, 4, 6])
+def test_scale_refuses_labels_that_fit_neither_ends_nor_points(count):
+    with pytest.raises(ValidationError, match="2 end labels .* or 5 point labels"):
+        _scale(["x"] * count)
 
 
 def test_stars_take_no_labels():

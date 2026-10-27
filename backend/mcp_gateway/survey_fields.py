@@ -3,7 +3,7 @@ from typing import Annotated, Self
 from uuid import UUID
 
 from community._field_limits import FieldLimit
-from community._survey_schemas import SurveyIn, SurveyQuestionIn, scale_end_labels
+from community._survey_schemas import SurveyIn, SurveyQuestionIn, scale_labels
 from community.models import QuestionType, ShowIfOperator, SurveyVisibility
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
@@ -21,7 +21,7 @@ from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
 _TYPES += "(buttons); select: pick one (dropdown); checkbox: pick multiple; stars: 1-5 stars; "
-_TYPES += "scale: pick 1-5 on numbered buttons, with optional end labels; "
+_TYPES += "scale: pick 1-5 on numbered buttons, with optional end or point labels; "
 _TYPES += "datetime_poll: respondents mark yes/maybe/no on each candidate time; section: a heading "
 _TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -46,8 +46,9 @@ class SurveyQuestionFields(BaseModel):
         [],
         description=(
             "radio/select/checkbox: the choices. scale: optional [low, high] end labels, e.g. "
-            "['bad', 'great']. datetime_poll: candidate times, {WHEN} (saved as utc like the "
-            "survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
+            "['bad', 'great'], or 5 labels for points 1-5 in order. datetime_poll: candidate "
+            "times, {WHEN} (saved as utc like the survey builder, e.g. 2026-11-07T16:00:00.000Z). "
+            "none for other types"
         ),
     )
     description: str = Field(
@@ -62,7 +63,7 @@ class SurveyQuestionFields(BaseModel):
     @model_validator(mode="after")
     def _shape_options(self) -> Self:
         if self.field_type == QuestionType.SCALE:
-            self.options = scale_end_labels(self.options)
+            self.options = scale_labels(self.options)
             return self
         kind, self.options = self.field_type, [o.strip() for o in self.options if o.strip()]
         if kind in _NEEDS_OPTIONS and not self.options:
