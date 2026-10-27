@@ -4955,23 +4955,6 @@ export interface components {
              */
             datetime: string;
         };
-        /** PollResultOut */
-        PollResultOut: {
-            /**
-             * Finalized At
-             * Format: date-time
-             */
-            finalized_at: string;
-            /** Finalized By Id */
-            finalized_by_id?: string | null;
-            /** Id */
-            id: string;
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
-        };
         /** PollResultsOut */
         PollResultsOut: {
             /** Question Id */
@@ -5493,7 +5476,6 @@ export interface components {
             one_response_per_user: boolean;
             /** Opens At */
             opens_at?: string | null;
-            poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
              * @default []

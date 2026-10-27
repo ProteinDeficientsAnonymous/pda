@@ -44,13 +44,6 @@ class SurveyQuestionOut(BaseModel):
     show_if: ShowIfOut | None = None
 
 
-class PollResultOut(BaseModel):
-    id: str
-    winning_datetime: datetime
-    finalized_by_id: str | None = None
-    finalized_at: datetime
-
-
 class VoterOut(BaseModel):
     user_id: str
     name: str
@@ -91,7 +84,6 @@ class SurveyOut(BaseModel):
     created_at: datetime
     questions: list[SurveyQuestionOut] = []
     response_count: int = 0
-    poll_result: PollResultOut | None = None
     my_response_id: str | None = None
     my_answers: dict | None = None
 

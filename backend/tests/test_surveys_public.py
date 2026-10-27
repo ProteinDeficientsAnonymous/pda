@@ -2,20 +2,17 @@
 
 import json
 import logging
-from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
 from community._validation import Code
 from community.models import (
-    DatetimePollResult,
     Survey,
     SurveyQuestion,
     SurveyQuestionType,
     SurveyResponse,
     SurveyVisibility,
 )
-from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -254,21 +251,6 @@ def closed_members_survey(db):
     return survey
 
 
-@pytest.fixture
-def finalized_poll_survey(db):
-    survey = Survey.objects.create(title="Finalized poll", slug="finalized-poll", is_active=False)
-    SurveyQuestion.objects.create(
-        survey=survey,
-        label="When works?",
-        field_type=SurveyQuestionType.DATETIME_POLL,
-        options=[future_iso()],
-    )
-    DatetimePollResult.objects.create(
-        survey=survey, winning_datetime=timezone.now() + timedelta(days=30)
-    )
-    return survey
-
-
 @pytest.mark.django_db
 class TestClosedSurvey:
     def _view_url(self, survey):
@@ -323,23 +305,6 @@ class TestClosedSurvey:
         # NOT_FOUND must win over CLOSED here, or the 400 would confirm the survey exists.
         assert resp.status_code == 404
         assert_error_code(resp, Code.Survey.NOT_FOUND)
-
-    def test_get_finalized_poll_is_readable(self, api_client, finalized_poll_survey):
-        resp = api_client.get(self._view_url(finalized_poll_survey))
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["is_active"] is False
-        assert data["poll_result"] is not None
-
-    def test_submit_to_finalized_poll_rejected(self, api_client, finalized_poll_survey):
-        resp = api_client.post(
-            self._respond_url(finalized_poll_survey),
-            data=json.dumps({"answers": {}}),
-            content_type="application/json",
-        )
-        assert resp.status_code == 400
-        assert_error_code(resp, Code.Survey.CLOSED)
-        assert not SurveyResponse.objects.filter(survey=finalized_poll_survey).exists()
 
 
 # ---------------------------------------------------------------------------
