@@ -166,9 +166,6 @@ class Code:
         FEEDBACK_TYPE_TAKEN = "survey.feedback_type_taken"
         FEEDBACK_LINK_INVALID = "survey.feedback_link_invalid"
         FEEDBACK_ALREADY_SUBMITTED = "survey.feedback_already_submitted"
-        NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
-        WINNING_DATETIME_NOT_IN_OPTIONS = "survey.winning_datetime_not_in_options"
-        POLL_ALREADY_FINALIZED = "survey.poll_already_finalized"
         ANSWER_REQUIRED = "survey.answer_required"  # params: { label }
         ANSWER_INVALID_FORMAT = "survey.answer_invalid_format"  # params: { label }
         ANSWER_INVALID_OPTION = "survey.answer_invalid_option"  # params: { label }

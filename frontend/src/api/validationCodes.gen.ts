@@ -166,9 +166,6 @@ export const Code = {
     FeedbackTypeTaken: 'survey.feedback_type_taken',
     FeedbackLinkInvalid: 'survey.feedback_link_invalid',
     FeedbackAlreadySubmitted: 'survey.feedback_already_submitted',
-    NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
-    WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
-    PollAlreadyFinalized: 'survey.poll_already_finalized',
     AnswerRequired: 'survey.answer_required',
     AnswerInvalidFormat: 'survey.answer_invalid_format',
     AnswerInvalidOption: 'survey.answer_invalid_option',
@@ -427,9 +424,6 @@ export type ValidationCode =
   | 'survey.feedback_type_taken'
   | 'survey.feedback_link_invalid'
   | 'survey.feedback_already_submitted'
-  | 'survey.no_datetime_poll_question'
-  | 'survey.winning_datetime_not_in_options'
-  | 'survey.poll_already_finalized'
   | 'survey.answer_required'
   | 'survey.answer_invalid_format'
   | 'survey.answer_invalid_option'
@@ -646,9 +640,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.feedback_type_taken': [],
   'survey.feedback_link_invalid': [],
   'survey.feedback_already_submitted': [],
-  'survey.no_datetime_poll_question': [],
-  'survey.winning_datetime_not_in_options': [],
-  'survey.poll_already_finalized': [],
   'survey.answer_required': ['label'],
   'survey.answer_invalid_format': ['label'],
   'survey.answer_invalid_option': ['label'],

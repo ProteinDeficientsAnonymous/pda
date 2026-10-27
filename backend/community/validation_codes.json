@@ -712,21 +712,6 @@
         "params": []
       },
       {
-        "name": "NO_DATETIME_POLL_QUESTION",
-        "value": "survey.no_datetime_poll_question",
-        "params": []
-      },
-      {
-        "name": "WINNING_DATETIME_NOT_IN_OPTIONS",
-        "value": "survey.winning_datetime_not_in_options",
-        "params": []
-      },
-      {
-        "name": "POLL_ALREADY_FINALIZED",
-        "value": "survey.poll_already_finalized",
-        "params": []
-      },
-      {
         "name": "ANSWER_REQUIRED",
         "value": "survey.answer_required",
         "params": [
