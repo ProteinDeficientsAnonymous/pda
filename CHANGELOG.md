@@ -1,3 +1,10 @@
+## [0.205.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.9...v0.205.10) (2026-10-27)
+
+
+### Bug Fixes
+
+* **questions:** label textarea type as long answer ([#1978](https://github.com/ProteinDeficientsAnonymous/pda/issues/1978)) ([5751350](https://github.com/ProteinDeficientsAnonymous/pda/commit/575135019ac9f2f66430ca7af513b09a02530e1d))
+
 ## [0.205.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.8...v0.205.9) (2026-10-27)
 
 
