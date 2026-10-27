@@ -23,7 +23,6 @@ from community._survey_helpers import (
     survey_is_open,
 )
 from community._survey_schemas import (
-    FinalizePollIn,
     PollResultsOut,
     SurveyAnswersIn,
     SurveyOut,
@@ -32,7 +31,6 @@ from community._survey_schemas import (
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community._validation import Code, raise_validation
 from community.models import (
-    DatetimePollResult,
     Survey,
     SurveyQuestionType,
     SurveyResponse,
@@ -148,9 +146,8 @@ def get_survey_tallies(request, survey_id: UUID):
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
-    # Tallies expose voter names/photos — gate behind the same authority that
-    # can finalize the poll (MANAGE_SURVEYS / MANAGE_EVENTS / survey owner /
-    # event host). Without this any authed user could enumerate voters by UUID.
+    # Tallies expose voter names/photos — gate to MANAGE_SURVEYS / MANAGE_EVENTS /
+    # survey owner / event host. Without this any authed user could enumerate voters by UUID.
     if not _has_finalize_permission(request, survey, survey.linked_event):
         audit_log(
             logging.WARNING,
@@ -174,78 +171,3 @@ def get_survey_tallies(request, survey_id: UUID):
         for q in poll_questions
     ]
     return Status(200, tallies)
-
-
-@router.post(
-    "/surveys/{survey_id}/finalize/",
-    response={200: SurveyOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-    include_in_schema=False,
-)
-def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
-    try:
-        survey = (
-            Survey.objects.select_related("linked_event", "created_by")
-            .prefetch_related("questions")
-            .get(id=survey_id)
-        )
-    except Survey.DoesNotExist:
-        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-
-    event = survey.linked_event
-    if not _has_finalize_permission(request, survey, event):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.SURVEY,
-                id=str(survey_id),
-                details={"endpoint": "finalize_poll"},
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_poll")
-
-    if hasattr(survey, "poll_result"):
-        raise_validation(Code.Survey.POLL_ALREADY_FINALIZED, status_code=400)
-
-    poll_questions = [
-        q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
-    ]
-    if not poll_questions:
-        raise_validation(Code.Survey.NO_DATETIME_POLL_QUESTION, status_code=400)
-
-    winning_iso = payload.winning_datetime.isoformat()
-    all_options = poll_questions[0].options or []
-    if winning_iso not in all_options:
-        raise_validation(Code.Survey.WINNING_DATETIME_NOT_IN_OPTIONS, status_code=400)
-
-    DatetimePollResult.objects.create(
-        survey=survey,
-        winning_datetime=payload.winning_datetime,
-        finalized_by=request.auth,
-    )
-    survey.is_active = False
-    survey.save(update_fields=["is_active"])
-
-    if event:
-        event.start_datetime = payload.winning_datetime
-        event.datetime_tbd = False
-        event.save(update_fields=["start_datetime", "datetime_tbd"])
-
-    audit_log(
-        logging.INFO,
-        "survey_poll_finalized",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.SURVEY,
-            id=str(survey_id),
-            details={
-                "winning_datetime": payload.winning_datetime.isoformat(),
-                "linked_event_id": str(event.id) if event else None,
-            },
-        ),
-    )
-    survey.refresh_from_db()
-    return Status(200, _survey_out(survey, include_questions=True, requesting_user=request.auth))

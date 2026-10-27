@@ -144,10 +144,6 @@ class SurveyPatchIn(BaseModel):
     feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] | None = None
 
 
-class FinalizePollIn(BaseModel):
-    winning_datetime: datetime
-
-
 class SurveyQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
     field_type: SurveyQuestionType = SurveyQuestionType.TEXT
