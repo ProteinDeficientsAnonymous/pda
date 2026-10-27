@@ -1,3 +1,10 @@
+## [0.205.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.7...v0.205.8) (2026-10-27)
+
+
+### Bug Fixes
+
+* **events:** reject offset-less event datetimes with 422 instead of 500 ([#1796](https://github.com/ProteinDeficientsAnonymous/pda/issues/1796)) ([88d38d5](https://github.com/ProteinDeficientsAnonymous/pda/commit/88d38d5f7763acc94eabe9e4003d3ead0b019911))
+
 ## [0.205.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.6...v0.205.7) (2026-10-26)
 
 
