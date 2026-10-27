@@ -372,7 +372,7 @@ export function useDeleteSurveyResponse(surveyId: string) {
   });
 }
 
-// --- survey-level datetime poll (tallies + finalize) -----------------------
+// --- survey-level datetime poll tallies ------------------------------------
 
 export interface SurveyPollVoter {
   userId: string;
@@ -478,25 +478,6 @@ export async function downloadSurveyResponsesCsv(surveyId: string, slug: string)
     `/api/community/surveys/${surveyId}/responses.csv`,
     `survey-responses-${slug}.csv`,
   );
-}
-
-export function useFinalizeSurveyPoll(surveyId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (winningDatetime: Date) => {
-      const { data } = await apiClient.post<WireSurveyFull>(
-        `/api/community/surveys/${surveyId}/finalize/`,
-        { winning_datetime: winningDatetime.toISOString() },
-      );
-      return mapSurveyFull(data);
-    },
-    onSuccess: (survey) => {
-      qc.setQueryData(['surveys', 'admin', surveyId], survey);
-      void qc.invalidateQueries({ queryKey: ['surveys', 'admin'] });
-      void qc.invalidateQueries({ queryKey: ['surveys', 'admin', surveyId, 'responses'] });
-      void qc.invalidateQueries({ queryKey: ['surveys', 'admin', surveyId, 'tallies'] });
-    },
-  });
 }
 
 // Re-export survey types for convenience so admin screens don't need to

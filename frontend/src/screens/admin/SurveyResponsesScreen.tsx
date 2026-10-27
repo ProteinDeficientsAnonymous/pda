@@ -11,7 +11,6 @@ import {
   type SurveyResponseAdmin,
   useAdminSurvey,
   useDeleteSurveyResponse,
-  useFinalizeSurveyPoll,
   useSurveyPollTallies,
   useSurveyQuestionSummaries,
   useSurveyResponses,
@@ -19,7 +18,6 @@ import {
 import { formatPollOption } from '@/components/questions/pollOption';
 import { scalePointLabel } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
@@ -75,11 +73,6 @@ export default function SurveyResponsesScreen() {
   }
 
   const visibleResponses = filterResponsesByEvent(responses.data, eventFilter);
-  const firstDatetimeQuestion = datetimeQuestions[0];
-  const finalizeOptions =
-    !survey.data.pollResult && firstDatetimeQuestion && firstDatetimeQuestion.options.length > 0
-      ? firstDatetimeQuestion.options
-      : null;
 
   return (
     <ContentContainer>
@@ -115,9 +108,6 @@ export default function SurveyResponsesScreen() {
           ) : (
             <TalliesTables questions={survey.data.questions} rows={tallies.data} />
           )}
-          {finalizeOptions ? (
-            <SurveyFinalizeControls surveyId={surveyId} options={finalizeOptions} />
-          ) : null}
         </section>
       ) : null}
 
@@ -304,90 +294,4 @@ function TalliesTables({
       ))}
     </div>
   );
-}
-
-function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; options: string[] }) {
-  const [open, setOpen] = useState(false);
-  const [choice, setChoice] = useState(options[0] ?? '');
-  const finalize = useFinalizeSurveyPoll(surveyId);
-
-  async function onConfirm() {
-    const dt = new Date(choice);
-    if (Number.isNaN(dt.getTime())) {
-      toast.error('pick a valid option');
-      return;
-    }
-    try {
-      await finalize.mutateAsync(dt);
-      toast.success('poll finalized 🌱');
-      setOpen(false);
-    } catch (err) {
-      toast.error(extractApiDetail(err));
-    }
-  }
-
-  return (
-    <div className="mt-4 flex flex-col gap-2">
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        finalize poll
-      </Button>
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-        title="finalize survey poll"
-      >
-        <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4">
-          <p className="text-muted text-sm">
-            pick the winning datetime. this locks the survey and, if linked, updates the event start
-            time.
-          </p>
-          <div className="flex flex-col gap-2">
-            {options.map((opt) => (
-              <label
-                key={opt}
-                className="border-border flex cursor-pointer items-start gap-2 rounded-md border p-2 text-sm"
-              >
-                <input
-                  type="radio"
-                  name="win-opt"
-                  checked={choice === opt}
-                  onChange={() => {
-                    setChoice(opt);
-                  }}
-                  className="mt-1"
-                />
-                <span className="font-mono text-xs">{formatPollOption(opt)}</span>
-              </label>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setOpen(false);
-              }}
-            >
-              cancel
-            </Button>
-            <Button type="button" disabled={finalize.isPending} onClick={() => void onConfirm()}>
-              {finalize.isPending ? 'finalizing…' : 'confirm'}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-    </div>
-  );
-}
-
-function extractApiDetail(err: unknown): string {
-  return extractApiErrorOr(err, 'request failed');
 }
