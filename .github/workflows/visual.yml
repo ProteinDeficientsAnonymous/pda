@@ -46,7 +46,10 @@ jobs:
       ALLOWED_HOSTS: localhost,127.0.0.1
 
     steps:
+      # Shoot the PR head, not the merge ref, so it matches the merge-base baseline.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       # The merge-base is often a [skip ci] release commit, which never uploaded
       # a screenshots artifact. reg-actions then treats every image as new.
