@@ -2,7 +2,12 @@ import { LabelSuffix } from '@/components/ui/LabelSuffix';
 import { cn } from '@/utils/cn';
 
 import { FieldError } from './FieldError';
-import { RATING_SCALE_SIZE, scaleEndLabels, scalePointLabel } from './questionTypeOptions';
+import {
+  labelsEveryScalePoint,
+  RATING_SCALE_SIZE,
+  scaleLabels,
+  scalePointLabel,
+} from './questionTypeOptions';
 
 const POINTS = Array.from({ length: RATING_SCALE_SIZE }, (_, i) => i + 1);
 
@@ -10,7 +15,7 @@ interface Props {
   label: string;
   labelSuffix: string | undefined;
   value: number;
-  endLabels: string[];
+  pointLabels: string[];
   onChange: (n: number) => void;
   error?: string | undefined;
   readOnly?: boolean | undefined;
@@ -20,12 +25,14 @@ export function ScaleRating({
   label,
   labelSuffix,
   value,
-  endLabels,
+  pointLabels,
   onChange,
   error,
   readOnly,
 }: Props) {
-  const [low, high] = scaleEndLabels(endLabels);
+  const labels = scaleLabels(pointLabels);
+  const low = labels[0];
+  const high = labels[RATING_SCALE_SIZE - 1];
 
   return (
     <fieldset className="flex flex-col gap-2">
@@ -41,7 +48,7 @@ export function ScaleRating({
               type="button"
               role="radio"
               aria-checked={n === value}
-              aria-label={scalePointLabel(n, endLabels)}
+              aria-label={scalePointLabel(n, pointLabels)}
               disabled={readOnly}
               onClick={() => {
                 onChange(n);
@@ -57,7 +64,15 @@ export function ScaleRating({
             </button>
           ))}
         </div>
-        {low || high ? (
+        {labelsEveryScalePoint(pointLabels) ? (
+          <div aria-hidden="true" className="text-muted grid grid-cols-5 gap-2 text-xs">
+            {POINTS.map((n) => (
+              <span key={n} className="min-w-0 text-center break-words">
+                {labels[n - 1]}
+              </span>
+            ))}
+          </div>
+        ) : low || high ? (
           <div aria-hidden="true" className="text-muted flex justify-between gap-4 text-xs">
             <span>{low}</span>
             <span className="text-end">{high}</span>

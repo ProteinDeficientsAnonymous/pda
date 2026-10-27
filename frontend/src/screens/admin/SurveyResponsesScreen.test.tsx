@@ -171,6 +171,16 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(section).getByText('5 — fast')).toBeInTheDocument();
   });
 
+  it('should name scale rows by their point labels', () => {
+    const options = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'];
+    setup({
+      questions: [{ id: 'q-pace', label: 'Pace', fieldType: QuestionType.Scale, options }],
+      summaries: [{ ...SUMMARY_ROWS[1]!, questionId: 'q-pace', fieldType: QuestionType.Scale }],
+    });
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByText('3 — sometimes')).toBeInTheDocument();
+  });
+
   it('should share checkbox options across respondents, not across selections', () => {
     setup({
       questions: [

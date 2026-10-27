@@ -118,7 +118,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           labelSuffix={labelSuffix}
           error={error}
           value={Number(asString(value)) || 0}
-          endLabels={question.options}
+          pointLabels={question.options}
           readOnly={readOnly}
           onChange={(n) => {
             onChange(String(n));

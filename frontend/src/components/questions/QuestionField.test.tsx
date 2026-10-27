@@ -47,6 +47,20 @@ describe('QuestionField', () => {
     expect(onChange).toHaveBeenCalledWith('5');
   });
 
+  it('labels every point of a 1–5 scale when given five labels', () => {
+    const options = ['never', 'rarely', '', 'often', 'always'];
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: QuestionType.Scale, options }}
+        value=""
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: '2 — rarely' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '3' })).toBeInTheDocument();
+    expect(screen.getByText('often')).toBeInTheDocument();
+  });
+
   it('lets a datetime poll answer no for a time', () => {
     const onChange = vi.fn();
     render(

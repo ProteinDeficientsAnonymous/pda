@@ -82,11 +82,21 @@ export function scaleEndLabels(options: readonly string[]): [string, string] {
   return [options[0] ?? '', options[1] ?? ''];
 }
 
-/** Accessible name for a scale point, e.g. "5 — great" at a labeled end. */
-export function scalePointLabel(n: number, options: readonly string[]): string {
+export function labelsEveryScalePoint(options: readonly string[]): boolean {
+  return options.length === RATING_SCALE_SIZE;
+}
+
+/** Label for each point 1–5: all five as given, or just the two ends. */
+export function scaleLabels(options: readonly string[]): string[] {
+  if (labelsEveryScalePoint(options)) return [...options];
   const [low, high] = scaleEndLabels(options);
-  const end = n === 1 ? low : n === RATING_SCALE_SIZE ? high : '';
-  return end ? `${String(n)} — ${end}` : String(n);
+  return [low, '', '', '', high];
+}
+
+/** Accessible name for a scale point, e.g. "5 — great" when that point is labeled. */
+export function scalePointLabel(n: number, options: readonly string[]): string {
+  const label = scaleLabels(options)[n - 1];
+  return label ? `${String(n)} — ${label}` : String(n);
 }
 
 export function normalizeScaleEndLabels(options: readonly string[]): string[] {
