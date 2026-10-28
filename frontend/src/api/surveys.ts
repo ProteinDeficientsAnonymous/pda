@@ -49,7 +49,6 @@ export interface Survey {
   closesAt: string | null;
   maxResponses: number | null;
   responseCount: number;
-  linkedEventId: string | null;
   feedbackEventType: '' | EventTypeValue;
   questions: SurveyQuestion[];
   myResponseId: string | null;
@@ -106,7 +105,6 @@ export interface WireSurvey {
   closes_at?: string | null;
   max_responses?: number | null;
   response_count?: number;
-  linked_event_id?: string | null;
   feedback_event_type?: '' | EventTypeValue;
   questions?: WireQuestion[];
   my_response_id?: string | null;
@@ -137,7 +135,6 @@ export function mapSurvey(w: WireSurvey): Survey {
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
-    linkedEventId: w.linked_event_id ?? null,
     feedbackEventType: w.feedback_event_type ?? '',
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
