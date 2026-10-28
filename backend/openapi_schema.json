@@ -2551,17 +2551,6 @@
             "title": "Created By Photo Url",
             "type": "string"
           },
-          "datetime_poll_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Poll Slug"
-          },
           "datetime_tbd": {
             "default": false,
             "title": "Datetime Tbd",
@@ -2669,14 +2658,6 @@
               }
             ],
             "title": "Latitude"
-          },
-          "linked_surveys": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/EventSurveyOut"
-            },
-            "title": "Linked Surveys",
-            "type": "array"
           },
           "location": {
             "title": "Location",
@@ -3643,29 +3624,6 @@
           }
         },
         "title": "EventStatsOut",
-        "type": "object"
-      },
-      "EventSurveyOut": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug"
-        ],
-        "title": "EventSurveyOut",
         "type": "object"
       },
       "FeedbackIn": {
