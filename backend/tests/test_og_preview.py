@@ -3,7 +3,14 @@ import uuid
 from pathlib import Path
 
 import pytest
-from community.models import Event, EventStatus, PageVisibility
+from community.models import (
+    Event,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    Survey,
+    SurveyVisibility,
+)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
@@ -207,6 +214,47 @@ class TestEventOgPreview:
         assert (
             '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
         )
+
+
+@pytest.mark.django_db
+class TestSurveyOgPreview:
+    def test_public_survey_renders_title_and_description(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        Survey.objects.create(
+            title="Potluck Planning", description="Tell us what to bring.", slug="potluck"
+        )
+        response = api_client.get("/surveys/potluck/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Potluck Planning"' in html
+        assert '<meta property="og:description" content="Tell us what to bring."' in html
+        assert '<meta property="og:url" content="https://pda.example.com/surveys/potluck"' in html
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+
+    @pytest.mark.parametrize(
+        "extra",
+        [
+            {"visibility": SurveyVisibility.MEMBERS_ONLY},
+            {"feedback_event_type": EventType.OFFICIAL},
+        ],
+    )
+    def test_restricted_survey_shows_title_only(self, api_client, extra):
+        Survey.objects.create(
+            title="Steward Check-in", description="Private survey details.", slug="s", **extra
+        )
+        response = api_client.get("/surveys/s/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Steward Check-in"' in html
+        assert "Private survey details" not in html
+
+    def test_missing_survey_gets_site_preview(self, api_client, db):
+        response = api_client.get("/surveys/nope/preview/")
+
+        assert response.status_code == 200
+        assert '<meta property="og:title" content="pda"' in response.content.decode()
 
 
 @pytest.mark.django_db

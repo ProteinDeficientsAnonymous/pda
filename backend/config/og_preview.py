@@ -1,4 +1,11 @@
-from community.models import Event, EventStatus, PageVisibility, parse_event_ref
+from community.models import (
+    Event,
+    EventStatus,
+    PageVisibility,
+    Survey,
+    SurveyVisibility,
+    parse_event_ref,
+)
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
@@ -87,6 +94,23 @@ def event_og_preview(request, event_id: str):
         description=_truncate(event.description, _OG_DESCRIPTION_MAX),
         url=_absolute(f"/events/{event.slug or event.id}"),
         image=_absolute(media_path(event.photo)),
+    )
+
+
+def survey_og_preview(request, slug: str):
+    """OG tags for survey links; members-only and feedback surveys expose only their title."""
+    survey = Survey.objects.filter(slug=slug).first()
+    if survey is None:
+        return _site_preview(request, f"/surveys/{slug}")
+
+    is_public = survey.visibility == SurveyVisibility.PUBLIC and not survey.feedback_event_type
+    description = _truncate(survey.description, _OG_DESCRIPTION_MAX) if is_public else ""
+    return _render_preview(
+        request,
+        title=survey.title,
+        description=description or _STATIC_PAGES[""][1],
+        url=_absolute(f"/surveys/{survey.slug}"),
+        image=_absolute(_LOGO_PATH),
     )
 
 
