@@ -24,7 +24,6 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
   const update = useUpdateSurvey(survey.id);
   const [values, setValues] = useState<SurveyFormValues>({
     title: survey.title,
-    description: survey.description,
     slug: survey.slug,
     visibility: survey.visibility,
     oneResponsePerUser: survey.oneResponsePerUser,

@@ -89,6 +89,27 @@ describe('SurveyBuilderScreen', () => {
     expect(within(card).getByLabelText('thank-you message')).toHaveValue('yay');
   });
 
+  it('edits the description inline above the questions', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...wireSurvey, description: 'hi all' } });
+    mockedPatch.mockResolvedValueOnce({ data: { ...wireSurvey, description: 'welcome' } });
+    renderScreen();
+
+    const card = await screen.findByRole('article', { name: 'intro' });
+    const first = screen.getByDisplayValue('first');
+    expect(card.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const field = within(card).getByLabelText('description');
+    expect(field).toHaveValue('hi all');
+    fireEvent.change(field, { target: { value: ' welcome ' } });
+    fireEvent.blur(field);
+
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledWith('/api/community/surveys/srv-1/', {
+        description: 'welcome',
+      });
+    });
+  });
+
   it('links back to the survey list', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireSurvey });
     renderScreen();
