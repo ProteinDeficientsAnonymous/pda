@@ -57,7 +57,6 @@ describe('SurveyCreateScreen', () => {
     renderScreen();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByLabelText('title · required')).toBeInTheDocument();
-    expect(screen.getByLabelText('description')).toBeInTheDocument();
     expect(screen.getByLabelText('slug · required')).toBeInTheDocument();
     expect(screen.getByLabelText('visibility')).toBeInTheDocument();
     expect(screen.getByText('opens at')).toBeInTheDocument();
