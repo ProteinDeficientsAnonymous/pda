@@ -1,11 +1,9 @@
 import json
-from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
 from community._validation import Code
-from community.models import Event, EventType, PageVisibility, Survey, SurveyResponse
-from django.utils import timezone
+from community.models import Survey, SurveyResponse
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
@@ -117,36 +115,6 @@ class TestFeedbackType:
         assert resp.json()["feedback_event_type"] == ""
         survey.refresh_from_db()
         assert survey.feedback_event_type == ""
-
-    def test_feedback_survey_drops_linked_event(self, api_client, admin_headers, surveys_admin):
-        event = Event.objects.create(
-            title="Potluck",
-            start_datetime=timezone.now() + timedelta(days=3),
-            event_type=EventType.OFFICIAL,
-            visibility=PageVisibility.PUBLIC,
-            created_by=surveys_admin,
-        )
-        resp = _post(
-            api_client,
-            _payload(feedback_event_type="official", linked_event_id=str(event.id)),
-            admin_headers,
-        )
-        assert resp.status_code == 201
-        assert resp.json()["linked_event_id"] is None
-
-    def test_patch_drops_linked_event_when_marking(self, api_client, admin_headers, surveys_admin):
-        event = Event.objects.create(
-            title="Potluck",
-            start_datetime=timezone.now() + timedelta(days=3),
-            event_type=EventType.OFFICIAL,
-            visibility=PageVisibility.PUBLIC,
-            created_by=surveys_admin,
-        )
-        survey = Survey.objects.create(title="Linked", slug="linked", linked_event=event)
-        resp = _patch(api_client, survey.id, {"feedback_event_type": "club"}, admin_headers)
-        assert resp.status_code == 200
-        survey.refresh_from_db()
-        assert survey.linked_event is None
 
     def test_cannot_force_anonymous_after_named_responses(self, api_client, admin_headers):
         survey = Survey.objects.create(title="Named", slug="named", anonymous=False)

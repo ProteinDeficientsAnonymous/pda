@@ -10,9 +10,6 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.fields import build
 from mcp_gateway.survey_edit_fields import normalize_settings, settings_diff
 
-# The website forces these on a feedback survey, so a change to them would never be saved.
-_FEEDBACK_FIXED = ("anonymous", "linked_event_id")
-
 
 @dataclass(frozen=True)
 class Step:
@@ -47,9 +44,10 @@ def operation(number: int) -> Iterator[None]:
 
 def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -> None:
     changed = normalize_settings(changed, detail["title"])
-    forced = [key for key in _FEEDBACK_FIXED if key in changed and changed[key] != detail[key]]
+    # The website forces anonymous on a feedback survey, so a change to it would never be saved.
+    forced = "anonymous" in changed and changed["anonymous"] != detail["anonymous"]
     if detail["feedback_event_type"] and forced:
-        raise ToolError("feedback surveys are always anonymous and never linked to an event")
+        raise ToolError("feedback surveys are always anonymous")
     diff = settings_diff(detail, changed)
     if detail["response_count"] and "anonymous" in diff:
         edit.blockers.append(

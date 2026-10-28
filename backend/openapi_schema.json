@@ -6561,17 +6561,6 @@
             "title": "Is Active",
             "type": "boolean"
           },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
-          },
           "max_responses": {
             "anyOf": [
               {
@@ -6651,17 +6640,6 @@
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -6771,17 +6749,6 @@
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -6947,17 +6914,6 @@
               }
             ],
             "title": "Is Active"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [

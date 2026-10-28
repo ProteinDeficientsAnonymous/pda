@@ -15,11 +15,11 @@ from mcp_gateway.view_calls import _tool_error, call_view
 
 _LIST_FIELDS = (
     *("id", "slug", "title", "is_active", "visibility", "max_responses"),
-    *("response_count", "linked_event_id"),
+    "response_count",
 )
 _SETTINGS = (
     *("id", "slug", "title", "description", "visibility", "is_active", "one_response_per_user"),
-    *("anonymous", "confirmation_message", "max_responses", "linked_event_id"),
+    *("anonymous", "confirmation_message", "max_responses"),
     *("feedback_event_type", "response_count"),
 )
 
