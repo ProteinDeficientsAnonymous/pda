@@ -20,6 +20,7 @@ import { surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
+import { SurveyDescriptionCard } from './SurveyDescriptionCard';
 import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
 import { SurveyThankYouCard } from './SurveyThankYouCard';
@@ -182,6 +183,8 @@ export default function SurveyBuilderScreen() {
             {extractApiErrorOr(reorder.error, "couldn't reorder questions — try again")}
           </p>
         ) : null}
+
+        <SurveyDescriptionCard surveyId={surveyId} description={currentSurvey.description} />
 
         {currentSurvey.questions.length === 0 ? (
           <p className="text-muted mb-3 text-sm">no questions yet 🌿</p>

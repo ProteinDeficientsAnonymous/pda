@@ -4,11 +4,13 @@ import { useEvents } from '@/api/events';
 import type { SurveyInput } from '@/api/surveyAdmin';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { type Event, EventType, type EventTypeValue } from '@/models/event';
 
-export type SurveyFormValues = Omit<SurveyInput, 'isActive' | 'confirmationMessage'>;
+export type SurveyFormValues = Omit<
+  SurveyInput,
+  'isActive' | 'confirmationMessage' | 'description'
+>;
 
 interface Props {
   values: SurveyFormValues;
@@ -61,15 +63,6 @@ export function SurveyFields({
         hint="short url segment — /surveys/:slug"
         error={slugError}
         maxLength={100}
-      />
-      <Textarea
-        label="description"
-        value={values.description}
-        onChange={(e) => {
-          onChange({ description: e.target.value });
-        }}
-        rows={3}
-        maxLength={2000}
       />
       <Select
         label="visibility"

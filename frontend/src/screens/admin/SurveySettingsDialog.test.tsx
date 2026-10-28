@@ -76,7 +76,6 @@ describe('SurveySettingsDialog', () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
         title: 'new title',
-        description: 'about this survey',
         slug: 'old-slug',
         visibility: 'public',
         oneResponsePerUser: true,
