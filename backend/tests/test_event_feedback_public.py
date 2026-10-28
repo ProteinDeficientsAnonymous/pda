@@ -252,6 +252,23 @@ class TestSubmitFeedback:
         assert_error_code(second, Code.Survey.FEEDBACK_ALREADY_SUBMITTED)
         assert SurveyResponse.objects.filter(survey=feedback_survey).count() == 1
 
+    def test_same_member_can_respond_for_another_event(
+        self, api_client, feedback_survey, feedback_request, event, test_user
+    ):
+        assert _submit(api_client, feedback_request, feedback_survey).status_code == 201
+        next_event = Event.objects.create(
+            title="vegan picnic",
+            event_type=EventType.OFFICIAL,
+            start_datetime=event.start_datetime,
+            end_datetime=event.end_datetime,
+        )
+        next_request = EventFeedbackRequest.objects.create(
+            event=next_event, user=test_user, token=EventFeedbackRequest.new_token()
+        )
+        assert _submit(api_client, next_request, feedback_survey).status_code == 201
+        stored = SurveyResponse.objects.filter(survey=feedback_survey)
+        assert sorted(r.event_id for r in stored) == sorted([event.id, next_event.id])
+
     def test_unknown_token_404(self, api_client, feedback_survey):
         response = api_client.post(
             RESPOND_URL,
