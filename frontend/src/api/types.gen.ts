@@ -3674,8 +3674,6 @@ export interface components {
              * @default
              */
             created_by_photo_url: string;
-            /** Datetime Poll Slug */
-            datetime_poll_slug?: string | null;
             /**
              * Datetime Tbd
              * @default false
@@ -3749,11 +3747,6 @@ export interface components {
             is_past: boolean;
             /** Latitude */
             latitude?: number | null;
-            /**
-             * Linked Surveys
-             * @default []
-             */
-            linked_surveys: components["schemas"]["EventSurveyOut"][];
             /** Location */
             location: string;
             /** Longitude */
@@ -4141,15 +4134,6 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
-        };
-        /** EventSurveyOut */
-        EventSurveyOut: {
-            /** Id */
-            id: string;
-            /** Slug */
-            slug: string;
-            /** Title */
-            title: string;
         };
         /** FeedbackIn */
         FeedbackIn: {
