@@ -29,7 +29,6 @@ describe('event detail — long user content wraps (issue 1131)', () => {
   it('wraps a long other-link label so it cannot overflow the viewport', () => {
     const event = {
       otherLink: `https://example.com/${LONG_TOKEN}`,
-      linkedSurveys: [],
     } as unknown as Event;
     renderIn(<LinksSection event={event} />);
     const link = screen.getByRole('link');

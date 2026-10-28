@@ -88,12 +88,6 @@ export interface EventTag {
   slug: string;
 }
 
-export interface EventLinkedSurvey {
-  id: string;
-  title: string;
-  slug: string;
-}
-
 export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 
 export interface EventRsvpQuestion {
@@ -180,7 +174,6 @@ export interface Event {
 
   datetimeTbd: boolean;
   hasPoll: boolean;
-  datetimePollSlug: string | null;
 
   createdById: string | null;
   createdByName: string | null;
@@ -196,7 +189,6 @@ export interface Event {
   myQuestionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
-  linkedSurveys: EventLinkedSurvey[];
   invitedUserIds: string[];
   invitedUserNames: string[];
   invitedUserPhotoUrls: string[];
