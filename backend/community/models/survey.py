@@ -31,13 +31,6 @@ class Survey(models.Model):
     feedback_event_type = models.CharField(
         max_length=20, choices=EventType.choices, blank=True, default=""
     )
-    linked_event = models.ForeignKey(
-        "community.Event",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="surveys",
-    )
     created_by = models.ForeignKey(
         "users.User",
         null=True,
@@ -48,7 +41,6 @@ class Survey(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     if TYPE_CHECKING:
-        linked_event_id: uuid.UUID | None
         created_by_id: uuid.UUID | None
         questions: "Manager[SurveyQuestion]"
         responses: "Manager[SurveyResponse]"

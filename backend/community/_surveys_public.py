@@ -135,20 +135,13 @@ def submit_survey_response(
 )
 def get_survey_tallies(request, survey_id: UUID):
     try:
-        # select_related linked_event: _has_finalize_permission dereferences the
-        # event object (its created_by_id / co_hosts). created_by is NOT joined —
-        # the permission check only reads survey.created_by_id (the FK column).
-        survey = (
-            Survey.objects.select_related("linked_event")
-            .prefetch_related("questions")
-            .get(id=survey_id)
-        )
+        survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
     # Tallies expose voter names/photos — gate to MANAGE_SURVEYS / MANAGE_EVENTS /
-    # survey owner / event host. Without this any authed user could enumerate voters by UUID.
-    if not _has_finalize_permission(request, survey, survey.linked_event):
+    # survey owner. Without this any authed user could enumerate voters by UUID.
+    if not _has_finalize_permission(request, survey):
         audit_log(
             logging.WARNING,
             "permission_denied",

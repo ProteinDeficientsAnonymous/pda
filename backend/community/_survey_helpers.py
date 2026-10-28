@@ -17,7 +17,6 @@ from community._survey_schemas import (
 )
 from community._validation import Code, raise_validation
 from community.models import (
-    Event,
     PollAvailability,
     Survey,
     SurveyQuestion,
@@ -243,13 +242,9 @@ def _tally_question(
     )
 
 
-def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:
+def _has_finalize_permission(request, survey: Survey) -> bool:
     if request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
         return True
     if request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if survey.created_by_id == request.auth.pk:
-        return True
-    if event and event.co_hosts.filter(pk=request.auth.pk).exists():
-        return True
-    return False
+    return survey.created_by_id == request.auth.pk
