@@ -1,3 +1,10 @@
+# [0.207.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.1...v0.207.0) (2026-10-28)
+
+
+### Features
+
+* **surveys:** show survey title in shared link previews ([#1983](https://github.com/ProteinDeficientsAnonymous/pda/issues/1983)) ([5f92f24](https://github.com/ProteinDeficientsAnonymous/pda/commit/5f92f24ac5f3b3b4164259910536da3d5d69199b))
+
 ## [0.206.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.0...v0.206.1) (2026-10-28)
 
 
