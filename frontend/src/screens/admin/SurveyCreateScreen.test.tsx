@@ -14,12 +14,6 @@ vi.mock('@/api/surveyAdmin', () => ({
   useCreateSurvey: () => ({ mutateAsync: createMutateAsync, isPending: false }),
 }));
 
-vi.mock('@/api/events', () => ({
-  useEvents: () => ({
-    data: [{ id: 'evt-1', title: 'Potluck', startDatetime: new Date('2026-10-01T18:00:00Z') }],
-  }),
-}));
-
 vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof RouterDom>();
   return { ...actual, useNavigate: () => navigate };
@@ -43,7 +37,6 @@ function renderScreen() {
 async function fillForm() {
   await userEvent.type(screen.getByLabelText('title · required'), 'retreat a');
   await userEvent.type(screen.getByLabelText('slug · required'), 'retreat-a');
-  await userEvent.selectOptions(screen.getByLabelText('linked event'), 'evt-1');
 }
 
 beforeEach(() => {
@@ -94,7 +87,6 @@ describe('SurveyCreateScreen', () => {
       expect.objectContaining({
         title: 'retreat a',
         slug: 'retreat-a',
-        linkedEventId: 'evt-1',
         maxResponses: 25,
         opensAt: null,
         closesAt: null,
@@ -117,17 +109,6 @@ describe('SurveyCreateScreen', () => {
     await userEvent.type(slug, '-2');
     expect(slug).not.toHaveAttribute('aria-invalid');
     expect(screen.queryByText('a survey with that slug already exists')).not.toBeInTheDocument();
-  });
-
-  it('shows a linked event error on the dropdown', async () => {
-    createMutateAsync.mockRejectedValue(fieldError('event.not_found', 'linked_event_id'));
-    renderScreen();
-    await fillForm();
-    await userEvent.click(screen.getByRole('button', { name: 'create' }));
-
-    expect(await screen.findByText('event not found')).toBeInTheDocument();
-    expect(screen.getByLabelText('linked event')).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('shows a taken feedback type inline on the select', async () => {
