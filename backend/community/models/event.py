@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from community.models.cohost_invite import EventCoHostInvite
     from community.models.comment import EventComment
     from community.models.poll import EventPoll
-    from community.models.survey import Survey
 
 
 # How long an event with no end_datetime is treated as running; mirrors frontend DEFAULT_EVENT_DURATION_MS.
@@ -109,7 +108,6 @@ class Event(models.Model):
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
         rsvps: "Manager[EventRSVP]"
-        surveys: "Manager[Survey]"
         poll: "EventPoll"
         comments: "Manager[EventComment]"
         cohost_invites: "Manager[EventCoHostInvite]"
