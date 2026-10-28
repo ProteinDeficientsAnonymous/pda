@@ -1,7 +1,6 @@
 import asyncio
 import json
 from unittest.mock import DEFAULT, patch
-from uuid import uuid4
 
 import pytest
 from audit.models import AuditLogEntry
@@ -140,8 +139,7 @@ def test_token_bound_to_changes_and_state_and_single_use(surveys_admin):
 
 def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
     survey = _survey(feedback_event_type="official", anonymous=True, responses=1)
-    for settings in ({"anonymous": False}, {"linked_event_id": str(uuid4())}):
-        assert "always anonymous" in _refused(surveys_admin, survey, settings=settings)
+    assert "always anonymous" in _refused(surveys_admin, survey, settings={"anonymous": False})
     assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["confirm_token"]
 
 

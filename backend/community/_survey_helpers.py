@@ -93,7 +93,6 @@ def _survey_out(
         opens_at=survey.opens_at,
         closes_at=survey.closes_at,
         max_responses=survey.max_responses,
-        linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
         feedback_event_type=survey.feedback_event_type,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
@@ -151,15 +150,13 @@ def _ensure_feedback_type_free(survey: Survey | None, event_type: str) -> None:
 def _force_feedback_defaults(survey: Survey | None, data: dict) -> None:
     if data.get("anonymous", survey.anonymous if survey else None) is not True:
         data["anonymous"] = True
-    if data.get("linked_event_id", survey.linked_event_id if survey else None) is not None:
-        data["linked_event_id"] = None
 
 
 def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     """Normalize a survey write that sets or keeps a feedback event type.
 
     survey(Survey | None): the survey being updated, None on create.
-    return(dict): data, with anonymous forced on and the linked event dropped when typed.
+    return(dict): data, with anonymous forced on when typed.
     """
     if "feedback_event_type" in data and data["feedback_event_type"] is None:
         del data["feedback_event_type"]
@@ -170,22 +167,6 @@ def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     _ensure_feedback_type_free(survey, resulting)
     _force_feedback_defaults(survey, data)
     return data
-
-
-def _apply_linked_event_update(updates: dict) -> dict:
-    """Resolve linked_event_id → linked_event object in update dict.
-
-    Raises ValidationException if the referenced event doesn't exist.
-    """
-    eid = updates.pop("linked_event_id")
-    if not eid:
-        updates["linked_event"] = None
-        return updates
-    try:
-        updates["linked_event"] = Event.objects.get(id=eid)
-    except Event.DoesNotExist:
-        raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
-    return updates
 
 
 def _submit_out(response: SurveyResponse, user_name: str | None) -> SurveySubmitOut:

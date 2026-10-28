@@ -117,17 +117,6 @@ class TestCreateSurvey:
         assert_error_code(response, Code.Survey.SLUG_ALREADY_EXISTS, "slug")
         assert Survey.objects.filter(slug=survey.slug).count() == 1
 
-    def test_unknown_linked_event_400(self, api_client, admin_headers):
-        response = _post(
-            api_client,
-            "/api/community/surveys/",
-            {"title": "Linked", "slug": "linked", "linked_event_id": MISSING_ID},
-            admin_headers,
-        )
-        assert response.status_code == 400
-        assert_error_code(response, Code.Event.NOT_FOUND, "linked_event_id")
-        assert not Survey.objects.filter(slug="linked").exists()
-
 
 @pytest.mark.django_db
 class TestGetSurveyAdmin:

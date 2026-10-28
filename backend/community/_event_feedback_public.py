@@ -45,7 +45,6 @@ def _public_survey_out(survey: Survey) -> SurveyOut:
             "slug": "",
             "response_count": 0,
             "max_responses": None,
-            "linked_event_id": None,
             "created_by_id": None,
         }
     )

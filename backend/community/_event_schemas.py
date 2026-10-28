@@ -99,12 +99,6 @@ class TagOut(BaseModel):
     slug: str
 
 
-class EventSurveyOut(BaseModel):
-    id: str
-    title: str
-    slug: str
-
-
 class TagIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
 
