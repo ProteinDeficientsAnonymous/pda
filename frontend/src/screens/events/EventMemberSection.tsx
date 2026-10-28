@@ -143,11 +143,10 @@ export function LocationSection({ event }: { event: Event }) {
 
 export function LinksSection({ event }: { event: Event }) {
   const links = buildEventLinks(event);
-  const feedbackSurveys = event.linkedSurveys.filter((s) => s.slug !== event.datetimePollSlug);
   const isAuthed = useAuthStore((s) => s.user !== null);
   const feedbackToken = useMyEventFeedback(event.id, isAuthed && event.isPast).data?.token ?? null;
 
-  if (links.length === 0 && feedbackSurveys.length === 0 && !feedbackToken) return null;
+  if (links.length === 0 && !feedbackToken) return null;
   return (
     <Card label="links">
       <ul className="flex flex-col gap-2 text-sm">
@@ -161,16 +160,6 @@ export function LinksSection({ event }: { event: Event }) {
             >
               {l.label}
             </a>
-          </li>
-        ))}
-        {feedbackSurveys.map((survey) => (
-          <li key={survey.slug}>
-            <Link
-              to={`/surveys/${survey.slug}`}
-              className="text-brand-700 hover:text-brand-900 [overflow-wrap:anywhere] break-words"
-            >
-              {survey.title.toLowerCase()}
-            </Link>
           </li>
         ))}
         {feedbackToken ? (
