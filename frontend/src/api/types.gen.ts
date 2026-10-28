@@ -5359,8 +5359,6 @@ export interface components {
              * @default true
              */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /**
@@ -5393,8 +5391,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** Opens At */
@@ -5443,8 +5439,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** My Answers */
@@ -5491,8 +5485,6 @@ export interface components {
             feedback_event_type?: ("official" | "club" | "") | null;
             /** Is Active */
             is_active?: boolean | null;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** One Response Per User */

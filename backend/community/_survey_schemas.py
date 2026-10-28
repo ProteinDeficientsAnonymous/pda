@@ -79,7 +79,6 @@ class SurveyOut(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
-    linked_event_id: str | None = None
     feedback_event_type: str = ""
     created_by_id: str | None = None
     created_at: datetime
@@ -98,7 +97,6 @@ class SurveyListOut(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
-    linked_event_id: str | None = None
     created_at: datetime
     response_count: int = 0
 
@@ -115,7 +113,6 @@ class SurveyIn(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
-    linked_event_id: str | None = None
     feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = ""
 
 
@@ -133,7 +130,6 @@ class SurveyPatchIn(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
-    linked_event_id: str | None = None
     feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] | None = None
 
 

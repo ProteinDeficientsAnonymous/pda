@@ -78,7 +78,6 @@ def test_list_surveys_newest_first_in_new_york_time(surveys_admin):
         "visibility": "public",
         "max_responses": 10,
         "response_count": 1,
-        "linked_event_id": None,
         "opens_at": None,
         "closes_at": None,
         "edit_url": f"{BASE_URL}/admin/surveys/{old.id}",

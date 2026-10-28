@@ -115,7 +115,6 @@ class SurveySettings(BaseModel):
     opens_at: NewYorkTime = Field(None, description=f"first time it takes responses, {WHEN}")
     closes_at: NewYorkTime = Field(None, description=f"stops taking responses, {WHEN}")
     max_responses: int | None = Field(None, description="stop after this many; empty: unlimited")
-    linked_event_id: UUID | None = Field(None, description="event id this survey is for")
     confirmation_message: str = Field("", description="shown to the respondent after submitting")
 
 
