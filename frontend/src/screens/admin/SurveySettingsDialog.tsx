@@ -31,7 +31,6 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
     opensAt: survey.opensAt,
     closesAt: survey.closesAt,
     maxResponses: survey.maxResponses,
-    linkedEventId: survey.linkedEventId,
     feedbackEventType: survey.feedbackEventType,
   });
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +64,6 @@ function SurveySettingsDialogBody({ survey, open, onClose }: Props) {
             fieldErrors.clearFor(patch);
           }}
           slugError={fieldErrors.slugError ?? undefined}
-          linkedEventError={fieldErrors.linkedEventError ?? undefined}
           feedbackTypeError={fieldErrors.feedbackTypeError ?? undefined}
           anonymousLocked={survey.responseCount > 0}
         />

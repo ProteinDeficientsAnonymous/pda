@@ -21,7 +21,6 @@ export interface SurveySummary {
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
-  linkedEventId: string | null;
   createdAt: string;
   responseCount: number;
 }
@@ -35,7 +34,6 @@ interface WireSummary {
   opens_at: string | null;
   closes_at: string | null;
   max_responses: number | null;
-  linked_event_id: string | null;
   created_at: string;
   response_count: number;
 }
@@ -50,7 +48,6 @@ function mapSummary(w: WireSummary): SurveySummary {
     opensAt: w.opens_at,
     closesAt: w.closes_at,
     maxResponses: w.max_responses,
-    linkedEventId: w.linked_event_id,
     createdAt: w.created_at,
     responseCount: w.response_count,
   };
@@ -84,7 +81,6 @@ interface WireSurveyFull {
   closes_at?: string | null;
   max_responses?: number | null;
   response_count?: number;
-  linked_event_id?: string | null;
   feedback_event_type?: '' | EventTypeValue;
   questions?: WireQuestion[];
   my_response_id?: string | null;
@@ -106,7 +102,6 @@ function mapSurveyFull(w: WireSurveyFull): PublicSurvey {
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
-    linkedEventId: w.linked_event_id ?? null,
     feedbackEventType: w.feedback_event_type ?? '',
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
@@ -139,7 +134,6 @@ export interface SurveyInput {
   opensAt: string | null;
   closesAt: string | null;
   maxResponses: number | null;
-  linkedEventId: string | null;
   feedbackEventType: '' | EventTypeValue;
 }
 
@@ -159,7 +153,6 @@ export function useCreateSurvey() {
         opens_at: input.opensAt,
         closes_at: input.closesAt,
         max_responses: input.maxResponses,
-        linked_event_id: input.linkedEventId,
         feedback_event_type: input.feedbackEventType,
       });
       return mapSurveyFull(data);
@@ -188,7 +181,6 @@ export function useUpdateSurvey(surveyId: string) {
       if (patch.opensAt !== undefined) body.opens_at = patch.opensAt;
       if (patch.closesAt !== undefined) body.closes_at = patch.closesAt;
       if (patch.maxResponses !== undefined) body.max_responses = patch.maxResponses;
-      if (patch.linkedEventId !== undefined) body.linked_event_id = patch.linkedEventId;
       if (patch.feedbackEventType !== undefined) body.feedback_event_type = patch.feedbackEventType;
       const { data } = await apiClient.patch<WireSurveyFull>(
         `/api/community/surveys/${surveyId}/`,

@@ -22,7 +22,6 @@ function makeSurvey(overrides: Partial<SurveySummary> = {}): SurveySummary {
     opensAt: null,
     closesAt: null,
     maxResponses: null,
-    linkedEventId: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     responseCount: 0,
     ...overrides,
