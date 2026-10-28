@@ -1,3 +1,10 @@
+## [0.206.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.0...v0.206.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **events:** show event photo in link previews for non-public events ([#1989](https://github.com/ProteinDeficientsAnonymous/pda/issues/1989)) ([bd015bc](https://github.com/ProteinDeficientsAnonymous/pda/commit/bd015bcaa1ad5e8e9d11ffb7c769168ce39ef1e5))
+
 # [0.206.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.10...v0.206.0) (2026-10-27)
 
 
