@@ -7,14 +7,8 @@ from users.models import User
 from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _user(phone: str, name: str, **extra) -> User:
-    return User.objects.create_user(
-        phone_number=phone, password="Testpass123!", first_name=name, last_name="Last", **extra
-    )
-
 
 _seq = {"n": 0}
 
@@ -23,8 +17,8 @@ def _make_events(count: int, viewer: User | None) -> None:
     for _ in range(count):
         _seq["n"] += 1
         i = _seq["n"]
-        creator = _user(f"+1415555{i:04d}", f"Host{i}", hide_last_name=True)
-        cohost = _user(f"+1415666{i:04d}", f"Co{i}", hide_last_name=True)
+        creator = make_user(first_name=f"Host{i}", hide_last_name=True, last_name="Last")
+        cohost = make_user(first_name=f"Co{i}", hide_last_name=True, last_name="Last")
         event = Event.objects.create(
             title=f"Event {i}", start_datetime=future_iso(days=2 + i), created_by=creator
         )
@@ -69,7 +63,7 @@ class TestListEventsQueryCount:
         self._assert_constant(api_client, test_user, auth_headers)
 
     def test_admin(self, api_client):
-        admin = _user("+12025550901", "Admin")
+        admin = make_user(first_name="Admin", last_name="Last")
         admin.roles.add(Role.objects.get(name="admin", is_default=True))
         self._assert_constant(api_client, admin, auth_headers_for(admin))
 
@@ -78,15 +72,15 @@ def _add_people(event: Event, count: int) -> None:
     for _ in range(count):
         _seq["n"] += 1
         i = _seq["n"]
-        event.co_hosts.add(_user(f"+1415777{i:04d}", f"Co{i}", hide_last_name=True))
-        guest = _user(f"+1415888{i:04d}", f"Guest{i}", hide_last_name=True)
+        event.co_hosts.add(make_user(first_name=f"Co{i}", hide_last_name=True, last_name="Last"))
+        guest = make_user(first_name=f"Guest{i}", hide_last_name=True, last_name="Last")
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("path", ["", "guests/"])
 def test_event_detail_names_do_not_query_per_person(api_client, test_user, auth_headers, path):
-    host = _user("+12025550902", "Host", hide_last_name=True)
+    host = make_user(first_name="Host", hide_last_name=True, last_name="Last")
     event = Event.objects.create(
         title="Busy", start_datetime=future_iso(days=4), created_by=host, rsvp_enabled=True
     )
@@ -104,7 +98,9 @@ def test_event_detail_names_do_not_query_per_person(api_client, test_user, auth_
 
 @pytest.mark.django_db
 def test_visible_names_check_viewer_roles_once(test_user, django_assert_num_queries):
-    targets = [_user(f"+1415999{i:04d}", f"Hidden{i}", hide_last_name=True) for i in range(5)]
+    targets = [
+        make_user(first_name=f"Hidden{i}", hide_last_name=True, last_name="Last") for i in range(5)
+    ]
     viewer = User.objects.get(pk=test_user.pk)
     with django_assert_num_queries(1):
         for target in targets:
