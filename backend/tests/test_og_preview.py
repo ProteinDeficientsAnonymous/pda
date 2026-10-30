@@ -93,7 +93,9 @@ class TestEventOgPreview:
     @pytest.mark.parametrize(
         "visibility", [PageVisibility.MEMBERS_ONLY, PageVisibility.INVITE_ONLY]
     )
-    def test_non_public_event_shows_title_and_photo(self, api_client, db, settings, visibility):
+    def test_non_public_event_shows_title_description_and_photo(
+        self, api_client, db, settings, visibility
+    ):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         event = Event.objects.create(
             title="Stewards Gathering",
@@ -115,7 +117,9 @@ class TestEventOgPreview:
         assert (
             '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
         )
-        assert "Secret details" not in html
+        assert (
+            '<meta property="og:description" content="Secret details about the gathering."' in html
+        )
         assert "Secret Spot" not in html
 
     def test_non_public_event_without_photo_uses_logo(self, api_client, db, settings):

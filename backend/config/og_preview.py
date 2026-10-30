@@ -74,26 +74,21 @@ def _site_preview(request, path: str):
 
 
 def event_og_preview(request, event_id: str):
-    """OG tags for link scrapers; non-public events expose only title and photo, drafts nothing."""
+    """OG tags for link scrapers; non-public events fall back to the logo image, drafts nothing."""
     event = Event.objects.filter(parse_event_ref(event_id).as_q()).first()
     if event is None or event.status not in _PREVIEWABLE_STATUSES:
         return _site_preview(request, f"/events/{event_id}")
 
-    if event.visibility != PageVisibility.PUBLIC:
-        return _render_preview(
-            request,
-            title=event.title,
-            description=_STATIC_PAGES[""][1],
-            url=_absolute(f"/events/{event.slug or event.id}"),
-            image=_absolute(media_path(event.photo) or _LOGO_PATH),
-        )
+    image = media_path(event.photo)
+    if not image and event.visibility != PageVisibility.PUBLIC:
+        image = _LOGO_PATH
 
     return _render_preview(
         request,
         title=event.title,
         description=_truncate(event.description, _OG_DESCRIPTION_MAX),
         url=_absolute(f"/events/{event.slug or event.id}"),
-        image=_absolute(media_path(event.photo)),
+        image=_absolute(image),
     )
 
 
