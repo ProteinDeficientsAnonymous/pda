@@ -19,8 +19,8 @@ from mcp_gateway.server import pda_mcp
 from mcp_gateway.tools.events_read import _my_events
 from mcp_gateway.view_calls import call_view
 
+from tests._mcp_tool_helpers import signed_in
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
-from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -31,7 +31,7 @@ def _event(user, title, days=7, **fields):
 
 
 def _call(user, name, **arguments):
-    token = _signed_in(user)
+    token = signed_in(user)
     try:
         return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
     finally:

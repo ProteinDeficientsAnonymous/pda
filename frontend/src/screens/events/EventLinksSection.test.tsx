@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useMyEventFeedback } from '@/api/eventFeedbackHost';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import { LinksSection } from './EventMemberSection';
@@ -17,7 +17,7 @@ function mockMyFeedback(token: string | null) {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   mockMyFeedback(null);
 });
 
@@ -38,7 +38,7 @@ describe('LinksSection', () => {
 
 describe('LinksSection — leave feedback', () => {
   beforeEach(() => {
-    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
+    setAuthed(makeUser());
   });
 
   it('links to the feedback page with the token in the fragment', () => {
@@ -61,7 +61,7 @@ describe('LinksSection — leave feedback', () => {
   });
 
   it('does not ask for the token when signed out, even on a past event', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderLinks(makeEvent({ isPast: true }));
     expect(useMyEventFeedback).toHaveBeenLastCalledWith('ev1', false);
   });

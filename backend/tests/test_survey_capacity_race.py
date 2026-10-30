@@ -4,8 +4,9 @@ import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from django import db
 from django.test import Client
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+
+from tests._auth import auth_headers_for
 
 
 def _make_user(i):
@@ -15,11 +16,6 @@ def _make_user(i):
         first_name=f"Racer{i}",
         last_name="",
     )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -44,7 +40,7 @@ class TestSurveyCapacityRace:
                     f"/api/community/surveys/view/{survey.slug}/respond/",
                     {"answers": {str(question.id): f"answer {i}"}},
                     content_type="application/json",
-                    **_jwt_headers(users[i]),
+                    **auth_headers_for(users[i]),
                 )
                 results[i] = resp.status_code
             finally:
