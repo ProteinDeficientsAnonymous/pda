@@ -8,9 +8,9 @@ from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from django.apps import apps as django_apps
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 from tests.conftest import future_iso
 
 
@@ -19,15 +19,9 @@ def _auth(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
-def _user(n):
-    return User.objects.create_user(
-        phone_number=f"+1202555{9200 + n}", password="x", first_name=f"U{n}"
-    )
-
-
 @pytest.fixture
 def host(db):
-    return _user(0)
+    return make_user()
 
 
 @pytest.fixture
@@ -40,13 +34,13 @@ def full_event(db, host):
         allow_plus_ones=True,
         created_by=host,
     )
-    EventRSVP.objects.create(event=event, user=_user(1), status=RSVPStatus.ATTENDING)
+    EventRSVP.objects.create(event=event, user=make_user(), status=RSVPStatus.ATTENDING)
     return event
 
 
 @pytest.fixture
 def waitlisted(full_event):
-    users = [_user(n) for n in (2, 3, 4)]
+    users = [make_user() for _ in range(3)]
     for u in users:
         EventRSVP.objects.create(event=full_event, user=u, status=RSVPStatus.WAITLISTED)
     return users
@@ -84,7 +78,7 @@ class TestReorderWaitlist:
     def test_new_joiner_goes_after_positioned_rows(self, api_client, full_event, host, waitlisted):
         a, b, c = waitlisted
         _reorder(api_client, full_event, host, [c.pk, b.pk, a.pk])
-        late = _user(5)
+        late = make_user()
         EventRSVP.objects.create(event=full_event, user=late, status=RSVPStatus.WAITLISTED)
         response = _reorder(api_client, full_event, host, [c.pk, b.pk, a.pk, late.pk])
         assert _waitlisted_guest_ids(response) == [str(c.pk), str(b.pk), str(a.pk), str(late.pk)]
@@ -143,7 +137,7 @@ class TestWaitlistPositionOnJoin:
         assert rsvp.waitlist_position == 4
 
     def test_update_or_create_assigns_position(self, full_event, waitlisted):
-        late = _user(6)
+        late = make_user()
         EventRSVP.objects.update_or_create(
             event=full_event, user=late, defaults={"status": RSVPStatus.WAITLISTED}
         )
@@ -164,7 +158,7 @@ def test_backfill_numbers_existing_waitlists_in_line_order(full_event):
     backfill = importlib.import_module(
         "community.migrations.0097_backfill_waitlist_positions"
     ).backfill_positions
-    users = [_user(n) for n in (7, 8, 9)]
+    users = [make_user() for _ in range(3)]
     EventRSVP.objects.bulk_create(
         [EventRSVP(event=full_event, user=u, status=RSVPStatus.WAITLISTED) for u in users]
     )

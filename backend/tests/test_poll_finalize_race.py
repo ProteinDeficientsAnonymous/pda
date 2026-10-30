@@ -5,18 +5,9 @@ from community.models import Event, EventPoll, PollOption
 from django import db
 from django.test import Client
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _make_user(i):
-    return User.objects.create_user(
-        phone_number=f"+1415555{9200 + i}",
-        password="Testpass123!",
-        first_name=f"Finalizer{i}",
-        last_name="",
-    )
 
 
 def _jwt_headers(user):
@@ -42,7 +33,7 @@ class TestPollFinalizeRace:
             for i in range(8)
         ]
 
-        cohosts = [_make_user(i) for i in range(len(options))]
+        cohosts = [make_user() for _ in range(len(options))]
         event.co_hosts.set(cohosts)
         results = [None] * len(options)
 

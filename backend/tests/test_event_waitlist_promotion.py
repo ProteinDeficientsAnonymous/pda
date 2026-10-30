@@ -5,22 +5,13 @@ from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
-from users.models import User
 
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-
-def _make_user(phone, name):
-    return User.objects.create_user(
-        phone_number=phone,
-        password="Testpass123!",
-        first_name=name,
-        last_name="",
-    )
 
 
 def _jwt_headers(user):
@@ -30,22 +21,22 @@ def _jwt_headers(user):
 
 @pytest.fixture
 def user1(db):
-    return _make_user("+14155559001", "User One")
+    return make_user(first_name="User One")
 
 
 @pytest.fixture
 def user2(db):
-    return _make_user("+14155559002", "User Two")
+    return make_user(first_name="User Two")
 
 
 @pytest.fixture
 def user3(db):
-    return _make_user("+14155559003", "User Three")
+    return make_user(first_name="User Three")
 
 
 @pytest.fixture
 def user4(db):
-    return _make_user("+14155559004", "User Four")
+    return make_user(first_name="User Four")
 
 
 @pytest.fixture

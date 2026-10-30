@@ -5,16 +5,8 @@ from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyR
 from django import db
 from django.test import Client
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 
-
-def _make_user(i):
-    return User.objects.create_user(
-        phone_number=f"+1415556{9200 + i}",
-        password="Testpass123!",
-        first_name=f"Racer{i}",
-        last_name="",
-    )
+from tests._users import make_user
 
 
 def _jwt_headers(user):
@@ -34,7 +26,7 @@ class TestSurveyCapacityRace:
             field_type=SurveyQuestionType.TEXT,
         )
         thread_count = 8
-        users = [_make_user(i) for i in range(thread_count)]
+        users = [make_user() for _ in range(thread_count)]
         results = [None] * thread_count
 
         def submit(i):
