@@ -2,9 +2,17 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, WithJsonSchema, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationInfo,
+    WithJsonSchema,
+    field_validator,
+    model_validator,
+)
 
 from community._event_field_validators import (
+    _validate_datetime_has_offset,
     _validate_event_slug,
     _validate_generic_url,
     _validate_max_attendees,
@@ -88,12 +96,6 @@ def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
 class TagOut(BaseModel):
     id: str
     name: str
-    slug: str
-
-
-class EventSurveyOut(BaseModel):
-    id: str
-    title: str
     slug: str
 
 
@@ -197,8 +199,6 @@ class EventOut(BaseModel):
     # RSVP rows from outside the current co-hosts —
     # exactly the unpublish guard's predicate: 0 ⇔ "back to draft" is allowed.
     guest_rsvp_count: int = 0
-    linked_surveys: list[EventSurveyOut] = []
-    datetime_poll_slug: str | None = None
     has_poll: bool = False
     invited_user_ids: list[str] = []
     invited_user_names: list[str] = []
@@ -374,6 +374,11 @@ class EventIn(BaseModel):
     def validate_max_attendees(cls, v: int | None) -> int | None:
         return _validate_max_attendees(v)
 
+    @field_validator("start_datetime", "end_datetime", mode="after")
+    @classmethod
+    def validate_datetime_offset(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
+        return _validate_datetime_has_offset(v, info)
+
 
 class EventPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
@@ -439,6 +444,11 @@ class EventPatchIn(BaseModel):
     @classmethod
     def validate_max_attendees(cls, v: int | None) -> int | None:
         return _validate_max_attendees(v)
+
+    @field_validator("start_datetime", "end_datetime", mode="after")
+    @classmethod
+    def validate_datetime_offset(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
+        return _validate_datetime_has_offset(v, info)
 
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB

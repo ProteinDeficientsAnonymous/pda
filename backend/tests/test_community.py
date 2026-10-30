@@ -4,10 +4,11 @@ import json
 
 import pytest
 from community.models import EditablePage, PageVisibility
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._auth import auth_headers_for
 
 
 def _pm(text: str) -> str:
@@ -47,8 +48,7 @@ def manage_guidelines_user(db):
 
 @pytest.fixture
 def manage_guidelines_headers(manage_guidelines_user):
-    refresh = RefreshToken.for_user(manage_guidelines_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_guidelines_user)
 
 
 @pytest.fixture
@@ -69,8 +69,7 @@ def edit_homepage_user(db):
 
 @pytest.fixture
 def edit_homepage_headers(edit_homepage_user):
-    refresh = RefreshToken.for_user(edit_homepage_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(edit_homepage_user)
 
 
 @pytest.fixture
@@ -91,8 +90,7 @@ def edit_faq_user(db):
 
 @pytest.fixture
 def edit_faq_headers(edit_faq_user):
-    refresh = RefreshToken.for_user(edit_faq_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(edit_faq_user)
 
 
 # ---------------------------------------------------------------------------

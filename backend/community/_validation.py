@@ -10,6 +10,7 @@ class Code:
         MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE = "event.max_attendees_must_be_at_least_one"
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
+        DATETIME_OFFSET_REQUIRED = "event.datetime_offset_required"
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
         OFFICIAL_NO_PLUS_ONES = "event.official_no_plus_ones"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
@@ -165,9 +166,6 @@ class Code:
         FEEDBACK_TYPE_TAKEN = "survey.feedback_type_taken"
         FEEDBACK_LINK_INVALID = "survey.feedback_link_invalid"
         FEEDBACK_ALREADY_SUBMITTED = "survey.feedback_already_submitted"
-        NO_DATETIME_POLL_QUESTION = "survey.no_datetime_poll_question"
-        WINNING_DATETIME_NOT_IN_OPTIONS = "survey.winning_datetime_not_in_options"
-        POLL_ALREADY_FINALIZED = "survey.poll_already_finalized"
         ANSWER_REQUIRED = "survey.answer_required"  # params: { label }
         ANSWER_INVALID_FORMAT = "survey.answer_invalid_format"  # params: { label }
         ANSWER_INVALID_OPTION = "survey.answer_invalid_option"  # params: { label }
@@ -270,6 +268,7 @@ class Code:
         NOT_REMOVABLE = "cohost_invite.not_removable"  # invite is in a terminal state
         WOULD_LEAVE_HOSTLESS = "cohost_invite.would_leave_hostless"
         EVENT_IS_PAST = "cohost_invite.event_is_past"
+        NOT_MEMBER = "cohost_invite.not_member"
 
     class WelcomeTemplate:
         BODY_REQUIRED = "welcome_template.body_required"

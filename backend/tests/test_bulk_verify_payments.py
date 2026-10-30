@@ -6,20 +6,18 @@ from audit.models import AuditLogEntry
 from community._event_schemas import MAX_BULK_PAYMENT_VERIFY
 from community._validation import Code
 from community.models import EventRSVP, EventStatus, RSVPStatus
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
 
 pytestmark = pytest.mark.django_db
 
 URL = "/api/community/events/{event_id}/rsvps/payments/verify/"
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _user_with(django_user_model, phone: str, *permissions: str):
@@ -56,7 +54,7 @@ def _verify(api_client, user, event_id, user_ids):
         URL.format(event_id=event_id),
         {"user_ids": [str(uid) for uid in user_ids]},
         content_type="application/json",
-        **_headers(user),
+        **auth_headers_for(user),
     )
 
 
@@ -212,3 +210,18 @@ def test_verifying_keeps_a_self_attested_paid_time(api_client, importer, event, 
     rsvp = EventRSVP.objects.get(user=guest)
     assert rsvp.paid_confirmed_at == attested_at
     assert rsvp.payment_verified_at is not None
+
+
+def test_verifies_every_guest_in_one_update(api_client, importer, event, django_user_model):
+    guests = [_guest(django_user_model, n, event) for n in range(1, 7)]
+    table = EventRSVP._meta.db_table
+
+    with CaptureQueriesContext(connection) as ctx:
+        response = _verify(api_client, importer, event.id, [g.id for g in guests])
+
+    assert response.status_code == 200
+    updates = [q for q in ctx.captured_queries if q["sql"].startswith(f'UPDATE "{table}"')]
+    assert len(updates) == 1
+    rsvps = EventRSVP.objects.filter(event=event)
+    assert all(r.payment_verified_by_id == importer.id for r in rsvps)
+    assert all(r.paid_confirmed_at == r.payment_verified_at == r.updated_at for r in rsvps)

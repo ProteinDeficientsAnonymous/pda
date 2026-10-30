@@ -1,20 +1,24 @@
-from datetime import datetime
 from typing import Annotated, Any
 
+from asgiref.sync import sync_to_async
 from community._event_description_templates import get_event_description_templates
-from community._event_list import EventListQuery
+from community._event_list import hosted_events_q
 from community._event_tags import list_event_tags as list_event_tags_view
 from community._events import get_event as get_event_view
-from community._events import list_events
-from community.models import EventStatus
+from community.models import Event
+from community.models.event import _is_past_q
+from django.db.models import BooleanField, Case, F, When
+from django.utils import timezone
 from pydantic import Field
+from pydantic_core import to_jsonable_python
+from users.models import User
 
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
 from mcp_gateway.view_calls import call_view
 
 _SUMMARY_FIELDS = (
-    *("id", "slug", "title", "status", "event_type", "visibility"),
+    *("slug", "title", "status", "event_type", "visibility"),
     *("start_datetime", "end_datetime", "datetime_tbd", "is_past"),
 )
 
@@ -23,16 +27,33 @@ def _event_url(event: dict[str, Any]) -> str:
     return f"{BASE_URL}/events/{event['slug'] or event['id']}"
 
 
-def _summary(event: dict[str, Any]) -> dict[str, Any]:
-    tags = [tag["name"] for tag in event["tags"]]
-    return {**{key: event[key] for key in _SUMMARY_FIELDS}, "url": _event_url(event), "tags": tags}
+def _summary(event: Event) -> dict[str, Any]:
+    row = {"id": str(event.id), **{key: getattr(event, key) for key in _SUMMARY_FIELDS}}
+    tags = [tag.name for tag in event.tags.all()]
+    return {**to_jsonable_python(row), "url": _event_url(row), "tags": tags}
 
 
-def _sort_key(event: dict[str, Any]) -> tuple[bool, float, str]:
-    start = None if event["datetime_tbd"] else event["start_datetime"]
-    when = datetime.fromisoformat(start).timestamp() if start else float("inf")
-    # id breaks ties (every tbd event is inf) so offset pages don't repeat or skip rows
-    return event["is_past"], -when if event["is_past"] else when, str(event["id"])
+def _my_events(user: User, include_past: bool, limit: int, offset: int) -> list[dict[str, Any]]:
+    """Upcoming first, undated (tbd) last, then past newest first; id breaks ties for paging."""
+    past = Case(
+        When(_is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
+    )
+    rows = (
+        Event.objects.filter(hosted_events_q(user, upcoming=not include_past))
+        .annotate(
+            listed_past=past,
+            upcoming_start=Case(When(listed_past=False, datetime_tbd=False, then="start_datetime")),
+            past_start=Case(When(listed_past=True, then="start_datetime")),
+        )
+        .order_by(
+            "listed_past",
+            F("upcoming_start").asc(nulls_last=True),
+            F("past_start").desc(nulls_first=True),
+            "id",
+        )
+        .prefetch_related("tags")
+    )
+    return [_summary(e) for e in rows[offset : offset + limit + 1]]
 
 
 @pda_tool(
@@ -50,15 +71,10 @@ async def list_my_events(
     limit: Annotated[int, Field(ge=1, le=50, description="events per page")] = 20,
     offset: Annotated[int, Field(ge=0, description="next_offset from the previous page")] = 0,
 ) -> dict[str, Any]:
-    user = await current_user()
-    mine = EventListQuery(status=EventStatus.ACTIVE, hosted=True, upcoming=not include_past)
-    active = await call_view(list_events, user, params=mine)
-    drafts = await call_view(list_events, user, params=EventListQuery(status=EventStatus.DRAFT))
-    rows = sorted([*drafts, *active], key=_sort_key)
-    more = offset + limit < len(rows)
+    rows = await sync_to_async(_my_events)(await current_user(), include_past, limit, offset)
     return {
-        "events": [_summary(e) for e in rows[offset : offset + limit]],
-        "next_offset": offset + limit if more else None,
+        "events": rows[:limit],
+        "next_offset": offset + limit if len(rows) > limit else None,
     }
 
 

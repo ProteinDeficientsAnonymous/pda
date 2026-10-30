@@ -9,6 +9,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from community._field_limits import FieldLimit
 from community.models import EventType, ShowIfOperator, SurveyQuestionType, SurveyVisibility
 
+SCALE_END_LABELS = 2
+SCALE_POINTS = 5
+
+
+def scale_labels(options: list[str]) -> list[str]:
+    """return(list): [low, high] or one label per point 1-5, or [] when all are blank."""
+    if len(options) > SCALE_END_LABELS and len(options) != SCALE_POINTS:
+        raise ValueError("scale questions take 2 end labels (low, high) or 5 point labels")
+    labels = [label.strip() for label in options]
+    labels += [""] * (SCALE_END_LABELS - len(labels))
+    return labels if any(labels) else []
+
 
 class ShowIfIn(BaseModel):
     question_id: UUID
@@ -33,13 +45,6 @@ class SurveyQuestionOut(BaseModel):
     show_if: ShowIfOut | None = None
 
 
-class PollResultOut(BaseModel):
-    id: str
-    winning_datetime: datetime
-    finalized_by_id: str | None = None
-    finalized_at: datetime
-
-
 class VoterOut(BaseModel):
     user_id: str
     name: str
@@ -48,7 +53,7 @@ class VoterOut(BaseModel):
 
 class PollResultsOut(BaseModel):
     question_id: str
-    tallies: dict[str, dict[str, int]]  # option -> {"yes": N, "maybe": M}
+    tallies: dict[str, dict[str, int]]  # option -> {"yes": N, "maybe": M, "no": K}
     voters: dict[str, list[VoterOut]] = {}
     total_responses: int
 
@@ -74,13 +79,11 @@ class SurveyOut(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
-    linked_event_id: str | None = None
     feedback_event_type: str = ""
     created_by_id: str | None = None
     created_at: datetime
     questions: list[SurveyQuestionOut] = []
     response_count: int = 0
-    poll_result: PollResultOut | None = None
     my_response_id: str | None = None
     my_answers: dict | None = None
 
@@ -94,7 +97,6 @@ class SurveyListOut(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = None
-    linked_event_id: str | None = None
     created_at: datetime
     response_count: int = 0
 
@@ -111,7 +113,6 @@ class SurveyIn(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
-    linked_event_id: str | None = None
     feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = ""
 
 
@@ -129,12 +130,7 @@ class SurveyPatchIn(BaseModel):
     opens_at: datetime | None = None
     closes_at: datetime | None = None
     max_responses: int | None = Field(default=None, ge=1)
-    linked_event_id: str | None = None
     feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] | None = None
-
-
-class FinalizePollIn(BaseModel):
-    winning_datetime: datetime
 
 
 class SurveyQuestionIn(BaseModel):
@@ -151,6 +147,10 @@ class SurveyQuestionIn(BaseModel):
             self.options, self.required = [], False
         else:
             self.description = ""
+        if self.field_type == SurveyQuestionType.SCALE:
+            self.options = scale_labels(self.options)
+        elif self.field_type == SurveyQuestionType.STARS:
+            self.options = []
         return self
 
 
@@ -175,7 +175,7 @@ class SurveySubmitOut(SurveyResponseOut):
 
 # str for standard question types (text, select, number, etc.)
 # list[str] for checkbox answers (ticked options)
-# dict[str, str] for availability answers (option -> "yes"|"maybe")
+# dict[str, str] for availability answers (option -> "yes"|"maybe"|"no")
 TextAnswer = str
 ChoiceListAnswer = list[str]
 AvailabilityAnswer = dict[str, str]

@@ -20,6 +20,7 @@ import { surveyVisibilityLabel } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SurveyCopyLinkButton } from './SurveyCopyLinkButton';
+import { SurveyDescriptionCard } from './SurveyDescriptionCard';
 import { SurveyQuestionCard } from './SurveyQuestionCard';
 import { SurveySettingsDialog } from './SurveySettingsDialog';
 import { SurveyThankYouCard } from './SurveyThankYouCard';
@@ -174,12 +175,6 @@ export default function SurveyBuilderScreen() {
         </div>
       </header>
 
-      {currentSurvey.pollResult ? (
-        <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized
-        </div>
-      ) : null}
-
       <section className="mt-6">
         <h2 className="mb-3 text-base font-medium">questions</h2>
 
@@ -188,6 +183,8 @@ export default function SurveyBuilderScreen() {
             {extractApiErrorOr(reorder.error, "couldn't reorder questions — try again")}
           </p>
         ) : null}
+
+        <SurveyDescriptionCard surveyId={surveyId} description={currentSurvey.description} />
 
         {currentSurvey.questions.length === 0 ? (
           <p className="text-muted mb-3 text-sm">no questions yet 🌿</p>

@@ -2073,23 +2073,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/community/surveys/{survey_id}/finalize/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Finalize Poll */
-        post: operations["community__surveys_public_finalize_poll"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/community/surveys/{survey_id}/questions/": {
         parameters: {
             query?: never;
@@ -3691,8 +3674,6 @@ export interface components {
              * @default
              */
             created_by_photo_url: string;
-            /** Datetime Poll Slug */
-            datetime_poll_slug?: string | null;
             /**
              * Datetime Tbd
              * @default false
@@ -3766,11 +3747,6 @@ export interface components {
             is_past: boolean;
             /** Latitude */
             latitude?: number | null;
-            /**
-             * Linked Surveys
-             * @default []
-             */
-            linked_surveys: components["schemas"]["EventSurveyOut"][];
             /** Location */
             location: string;
             /** Longitude */
@@ -4159,15 +4135,6 @@ export interface components {
              */
             waitlisted_count: number;
         };
-        /** EventSurveyOut */
-        EventSurveyOut: {
-            /** Id */
-            id: string;
-            /** Slug */
-            slug: string;
-            /** Title */
-            title: string;
-        };
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -4209,14 +4176,6 @@ export interface components {
          * @enum {string}
          */
         FeedbackType: "bug" | "feature request" | "improvement";
-        /** FinalizePollIn */
-        FinalizePollIn: {
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
-        };
         /** FolderIn */
         FolderIn: {
             /** Name */
@@ -4980,23 +4939,6 @@ export interface components {
              */
             datetime: string;
         };
-        /** PollResultOut */
-        PollResultOut: {
-            /**
-             * Finalized At
-             * Format: date-time
-             */
-            finalized_at: string;
-            /** Finalized By Id */
-            finalized_by_id?: string | null;
-            /** Id */
-            id: string;
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
-        };
         /** PollResultsOut */
         PollResultsOut: {
             /** Question Id */
@@ -5154,7 +5096,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "stars" | "scale" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -5417,8 +5359,6 @@ export interface components {
              * @default true
              */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /**
@@ -5451,8 +5391,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** Opens At */
@@ -5501,8 +5439,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** My Answers */
@@ -5518,7 +5454,6 @@ export interface components {
             one_response_per_user: boolean;
             /** Opens At */
             opens_at?: string | null;
-            poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
              * @default []
@@ -5550,8 +5485,6 @@ export interface components {
             feedback_event_type?: ("official" | "club" | "") | null;
             /** Is Active */
             is_active?: boolean | null;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** One Response Per User */
@@ -12193,59 +12126,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__surveys_public_finalize_poll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                survey_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinalizePollIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SurveyOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */

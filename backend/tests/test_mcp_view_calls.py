@@ -1,15 +1,16 @@
-import asyncio
 import json
 import sys
 from typing import Any
 
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from community._event_description_templates import get_event_description_templates as templates
 from community._event_schemas import EventIn
 from community._events import create_event
 from community._validation import Code
 from config.audit import is_request_via_mcp
+from django.test import TestCase
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway import tools
 from mcp_gateway.server import TOOL_PERMISSIONS, current_user, pda_mcp, pda_tool
@@ -18,12 +19,13 @@ from ninja.responses import Status
 
 from tests.test_mcp_flow import connect, mcp_client, rpc
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 DRAFT = EventIn(title="picnic", status="draft")
 
 
 def _call(view, user, *args, **kwargs):
-    return asyncio.run(call_view(view, user, *args, **kwargs))
+    with TestCase.captureOnCommitCallbacks(execute=True):
+        return async_to_sync(call_view)(view, user, *args, **kwargs)
 
 
 def _tool_error(view, user, *args) -> dict:
@@ -93,6 +95,7 @@ def meta_tool():
     TOOL_PERMISSIONS.pop("echo_meta")
 
 
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 def test_copies_client_meta_from_mcp_http_request(test_user, meta_tool):
     async def flow():
         async with mcp_client() as client:
@@ -100,7 +103,7 @@ def test_copies_client_meta_from_mcp_http_request(test_user, meta_tool):
             client.headers["X-Forwarded-For"] = "203.0.113.9"
             return (await rpc(client, token, "tools/call", name=meta_tool, arguments={})).json()
 
-    meta = asyncio.run(flow())["result"]["structuredContent"]
+    meta = async_to_sync(flow)()["result"]["structuredContent"]
     assert (meta["REMOTE_ADDR"], meta["HTTP_X_FORWARDED_FOR"]) == ("127.0.0.1", "203.0.113.9")
     assert "HTTP_AUTHORIZATION" not in meta
 

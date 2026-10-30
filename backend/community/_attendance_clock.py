@@ -43,13 +43,16 @@ def last_qualifying_attendance_date(user: User) -> date | None:
     return latest.date() if latest else None
 
 
-def compute_anchor(user: User, today: date) -> date:
+def anchor_from(date_joined: date, last_attended: date | None) -> date:
     """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined)."""
-    candidates = [settings.ATTENDANCE_CLOCK_FLOOR, user.date_joined.date()]
-    last_attended = last_qualifying_attendance_date(user)
+    candidates = [settings.ATTENDANCE_CLOCK_FLOOR, date_joined]
     if last_attended is not None:
         candidates.append(last_attended)
     return max(candidates)
+
+
+def compute_anchor(user: User, today: date) -> date:
+    return anchor_from(user.date_joined.date(), last_qualifying_attendance_date(user))
 
 
 def milestone_due_date(anchor: date, milestone: str) -> date:

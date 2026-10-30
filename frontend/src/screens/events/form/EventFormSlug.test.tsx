@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as EventWritesModule from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -29,16 +29,12 @@ import { EventForm } from './EventForm';
 const existing = makeEvent({ id: 'evt-1', slug: 'potluck', createdById: 'host' });
 
 function renderForm(event = existing) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/potluck/edit']}>
-        <Routes>
-          <Route path="/events/:id/edit" element={<EventForm existing={event} />} />
-          <Route path="/events/:id" element={<p>detail page</p>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/events/:id/edit" element={<EventForm existing={event} />} />
+      <Route path="/events/:id" element={<p>detail page</p>} />
+    </Routes>,
+    { route: '/events/potluck/edit' },
   );
 }
 
@@ -52,14 +48,7 @@ describe('EventForm slug', () => {
   });
 
   it('is not shown on create', () => {
-    const qc = new QueryClient();
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <EventForm />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    renderWithProviders(<EventForm />);
     expect(screen.queryByLabelText('event url')).not.toBeInTheDocument();
   });
 

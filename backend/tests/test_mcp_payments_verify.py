@@ -20,10 +20,9 @@ from tests._mcp_payments_helpers import (
     review,
     verified_ids,
 )
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_surveys_read import _tool_names
+from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
@@ -53,12 +52,12 @@ def review_id(importer, event, guests, csv_text):
 
 def _verify(user, event, review_id, assignments, **extra) -> dict:
     arguments = {"event": str(event.pk), "review_id": review_id, "assignments": assignments}
-    return _run(user, "verify_cashapp_payments", **arguments, **extra)
+    return run_tool(user, "verify_cashapp_payments", **arguments, **extra)
 
 
 def _refused(user, event, review_id, assignments, **extra) -> str:
     arguments = {"event": str(event.pk), "review_id": review_id, "assignments": assignments}
-    return _error(user, "verify_cashapp_payments", **arguments, **extra)
+    return tool_error(user, "verify_cashapp_payments", **arguments, **extra)
 
 
 def _pay(payment_id, *users) -> dict:
@@ -70,8 +69,8 @@ def _names(people) -> list[str]:
 
 
 def test_verify_tool_needs_import_payments(test_user, importer, event, review_id, guests):
-    assert "verify_cashapp_payments" not in _tool_names(test_user)
-    assert "verify_cashapp_payments" in _tool_names(importer)
+    assert "verify_cashapp_payments" not in tool_names(test_user)
+    assert "verify_cashapp_payments" in tool_names(importer)
     assert "permission" in _refused(test_user, event, review_id, [_pay("tx1", guests["alex"])])
 
 

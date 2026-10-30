@@ -1,7 +1,9 @@
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 
 import phonenumbers
+from pydantic import ValidationInfo
 
 from community._shared import require_url_path
 from community._validation import Code, raise_validation
@@ -33,6 +35,13 @@ def _validate_zelle_info(v: str | None) -> str | None:
     if _looks_like_email(stripped) or _looks_like_phone(stripped):
         return stripped
     raise_validation(Code.Zelle.INVALID, field="zelle_info")
+
+
+def _validate_datetime_has_offset(v: datetime | None, info: ValidationInfo) -> datetime | None:
+    """Reject offset-less datetimes; comparing them to aware ones would 500."""
+    if v is not None and v.utcoffset() is None:
+        raise_validation(Code.Event.DATETIME_OFFSET_REQUIRED, field=info.field_name)
+    return v
 
 
 def _validate_max_attendees(v: int | None) -> int | None:

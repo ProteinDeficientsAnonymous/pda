@@ -1,3 +1,168 @@
+## [0.209.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.0...v0.209.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pillow to v13 [security] ([#1806](https://github.com/ProteinDeficientsAnonymous/pda/issues/1806)) ([bb00169](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb001696965dd08315dbe12183376aa2274f5ff5))
+
+# [0.209.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.208.0...v0.209.0) (2026-10-30)
+
+
+### Features
+
+* **auth:** lead login link email confirmation with "check your email!" ([#2049](https://github.com/ProteinDeficientsAnonymous/pda/issues/2049)) ([1980907](https://github.com/ProteinDeficientsAnonymous/pda/commit/19809072d52052d677c2b382ef91da31a9ca91c7))
+
+# [0.208.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.1...v0.208.0) (2026-10-30)
+
+
+### Features
+
+* **events:** remind hosts to add co-hosts a week before official events ([#1996](https://github.com/ProteinDeficientsAnonymous/pda/issues/1996)) ([378a437](https://github.com/ProteinDeficientsAnonymous/pda/commit/378a437103c654899fd233821605ca0b8bb51796))
+
+## [0.207.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.0...v0.207.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **events:** show real description in link previews for non-public events ([#1995](https://github.com/ProteinDeficientsAnonymous/pda/issues/1995)) ([5d0d130](https://github.com/ProteinDeficientsAnonymous/pda/commit/5d0d130c27ef7ed1682b96b7871e685ff67ac14a))
+
+# [0.207.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.1...v0.207.0) (2026-10-28)
+
+
+### Features
+
+* **surveys:** show survey title in shared link previews ([#1983](https://github.com/ProteinDeficientsAnonymous/pda/issues/1983)) ([5f92f24](https://github.com/ProteinDeficientsAnonymous/pda/commit/5f92f24ac5f3b3b4164259910536da3d5d69199b))
+
+## [0.206.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.0...v0.206.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **events:** show event photo in link previews for non-public events ([#1989](https://github.com/ProteinDeficientsAnonymous/pda/issues/1989)) ([bd015bc](https://github.com/ProteinDeficientsAnonymous/pda/commit/bd015bcaa1ad5e8e9d11ffb7c769168ce39ef1e5))
+
+# [0.206.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.10...v0.206.0) (2026-10-27)
+
+
+### Bug Fixes
+
+* **surveys:** drop finalize poll from survey responses ([#1970](https://github.com/ProteinDeficientsAnonymous/pda/issues/1970)) ([5120f11](https://github.com/ProteinDeficientsAnonymous/pda/commit/5120f11a292e81a8879e8c05d7523bb9c371ccdc))
+* **surveys:** drop survey poll result model and output field ([#1977](https://github.com/ProteinDeficientsAnonymous/pda/issues/1977)) ([24f4bd5](https://github.com/ProteinDeficientsAnonymous/pda/commit/24f4bd5f8262af47b089e25c06f2b27ab46820a4))
+* **surveys:** remove survey poll finalize endpoint ([#1980](https://github.com/ProteinDeficientsAnonymous/pda/issues/1980)) ([76d1249](https://github.com/ProteinDeficientsAnonymous/pda/commit/76d12490b7b836eab16b0169874e67e3c27d5444))
+* **surveys:** show datetime poll results in survey order with a no column ([#1971](https://github.com/ProteinDeficientsAnonymous/pda/issues/1971)) ([ead869b](https://github.com/ProteinDeficientsAnonymous/pda/commit/ead869bdd678f11c4326edbed4cf6246fac80d47))
+* **surveys:** stop reading survey poll result in the frontend ([#1974](https://github.com/ProteinDeficientsAnonymous/pda/issues/1974)) ([1530b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/1530b13625527a68500361df552e5acee2458fdf))
+
+
+### Features
+
+* **surveys:** label every point of a 1-5 scale in the survey builder ([#1973](https://github.com/ProteinDeficientsAnonymous/pda/issues/1973)) ([80fe2a2](https://github.com/ProteinDeficientsAnonymous/pda/commit/80fe2a2cf1fedf21fdce3f52dfab8095258b3b70))
+* **surveys:** show a label under every point of a 1-5 scale ([#1972](https://github.com/ProteinDeficientsAnonymous/pda/issues/1972)) ([57d939b](https://github.com/ProteinDeficientsAnonymous/pda/commit/57d939b388dc65d28802b2959e30ccafb8a1fc40))
+
+## [0.205.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.9...v0.205.10) (2026-10-27)
+
+
+### Bug Fixes
+
+* **questions:** label textarea type as long answer ([#1978](https://github.com/ProteinDeficientsAnonymous/pda/issues/1978)) ([5751350](https://github.com/ProteinDeficientsAnonymous/pda/commit/575135019ac9f2f66430ca7af513b09a02530e1d))
+
+## [0.205.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.8...v0.205.9) (2026-10-27)
+
+
+### Bug Fixes
+
+* **ci:** screenshot the PR head so it matches the visual baseline ([#1969](https://github.com/ProteinDeficientsAnonymous/pda/issues/1969)) ([98fae7b](https://github.com/ProteinDeficientsAnonymous/pda/commit/98fae7b2ae20eee054d80547986715e3d023f1f7))
+
+## [0.205.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.7...v0.205.8) (2026-10-27)
+
+
+### Bug Fixes
+
+* **events:** reject offset-less event datetimes with 422 instead of 500 ([#1796](https://github.com/ProteinDeficientsAnonymous/pda/issues/1796)) ([88d38d5](https://github.com/ProteinDeficientsAnonymous/pda/commit/88d38d5f7763acc94eabe9e4003d3ead0b019911))
+
+## [0.205.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.6...v0.205.7) (2026-10-26)
+
+
+### Performance Improvements
+
+* 1923 - reload edited events with prefetches ([#1936](https://github.com/ProteinDeficientsAnonymous/pda/issues/1936)) ([1738d62](https://github.com/ProteinDeficientsAnonymous/pda/commit/1738d625d56e3683f4399cebaabf19f4cec13582))
+
+## [0.205.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.5...v0.205.6) (2026-10-26)
+
+
+### Performance Improvements
+
+* 1923 - bulk-verify guest payments in one update ([#1945](https://github.com/ProteinDeficientsAnonymous/pda/issues/1945)) ([d571e1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/d571e1cd942ed81c337b7e818b5d8b60de60af48))
+* 1923 - drop unused invitee prefetches on rsvp writes ([#1949](https://github.com/ProteinDeficientsAnonymous/pda/issues/1949)) ([92c74d6](https://github.com/ProteinDeficientsAnonymous/pda/commit/92c74d6d83f4fb73b7ccc9e32cf00935155b985b))
+
+## [0.205.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.4...v0.205.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* only members can be co-hosts ([#1967](https://github.com/ProteinDeficientsAnonymous/pda/issues/1967)) ([7324826](https://github.com/ProteinDeficientsAnonymous/pda/commit/7324826786d49ca770ad2ce7db72729f8c0ff800))
+
+
+### Performance Improvements
+
+* 1922 - prefetch roles once per authenticated request ([#1933](https://github.com/ProteinDeficientsAnonymous/pda/issues/1933)) ([2aff405](https://github.com/ProteinDeficientsAnonymous/pda/commit/2aff405c718ffe2f06ce6790d0a53b6e932de67a))
+* 1925 - constant query count for reminder crons ([#1935](https://github.com/ProteinDeficientsAnonymous/pda/issues/1935)) ([e6f81ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6f81ef3c1f37f3066c504cdc5030a0cbff79f7f))
+
+## [0.205.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.3...v0.205.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1919 - prefill edits on anonymous multi-response surveys ([#1956](https://github.com/ProteinDeficientsAnonymous/pda/issues/1956)) ([d6f7da4](https://github.com/ProteinDeficientsAnonymous/pda/commit/d6f7da4615afc3395a20063dd3ddfd8d7d7ea475))
+
+## [0.205.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.2...v0.205.3) (2026-10-26)
+
+
+### Performance Improvements
+
+* bound list_my_events in sql and look up survey slugs directly ([#1943](https://github.com/ProteinDeficientsAnonymous/pda/issues/1943)) ([69b9792](https://github.com/ProteinDeficientsAnonymous/pda/commit/69b9792dfa95453046d22a49d078fe08c80f2ae4))
+
+## [0.205.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.1...v0.205.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** address first round of survey feedback ([#1959](https://github.com/ProteinDeficientsAnonymous/pda/issues/1959)) ([4fa6eae](https://github.com/ProteinDeficientsAnonymous/pda/commit/4fa6eae3643a29f5e52cebf818cae419fd95451c))
+* **surveys:** clamp long answers in responses table with show more ([#1966](https://github.com/ProteinDeficientsAnonymous/pda/issues/1966)) ([7ba5c10](https://github.com/ProteinDeficientsAnonymous/pda/commit/7ba5c10e0a46be24a4ece090b7ac985de591a3c1))
+
+## [0.205.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.205.0...v0.205.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1917 - show char limits on open-ended answers ([#1954](https://github.com/ProteinDeficientsAnonymous/pda/issues/1954)) ([cf72db9](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf72db9693dc2c81dbeff22ec7deda837528fc12))
+
+# [0.205.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.5...v0.205.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **perf:** run 2 gunicorn workers and pool postgres connections ([#1928](https://github.com/ProteinDeficientsAnonymous/pda/issues/1928)) ([e1f52ae](https://github.com/ProteinDeficientsAnonymous/pda/commit/e1f52ae3486fa2a51b9004f92d0fa3c1da3e5de6))
+
+
+### Features
+
+* **surveys:** add a 1-5 scale question type ([#1961](https://github.com/ProteinDeficientsAnonymous/pda/issues/1961)) ([229e316](https://github.com/ProteinDeficientsAnonymous/pda/commit/229e3168d9aa219d6da3be863b0146855506547f))
+* **surveys:** edit scale end labels in the survey builder ([#1963](https://github.com/ProteinDeficientsAnonymous/pda/issues/1963)) ([c64d813](https://github.com/ProteinDeficientsAnonymous/pda/commit/c64d81329e03aa85033278898c8799b62b87e2ff))
+* **surveys:** optional end labels on a 1-5 scale ([#1962](https://github.com/ProteinDeficientsAnonymous/pda/issues/1962)) ([3c4e288](https://github.com/ProteinDeficientsAnonymous/pda/commit/3c4e288267ea8db5073057ce3523a397b33ecc5a))
+* **surveys:** star ratings take no per-star labels ([#1964](https://github.com/ProteinDeficientsAnonymous/pda/issues/1964)) ([7859713](https://github.com/ProteinDeficientsAnonymous/pda/commit/78597138c6159380613042413fe409758190b80d))
+
+
+### Performance Improvements
+
+* reuse the token lookup's user for each mcp tool call ([#1944](https://github.com/ProteinDeficientsAnonymous/pda/issues/1944)) ([3f490b5](https://github.com/ProteinDeficientsAnonymous/pda/commit/3f490b513486d6993951d2dc4e35afc04ec23aea))
+* slim cash app review event lookup and load rsvps once ([#1942](https://github.com/ProteinDeficientsAnonymous/pda/issues/1942)) ([f86725f](https://github.com/ProteinDeficientsAnonymous/pda/commit/f86725f6be749425b72f5fd2d7d0ab7479d31e7f))
+
+## [0.204.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.4...v0.204.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* **surveys:** 1920 - keep responses table from widening the page ([#1955](https://github.com/ProteinDeficientsAnonymous/pda/issues/1955)) ([10d0322](https://github.com/ProteinDeficientsAnonymous/pda/commit/10d0322a868331ef717641122fb094e701d44ce4))
+
 ## [0.204.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.204.3...v0.204.4) (2026-10-26)
 
 

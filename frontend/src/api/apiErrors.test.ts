@@ -166,10 +166,10 @@ describe('getFieldError', () => {
     const err = axiosError(400, {
       detail: [
         { code: Code.Survey.SlugAlreadyExists, field: 'slug' },
-        { code: Code.Event.NotFound, field: 'linked_event_id' },
+        { code: Code.Event.NotFound, field: 'event_id' },
       ],
     });
-    expect(getFieldError(err, 'linked_event_id')).toBe('event not found');
+    expect(getFieldError(err, 'event_id')).toBe('event not found');
   });
 
   it('returns null when no entry carries that field', () => {

@@ -19,6 +19,7 @@ from community._docs import (
     DocumentOut,
     DocumentPatchIn,
     ReorderIn,
+    _apply_display_order,
     _doc_to_out,
     _has_manage_docs,
 )
@@ -101,8 +102,7 @@ def reorder_documents(request, payload: ReorderIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
-    for i, did in enumerate(payload.ids):
-        Document.objects.filter(pk=did).update(display_order=i)
+    _apply_display_order(Document, payload.ids)
     audit_log(logging.INFO, "documents_reordered", request)
     return Status(200, {"detail": "Documents reordered."})
 

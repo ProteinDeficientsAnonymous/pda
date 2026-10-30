@@ -8,6 +8,7 @@ from community._attendance_analytics import (
     is_pause_candidate,
     user_rsvps_for_attendance,
 )
+from community.management.commands._e2e_common import _random_phone
 from community.management.commands.e2e_seed import _month_end
 from community.models import (
     AttendanceStatus,
@@ -265,3 +266,13 @@ def test_e2e_seed_event_feedback_link_loads_logged_out(api_client, capsys):
     assert body["is_open"] is True
     assert body["already_responded"] is False
     assert [q["label"] for q in body["survey"]["questions"]] == [out["question_label"]]
+
+
+@pytest.mark.django_db
+def test_random_phone_skips_numbers_already_taken(monkeypatch):
+    User.objects.create_user(phone_number="+12025550001", password="x")
+    picks = iter([1, 2])
+    monkeypatch.setattr(
+        "community.management.commands._e2e_common.secrets.randbelow", lambda _n: next(picks)
+    )
+    assert _random_phone() == "+12025550002"

@@ -1,4 +1,10 @@
-from community.models import Event, EventStatus, PageVisibility, parse_event_ref
+from community.models import (
+    Event,
+    EventStatus,
+    Survey,
+    SurveyVisibility,
+    parse_event_ref,
+)
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
@@ -9,9 +15,7 @@ from config.media_proxy import media_path
 # here keeps the tag tidy and avoids dumping a 2000-char body into <head>.
 _OG_DESCRIPTION_MAX = 200
 
-# Anonymous scrapers may only preview what an anonymous user could open in the
-# app: public events that aren't drafts or deleted. Cancelled public events are
-# still viewable (and shareable), so they get a preview too.
+# Cancelled events are still viewable (and shareable), so they get a preview too.
 _PREVIEWABLE_STATUSES = frozenset({EventStatus.ACTIVE, EventStatus.CANCELLED})
 
 # Served by nginx from frontend/public — Django static() would need a build-time manifest.
@@ -67,26 +71,34 @@ def _site_preview(request, path: str):
 
 
 def event_og_preview(request, event_id: str):
-    """OG tags for link scrapers; non-public events expose only their title, drafts nothing."""
+    """OG tags for link scrapers; drafts and deleted events get the site preview."""
     event = Event.objects.filter(parse_event_ref(event_id).as_q()).first()
     if event is None or event.status not in _PREVIEWABLE_STATUSES:
         return _site_preview(request, f"/events/{event_id}")
-
-    if event.visibility != PageVisibility.PUBLIC:
-        return _render_preview(
-            request,
-            title=event.title,
-            description=_STATIC_PAGES[""][1],
-            url=_absolute(f"/events/{event.slug or event.id}"),
-            image=_absolute(_LOGO_PATH),
-        )
 
     return _render_preview(
         request,
         title=event.title,
         description=_truncate(event.description, _OG_DESCRIPTION_MAX),
         url=_absolute(f"/events/{event.slug or event.id}"),
-        image=_absolute(media_path(event.photo)),
+        image=_absolute(media_path(event.photo) or _LOGO_PATH),
+    )
+
+
+def survey_og_preview(request, slug: str):
+    """OG tags for survey links; members-only and feedback surveys expose only their title."""
+    survey = Survey.objects.filter(slug=slug).first()
+    if survey is None:
+        return _site_preview(request, f"/surveys/{slug}")
+
+    is_public = survey.visibility == SurveyVisibility.PUBLIC and not survey.feedback_event_type
+    description = _truncate(survey.description, _OG_DESCRIPTION_MAX) if is_public else ""
+    return _render_preview(
+        request,
+        title=survey.title,
+        description=description or _STATIC_PAGES[""][1],
+        url=_absolute(f"/surveys/{survey.slug}"),
+        image=_absolute(_LOGO_PATH),
     )
 
 

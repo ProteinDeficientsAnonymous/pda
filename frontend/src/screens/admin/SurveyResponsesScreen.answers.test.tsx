@@ -1,32 +1,25 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { format } from 'date-fns';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyResponsesScreen from './SurveyResponsesScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 
 function renderScreen(surveyId = 'srv-1') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/admin/surveys/${surveyId}/responses`]}>
-        <Routes>
-          <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  const qc = makeQueryClient();
+  renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+    </Routes>,
+    { route: `/admin/surveys/${surveyId}/responses`, qc },
   );
 }
 
@@ -58,7 +51,6 @@ const wireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 const wireResponse = {
@@ -114,6 +106,36 @@ describe('SurveyResponsesScreen', () => {
     const dialog = screen.getByRole('dialog', { name: 'ada' });
     expect(within(dialog).getByText('great')).toBeInTheDocument();
     expect(within(dialog).getByRole('heading', { name: 'about you' })).toBeInTheDocument();
+  });
+
+  it('clamps long text answers but not long choice lists', async () => {
+    const longText = 'a\n\n\n\n\nb';
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('/responses/'))
+        return Promise.resolve({
+          data: [
+            {
+              ...wireResponse,
+              answers: {
+                qt: { label: 'mood', answer: longText },
+                qc: { label: 'flavors', answer: ['a', 'b', 'c', 'd', 'e'] },
+              },
+            },
+          ],
+        });
+      if (url.includes('/summary/') || url.includes('/tallies/'))
+        return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: wireSurvey });
+    });
+    renderScreen();
+
+    await screen.findByText('ada');
+    expect(screen.getAllByRole('button', { name: 'show more' })).toHaveLength(1);
+    const toggle = screen.getByRole('button', { name: 'show more' });
+    expect(document.getElementById(toggle.getAttribute('aria-controls') ?? '')).toHaveTextContent(
+      longText,
+      { normalizeWhitespace: false },
+    );
   });
 
   it('labels anonymous submitters', async () => {
