@@ -24,13 +24,10 @@ from notifications.email_sender import SendResult
 from tests._event_feedback_helpers import (
     NOW,
     TZ,
-    feedback_survey,
     make_ended_event,
     make_rsvp,
 )
 from tests._users import make_user
-
-__all__ = ["feedback_survey"]
 
 
 def _request(event, user, **extra) -> EventFeedbackRequest:

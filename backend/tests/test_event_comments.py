@@ -17,10 +17,16 @@ from users.models import User
 from users.roles import Role
 
 from tests._auth import auth_headers_for
-from tests._event_comments_helpers import event
 from tests.conftest import future_iso
 
-__all__ = ["event"]
+
+@pytest.fixture
+def event(db, test_user):
+    return Event.objects.create(
+        title="Test Event",
+        start_datetime=future_iso(days=30),
+        created_by=test_user,
+    )
 
 
 @pytest.mark.django_db

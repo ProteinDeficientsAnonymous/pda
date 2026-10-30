@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-import pytest
 from community.models import (
     AttendanceStatus,
     Event,
@@ -8,7 +7,6 @@ from community.models import (
     EventStatus,
     EventType,
     RSVPStatus,
-    Survey,
 )
 from django.conf import settings
 from users.models import User
@@ -16,13 +14,6 @@ from users.models import User
 TZ = settings.COMMUNITY_TZ
 NOW = datetime(2026, 10, 15, 14, 0, tzinfo=TZ)
 YESTERDAY_EVENING = datetime(2026, 10, 14, 20, 0, tzinfo=TZ)
-
-
-@pytest.fixture
-def feedback_survey(db):
-    return Survey.objects.create(
-        title="official feedback", slug="official-feedback", feedback_event_type=EventType.OFFICIAL
-    )
 
 
 def make_ended_event(*, end=YESTERDAY_EVENING, event_type=EventType.OFFICIAL, **extra) -> Event:
