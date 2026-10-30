@@ -4,7 +4,7 @@ Runs renderer output (`content_html`) through `nh3` as a single audited security
 boundary, configured to exactly match the Delta / ProseMirror vocabulary. Mirrors
 the frontend DOMPurify pass in `frontend/src/utils/sanitize.ts`; the two are kept
 equivalent on URL handling and the `text-align` allowlist. Keep the allowlists in
-sync with `delta_html.py` / `_prosemirror_html.py`; `test_html_sanitize.py`
+sync with `delta_html.py` / `prosemirror_html.py`; `test_html_sanitize.py`
 round-trips real renderer output to catch drift.
 """
 
