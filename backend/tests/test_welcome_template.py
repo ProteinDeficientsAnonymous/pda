@@ -1,11 +1,11 @@
 import pytest
 from community.models import WelcomeMessageTemplate
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -25,8 +25,7 @@ def edit_welcome_user(db):
 
 @pytest.fixture
 def edit_welcome_headers(edit_welcome_user):
-    refresh = RefreshToken.for_user(edit_welcome_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(edit_welcome_user)
 
 
 @pytest.mark.django_db
