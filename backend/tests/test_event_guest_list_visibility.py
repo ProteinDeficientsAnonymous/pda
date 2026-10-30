@@ -2,10 +2,10 @@ import pytest
 from community.models import RSVPStatus
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -20,9 +20,7 @@ def other_auth_headers(other_user):
 
 @pytest.fixture
 def event_manager_headers(db):
-    user = User.objects.create_user(phone_number="+15550001111")
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
+    user = make_user(PermissionKey.MANAGE_EVENTS)
     return auth_headers_for(user)
 
 
