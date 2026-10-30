@@ -11,6 +11,9 @@ export interface SpeechTemplate {
 }
 
 export interface SpeechTemplateUpdate {
+  sharedPm?: string;
+  walkPm?: string;
+  restaurantPm?: string;
   openRoles?: string[];
 }
 
@@ -50,6 +53,9 @@ export function useUpdateSpeechTemplate() {
   return useMutation({
     mutationFn: async (patch: SpeechTemplateUpdate) => {
       const body: Record<string, string | string[]> = {};
+      if (patch.sharedPm !== undefined) body.shared_pm = patch.sharedPm;
+      if (patch.walkPm !== undefined) body.walk_pm = patch.walkPm;
+      if (patch.restaurantPm !== undefined) body.restaurant_pm = patch.restaurantPm;
       if (patch.openRoles !== undefined) body.open_roles = patch.openRoles;
       const { data } = await apiClient.patch<WireSpeechTemplate>(TEMPLATE_URL, body);
       return mapTemplate(data);
