@@ -1,13 +1,13 @@
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 
-from community._attendance_analytics import (
+from community.attendance.analytics import (
     QUALIFYING_EVENT_TYPES,
     QUALIFYING_WINDOW_DAYS,
     MemberAttendanceStats,
 )
-from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES, is_attended, is_didnt_go
 from community.models import EventRSVP, EventType
+from community.rsvps.counts import NON_REPORTABLE_EVENT_STATUSES, is_attended, is_didnt_go
 from django.utils import timezone
 
 
