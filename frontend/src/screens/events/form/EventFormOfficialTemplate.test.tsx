@@ -53,10 +53,10 @@ describe('EventForm official description template', () => {
     await userEvent.click(screen.getByLabelText('make it an official pda event'));
     expect(screen.getByLabelText('description')).toHaveValue('walk copy');
 
-    await userEvent.click(screen.getByLabelText("it's a walk"));
+    await userEvent.click(screen.getByLabelText('restaurant'));
     expect(screen.getByLabelText('description')).toHaveValue('non-walk copy');
 
-    await userEvent.click(screen.getByLabelText("it's a walk"));
+    await userEvent.click(screen.getByLabelText('walk'));
     expect(screen.getByLabelText('description')).toHaveValue('walk copy');
   });
 

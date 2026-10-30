@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/auth/store';
 import {
   type Event,
+  EventFormat,
   type EventRsvpQuestion,
   EventStatus as EventStatusEnum,
   EventType as EventTypeEnum,
@@ -48,8 +49,7 @@ export interface EventFormValues {
   coHostIds: string[];
   tagIds: string[];
   status: EventStatus;
-  // form-only: picks the official description template, never sent to the api
-  isWalk: boolean;
+  eventFormat: EventFormat | null;
 }
 
 type CreateEventValues = EventFormValues & {
@@ -74,6 +74,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   slug: ['slug', (v) => v],
   description: ['description', (v) => v],
   eventType: ['event_type', (v) => v],
+  eventFormat: ['event_format', (v) => v],
   visibility: ['visibility', (v) => v],
   location: ['location', (v) => v],
   latitude: ['latitude', (v) => v],
@@ -110,13 +111,21 @@ function encodeField<K extends keyof EventFormValues>(
   return [wireKey, encode(value)];
 }
 
-function toWireBody(values: EventFormValues): WireBody {
+// null event_format means "unchanged" on PATCH; the server clears it itself when the type leaves official.
+function nullFormatUnlessOfficial(body: WireBody, eventType: string | undefined) {
+  if (eventType !== undefined && eventType !== EventTypeEnum.Official && 'event_format' in body) {
+    body.event_format = null;
+  }
+}
+
+export function toWireBody(values: EventFormValues): WireBody {
   const body: WireBody = {};
   for (const key of Object.keys(FIELD_TO_WIRE) as (keyof EventFormValues)[]) {
     const encoded = encodeField(key, values[key]);
     if (!encoded) continue;
     body[encoded[0]] = encoded[1];
   }
+  nullFormatUnlessOfficial(body, values.eventType);
   return body;
 }
 
@@ -130,6 +139,7 @@ export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
     if (!encoded) continue;
     body[encoded[0]] = encoded[1];
   }
+  nullFormatUnlessOfficial(body, values.eventType);
   return body;
 }
 
@@ -323,7 +333,7 @@ export function emptyEventFormValues(): EventFormValues {
     coHostIds: [],
     tagIds: [],
     status: 'active',
-    isWalk: true,
+    eventFormat: EventFormat.Walk,
   };
 }
 
@@ -388,6 +398,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     coHostIds: e.coHostIds,
     tagIds: e.tags.map((t) => t.id),
     status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
-    isWalk: true,
+    eventFormat: e.eventFormat,
   };
 }
