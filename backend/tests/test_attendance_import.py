@@ -3,8 +3,10 @@ from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVP
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
+
+from tests._users import make_user
 
 
 def _auth(user):
@@ -19,12 +21,7 @@ def _csv(rows: list[str]) -> SimpleUploadedFile:
 
 @pytest.fixture
 def events_admin(db):
-    admin = User.objects.create_user(
-        phone_number="+12025552000", password="x", first_name="Admin", is_member=True
-    )
-    role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
-    return admin
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture

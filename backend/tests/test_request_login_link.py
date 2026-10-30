@@ -9,18 +9,8 @@ from notifications.email_sender import SendResult
 from notifications.models import Notification, NotificationType
 from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.permissions import PermissionKey
-from users.roles import Role
 
-
-def _make_user_manager():
-    """Create a user with MANAGE_USERS permission and return them."""
-    manager = User.objects.create_user(
-        phone_number="+12025559001", password="pass", first_name="Manager"
-    )
-    role = Role.objects.create(name="user-manager", permissions=[PermissionKey.MANAGE_USERS])
-    manager.roles.add(role)
-    return manager
-
+from tests._users import make_user
 
 _URL = "/api/community/request-login-link/"
 _PHONE = "+12025558800"
@@ -78,7 +68,7 @@ class TestRequestLoginLink:
         user = User.objects.create_user(
             phone_number=_PHONE, password="pass", first_name="Invited", last_name="Person"
         )
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
 
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
 
@@ -94,18 +84,14 @@ class TestRequestLoginLink:
         User.objects.create_user(
             phone_number=_PHONE, password="pass", first_name="Invited", last_name="Person"
         )
-        approver = User.objects.create_user(
-            phone_number="+12025559002", password="pass", first_name="Approver"
-        )
-        role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
-        approver.roles.add(role)
+        approver = make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
 
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
 
         assert not Notification.objects.filter(recipient=approver).exists()
 
     def test_does_not_create_notification_for_unknown_phone(self, api_client):
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
 
         api_client.post(_URL, {"phone_number": "+12025559999"}, content_type="application/json")
 
@@ -270,7 +256,7 @@ class TestRequestLoginLinkEmailDelivery:
 
     def test_admin_fallback_sets_login_link_requested(self, api_client, fake_email_sender):
         """No-email fallback dedupes admin notifications via login_link_requested."""
-        _make_user_manager()
+        make_user(PermissionKey.MANAGE_USERS)
         user = User.objects.create_user(
             phone_number="+12025550102",
             first_name="NoEmail",
@@ -287,7 +273,7 @@ class TestRequestLoginLinkEmailDelivery:
     def test_user_with_email_send_succeeds_skips_admin_notification(
         self, api_client, fake_email_sender
     ):
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
         user = User.objects.create_user(
             phone_number="+12025550101",
             first_name="Sam",
@@ -308,7 +294,7 @@ class TestRequestLoginLinkEmailDelivery:
 
     def test_user_with_email_send_fails_still_returns_200(self, api_client, fake_email_sender):
         fake_email_sender.send.return_value = SendResult(success=False, error="invalid recipient")
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
         user = User.objects.create_user(
             phone_number="+12025550101",
             first_name="Sam",
@@ -328,7 +314,7 @@ class TestRequestLoginLinkEmailDelivery:
         assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]
 
     def test_user_with_no_email_skips_send(self, api_client, fake_email_sender):
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
         user = User.objects.create_user(
             phone_number="+12025550101",
             first_name="Sam",
@@ -354,7 +340,7 @@ class TestRequestLoginLinkEmailDelivery:
         bug in helper, etc.), the endpoint still returns 200 and the admin
         notification fallback fires."""
         fake_email_sender.send.side_effect = RuntimeError("unexpected boom")
-        manager = _make_user_manager()
+        manager = make_user(PermissionKey.MANAGE_USERS)
         user = User.objects.create_user(
             phone_number="+12025550101",
             first_name="Sam",
