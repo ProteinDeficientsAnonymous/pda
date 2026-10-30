@@ -6542,6 +6542,62 @@
         "title": "SpeechTemplateOut",
         "type": "object"
       },
+      "SpeechTemplatePatchIn": {
+        "properties": {
+          "open_roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Roles"
+          },
+          "restaurant_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restaurant Pm"
+          },
+          "shared_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared Pm"
+          },
+          "walk_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Walk Pm"
+          }
+        },
+        "title": "SpeechTemplatePatchIn",
+        "type": "object"
+      },
       "SseTicketOut": {
         "properties": {
           "ticket": {
@@ -16486,6 +16542,51 @@
           }
         ],
         "summary": "Get Speech Template",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_speech_template_update_speech_template",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechTemplatePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Speech Template",
         "tags": [
           "community"
         ]

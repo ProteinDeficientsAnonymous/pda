@@ -293,6 +293,11 @@ class Code:
         REASON_TEXT_REQUIRED = "rejection_email.reason_text_required"
         REASON_TEXT_TOO_LONG = "rejection_email.reason_text_too_long"  # params: { max_length: int }
 
+    class SpeechTemplate:
+        INVALID_DOC = "speech_template.invalid_doc"
+        TOO_MANY_ROLES = "speech_template.too_many_roles"  # params: { max: int }
+        ROLE_TOO_LONG = "speech_template.role_too_long"  # params: { max: int }
+
     class Connect:
         REQUEST_NOT_FOUND = "connect.request_not_found"
         REQUEST_EXPIRED = "connect.request_expired"
