@@ -12,14 +12,10 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
 
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -97,7 +93,9 @@ class TestAttendanceReportEndpoint:
             attendance=AttendanceStatus.UNKNOWN,
         )
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         assert response.status_code == 200
         rows = response.json()["events"]
         assert len(rows) == 1
@@ -111,7 +109,9 @@ class TestAttendanceReportEndpoint:
         unmarked = _make_event(host_user, "No Marks", days_ago=1)
         EventRSVP.objects.create(event=unmarked, user=members[0], status=RSVPStatus.ATTENDING)
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         assert response.status_code == 200
         assert response.json()["events"] == []
 
@@ -125,7 +125,9 @@ class TestAttendanceReportEndpoint:
         )
         Event.objects.filter(pk=deleted.pk).update(status=EventStatus.DELETED)
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         assert response.status_code == 200
         assert response.json()["events"] == []
 
@@ -139,7 +141,9 @@ class TestAttendanceReportEndpoint:
         )
         Event.objects.filter(pk=cancelled.pk).update(status=EventStatus.CANCELLED)
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         assert response.status_code == 200
         assert response.json()["events"] == []
 
@@ -159,7 +163,9 @@ class TestAttendanceReportEndpoint:
             attendance=AttendanceStatus.UNKNOWN,
         )
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         row = response.json()["events"][0]
         # 2 attending rsvps, one with a +1 → headcount 3, matching event detail.
         assert row["going_count"] == 3
@@ -194,10 +200,10 @@ class TestAttendanceReportEndpoint:
         )
 
         row = api_client.get(
-            "/api/community/events/attendance-report/", **_auth(events_admin)
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
         ).json()["events"][0]
         report = api_client.get(
-            f"/api/community/events/{event.id}/report/", **_auth(events_admin)
+            f"/api/community/events/{event.id}/report/", **auth_headers_for(events_admin)
         ).json()
         assert row["attended_count"] == 3
         assert row["no_show_count"] == 2
@@ -217,7 +223,7 @@ class TestAttendanceReportEndpoint:
         )
 
         rows = api_client.get(
-            "/api/community/events/attendance-report/", **_auth(events_admin)
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
         ).json()["events"]
         assert len(rows) == 1
         assert rows[0]["attended_count"] == 1
@@ -232,7 +238,9 @@ class TestAttendanceReportEndpoint:
         )
         Event.objects.filter(pk=draft.pk).update(status=EventStatus.DRAFT)
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         assert response.json()["events"] == []
 
     def test_attended_mark_counts_regardless_of_later_status_change(
@@ -248,7 +256,9 @@ class TestAttendanceReportEndpoint:
             attendance=AttendanceStatus.ATTENDED,
         )
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         events = response.json()["events"]
         assert len(events) == 1
         assert events[0]["attended_count"] == 1
@@ -264,7 +274,9 @@ class TestAttendanceReportEndpoint:
                 attendance=AttendanceStatus.ATTENDED,
             )
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         ids = [r["event_id"] for r in response.json()["events"]]
         assert ids == [str(newer.id), str(older.id)]
 
@@ -276,7 +288,9 @@ class TestAttendanceReportEndpoint:
             status=RSVPStatus.ATTENDING,
             attendance=AttendanceStatus.ATTENDED,
         )
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(members[0]))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(members[0])
+        )
         assert response.status_code == 403
 
     def test_unauthenticated_rejected(self, api_client):
@@ -300,7 +314,9 @@ class TestAttendanceReportEndpoint:
                     attendance=AttendanceStatus.DIDNT_GO,
                 )
 
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         data = response.json()
         assert data["official_no_show_count"] == 2
         assert data["club_no_show_count"] == 1
@@ -486,7 +502,7 @@ class TestMemberAttendedEvents:
         assert response.json() == []
 
     def test_requires_manage_users(self, api_client, members, events_admin):
-        response = api_client.get(self._url(members[0]), **_auth(events_admin))
+        response = api_client.get(self._url(members[0]), **auth_headers_for(events_admin))
         assert response.status_code == 403
 
     def test_unknown_user_404(self, api_client, manage_users_headers):
