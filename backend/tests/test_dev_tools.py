@@ -5,21 +5,13 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._users import make_user
 
 
 @pytest.fixture
 def dev_tools_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003003",
-        password="devtoolsuserpass123",
-        first_name="Dev",
-        last_name="Tools",
-        is_member=True,
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS, first_name="Dev", last_name="Tools")
 
 
 @pytest.fixture

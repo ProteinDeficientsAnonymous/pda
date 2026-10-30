@@ -53,19 +53,19 @@ def test_review_tool_needs_import_payments(test_user, importer, event, csv_text)
 
 
 def test_import_permission_alone_cannot_see_payments(test_user, csv_text):
-    import_only = make_user("+12025557201", PermissionKey.IMPORT_PAYMENTS)
+    import_only = make_user(PermissionKey.IMPORT_PAYMENTS)
     event = make_event(test_user)
     error = json.loads(review_refused(import_only, str(event.pk), csv_text))
     assert (error["status"], error["detail"][0]["code"]) == (403, "perm.denied")
 
 
 def test_manage_events_holder_can_review(test_user, event, guests, csv_text):
-    manager = make_user("+12025557202", PermissionKey.IMPORT_PAYMENTS, PermissionKey.MANAGE_EVENTS)
+    manager = make_user(PermissionKey.IMPORT_PAYMENTS, PermissionKey.MANAGE_EVENTS)
     assert review(manager, event, csv_text)["counts"]["confident"] == 2
 
 
 def test_another_members_draft_is_refused(importer, csv_text):
-    other = make_user("+12025557203", first="Other", last="Host")
+    other = make_user(first_name="Other", last_name="Host")
     error = json.loads(review_refused(importer, str(make_draft(other).pk), csv_text))
     assert error["status"] == 403
 

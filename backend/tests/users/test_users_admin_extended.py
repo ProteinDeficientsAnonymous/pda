@@ -7,6 +7,7 @@ from community._validation import Code
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
+from tests._users import make_user
 from users.models import MagicLoginToken, User
 from users.roles import Role
 
@@ -414,7 +415,7 @@ class TestGenerateMagicLink:
         self, api_client, manage_users_headers, other_user
     ):
         """When admin generates the link, MAGIC_LINK_REQUEST notifications are marked read."""
-        approver = User.objects.create_user(phone_number="+12025557788", password="pass")
+        approver = make_user()
         Notification.objects.create(
             recipient=approver,
             notification_type=NotificationType.MAGIC_LINK_REQUEST,
@@ -464,13 +465,7 @@ class TestSearchUsersRespectsShowPhone:
         # A genuinely nameless member (e.g. pre-onboarding) must not leak the
         # private phone via the name fields — full_name stays empty rather than
         # falling back to the phone number.
-        nameless_user = User.objects.create_user(
-            phone_number="+12025550999",
-            password="namelesspass123",
-            first_name="",
-            last_name="",
-            show_phone=False,
-        )
+        nameless_user = make_user(first_name="", show_phone=False)
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
         match = self._find(response, nameless_user.pk)
