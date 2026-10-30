@@ -1,3 +1,10 @@
+## [0.209.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.0...v0.209.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pillow to v13 [security] ([#1806](https://github.com/ProteinDeficientsAnonymous/pda/issues/1806)) ([bb00169](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb001696965dd08315dbe12183376aa2274f5ff5))
+
 # [0.209.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.208.0...v0.209.0) (2026-10-30)
 
 

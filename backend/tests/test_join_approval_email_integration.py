@@ -7,16 +7,11 @@ from community.models import (
     WhatsAppLinkConfig,
 )
 from django.conf import settings
-from ninja_jwt.tokens import RefreshToken
 
-from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
+from tests._auth import auth_headers_for
+from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
 
 __all__ = ["open_official_event"]
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.django_db
@@ -74,8 +69,8 @@ class TestJoinApprovalEmail:
     ):
         sample_join_request.email = "checkin@example.com"
         sample_join_request.save(update_fields=["email"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         api_client.post(
             f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
@@ -90,8 +85,8 @@ class TestJoinApprovalEmail:
     ):
         sample_join_request.email = "checkin@example.com"
         sample_join_request.save(update_fields=["email"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         api_client.post(
             f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
