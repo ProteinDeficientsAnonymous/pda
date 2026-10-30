@@ -6,7 +6,6 @@ from datetime import timedelta
 import psycopg
 import pytest
 from django.conf import settings
-from django.core.cache import caches
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
@@ -33,14 +32,6 @@ class TestFormatNotifyForUser:
 def _auth_headers(user) -> dict:
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
