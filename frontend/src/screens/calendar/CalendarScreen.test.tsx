@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as CalendarEventsModule from '@/api/calendarEvents';
 import { upcomingRange, useCalendarEvents } from '@/api/calendarEvents';
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
 import { makeEvent } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -55,7 +55,7 @@ function renderCalendar(initialEntry = '/calendar') {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
 
   mockUseCalendarEvents.mockReturnValue({

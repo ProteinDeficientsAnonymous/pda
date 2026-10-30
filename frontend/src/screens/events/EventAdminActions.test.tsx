@@ -2,11 +2,11 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
-import { makeUser as makeBaseUser, makeEvent } from '@/test/fixtures';
+import { setAuthed, setUnauthed } from '@/test/auth';
+import { makeEvent, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { EventAdminActions } from './EventAdminActions';
@@ -27,10 +27,7 @@ const COHOST_ID = 'cohost-user';
 const REGULAR_ID = 'regular-user';
 
 function makeUser(id: string, permissions: string[] = []): User {
-  return makeBaseUser({
-    id,
-    roles: permissions.length ? [{ id: 'r1', name: 'custom', isDefault: true, permissions }] : [],
-  });
+  return makeUserWithPermissions(permissions, { id });
 }
 
 const BASE_EVENT = makeEvent({
@@ -51,14 +48,14 @@ function renderActions(event: Event) {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
 });
 
 describe('EventAdminActions', () => {
   it('creator sees edit and cancel (no delete) for active upcoming event with attendees', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     renderActions(BASE_EVENT);
 
@@ -70,7 +67,7 @@ describe('EventAdminActions', () => {
 
   it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const emptyEvent: Event = { ...BASE_EVENT, attendingCount: 0 };
     renderActions(emptyEvent);
@@ -82,7 +79,7 @@ describe('EventAdminActions', () => {
 
   it('creator sees back to draft for active event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const emptyEvent: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 0 };
     renderActions(emptyEvent);
@@ -92,7 +89,7 @@ describe('EventAdminActions', () => {
 
   it("back to draft is hidden when guests have rsvp'd, even with no attendees", () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     // attendingCount is 0 (a maybe-only guest row) but the guest rsvp count is
     // 1 — the API guard blocks unpublish, so the button must stay hidden.
@@ -104,7 +101,7 @@ describe('EventAdminActions', () => {
 
   it("back to draft is shown when only the host crew has rsvp'd", () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     // Host rsvp rows (creator + co-hosts) are excluded from guestRsvpCount,
     // so a host-only rsvp leaves the count at 0: unpublish is allowed.
@@ -116,7 +113,7 @@ describe('EventAdminActions', () => {
 
   it('back to draft is hidden when attendees exist', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     renderActions(BASE_EVENT);
 
@@ -125,7 +122,7 @@ describe('EventAdminActions', () => {
 
   it('back to draft is hidden for a past event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const pastEmpty: Event = {
       ...BASE_EVENT,
@@ -141,7 +138,7 @@ describe('EventAdminActions', () => {
 
   it('back to draft is hidden for draft and cancelled events', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const { unmount } = renderActions({ ...BASE_EVENT, status: EventStatus.Draft });
     expect(screen.queryByRole('button', { name: /back to draft/i })).not.toBeInTheDocument();
@@ -154,7 +151,7 @@ describe('EventAdminActions', () => {
 
   it('clicking back to draft patches status to draft', async () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const emptyEvent: Event = { ...BASE_EVENT, attendingCount: 0, guestRsvpCount: 0 };
     renderActions(emptyEvent);
@@ -166,7 +163,7 @@ describe('EventAdminActions', () => {
 
   it('creator sees delete for draft event', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const draftEvent: Event = { ...BASE_EVENT, status: EventStatus.Draft };
     renderActions(draftEvent);
@@ -178,7 +175,7 @@ describe('EventAdminActions', () => {
 
   it('co-host sees edit and cancel buttons for upcoming event', () => {
     const cohost = makeUser(COHOST_ID);
-    useAuthStore.setState({ status: 'authed', user: cohost, accessToken: 'tok' });
+    setAuthed(cohost);
 
     renderActions(BASE_EVENT);
 
@@ -190,7 +187,7 @@ describe('EventAdminActions', () => {
 
   it('creator sees no cancel button for an already-cancelled event', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const cancelledEvent: Event = { ...BASE_EVENT, status: EventStatus.Cancelled };
     renderActions(cancelledEvent);
@@ -203,7 +200,7 @@ describe('EventAdminActions', () => {
 
   it('creator sees no cancel button for a past (ended) event', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const pastEvent: Event = {
       ...BASE_EVENT,
@@ -217,7 +214,7 @@ describe('EventAdminActions', () => {
 
   it('regular member (not creator, not co-host) sees no admin action buttons', () => {
     const regular = makeUser(REGULAR_ID);
-    useAuthStore.setState({ status: 'authed', user: regular, accessToken: 'tok' });
+    setAuthed(regular);
 
     renderActions(BASE_EVENT);
 
@@ -227,7 +224,7 @@ describe('EventAdminActions', () => {
   });
 
   it('unauthenticated user sees no admin action buttons', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
 
     renderActions(BASE_EVENT);
 
@@ -240,7 +237,7 @@ describe('EventAdminActions', () => {
   // published, so there's nothing to cancel — users can delete directly.
   it('creator sees delete for draft event regardless of attendees count', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const draftWithAttendees: Event = {
       ...BASE_EVENT,
@@ -257,7 +254,7 @@ describe('EventAdminActions', () => {
   // already cancelled.
   it('creator sees only delete (no edit) for a past cancelled event', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const pastCancelled: Event = {
       ...BASE_EVENT,
@@ -277,7 +274,7 @@ describe('EventAdminActions', () => {
   // just after the event.
   it('creator can still edit an event that started 2 hours ago (within grace window)', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const justStarted: Event = {
       ...BASE_EVENT,
@@ -292,7 +289,7 @@ describe('EventAdminActions', () => {
 
   it('creator cannot edit an event that ended 10 hours ago (past grace window)', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const longOver: Event = {
       ...BASE_EVENT,
@@ -309,7 +306,7 @@ describe('EventAdminActions', () => {
   // past before publish) must remain editable so the user can update the date.
   it('creator can edit a draft with a start time well in the past', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     const staleDraft: Event = {
       ...BASE_EVENT,
@@ -325,7 +322,7 @@ describe('EventAdminActions', () => {
 
   it('creator uses endDatetime (not startDatetime) as the grace-window anchor', () => {
     const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
 
     // Started 4h ago, still going (ends 1h from now). Well within grace.
     const longRunning: Event = {
