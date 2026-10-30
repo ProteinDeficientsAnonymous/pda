@@ -187,6 +187,7 @@ class EventOut(BaseModel):
     my_paid_confirmed: bool = False
     viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
+    official_kind: str | None = None
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
     photo_updated_at: str | None = None

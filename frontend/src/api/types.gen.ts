@@ -3769,6 +3769,8 @@ export interface components {
             };
             /** My Rsvp */
             my_rsvp?: string | null;
+            /** Official Kind */
+            official_kind?: string | null;
             /**
              * Other Link
              * @default

@@ -2718,6 +2718,17 @@
             ],
             "title": "My Rsvp"
           },
+          "official_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Kind"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",

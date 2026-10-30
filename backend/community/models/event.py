@@ -15,6 +15,7 @@ from community.models.choices import (
     EventStatus,
     EventType,
     InvitePermission,
+    OfficialKind,
     PageVisibility,
     RSVPStatus,
 )
@@ -86,6 +87,12 @@ class Event(models.Model):
         max_length=20,
         choices=EventType.choices,
         default=EventType.COMMUNITY,
+    )
+    official_kind = models.CharField(
+        max_length=20,
+        choices=OfficialKind.choices,
+        blank=True,
+        default="",
     )
     visibility = models.CharField(
         max_length=20,
