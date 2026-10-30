@@ -14,10 +14,6 @@ def host(test_user):
     return test_user
 
 
-def _make_event(host, days_out: float = 5, **extra):
-    return make_event("Vegan Potluck", days_out, created_by=host, **extra)
-
-
 def _due():
     return list(due_cohost_reminder_events(timezone.now()))
 
@@ -25,11 +21,11 @@ def _due():
 @pytest.mark.django_db
 class TestDueCohostReminderEvents:
     def test_includes_official_event_with_only_creator(self, host):
-        event = _make_event(host)
+        event = make_event("Vegan Potluck", 5, created_by=host)
         assert _due() == [event]
 
     def test_excludes_event_with_cohost(self, host):
-        event = _make_event(host)
+        event = make_event("Vegan Potluck", 5, created_by=host)
         event.co_hosts.add(make_member("+12025556001"))
         assert _due() == []
 
@@ -40,17 +36,20 @@ class TestDueCohostReminderEvents:
             {"event_type": EventType.CLUB},
             {"status": EventStatus.DRAFT},
             {"status": EventStatus.CANCELLED},
-            {"days_out": 8},
-            {"days_out": -0.05},
             {"cohost_reminder_sent_at": timezone.now()},
         ],
     )
     def test_excludes_ineligible(self, host, overrides):
-        _make_event(host, **overrides)
+        make_event("Vegan Potluck", 5, created_by=host, **overrides)
+        assert _due() == []
+
+    @pytest.mark.parametrize("days_out", [8, -0.05])
+    def test_excludes_outside_window(self, host, days_out):
+        make_event("Vegan Potluck", days_out, created_by=host)
         assert _due() == []
 
     def test_excludes_tbd_start(self, host):
-        event = _make_event(host)
+        event = make_event("Vegan Potluck", 5, created_by=host)
         event.start_datetime = None
         event.save(update_fields=["start_datetime"])
         assert _due() == []
@@ -59,7 +58,7 @@ class TestDueCohostReminderEvents:
 @pytest.mark.django_db
 class TestSendDueCohostReminders:
     def test_emails_host_and_stamps_once(self, host, fake_email_sender):
-        event = _make_event(host)
+        event = make_event("Vegan Potluck", 5, created_by=host)
 
         assert send_due_cohost_reminders() == 1
         assert send_due_cohost_reminders() == 0
@@ -74,7 +73,7 @@ class TestSendDueCohostReminders:
         assert event.cohost_reminder_sent_at is not None
 
     def test_skips_host_without_email(self, test_user, fake_email_sender):
-        event = _make_event(test_user)
+        event = make_event("Vegan Potluck", 5, created_by=test_user)
         test_user.email = ""
         test_user.save(update_fields=["email"])
 
@@ -86,6 +85,6 @@ class TestSendDueCohostReminders:
 
 @pytest.mark.django_db
 def test_command_reports_count(host, fake_email_sender, capsys):
-    _make_event(host)
+    make_event("Vegan Potluck", 5, created_by=host)
     call_command("send_cohost_reminders")
     assert "Sent 1 co-host reminder(s)" in capsys.readouterr().out
