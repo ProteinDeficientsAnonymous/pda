@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { makeEvent as makeBaseEvent, makeGuest, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { MyRsvpSection } from './MyRsvpSection';
 
@@ -48,17 +47,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 }
 
 function renderSection(event: Event, token?: string, locked?: boolean) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <MyRsvpSection
-          event={event}
-          {...(token ? { token } : {})}
-          {...(locked ? { locked } : {})}
-        />
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <MyRsvpSection event={event} {...(token ? { token } : {})} {...(locked ? { locked } : {})} />,
   );
 }
 
