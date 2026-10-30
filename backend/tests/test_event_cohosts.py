@@ -1,22 +1,15 @@
 import pytest
-from community.models import Event, RSVPStatus
+from community.models import RSVPStatus
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._events import make_event
 from tests.conftest import future_iso
 
 
 @pytest.fixture
 def rsvp_event(db, test_user):
-    return Event.objects.create(
-        title="RSVP Event",
-        description="An event with RSVPs enabled",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        location="Community Space",
-        rsvp_enabled=True,
-        created_by=test_user,
-    )
+    return make_event(title="RSVP Event", rsvp_enabled=True, created_by=test_user)
 
 
 @pytest.fixture

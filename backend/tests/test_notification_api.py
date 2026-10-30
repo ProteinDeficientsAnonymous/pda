@@ -11,7 +11,7 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._events import make_event
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -67,12 +67,7 @@ def another_user(db) -> User:
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        created_by=inviter,
-    )
+    return make_event(created_by=inviter)
 
 
 # ─── List endpoint ────────────────────────────────────────────────────────────

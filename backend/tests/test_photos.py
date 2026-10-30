@@ -3,7 +3,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-from community.models import Event
 from config.media_proxy import serve_media
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -14,7 +13,7 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from tests.conftest import future_iso
+from tests._events import make_event
 
 
 def _make_test_image(fmt="JPEG", size=(20, 20)):
@@ -76,11 +75,7 @@ def manager(db):
 
 @pytest.fixture
 def event(db, member):
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        created_by=member,
-    )
+    return make_event(created_by=member)
 
 
 @pytest.mark.django_db
