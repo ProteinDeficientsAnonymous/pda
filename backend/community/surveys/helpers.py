@@ -70,6 +70,7 @@ def _survey_out(
     include_questions: bool = False,
     requesting_user=None,
     response_token: str = "",
+    count_responses: bool = True,
 ) -> SurveyOut:
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
@@ -96,7 +97,7 @@ def _survey_out(
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
         questions=questions,
-        response_count=survey.responses.count(),
+        response_count=survey.responses.count() if count_responses else 0,
         my_response_id=my_response_id,
         my_answers=my_answers,
     )
