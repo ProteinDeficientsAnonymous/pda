@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAccessibilityStore } from '@/accessibility/store';
 import * as authApi from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import SettingsScreen from './SettingsScreen';
 
@@ -56,18 +55,8 @@ const TEST_USER = makeUser({
   email: 'test@example.com',
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderSettings() {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter>
-        <SettingsScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<SettingsScreen />);
 }
 
 beforeEach(() => {
