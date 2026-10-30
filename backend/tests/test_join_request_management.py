@@ -7,10 +7,10 @@ from community import _join_requests
 from community._validation import Code
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
@@ -51,9 +51,7 @@ class TestJoinRequestManagement:
             first_name="Admin",
             last_name="User",
         )
-        admin_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
-        }
+        admin_headers = auth_headers_for(admin)
         response = api_client.get("/api/community/join-requests/", **admin_headers)
         assert response.status_code == 200
 
