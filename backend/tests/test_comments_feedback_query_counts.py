@@ -10,10 +10,11 @@ from community.models import (
 )
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 
-from tests.test_event_comments import event  # noqa: F401
-from tests.test_event_feedback_send import NOW, _event, _rsvp, _user, feedback_survey  # noqa: F401
+from tests._auth import auth_headers_for
+from tests._event_feedback_helpers import NOW, make_ended_event, make_rsvp
+from tests._users import make_user
+from tests.conftest import future_iso
 
 
 def _count(call) -> int:
@@ -24,10 +25,13 @@ def _count(call) -> int:
 
 @pytest.mark.django_db
 class TestCommentsFeedbackQueryCounts:
-    def test_reaction_toggle_reuses_co_hosts_prefetch(self, api_client, event, test_user):  # noqa: F811
-        viewer = _user()
+    def test_reaction_toggle_reuses_co_hosts_prefetch(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Test Event", start_datetime=future_iso(days=30), created_by=test_user
+        )
+        viewer = make_user()
         EventRSVP.objects.create(event=event, user=viewer, status=RSVPStatus.ATTENDING)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(viewer).access_token}"}  # ty: ignore[unresolved-attribute]
+        headers = auth_headers_for(viewer)
         top = EventComment.objects.create(event=event, author=test_user, body="top")
 
         for _ in range(4):
@@ -42,12 +46,12 @@ class TestCommentsFeedbackQueryCounts:
         table = Event.co_hosts.through._meta.db_table
         assert sum(table in q["sql"] for q in ctx.captured_queries) == 1
 
-    def test_feedback_rerun_is_constant(self, feedback_survey, fake_email_sender):  # noqa: F811
-        feedback_event = _event()
+    def test_feedback_rerun_is_constant(self, feedback_survey, fake_email_sender):
+        feedback_event = make_ended_event()
 
         def add_attendees(n: int) -> None:
             for _ in range(n):
-                _rsvp(feedback_event, _user())
+                make_rsvp(feedback_event, make_user())
             send_first_requests(NOW)
 
         add_attendees(2)

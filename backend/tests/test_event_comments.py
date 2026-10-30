@@ -13,10 +13,10 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -64,8 +64,7 @@ class TestGetComments:
             password="bystanderpass",
             first_name="Bystander",
         )
-        refresh = RefreshToken.for_user(bystander)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(bystander)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -81,8 +80,7 @@ class TestGetComments:
             first_name="Member",
         )
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
-        refresh = RefreshToken.for_user(member)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(member)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -99,8 +97,7 @@ class TestGetComments:
             first_name="Cohost",
         )
         event.co_hosts.add(cohost)
-        refresh = RefreshToken.for_user(cohost)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(cohost)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -120,8 +117,7 @@ def rsvp_user(db):
 
 @pytest.fixture
 def rsvp_headers(rsvp_user):
-    refresh = RefreshToken.for_user(rsvp_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(rsvp_user)
 
 
 @pytest.fixture
@@ -149,8 +145,7 @@ class TestPostComment:
             password="bystanderpass",
             first_name="Bystander",
         )
-        refresh = RefreshToken.for_user(bystander)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(bystander)
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             data=json.dumps({"body": "hi"}),
@@ -294,8 +289,7 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(admin_user)
 
 
 @pytest.mark.django_db
@@ -318,9 +312,7 @@ class TestDeleteComment:
             first_name="Bystander",
         )
         EventRSVP.objects.create(event=event_with_rsvp, user=bystander, status=RSVPStatus.ATTENDING)
-        bystander_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(bystander).access_token}"  # type: ignore
-        }
+        bystander_headers = auth_headers_for(bystander)
 
         author = User.objects.create_user(
             phone_number="+12025550505",
@@ -399,8 +391,7 @@ class TestCommentVisibility:
             password="strangerpass",
             first_name="Stranger",
         )
-        refresh = RefreshToken.for_user(stranger)
-        stranger_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        stranger_headers = auth_headers_for(stranger)
         event = Event.objects.create(
             title="Invite-only",
             start_datetime=future_iso(days=30),
