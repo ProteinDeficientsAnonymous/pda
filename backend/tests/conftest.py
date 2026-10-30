@@ -8,12 +8,13 @@ from django.core.cache import caches
 from django.db import DatabaseError, connections
 from django.test import Client
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User, UserManager
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._auth import auth_headers_for
 
 
 def future_iso(days: int = 30, hours: int = 0, minutes: int = 0) -> str:
@@ -126,8 +127,7 @@ def test_user(db):
 
 @pytest.fixture
 def auth_headers(test_user):
-    refresh = RefreshToken.for_user(test_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(test_user)
 
 
 @pytest.fixture
@@ -144,8 +144,7 @@ def vettor_user(db):
 
 @pytest.fixture
 def vettor_headers(vettor_user):
-    refresh = RefreshToken.for_user(vettor_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(vettor_user)
 
 
 @pytest.fixture
@@ -166,8 +165,7 @@ def manage_users_user(db):
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_users_user)
 
 
 @pytest.fixture
@@ -188,8 +186,7 @@ def manage_roles_user(db):
 
 @pytest.fixture
 def manage_roles_headers(manage_roles_user):
-    refresh = RefreshToken.for_user(manage_roles_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_roles_user)
 
 
 @pytest.fixture
@@ -207,8 +204,25 @@ def manage_roles_only_user(db):
 
 @pytest.fixture
 def manage_roles_only_headers(manage_roles_only_user):
-    refresh = RefreshToken.for_user(manage_roles_only_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_roles_only_user)
+
+
+@pytest.fixture
+def manage_events_user(db):
+    user = User.objects.create_user(
+        phone_number="+14155551234",
+        password="eventmanagerpass123",
+        first_name="Event",
+        last_name="Manager",
+    )
+    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def manage_events_headers(manage_events_user):
+    return auth_headers_for(manage_events_user)
 
 
 @pytest.fixture
@@ -223,8 +237,7 @@ def needs_onboarding_user(db):
 
 @pytest.fixture
 def needs_onboarding_auth_headers(needs_onboarding_user):
-    refresh = RefreshToken.for_user(needs_onboarding_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(needs_onboarding_user)
 
 
 @pytest.fixture
