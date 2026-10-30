@@ -8,7 +8,7 @@ from django.utils import timezone
 from users.models import Role, User
 from users.permissions import PermissionKey
 
-from tests.test_attendance_mark import _auth
+from tests._auth import auth_headers_for
 
 IMPORT_URL = "/api/community/events/attendance-import/commit/"
 MARK_URL = "/api/community/events/attendance-mark/"
@@ -54,7 +54,9 @@ def _row(user: User) -> dict:
 
 def _post(api_client, admin, url: str, payload: dict):
     with CaptureQueriesContext(connection) as ctx:
-        response = api_client.post(url, payload, content_type="application/json", **_auth(admin))
+        response = api_client.post(
+            url, payload, content_type="application/json", **auth_headers_for(admin)
+        )
     assert response.status_code == 200, response.content
     return response.json(), len(ctx.captured_queries)
 
