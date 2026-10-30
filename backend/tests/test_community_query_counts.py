@@ -16,8 +16,9 @@ from community.models import (
 from django.utils import timezone
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
-from tests._query_counts import assert_constant_queries, headers_for, make_user, make_user_with
+from tests._query_counts import assert_constant_queries, make_user, make_user_with
 
 
 @pytest.mark.django_db
@@ -40,7 +41,7 @@ class TestEventEndpointsQueryCount:
                     )
 
         url = f"/api/community/events/{event.id}/comments/"
-        assert_constant_queries(api_client, url, grow, headers_for(host))
+        assert_constant_queries(api_client, url, grow, auth_headers_for(host))
 
     @pytest.mark.parametrize("suffix", ["stats/", "text-recipients/"])
     def test_host_rsvp_views(self, api_client, suffix):
@@ -53,7 +54,7 @@ class TestEventEndpointsQueryCount:
                 event.invited_users.add(make_user("Invitee", is_member=True))
 
         url = f"/api/community/events/{event.id}/{suffix}"
-        assert_constant_queries(api_client, url, grow, headers_for(host))
+        assert_constant_queries(api_client, url, grow, auth_headers_for(host))
 
     def test_event_flags(self, api_client):
         admin = make_user_with(PermissionKey.MANAGE_EVENTS)
@@ -65,7 +66,9 @@ class TestEventEndpointsQueryCount:
                     event=make_event(created_by=flagger), flagged_by=flagger, reason="spam"
                 )
 
-        assert_constant_queries(api_client, "/api/community/event-flags/", grow, headers_for(admin))
+        assert_constant_queries(
+            api_client, "/api/community/event-flags/", grow, auth_headers_for(admin)
+        )
 
     @pytest.mark.parametrize(
         "path", ["events/attendance-report/", "events/attendance-analytics/members/"]
@@ -81,7 +84,7 @@ class TestEventEndpointsQueryCount:
                 )
                 make_rsvp(past, member, attendance=AttendanceStatus.ATTENDED)
 
-        assert_constant_queries(api_client, f"/api/community/{path}", grow, headers_for(admin))
+        assert_constant_queries(api_client, f"/api/community/{path}", grow, auth_headers_for(admin))
 
 
 @pytest.mark.django_db
@@ -102,7 +105,7 @@ class TestContentEndpointsQueryCount:
                 )
 
         url = f"/api/community/surveys/{survey.id}/summary/"
-        assert_constant_queries(api_client, url, grow, headers_for(admin))
+        assert_constant_queries(api_client, url, grow, auth_headers_for(admin))
 
     def test_join_form(self, api_client):
         def grow(n: int) -> None:

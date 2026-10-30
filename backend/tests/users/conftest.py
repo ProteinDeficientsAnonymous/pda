@@ -1,5 +1,5 @@
 import pytest
-from ninja_jwt.tokens import RefreshToken
+from tests._auth import auth_headers_for
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -23,8 +23,7 @@ def manage_users_user(db):
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_users_user)
 
 
 @pytest.fixture
