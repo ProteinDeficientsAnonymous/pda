@@ -4,8 +4,8 @@ from community.models import AttendanceStatus, EventRSVP, RSVPStatus
 from tests._auth import auth_headers_for
 from tests._event_stats_helpers import (
     admin_user,
-    cohost_user,
-    host_user,
+    cohost,
+    host,
     members,
     open_check_in_event,
     stats_event,
@@ -13,8 +13,8 @@ from tests._event_stats_helpers import (
 
 __all__ = [
     "admin_user",
-    "cohost_user",
-    "host_user",
+    "cohost",
+    "host",
     "members",
     "open_check_in_event",
     "stats_event",
@@ -23,11 +23,11 @@ __all__ = [
 
 @pytest.mark.django_db
 class TestStatsEndpoint:
-    def test_host_gets_stats(self, api_client, stats_event, host_user, members):
+    def test_host_gets_stats(self, api_client, stats_event, host, members):
         EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(event=stats_event, user=members[1], status=RSVPStatus.CANT_GO)
         response = api_client.get(
-            f"/api/community/events/{stats_event.id}/stats/", **auth_headers_for(host_user)
+            f"/api/community/events/{stats_event.id}/stats/", **auth_headers_for(host)
         )
         assert response.status_code == 200
         data = response.json()
@@ -35,9 +35,9 @@ class TestStatsEndpoint:
         assert data["cant_go_count"] == 1
         assert data["no_response_count"] == 2
 
-    def test_cohost_gets_stats(self, api_client, stats_event, cohost_user):
+    def test_cohost_gets_stats(self, api_client, stats_event, cohost):
         response = api_client.get(
-            f"/api/community/events/{stats_event.id}/stats/", **auth_headers_for(cohost_user)
+            f"/api/community/events/{stats_event.id}/stats/", **auth_headers_for(cohost)
         )
         assert response.status_code == 200
 
@@ -57,17 +57,17 @@ class TestStatsEndpoint:
         response = api_client.get(f"/api/community/events/{stats_event.id}/stats/")
         assert response.status_code == 401
 
-    def test_not_found(self, api_client, host_user):
+    def test_not_found(self, api_client, host):
         response = api_client.get(
             "/api/community/events/00000000-0000-0000-0000-000000000000/stats/",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 404
 
 
 @pytest.mark.django_db
 class TestSetAttendance:
-    def test_host_marks_attended(self, api_client, open_check_in_event, host_user, members):
+    def test_host_marks_attended(self, api_client, open_check_in_event, host, members):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
         )
@@ -75,7 +75,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         rsvp.refresh_from_db()
@@ -83,7 +83,7 @@ class TestSetAttendance:
         assert rsvp.checked_in_at is not None
 
     def test_guest_order_is_stable_across_check_ins(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         for m in members:
             EventRSVP.objects.create(event=open_check_in_event, user=m, status=RSVPStatus.ATTENDING)
@@ -91,21 +91,21 @@ class TestSetAttendance:
         expected = [str(m.pk) for m in members]
         assert [
             g["user_id"]
-            for g in api_client.get(detail_url, **auth_headers_for(host_user)).json()["guests"]
+            for g in api_client.get(detail_url, **auth_headers_for(host)).json()["guests"]
         ] == expected
 
         api_client.post(
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[1].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
 
-        after = api_client.get(detail_url, **auth_headers_for(host_user)).json()["guests"]
+        after = api_client.get(detail_url, **auth_headers_for(host)).json()["guests"]
         assert [g["user_id"] for g in after] == expected
 
     def test_no_show_does_not_stamp_checked_in_at(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
@@ -114,14 +114,14 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         rsvp.refresh_from_db()
         assert rsvp.checked_in_at is None
 
     def test_checked_in_at_preserved_on_re_mark(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
@@ -131,7 +131,7 @@ class TestSetAttendance:
             url,
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         rsvp.refresh_from_db()
         first_check_in = rsvp.checked_in_at
@@ -139,18 +139,18 @@ class TestSetAttendance:
             url,
             {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         api_client.post(
             url,
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         rsvp.refresh_from_db()
         assert rsvp.checked_in_at == first_check_in
 
-    def test_cohost_can_mark(self, api_client, open_check_in_event, cohost_user, members):
+    def test_cohost_can_mark(self, api_client, open_check_in_event, cohost, members):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
         )
@@ -158,7 +158,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.DIDNT_GO},
             content_type="application/json",
-            **auth_headers_for(cohost_user),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
 
@@ -174,19 +174,19 @@ class TestSetAttendance:
         )
         assert response.status_code == 403
 
-    def test_rejects_when_check_in_not_open(self, api_client, stats_event, host_user, members):
+    def test_rejects_when_check_in_not_open(self, api_client, stats_event, host, members):
         EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.ATTENDING)
         response = api_client.post(
             f"/api/community/events/{stats_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.attendance_opens_later"
 
     def test_host_marks_attended_for_maybe_rsvp(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.MAYBE
@@ -195,7 +195,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         rsvp.refresh_from_db()
@@ -203,7 +203,7 @@ class TestSetAttendance:
         assert rsvp.checked_in_at is not None
 
     def test_allows_check_in_when_rsvp_not_going(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.CANT_GO
@@ -212,12 +212,12 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
 
     def test_allows_check_in_when_rsvp_waitlisted(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.WAITLISTED
@@ -226,22 +226,20 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
 
-    def test_rejects_unknown_rsvp(self, api_client, open_check_in_event, host_user, members):
+    def test_rejects_unknown_rsvp(self, api_client, open_check_in_event, host, members):
         response = api_client.post(
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 404
 
-    def test_rejects_invalid_attendance_value(
-        self, api_client, open_check_in_event, host_user, members
-    ):
+    def test_rejects_invalid_attendance_value(self, api_client, open_check_in_event, host, members):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
         )
@@ -249,7 +247,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": "maybe_attended"},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 422
 
@@ -260,7 +258,7 @@ class TestSetAttendance:
         assert rsvp.attendance == AttendanceStatus.UNKNOWN
 
     def test_marks_plus_one_independently_of_member(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event,
@@ -273,13 +271,13 @@ class TestSetAttendance:
             url,
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         api_client.post(
             url,
             {"attendance": AttendanceStatus.DIDNT_GO, "for_plus_one": True},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         rsvp.refresh_from_db()
         assert rsvp.attendance == AttendanceStatus.ATTENDED
@@ -288,7 +286,7 @@ class TestSetAttendance:
         assert rsvp.plus_one_checked_in_at is None
 
     def test_plus_one_check_in_stamps_its_own_checked_in_at(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         rsvp = EventRSVP.objects.create(
             event=open_check_in_event,
@@ -300,7 +298,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED, "for_plus_one": True},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         rsvp.refresh_from_db()
@@ -309,7 +307,7 @@ class TestSetAttendance:
         assert rsvp.plus_one_checked_in_at is not None
 
     def test_rejects_plus_one_mark_when_no_plus_one(
-        self, api_client, open_check_in_event, host_user, members
+        self, api_client, open_check_in_event, host, members
     ):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
@@ -318,7 +316,7 @@ class TestSetAttendance:
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED, "for_plus_one": True},
             content_type="application/json",
-            **auth_headers_for(host_user),
+            **auth_headers_for(host),
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.no_plus_one_to_check_in"
