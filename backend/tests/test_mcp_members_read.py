@@ -9,8 +9,8 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
 from users.models import User
 
+from tests._mcp_tool_helpers import signed_in
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
-from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +19,7 @@ _BUCKETS = ("active", "still_onboarding", "paused", "archived")
 
 
 def _call(user, **arguments):
-    token = _signed_in(user)
+    token = signed_in(user)
     try:
         return async_to_sync(pda_mcp.call_tool)("member_totals", arguments).structured_content  # type: ignore[union-attr]
     finally:
@@ -49,7 +49,7 @@ def _join_request(
 
 
 def test_hidden_and_forbidden_without_manage_users(test_user):
-    token = _signed_in(test_user)
+    token = signed_in(test_user)
     try:
         assert "member_totals" not in {t.name for t in async_to_sync(pda_mcp.list_tools)()}
     finally:

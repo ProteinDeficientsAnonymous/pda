@@ -6,9 +6,9 @@ from users.models import User
 from users.permissions import PermissionKey
 
 from tests._cashapp_helpers import csv_line, make_csv
+from tests._mcp_tool_helpers import run_tool, tool_error
 from tests._payment_helpers import create_paid_event
 from tests._users import make_user
-from tests.test_mcp_events_write import _error, _run
 
 
 def make_importer() -> User:
@@ -68,11 +68,11 @@ def make_csv_text(*extra_lines: str) -> str:
 
 
 def review(user: User, event: Event, csv_text: str) -> dict:
-    return _run(user, "review_cashapp_payments", event=str(event.pk), csv_text=csv_text)
+    return run_tool(user, "review_cashapp_payments", event=str(event.pk), csv_text=csv_text)
 
 
 def review_refused(user: User, event_ref: str, csv_text: str) -> str:
-    return _error(user, "review_cashapp_payments", event=event_ref, csv_text=csv_text)
+    return tool_error(user, "review_cashapp_payments", event=event_ref, csv_text=csv_text)
 
 
 def verified_ids(event: Event) -> set[str]:
