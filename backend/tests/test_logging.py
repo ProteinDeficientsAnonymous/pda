@@ -115,7 +115,6 @@ class TestApplicationEventLogging:
     @pytest.mark.django_db
     def test_email_failure_logs_at_error(self, caplog, settings):
         settings.VETTING_EMAIL = "test@example.com"
-        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         q = JoinFormQuestion.objects.filter(required=True).first()
         answers = {str(q.id): "Community"} if q else {}
         client = Client()

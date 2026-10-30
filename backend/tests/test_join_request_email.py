@@ -77,7 +77,6 @@ class TestVettingEmailHeaderInjection:
     @pytest.mark.django_db
     def test_vetting_email_subject_is_single_line(self, settings):
         settings.VETTING_EMAIL = "vetting@example.com"
-        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         mail.outbox = []
 
         _send_join_request_email(
