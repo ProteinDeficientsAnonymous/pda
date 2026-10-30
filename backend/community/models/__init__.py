@@ -58,6 +58,7 @@ from community.models.event_slug import (
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
 from community.models.poll import EventPoll, PollOption, PollVote
+from community.models.speech import SpeechTemplate
 from community.models.survey import (
     Survey,
     SurveyQuestion,
@@ -128,6 +129,7 @@ __all__ = [
     "EventPoll",
     "PollOption",
     "PollVote",
+    "SpeechTemplate",
     "Survey",
     "SurveyQuestion",
     "SurveyResponse",
