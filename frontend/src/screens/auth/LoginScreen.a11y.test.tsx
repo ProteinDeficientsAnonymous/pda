@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
 import { renderWithProviders } from '@/test/render';
 
 import LoginScreen from './LoginScreen';
@@ -24,7 +24,7 @@ function renderWith(component: ReactElement) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('LoginScreen accessibility', () => {

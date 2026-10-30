@@ -4,7 +4,7 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed } from '@/test/auth';
 import { creator, makeEvent, nonHost } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -52,7 +52,7 @@ beforeEach(() => {
 
 describe('EventCheckInReportScreen', () => {
   it('renders the report heading for the event creator', () => {
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /check-in report/i })).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('EventCheckInReportScreen', () => {
   });
 
   it('back link returns to the event, not the attendance page', async () => {
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     await userEvent.click(screen.getByRole('link', { name: /back to event/i }));
@@ -69,7 +69,7 @@ describe('EventCheckInReportScreen', () => {
   });
 
   it('blocks non-host members with a forbidden notice', () => {
-    useAuthStore.setState({ status: 'authed', user: nonHost, accessToken: 'tok' });
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();

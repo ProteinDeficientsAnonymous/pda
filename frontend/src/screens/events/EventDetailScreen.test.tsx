@@ -4,9 +4,9 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
 import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -72,7 +72,7 @@ function renderScreen(eventId = 'ev1', search = '') {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
 
   // Default: success with base event
@@ -90,7 +90,7 @@ describe('EventDetailScreen', () => {
   });
 
   it('shows location for authenticated member', () => {
-    useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+    setAuthed(AUTHED_USER);
     renderScreen();
 
     // LocationSection renders the first segment of the address as a link
@@ -98,7 +98,7 @@ describe('EventDetailScreen', () => {
   });
 
   it('hides location for unauthenticated guest', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderScreen();
 
     // Location link should not appear — unauthed users see LoginOrJoinSection instead
@@ -129,21 +129,21 @@ describe('EventDetailScreen', () => {
   });
 
   it('shows WhatsApp link for authenticated member', () => {
-    useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+    setAuthed(AUTHED_USER);
     renderScreen();
 
     expect(screen.getByRole('link', { name: /whatsapp group/i })).toBeInTheDocument();
   });
 
   it('hides WhatsApp link for unauthenticated guest', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderScreen();
 
     expect(screen.queryByRole('link', { name: /whatsapp group/i })).not.toBeInTheDocument();
   });
 
   it('shows sign-in and join CTAs for unauthenticated guest', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderScreen();
 
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
@@ -152,21 +152,21 @@ describe('EventDetailScreen', () => {
 
   it('shows event-settings kebab for the creator', () => {
     const creator: User = { ...AUTHED_USER, id: 'user1' };
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('button', { name: /event settings/i })).toBeInTheDocument();
   });
 
   it('hides event-settings kebab from non-host members', () => {
-    useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+    setAuthed(AUTHED_USER);
     renderScreen();
 
     expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
   });
 
   it('hides event-settings kebab from unauthenticated guests', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderScreen();
 
     expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('EventDetailScreen', () => {
     const TENTATIVE_USER = makeUser({ ...AUTHED_USER, isMember: false });
 
     function renderAs(user: User, eventType: string) {
-      useAuthStore.setState({ status: 'authed', user, accessToken: 'tok' });
+      setAuthed(user);
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, eventType, rsvpEnabled: true, isPast: false },
         isPending: false,
@@ -209,7 +209,7 @@ describe('EventDetailScreen', () => {
 
   describe('token-scoped rsvp viewer', () => {
     it('renders the public-rsvp section when rsvp_token is present and the event comes back unlocked', () => {
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, viewerUserId: 'nm-1' },
         isPending: false,
@@ -223,7 +223,7 @@ describe('EventDetailScreen', () => {
     });
 
     it('falls back to the public rsvp form when the token did not unlock the event', () => {
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       mockUseEvent.mockReturnValue({
         data: {
           ...BASE_EVENT,
@@ -243,14 +243,14 @@ describe('EventDetailScreen', () => {
     });
 
     it('passes the rsvp_token through to useEvent', () => {
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       renderScreen('ev1', '?rsvp_token=tok-abc');
 
       expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, 'tok-abc');
     });
 
     it('reuses a persisted token when the url has none (issue 873)', () => {
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       localStorage.setItem('pda-rsvp-token', 'stored-tok');
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, viewerUserId: 'nm-1' },
@@ -265,7 +265,7 @@ describe('EventDetailScreen', () => {
     });
 
     it('keeps a stored token when viewing an ineligible event (issue 880)', () => {
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       localStorage.setItem('pda-rsvp-token', 'valid-tok');
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, viewerUserId: null },
@@ -281,7 +281,7 @@ describe('EventDetailScreen', () => {
     it('keeps a stored token even on an eligible event that came back locked (issue 880)', () => {
       // A null viewerUserId can't distinguish a dead token from a live one here,
       // so EventDetailScreen never clears — the /my-rsvps 404 path owns that.
-      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      setUnauthed();
       localStorage.setItem('pda-rsvp-token', 'valid-tok');
       mockUseEvent.mockReturnValue({
         data: {
@@ -299,7 +299,7 @@ describe('EventDetailScreen', () => {
     });
 
     it('ignores a stored token for an authed member', () => {
-      useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+      setAuthed(AUTHED_USER);
       localStorage.setItem('pda-rsvp-token', 'stored-tok');
       renderScreen('ev1');
 
@@ -369,7 +369,7 @@ describe('EventDetailScreen', () => {
     });
 
     it('shows a "nothing here" notice on 404 for an authed member instead of a login prompt', () => {
-      useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+      setAuthed(AUTHED_USER);
       mockError(404);
       renderScreen('ev1');
 

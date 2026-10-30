@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType } from '@/models/event';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
@@ -44,16 +44,12 @@ async function openMenu() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('EventDetailKebabMenu', () => {
   it('shows an edit item for a co-host, linking to the edit route', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: HOST_ID }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: HOST_ID }));
     renderMenu({ event: { coHostIds: [HOST_ID] } });
     await openMenu();
 
@@ -62,11 +58,7 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item for a member who is not a host', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: 'regular-user' }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: 'regular-user' }));
     renderMenu({ event: { coHostIds: [HOST_ID] } });
     await openMenu();
 
@@ -74,11 +66,7 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item once the edit window has closed', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: HOST_ID }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: HOST_ID }));
     renderMenu({
       event: {
         coHostIds: [HOST_ID],
