@@ -2,10 +2,11 @@ import json
 
 import pytest
 from community.models import CommunityGuidelines
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._auth import auth_headers_for
 
 
 def _pm(text: str) -> str:
@@ -39,8 +40,7 @@ def manage_guidelines_user(db):
 
 @pytest.fixture
 def manage_guidelines_headers(manage_guidelines_user):
-    refresh = RefreshToken.for_user(manage_guidelines_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_guidelines_user)
 
 
 @pytest.mark.django_db

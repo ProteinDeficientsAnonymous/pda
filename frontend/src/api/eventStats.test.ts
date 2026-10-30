@@ -10,9 +10,7 @@ import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useSetGuestPayment, withWaitlistOrder } from './eventStats';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = { status: 'authed', user: { id: 'u-me' } };
