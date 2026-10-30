@@ -8,13 +8,8 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _make_user(phone: str, name: str = "", email: str = "") -> User:
-    return User.objects.create_user(
-        phone_number=phone, password="pass", first_name=name, email=email
-    )
 
 
 def _auth_headers(user: User) -> dict:
@@ -24,17 +19,17 @@ def _auth_headers(user: User) -> dict:
 
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice", email="")
 
 
 @pytest.fixture
 def invitee_with_email(db) -> User:
-    return _make_user("+12025550102", "Bob", email="bob@example.com")
+    return make_user(first_name="Bob", email="bob@example.com")
 
 
 @pytest.fixture
 def invitee_without_email(db) -> User:
-    return _make_user("+12025550103", "Carol", email="")
+    return make_user(first_name="Carol", email="")
 
 
 @pytest.fixture

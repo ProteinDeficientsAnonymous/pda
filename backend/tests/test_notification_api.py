@@ -11,13 +11,10 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
-
-
-def _make_user(phone: str, name: str = "") -> User:
-    return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
 
 
 def _auth_headers(user: User) -> dict:
@@ -52,17 +49,17 @@ def _bulk_invites(recipient: User, event: Event, count: int) -> None:
 
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550102", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def another_user(db) -> User:
-    return _make_user("+12025550103", "Carol")
+    return make_user(first_name="Carol")
 
 
 @pytest.fixture

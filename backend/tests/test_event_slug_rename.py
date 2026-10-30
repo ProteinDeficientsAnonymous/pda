@@ -14,9 +14,7 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-
-def _make_user(phone: str, name: str) -> User:
-    return User.objects.create_user(phone_number=phone, password="testpass123", first_name=name)
+from tests._users import make_user
 
 
 def _auth_headers(user: User) -> dict:
@@ -46,17 +44,17 @@ def _patch_slug(api_client, event: Event, slug: str, user: User):
 
 @pytest.fixture
 def host(db) -> User:
-    return _make_user("+12025550301", "Host")
+    return make_user(first_name="Host")
 
 
 @pytest.fixture
 def cohost(db) -> User:
-    return _make_user("+12025550302", "CoHost")
+    return make_user(first_name="CoHost")
 
 
 @pytest.fixture
 def stranger(db) -> User:
-    return _make_user("+12025550303", "Stranger")
+    return make_user(first_name="Stranger")
 
 
 @pytest.mark.django_db
