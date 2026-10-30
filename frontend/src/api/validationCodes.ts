@@ -64,6 +64,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'official events must be public';
     case Code.Event.OfficialNoPlusOnes:
       return "official and club events can't allow +1s";
+    case Code.Event.InvalidOfficialKind:
+      return 'only official events can be a walk or restaurant';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:

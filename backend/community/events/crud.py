@@ -30,6 +30,7 @@ from community.events.helpers import (
     _invited_payload,
     _is_invalid_typed_visibility,
     _set_event_tags,
+    _validated_official_kind,
     broadcast_capacity_change,
     is_cohost,
     reload_event_or_404,
@@ -213,6 +214,8 @@ def create_event(request, payload: EventIn):
     if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
+    official_kind = _validated_official_kind(payload.official_kind, payload.event_type)
+
     if payload.allow_plus_ones and is_official_or_club(payload.event_type):
         raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
 
@@ -251,6 +254,7 @@ def create_event(request, payload: EventIn):
         allow_plus_ones=payload.allow_plus_ones,
         max_attendees=payload.max_attendees,
         event_type=payload.event_type,
+        official_kind=official_kind,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
         status=payload.status,

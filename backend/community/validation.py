@@ -56,6 +56,7 @@ class Code:
         )
         SLUG_INVALID = "event.slug_invalid"
         SLUG_TAKEN = "event.slug_taken"
+        INVALID_OFFICIAL_KIND = "event.invalid_official_kind"
 
     class Poll:
         NOT_FOUND = "poll.not_found"

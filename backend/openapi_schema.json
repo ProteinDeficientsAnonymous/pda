@@ -2148,6 +2148,18 @@
             ],
             "title": "Max Attendees"
           },
+          "official_kind": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Kind"
+          },
           "other_link": {
             "default": "",
             "maxLength": 200,
@@ -3025,6 +3037,18 @@
               }
             ],
             "title": "Notify Attendees"
+          },
+          "official_kind": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Kind"
           },
           "other_link": {
             "anyOf": [

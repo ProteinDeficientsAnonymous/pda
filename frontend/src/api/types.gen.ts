@@ -3436,6 +3436,8 @@ export interface components {
             longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
+            /** Official Kind */
+            official_kind?: string | null;
             /**
              * Other Link
              * @default
@@ -3885,6 +3887,8 @@ export interface components {
             max_attendees?: number | null;
             /** Notify Attendees */
             notify_attendees?: boolean | null;
+            /** Official Kind */
+            official_kind?: string | null;
             /** Other Link */
             other_link?: string | null;
             /** Partiful Link */
