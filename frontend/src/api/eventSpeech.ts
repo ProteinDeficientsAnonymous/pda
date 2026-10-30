@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { OfficialKind } from '@/models/event';
+
 import { apiClient } from './client';
 
 export interface SpeechTemplate {
@@ -62,6 +64,56 @@ export function useUpdateSpeechTemplate() {
     },
     onSuccess: (template) => {
       qc.setQueryData(TEMPLATE_KEY, template);
+    },
+  });
+}
+
+export type SpeechValues = Record<string, string | string[]>;
+
+export interface EventSpeech {
+  eventTitle: string;
+  officialKind: OfficialKind | null;
+  saved: boolean;
+  values: SpeechValues;
+  html: string;
+  updatedAt: string | null;
+  updatedByName: string | null;
+}
+
+interface WireEventSpeech {
+  event_title: string;
+  official_kind: string | null;
+  saved: boolean;
+  values: SpeechValues;
+  html: string;
+  updated_at: string | null;
+  updated_by_name: string | null;
+}
+
+const speechKey = (eventId: string) => ['event-speech', eventId] as const;
+const speechUrl = (eventId: string) => `/api/community/events/${eventId}/speech/`;
+
+function mapSpeech(data: WireEventSpeech): EventSpeech {
+  const kind = Object.values(OfficialKind).find((k) => k === data.official_kind) ?? null;
+  return {
+    eventTitle: data.event_title,
+    officialKind: kind,
+    saved: data.saved,
+    values: data.values,
+    html: data.html,
+    updatedAt: data.updated_at,
+    updatedByName: data.updated_by_name,
+  };
+}
+
+export function useEventSpeech(eventId: string | undefined) {
+  return useQuery({
+    queryKey: speechKey(eventId ?? ''),
+    enabled: !!eventId,
+    retry: false,
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireEventSpeech>(speechUrl(eventId ?? ''));
+      return mapSpeech(data);
     },
   });
 }
