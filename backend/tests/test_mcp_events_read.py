@@ -153,6 +153,14 @@ def test_official_templates_with_slots(test_user):
     assert body["official_non_walk"]["slots"] == ["WHAT WE'RE ORDERING, PER PERSON"]
 
 
+def test_official_templates_hint_is_driven_by_official_kind(test_user):
+    token = signed_in(test_user)
+    tools = {tool.name: tool for tool in async_to_sync(pda_mcp.list_tools)()}
+    auth_context_var.reset(token)
+    description = tools["get_official_event_templates"].description or ""
+    assert "official_kind" in description and "'walk' tag" not in description
+
+
 @pytest.mark.parametrize("template", [OFFICIAL_WALK_TEMPLATE, OFFICIAL_NON_WALK_TEMPLATE])
 def test_template_slots_cover_every_placeholder(template):
     bracketed = set(re.findall(r"\[([^\]]*)\]", template))
