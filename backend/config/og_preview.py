@@ -15,9 +15,7 @@ from config.media_proxy import media_path
 # here keeps the tag tidy and avoids dumping a 2000-char body into <head>.
 _OG_DESCRIPTION_MAX = 200
 
-# Anonymous scrapers may only preview what an anonymous user could open in the
-# app: public events that aren't drafts or deleted. Cancelled public events are
-# still viewable (and shareable), so they get a preview too.
+# Cancelled events are still viewable (and shareable), so they get a preview too.
 _PREVIEWABLE_STATUSES = frozenset({EventStatus.ACTIVE, EventStatus.CANCELLED})
 
 # Served by nginx from frontend/public — Django static() would need a build-time manifest.
