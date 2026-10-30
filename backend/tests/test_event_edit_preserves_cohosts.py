@@ -6,26 +6,18 @@ from community.models.choices import CoHostInviteStatus
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _make_user(phone: str, name: str = "Member", email: str | None = "") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-        email=email,
-    )
 
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550201", "Creator", email="creator@example.com")
+    return make_user(first_name="Creator", email="creator@example.com")
 
 
 @pytest.fixture
 def cohost(db) -> User:
-    return _make_user("+12025550202", "CoHost", email="cohost@example.com")
+    return make_user(first_name="CoHost", email="cohost@example.com")
 
 
 @pytest.mark.django_db

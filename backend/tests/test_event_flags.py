@@ -13,38 +13,27 @@ from community.models import (
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 
-def _make_user(phone: str, name: str = "Member") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-    )
-
-
 @pytest.fixture
 def member(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def other_member(db) -> User:
-    return _make_user("+12025550102", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def admin_user(db) -> User:
-    user = _make_user("+12025550103", "Admin")
-    role = Role.objects.create(name="event_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin")
 
 
 @pytest.fixture

@@ -6,36 +6,28 @@ from community.models.choices import CoHostInviteStatus
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso, past_iso
-
-
-def _make_user(phone: str, name: str) -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-        email=f"{name.lower()}@example.com",
-    )
 
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550401", "Creator")
+    return make_user(first_name="Creator")
 
 
 @pytest.fixture
 def alice(db) -> User:
-    return _make_user("+12025550402", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def bob(db) -> User:
-    return _make_user("+12025550403", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def outsider(db) -> User:
-    return _make_user("+12025550404", "Outsider")
+    return make_user(first_name="Outsider")
 
 
 @pytest.fixture

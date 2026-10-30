@@ -19,17 +19,10 @@ from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _make_user(phone: str, name: str = "Member") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-    )
 
 
 def _create_event_via_api(api_client, creator: User, **overrides) -> dict:
@@ -55,17 +48,17 @@ def _create_event_via_api(api_client, creator: User, **overrides) -> dict:
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550111", "Creator")
+    return make_user(first_name="Creator")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550112", "Invitee")
+    return make_user(first_name="Invitee")
 
 
 @pytest.fixture
 def other_member(db) -> User:
-    return _make_user("+12025550113", "Stranger")
+    return make_user(first_name="Stranger")
 
 
 @pytest.fixture
