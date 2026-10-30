@@ -3,35 +3,11 @@
 import pytest
 from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
-
-
-@pytest.fixture
-def manage_events_user(db):
-    user = User.objects.create_user(
-        phone_number="+14155551235",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager 2",
-    )
-    role = Role.objects.create(
-        name="event_manager_cancel", permissions=[PermissionKey.MANAGE_EVENTS]
-    )
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_events_headers(manage_events_user):
-    refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture

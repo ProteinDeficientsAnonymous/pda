@@ -19,11 +19,7 @@ vi.mock('@/api/feedback', () => ({
   useSubmitFeedback: () => useSubmitFeedbackMock(),
 }));
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
