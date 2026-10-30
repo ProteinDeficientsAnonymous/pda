@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { authClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
 import { useEventFeedback, useSubmitEventFeedback } from './eventFeedback';
 
@@ -14,12 +12,6 @@ vi.mock('@/api/client', () => ({
 
 const mockedGet = vi.mocked(authClient.get);
 const mockedPost = vi.mocked(authClient.post);
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -38,7 +30,7 @@ describe('useEventFeedback', () => {
       },
     });
 
-    const { result } = renderHook(() => useEventFeedback('tok-1'), { wrapper: wrapper() });
+    const { result } = renderHook(() => useEventFeedback('tok-1'), { wrapper: queryWrapper() });
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
@@ -57,7 +49,7 @@ describe('useEventFeedback', () => {
   });
 
   it('does not fetch without a token', () => {
-    renderHook(() => useEventFeedback(''), { wrapper: wrapper() });
+    renderHook(() => useEventFeedback(''), { wrapper: queryWrapper() });
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });
@@ -65,7 +57,9 @@ describe('useEventFeedback', () => {
 describe('useSubmitEventFeedback', () => {
   it('posts answers with the token header and returns the confirmation', async () => {
     mockedPost.mockResolvedValueOnce({ data: { confirmation_message: 'thanks' } });
-    const { result } = renderHook(() => useSubmitEventFeedback('tok-1'), { wrapper: wrapper() });
+    const { result } = renderHook(() => useSubmitEventFeedback('tok-1'), {
+      wrapper: queryWrapper(),
+    });
 
     const out = await result.current.mutateAsync({ q1: 'great' });
 

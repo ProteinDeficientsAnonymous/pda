@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
 import { useVersion } from './version';
 
@@ -13,12 +11,6 @@ vi.mock('@/api/client', () => ({
 }));
 
 const mockedGet = vi.mocked(apiClient.get);
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -30,7 +22,7 @@ describe('useVersion', () => {
       data: { commit_sha: 'abcdef123', commit_sha_short: 'abcdef1', environment: 'production' },
     });
 
-    const { result } = renderHook(() => useVersion(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useVersion(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
