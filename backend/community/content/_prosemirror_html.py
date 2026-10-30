@@ -6,6 +6,8 @@ import json
 from html import escape
 from typing import Any
 
+from community.speech.blanks import BLANKS
+
 
 def prosemirror_to_html(pm_json: str) -> str:
     """Convert a TipTap/ProseMirror JSON string to HTML.
@@ -93,20 +95,28 @@ def _render_node(node: dict) -> str:
     return renderer(node.get("content") or [], node.get("attrs") or {})
 
 
+def _render_inline_node(n: dict) -> str:
+    t = n.get("type")
+    if t == "text":
+        return _apply_marks(escape(n.get("text", "")), n.get("marks") or [])
+    if t == "hardBreak":
+        return "<br>"
+    if t == "image":
+        return f'<img src="{escape((n.get("attrs") or {}).get("src", ""))}">'
+    if t == "speechBlank":
+        return _render_speech_blank(n.get("attrs") or {})
+    return ""
+
+
 def _render_inline(nodes: list[Any]) -> str:
-    parts: list[str] = []
-    for n in nodes:
-        if not isinstance(n, dict):
-            continue
-        t = n.get("type")
-        if t == "text":
-            parts.append(_apply_marks(escape(n.get("text", "")), n.get("marks") or []))
-        elif t == "hardBreak":
-            parts.append("<br>")
-        elif t == "image":
-            src = (n.get("attrs") or {}).get("src", "")
-            parts.append(f'<img src="{escape(src)}">')
-    return "".join(parts)
+    return "".join(_render_inline_node(n) for n in nodes if isinstance(n, dict))
+
+
+def _render_speech_blank(attrs: dict) -> str:
+    blank = BLANKS.get(attrs.get("key", ""))
+    if blank is None:
+        return ""
+    return f'<span class="speech-blank">{escape(blank.label)}</span>'
 
 
 def _apply_marks(chunk: str, marks: list[Any]) -> str:
