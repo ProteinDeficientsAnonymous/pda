@@ -60,10 +60,13 @@ export function prefetchCalendarEvents(
   range: CalendarRange,
   token: string | null,
 ): Promise<void> {
-  return qc.prefetchQuery({
-    queryKey: calendarEventKeys(token !== null, range),
-    queryFn: () => fetchCalendarEvents(range, token ?? undefined),
-  });
+  return qc
+    .query({
+      queryKey: calendarEventKeys(token !== null, range),
+      queryFn: () => fetchCalendarEvents(range, token ?? undefined),
+    })
+    .then(() => undefined)
+    .catch(() => undefined);
 }
 
 export function useCalendarEvents(range: CalendarRange) {

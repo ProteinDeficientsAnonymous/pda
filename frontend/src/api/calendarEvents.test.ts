@@ -118,4 +118,11 @@ describe('prefetchCalendarEvents', () => {
     });
     expect(qc.getQueryData(calendarEventKeys(false, range))).toEqual([]);
   });
+
+  it('should resolve when the fetch fails', async () => {
+    const qc = makeQueryClient();
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('down'));
+
+    await expect(prefetchCalendarEvents(qc, upcomingRange(), null)).resolves.toBeUndefined();
+  });
 });
