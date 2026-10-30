@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
 import { useGuidelines, useHome, useUpdateGuidelines, useUpdateHome } from './content';
 
@@ -21,12 +19,6 @@ vi.mock('@/auth/store', () => ({
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPatch = vi.mocked(apiClient.patch);
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -47,7 +39,7 @@ describe('useHome', () => {
       },
     });
 
-    const { result } = renderHook(() => useHome(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useHome(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -69,7 +61,7 @@ describe('useHome', () => {
       },
     });
 
-    const { result } = renderHook(() => useHome(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useHome(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -91,7 +83,7 @@ describe('useUpdateHome', () => {
     };
     mockedPatch.mockResolvedValueOnce({ data: wireResponse });
 
-    const { result } = renderHook(() => useUpdateHome(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useUpdateHome(), { wrapper: queryWrapper() });
 
     await result.current.mutateAsync({
       contentPm: '{"type":"doc"}',
@@ -107,7 +99,7 @@ describe('useUpdateHome', () => {
     const apiError = new Error('network error');
     mockedPatch.mockRejectedValueOnce(apiError);
 
-    const { result } = renderHook(() => useUpdateHome(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useUpdateHome(), { wrapper: queryWrapper() });
 
     await expect(result.current.mutateAsync({ contentPm: 'x' })).rejects.toThrow('network error');
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -129,7 +121,7 @@ describe('useGuidelines', () => {
       },
     });
 
-    const { result } = renderHook(() => useGuidelines(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useGuidelines(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -147,7 +139,7 @@ describe('useGuidelines', () => {
     const apiError = new Error('server error');
     mockedGet.mockRejectedValueOnce(apiError);
 
-    const { result } = renderHook(() => useGuidelines(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useGuidelines(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBe(apiError);
@@ -167,7 +159,7 @@ describe('useUpdateGuidelines', () => {
       },
     });
 
-    const { result } = renderHook(() => useUpdateGuidelines(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useUpdateGuidelines(), { wrapper: queryWrapper() });
 
     await result.current.mutateAsync('{"type":"doc","content":[]}');
 

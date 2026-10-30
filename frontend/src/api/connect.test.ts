@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   connectKeys,
@@ -24,11 +22,6 @@ vi.mock('@/api/client', () => ({
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 const mockedDelete = vi.mocked(apiClient.delete);
-
-function wrapper(qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 const WIRE_APP = {
   id: 'g1',
@@ -50,7 +43,7 @@ describe('connect api', () => {
         expires_at: '2026-10-01T12:10:00Z',
       },
     });
-    const { result } = renderHook(() => useConnectRequest('r1'), { wrapper: wrapper() });
+    const { result } = renderHook(() => useConnectRequest('r1'), { wrapper: queryWrapper() });
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
@@ -63,14 +56,14 @@ describe('connect api', () => {
   });
 
   it('does not fetch without a request id', () => {
-    renderHook(() => useConnectRequest(null), { wrapper: wrapper() });
+    renderHook(() => useConnectRequest(null), { wrapper: queryWrapper() });
     expect(mockedGet).not.toHaveBeenCalled();
   });
 
   it('posts approve and deny and returns the redirect url', async () => {
     mockedPost.mockResolvedValue({ data: { redirect_url: 'https://claude.ai/cb?code=x' } });
     const { result } = renderHook(() => ({ a: useApproveConnect(), d: useDenyConnect() }), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
     await expect(result.current.a.mutateAsync('r1')).resolves.toBe('https://claude.ai/cb?code=x');
     await expect(result.current.d.mutateAsync('r2')).resolves.toBe('https://claude.ai/cb?code=x');
@@ -80,7 +73,7 @@ describe('connect api', () => {
 
   it('lists my connected apps', async () => {
     mockedGet.mockResolvedValueOnce({ data: [WIRE_APP] });
-    const { result } = renderHook(() => useConnectedApps(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useConnectedApps(), { wrapper: queryWrapper() });
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
@@ -97,7 +90,7 @@ describe('connect api', () => {
 
   it('revokes my connected app', async () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
-    const { result } = renderHook(() => useRevokeConnectedApp(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useRevokeConnectedApp(), { wrapper: queryWrapper() });
     await result.current.mutateAsync('g1');
     expect(mockedDelete).toHaveBeenCalledWith('/api/connect/apps/g1/');
   });
@@ -109,7 +102,7 @@ describe('connect api', () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
     const { result } = renderHook(
       () => ({ list: useMemberConnectedApps('u1'), revoke: useRevokeMemberConnectedApp('u1') }),
-      { wrapper: wrapper() },
+      { wrapper: queryWrapper() },
     );
     await waitFor(() => {
       expect(result.current.list.isSuccess).toBe(true);
@@ -122,19 +115,19 @@ describe('connect api', () => {
 
   it('invalidates the apps list after revoking my app', async () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
-    const qc = new QueryClient();
+    const qc = makeQueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useRevokeConnectedApp(), { wrapper: wrapper(qc) });
+    const { result } = renderHook(() => useRevokeConnectedApp(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync('g1');
     expect(spy).toHaveBeenCalledWith({ queryKey: connectKeys.apps });
   });
 
   it('invalidates the member apps list after an admin revoke', async () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
-    const qc = new QueryClient();
+    const qc = makeQueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useRevokeMemberConnectedApp('u1'), {
-      wrapper: wrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await result.current.mutateAsync('g1');
     expect(spy).toHaveBeenCalledWith({ queryKey: connectKeys.memberApps('u1') });
@@ -150,9 +143,9 @@ describe('connect api', () => {
         revoke: useRevokeConnectedApp(),
         adminRevoke: useRevokeMemberConnectedApp('u/../1'),
       }),
-      { wrapper: wrapper() },
+      { wrapper: queryWrapper() },
     );
-    renderHook(() => useConnectRequest('../apps'), { wrapper: wrapper() });
+    renderHook(() => useConnectRequest('../apps'), { wrapper: queryWrapper() });
     await result.current.approve.mutateAsync('../apps');
     await result.current.revoke.mutateAsync('a/b');
     await result.current.adminRevoke.mutateAsync('../x');

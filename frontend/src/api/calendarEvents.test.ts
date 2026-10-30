@@ -1,10 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { useAuthStore } from '@/auth/store';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   calendarEventKeys,
@@ -27,13 +26,6 @@ const localIso = (y: number, m: number, d: number) => new Date(y, m, d).toISOStr
 
 function wire(id: string, title: string) {
   return { id, title, start_datetime: '2026-03-10T18:00:00Z', end_datetime: null };
-}
-
-function buildWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-  return { qc, Wrapper };
 }
 
 beforeEach(() => {
@@ -68,10 +60,9 @@ describe('calendar ranges', () => {
 
 describe('useCalendarEvents', () => {
   it('keeps the last month on screen while an earlier one loads', async () => {
-    const { Wrapper } = buildWrapper();
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [wire('e1', 'march potluck')] });
     const { result, rerender } = renderHook(({ range }) => useCalendarEvents(range), {
-      wrapper: Wrapper,
+      wrapper: queryWrapper(),
       initialProps: { range: monthRange(new Date(2026, 2, 1)) },
     });
     await waitFor(() => expect(result.current.data?.[0]?.title).toBe('march potluck'));
@@ -88,10 +79,9 @@ describe('useCalendarEvents', () => {
 
   it('drops the previous data when the viewer signs out', async () => {
     useAuthStore.setState({ status: 'authed' });
-    const { Wrapper } = buildWrapper();
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [wire('e1', 'members only')] });
     const range = monthRange(new Date(2026, 2, 1));
-    const { result } = renderHook(() => useCalendarEvents(range), { wrapper: Wrapper });
+    const { result } = renderHook(() => useCalendarEvents(range), { wrapper: queryWrapper() });
     await waitFor(() => expect(result.current.data).toHaveLength(1));
 
     vi.mocked(apiClient.get).mockReturnValueOnce(new Promise(() => undefined));
@@ -106,7 +96,7 @@ describe('useCalendarEvents', () => {
 
 describe('prefetchCalendarEvents', () => {
   it('fetches with the refreshed token under the authed key', async () => {
-    const { qc } = buildWrapper();
+    const qc = makeQueryClient();
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [wire('e1', 'members only')] });
     const range = monthRange(new Date(2026, 2, 1));
 
@@ -121,7 +111,7 @@ describe('prefetchCalendarEvents', () => {
   });
 
   it('fetches anonymously under the signed-out key', async () => {
-    const { qc } = buildWrapper();
+    const qc = makeQueryClient();
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: [] });
     const range = upcomingRange();
 
