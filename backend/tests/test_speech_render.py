@@ -1,8 +1,8 @@
 import json
 
 import pytest
-from community.content._prosemirror_html import prosemirror_to_html
 from community.content.html_sanitize import sanitize_content_html
+from community.content.prosemirror_html import prosemirror_to_html
 from community.speech.blanks import BLANKS, clean_values
 
 
