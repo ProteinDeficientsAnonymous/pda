@@ -3,7 +3,6 @@ from itertools import count
 
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -25,10 +24,6 @@ def make_user_with(*permissions: PermissionKey) -> User:
     user = make_user("Admin", is_member=True)
     user.roles.add(Role.objects.create(name=f"qc-{user.phone_number}", permissions=permissions))
     return user
-
-
-def headers_for(user: User) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _capture(client, url: str, headers: dict) -> CaptureQueriesContext:
