@@ -4,8 +4,9 @@ endpoint and join-request attendance history."""
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
+from uuid import UUID
 
-from django.db.models import Prefetch, Q
+from django.db.models import Count, Max, Q, QuerySet
 from django.utils import timezone
 
 from community.models import AttendanceStatus, EventRSVP, EventType
@@ -50,9 +51,34 @@ class MemberAttendanceStats(NamedTuple):
     cancel_count: int
 
 
-def member_rsvps_prefetch() -> Prefetch:
-    """Prefetch for annotating a User queryset with rsvps + events, ready for compute_member_stats."""
-    return Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
+EMPTY_MEMBER_STATS = MemberAttendanceStats(None, 0, 0, 0, 0)
+
+
+def member_stats_by_user(
+    users: QuerySet, now: datetime | None = None
+) -> dict[UUID, MemberAttendanceStats]:
+    """compute_member_stats for many users in one grouped query; users with no rsvps are absent."""
+    window_start = (now or timezone.now()) - timedelta(days=QUALIFYING_WINDOW_DAYS)
+    qualifying = qualifying_attendance_q()
+    attended = attendance_q(AttendanceStatus.ATTENDED, prefix="") & reportable_events_q()
+    rows = (
+        EventRSVP.objects.filter(user__in=users.values("pk"))
+        .order_by()
+        .values("user_id")
+        .annotate(
+            last_qualifying_at=Max("event__start_datetime", filter=qualifying),
+            qualifying_count_12mo=Count(
+                "pk", filter=qualifying & Q(event__start_datetime__gte=window_start)
+            ),
+            community_count=Count("pk", filter=attended & Q(event__event_type=EventType.COMMUNITY)),
+            didnt_go_count=Count(
+                "pk",
+                filter=attendance_q(AttendanceStatus.DIDNT_GO, prefix="") & reportable_events_q(),
+            ),
+            cancel_count=Count("pk", filter=Q(cancelled_at__isnull=False)),
+        )
+    )
+    return {row.pop("user_id"): MemberAttendanceStats(**row) for row in rows}
 
 
 def compute_member_stats(
