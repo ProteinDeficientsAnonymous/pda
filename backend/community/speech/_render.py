@@ -34,16 +34,51 @@ def _text_node(text: str) -> dict:
     return {"type": "text", "text": text}
 
 
+def _list_items(values: SpeechValues, key: str) -> list[str]:
+    value = values.get(key)
+    return [v for v in value if v] if isinstance(value, list) else []
+
+
 def _inline_text(node: dict, values: SpeechValues) -> str:
     key = _blank_key(node)
     blank = BLANKS.get(key)
     if blank is None:
         return _PLACEHOLDER
+    if blank.is_list:
+        return ", ".join(_list_items(values, key)) or _PLACEHOLDER
     value = values.get(key)
     return value if isinstance(value, str) and value else _PLACEHOLDER
 
 
+def _list_blank_paragraph(node: dict, values: SpeechValues) -> dict | None:
+    """A paragraph holding only a list blank becomes a bullet list (or a placeholder paragraph)."""
+    content = node.get("content") or []
+    if len(content) != 1 or not _is_blank(content[0]):
+        return None
+    key = _blank_key(content[0])
+    blank = BLANKS.get(key)
+    if blank is None or not blank.is_list:
+        return None
+    items = _list_items(values, key)
+    if not items:
+        return {"type": "paragraph", "content": [_text_node(_PLACEHOLDER)]}
+    return {
+        "type": "bulletList",
+        "content": [
+            {
+                "type": "listItem",
+                "content": [{"type": "paragraph", "content": [_text_node(item)]}],
+            }
+            for item in items
+        ],
+    }
+
+
 def _fill_node(node: dict, values: SpeechValues) -> dict:
+    if node.get("type") == "paragraph":
+        replaced = _list_blank_paragraph(node, values)
+        if replaced is not None:
+            return replaced
     children = node.get("content")
     if not isinstance(children, list):
         return node
