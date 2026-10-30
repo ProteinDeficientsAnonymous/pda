@@ -5,9 +5,8 @@ from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey
 
-from tests._users import make_user
-
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
