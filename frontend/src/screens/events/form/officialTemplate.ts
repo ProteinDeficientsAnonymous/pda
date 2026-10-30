@@ -1,6 +1,6 @@
 import type { EventDescriptionTemplates } from '@/api/eventDescriptionTemplates';
 import type { EventFormValues } from '@/api/eventWrites';
-import { EventType } from '@/models/event';
+import { EventType, OfficialKind } from '@/models/event';
 
 const PLACEHOLDER_PATTERN = /\[[^\]a-z]*[A-Z][^\]a-z]*\]/;
 
@@ -26,6 +26,9 @@ export function withOfficialTemplate(
   }
   return {
     ...values,
-    description: values.isWalk ? templates.officialWalk : templates.officialNonWalk,
+    description:
+      values.officialKind === OfficialKind.Walk
+        ? templates.officialWalk
+        : templates.officialNonWalk,
   };
 }

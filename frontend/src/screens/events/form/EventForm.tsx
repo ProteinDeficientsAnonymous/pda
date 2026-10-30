@@ -149,7 +149,7 @@ export function EventForm({ existing }: Props) {
     }
     setValues((v) => {
       const next = { ...v, ...p };
-      if (existing || (!('eventType' in p) && !('isWalk' in p))) return next;
+      if (existing || (!('eventType' in p) && !('officialKind' in p))) return next;
       return withOfficialTemplate(next, templates);
     });
   }
@@ -324,7 +324,6 @@ export function EventForm({ existing }: Props) {
           errors={errors}
           canTagOfficial={canTagOfficial}
           canTagClub={canTagClub}
-          showWalkToggle={!existing}
           timeLocked={!!existing?.hasPoll && !existing.startDatetime}
           existingEventId={existing?.id}
           existingHasPoll={!!existing?.hasPoll}
