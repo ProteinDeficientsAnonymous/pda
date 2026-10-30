@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithProviders } from '@/test/render';
 
 import LoginScreen from './screens/auth/LoginScreen';
 
@@ -37,18 +38,14 @@ vi.mock('sonner', () => ({
   },
 }));
 
-function renderWith(initialEntries: string[] = ['/login']) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route path="/login" element={<LoginScreen />} />
-          <Route path="/join" element={<div>join page</div>} />
-          <Route path="/calendar" element={<div>calendar page</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+function renderWith(route = '/login') {
+  return renderWithProviders(
+    <Routes>
+      <Route path="/login" element={<LoginScreen />} />
+      <Route path="/join" element={<div>join page</div>} />
+      <Route path="/calendar" element={<div>calendar page</div>} />
+    </Routes>,
+    { route },
   );
 }
 
@@ -144,7 +141,7 @@ describe('LoginScreen', () => {
   });
 
   it('shows invited banner when ?invited=true', () => {
-    renderWith(['/login?invited=true']);
+    renderWith('/login?invited=true');
     expect(screen.getByText(/you already have an account/i)).toBeInTheDocument();
   });
 });

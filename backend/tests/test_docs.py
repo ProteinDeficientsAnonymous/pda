@@ -1,28 +1,9 @@
 import pytest
 from community.models import DocFolder, Document
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
+from tests._docs_helpers import BASE, manage_docs_headers, manage_docs_user
 
-@pytest.fixture
-def manage_docs_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003001",
-        password="docspass123",
-        first_name="Docs",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="docs_manager", permissions=[PermissionKey.MANAGE_DOCUMENTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_docs_headers(manage_docs_user):
-    refresh = RefreshToken.for_user(manage_docs_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+__all__ = ["manage_docs_headers", "manage_docs_user"]
 
 
 @pytest.fixture
@@ -38,9 +19,6 @@ def document(folder, manage_docs_user):
         folder=folder,
         created_by=manage_docs_user,
     )
-
-
-BASE = "/api/community/docs"
 
 
 @pytest.mark.django_db

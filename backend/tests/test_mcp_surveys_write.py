@@ -16,8 +16,7 @@ from mcp_gateway.confirm import MAX_AGE_SECONDS
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools import surveys_write
 
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_server import _signed_in
+from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
 
 pytestmark = pytest.mark.django_db
 SETTINGS = {"title": "Retreat Planning!"}
@@ -30,20 +29,22 @@ POLL = {"label": "when", "field_type": "datetime_poll", "options": ["2099-11-07T
 
 
 def _create(user, questions=(NAME, NOTES), **settings) -> dict:
-    return _run(user, "create_survey", settings={**SETTINGS, **settings}, questions=list(questions))
+    return run_tool(
+        user, "create_survey", settings={**SETTINGS, **settings}, questions=list(questions)
+    )
 
 
 def _create_refused(user, questions=(NAME, NOTES), **settings) -> str:
     arguments = {"settings": {**SETTINGS, **settings}, "questions": list(questions)}
-    return _error(user, "create_survey", **arguments)
+    return tool_error(user, "create_survey", **arguments)
 
 
 def _publish(user, survey_id, **arguments) -> dict:
-    return _run(user, "publish_survey", survey=survey_id, **arguments)
+    return run_tool(user, "publish_survey", survey=survey_id, **arguments)
 
 
 def _publish_refused(user, survey_id, **arguments) -> str:
-    return _error(user, "publish_survey", survey=survey_id, **arguments)
+    return tool_error(user, "publish_survey", survey=survey_id, **arguments)
 
 
 def test_publish_two_step(surveys_admin):
@@ -259,7 +260,7 @@ def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
             await pda_mcp.call_tool("create_survey", arguments)
         await anyio.sleep(0.5)  # lets an unshielded view thread finish, as it would in production
 
-    reset = _signed_in(surveys_admin)
+    reset = signed_in(surveys_admin)
     try:
         with patch(f"mcp_gateway.tools.surveys_write.{view}", slow):
             async_to_sync(cancel_midway)()
@@ -304,7 +305,7 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
             await pda_mcp.call_tool("create_survey", arguments)
         return scope.cancelled_caught
 
-    reset = _signed_in(surveys_admin)
+    reset = signed_in(surveys_admin)
     try:
         with patch.object(surveys_write, "create_question_view", slow), _failing_delete():
             assert async_to_sync(cancel)()

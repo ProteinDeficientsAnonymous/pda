@@ -1,13 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as SurveysApi from '@/api/surveys';
 import type { Survey } from '@/api/surveys';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { setUnauthed } from '@/test/auth';
+import { renderWithProviders } from '@/test/render';
 
 const useSurveyMock = vi.fn();
 
@@ -49,14 +50,11 @@ function mockNotFound() {
 }
 
 function renderScreen() {
-  render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={['/surveys/diet?ref=email']}>
-        <Routes>
-          <Route path="/surveys/:slug" element={<SurveyScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/surveys/:slug" element={<SurveyScreen />} />
+    </Routes>,
+    { route: '/surveys/diet?ref=email' },
   );
 }
 
@@ -64,7 +62,7 @@ const loginHref = `/login?redirect=${encodeURIComponent('/surveys/diet?ref=email
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('SurveyScreen login prompts', () => {
