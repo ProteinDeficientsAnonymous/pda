@@ -1,7 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
@@ -9,6 +8,7 @@ import { useAuthStore } from '@/auth/store';
 import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import EventDetailScreen from './EventDetailScreen';
 
@@ -59,22 +59,15 @@ const AUTHED_USER = makeUser({
   email: 'test@example.com',
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderScreen(eventId = 'ev1', search = '') {
   window.history.replaceState(null, '', `/events/${eventId}${search}`);
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[`/events/${eventId}${search}`]}>
-        <Routes>
-          <Route path="/events/:id" element={<EventDetailScreen />} />
-          <Route path="/login" element={<div>login page</div>} />
-          <Route path="/join" element={<div>join page</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/events/:id" element={<EventDetailScreen />} />
+      <Route path="/login" element={<div>login page</div>} />
+      <Route path="/join" element={<div>join page</div>} />
+    </Routes>,
+    { route: `/events/${eventId}${search}` },
   );
 }
 
