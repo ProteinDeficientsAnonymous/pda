@@ -1,4 +1,5 @@
 from django.db.models import F
+from django.utils import timezone
 from notifications.service import create_waitlist_promoted_notifications
 
 from community._rsvp_counts import _attending_headcount_db
@@ -14,18 +15,31 @@ def waitlist_sort_key(rsvp: EventRSVP) -> tuple:
     return (pos is None, pos or 0, rsvp.created_at, str(rsvp.pk))
 
 
-def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | None:
-    """Return the first waitlisted RSVP in line if it still fits under max_attendees."""
-    oldest = (
-        EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
-        .order_by(*WAITLIST_ORDER)
-        .first()
+def _promotable_waitlist_rsvps(event: Event) -> list[EventRSVP]:
+    """Waitlisted RSVPs that fit under max_attendees, in line order; stops at the first that doesn't."""
+    headcount = _attending_headcount_db(event)
+    promotable: list[EventRSVP] = []
+    line = EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED).order_by(
+        *WAITLIST_ORDER
     )
-    if not oldest:
-        return None
-    if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
-        return None
-    return oldest
+    for rsvp in line:
+        spots = 2 if rsvp.has_plus_one else 1
+        if headcount + spots > event.max_attendees:
+            break
+        headcount += spots
+        promotable.append(rsvp)
+    return promotable
+
+
+def _mark_attending(rsvps: list[EventRSVP]) -> None:
+    # .update() skips EventRSVP.save(), so apply what it would: clear the position, stamp the change.
+    now = timezone.now()
+    EventRSVP.objects.filter(pk__in=[r.pk for r in rsvps]).update(
+        status=RSVPStatus.ATTENDING,
+        waitlist_position=None,
+        status_changed_at=now,
+        updated_at=now,
+    )
 
 
 def _waitlist_closed(event: Event) -> bool:
@@ -41,21 +55,15 @@ def promote_from_waitlist(event: Event) -> list[str]:
     """
     if _waitlist_closed(event):
         return []
-    promoted_user_ids: list[str] = []
-    unpaid_user_ids: list[str] = []
-    needs_payment = payment_enforced_for_event(event)
-    while True:
-        headcount = _attending_headcount_db(event)
-        if headcount >= event.max_attendees:
-            break
-        oldest = _next_promotable_waitlist_rsvp(event, headcount)
-        if oldest is None:
-            break
-        oldest.status = RSVPStatus.ATTENDING
-        oldest.save(update_fields=["status", "updated_at"])
-        promoted_user_ids.append(str(oldest.user_id))
-        if needs_payment and oldest.paid_confirmed_at is None:
-            unpaid_user_ids.append(str(oldest.user_id))
-    if promoted_user_ids:
-        create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
+    promoted = _promotable_waitlist_rsvps(event)
+    if not promoted:
+        return []
+    _mark_attending(promoted)
+    promoted_user_ids = [str(r.user_id) for r in promoted]
+    unpaid_user_ids = (
+        [str(r.user_id) for r in promoted if r.paid_confirmed_at is None]
+        if payment_enforced_for_event(event)
+        else []
+    )
+    create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
     return promoted_user_ids
