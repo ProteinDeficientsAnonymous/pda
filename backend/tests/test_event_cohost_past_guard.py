@@ -14,19 +14,14 @@ from community.models import (
     EventStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso, past_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _create_active_event(api_client, creator: User, co_host_ids: list[str]) -> str:
@@ -42,7 +37,7 @@ def _create_active_event(api_client, creator: User, co_host_ids: list[str]) -> s
             }
         ),
         content_type="application/json",
-        **_auth_headers(creator),
+        **auth_headers_for(creator),
     )
     assert response.status_code == 201, response.content
     return response.json()["id"]
@@ -93,7 +88,7 @@ class TestPastEventGuard:
                 }
             ),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 422
         assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE)
@@ -105,7 +100,7 @@ class TestPastEventGuard:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         assert_error_code(response, Code.CoHostInvite.EVENT_IS_PAST)
@@ -122,7 +117,7 @@ class TestPastEventGuard:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": []}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
 
@@ -134,13 +129,13 @@ class TestPastEventGuard:
         # Accept first so the user is an accepted co-host.
         api_client.post(
             f"/api/community/events/{event_id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         _make_event_past(event_id)
         response = api_client.patch(
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200

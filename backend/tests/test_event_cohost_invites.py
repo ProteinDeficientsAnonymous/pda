@@ -15,19 +15,14 @@ from community.models import (
     EventStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _create_event_via_api(api_client, creator: User, **overrides) -> dict:
@@ -42,7 +37,7 @@ def _create_event_via_api(api_client, creator: User, **overrides) -> dict:
         "/api/community/events/",
         data=json.dumps(payload),
         content_type="application/json",
-        **_auth_headers(creator),
+        **auth_headers_for(creator),
     )
     assert response.status_code == 201, response.content
     return response.json()
@@ -116,7 +111,7 @@ class TestDiffOnPatch:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200, response.content
         invite = EventCoHostInvite.objects.get(event_id=event_id, user=invitee)
@@ -130,7 +125,7 @@ class TestDiffOnPatch:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": []}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite = EventCoHostInvite.objects.get(event_id=event_id, user=invitee)
@@ -145,7 +140,7 @@ class TestDiffOnPatch:
         # Simulate acceptance.
         api_client.post(
             f"/api/community/events/{event_id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         event = Event.objects.get(id=event_id)
         assert event.co_hosts.filter(pk=invitee.pk).exists()
@@ -154,7 +149,7 @@ class TestDiffOnPatch:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": []}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -167,7 +162,7 @@ class TestDiffOnPatch:
         invite = EventCoHostInvite.objects.get(event_id=event_id, user=invitee)
         api_client.post(
             f"/api/community/events/{event_id}/cohost-invites/{invite.id}/decline/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         invite.refresh_from_db()
         assert invite.status == CoHostInviteStatus.DECLINED
@@ -176,7 +171,7 @@ class TestDiffOnPatch:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -195,7 +190,7 @@ class TestAccept:
         event, invite = event_with_pending_invite
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -210,7 +205,7 @@ class TestAccept:
         Notification.objects.all().delete()  # ignore the invite notification
         api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         notif = Notification.objects.get(recipient=creator)
         assert notif.notification_type == NotificationType.COHOST_INVITE_ACCEPTED
@@ -220,7 +215,7 @@ class TestAccept:
         event, invite = event_with_pending_invite
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
 
@@ -230,7 +225,7 @@ class TestAccept:
         invite.save(update_fields=["status"])
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 400
 
@@ -244,7 +239,7 @@ class TestDecline:
         event, invite = event_with_pending_invite
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/decline/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -258,7 +253,7 @@ class TestDecline:
         Notification.objects.all().delete()
         api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/decline/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         notif = Notification.objects.get(recipient=creator)
         assert notif.notification_type == NotificationType.COHOST_INVITE_DECLINED
@@ -275,7 +270,7 @@ class TestRescind:
         event, invite = event_with_pending_invite
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -285,7 +280,7 @@ class TestRescind:
         event, invite = event_with_pending_invite
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",
-            **_auth_headers(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
 
@@ -298,7 +293,7 @@ class TestRescind:
         invite.save(update_fields=["status"])
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
 
@@ -320,7 +315,7 @@ class TestLazyExpire:
         # Simply reading the event detail triggers lazy expiration.
         response = api_client.get(
             f"/api/community/events/{event.id}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -336,7 +331,7 @@ class TestEventOutVisibility:
         event, _invite = event_with_pending_invite
         response = api_client.get(
             f"/api/community/events/{event.id}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         data = response.json()
@@ -348,7 +343,7 @@ class TestEventOutVisibility:
         event, _invite = event_with_pending_invite
         response = api_client.get(
             f"/api/community/events/{event.id}/",
-            **_auth_headers(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 200
         data = response.json()
@@ -360,7 +355,7 @@ class TestEventOutVisibility:
         event, invite = event_with_pending_invite
         response = api_client.get(
             f"/api/community/events/{event.id}/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         data = response.json()
@@ -388,7 +383,7 @@ class TestDraftVisibility:
         event_id = data["id"]
         response = api_client.get(
             f"/api/community/events/{event_id}/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         body = response.json()
@@ -406,7 +401,7 @@ class TestDraftVisibility:
         )
         response = api_client.get(
             f"/api/community/events/{data['id']}/",
-            **_auth_headers(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
 
@@ -421,7 +416,7 @@ class TestDraftVisibility:
         invite = EventCoHostInvite.objects.get(event_id=event_id, user=invitee)
         response = api_client.post(
             f"/api/community/events/{event_id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -439,7 +434,7 @@ class TestCohostInviteOnDeletedEvent:
         event.save(update_fields=["status"])
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 404
         invite.refresh_from_db()
@@ -451,7 +446,7 @@ class TestCohostInviteOnDeletedEvent:
         event.save(update_fields=["status"])
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/decline/",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 404
         invite.refresh_from_db()

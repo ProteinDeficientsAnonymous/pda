@@ -11,15 +11,10 @@ from community.models import (
     event_lookup_q,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _make_event(title: str, created_by: User | None = None) -> Event:
@@ -38,7 +33,7 @@ def _patch_slug(api_client, event: Event, slug: str, user: User):
         f"/api/community/events/{event.id}/",
         data=json.dumps({"slug": slug}),
         content_type="application/json",
-        **_auth_headers(user),
+        **auth_headers_for(user),
     )
 
 

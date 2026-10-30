@@ -14,19 +14,14 @@ from community.models import (
     EventCoHostInvite,
     EventStatus,
 )
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso, past_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _create_event(api_client, creator: User, co_host_ids: list[str]) -> str:
@@ -42,7 +37,7 @@ def _create_event(api_client, creator: User, co_host_ids: list[str]) -> str:
             }
         ),
         content_type="application/json",
-        **_auth_headers(creator),
+        **auth_headers_for(creator),
     )
     assert response.status_code == 201, response.content
     return response.json()["id"]
@@ -51,7 +46,7 @@ def _create_event(api_client, creator: User, co_host_ids: list[str]) -> str:
 def _accept_invite(api_client, event_id: str, invite_id: str, invitee: User) -> None:
     response = api_client.post(
         f"/api/community/events/{event_id}/cohost-invites/{invite_id}/accept/",
-        **_auth_headers(invitee),
+        **auth_headers_for(invitee),
     )
     assert response.status_code == 200, response.content
 
@@ -94,7 +89,7 @@ class TestRemoveAcceptedCoHost:
         event, invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -108,7 +103,7 @@ class TestRemoveAcceptedCoHost:
         Notification.objects.all().delete()
         api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         notif = Notification.objects.get(recipient=cohost)
         assert notif.notification_type == NotificationType.COHOST_REMOVED
@@ -118,7 +113,7 @@ class TestRemoveAcceptedCoHost:
         event, invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
         invite.refresh_from_db()
@@ -130,7 +125,7 @@ class TestRemoveAcceptedCoHost:
         Notification.objects.all().delete()
         api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         # Step-down: nobody gets notified — neither the cohost (self-action)
         # nor the creator (matches existing decline-policy precedent of "no
@@ -143,7 +138,7 @@ class TestRemoveAcceptedCoHost:
         event, invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(stranger),
+            **auth_headers_for(stranger),
         )
         assert response.status_code == 403
 
@@ -156,7 +151,7 @@ class TestRemoveAcceptedCoHost:
         Event.objects.filter(pk=event.pk).update(created_by=None)
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 400
         invite.refresh_from_db()
@@ -171,7 +166,7 @@ class TestRemoveAcceptedCoHost:
         event, invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
 
@@ -181,7 +176,7 @@ class TestRemoveAcceptedCoHost:
         event, _invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
         assert not event.co_hosts.filter(pk=creator.pk).exists()
@@ -194,14 +189,14 @@ class TestRemoveAcceptedCoHost:
         event, _invite = event_with_accepted_cohost
         api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert not event.co_hosts.filter(pk=creator.pk).exists()
         response = api_client.patch(
             f"/api/community/events/{event.id}/",
             data=json.dumps({"co_host_ids": [str(creator.pk), str(cohost.pk)]}),
             content_type="application/json",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
         assert event.cohost_invites.filter(user=creator, status=CoHostInviteStatus.PENDING).exists()
@@ -215,7 +210,7 @@ class TestStepDown:
         event, _invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         event.refresh_from_db()
@@ -227,7 +222,7 @@ class TestStepDown:
         event_id = _create_event(api_client, creator, co_host_ids=[])
         response = api_client.delete(
             f"/api/community/events/{event_id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         event = Event.objects.get(id=event_id)
@@ -239,7 +234,7 @@ class TestStepDown:
         event, invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
         assert not event.co_hosts.filter(pk=cohost.pk).exists()
@@ -254,7 +249,7 @@ class TestStepDown:
         event, _invite = event_with_accepted_cohost
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{cohost.pk}/",
-            **_auth_headers(stranger),
+            **auth_headers_for(stranger),
         )
         assert response.status_code == 403
 
@@ -270,7 +265,7 @@ class TestStepDown:
         event.co_hosts.add(cohost)
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         assert not event.co_hosts.filter(pk=creator.pk).exists()
@@ -284,7 +279,7 @@ class TestStepDown:
         )
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         assert "would_leave_hostless" in response.content.decode()
@@ -296,7 +291,7 @@ class TestStepDown:
         event, _invite = event_with_accepted_cohost
         api_client.delete(
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         event.status = EventStatus.CANCELLED
         event.save(update_fields=["status"])
@@ -305,7 +300,7 @@ class TestStepDown:
             f"/api/community/events/{event.id}/",
             data=json.dumps({"status": EventStatus.ACTIVE}),
             content_type="application/json",
-            **_auth_headers(cohost),
+            **auth_headers_for(cohost),
         )
         assert response.status_code == 200
         assert response.json()["status"] == EventStatus.ACTIVE

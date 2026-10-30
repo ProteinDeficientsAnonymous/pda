@@ -4,17 +4,12 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event
-from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -53,7 +48,7 @@ class TestEventInviteEmailIntegration:
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_called_once()
@@ -67,7 +62,7 @@ class TestEventInviteEmailIntegration:
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_without_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_not_called()
@@ -83,7 +78,7 @@ class TestEventInviteEmailIntegration:
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
 
@@ -96,7 +91,7 @@ class TestEventInviteEmailIntegration:
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_called_once()

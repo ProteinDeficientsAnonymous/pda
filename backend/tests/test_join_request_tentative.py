@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import pytest
 from community._join_request_approval import _provision_tentative_user
 from community._validation import Code
@@ -12,15 +10,13 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
+from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
 
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+__all__ = ["open_official_event"]
 
 
 @pytest.mark.django_db
@@ -108,29 +104,6 @@ class TestTentativeApprove:
         assert sample_join_request.user.id not in member_ids
 
 
-@pytest.fixture
-def open_official_event(db):
-    host = User.objects.create_user(phone_number="+12025557000", first_name="Host")
-    return Event.objects.create(
-        title="Official Meetup",
-        start_datetime=timezone.now() + timedelta(minutes=30),
-        end_datetime=timezone.now() + timedelta(hours=2),
-        rsvp_enabled=True,
-        event_type=EventType.OFFICIAL,
-        created_by=host,
-    )
-
-
-def _tentative_user_with_rsvp(join_request, event, vettor):
-
-    _provision_tentative_user(join_request, vettor)
-    join_request.status = JoinRequestStatus.TENTATIVE
-    join_request.save(update_fields=["status"])
-    join_request.refresh_from_db()
-    EventRSVP.objects.create(event=event, user=join_request.user, status=RSVPStatus.ATTENDING)
-    return join_request.user
-
-
 @pytest.mark.django_db
 class TestCheckInPromotion:
     def _mark(self, api_client, event, user, headers, attendance):
@@ -146,8 +119,8 @@ class TestCheckInPromotion:
     ):
         sample_join_request.email = "promote@example.com"
         sample_join_request.save(update_fields=["email"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         resp = self._mark(
             api_client, open_official_event, user, host_headers, AttendanceStatus.ATTENDED
         )
@@ -164,8 +137,8 @@ class TestCheckInPromotion:
     ):
         open_official_event.event_type = EventType.CLUB
         open_official_event.save(update_fields=["event_type"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         resp = self._mark(
             api_client, open_official_event, user, host_headers, AttendanceStatus.ATTENDED
         )
@@ -178,8 +151,8 @@ class TestCheckInPromotion:
     ):
         open_official_event.event_type = EventType.COMMUNITY
         open_official_event.save(update_fields=["event_type"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         resp = self._mark(
             api_client, open_official_event, user, host_headers, AttendanceStatus.ATTENDED
         )
@@ -199,7 +172,7 @@ class TestCheckInPromotion:
         EventRSVP.objects.create(
             event=open_official_event, user=non_member, status=RSVPStatus.ATTENDING
         )
-        host_headers = _auth(open_official_event.created_by)
+        host_headers = auth_headers_for(open_official_event.created_by)
         resp = self._mark(
             api_client, open_official_event, non_member, host_headers, AttendanceStatus.ATTENDED
         )
@@ -211,8 +184,8 @@ class TestCheckInPromotion:
     def test_no_show_does_not_promote(
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-        host_headers = _auth(open_official_event.created_by)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        host_headers = auth_headers_for(open_official_event.created_by)
         resp = self._mark(
             api_client, open_official_event, user, host_headers, AttendanceStatus.DIDNT_GO
         )
@@ -289,7 +262,7 @@ class TestTentativeRsvpEvents:
     def test_list_includes_rsvpd_events(
         self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
     ):
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         assert response.status_code == 200
         row = next(r for r in response.json() if r["user_id"] == str(user.id))
@@ -298,7 +271,7 @@ class TestTentativeRsvpEvents:
     def test_list_includes_future_events(
         self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
     ):
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         row = next(r for r in response.json() if r["user_id"] == str(user.id))
         assert row["rsvp_events"][0]["start_datetime"] is not None
@@ -331,7 +304,7 @@ class TestTentativeRsvpEvents:
     ):
         open_official_event.event_type = EventType.COMMUNITY
         open_official_event.save(update_fields=["event_type"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         row = next(r for r in response.json() if r["user_id"] == str(user.id))
         assert row["rsvp_events"] == []
@@ -349,7 +322,7 @@ class TestTentativeRsvpEvents:
             event_type=EventType.OFFICIAL,
             created_by=host,
         )
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         EventRSVP.objects.create(event=tbd_event, user=user, status=RSVPStatus.ATTENDING)
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         row = next(r for r in response.json() if r["user_id"] == str(user.id))

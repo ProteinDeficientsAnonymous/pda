@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { screen } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { creator, makeEvent, makeGuest, nonHost } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import EventQuestionResponsesScreen from './EventQuestionResponsesScreen';
 
@@ -21,20 +21,13 @@ const BASE_EVENT = makeEvent({
   guests: [],
 });
 
-const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
-const nonMember = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
-
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/ev1/responses']}>
-        <Routes>
-          <Route path="/events/:id/responses" element={<EventQuestionResponsesScreen />} />
-          <Route path="/events/:id" element={<div>event detail</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/events/:id/responses" element={<EventQuestionResponsesScreen />} />
+      <Route path="/events/:id" element={<div>event detail</div>} />
+    </Routes>,
+    { route: '/events/ev1/responses' },
   );
 }
 
@@ -48,14 +41,14 @@ beforeEach(() => {
 
 describe('EventQuestionResponsesScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
   it('shows a notice when the event has no questions', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText(/no rsvp questions/i)).toBeInTheDocument();
@@ -84,7 +77,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
@@ -108,7 +101,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText('saved answer')).toBeInTheDocument();

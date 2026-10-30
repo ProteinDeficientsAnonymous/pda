@@ -3,16 +3,11 @@ import json
 import pytest
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso, past_iso
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -53,7 +48,7 @@ def _add_cohosts(api_client, event, user, ids):
         f"/api/community/events/{event.id}/cohost-invites/",
         data=json.dumps({"user_ids": [str(i) for i in ids]}),
         content_type="application/json",
-        **_auth_headers(user),
+        **auth_headers_for(user),
     )
 
 
