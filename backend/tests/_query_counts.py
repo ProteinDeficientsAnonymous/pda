@@ -2,12 +2,6 @@ from collections.abc import Callable
 
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
-
-
-def headers_for(user: User) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _capture(client, url: str, headers: dict) -> CaptureQueriesContext:

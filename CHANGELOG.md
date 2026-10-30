@@ -1,3 +1,10 @@
+# [0.209.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.208.0...v0.209.0) (2026-10-30)
+
+
+### Features
+
+* **auth:** lead login link email confirmation with "check your email!" ([#2049](https://github.com/ProteinDeficientsAnonymous/pda/issues/2049)) ([1980907](https://github.com/ProteinDeficientsAnonymous/pda/commit/19809072d52052d677c2b382ef91da31a9ca91c7))
+
 # [0.208.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.1...v0.208.0) (2026-10-30)
 
 
