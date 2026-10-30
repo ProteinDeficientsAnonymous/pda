@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { type WireCommentList } from './eventCommentMapper';
 import { mapCommentList } from './eventCommentMapper';
@@ -12,9 +10,7 @@ import { eventCommentKeys, useEventComments } from './eventComments';
 import { useDeleteComment } from './eventComments';
 import { useToggleReaction } from './eventComments';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = {
@@ -44,13 +40,6 @@ function wireCommentList(overrides: Partial<WireCommentList> = {}): WireCommentL
   };
 }
 
-function buildWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-  return { qc, Wrapper };
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -74,9 +63,8 @@ describe('eventCommentKeys', () => {
 describe('useEventComments', () => {
   it('maps the wire payload to the domain shape', async () => {
     mockedGet.mockResolvedValueOnce({ data: wireCommentList() });
-    const { Wrapper } = buildWrapper();
 
-    const { result } = renderHook(() => useEventComments(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventComments(EVENT_ID), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({
@@ -91,9 +79,8 @@ describe('useEventComments', () => {
     mockedGet.mockResolvedValueOnce({
       data: wireCommentList({ can_post: false, cannot_post_reason: 'login_required' }),
     });
-    const { Wrapper } = buildWrapper();
 
-    const { result } = renderHook(() => useEventComments(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventComments(EVENT_ID), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.canPost).toBe(false);
@@ -101,8 +88,7 @@ describe('useEventComments', () => {
   });
 
   it('is disabled when eventId is empty', () => {
-    const { Wrapper } = buildWrapper();
-    const { result } = renderHook(() => useEventComments(''), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventComments(''), { wrapper: queryWrapper() });
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockedGet).not.toHaveBeenCalled();
   });
@@ -133,7 +119,7 @@ const wireWithComment: WireCommentList = {
 
 describe('useDeleteComment', () => {
   it('optimistically marks comment as deleted', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventCommentKeys.list(EVENT_ID);
     qc.setQueryData(key, mapCommentList(wireWithComment));
 
@@ -153,7 +139,7 @@ describe('useDeleteComment', () => {
     // invalidateQueries triggers a refetch — stub it
     mockedGet.mockResolvedValue({ data: wireWithComment });
 
-    const { result } = renderHook(() => useDeleteComment(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useDeleteComment(EVENT_ID), { wrapper: queryWrapper(qc) });
 
     result.current.mutate({ commentId: 'c-1' });
 
@@ -168,14 +154,14 @@ describe('useDeleteComment', () => {
   });
 
   it('rolls back on error', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventCommentKeys.list(EVENT_ID);
     qc.setQueryData(key, mapCommentList(wireWithComment));
 
     mockedDelete.mockRejectedValueOnce(new Error('network fail'));
     mockedGet.mockResolvedValue({ data: wireWithComment });
 
-    const { result } = renderHook(() => useDeleteComment(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useDeleteComment(EVENT_ID), { wrapper: queryWrapper(qc) });
 
     await expect(result.current.mutateAsync({ commentId: 'c-1' })).rejects.toThrow('network fail');
 
@@ -210,7 +196,7 @@ const wireWithReaction: WireCommentList = {
 
 describe('useToggleReaction', () => {
   it('optimistically increments reaction count when adding', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventCommentKeys.list(EVENT_ID);
     qc.setQueryData(key, mapCommentList(wireWithReaction));
 
@@ -221,7 +207,7 @@ describe('useToggleReaction', () => {
       }),
     );
 
-    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: queryWrapper(qc) });
 
     result.current.mutate({ commentId: 'c-1', emoji: '👍' });
 
@@ -265,7 +251,7 @@ describe('useToggleReaction', () => {
       ],
     };
 
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventCommentKeys.list(EVENT_ID);
     qc.setQueryData(key, mapCommentList(wireWithMyReaction));
 
@@ -276,7 +262,7 @@ describe('useToggleReaction', () => {
       }),
     );
 
-    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: queryWrapper(qc) });
 
     result.current.mutate({ commentId: 'c-1', emoji: '👍' });
 
@@ -293,13 +279,13 @@ describe('useToggleReaction', () => {
   });
 
   it('rolls back on error', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventCommentKeys.list(EVENT_ID);
     qc.setQueryData(key, mapCommentList(wireWithReaction));
 
     mockedPost.mockRejectedValueOnce(new Error('network fail'));
 
-    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: queryWrapper(qc) });
 
     await expect(result.current.mutateAsync({ commentId: 'c-1', emoji: '👍' })).rejects.toThrow(
       'network fail',

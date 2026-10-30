@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEventStats } from '@/api/eventStats';
 import type { Event, EventStats } from '@/models/event';
 import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventAttendancePanel } from './EventAttendancePanel';
 
@@ -62,16 +62,8 @@ const MIXED_RSVP_EVENT = makeEvent({
   ],
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderPanel(event: Event) {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <EventAttendancePanel event={event} />
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<EventAttendancePanel event={event} />);
 }
 
 function mockStats(stats: EventStats | null, state: 'loading' | 'error' | 'success' = 'success') {
