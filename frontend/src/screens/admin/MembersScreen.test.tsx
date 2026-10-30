@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRoles } from '@/api/roles';
@@ -9,7 +7,9 @@ import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { makeMember, makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeMember, makeUser, makeUserWithPermissions } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import MembersScreen from './MembersScreen';
 
@@ -42,28 +42,11 @@ const baseUser = makeUser({
 });
 
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
-  return {
-    ...baseUser,
-    roles: [
-      {
-        id: 'role-admin',
-        name: 'admin',
-        isDefault: true,
-        permissions,
-      },
-    ],
-  };
+  return makeUserWithPermissions(permissions, baseUser);
 }
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <MembersScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<MembersScreen />);
 }
 
 function mockUsersResult(overrides: Partial<ReturnType<typeof useUsers>>) {
@@ -82,11 +65,7 @@ beforeEach(() => {
     isPending: false,
     isError: false,
   } as unknown as ReturnType<typeof useRoles>);
-  useAuthStore.setState({
-    status: 'authed',
-    user: adminUser(),
-    accessToken: 'tok',
-  });
+  setAuthed(adminUser());
 });
 
 describe('MembersScreen', () => {
@@ -181,11 +160,7 @@ describe('MembersScreen', () => {
   // level (see AdminHubScreen). Locking the current React behavior: the
   // button is always present when the screen renders.
   it('renders the add-member button even without manage_users permission (react gates at route level)', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([]),
-      accessToken: 'tok',
-    });
+    setAuthed(adminUser([]));
     mockUsersResult({ data: [] });
 
     renderScreen();
@@ -194,11 +169,7 @@ describe('MembersScreen', () => {
   });
 
   it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
-      accessToken: 'tok',
-    });
+    setAuthed(adminUser([Permission.ManageUsers, Permission.ManageRoles]));
     mockUsersResult({ data: [] });
 
     renderScreen();
@@ -368,11 +339,7 @@ describe('MembersScreen', () => {
   });
 
   it('shows filtered count as "N of M" when role filter is active', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
-      accessToken: 'tok',
-    });
+    setAuthed(adminUser([Permission.ManageUsers, Permission.ManageRoles]));
     vi.mocked(useRoles).mockReturnValue({
       data: [
         { id: 'r1', name: 'organizer', isDefault: false, permissions: [] },

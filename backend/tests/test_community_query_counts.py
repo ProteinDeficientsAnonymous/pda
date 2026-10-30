@@ -18,18 +18,19 @@ from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
-from tests._query_counts import assert_constant_queries, make_user, make_user_with
+from tests._query_counts import assert_constant_queries
+from tests._users import make_user
 
 
 @pytest.mark.django_db
 class TestEventEndpointsQueryCount:
     def test_comments(self, api_client):
-        host = make_user("Host", is_member=True)
+        host = make_user(first_name="Host")
         event = make_event(created_by=host)
 
         def grow(n: int) -> None:
             for _ in range(n):
-                author = make_user("Author", is_member=True, hide_last_name=True)
+                author = make_user(first_name="Author", hide_last_name=True)
                 make_rsvp(event, author)
                 comment = EventComment.objects.create(event=event, author=author, body="hi")
                 reply = EventComment.objects.create(
@@ -45,23 +46,23 @@ class TestEventEndpointsQueryCount:
 
     @pytest.mark.parametrize("suffix", ["stats/", "text-recipients/"])
     def test_host_rsvp_views(self, api_client, suffix):
-        host = make_user("Host", is_member=True)
+        host = make_user(first_name="Host")
         event = make_event(created_by=host)
 
         def grow(n: int) -> None:
             for _ in range(n):
-                make_rsvp(event, make_user("Guest", is_member=True))
-                event.invited_users.add(make_user("Invitee", is_member=True))
+                make_rsvp(event, make_user(first_name="Guest"))
+                event.invited_users.add(make_user(first_name="Invitee"))
 
         url = f"/api/community/events/{event.id}/{suffix}"
         assert_constant_queries(api_client, url, grow, auth_headers_for(host))
 
     def test_event_flags(self, api_client):
-        admin = make_user_with(PermissionKey.MANAGE_EVENTS)
+        admin = make_user(PermissionKey.MANAGE_EVENTS)
 
         def grow(n: int) -> None:
             for _ in range(n):
-                flagger = make_user("Flagger", is_member=True)
+                flagger = make_user(first_name="Flagger")
                 EventFlag.objects.create(
                     event=make_event(created_by=flagger), flagged_by=flagger, reason="spam"
                 )
@@ -74,11 +75,11 @@ class TestEventEndpointsQueryCount:
         "path", ["events/attendance-report/", "events/attendance-analytics/members/"]
     )
     def test_attendance_reports(self, api_client, path):
-        admin = make_user_with(PermissionKey.MANAGE_EVENTS)
+        admin = make_user(PermissionKey.MANAGE_EVENTS)
 
         def grow(n: int) -> None:
             for _ in range(n):
-                member = make_user("Member", is_member=True)
+                member = make_user(first_name="Member")
                 past = make_event(
                     created_by=member, start_datetime=timezone.now() - timedelta(days=3)
                 )
@@ -90,7 +91,7 @@ class TestEventEndpointsQueryCount:
 @pytest.mark.django_db
 class TestContentEndpointsQueryCount:
     def test_survey_summary(self, api_client):
-        admin = make_user_with(PermissionKey.MANAGE_SURVEYS)
+        admin = make_user(PermissionKey.MANAGE_SURVEYS)
         survey = Survey.objects.create(title="Summary", slug="summary")
         q = SurveyQuestion.objects.create(
             survey=survey, label="Rate it", field_type=SurveyQuestionType.STARS
@@ -100,7 +101,7 @@ class TestContentEndpointsQueryCount:
             for _ in range(n):
                 SurveyResponse.objects.create(
                     survey=survey,
-                    user=make_user("Responder"),
+                    user=make_user(first_name="Responder"),
                     answers={str(q.id): {"label": "Rate it", "answer": "4"}},
                 )
 
