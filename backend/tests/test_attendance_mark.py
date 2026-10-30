@@ -9,16 +9,12 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
+
 URL = "/api/community/events/attendance-mark/"
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -73,7 +69,7 @@ def past_event(db, members_admin):
 
 
 def _post(api_client, user, payload):
-    return api_client.post(URL, payload, content_type="application/json", **_auth(user))
+    return api_client.post(URL, payload, content_type="application/json", **auth_headers_for(user))
 
 
 @pytest.mark.django_db
@@ -101,7 +97,7 @@ class TestPermissions:
     ):
         url = "/api/community/events/attendance-import/events/"
         for user in (members_admin, events_only_admin):
-            resp = api_client.get(url, **_auth(user))
+            resp = api_client.get(url, **auth_headers_for(user))
             assert resp.status_code == 200
             assert any(e["id"] == str(past_event.id) for e in resp.json())
 
@@ -250,7 +246,7 @@ class TestLegacyEventInEventList:
             is_legacy=True,
         )
 
-        resp = api_client.get("/api/community/events/", **_auth(members_admin))
+        resp = api_client.get("/api/community/events/", **auth_headers_for(members_admin))
 
         assert resp.status_code == 200
         row = next(e for e in resp.json() if e["id"] == str(event.id))
