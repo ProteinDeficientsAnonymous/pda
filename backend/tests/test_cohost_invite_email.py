@@ -6,7 +6,7 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 CREATE_EVENT_URL = "/api/community/events/"
 

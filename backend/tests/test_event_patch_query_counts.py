@@ -5,7 +5,7 @@ from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 _seq = {"n": 0}
 

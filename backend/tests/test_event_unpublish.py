@@ -10,7 +10,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso, past_iso
+from tests._time import future_iso, past_iso
 
 
 @pytest.fixture

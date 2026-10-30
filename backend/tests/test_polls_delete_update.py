@@ -8,7 +8,7 @@ from community.models import Event, EventPoll, PollAvailability, PollOption, Pol
 from ninja_jwt.tokens import RefreshToken
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 # ---------------------------------------------------------------------------
 # Fixtures

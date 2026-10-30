@@ -11,7 +11,7 @@ from users.models import User
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 _phone_suffix = count(9000)
 

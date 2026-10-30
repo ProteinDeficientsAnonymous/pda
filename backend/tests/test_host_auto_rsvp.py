@@ -16,7 +16,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 EVENTS_URL = "/api/community/events/"
 PAID = {"price": "$10", "venmo_link": "https://venmo.com/x"}

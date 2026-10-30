@@ -12,7 +12,7 @@ from ninja_jwt.tokens import RefreshToken
 from PIL import Image
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _user(phone: str, name: str, *, is_member: bool = True) -> User:

@@ -6,7 +6,7 @@ from community.models.choices import CoHostInviteStatus
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-from tests.conftest import future_iso, past_iso
+from tests._time import future_iso, past_iso
 
 
 def _make_user(phone: str, name: str) -> User:

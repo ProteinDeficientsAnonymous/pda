@@ -6,7 +6,7 @@ from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPSt
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

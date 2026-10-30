@@ -10,7 +10,7 @@ from community.models import EventRSVP, RSVPStatus
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp-phone-check/"
 

@@ -9,7 +9,7 @@ from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import make_official_event, payload, url
-from tests.conftest import future_iso
+from tests._time import future_iso
 from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
 
 __all__ = ["open_official_event"]

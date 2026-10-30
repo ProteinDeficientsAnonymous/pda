@@ -6,7 +6,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 LONG_AGO = timezone.now() - timedelta(days=30)
 

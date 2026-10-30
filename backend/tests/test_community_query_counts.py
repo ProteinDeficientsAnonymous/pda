@@ -20,7 +20,7 @@ from django.utils import timezone
 from users.permissions import PermissionKey
 
 from tests._query_counts import assert_constant_queries, headers_for, make_user, make_user_with
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _event(host, days: int = 5) -> Event:

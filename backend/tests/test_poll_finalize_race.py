@@ -7,7 +7,7 @@ from django.test import Client
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _make_user(i):

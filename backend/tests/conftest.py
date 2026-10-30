@@ -1,4 +1,3 @@
-from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -14,22 +13,6 @@ from notifications.email_sender import SendResult
 from users.models import User, UserManager
 from users.permissions import PermissionKey
 from users.roles import Role
-
-
-def future_iso(days: int = 30, hours: int = 0, minutes: int = 0) -> str:
-    """ISO 8601 string N days/hours/minutes ahead of now.
-
-    Use this anywhere a test needs a valid future start/end datetime instead
-    of hardcoding a year like "2026-06-01T18:00:00Z" — those strings silently
-    rot as time passes and the `check_past` validator starts rejecting them.
-    """
-    return (timezone.now() + timedelta(days=days, hours=hours, minutes=minutes)).isoformat()
-
-
-def past_iso(days: int = 1) -> str:
-    """ISO 8601 string N days in the past. Use for testing stale-draft scenarios,
-    retroactive data, etc. — never for normal create/edit flows (those are rejected)."""
-    return (timezone.now() - timedelta(days=days)).isoformat()
 
 
 def pytest_configure() -> None:

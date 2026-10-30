@@ -17,7 +17,7 @@ from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.roles import Role
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ from users._helpers import visible_display_name, visible_name
 from users.models import User
 from users.roles import Role
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _user(phone: str, name: str, **extra) -> User:

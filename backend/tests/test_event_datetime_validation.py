@@ -11,7 +11,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso, past_iso
+from tests._time import future_iso, past_iso
 
 
 def _naive_future_iso(days: int, hours: int = 0) -> str:

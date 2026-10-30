@@ -5,7 +5,7 @@ from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _member(phone="+14155550100", email="member@e.com"):

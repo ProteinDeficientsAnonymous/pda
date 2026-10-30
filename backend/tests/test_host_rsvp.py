@@ -10,7 +10,7 @@ from users.models import Role, User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _auth(user):
