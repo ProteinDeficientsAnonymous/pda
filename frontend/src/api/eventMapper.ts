@@ -6,7 +6,7 @@ import type {
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
-import { AttendanceStatus, type QuestionnaireAnswer } from '@/models/event';
+import { AttendanceStatus, OfficialKind, type QuestionnaireAnswer } from '@/models/event';
 
 import { mapRsvpQuestion } from './eventRsvpQuestions';
 
@@ -85,6 +85,7 @@ export interface WireEvent {
   my_pending_cohost_invite_id?: string | null;
 
   event_type?: string;
+  official_kind?: string | null;
   visibility?: string;
   photo_url?: string;
   photo_updated_at?: string | null;
@@ -109,6 +110,10 @@ interface WirePendingCohostInvite {
   user_name: string;
   user_photo_url?: string;
   invited_at: string;
+}
+
+function mapOfficialKind(value: string | null | undefined): OfficialKind | null {
+  return Object.values(OfficialKind).find((kind) => kind === value) ?? null;
 }
 
 function mapAttendance(value: string | undefined): AttendanceStatusValue {
@@ -213,6 +218,7 @@ export function mapEvent(e: WireEvent): Event {
     myPendingCohostInviteId: e.my_pending_cohost_invite_id ?? null,
 
     eventType: e.event_type ?? 'community',
+    officialKind: mapOfficialKind(e.official_kind),
     visibility: e.visibility ?? 'public',
     photoUrl: e.photo_url ?? '',
     photoUpdatedAt: e.photo_updated_at ?? null,

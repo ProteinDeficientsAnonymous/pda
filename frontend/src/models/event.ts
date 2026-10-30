@@ -16,6 +16,13 @@ export const EventType = {
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
 
+export const OfficialKind = {
+  Walk: 'walk',
+  Restaurant: 'restaurant',
+} as const;
+
+export type OfficialKind = (typeof OfficialKind)[keyof typeof OfficialKind];
+
 export function isOfficialOrClub(type: string): boolean {
   return type === EventType.Official || type === EventType.Club;
 }
@@ -198,6 +205,7 @@ export interface Event {
   myPendingCohostInviteId: string | null;
 
   eventType: string;
+  officialKind: OfficialKind | null;
   visibility: string;
   photoUrl: string;
   photoUpdatedAt: string | null;
