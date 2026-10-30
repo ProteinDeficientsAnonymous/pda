@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 
@@ -59,12 +59,7 @@ function renderEditors(user: User | null) {
     user,
     accessToken: user ? 'tok' : null,
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <JoinRequestMessageEditors />
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<JoinRequestMessageEditors />);
 }
 
 describe('JoinRequestMessageEditors', () => {
