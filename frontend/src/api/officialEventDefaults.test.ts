@@ -8,9 +8,7 @@ import { apiClient } from '@/api/client';
 
 import { useOfficialEventDefaults } from './officialEventDefaults';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 
