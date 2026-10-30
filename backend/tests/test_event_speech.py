@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from community.models import (
     Event,
+    EventSpeech,
     EventStatus,
     EventType,
     OfficialKind,
@@ -13,6 +14,7 @@ from community.models import (
 )
 from users.permissions import PermissionKey
 
+from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._events import make_event
 from tests._query_counts import assert_constant_queries
@@ -169,6 +171,17 @@ class TestGetSpeech:
         data = api_client.get(_url(event), **auth_headers_for(maya)).json()
         assert data["official_kind"] is None
 
+    def test_switched_to_community_is_404_but_row_kept(self, api_client, maya, walk):
+        api_client.put(
+            _url(walk),
+            {"values": {"facilitators": "x"}},
+            content_type="application/json",
+            **auth_headers_for(maya),
+        )
+        Event.objects.filter(pk=walk.pk).update(event_type=EventType.COMMUNITY)
+        assert api_client.get(_url(walk), **auth_headers_for(maya)).status_code == 404
+        assert EventSpeech.objects.filter(event_id=walk.pk).exists()
+
     def test_query_count_is_constant(self, api_client, maya, walk):
         def grow(n: int) -> None:
             for i in range(n):
@@ -178,3 +191,56 @@ class TestGetSpeech:
                 _event(maya, title=f"later {i}")
 
         assert_constant_queries(api_client, _url(walk), grow, auth_headers_for(maya))
+
+
+@pytest.mark.django_db
+class TestPutSpeech:
+    def _put(self, api_client, event, user, body):
+        return api_client.put(
+            _url(event), body, content_type="application/json", **auth_headers_for(user)
+        )
+
+    def test_put_then_get_is_saved_with_html(self, api_client, maya, walk):
+        template = SpeechTemplate.get()
+        template.shared_pm = _blank_pm("facilitators")
+        template.save()
+
+        put = self._put(api_client, walk, maya, {"values": {"facilitators": "maya and sam"}})
+        assert put.status_code == 200
+        assert "maya and sam" in put.json()["html"]
+
+        data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
+        assert data["saved"] is True
+        assert "maya and sam" in data["html"]
+        assert data["values"]["facilitators"] == "maya and sam"
+        assert data["updated_by_name"] == "maya"
+        assert data["updated_at"] is not None
+
+    def test_last_write_wins(self, api_client, maya, sam, walk):
+        self._put(api_client, walk, maya, {"values": {"front_walker": "a"}})
+        self._put(api_client, walk, sam, {"values": {"front_walker": "b"}})
+        speech = EventSpeech.objects.get(event=walk)
+        assert speech.values["front_walker"] == "b"
+        assert speech.updated_by == sam
+
+    def test_non_cohost_forbidden(self, api_client, walk):
+        outsider = make_user(first_name="out", last_name="Last", is_member=True)
+        assert self._put(api_client, walk, outsider, {"values": {}}).status_code == 403
+
+    def test_manage_events_without_cohost_forbidden(self, api_client, walk):
+        admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
+        assert self._put(api_client, walk, admin, {"values": {}}).status_code == 403
+
+    def test_anonymous_unauthorized(self, api_client, walk):
+        response = api_client.put(_url(walk), {"values": {}}, content_type="application/json")
+        assert response.status_code == 401
+
+    def test_community_event_not_found(self, api_client, maya):
+        event = _event(maya, event_type=EventType.COMMUNITY, official_kind="")
+        assert self._put(api_client, event, maya, {"values": {}}).status_code == 404
+
+    def test_bad_values_are_422(self, api_client, maya, walk):
+        response = self._put(api_client, walk, maya, {"values": {"open_roles": "x"}})
+        assert response.status_code == 422
+        assert_error_code(response, "speech.invalid_values")
+        assert not EventSpeech.objects.filter(event=walk).exists()

@@ -14,6 +14,7 @@ from users.models import User
 from community.events.helpers import is_cohost
 from community.models import (
     Event,
+    EventSpeech,
     EventStatus,
     EventType,
     OfficialKind,
@@ -21,12 +22,17 @@ from community.models import (
     SpeechTemplate,
 )
 from community.shared import ErrorOut
-from community.speech.blanks import SpeechValues
+from community.speech._render import render_speech_html
+from community.speech.blanks import SpeechValues, clean_values
 from community.validation import Code, raise_validation
 
 router = Router()
 
 _UPCOMING_LIMIT = 5
+
+
+class EventSpeechIn(BaseModel):
+    values: dict
 
 
 class EventSpeechOut(BaseModel):
@@ -41,7 +47,8 @@ class EventSpeechOut(BaseModel):
 
 def _load_event(event_id: UUID) -> Event:
     event = (
-        Event.objects.prefetch_related(
+        Event.objects.select_related("speech__updated_by")
+        .prefetch_related(
             Prefetch("co_hosts", queryset=User.objects.order_by("created_at", "pk")),
         )
         .filter(id=event_id, event_type=EventType.OFFICIAL)
@@ -98,16 +105,33 @@ def prefill_values(event: Event, template: SpeechTemplate) -> SpeechValues:
     }
 
 
-def _out(event: Event, template: SpeechTemplate) -> EventSpeechOut:
+def _saved_speech(event: Event) -> EventSpeech | None:
+    return getattr(event, "speech", None)
+
+
+def _out(event: Event, template: SpeechTemplate, viewer) -> EventSpeechOut:
+    speech = _saved_speech(event)
     kind = event.official_kind or None
+    if speech is None:
+        return EventSpeechOut(
+            event_title=event.title,
+            official_kind=kind,
+            saved=False,
+            values=prefill_values(event, template),
+            html="",
+            updated_at=None,
+            updated_by_name=None,
+        )
+    updater = speech.updated_by
+    values = speech.values
     return EventSpeechOut(
         event_title=event.title,
         official_kind=kind,
-        saved=False,
-        values=prefill_values(event, template),
-        html="",
-        updated_at=None,
-        updated_by_name=None,
+        saved=True,
+        values=values,
+        html=render_speech_html(template, kind, values) if kind else "",
+        updated_at=speech.updated_at,
+        updated_by_name=visible_display_name(updater, viewer) if updater else None,
     )
 
 
@@ -118,4 +142,22 @@ def _out(event: Event, template: SpeechTemplate) -> EventSpeechOut:
 )
 def get_event_speech(request, event_id: UUID):
     event = _load_cohost_event(request, event_id)
-    return Status(200, _out(event, SpeechTemplate.get()))
+    return Status(200, _out(event, SpeechTemplate.get(), request.auth))
+
+
+@router.put(
+    "/events/{event_id}/speech/",
+    response={200: EventSpeechOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut},
+    auth=gated_jwt,
+)
+def put_event_speech(request, event_id: UUID, payload: EventSpeechIn):
+    event = _load_cohost_event(request, event_id)
+    try:
+        values = clean_values(payload.values)
+    except ValueError:
+        raise_validation(Code.Speech.INVALID_VALUES, field="values")
+    speech, _ = EventSpeech.objects.update_or_create(
+        event=event, defaults={"values": values, "updated_by": request.auth}
+    )
+    event.speech = speech
+    return Status(200, _out(event, SpeechTemplate.get(), request.auth))

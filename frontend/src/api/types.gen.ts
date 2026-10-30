@@ -1439,7 +1439,8 @@ export interface paths {
         };
         /** Get Event Speech */
         get: operations["community_speech_event_speech_get_event_speech"];
-        put?: never;
+        /** Put Event Speech */
+        put: operations["community_speech_event_speech_put_event_speech"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4127,6 +4128,13 @@ export interface components {
             expected: components["schemas"]["EventRsvpQuestionExpectedIn"][];
             /** Questions */
             questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
+        };
+        /** EventSpeechIn */
+        EventSpeechIn: {
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
         };
         /** EventSpeechOut */
         EventSpeechOut: {
@@ -10518,6 +10526,59 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_speech_event_speech_put_event_speech: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventSpeechIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSpeechOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
