@@ -75,20 +75,21 @@ class TestEventOgPreview:
         assert response.status_code == 200
         assert '<meta property="og:title" content="Vegan Potluck"' in response.content.decode()
 
-    def test_event_without_photo_uses_summary_card(self, api_client, db, settings):
+    @pytest.mark.parametrize("visibility", [PageVisibility.PUBLIC, PageVisibility.MEMBERS_ONLY])
+    def test_event_without_photo_uses_logo(self, api_client, db, settings, visibility):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         event = Event.objects.create(
             title="No Photo Event",
             start_datetime=future_iso(),
-            visibility=PageVisibility.PUBLIC,
+            visibility=visibility,
             status=EventStatus.ACTIVE,
         )
         response = api_client.get(_preview_url(event.id))
 
         assert response.status_code == 200
         html = response.content.decode()
-        assert '<meta name="twitter:card" content="summary"' in html
-        assert "og:image" not in html
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+        assert '<meta name="twitter:card" content="summary_large_image"' in html
 
     @pytest.mark.parametrize(
         "visibility", [PageVisibility.MEMBERS_ONLY, PageVisibility.INVITE_ONLY]
@@ -121,19 +122,6 @@ class TestEventOgPreview:
             '<meta property="og:description" content="Secret details about the gathering."' in html
         )
         assert "Secret Spot" not in html
-
-    def test_non_public_event_without_photo_uses_logo(self, api_client, db, settings):
-        settings.FRONTEND_BASE_URL = "https://pda.example.com"
-        event = Event.objects.create(
-            title="Stewards Gathering",
-            start_datetime=future_iso(),
-            visibility=PageVisibility.MEMBERS_ONLY,
-            status=EventStatus.ACTIVE,
-        )
-        response = api_client.get(_preview_url(event.slug))
-
-        html = response.content.decode()
-        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
 
     def test_cancelled_public_event_still_previews(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
