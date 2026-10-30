@@ -171,6 +171,18 @@ def test_publish_and_update_tokens_are_not_interchangeable(test_user, make_event
     assert Event.objects.get(pk=event.pk).price == ""
 
 
+def test_draft_edit_sets_event_format(test_user, make_event):
+    event = make_event(EventStatus.DRAFT, event_type=EventType.OFFICIAL)
+    assert _update(test_user, event, {"event_format": "restaurant"})["event_format"] == "restaurant"
+    assert Event.objects.get(pk=event.pk).event_format == "restaurant"
+
+
+def test_explicit_null_event_format_leaves_it_unchanged(test_user, make_event):
+    event = make_event(EventStatus.DRAFT, event_type=EventType.OFFICIAL, event_format="walk")
+    _update(test_user, event, {**PRICE, "event_format": None})
+    assert Event.objects.get(pk=event.pk).event_format == "walk"
+
+
 @pytest.mark.parametrize(
     ("fields", "changes"),
     [
