@@ -10,8 +10,9 @@ from community.events.helpers import (
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
+    _validated_official_kind,
 )
-from community.models import Event, EventSlugAlias, is_official_or_club
+from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
 from community.rsvps.waitlist import promote_from_waitlist
 from community.validation import Code, raise_validation
@@ -34,6 +35,7 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     if "event_type" in updates:
         _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
+    _validated_official_kind(updates.get("official_kind"), effective_type)
     effective_visibility = updates.get("visibility", event.visibility)
     if _is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
@@ -85,6 +87,15 @@ def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
         updates["allow_plus_ones"] = False
 
 
+def _resolve_official_kind(event: Event, updates: dict) -> None:
+    """Treat a null kind as unchanged, and clear the kind when the event stops being official."""
+    if updates.get("event_type", event.event_type) != EventType.OFFICIAL:
+        if event.official_kind or "official_kind" in updates:
+            updates["official_kind"] = ""
+    elif updates.get("official_kind", "") is None:
+        del updates["official_kind"]
+
+
 def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     if _can_edit_event(request.auth, event):
         return
@@ -127,6 +138,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)
     _lock_typed_plus_ones(event, updates)
+    _resolve_official_kind(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())

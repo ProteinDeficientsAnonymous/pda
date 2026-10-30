@@ -328,6 +328,7 @@ class EventIn(BaseModel):
     allow_plus_ones: bool = False
     max_attendees: int | None = None
     event_type: str = Field(default=EventType.COMMUNITY, max_length=FieldLimit.CHOICE)
+    official_kind: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     visibility: str = Field(default=PageVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     invite_permission: str = Field(
         default=InvitePermission.ALL_MEMBERS, max_length=FieldLimit.CHOICE
@@ -402,6 +403,7 @@ class EventPatchIn(BaseModel):
     allow_plus_ones: bool | None = None
     max_attendees: int | None = None
     event_type: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+    official_kind: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None

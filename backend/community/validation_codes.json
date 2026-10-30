@@ -262,6 +262,11 @@
         "name": "SLUG_TAKEN",
         "value": "event.slug_taken",
         "params": []
+      },
+      {
+        "name": "INVALID_OFFICIAL_KIND",
+        "value": "event.invalid_official_kind",
+        "params": []
       }
     ],
     "Poll": [

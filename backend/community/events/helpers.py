@@ -22,6 +22,7 @@ from community.models import (
     EventRSVP,
     EventTag,
     EventType,
+    OfficialKind,
     PageVisibility,
     RSVPStatus,
     is_official_or_club,
@@ -433,6 +434,13 @@ _TYPE_TAG_PERMISSIONS = {
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
+
+
+def _validated_official_kind(kind: str | None, event_type: str) -> str:
+    """Return the kind to store ("" when unset); raise if invalid or the event isn't official."""
+    if kind and (kind not in OfficialKind.values or event_type != EventType.OFFICIAL):
+        raise_validation(Code.Event.INVALID_OFFICIAL_KIND, field="official_kind")
+    return kind or ""
 
 
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
