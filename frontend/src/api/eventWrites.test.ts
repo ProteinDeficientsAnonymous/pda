@@ -8,8 +8,10 @@ import { makeEvent } from '@/test/fixtures';
 import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
+  emptyEventFormValues,
   eventToFormValues,
   toPartialWireBody,
+  toWireBody,
   useCreateEvent,
   useInviteToEvent,
   useUpdateEvent,
@@ -114,6 +116,51 @@ describe('toPartialWireBody', () => {
   it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
     expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
     expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
+  });
+});
+
+describe('official kind', () => {
+  it('defaults a new event to walk', () => {
+    expect(emptyEventFormValues().officialKind).toBe('walk');
+  });
+
+  it('keeps an older official event without a kind as null', () => {
+    const form = eventToFormValues(
+      makeEvent({ eventType: EventType.Official, officialKind: null }),
+    );
+    expect(form.officialKind).toBeNull();
+  });
+
+  it('reads the saved kind', () => {
+    const form = eventToFormValues(
+      makeEvent({ eventType: EventType.Official, officialKind: 'restaurant' }),
+    );
+    expect(form.officialKind).toBe('restaurant');
+  });
+
+  it('full body sends official_kind only for official events', () => {
+    const official = toWireBody({
+      ...emptyEventFormValues(),
+      eventType: 'official',
+      officialKind: 'restaurant',
+    });
+    expect(official.official_kind).toBe('restaurant');
+    const community = toWireBody({ ...emptyEventFormValues(), officialKind: 'walk' });
+    expect(community.official_kind).toBeNull();
+  });
+
+  it('partial body sends null kind (unchanged) when the type is not official', () => {
+    expect(toPartialWireBody({ eventType: 'club', officialKind: 'walk' })).toEqual({
+      event_type: 'club',
+      official_kind: null,
+    });
+    expect(toPartialWireBody({ eventType: 'official', officialKind: 'walk' })).toEqual({
+      event_type: 'official',
+      official_kind: 'walk',
+    });
+    expect(toPartialWireBody({ officialKind: 'restaurant' })).toEqual({
+      official_kind: 'restaurant',
+    });
   });
 });
 
