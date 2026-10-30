@@ -1970,6 +1970,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/speech-template/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Speech Template */
+        get: operations["community_speech_template_get_speech_template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/surveys/": {
         parameters: {
             query?: never;
@@ -5320,6 +5337,22 @@ export interface components {
             question_id: string;
             /** Value */
             value: string;
+        };
+        /** SpeechTemplateOut */
+        SpeechTemplateOut: {
+            /** Open Roles */
+            open_roles: string[];
+            /** Restaurant Pm */
+            restaurant_pm: string;
+            /** Shared Pm */
+            shared_pm: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Walk Pm */
+            walk_pm: string;
         };
         /** SseTicketOut */
         SseTicketOut: {
@@ -11850,6 +11883,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_speech_template_get_speech_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechTemplateOut"];
                 };
             };
         };

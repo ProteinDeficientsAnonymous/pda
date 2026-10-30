@@ -6505,6 +6505,43 @@
         "title": "ShowIfOut",
         "type": "object"
       },
+      "SpeechTemplateOut": {
+        "properties": {
+          "open_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open Roles",
+            "type": "array"
+          },
+          "restaurant_pm": {
+            "title": "Restaurant Pm",
+            "type": "string"
+          },
+          "shared_pm": {
+            "title": "Shared Pm",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "walk_pm": {
+            "title": "Walk Pm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shared_pm",
+          "walk_pm",
+          "restaurant_pm",
+          "open_roles",
+          "updated_at"
+        ],
+        "title": "SpeechTemplateOut",
+        "type": "object"
+      },
       "SseTicketOut": {
         "properties": {
           "ticket": {
@@ -16422,6 +16459,33 @@
           }
         },
         "summary": "Request Login Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/speech-template/": {
+      "get": {
+        "operationId": "community_speech_template_get_speech_template",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Speech Template",
         "tags": [
           "community"
         ]

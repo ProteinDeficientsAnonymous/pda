@@ -23,6 +23,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.EditFaq]: 'edit faq',
   [Permission.EditHomepage]: 'edit homepage',
   [Permission.EditJoinQuestions]: 'edit join questions',
+  [Permission.EditSpeechTemplate]: 'edit event speech template',
   [Permission.ManageSurveys]: 'manage surveys',
   [Permission.TagOfficialEvent]: 'tag official events',
   [Permission.TagClubEvent]: 'tag club events',
