@@ -3,7 +3,7 @@
 import logging
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code

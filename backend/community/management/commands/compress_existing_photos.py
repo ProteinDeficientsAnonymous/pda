@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from users.models import User
 
-from community._image_compress import (
+from community.image_compress import (
     AVATAR_MAX_EDGE,
     EVENT_MAX_EDGE,
     UnsafeImageError,

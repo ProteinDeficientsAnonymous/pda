@@ -7,12 +7,12 @@ import json
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventCoHostInvite,
     EventStatus,
 )
+from community.validation import Code
 from django.utils import timezone
 from users.models import User
 

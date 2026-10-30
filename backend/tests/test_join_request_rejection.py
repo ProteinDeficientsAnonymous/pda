@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import JoinRequestStatus, RejectionEmailTemplate, RejectionReason
+from community.validation import Code
 
 from tests._asserts import assert_error_code
 

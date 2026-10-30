@@ -15,9 +15,9 @@ from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line, logger
-from community._validation import Code, raise_validation
 from community.models import FeedbackType
+from community.shared import ErrorOut, _optional_jwt, flatten_to_single_line, logger
+from community.validation import Code, raise_validation
 
 router = Router()
 

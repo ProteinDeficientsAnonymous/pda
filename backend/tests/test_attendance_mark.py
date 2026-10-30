@@ -1,5 +1,5 @@
 import pytest
-from community._attendance_clock import last_qualifying_attendance_date
+from community.attendance.clock import last_qualifying_attendance_date
 from community.models import (
     AttendanceStatus,
     Event,

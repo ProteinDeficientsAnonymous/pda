@@ -2,7 +2,7 @@ import io
 import os
 
 import pytest
-from community._image_compress import (
+from community.image_compress import (
     AVATAR_MAX_EDGE,
     EVENT_MAX_EDGE,
     UnsafeImageError,

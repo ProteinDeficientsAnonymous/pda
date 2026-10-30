@@ -1,7 +1,7 @@
 from typing import Any
 
-from community._event_schemas import EventIn, EventPatchIn
-from community._event_tags import list_event_tags
+from community.events.schemas import EventIn, EventPatchIn
+from community.events.tags import list_event_tags
 from community.models import EventType, PageVisibility, is_official_or_club
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field, create_model

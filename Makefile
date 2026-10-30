@@ -53,12 +53,12 @@ AGENT_VITEST_EXTRA = --coverage
 endif
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity check-private-modules \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes cursor-rules dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
-        agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
+        agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes agent-check-private-modules \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck \
         diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend
@@ -76,6 +76,7 @@ help:
 	@echo "  make createsuperuser  Create Django admin user"
 	@echo "  make seed             Seed database with sample data"
 	@echo "  make complexity       Run Python cognitive complexity check"
+	@echo "  make check-private-modules  Fail if a _module is imported from outside its package"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
@@ -154,6 +155,9 @@ complexity:
 	cd backend && uvx --with flake8-cognitive-complexity flake8 --max-cognitive-complexity 10 --select CCR001 .
 	@violations=$$(find backend -name '*.py' -not -path '*/migrations/*' | while read f; do lines=$$(wc -l < "$$f"); if [ "$$lines" -gt 500 ]; then echo "$$f: $$lines lines"; fi; done); \
 	if [ -n "$$violations" ]; then echo "Error: files exceed 500-line limit:\n$$violations"; exit 1; fi
+
+check-private-modules:
+	python3 scripts/check_private_modules.py
 
 lint-file:
 	@uv run ruff check --fix "$(FILE)" && uv run ruff format "$(FILE)"
@@ -249,7 +253,7 @@ frontend-typecheck:
 frontend-types: dump-codes generate-codes dump-openapi
 	cd frontend && pnpm types:api
 
-# Dump the backend Code catalog (community/_validation.py) to validation_codes.json.
+# Dump the backend Code catalog (community/validation.py) to validation_codes.json.
 dump-codes:
 	cd backend && uv run python manage.py dump_validation_codes
 
@@ -283,7 +287,7 @@ frontend-types-check:
 # CI (run before every commit)
 ci: backend-ci frontend-ci
 
-backend-ci: lint check test typecheck complexity check-codes
+backend-ci: lint check test typecheck complexity check-private-modules check-codes
 
 frontend-ci: parallel-frontend
 
@@ -351,7 +355,10 @@ agent-frontend-typecheck:
 
 agent-ci: agent-backend-ci agent-frontend-ci
 
-agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity agent-check-codes
+agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity agent-check-private-modules agent-check-codes
+
+agent-check-private-modules:
+	@python3 scripts/check_private_modules.py
 
 # check-codes against AGENT_DATABASE_URL, matching the rest of the agent ladder.
 agent-check-codes: $(AGENT_DB_ENSURE)

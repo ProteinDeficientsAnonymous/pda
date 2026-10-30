@@ -3,12 +3,12 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import (
     ShowIfOperator,
     Survey,
     SurveyQuestionType,
 )
+from community.validation import Code
 
 from tests._asserts import assert_error_code
 from tests._survey_condition_helpers import equals, make_question

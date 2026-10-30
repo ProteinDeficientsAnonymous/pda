@@ -1,8 +1,8 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventStatus
+from community.validation import Code
 from notifications.models import Notification
 from users.models import User
 

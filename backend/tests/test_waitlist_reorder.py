@@ -3,9 +3,9 @@
 import importlib
 
 import pytest
-from community._validation import Code
-from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
+from community.rsvps.waitlist import promote_from_waitlist
+from community.validation import Code
 from django.apps import apps as django_apps
 
 from tests._asserts import assert_error_code

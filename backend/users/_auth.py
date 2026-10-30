@@ -3,8 +3,8 @@
 import logging
 import time
 
-from community._image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
-from community._validation import Code, raise_validation
+from community.image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
@@ -18,18 +18,18 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import ConsentType, stamp_consents
-from users._helpers import (
+from users._password_validation import validate_password
+from users.helpers import (
     _check_and_set_email,
     _require_first_name,
     _resolve_name_fields,
 )
-from users._password_validation import validate_password
-from users._refresh_cookie import (
+from users.models import User
+from users.refresh_cookie import (
     clear_refresh_cookie,
     read_refresh_cookie,
     set_refresh_cookie,
 )
-from users.models import User
 from users.schemas import (
     AcceptConsentsIn,
     AccessOut,

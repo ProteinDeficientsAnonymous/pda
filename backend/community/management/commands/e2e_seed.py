@@ -8,11 +8,11 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
-from notifications._email_helpers import format_eastern_datetime
+from notifications.email_helpers import format_eastern_datetime
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
-from community._event_feedback_send import feedback_url
+from community.event_feedback.send import feedback_url
 from community.models import (
     AttendanceStatus,
     DocFolder,

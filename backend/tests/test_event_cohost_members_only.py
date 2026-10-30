@@ -1,9 +1,9 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
+from community.validation import Code
 from users.models import User
 
 from tests._asserts import assert_error_code

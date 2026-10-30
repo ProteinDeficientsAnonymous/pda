@@ -5,10 +5,10 @@ from typing import Any
 import pytest
 from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
-from community._event_description_templates import get_event_description_templates as templates
-from community._event_schemas import EventIn
-from community._events import create_event
-from community._validation import Code
+from community.events.crud import create_event
+from community.events.description_templates import get_event_description_templates as templates
+from community.events.schemas import EventIn
+from community.validation import Code
 from config.audit import is_request_via_mcp
 from django.test import TestCase
 from mcp.server.mcpserver.exceptions import ToolError

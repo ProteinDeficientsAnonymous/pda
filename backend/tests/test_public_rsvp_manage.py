@@ -2,7 +2,6 @@ import logging
 from unittest.mock import patch
 
 import pytest
-from community._validation import Code
 from community.models import (
     EventRSVP,
     EventStatus,
@@ -10,6 +9,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import NonMemberRsvpToken
@@ -257,7 +257,7 @@ class TestPostMyRsvps:
     def test_update_broadcasts_capacity_change(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
-        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.public_manage.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"{_post_url(official_event)}?token={token.token}",
                 {"status": RSVPStatus.MAYBE},
@@ -309,7 +309,7 @@ class TestDeleteMyRsvps:
     def test_delete_broadcasts_capacity_change(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
-        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.public_manage.broadcast_capacity_change") as mock_broadcast:
             api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == official_event.id
@@ -408,7 +408,7 @@ class TestPublicRsvpManageComment:
         from community.models import EventComment
 
         token = self._setup(nonmember, official_event, status=RSVPStatus.ATTENDING)
-        with patch("community._event_rsvps.notify_rsvp_declined_note") as mock_notify:
+        with patch("community.rsvps.member.notify_rsvp_declined_note") as mock_notify:
             resp = self._post(
                 api_client,
                 official_event,

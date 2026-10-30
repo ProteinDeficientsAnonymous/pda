@@ -1,12 +1,6 @@
 from datetime import timedelta
 
 import pytest
-from community._host_digest import (
-    build_host_digest,
-    capacity_line,
-    digest_recipients,
-    eligible_events,
-)
 from community.models import (
     DEFAULT_EVENT_DURATION,
     Event,
@@ -16,11 +10,17 @@ from community.models import (
     EventType,
     RSVPStatus,
 )
+from community.scheduled.host_digest import (
+    build_host_digest,
+    capacity_line,
+    digest_recipients,
+    eligible_events,
+)
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from notifications._email_helpers import format_eastern_datetime
-from users._helpers import visible_display_name
+from notifications.email_helpers import format_eastern_datetime
+from users.helpers import visible_display_name
 from users.models import User
 from users.roles import Role
 

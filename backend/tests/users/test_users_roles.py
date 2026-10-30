@@ -1,5 +1,5 @@
 import pytest
-from community._validation import Code
+from community.validation import Code
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from users.models import User

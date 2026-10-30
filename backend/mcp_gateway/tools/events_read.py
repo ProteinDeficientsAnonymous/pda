@@ -1,10 +1,10 @@
 from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
-from community._event_description_templates import get_event_description_templates
-from community._event_list import hosted_events_q
-from community._event_tags import list_event_tags as list_event_tags_view
-from community._events import get_event as get_event_view
+from community.events.crud import get_event as get_event_view
+from community.events.description_templates import get_event_description_templates
+from community.events.listing import hosted_events_q
+from community.events.tags import list_event_tags as list_event_tags_view
 from community.models import Event
 from community.models.event import _is_past_q
 from django.db.models import BooleanField, Case, F, When

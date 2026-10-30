@@ -1,0 +1,238 @@
+import logging
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.ratelimit import client_ip, rate_limit
+from django.db import transaction
+from django.utils import timezone
+from ninja import Router
+from ninja.responses import Status
+from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_updated_email
+from notifications.email_sender import get_email_sender
+from notifications.service import notify_rsvp_status_changed
+from pydantic import BaseModel, Field
+from users.models import NonMemberRsvpToken, User
+
+from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.schemas import EventOut, RsvpAnswer
+from community.field_limits import FieldLimit
+from community.models import Event, EventRSVP, RSVPStatus
+from community.models.event import public_rsvp_eligible_q
+from community.rsvps.member import (
+    _apply_rsvp_in_transaction,
+    _post_rsvp_comment,
+    _RsvpApply,
+    _validate_rsvp_status,
+    payment_audit_details,
+)
+from community.rsvps.public_shared import (
+    PublicRsvpOut,
+    PublicRsvpStateOut,
+    _email_details,
+    _load_public_rsvp_event,
+    _log_email_failure,
+)
+from community.rsvps.status_emails import email_promoted_users
+from community.rsvps.waitlist import promote_from_waitlist
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
+
+router = Router()
+
+
+class PublicRsvpManageUserOut(BaseModel):
+    display_name: str
+    email: str
+    phone_number: str
+
+
+class PublicRsvpManageItemOut(BaseModel):
+    event: EventOut
+    status: str
+    has_plus_one: bool
+
+
+class PublicRsvpManageOut(BaseModel):
+    user: PublicRsvpManageUserOut
+    rsvps: list[PublicRsvpManageItemOut]
+
+
+class PublicRsvpManageIn(BaseModel):
+    status: str
+    has_plus_one: bool = False
+    paid_confirmed: bool = False
+    comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    questionnaire_responses: dict[str, RsvpAnswer] | None = Field(
+        default=None,
+        description="Question UUID to answer; omit or send null to preserve saved answers.",
+    )
+
+
+def _resolve_token_user(token: str) -> User:
+    """Resolve a manage-rsvp token to its non-member user, or 404."""
+    user = NonMemberRsvpToken.resolve_user(token)
+    if user is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    return user
+
+
+def _eligible_event_rsvps(user):
+    """The user's RSVPs on events still public-RSVP-eligible, matching _load_public_rsvp_event."""
+    # Ineligible events must drop out, else their member-only details leak to the token holder.
+    return (
+        user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
+        .select_related("event", "event__created_by")
+        .prefetch_related("event__co_hosts", "event__invited_users", "event__rsvps__user")
+    )
+
+
+def _send_manage_rsvp_email(
+    event: Event, user: User, token_str: str, *, created: bool, final_status: str
+) -> Exception | None:
+    """Best-effort email: confirmation for a first RSVP, "updated" for a change.
+
+    A send failure must NOT roll back the RSVP. Returns the exception on failure, for the
+    caller to audit-log (keeps this helper request-agnostic).
+    """
+    if not user.email:
+        return None
+    details = _email_details(event, user, token_str)
+    try:
+        if created:
+            result = send_rsvp_confirmation_email(
+                sender=get_email_sender(),
+                details=details,
+                waitlisted=final_status == RSVPStatus.WAITLISTED,
+            )
+        else:
+            result = send_rsvp_updated_email(sender=get_email_sender(), details=details)
+        if not result.success:
+            raise RuntimeError(result.error or "send returned failure")
+    except Exception as exc:
+        return exc
+    return None
+
+
+@router.get(
+    "/public/my-rsvps/",
+    response={200: PublicRsvpManageOut, 404: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="30/h")
+def list_my_rsvps(request, token: str = ""):
+    user = _resolve_token_user(token)
+    items = []
+    for rsvp in _eligible_event_rsvps(user):
+        items.append(
+            PublicRsvpManageItemOut(
+                event=_event_out(rsvp.event, user),
+                status=rsvp.status,
+                has_plus_one=rsvp.has_plus_one,
+            )
+        )
+    return Status(
+        200,
+        PublicRsvpManageOut(
+            user=PublicRsvpManageUserOut(
+                display_name=user.full_name,
+                email=user.email or "",
+                phone_number=user.phone_number,
+            ),
+            rsvps=items,
+        ),
+    )
+
+
+@router.post(
+    "/public/my-rsvps/{event_id}/",
+    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="30/h")
+def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = ""):
+    user = _resolve_token_user(token)
+    event = _load_public_rsvp_event(event_id)
+    _validate_rsvp_status(payload.status)
+
+    with transaction.atomic():
+        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
+            event.id,
+            user,
+            _RsvpApply(
+                status=payload.status,
+                paid_confirmed=payload.paid_confirmed,
+                answers=payload.questionnaire_responses,
+            ),
+        )
+        rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
+
+    audit_log(
+        logging.INFO,
+        "public_rsvp_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={
+                "user_id": str(user.pk),
+                "status": final_status,
+                **payment_audit_details(event.id, user.pk),
+            },
+        ),
+    )
+    sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
+    email_error = _send_manage_rsvp_email(
+        event, user, rsvp_token.token, created=previous_status is None, final_status=final_status
+    )
+    if email_error is not None:
+        _log_email_failure(request, event, user, email_error)
+    email_promoted_users(request, event, promoted_user_ids)
+    if not sent_decline_note:
+        notify_rsvp_status_changed(event, user, final_status)
+    broadcast_capacity_change(event.id)
+
+    fresh_event = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .get(id=event.id)
+    )
+    final_rsvp = user.event_rsvps.get(event=fresh_event)
+    return Status(
+        200,
+        PublicRsvpOut(
+            event=_event_out(fresh_event, user),
+            rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
+            rsvp_token=rsvp_token.token,
+        ),
+    )
+
+
+@router.delete(
+    "/public/my-rsvps/{event_id}/",
+    response={204: None, 400: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="30/h")
+def delete_my_rsvp(request, event_id, token: str = ""):
+    user = _resolve_token_user(token)
+    promoted_user_ids: list[str] = []
+    with transaction.atomic():
+        event = _load_public_rsvp_event(event_id, for_update=True)
+        rsvp = EventRSVP.objects.filter(event=event, user=user).first()
+        if not rsvp:
+            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        was_attending = rsvp.status == RSVPStatus.ATTENDING
+        rsvp.delete()
+        if was_attending:
+            promoted_user_ids = promote_from_waitlist(event)
+
+    audit_log(
+        logging.INFO,
+        "public_rsvp_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.EVENT, id=str(event_id), details={"user_id": str(user.pk)}
+        ),
+    )
+    email_promoted_users(request, event, promoted_user_ids)
+    broadcast_capacity_change(event.id)
+    return Status(204, None)

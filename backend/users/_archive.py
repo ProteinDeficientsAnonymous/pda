@@ -1,6 +1,4 @@
-from community._event_helpers import broadcast_capacity_change
-from community._rsvp_status_emails import email_promoted_users
-from community._waitlist import promote_from_waitlist
+from community.events.helpers import broadcast_capacity_change
 from community.models import (
     CoHostInviteStatus,
     Event,
@@ -10,12 +8,14 @@ from community.models import (
     RSVPStatus,
 )
 from community.models.event import _is_past_q
+from community.rsvps.status_emails import email_promoted_users
+from community.rsvps.waitlist import promote_from_waitlist
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
-from users._helpers import _strip_non_member_roles
+from users.helpers import _strip_non_member_roles
 from users.models import User
 
 _HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)

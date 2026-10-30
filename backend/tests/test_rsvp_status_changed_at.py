@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community._event_nonmember_removal import guard_or_remove_ineligible_non_members
+from community.events.nonmember_removal import guard_or_remove_ineligible_non_members
 from community.models import EventRSVP, RSVPStatus
 from django.utils import timezone
 from users.models import User

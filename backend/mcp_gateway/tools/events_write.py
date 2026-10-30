@@ -1,15 +1,15 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from community._event_helpers import _can_edit_event
-from community._event_nonmember_removal import ineligible_non_member_rsvps
-from community._event_schemas import EventPatchIn
-from community._events import create_event as create_event_view
-from community._events import get_event as get_event_view
-from community._events import update_event as update_event_view
-from community._geocode import GeocodeQuery, geocode
-from community._validation import Code, raise_validation
+from community.events.crud import create_event as create_event_view
+from community.events.crud import get_event as get_event_view
+from community.events.crud import update_event as update_event_view
+from community.events.geocode import GeocodeQuery, geocode
+from community.events.helpers import _can_edit_event
+from community.events.nonmember_removal import ineligible_non_member_rsvps
+from community.events.schemas import EventPatchIn
 from community.models import Event, EventStatus, EventType
+from community.validation import Code, raise_validation
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 

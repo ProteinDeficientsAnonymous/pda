@@ -4,8 +4,8 @@ from unittest.mock import DEFAULT, patch
 
 import pytest
 from audit.models import AuditLogEntry
-from community._surveys import delete_survey_question, get_survey_admin
 from community.models import Survey, SurveyQuestion, SurveyResponse
+from community.surveys.crud import delete_survey_question, get_survey_admin
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names

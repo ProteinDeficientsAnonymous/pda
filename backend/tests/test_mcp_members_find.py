@@ -7,7 +7,7 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
 from mcp_gateway.tools.members_read import _page
-from users._member_search import MemberFilters
+from users.member_search import MemberFilters
 from users.models import User
 
 from tests._mcp_members_helpers import (

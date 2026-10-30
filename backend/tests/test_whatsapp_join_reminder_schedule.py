@@ -2,7 +2,7 @@
 
 from datetime import date, timedelta
 
-from community._whatsapp_join_reminder import (
+from community.scheduled.whatsapp_join_reminder import (
     GRACE_DAYS,
     INTERVAL_DAYS,
     MAX_REMINDERS,

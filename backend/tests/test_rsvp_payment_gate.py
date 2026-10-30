@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import EventRSVP, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
 from users.models import NonMemberRsvpToken
 

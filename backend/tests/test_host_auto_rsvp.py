@@ -1,5 +1,4 @@
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventCoHostInvite,
@@ -9,6 +8,7 @@ from community.models import (
     RsvpQuestionType,
     RSVPStatus,
 )
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey

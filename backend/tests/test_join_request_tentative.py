@@ -1,6 +1,5 @@
 import pytest
-from community._join_request_approval import _provision_tentative_user
-from community._validation import Code
+from community.join_requests.approval import _provision_tentative_user
 from community.models import (
     AttendanceStatus,
     Event,
@@ -9,6 +8,7 @@ from community.models import (
     JoinRequestStatus,
     RSVPStatus,
 )
+from community.validation import Code
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 

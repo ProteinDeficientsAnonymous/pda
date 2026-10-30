@@ -3,8 +3,8 @@
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey

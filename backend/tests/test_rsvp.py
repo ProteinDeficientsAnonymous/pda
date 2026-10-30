@@ -3,9 +3,9 @@
 from unittest.mock import patch
 
 import pytest
-from community._event_helpers import _cancellations
-from community._validation import Code
+from community.events.helpers import _cancellations
 from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
+from community.validation import Code
 from users.models import User
 
 from tests._asserts import assert_error_code
@@ -106,7 +106,7 @@ class TestRSVP:
     def test_rsvp_broadcasts_event_update_excluding_actor(
         self, api_client, auth_headers, rsvp_event, test_user
     ):
-        with patch("community._event_rsvps.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.member.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"/api/community/events/{rsvp_event.id}/rsvp/",
                 {"status": RSVPStatus.ATTENDING},
@@ -122,7 +122,7 @@ class TestRSVP:
     ):
         EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)
         with (
-            patch("community._event_helpers.broadcast_event_update") as mock_broadcast,
+            patch("community.events.helpers.broadcast_event_update") as mock_broadcast,
             django_capture_on_commit_callbacks(execute=True),
         ):
             api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
@@ -274,7 +274,7 @@ class TestRSVP:
         self, api_client, auth_headers, rsvp_event, test_user
     ):
         EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)
-        with patch("community._event_rsvps.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.member.broadcast_capacity_change") as mock_broadcast:
             api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == rsvp_event.id

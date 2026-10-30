@@ -187,7 +187,7 @@ class TestEventPhoto:
         event.refresh_from_db()
         old_name = event.photo.name
         if fail == "compress":
-            ctx = patch("community._event_actions.stored_photo", side_effect=RuntimeError("boom"))
+            ctx = patch("community.events.photos.stored_photo", side_effect=RuntimeError("boom"))
             expected: type[Exception] = RuntimeError
         else:
             ctx = patch.object(default_storage, "save", side_effect=OSError("b2 down"))

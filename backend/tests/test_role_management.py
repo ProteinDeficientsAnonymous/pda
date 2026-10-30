@@ -1,5 +1,5 @@
 import pytest
-from community._validation import Code
+from community.validation import Code
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role

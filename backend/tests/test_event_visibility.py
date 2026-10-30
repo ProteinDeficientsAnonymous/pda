@@ -4,8 +4,8 @@ import secrets
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey

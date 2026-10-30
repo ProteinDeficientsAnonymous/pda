@@ -3,8 +3,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
-from community._survey_schemas import SurveyPatchIn, SurveyQuestionOrderIn
-from community._surveys import update_survey as update_survey_view
+from community.surveys.crud import update_survey as update_survey_view
+from community.surveys.schemas import SurveyPatchIn, SurveyQuestionOrderIn
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gateway.fields import build

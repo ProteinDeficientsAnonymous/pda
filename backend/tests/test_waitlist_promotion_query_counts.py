@@ -1,6 +1,6 @@
 import pytest
-from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
+from community.rsvps.waitlist import promote_from_waitlist
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from notifications.models import Notification, NotificationType

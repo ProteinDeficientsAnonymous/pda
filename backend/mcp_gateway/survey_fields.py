@@ -2,9 +2,9 @@ from datetime import UTC, datetime
 from typing import Annotated, Self
 from uuid import UUID
 
-from community._field_limits import FieldLimit
-from community._survey_schemas import SurveyIn, SurveyQuestionIn, scale_labels
+from community.field_limits import FieldLimit
 from community.models import QuestionType, ShowIfOperator, SurveyVisibility
+from community.surveys.schemas import SurveyIn, SurveyQuestionIn, scale_labels
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import (

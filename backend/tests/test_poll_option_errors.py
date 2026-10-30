@@ -4,8 +4,8 @@ import json
 from unittest.mock import patch
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventPoll, PollOption
+from community.validation import Code
 
 from tests._asserts import assert_error_code
 from tests._time import future_iso
@@ -49,7 +49,7 @@ class TestAddPollOptionErrors:
         # A non-IntegrityError from the DB layer must NOT be reported as a
         # duplicate — it should surface as a 500, not a misleading 400.
         with patch(
-            "community._polls.PollOption.objects.create",
+            "community.polls.crud.PollOption.objects.create",
             side_effect=RuntimeError("db exploded"),
         ):
             with pytest.raises(RuntimeError, match="db exploded"):
@@ -83,7 +83,7 @@ class TestUpdatePollOptionErrors:
     ):
         option = poll_with_options.options.first()
         with patch(
-            "community._polls.PollOption.save",
+            "community.polls.crud.PollOption.save",
             side_effect=RuntimeError("db exploded"),
         ):
             with pytest.raises(RuntimeError, match="db exploded"):

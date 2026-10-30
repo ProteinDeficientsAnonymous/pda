@@ -3,9 +3,9 @@
 import json
 
 import pytest
-from community._delta_html import delta_to_html
-from community._html_sanitize import sanitize_content_html
-from community._prosemirror_html import prosemirror_to_html
+from community.content._prosemirror_html import prosemirror_to_html
+from community.content.delta_html import delta_to_html
+from community.content.html_sanitize import sanitize_content_html
 
 
 class TestSchemeStripping:

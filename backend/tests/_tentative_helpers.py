@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community._join_request_approval import _provision_tentative_user
+from community.join_requests.approval import _provision_tentative_user
 from community.models import Event, EventRSVP, EventType, JoinRequestStatus, RSVPStatus
 from django.utils import timezone
 from users.models import User

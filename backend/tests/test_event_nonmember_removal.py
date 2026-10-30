@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import EventRSVP, EventType, RSVPStatus
+from community.validation import Code
 from notifications.email_sender import SendResult
 from users.models import User
 

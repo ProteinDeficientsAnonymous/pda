@@ -1,5 +1,5 @@
 import pytest
-from community._event_feedback_send import send_first_requests
+from community.event_feedback.send import send_first_requests
 from community.models import (
     Event,
     EventComment,

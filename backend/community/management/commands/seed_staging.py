@@ -13,6 +13,7 @@ from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from community.dev_tools.seed_guard import is_seed_allowed
 from community.models import Event, EventComment, EventType, RSVPStatus
 
 from ._seed_join_requests import reset_join_requests, seed_join_form_questions, seed_join_requests
@@ -32,7 +33,6 @@ from ._seed_staging_data import (
     cond_phone,
     condition_combinations,
     condition_label,
-    is_seed_allowed,
     nonmember_email,
     nonmember_phone,
     perm_email,

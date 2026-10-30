@@ -6,12 +6,12 @@ from uuid import UUID
 
 import anyio
 import anyio.lowlevel
-from community._survey_schemas import SurveyPatchIn
-from community._surveys import create_survey as create_survey_view
-from community._surveys import create_survey_question as create_question_view
-from community._surveys import delete_survey as delete_survey_view
-from community._surveys import get_survey_admin as get_survey_view
-from community._surveys import update_survey as update_survey_view
+from community.surveys.crud import create_survey as create_survey_view
+from community.surveys.crud import create_survey_question as create_question_view
+from community.surveys.crud import delete_survey as delete_survey_view
+from community.surveys.crud import get_survey_admin as get_survey_view
+from community.surveys.crud import update_survey as update_survey_view
+from community.surveys.schemas import SurveyPatchIn
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 from users.models import User

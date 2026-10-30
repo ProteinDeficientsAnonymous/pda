@@ -107,7 +107,7 @@ class TestRSVPCommentRouting:
     def test_going_comment_broadcasts_live_update(
         self, api_client, member_headers, member, rsvp_event
     ):
-        with patch("community._event_rsvps.broadcast_event_comment_update") as mock_broadcast:
+        with patch("community.rsvps.member.broadcast_event_comment_update") as mock_broadcast:
             resp = _rsvp(
                 api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
             )
@@ -117,7 +117,7 @@ class TestRSVPCommentRouting:
     def test_comment_post_failure_does_not_fail_the_rsvp(
         self, api_client, member_headers, member, rsvp_event
     ):
-        with patch("community._event_rsvps.notify_event_comment", side_effect=RuntimeError("boom")):
+        with patch("community.rsvps.member.notify_event_comment", side_effect=RuntimeError("boom")):
             resp = _rsvp(
                 api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
             )

@@ -6,9 +6,9 @@ import anyio
 import pytest
 from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
-from community._surveys import create_survey_question as create_question_view
-from community._validation import Code
 from community.models import Survey, SurveyQuestion
+from community.surveys.crud import create_survey_question as create_question_view
+from community.validation import Code
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError

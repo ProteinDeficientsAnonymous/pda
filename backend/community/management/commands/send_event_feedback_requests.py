@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from community._event_feedback_send import send_first_requests, send_reminders
+from community.event_feedback.send import send_first_requests, send_reminders
 
 logger = logging.getLogger(__name__)
 

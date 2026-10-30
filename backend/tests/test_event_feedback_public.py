@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from audit.models import AuditLogEntry
-from community._validation import Code
 from community.models import (
     Event,
     EventFeedbackRequest,
@@ -15,8 +14,9 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
+from community.validation import Code
 from django.utils import timezone
-from notifications._event_feedback_notifications import notify_event_feedback
+from notifications.event_feedback_notifications import notify_event_feedback
 from notifications.models import Notification, NotificationType
 from users.models import User
 

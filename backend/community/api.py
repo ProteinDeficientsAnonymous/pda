@@ -1,74 +1,74 @@
 from ninja import Router
 
-from community._attendance_import import router as attendance_import_router
-from community._attendance_mark import router as attendance_mark_router
-from community._attendance_report import router as attendance_report_router
-from community._calendar import router as calendar_router
-from community._dev_tools import router as dev_tools_router
-from community._docs import router as docs_router
-from community._docs_documents import router as docs_documents_router
-from community._event_actions import router as event_actions_router
-from community._event_blasts import router as event_blasts_router
-from community._event_cohost_invites import router as event_cohost_invites_router
-from community._event_comments import router as event_comments_router
-from community._event_description_templates import (
+from community._feedback import router as feedback_router
+from community._giphy import router as giphy_router
+from community._login_link import router as login_link_router
+from community._version import router as version_router
+from community.attendance.csv_import import router as attendance_import_router
+from community.attendance.mark import router as attendance_mark_router
+from community.attendance.report import router as attendance_report_router
+from community.cohosts.invites import router as event_cohost_invites_router
+from community.content.docs import router as docs_router
+from community.content.documents import router as docs_documents_router
+from community.content.guidelines import router as guidelines_router
+from community.content.home import router as home_router
+from community.content.pages import router as pages_router
+from community.dev_tools.api import router as dev_tools_router
+from community.event_feedback.host import router as event_feedback_host_router
+from community.event_feedback.public import router as event_feedback_public_router
+from community.events.blasts import router as event_blasts_router
+from community.events.calendar import router as calendar_router
+from community.events.comments import router as event_comments_router
+from community.events.crud import router as events_router
+from community.events.description_templates import (
     router as event_description_templates_router,
 )
-from community._event_feedback_host import router as event_feedback_host_router
-from community._event_feedback_public import router as event_feedback_public_router
-from community._event_flags import router as event_flags_router
+from community.events.flags import router as event_flags_router
+from community.events.geocode import router as geocode_router
 
 # Re-export symbols imported directly in tests
-from community._event_helpers import (  # noqa: F401
+from community.events.helpers import (  # noqa: F401
     _build_guest_list,
     _find_my_rsvp,
     is_cohost,
 )
-from community._event_host_actions import router as event_host_actions_router
-from community._event_host_rsvps import router as event_host_rsvps_router
-from community._event_invitations import router as event_invitations_router
-from community._event_report import router as event_report_router
-from community._event_rsvp_questions import router as event_rsvp_questions_router
-from community._event_rsvps import router as event_rsvps_router
-from community._event_schemas import EventPatchIn  # noqa: F401
-from community._event_tags import router as event_tags_router
-from community._event_waitlist_order import router as event_waitlist_order_router
-from community._events import router as events_router
-from community._feedback import router as feedback_router
-from community._geocode import router as geocode_router
-from community._giphy import router as giphy_router
-from community._guidelines import router as guidelines_router
-from community._home import router as home_router
-from community._join_form import router as join_form_router
-from community._join_request_resend import router as join_request_resend_router
-from community._join_request_submit import router as join_request_submit_router
-from community._join_request_unreject import router as join_request_unreject_router
-from community._join_requests import router as join_requests_router
-from community._login_link import router as login_link_router
-from community._member_promotion_email import (
+from community.events.host_actions import router as event_host_actions_router
+from community.events.invitations import router as event_invitations_router
+from community.events.official_defaults import router as official_event_defaults_router
+from community.events.photos import router as event_actions_router
+from community.events.report import router as event_report_router
+from community.events.schemas import EventPatchIn  # noqa: F401
+from community.events.tags import router as event_tags_router
+from community.join_requests.form import router as join_form_router
+from community.join_requests.manage import router as join_requests_router
+from community.join_requests.resend import router as join_request_resend_router
+from community.join_requests.submit import router as join_request_submit_router
+from community.join_requests.unreject import router as join_request_unreject_router
+from community.message_templates.member_promotion_email import (
     router as member_promotion_email_router,
 )
-from community._member_promotion_message import (
+from community.message_templates.member_promotion_message import (
     router as member_promotion_message_router,
 )
-from community._official_event_defaults import router as official_event_defaults_router
-from community._pages import router as pages_router
-from community._poll_options import router as poll_options_router
-from community._polls import router as polls_router
-from community._public_rsvp_manage import router as public_rsvp_manage_router
-from community._public_rsvp_resend import router as public_rsvp_resend_router
-from community._public_rsvp_submit import router as public_rsvp_submit_router
-from community._rejection_email import router as rejection_email_router
-from community._survey_reports import router as survey_reports_router
-from community._surveys import router as surveys_router
-from community._surveys_public import router as surveys_public_router
-from community._surveys_responses import router as surveys_responses_router
-from community._tentative_approval_message import (
+from community.message_templates.rejection_email import router as rejection_email_router
+from community.message_templates.tentative_approval import (
     router as tentative_approval_message_router,
 )
-from community._version import router as version_router
-from community._welcome_template import router as welcome_template_router
-from community._whatsapp_link import router as whatsapp_link_router
+from community.message_templates.welcome import router as welcome_template_router
+from community.message_templates.whatsapp_link import router as whatsapp_link_router
+from community.polls.crud import router as polls_router
+from community.polls.options import router as poll_options_router
+from community.rsvps.host import router as event_host_rsvps_router
+from community.rsvps.member import router as event_rsvps_router
+from community.rsvps.public_manage import router as public_rsvp_manage_router
+from community.rsvps.public_resend import router as public_rsvp_resend_router
+from community.rsvps.public_submit import router as public_rsvp_submit_router
+from community.rsvps.questions import router as event_rsvp_questions_router
+from community.rsvps.waitlist_order import router as event_waitlist_order_router
+from community.surveys.crud import router as surveys_router
+from community.surveys.public import router as surveys_public_router
+from community.surveys.reports import router as survey_reports_router
+from community.surveys.responses import router as surveys_responses_router
 
 router = Router()
 router.add_router("", guidelines_router)

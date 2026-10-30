@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from community._cohost_reminder import send_due_cohost_reminders
+from community.cohosts.reminder import send_due_cohost_reminders
 
 logger = logging.getLogger(__name__)
 

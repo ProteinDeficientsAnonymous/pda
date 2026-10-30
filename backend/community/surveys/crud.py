@@ -1,0 +1,448 @@
+"""Survey CRUD and question endpoints."""
+
+import logging
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from django.db import transaction
+from django.db.models import Max
+from ninja import Router
+from ninja.responses import Status
+from users.permissions import PermissionKey
+
+from community.models import (
+    Survey,
+    SurveyQuestion,
+)
+from community.shared import ErrorOut
+from community.surveys.conditions import (
+    assert_edit_keeps_conditions,
+    assert_order_keeps_dependencies,
+    clear_dependent_conditions,
+    resolve_question_order,
+    validate_show_if,
+)
+from community.surveys.helpers import (
+    _survey_out,
+    _survey_question_out,
+    _validate_anonymous_change,
+    _validate_feedback_type,
+    _validate_survey_window,
+)
+from community.surveys.schemas import (
+    SurveyIn,
+    SurveyListOut,
+    SurveyOut,
+    SurveyPatchIn,
+    SurveyQuestionIn,
+    SurveyQuestionOrderIn,
+    SurveyQuestionOut,
+)
+from community.validation import Code, raise_validation
+
+router = Router()
+
+
+# -- Admin endpoints --
+
+
+@router.get(
+    "/surveys/admin/",
+    response={200: list[SurveyListOut], 403: ErrorOut},
+    auth=gated_jwt,
+)
+def list_surveys_admin(request):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_surveys_admin",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    surveys = Survey.objects.all()
+    return Status(
+        200,
+        [
+            SurveyListOut(
+                id=str(s.id),
+                title=s.title,
+                slug=s.slug,
+                visibility=s.visibility,
+                is_active=s.is_active,
+                opens_at=s.opens_at,
+                closes_at=s.closes_at,
+                max_responses=s.max_responses,
+                created_at=s.created_at,
+                response_count=s.responses.count(),
+            )
+            for s in surveys
+        ],
+    )
+
+
+@router.post(
+    "/surveys/",
+    response={201: SurveyOut, 403: ErrorOut, 400: ErrorOut},
+    auth=gated_jwt,
+)
+def create_survey(request, payload: SurveyIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    if Survey.objects.filter(slug=payload.slug).exists():
+        raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
+    _validate_survey_window(payload.opens_at, payload.closes_at)
+    data = _validate_feedback_type(None, payload.model_dump())
+    survey = Survey.objects.create(
+        title=payload.title,
+        description=payload.description,
+        slug=payload.slug,
+        visibility=payload.visibility,
+        is_active=payload.is_active,
+        one_response_per_user=payload.one_response_per_user,
+        anonymous=data["anonymous"],
+        confirmation_message=payload.confirmation_message,
+        opens_at=payload.opens_at,
+        closes_at=payload.closes_at,
+        max_responses=payload.max_responses,
+        feedback_event_type=data["feedback_event_type"],
+        created_by=request.auth,
+    )
+    audit_log(
+        logging.INFO,
+        "survey_created",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY,
+            id=str(survey.id),
+            details={"title": survey.title, "slug": survey.slug},
+        ),
+    )
+    return Status(201, _survey_out(survey, include_questions=True))
+
+
+@router.get(
+    "/surveys/{survey_id}/admin/",
+    response={200: SurveyOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def get_survey_admin(request, survey_id: UUID):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "get_survey_admin",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    return Status(200, _survey_out(survey, include_questions=True))
+
+
+@router.patch(
+    "/surveys/{survey_id}/",
+    response={200: SurveyOut, 403: ErrorOut, 404: ErrorOut, 400: ErrorOut},
+    auth=gated_jwt,
+)
+def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "update_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        survey = Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    updates = _validate_feedback_type(survey, payload.model_dump(exclude_unset=True))
+    if "slug" in updates and updates["slug"] != survey.slug:
+        if Survey.objects.filter(slug=updates["slug"]).exists():
+            raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
+    _validate_survey_window(
+        updates.get("opens_at", survey.opens_at), updates.get("closes_at", survey.closes_at)
+    )
+    _validate_anonymous_change(survey, updates)
+    for key, value in updates.items():
+        setattr(survey, key, value)
+    survey.save(update_fields=list(updates.keys()))
+    audit_log(
+        logging.INFO,
+        "survey_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY,
+            id=str(survey_id),
+            details={"fields_changed": list(updates.keys())},
+        ),
+    )
+    return Status(200, _survey_out(survey, include_questions=True))
+
+
+@router.delete(
+    "/surveys/{survey_id}/",
+    response={204: None, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def delete_survey(request, survey_id: UUID):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "delete_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        survey = Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    title = survey.title
+    survey.delete()
+    audit_log(
+        logging.WARNING,
+        "survey_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY, id=str(survey_id), details={"title": title}
+        ),
+    )
+    return Status(204, None)
+
+
+# -- Survey questions --
+
+
+@router.post(
+    "/surveys/{survey_id}/questions/",
+    response={201: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "create_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        survey = Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    # count() ties with an existing order whenever a delete left a gap.
+    top_order = survey.questions.aggregate(top=Max("display_order"))["top"]
+    max_order = 0 if top_order is None else top_order + 1
+    show_if = validate_show_if(payload.show_if, survey_id=survey_id, display_order=max_order)
+    q = SurveyQuestion.objects.create(
+        survey=survey,
+        label=payload.label,
+        field_type=payload.field_type,
+        options=payload.options,
+        description=payload.description,
+        required=payload.required,
+        display_order=max_order,
+        show_if=show_if,
+    )
+    audit_log(
+        logging.INFO,
+        "survey_question_created",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(q.id),
+            details={"survey_id": str(survey_id), "label": q.label},
+        ),
+    )
+    return Status(201, _survey_question_out(q))
+
+
+@router.put(
+    "/surveys/{survey_id}/questions/order/",
+    response={200: list[SurveyQuestionOut], 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "reorder_survey_questions",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        Survey.objects.get(id=survey_id)
+    except Survey.DoesNotExist:
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+    existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
+    ordered_ids = resolve_question_order(existing, payload.question_ids)
+    assert_order_keeps_dependencies(existing, ordered_ids)
+    with transaction.atomic():
+        for idx, qid in enumerate(ordered_ids):
+            SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    audit_log(
+        logging.INFO,
+        "survey_questions_reordered",
+        request,
+        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
+    )
+    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
+    return Status(200, [_survey_question_out(q) for q in questions])
+
+
+# Order must precede /{question_id}/ below: Django matches by registration order and would 405.
+@router.patch(
+    "/surveys/{survey_id}/questions/{question_id}/",
+    response={200: SurveyQuestionOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "update_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
+    except SurveyQuestion.DoesNotExist:
+        raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
+    q.label = payload.label
+    q.field_type = payload.field_type
+    q.options = payload.options
+    q.description = payload.description
+    q.required = payload.required
+    q.show_if = validate_show_if(
+        payload.show_if, survey_id=survey_id, display_order=q.display_order
+    )
+    assert_edit_keeps_conditions(survey_id, q)
+    q.save()
+    audit_log(
+        logging.INFO,
+        "survey_question_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(question_id),
+            details={"survey_id": str(survey_id), "label": q.label},
+        ),
+    )
+    return Status(200, _survey_question_out(q))
+
+
+@router.delete(
+    "/surveys/{survey_id}/questions/{question_id}/",
+    response={204: None, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def delete_survey_question(request, survey_id: UUID, question_id: UUID):
+    if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "delete_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
+    try:
+        q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
+    except SurveyQuestion.DoesNotExist:
+        raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
+    with transaction.atomic():
+        clear_dependent_conditions(survey_id, question_id)
+        q.delete()
+    audit_log(
+        logging.INFO,
+        "survey_question_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(question_id),
+            details={"survey_id": str(survey_id)},
+        ),
+    )
+    return Status(204, None)

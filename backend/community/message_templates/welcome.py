@@ -1,0 +1,77 @@
+import logging
+from datetime import datetime
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from ninja import Router
+from ninja.responses import Status
+from pydantic import BaseModel, Field
+from users.permissions import PermissionKey
+
+from community.field_limits import FieldLimit
+from community.models import WelcomeMessageTemplate
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation, validate_template_body
+
+router = Router()
+
+
+class WelcomeTemplateOut(BaseModel):
+    body: str
+    updated_at: datetime
+
+
+class WelcomeTemplatePatchIn(BaseModel):
+    # Length validated explicitly in the handler so we can raise with our
+    # structured WelcomeTemplate.BODY_TOO_LONG code (Pydantic's max_length
+    # would emit a generic shape and skip our copy).
+    body: str | None = Field(default=None)
+
+
+def _out(obj: WelcomeMessageTemplate) -> WelcomeTemplateOut:
+    return WelcomeTemplateOut(body=obj.body, updated_at=obj.updated_at)
+
+
+@router.get("/welcome-template/", response={200: WelcomeTemplateOut}, auth=gated_jwt)
+def get_welcome_template(request):
+    return Status(200, _out(WelcomeMessageTemplate.get()))
+
+
+@router.patch(
+    "/welcome-template/",
+    response={200: WelcomeTemplateOut, 403: ErrorOut, 422: ErrorOut},
+    auth=gated_jwt,
+)
+def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_welcome_template",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="edit_welcome_message")
+
+    validate_template_body(
+        payload.body,
+        required_code=Code.WelcomeTemplate.BODY_REQUIRED,
+        too_long_code=Code.WelcomeTemplate.BODY_TOO_LONG,
+        max_length=FieldLimit.WELCOME_TEMPLATE,
+    )
+
+    template = WelcomeMessageTemplate.get()
+    template.body = payload.body
+    template.save()
+    audit_log(
+        logging.INFO,
+        "welcome_template_updated",
+        request,
+        target=AuditTarget(type=AuditTargetType.WELCOME_TEMPLATE),
+    )
+    return Status(200, _out(template))

@@ -2,10 +2,10 @@ import json
 
 import pytest
 from community._question_answers import checkbox_values
-from community._survey_conditions import visible_question_ids
-from community._survey_reports import _csv_answer_cell, _summarize_question
-from community._validation import Code
 from community.models import ShowIfOperator, Survey, SurveyQuestionType, SurveyResponse
+from community.surveys.conditions import visible_question_ids
+from community.surveys.reports import _csv_answer_cell, _summarize_question
+from community.validation import Code
 
 from tests._asserts import assert_error_code
 from tests._survey_condition_helpers import make_question

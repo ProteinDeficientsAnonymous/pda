@@ -11,11 +11,11 @@ Two cases:
 
 from typing import Any
 
-from community._validation import ValidationException
+from community.validation import ValidationException
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import ValidationError as NinjaValidationError
-from users._refresh_cookie import clear_refresh_cookie
+from users.refresh_cookie import clear_refresh_cookie
 
 _GENERIC_FIELD_INVALID = "field_invalid"
 _GENERIC_FIELD_REQUIRED = "field_required"

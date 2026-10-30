@@ -1,9 +1,10 @@
 from uuid import uuid4
 
 import pytest
-from community._field_limits import FieldLimit
-from community._survey_schemas import SurveyAnswersIn
-from community._survey_validators import (
+from community.field_limits import FieldLimit
+from community.models import SurveyQuestion, SurveyQuestionType
+from community.surveys.schemas import SurveyAnswersIn
+from community.surveys.validators import (
     _build_survey_answers,
     _validate_boolean_answer,
     _validate_checkbox_answer,
@@ -13,8 +14,7 @@ from community._survey_validators import (
     _validate_one_answer,
     _validate_survey_answers,
 )
-from community._validation import Code, ValidationException
-from community.models import SurveyQuestion, SurveyQuestionType
+from community.validation import Code, ValidationException
 from pydantic import ValidationError as PydanticValidationError
 
 SLOT_A = "2030-01-01T18:00:00+00:00"

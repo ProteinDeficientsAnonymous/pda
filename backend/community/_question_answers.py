@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from community._validation import raise_validation
+from community.validation import raise_validation
 
 
 def is_answer_empty(answer: str | list | dict | None) -> bool:

@@ -1,9 +1,9 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community._join_request_approval import _promote_tentative_member
-from community._validation import ValidationException
+from community.join_requests.approval import _promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
+from community.validation import ValidationException
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 

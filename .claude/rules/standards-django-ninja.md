@@ -4,7 +4,7 @@ paths:
   - "**/config/urls.py"
   - "**/models.py"
   - "**/schemas.py"
-  - "**/_*_schemas.py"
+  - "**/_*schemas.py"
   - "**/api.py"
   - "**/admin.py"
   - "**/management/**"
@@ -123,7 +123,7 @@ from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 
 router = Router()
 
@@ -141,7 +141,7 @@ def create_listing(request, data: ListingIn):
 
 ### Errors
 
-Raise errors with `raise_validation(Code.<Area>.<NAME>, field=..., status_code=...)` from `community/_validation.py`. Never return `{"detail": "..."}` or build `ErrorOut(detail=...)`: the frontend maps error codes, not free text. New codes go in the `Code` catalog; `make check-codes` keeps the frontend copy in sync.
+Raise errors with `raise_validation(Code.<Area>.<NAME>, field=..., status_code=...)` from `community/validation.py`. Never return `{"detail": "..."}` or build `ErrorOut(detail=...)`: the frontend maps error codes, not free text. New codes go in the `Code` catalog; `make check-codes` keeps the frontend copy in sync.
 
 ### Permission Pattern
 

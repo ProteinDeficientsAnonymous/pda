@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from community._surveys import get_survey_admin, list_surveys_admin
 from community.models import Survey, SurveyQuestionType
+from community.surveys.crud import get_survey_admin, list_surveys_admin
 from django.utils import timezone
 from pydantic import Field
 from users.models import User

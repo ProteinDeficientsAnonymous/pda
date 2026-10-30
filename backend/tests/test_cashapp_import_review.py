@@ -1,14 +1,14 @@
 from datetime import timedelta
 
 import pytest
-from community._cashapp_import_price import PriceKind
-from community._cashapp_import_review import (
+from community.cashapp.import_types import GapReason, MatchConfidence
+from community.cashapp.price import PriceKind
+from community.cashapp.review import (
     NO_END_GRACE,
     load_guests_and_verified,
     load_payment_context,
     review_cashapp_csv,
 )
-from community._cashapp_import_types import GapReason, MatchConfidence
 from community.models import EventRSVP, RSVPStatus
 from django.utils import timezone
 from users.models import User

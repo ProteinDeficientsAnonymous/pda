@@ -1,5 +1,5 @@
 import pytest
-from community._cohost_reminder import due_cohost_reminder_events, send_due_cohost_reminders
+from community.cohosts.reminder import due_cohost_reminder_events, send_due_cohost_reminders
 from community.models import EventStatus, EventType
 from django.core.management import call_command
 from django.utils import timezone

@@ -5,7 +5,7 @@ from uuid import UUID
 
 import anyio
 from anyio.lowlevel import checkpoint
-from community._surveys import get_survey_admin as get_survey_view
+from community.surveys.crud import get_survey_admin as get_survey_view
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 from users.models import User

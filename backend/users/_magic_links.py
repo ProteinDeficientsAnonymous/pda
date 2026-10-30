@@ -3,7 +3,7 @@
 import logging
 from datetime import timedelta
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
@@ -13,7 +13,7 @@ from ninja.responses import Status
 from notifications.models import Notification, NotificationType
 from notifications.service import notify_users
 
-from users._helpers import _create_magic_token
+from users.helpers import _create_magic_token
 from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.permissions import PermissionKey
 from users.schemas import ErrorOut, ResetPasswordOut

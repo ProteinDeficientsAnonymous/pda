@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
+from community.validation import Code
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event

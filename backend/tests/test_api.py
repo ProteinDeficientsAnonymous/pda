@@ -1,5 +1,5 @@
 import pytest
-from community._validation import Code, ValidationException
+from community.validation import Code, ValidationException
 from users.api import (
     _create_user_with_role,
     _validate_admin_role_change,

@@ -2,7 +2,7 @@ import pytest
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from users._helpers import visible_display_name, visible_name
+from users.helpers import visible_display_name, visible_name
 from users.models import User
 from users.roles import Role
 

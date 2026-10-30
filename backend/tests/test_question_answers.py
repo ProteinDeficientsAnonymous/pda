@@ -4,7 +4,7 @@ from community._question_answers import (
     assert_single_choice_member,
     is_answer_empty,
 )
-from community._validation import ValidationException
+from community.validation import ValidationException
 
 
 @pytest.mark.unit

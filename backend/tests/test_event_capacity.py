@@ -4,8 +4,8 @@ import json
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
 
 from tests._auth import auth_headers_for

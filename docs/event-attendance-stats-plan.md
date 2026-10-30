@@ -12,7 +12,7 @@ From the bug bash: hosts want a real picture of "who actually came" after the ev
 
 Existing primitives to reuse:
 
-- `_can_edit_event` / `_can_see_invited` (`backend/community/_event_helpers.py:121`) — the "host + co-host + admin" gate.
+- `_can_edit_event` / `_can_see_invited` (`backend/community/events/helpers.py:121`) — the "host + co-host + admin" gate.
 - `_attending_headcount`, `_waitlisted_count` — template for new aggregations.
 - `RsvpGuestList` (`frontend/src/screens/events/RsvpGuestList.tsx`) — tab-with-count layout we can mirror, but for a host-only panel.
 
@@ -49,7 +49,7 @@ Not in place today:
 
 **`backend/community/migrations/0047_eventrsvp_attendance.py`** (new) — AddField with default.
 
-**`backend/community/_event_helpers.py`**
+**`backend/community/events/helpers.py`**
 
 - Add helpers mirroring `_attending_headcount`:
   - `_maybe_count`, `_cant_go_count` (simple prefetch filters).
@@ -57,17 +57,17 @@ Not in place today:
   - `_attended_count`, `_no_show_count` — count RSVPs with matching `attendance`.
   - `_cancellations(event)` — for RSVPs with `status=CANT_GO`, return `[(user, updated_at, (start - updated_at).days)]` sorted by `updated_at` desc. Skip if `event.start_datetime` is null.
 
-**`backend/community/_event_schemas.py`**
+**`backend/community/events/schemas.py`**
 
 - New `EventStatsOut` Schema with the fields listed in Scope. Include a `CancellationOut` sub-schema `{user_id, name, cancelled_at, days_before_event}`.
 - New `AttendanceIn` Schema: `{attendance: str}` (validated against enum).
 
-**`backend/community/_event_rsvps.py`** (current home for RSVP endpoints)
+**`backend/community/rsvps/member.py`** (current home for RSVP endpoints)
 
 - `GET /events/{id}/stats` — gated by `_can_edit_event`. Returns `EventStatsOut`. Reuses the event's prefetch pattern so we don't re-query.
 - `POST /events/{id}/rsvps/{user_id}/attendance` — gated by `_can_edit_event`. Validates the target RSVP exists and is `ATTENDING`. Sets attendance. 404 if no RSVP; 403 if not host.
 
-**Router wiring** — add the two routes to whatever `Router()` `_event_rsvps.py` exports (match existing pattern).
+**Router wiring** — add the two routes to whatever `Router()` `community/rsvps/member.py` exports (match existing pattern).
 
 **Tests** — extend `backend/tests/test_events.py` (or add `test_event_stats.py`):
 
@@ -118,9 +118,9 @@ Not in place today:
 
 - `backend/community/models/event.py` — new `attendance` field on `EventRSVP`.
 - `backend/community/models/choices.py` — new `AttendanceStatus`.
-- `backend/community/_event_helpers.py` — new aggregations + cancellation query.
-- `backend/community/_event_schemas.py` — `EventStatsOut`, `CancellationOut`, `AttendanceIn`.
-- `backend/community/_event_rsvps.py` — two new endpoints.
+- `backend/community/events/helpers.py` — new aggregations + cancellation query.
+- `backend/community/events/schemas.py` — `EventStatsOut`, `CancellationOut`, `AttendanceIn`.
+- `backend/community/rsvps/member.py` — two new endpoints.
 - `frontend/src/models/event.ts` — types.
 - `frontend/src/api/eventStats.ts` (new) — query + mutation hooks.
 - `frontend/src/screens/events/EventAttendancePanel.tsx` (new).
@@ -128,7 +128,7 @@ Not in place today:
 
 ## Reused utilities / patterns
 
-- `_can_edit_event` / `_can_see_invited` in `_event_helpers.py` — host gate.
+- `_can_edit_event` / `_can_see_invited` in `community/events/helpers.py` — host gate.
 - `_attending_headcount` — aggregation style to mirror.
 - `EventAdminActions.tsx:24-27` — `isCreator || isCoHost || canManage` derivation already exists; copy for attendance panel gating.
 - `CollapsibleCard` (used in the event form) — for the attendance panel if available; otherwise a simple `<details>`.

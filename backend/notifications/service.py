@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from community.models import PageVisibility, RSVPStatus
 from django.db import DatabaseError, connection
-from users._helpers import visible_display_name
+from users.helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
 

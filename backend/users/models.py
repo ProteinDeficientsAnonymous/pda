@@ -3,8 +3,8 @@ import uuid
 from datetime import timedelta
 
 import phonenumbers
-from community._validation import Code, raise_validation
 from community.models.choices import JoinRequestStatus
+from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models

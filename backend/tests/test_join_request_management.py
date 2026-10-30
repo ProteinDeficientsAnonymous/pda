@@ -3,9 +3,9 @@
 import uuid
 
 import pytest
-from community import _join_requests
-from community._validation import Code
+from community.join_requests import manage
 from community.models import JoinRequest, JoinRequestStatus
+from community.validation import Code
 from django.utils import timezone
 from users.models import User
 
@@ -168,7 +168,7 @@ class TestJoinRequestManagement:
             called = True
             return original(*args, **kwargs)
 
-        monkeypatch.setattr(_join_requests.JoinRequest.objects, "select_for_update", spy)
+        monkeypatch.setattr(manage.JoinRequest.objects, "select_for_update", spy)
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": "approved"},

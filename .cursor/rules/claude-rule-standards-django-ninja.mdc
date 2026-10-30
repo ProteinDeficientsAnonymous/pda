@@ -1,6 +1,6 @@
 ---
 description: Django Ninja API Standards
-globs: **/config/settings.py, **/config/urls.py, **/models.py, **/schemas.py, **/_*_schemas.py, **/api.py, **/admin.py, **/management/**, **/conftest.py, **/test_api.py, **/test_models.py
+globs: **/config/settings.py, **/config/urls.py, **/models.py, **/schemas.py, **/_*schemas.py, **/api.py, **/admin.py, **/management/**, **/conftest.py, **/test_api.py, **/test_models.py
 alwaysApply: false
 ---
 

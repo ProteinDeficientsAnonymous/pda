@@ -1,8 +1,8 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
@@ -309,11 +309,11 @@ class TestUnpublishActive:
             lambda fn, using=None, robust=False: callbacks.append(fn),
         )
         monkeypatch.setattr(
-            "community._event_transitions.broadcast_event_created",
+            "community.events._transitions.broadcast_event_created",
             lambda event: pinged.append(event.pk),
         )
         monkeypatch.setattr(
-            "community._event_transitions.notify_users",
+            "community.events._transitions.notify_users",
             lambda ids: bell.append([str(uid) for uid in ids]),
         )
         response = api_client.patch(

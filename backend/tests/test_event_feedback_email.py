@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from notifications._event_feedback_email import send_event_feedback_email
 from notifications.email_sender import SendResult
+from notifications.event_feedback_email import send_event_feedback_email
 
 URL = "https://pda.test/feedback#abc123"
 

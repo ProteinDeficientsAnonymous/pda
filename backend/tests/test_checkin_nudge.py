@@ -1,10 +1,10 @@
 import pytest
-from community._checkin_nudge import (
+from community.models import Event, EventStatus, EventType
+from community.scheduled.checkin_nudge import (
     due_checkin_nudge_events,
     send_checkin_nudge,
     send_due_checkin_nudges,
 )
-from community.models import Event, EventStatus, EventType
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users.models import User

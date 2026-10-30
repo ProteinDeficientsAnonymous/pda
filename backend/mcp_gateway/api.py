@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from audit.models import AuditTargetType
-from community._attendance_shared import require_permission
-from community._validation import Code, raise_validation
+from community.attendance.shared import require_permission
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
