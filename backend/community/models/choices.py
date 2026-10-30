@@ -15,6 +15,11 @@ class EventType(models.TextChoices):
     CLUB = "club", "Club"
 
 
+class OfficialKind(models.TextChoices):
+    WALK = "walk", "Walk"
+    RESTAURANT = "restaurant", "Restaurant"
+
+
 def is_official_or_club(event_type: str) -> bool:
     return event_type in (EventType.OFFICIAL, EventType.CLUB)
 
