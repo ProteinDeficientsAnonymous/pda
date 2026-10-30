@@ -1,15 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { addDays, format } from 'date-fns';
 import { useEffect } from 'react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as CalendarEventsModule from '@/api/calendarEvents';
 import { upcomingRange, useCalendarEvents } from '@/api/calendarEvents';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import CalendarScreen from './CalendarScreen';
 
@@ -34,10 +34,6 @@ vi.mock('@/api/calendarEvents', async (importOriginal) => ({
 
 const mockUseCalendarEvents = vi.mocked(useCalendarEvents);
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 let currentSearch = '';
 
 function SearchSpy() {
@@ -49,13 +45,12 @@ function SearchSpy() {
 }
 
 function renderCalendar(initialEntry = '/calendar') {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[initialEntry]}>
-        <CalendarScreen />
-        <SearchSpy />
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <>
+      <CalendarScreen />
+      <SearchSpy />
+    </>,
+    { route: initialEntry },
   );
 }
 

@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
 import { useAuthStore } from '@/auth/store';
+import { renderWithProviders } from '@/test/render';
 
 import LoginScreen from './LoginScreen';
 
@@ -20,12 +19,7 @@ vi.mock('@/api/client', () => ({
 }));
 
 function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/login']}>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(component, { route: '/login' });
 }
 
 beforeEach(() => {

@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { WelcomeTemplate } from '@/api/content';
+import { renderWithProviders } from '@/test/render';
 
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 
@@ -24,11 +24,8 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 function renderEditor(template: WelcomeTemplate | null = { body: 'hi', updatedAt: '2026-01-01' }) {
   const onClose = vi.fn();
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const utils = render(
-    <QueryClientProvider client={qc}>
-      <WelcomeTemplateEditorDialog open onClose={onClose} template={template} />
-    </QueryClientProvider>,
+  const utils = renderWithProviders(
+    <WelcomeTemplateEditorDialog open onClose={onClose} template={template} />,
   );
   return { ...utils, onClose };
 }
