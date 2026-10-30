@@ -1,4 +1,3 @@
-import itertools
 from datetime import timedelta
 
 import pytest
@@ -7,17 +6,11 @@ from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+from users.permissions import PermissionKey
 
-_seq = itertools.count(1)
-
-
-def _user() -> User:
-    n = next(_seq)
-    return User.objects.create_user(
-        phone_number=f"+1415222{n:04d}", password="x", first_name=f"U{n}"
-    )
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def _started_event(host: User, guests: int) -> tuple[Event, User]:
@@ -30,10 +23,10 @@ def _started_event(host: User, guests: int) -> tuple[Event, User]:
         venmo_link="https://venmo.com/u/host",
     )
     event.co_hosts.add(host)
-    target = _user()
+    target = make_user()
     EventRSVP.objects.create(event=event, user=target, status=RSVPStatus.ATTENDING)
     for _ in range(guests):
-        EventRSVP.objects.create(event=event, user=_user(), status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=make_user(), status=RSVPStatus.ATTENDING)
     return event, target
 
 
@@ -56,8 +49,8 @@ ACTIONS = [
 @pytest.mark.django_db
 @pytest.mark.parametrize(("method", "suffix", "body", "ceiling"), ACTIONS)
 def test_host_action_queries_are_bounded(api_client, method, suffix, body, ceiling):
-    host = _user()
-    headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(host).access_token}"}
+    host = make_user()
+    headers = auth_headers_for(host)
     counts = []
     for guests in (2, 6):
         event, target = _started_event(host, guests)
@@ -67,11 +60,23 @@ def test_host_action_queries_are_bounded(api_client, method, suffix, body, ceili
     assert counts[0] <= ceiling
 
 
+def _prefetched(event: Event) -> Event:
+    return Event.objects.prefetch_related("co_hosts").get(pk=event.pk)
+
+
 @pytest.mark.django_db
 def test_can_edit_event_uses_prefetched_co_hosts(django_assert_num_queries):
-    host = _user()
-    event, _ = _started_event(host, 0)
-    event = Event.objects.prefetch_related("co_hosts").get(pk=event.pk)
+    host = make_user()
+    event = _prefetched(_started_event(host, 0)[0])
     viewer = User.objects.get(pk=host.pk)
     with django_assert_num_queries(0):
         assert _can_edit_event(viewer, event)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("permissions", "allowed"), [((), False), ((PermissionKey.MANAGE_EVENTS,), True)]
+)
+def test_can_edit_event_prefetched_non_host(permissions, allowed):
+    event = _prefetched(_started_event(make_user(), 0)[0])
+    assert _can_edit_event(make_user(*permissions), event) is allowed
