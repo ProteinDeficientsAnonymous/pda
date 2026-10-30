@@ -1,12 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as EventWritesModule from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -39,14 +38,7 @@ const HOST = makeUser({
 });
 
 function renderForm(existing?: Event) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const result = render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <EventForm existing={existing} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  const result = renderWithProviders(<EventForm existing={existing} />);
   // The hosts card is collapsed by default — its contents aren't mounted until opened.
   fireEvent.click(screen.getByRole('button', { name: /hosts/ }));
   return result;

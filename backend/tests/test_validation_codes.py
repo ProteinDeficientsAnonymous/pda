@@ -8,10 +8,6 @@ so the frontend owns UI copy.
 
 import pytest
 from community._validation import Code
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests.conftest import future_iso
 
@@ -21,20 +17,6 @@ def base_event() -> dict:
         "title": "Validation Test Event",
         "start_datetime": future_iso(days=30),
     }
-
-
-@pytest.fixture
-def manage_events_headers(db):
-    user = User.objects.create_user(
-        phone_number="+14155559010",
-        password="validationcodepass123",
-        first_name="Validation Codes",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="val_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.mark.django_db

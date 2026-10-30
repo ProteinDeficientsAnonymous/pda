@@ -2551,17 +2551,6 @@
             "title": "Created By Photo Url",
             "type": "string"
           },
-          "datetime_poll_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Poll Slug"
-          },
           "datetime_tbd": {
             "default": false,
             "title": "Datetime Tbd",
@@ -2669,14 +2658,6 @@
               }
             ],
             "title": "Latitude"
-          },
-          "linked_surveys": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/EventSurveyOut"
-            },
-            "title": "Linked Surveys",
-            "type": "array"
           },
           "location": {
             "title": "Location",
@@ -3645,29 +3626,6 @@
         "title": "EventStatsOut",
         "type": "object"
       },
-      "EventSurveyOut": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug"
-        ],
-        "title": "EventSurveyOut",
-        "type": "object"
-      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -3753,20 +3711,6 @@
         ],
         "title": "FeedbackType",
         "type": "string"
-      },
-      "FinalizePollIn": {
-        "properties": {
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "winning_datetime"
-        ],
-        "title": "FinalizePollIn",
-        "type": "object"
       },
       "FolderIn": {
         "properties": {
@@ -5614,42 +5558,6 @@
         "title": "PollOptionIn",
         "type": "object"
       },
-      "PollResultOut": {
-        "properties": {
-          "finalized_at": {
-            "format": "date-time",
-            "title": "Finalized At",
-            "type": "string"
-          },
-          "finalized_by_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finalized By Id"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "winning_datetime",
-          "finalized_at"
-        ],
-        "title": "PollResultOut",
-        "type": "object"
-      },
       "PollResultsOut": {
         "properties": {
           "question_id": {
@@ -6028,7 +5936,8 @@
           "checkbox",
           "number",
           "boolean",
-          "rating",
+          "stars",
+          "scale",
           "datetime_poll",
           "section"
         ],
@@ -6652,17 +6561,6 @@
             "title": "Is Active",
             "type": "boolean"
           },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
-          },
           "max_responses": {
             "anyOf": [
               {
@@ -6742,17 +6640,6 @@
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -6863,17 +6750,6 @@
             "title": "Is Active",
             "type": "boolean"
           },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
-          },
           "max_responses": {
             "anyOf": [
               {
@@ -6924,16 +6800,6 @@
               }
             ],
             "title": "Opens At"
-          },
-          "poll_result": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PollResultOut"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "questions": {
             "default": [],
@@ -7048,17 +6914,6 @@
               }
             ],
             "title": "Is Active"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -16986,84 +16841,6 @@
           }
         ],
         "summary": "Get Survey Admin",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/surveys/{survey_id}/finalize/": {
-      "post": {
-        "operationId": "community__surveys_public_finalize_poll",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "survey_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Survey Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FinalizePollIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SurveyOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Finalize Poll",
         "tags": [
           "community"
         ]

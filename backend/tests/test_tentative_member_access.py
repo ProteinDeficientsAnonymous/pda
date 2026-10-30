@@ -11,15 +11,10 @@ from community.models import (
     PageVisibility,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+from tests._auth import auth_headers_for
 
 
 def _event(title, event_type, visibility=PageVisibility.PUBLIC, *, host):
@@ -96,30 +91,40 @@ class TestCheckPhoneTentative:
 class TestTentativeEventAccess:
     def test_official_event_detail_unlocks_member_fields(self, api_client, tentative_user, host):
         event = _event("Official", EventType.OFFICIAL, host=host)
-        response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(tentative_user)
+        )
         assert response.status_code == 200
         assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc"
 
     def test_club_event_detail_unlocks_member_fields(self, api_client, tentative_user, host):
         event = _event("Club", EventType.CLUB, host=host)
-        response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(tentative_user)
+        )
         assert response.status_code == 200
         assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc"
 
     def test_members_only_club_event_is_visible(self, api_client, tentative_user, host):
         event = _event("Club", EventType.CLUB, PageVisibility.MEMBERS_ONLY, host=host)
-        response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(tentative_user)
+        )
         assert response.status_code == 200
 
     def test_public_community_event_hides_member_fields(self, api_client, tentative_user, host):
         event = _event("Potluck", EventType.COMMUNITY, host=host)
-        response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(tentative_user)
+        )
         assert response.status_code == 200
         assert response.json()["whatsapp_link"] == ""
 
     def test_members_only_community_event_is_hidden(self, api_client, tentative_user, host):
         event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
-        response = api_client.get(f"/api/community/events/{event.id}/", **_auth(tentative_user))
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(tentative_user)
+        )
         assert response.status_code == 404
 
     def test_list_includes_official_club_and_public_community(
@@ -129,7 +134,7 @@ class TestTentativeEventAccess:
         _event("Club", EventType.CLUB, PageVisibility.MEMBERS_ONLY, host=host)
         _event("Potluck", EventType.COMMUNITY, host=host)
         _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
-        response = api_client.get("/api/community/events/", **_auth(tentative_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(tentative_user))
         assert response.status_code == 200
         titles = {e["title"] for e in response.json()}
         assert titles == {"Official", "Club", "Potluck"}
@@ -137,7 +142,7 @@ class TestTentativeEventAccess:
     def test_list_gates_member_fields_per_event_type(self, api_client, tentative_user, host):
         _event("Official", EventType.OFFICIAL, host=host)
         _event("Potluck", EventType.COMMUNITY, host=host)
-        response = api_client.get("/api/community/events/", **_auth(tentative_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(tentative_user))
         by_title = {e["title"]: e for e in response.json()}
         assert by_title["Official"]["location"] == "123 Sprout Lane"
         assert by_title["Potluck"]["location"] == ""
@@ -148,7 +153,7 @@ class TestTentativeEventAccess:
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **_auth(tentative_user),
+            **auth_headers_for(tentative_user),
         )
         assert response.status_code == 200
 
@@ -158,7 +163,7 @@ class TestTentativeEventAccess:
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **_auth(tentative_user),
+            **auth_headers_for(tentative_user),
         )
         assert response.status_code == 403
 
@@ -173,7 +178,7 @@ class TestTentativeEventAccess:
                 "status": EventStatus.ACTIVE,
             },
             content_type="application/json",
-            **_auth(tentative_user),
+            **auth_headers_for(tentative_user),
         )
         assert response.status_code == 403
         assert not Event.objects.filter(title="Sprout's Potluck").exists()
@@ -188,7 +193,7 @@ class TestTentativeEventAccess:
                 "status": EventStatus.DRAFT,
             },
             content_type="application/json",
-            **_auth(tentative_user),
+            **auth_headers_for(tentative_user),
         )
         assert response.status_code == 403
 
@@ -203,14 +208,14 @@ class TestTentativeEventAccess:
                 "status": EventStatus.ACTIVE,
             },
             content_type="application/json",
-            **_auth(test_user),
+            **auth_headers_for(test_user),
         )
         assert response.status_code == 201
 
     def test_member_still_sees_everything(self, api_client, test_user, host):
         _event("Official", EventType.OFFICIAL, host=host)
         _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
-        response = api_client.get("/api/community/events/", **_auth(test_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(test_user))
         titles = {e["title"] for e in response.json()}
         assert titles == {"Official", "Private"}
 
@@ -218,16 +223,16 @@ class TestTentativeEventAccess:
 @pytest.mark.django_db
 class TestTentativeDirectoryAccess:
     def test_directory_is_blocked_for_non_members(self, api_client, tentative_user, test_user):
-        response = api_client.get("/api/auth/users/directory/", **_auth(tentative_user))
+        response = api_client.get("/api/auth/users/directory/", **auth_headers_for(tentative_user))
         assert response.status_code == 403
         assert_error_code(response, Code.Perm.DENIED)
 
     def test_member_profile_is_blocked_for_non_members(self, api_client, tentative_user, test_user):
         response = api_client.get(
-            f"/api/auth/users/{test_user.id}/profile/", **_auth(tentative_user)
+            f"/api/auth/users/{test_user.id}/profile/", **auth_headers_for(tentative_user)
         )
         assert response.status_code == 403
 
     def test_directory_still_works_for_members(self, api_client, test_user):
-        response = api_client.get("/api/auth/users/directory/", **_auth(test_user))
+        response = api_client.get("/api/auth/users/directory/", **auth_headers_for(test_user))
         assert response.status_code == 200

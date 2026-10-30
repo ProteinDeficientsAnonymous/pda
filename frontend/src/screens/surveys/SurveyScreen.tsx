@@ -29,8 +29,7 @@ export default function SurveyScreen() {
     return <ContentError message="couldn't load the survey — try refreshing" />;
   }
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
-  // A finalized poll keeps rendering its result rather than a shut-door message.
-  if (status !== 'active' && survey.pollResult === null) {
+  if (status !== 'active') {
     return <SurveyUnavailable survey={survey} status={status} />;
   }
   return (
@@ -96,14 +95,11 @@ function SurveyForm({
   const qc = useQueryClient();
   const [editingId, setEditingId] = useState(survey.myResponseId);
   const submit = useSubmitSurvey(survey.slug, editingId);
-  // lazy init: later server updates (e.g. poll finalized) keep what the user is typing
+  // lazy init: later server updates keep what the user is typing
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
-
-  const finalized = survey.pollResult !== null;
-  const readOnly = finalized;
 
   const visible = visibleQuestionIds(survey.questions, answers);
   const shownQuestions = survey.questions.filter((q) => visible.has(q.id));
@@ -158,9 +154,9 @@ function SurveyForm({
   }
 
   const submitLabel = editingId ? 'update response' : 'submit';
-  const canSubmitAnother = !readOnly && !survey.oneResponsePerUser && editingId !== null;
+  const canSubmitAnother = !survey.oneResponsePerUser && editingId !== null;
   const canStartFresh =
-    !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
+    !isAuthed && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
 
   function resetForm() {
     setEditingId(null);
@@ -183,18 +179,12 @@ function SurveyForm({
         <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
       ) : null}
 
-      {!isAuthed && !readOnly ? <SurveyLoginLink anonymous={survey.anonymous} /> : null}
+      {!isAuthed ? <SurveyLoginLink anonymous={survey.anonymous} /> : null}
 
       {survey.anonymous ? (
         <p className="text-foreground-secondary mb-6 text-sm">
           responses are anonymous — your name isn't saved with your answers
         </p>
-      ) : null}
-
-      {finalized ? (
-        <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized — responses are locked
-        </div>
       ) : null}
 
       <form
@@ -212,7 +202,6 @@ function SurveyForm({
                 setAnswers((a) => ({ ...a, [q.id]: v }));
               }}
               error={errors[q.id]}
-              readOnly={readOnly}
             />
           </div>
         ))}
@@ -223,11 +212,9 @@ function SurveyForm({
           </p>
         ) : null}
 
-        {!readOnly ? (
-          <Button type="submit" disabled={submit.isPending}>
-            {submit.isPending ? 'saving…' : submitLabel}
-          </Button>
-        ) : null}
+        <Button type="submit" disabled={submit.isPending}>
+          {submit.isPending ? 'saving…' : submitLabel}
+        </Button>
 
         {canSubmitAnother ? (
           <button

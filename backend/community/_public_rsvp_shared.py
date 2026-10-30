@@ -30,7 +30,7 @@ class PublicRsvpOut(BaseModel):
 def _load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
     """Fetch a public-RSVP event: 404 if it can't be seen at all, else 400 with the
     specific reason if it's visible but closed — mirrors _validate_rsvp_access."""
-    qs = Event.objects.prefetch_related("co_hosts", "invited_users")
+    qs = Event.objects.prefetch_related("co_hosts")
     if for_update:
         qs = qs.select_for_update()
     event = qs.filter(id=event_id).first()

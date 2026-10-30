@@ -73,11 +73,14 @@ ASGI_APPLICATION = "config.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default="sqlite:///db.sqlite3", conn_max_age=600, conn_health_checks=True
-    )
-}
+DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3")}
+
+# ASGI runs each request on a fresh thread, so CONN_MAX_AGE never reuses a connection; pool instead.
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
+        "min_size": 2,
+        "max_size": int(os.environ.get("PDA_DB_POOL_MAX_SIZE", "10")),
+    }
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
 # Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.

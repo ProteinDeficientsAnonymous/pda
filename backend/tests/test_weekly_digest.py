@@ -14,7 +14,8 @@ from django.utils import timezone
 from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 
-from tests._digest_helpers import make_event, make_member, make_tentative
+from tests._digest_helpers import make_event, make_tentative
+from tests._users import make_user
 
 
 def _freeze_digest(monkeypatch, when: datetime) -> None:
@@ -34,15 +35,15 @@ def _not_the_first(monkeypatch):
 @pytest.mark.django_db
 class TestSendWeeklyDigestCommand:
     def test_no_events_in_range_sends_nothing(self, fake_sender):
-        make_member("+12025550202")
+        make_user(phone_number="+12025550202")
         make_event("far off potluck", 30)
         make_event("last week's potluck", -3)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_sends_to_each_member_with_email(self, fake_sender):
-        make_member("+12025550203")
-        make_member("+12025550204")
+        make_user(phone_number="+12025550203")
+        make_user(phone_number="+12025550204")
         make_event("potluck", 2)
         make_event("film night", 5)
         call_command("send_weekly_digest")
@@ -53,21 +54,21 @@ class TestSendWeeklyDigestCommand:
 
         spy = MagicMock(return_value=fake_sender)
         monkeypatch.setattr(digest_command, "get_email_sender", spy)
-        make_member("+12025550250")
+        make_user(phone_number="+12025550250")
         make_event("park cleanup", 2)
         call_command("send_weekly_digest")
         assert spy.call_args.args[0] is EmailStream.BULK
 
     def test_to_sends_single_digest_to_that_address(self, fake_sender):
-        make_member("+12025550260")
-        make_member("+12025550261")
+        make_user(phone_number="+12025550260")
+        make_user(phone_number="+12025550261")
         make_event("potluck", 2)
         call_command("send_weekly_digest", to="probe@example.com")
         assert fake_sender.send.call_count == 1
         assert fake_sender.send.call_args.kwargs["to"] == "probe@example.com"
 
     def test_to_uses_first_name_of_matching_user(self, fake_sender):
-        make_member("+12025550262", email="known@example.com")
+        make_user(phone_number="+12025550262", email="known@example.com")
         make_event("potluck", 2)
         call_command("send_weekly_digest", to="known@example.com")
         assert "hi test" in fake_sender.send.call_args.kwargs["text"]
@@ -89,7 +90,7 @@ class TestSendWeeklyDigestCommand:
         assert spy.call_args.args[0] is EmailStream.BULK
 
     def test_digest_lists_both_events(self, fake_sender):
-        make_member("+12025550205")
+        make_user(phone_number="+12025550205")
         make_event("potluck", 2)
         make_event("film night", 5)
         call_command("send_weekly_digest")
@@ -98,26 +99,26 @@ class TestSendWeeklyDigestCommand:
         assert "film night" in text
 
     def test_skips_member_with_no_email(self, fake_sender):
-        make_member("+12025550206", email="")
+        make_user(phone_number="+12025550206", email="")
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_excludes_cancelled_and_deleted_events(self, fake_sender):
-        make_member("+12025550207")
+        make_user(phone_number="+12025550207")
         make_event("cancelled potluck", 2, status=EventStatus.CANCELLED)
         make_event("deleted potluck", 3, status=EventStatus.DELETED)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_excludes_soft_deleted_event(self, fake_sender):
-        make_member("+12025550208")
+        make_user(phone_number="+12025550208")
         make_event("removed potluck", 2, deleted_at=timezone.now())
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_includes_official_and_club_events(self, fake_sender):
-        make_member("+12025550213")
+        make_user(phone_number="+12025550213")
         make_event("official meetup", 2, event_type=EventType.OFFICIAL)
         make_event("book club", 3, event_type=EventType.CLUB)
         call_command("send_weekly_digest")
@@ -126,7 +127,7 @@ class TestSendWeeklyDigestCommand:
         assert "book club" in text
 
     def test_excludes_community_events(self, fake_sender):
-        make_member("+12025550214")
+        make_user(phone_number="+12025550214")
         make_event("random hangout", 2, event_type=EventType.COMMUNITY)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
@@ -143,19 +144,19 @@ class TestSendWeeklyDigestCommand:
         fake_sender.send.assert_not_called()
 
     def test_skips_member_opted_out(self, fake_sender):
-        make_member("+12025550210", weekly_digest_opt_out=True)
+        make_user(phone_number="+12025550210", weekly_digest_opt_out=True)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_skips_paused_member(self, fake_sender):
-        make_member("+12025550212", is_paused=True)
+        make_user(phone_number="+12025550212", is_paused=True)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
 
     def test_email_links_to_settings(self, fake_sender):
-        make_member("+12025550211")
+        make_user(phone_number="+12025550211")
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         text = fake_sender.send.call_args.kwargs["text"]
@@ -163,14 +164,14 @@ class TestSendWeeklyDigestCommand:
 
     def test_counts_failed_sends_separately(self, fake_sender):
         fake_sender.send.return_value = SendResult(success=False, error="boom")
-        make_member("+12025550215")
+        make_user(phone_number="+12025550215")
         make_event("potluck", 2)
         out = StringIO()
         call_command("send_weekly_digest", stdout=out)
         assert "Sent 0 digest(s); 1 failed." in out.getvalue()
 
     def test_reports_zero_failures_on_success(self, fake_sender):
-        make_member("+12025550216")
+        make_user(phone_number="+12025550216")
         make_event("potluck", 2)
         out = StringIO()
         call_command("send_weekly_digest", stdout=out)
@@ -181,15 +182,15 @@ class TestSendWeeklyDigestCommand:
             SendResult(success=True, provider_message_id="test_msg"),
             SendResult(success=False, error="boom"),
         ]
-        make_member("+12025550217")
-        make_member("+12025550218")
+        make_user(phone_number="+12025550217")
+        make_user(phone_number="+12025550218")
         make_event("potluck", 2)
         out = StringIO()
         call_command("send_weekly_digest", stdout=out)
         assert "Sent 1 digest(s); 1 failed." in out.getvalue()
 
     def test_formats_event_time_in_eastern_not_utc(self, fake_sender):
-        make_member("+12025550219")
+        make_user(phone_number="+12025550219")
         start = (
             (timezone.now() + timedelta(days=2))
             .astimezone(ZoneInfo("America/New_York"))
@@ -209,8 +210,8 @@ class TestSendWeeklyDigestCommand:
 
     def test_omits_veganniversaries(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 6, 3, 12, 0, 0))
-        make_member(
-            "+12025550220",
+        make_user(
+            phone_number="+12025550220",
             first_name="Ada",
             veganniversary_month=6,
             veganniversary_year=2021,
@@ -249,7 +250,7 @@ class TestWeeklyDigestTentativeMembers:
 class TestWeeklyDigestOnFirstOfMonth:
     def test_skips_monthly_subscribers_on_the_first(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
-        make_member("+12025550280")
+        make_user(phone_number="+12025550280")
         make_tentative("+12025550282")
         make_event("potluck", 2)
         call_command("send_weekly_digest")
@@ -257,9 +258,9 @@ class TestWeeklyDigestOnFirstOfMonth:
 
     def test_sends_to_monthly_opt_outs_on_the_first(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
-        member = make_member("+12025550283", monthly_digest_opt_out=True)
+        member = make_user(phone_number="+12025550283", monthly_digest_opt_out=True)
         tentative = make_tentative("+12025550284", monthly_digest_opt_out=True)
-        make_member("+12025550285")
+        make_user(phone_number="+12025550285")
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         sent_to = {c.kwargs["to"] for c in fake_sender.send.call_args_list}
@@ -267,7 +268,7 @@ class TestWeeklyDigestOnFirstOfMonth:
 
     def test_skips_double_opt_out_on_the_first(self, fake_sender, monkeypatch):
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 16, 0, 0))
-        make_member("+12025550286", monthly_digest_opt_out=True, weekly_digest_opt_out=True)
+        make_user(monthly_digest_opt_out=True, weekly_digest_opt_out=True)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_not_called()
@@ -275,7 +276,7 @@ class TestWeeklyDigestOnFirstOfMonth:
     def test_first_uses_community_timezone(self, fake_sender, monkeypatch):
         # 2am UTC on the 1st is still the 30th in New York.
         _freeze_digest(monkeypatch, datetime(2026, 7, 1, 2, 0, 0))
-        make_member("+12025550281")
+        make_user(phone_number="+12025550281")
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_sender.send.assert_called_once()

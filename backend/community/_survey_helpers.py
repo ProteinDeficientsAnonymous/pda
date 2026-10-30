@@ -9,7 +9,6 @@ from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._survey_schemas import (
-    PollResultOut,
     PollResultsOut,
     SurveyOut,
     SurveyQuestionOut,
@@ -18,8 +17,6 @@ from community._survey_schemas import (
 )
 from community._validation import Code, raise_validation
 from community.models import (
-    DatetimePollResult,
-    Event,
     PollAvailability,
     Survey,
     SurveyQuestion,
@@ -40,15 +37,6 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
     )
 
 
-def _poll_result_out(result: DatetimePollResult) -> PollResultOut:
-    return PollResultOut(
-        id=str(result.id),
-        winning_datetime=result.winning_datetime,
-        finalized_by_id=str(result.finalized_by_id) if result.finalized_by_id else None,
-        finalized_at=result.finalized_at,
-    )
-
-
 _MAX_ANONYMOUS_TOKEN_LENGTH = 64
 
 
@@ -57,9 +45,6 @@ def _find_my_response(
 ) -> SurveyResponse | None:
     if requesting_user is not None:
         return survey.responses.filter(user=requesting_user).first()
-    # only dedupe surveys reuse a row on submit
-    if not survey.one_response_per_user:
-        return None
     # minted tokens are 43 chars; skip the query for anything longer
     if not response_token or len(response_token) > _MAX_ANONYMOUS_TOKEN_LENGTH:
         return None
@@ -72,9 +57,11 @@ def _response_to_update(
     if survey.one_response_per_user:
         return _find_my_response(survey, responder, response_token)
     # multi-response surveys only edit the row the form loaded; a fresh submit adds one
-    # no token is minted on multi-response surveys, so there's no way to prove a logged-out owner
-    if response_id is None or responder is None:
+    if response_id is None:
         return None
+    if responder is None:
+        mine = _find_my_response(survey, None, response_token)
+        return mine if mine and mine.id == response_id else None
     return survey.responses.filter(id=response_id, user=responder).first()
 
 
@@ -87,11 +74,6 @@ def _survey_out(
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
     )
-    poll_result = None
-    try:
-        poll_result = _poll_result_out(survey.poll_result)
-    except DatetimePollResult.DoesNotExist:
-        pass
     # anonymous surveys never key on the member, so their row is found by token too
     responder = None if survey.anonymous else requesting_user
     existing = _find_my_response(survey, responder, response_token)
@@ -110,13 +92,11 @@ def _survey_out(
         opens_at=survey.opens_at,
         closes_at=survey.closes_at,
         max_responses=survey.max_responses,
-        linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
         feedback_event_type=survey.feedback_event_type,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
         questions=questions,
         response_count=survey.responses.count(),
-        poll_result=poll_result,
         my_response_id=my_response_id,
         my_answers=my_answers,
     )
@@ -169,15 +149,13 @@ def _ensure_feedback_type_free(survey: Survey | None, event_type: str) -> None:
 def _force_feedback_defaults(survey: Survey | None, data: dict) -> None:
     if data.get("anonymous", survey.anonymous if survey else None) is not True:
         data["anonymous"] = True
-    if data.get("linked_event_id", survey.linked_event_id if survey else None) is not None:
-        data["linked_event_id"] = None
 
 
 def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     """Normalize a survey write that sets or keeps a feedback event type.
 
     survey(Survey | None): the survey being updated, None on create.
-    return(dict): data, with anonymous forced on and the linked event dropped when typed.
+    return(dict): data, with anonymous forced on when typed.
     """
     if "feedback_event_type" in data and data["feedback_event_type"] is None:
         del data["feedback_event_type"]
@@ -188,22 +166,6 @@ def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     _ensure_feedback_type_free(survey, resulting)
     _force_feedback_defaults(survey, data)
     return data
-
-
-def _apply_linked_event_update(updates: dict) -> dict:
-    """Resolve linked_event_id → linked_event object in update dict.
-
-    Raises ValidationException if the referenced event doesn't exist.
-    """
-    eid = updates.pop("linked_event_id")
-    if not eid:
-        updates["linked_event"] = None
-        return updates
-    try:
-        updates["linked_event"] = Event.objects.get(id=eid)
-    except Event.DoesNotExist:
-        raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
-    return updates
 
 
 def _submit_out(response: SurveyResponse, user_name: str | None) -> SurveySubmitOut:
@@ -233,9 +195,9 @@ def _tally_dict_answer(
     voter: VoterOut | None,
 ) -> None:
     for opt, availability in answer.items():
-        if opt in counts and availability in PollAvailability.VALID:
+        if opt in counts and availability in counts[opt]:
             counts[opt][availability] += 1
-            if voter:
+            if voter and availability != PollAvailability.NO:
                 voters[opt].append(voter)
 
 
@@ -258,7 +220,8 @@ def _tally_question(
 ) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
-        opt: {PollAvailability.YES: 0, PollAvailability.MAYBE: 0} for opt in options
+        opt: {PollAvailability.YES: 0, PollAvailability.MAYBE: 0, PollAvailability.NO: 0}
+        for opt in options
     }
     voters: dict[str, list[VoterOut]] = {opt: [] for opt in options}
     for r in responses:
@@ -279,13 +242,9 @@ def _tally_question(
     )
 
 
-def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:
+def _has_finalize_permission(request, survey: Survey) -> bool:
     if request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
         return True
     if request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if survey.created_by_id == request.auth.pk:
-        return True
-    if event and event.co_hosts.filter(pk=request.auth.pk).exists():
-        return True
-    return False
+    return survey.created_by_id == request.auth.pk

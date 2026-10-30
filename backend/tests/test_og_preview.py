@@ -3,7 +3,14 @@ import uuid
 from pathlib import Path
 
 import pytest
-from community.models import Event, EventStatus, PageVisibility
+from community.models import (
+    Event,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    Survey,
+    SurveyVisibility,
+)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
@@ -68,25 +75,28 @@ class TestEventOgPreview:
         assert response.status_code == 200
         assert '<meta property="og:title" content="Vegan Potluck"' in response.content.decode()
 
-    def test_event_without_photo_uses_summary_card(self, api_client, db, settings):
+    @pytest.mark.parametrize("visibility", [PageVisibility.PUBLIC, PageVisibility.MEMBERS_ONLY])
+    def test_event_without_photo_uses_logo(self, api_client, db, settings, visibility):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         event = Event.objects.create(
             title="No Photo Event",
             start_datetime=future_iso(),
-            visibility=PageVisibility.PUBLIC,
+            visibility=visibility,
             status=EventStatus.ACTIVE,
         )
         response = api_client.get(_preview_url(event.id))
 
         assert response.status_code == 200
         html = response.content.decode()
-        assert '<meta name="twitter:card" content="summary"' in html
-        assert "og:image" not in html
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+        assert '<meta name="twitter:card" content="summary_large_image"' in html
 
     @pytest.mark.parametrize(
         "visibility", [PageVisibility.MEMBERS_ONLY, PageVisibility.INVITE_ONLY]
     )
-    def test_non_public_event_shows_title_only(self, api_client, db, settings, visibility):
+    def test_non_public_event_shows_title_description_and_photo(
+        self, api_client, db, settings, visibility
+    ):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         event = Event.objects.create(
             title="Stewards Gathering",
@@ -105,10 +115,13 @@ class TestEventOgPreview:
         assert (
             f'<meta property="og:url" content="https://pda.example.com/events/{event.slug}"' in html
         )
-        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
-        assert "Secret details" not in html
+        assert (
+            '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
+        )
+        assert (
+            '<meta property="og:description" content="Secret details about the gathering."' in html
+        )
         assert "Secret Spot" not in html
-        assert "event_photos" not in html
 
     def test_cancelled_public_event_still_previews(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
@@ -193,6 +206,47 @@ class TestEventOgPreview:
         assert (
             '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
         )
+
+
+@pytest.mark.django_db
+class TestSurveyOgPreview:
+    def test_public_survey_renders_title_and_description(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        Survey.objects.create(
+            title="Potluck Planning", description="Tell us what to bring.", slug="potluck"
+        )
+        response = api_client.get("/surveys/potluck/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Potluck Planning"' in html
+        assert '<meta property="og:description" content="Tell us what to bring."' in html
+        assert '<meta property="og:url" content="https://pda.example.com/surveys/potluck"' in html
+        assert '<meta property="og:image" content="https://pda.example.com/og/pda-logo.png"' in html
+
+    @pytest.mark.parametrize(
+        "extra",
+        [
+            {"visibility": SurveyVisibility.MEMBERS_ONLY},
+            {"feedback_event_type": EventType.OFFICIAL},
+        ],
+    )
+    def test_restricted_survey_shows_title_only(self, api_client, extra):
+        Survey.objects.create(
+            title="Steward Check-in", description="Private survey details.", slug="s", **extra
+        )
+        response = api_client.get("/surveys/s/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="Steward Check-in"' in html
+        assert "Private survey details" not in html
+
+    def test_missing_survey_gets_site_preview(self, api_client, db):
+        response = api_client.get("/surveys/nope/preview/")
+
+        assert response.status_code == 200
+        assert '<meta property="og:title" content="pda"' in response.content.decode()
 
 
 @pytest.mark.django_db

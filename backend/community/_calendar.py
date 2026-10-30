@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import icalendar
 from config.auth import gated_jwt
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 from ninja import Router
@@ -86,7 +86,11 @@ def _feed_events(user: UserModel):
             is_legacy=False,
         )
         .select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users")
+        .prefetch_related(
+            "co_hosts",
+            # Only the subscriber's own invite matters for the invite-only check.
+            Prefetch("invited_users", queryset=UserModel.objects.filter(pk=user.pk).only("pk")),
+        )
         .order_by("start_datetime")
     )
 

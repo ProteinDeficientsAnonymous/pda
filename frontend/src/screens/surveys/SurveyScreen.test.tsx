@@ -1,19 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenStorage';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyScreen from './SurveyScreen';
 import SurveyThanksScreen from './SurveyThanksScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const toastError = vi.fn();
 vi.mock('sonner', () => ({
@@ -27,20 +23,13 @@ vi.mock('sonner', () => ({
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 
-function makeQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderScreen(slug = 'feedback', qc = makeQueryClient()) {
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/surveys/${slug}`]}>
-        <Routes>
-          <Route path="/surveys/:slug" element={<SurveyScreen />} />
-          <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/surveys/:slug" element={<SurveyScreen />} />
+      <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
+    </Routes>,
+    { route: `/surveys/${slug}`, qc },
   );
 }
 
@@ -55,7 +44,6 @@ const baseWireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 beforeEach(() => {
@@ -197,25 +185,6 @@ describe('SurveyScreen', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('keeps the finalized-poll view for an inactive survey with a poll result', async () => {
-    mockedGet.mockResolvedValueOnce({
-      data: {
-        ...baseWireSurvey,
-        is_active: false,
-        poll_result: {
-          id: 'r1',
-          winning_datetime: '2030-01-01T10:00:00Z',
-          finalized_by_id: null,
-          finalized_at: '2029-12-01T10:00:00Z',
-        },
-      },
-    });
-    renderScreen();
-
-    expect(await screen.findByText(/this poll has been finalized/)).toBeInTheDocument();
-    expect(screen.queryByText(/this survey is closed/)).not.toBeInTheDocument();
-  });
-
   it('refetches the survey when a submit is rejected because it closed', async () => {
     mockedGet.mockResolvedValue({ data: baseWireSurvey });
     mockedPost.mockRejectedValueOnce({
@@ -238,10 +207,14 @@ describe('SurveyScreen', () => {
 });
 
 describe('SurveyScreen post-submit confirmation', () => {
-  async function submitWith(confirmationMessage: string) {
-    mockedGet.mockResolvedValue({
-      data: { ...baseWireSurvey, confirmation_message: confirmationMessage },
-    });
+  async function submitWith(
+    confirmationMessage: string,
+    savedResponseId: string | null = 'resp-1',
+  ) {
+    const survey = { ...baseWireSurvey, confirmation_message: confirmationMessage };
+    mockedGet
+      .mockResolvedValueOnce({ data: survey })
+      .mockResolvedValue({ data: { ...survey, my_response_id: savedResponseId } });
     mockedPost.mockResolvedValueOnce({
       data: {
         id: 'resp-1',
@@ -264,10 +237,17 @@ describe('SurveyScreen post-submit confirmation', () => {
       await screen.findByRole('heading', { name: 'thanks for your feedback!' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'submit' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'edit your response' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'edit your response' })).toHaveAttribute(
       'href',
       '/surveys/feedback',
     );
+    expect(screen.getByRole('link', { name: 'back to home' })).toHaveAttribute('href', '/');
+  });
+
+  it('hides the edit link when the response cannot be found again', async () => {
+    await submitWith('thanks!', null);
+    expect(await screen.findByRole('heading', { name: 'thanks!' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'edit your response' })).not.toBeInTheDocument();
   });
 
   it('falls back to the default thank-you message when none is set', async () => {

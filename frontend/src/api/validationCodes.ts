@@ -58,6 +58,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'start date must be in the future';
     case Code.Event.EndBeforeStart:
       return 'end time must be after the start time';
+    case Code.Event.DatetimeOffsetRequired:
+      return 'date and time must include a timezone';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
     case Code.Event.OfficialNoPlusOnes:
@@ -372,12 +374,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "this feedback link doesn't work anymore";
     case Code.Survey.FeedbackAlreadySubmitted:
       return 'you already sent feedback for this event — thank you!';
-    case Code.Survey.NoDatetimePollQuestion:
-      return 'survey has no datetime poll question';
-    case Code.Survey.WinningDatetimeNotInOptions:
-      return 'winning datetime is not one of the poll options';
-    case Code.Survey.PollAlreadyFinalized:
-      return 'this poll has already been finalized';
     case Code.Survey.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -409,8 +405,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Survey.AnswerInvalidAvailability: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label
-        ? `availability for "${label}" must be "yes" or "maybe"`
-        : 'availability must be "yes" or "maybe"';
+        ? `availability for "${label}" must be "yes", "maybe", or "no"`
+        : 'availability must be "yes", "maybe", or "no"';
     }
     case Code.Survey.ConditionQuestionNotFound:
       return 'the question this condition depends on no longer exists';
@@ -578,6 +574,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't step down — every event needs at least one host";
     case Code.CoHostInvite.EventIsPast:
       return "can't invite co-hosts to a past event";
+    case Code.CoHostInvite.NotMember:
+      return 'only members can be co-hosts';
 
     // Welcome template
     case Code.WelcomeTemplate.BodyRequired:

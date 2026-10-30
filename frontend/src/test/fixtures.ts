@@ -60,7 +60,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     guestRsvpCount: 1,
     datetimeTbd: false,
     hasPoll: false,
-    datetimePollSlug: null,
     createdById: 'creator',
     createdByName: 'Creator',
     createdByPhotoUrl: '',
@@ -81,7 +80,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     myQuestionnaireResponses: {},
     rsvpQuestions: [],
     viewerUserId: null,
-    linkedSurveys: [],
     invitedUserIds: [],
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
@@ -153,6 +151,19 @@ export function makeUser(overrides: Partial<User> = {}): User {
     ...overrides,
   };
 }
+
+export function makeUserWithPermissions(
+  permissions: string[],
+  overrides: Partial<User> = {},
+): User {
+  return makeUser({
+    ...overrides,
+    roles: [{ id: 'role-test', name: 'test', isDefault: false, permissions }],
+  });
+}
+
+export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
+export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
 
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {

@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from django.conf import settings
-from django.db import IntegrityError, transaction
 from django.utils import timezone
 from notifications._event_feedback_email import send_event_feedback_email
 from notifications.email_sender import EmailStream, SendResult, get_email_sender
@@ -23,7 +23,6 @@ from community.models.event import _is_past_q
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from notifications.email_sender import EmailSender
-    from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -91,15 +90,19 @@ def _send(
     return result
 
 
-def _get_or_create_request(event: Event, user: User) -> EventFeedbackRequest | None:
-    try:
-        with transaction.atomic():
-            request, _ = EventFeedbackRequest.objects.get_or_create(
-                event=event, user=user, defaults={"token": EventFeedbackRequest.new_token()}
-            )
-    except IntegrityError:
-        return None
-    return request
+def _requests_by_user(event: Event, user_ids: list[UUID]) -> dict[UUID, EventFeedbackRequest]:
+    existing = EventFeedbackRequest.objects.filter(event=event, user_id__in=user_ids)
+    by_user = {r.user_id: r for r in existing}
+    missing = [
+        EventFeedbackRequest(event=event, user_id=uid, token=EventFeedbackRequest.new_token())
+        for uid in user_ids
+        if uid not in by_user
+    ]
+    if missing:
+        # a concurrent run may have inserted some; re-read so every pk is the stored one
+        EventFeedbackRequest.objects.bulk_create(missing, ignore_conflicts=True)
+        by_user = {r.user_id: r for r in existing.all()}
+    return by_user
 
 
 def _claim_first_send(request: EventFeedbackRequest, now: datetime) -> bool:
@@ -112,17 +115,21 @@ def _claim_first_send(request: EventFeedbackRequest, now: datetime) -> bool:
 
 
 def _send_first_for_event(sender: EmailSender, event: Event, now: datetime) -> tuple[int, int]:
-    rsvps = EventRSVP.objects.filter(
-        event=event,
-        attendance=AttendanceStatus.ATTENDED,
-        user__is_active=True,
-        user__archived_at__isnull=True,
-    ).select_related("user")
+    rsvps = list(
+        EventRSVP.objects.filter(
+            event=event,
+            attendance=AttendanceStatus.ATTENDED,
+            user__is_active=True,
+            user__archived_at__isnull=True,
+        ).select_related("user")
+    )
+    requests = _requests_by_user(event, [r.user_id for r in rsvps])
     sent = failed = 0
     for rsvp in rsvps:
-        request = _get_or_create_request(event, rsvp.user)
+        request = requests.get(rsvp.user_id)
         if request is None or request.first_sent_at is not None or not rsvp.user.email:
             continue
+        request.event, request.user = event, rsvp.user
         if not _claim_first_send(request, now):
             continue
         result = _send(sender, request, reminder=False)

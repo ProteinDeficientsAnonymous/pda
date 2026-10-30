@@ -1,27 +1,24 @@
 import json
 import time
-from datetime import timedelta
 from unittest.mock import patch
 
 import anyio
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from community._surveys import create_survey_question as create_question_view
 from community._validation import Code
-from community.models import Event, Survey, SurveyQuestion
+from community.models import Survey, SurveyQuestion
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from mcp_gateway.confirm import MAX_AGE_SECONDS
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools import surveys_write
-from users.permissions import PermissionKey
-from users.roles import Role
 
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_server import _signed_in
+from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 SETTINGS = {"title": "Retreat Planning!"}
 NAME = {"label": "name", "required": True}
 NOTES = {"label": "notes", "field_type": "textarea"}
@@ -31,28 +28,23 @@ SECTION = {"label": "about you", "field_type": "section", "description": " optio
 POLL = {"label": "when", "field_type": "datetime_poll", "options": ["2099-11-07T11:00"]}
 
 
-@pytest.fixture
-def surveys_admin(test_user):
-    role = Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS])
-    test_user.roles.add(role)
-    return test_user
-
-
 def _create(user, questions=(NAME, NOTES), **settings) -> dict:
-    return _run(user, "create_survey", settings={**SETTINGS, **settings}, questions=list(questions))
+    return run_tool(
+        user, "create_survey", settings={**SETTINGS, **settings}, questions=list(questions)
+    )
 
 
 def _create_refused(user, questions=(NAME, NOTES), **settings) -> str:
     arguments = {"settings": {**SETTINGS, **settings}, "questions": list(questions)}
-    return _error(user, "create_survey", **arguments)
+    return tool_error(user, "create_survey", **arguments)
 
 
 def _publish(user, survey_id, **arguments) -> dict:
-    return _run(user, "publish_survey", survey=survey_id, **arguments)
+    return run_tool(user, "publish_survey", survey=survey_id, **arguments)
 
 
 def _publish_refused(user, survey_id, **arguments) -> str:
-    return _error(user, "publish_survey", survey=survey_id, **arguments)
+    return tool_error(user, "publish_survey", survey=survey_id, **arguments)
 
 
 def test_publish_two_step(surveys_admin):
@@ -155,9 +147,14 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         (({"label": "pick", "field_type": "radio"},), {}, "radio questions need at least one"),
         (({"label": "name", "options": ["x"]},), {}, "text questions take no options"),
         (({**SECTION, "options": ["x"]},), {}, "section questions take no options"),
+        (({"label": "pace", "field_type": "scale", "options": ["a"] * 3},), {}, "5 point labels"),
         (({**SECTION, "required": True},), {}, "section headers can't be required"),
         (({**NAME, "description": "x"},), {}, "only section headers take a description"),
-        (({"label": "rate", "field_type": "rating", "options": ["a"] * 6},), {}, "at most 5"),
+        (
+            ({"label": "rate", "field_type": "stars", "options": ["a"]},),
+            {},
+            "stars questions take no",
+        ),
         (({**POLL, "options": ["2099-07-04T11:00Z"]},), {}, "new york is at -04:00 on"),
         ((FOOD, {**WHY, "show_if": {"position": 2, "value": "vegan"}}), {}, "earlier question"),
         ((FOOD, {**WHY, "show_if": {"position": 3, "value": "vegan"}}), {}, "earlier question"),
@@ -202,17 +199,19 @@ def test_condition_the_website_refuses_leaves_no_survey(surveys_admin):
     assert not Survey.objects.exists()
 
 
-def test_rating_labels_and_poll_times_stored_like_the_builder(surveys_admin):
-    stars = {"label": "stars", "field_type": "rating", "options": ["meh", "", "", "great"]}
-    blank = {"label": "blank", "field_type": "rating", "options": ["", " "]}
-    summary = _create(surveys_admin, (stars, blank, POLL))
+def test_scale_labels_and_poll_times_stored_like_the_builder(surveys_admin):
+    scale = {"label": "pace", "field_type": "scale", "options": ["", " fast "]}
+    blank = {"label": "blank", "field_type": "scale", "options": ["", " "]}
+    points = {"label": "often", "field_type": "scale", "options": ["never", "", "", "", "a lot "]}
+    summary = _create(surveys_admin, (scale, blank, points, POLL))
     saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
     assert [q.options for q in saved] == [
-        ["meh", "", "", "great", ""],
+        ["", "fast"],
         [],
+        ["never", "", "", "", "a lot"],
         ["2099-11-07T16:00:00.000Z"],
     ]
-    assert summary["questions"][2]["option_times"] == ["2099-11-07T11:00:00-05:00"]
+    assert summary["questions"][3]["option_times"] == ["2099-11-07T11:00:00-05:00"]
 
 
 def test_duplicate_slug_refused(surveys_admin):
@@ -261,10 +260,10 @@ def test_cancel_midway_leaves_no_survey(surveys_admin, view, cancel_at):
             await pda_mcp.call_tool("create_survey", arguments)
         await anyio.sleep(0.5)  # lets an unshielded view thread finish, as it would in production
 
-    reset = _signed_in(surveys_admin)
+    reset = signed_in(surveys_admin)
     try:
         with patch(f"mcp_gateway.tools.surveys_write.{view}", slow):
-            anyio.run(cancel_midway)
+            async_to_sync(cancel_midway)()
     finally:
         auth_context_var.reset(reset)
     assert not (Survey.objects.exists() or SurveyQuestion.objects.exists())
@@ -306,10 +305,10 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
             await pda_mcp.call_tool("create_survey", arguments)
         return scope.cancelled_caught
 
-    reset = _signed_in(surveys_admin)
+    reset = signed_in(surveys_admin)
     try:
         with patch.object(surveys_write, "create_question_view", slow), _failing_delete():
-            assert anyio.run(cancel)
+            assert async_to_sync(cancel)()
     finally:
         auth_context_var.reset(reset)
     survey_id = str(Survey.objects.get().pk)
@@ -317,11 +316,10 @@ def test_cancel_with_failed_cleanup_stays_cancelled_and_logs(surveys_admin, capl
 
 
 def test_saves_every_setting_in_new_york_time(surveys_admin):
-    event = Event.objects.create(title="x", start_datetime=timezone.now() + timedelta(7))
     settings = {
         **{"anonymous": True, "one_response_per_user": True, "max_responses": 40},
         **{"opens_at": "2099-07-04T09:00", "closes_at": "2099-12-05T17:00:00-05:00"},
-        **{"linked_event_id": str(event.pk), "confirmation_message": "thanks!"},
+        "confirmation_message": "thanks!",
     }
     summary = _create(surveys_admin, **settings)
     expected = {**settings, "opens_at": "2099-07-04T09:00:00-04:00"}

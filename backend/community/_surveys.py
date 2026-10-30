@@ -20,7 +20,6 @@ from community._survey_conditions import (
     validate_show_if,
 )
 from community._survey_helpers import (
-    _apply_linked_event_update,
     _survey_out,
     _survey_question_out,
     _validate_anonymous_change,
@@ -38,7 +37,6 @@ from community._survey_schemas import (
 )
 from community._validation import Code, raise_validation
 from community.models import (
-    Event,
     Survey,
     SurveyQuestion,
 )
@@ -82,7 +80,6 @@ def list_surveys_admin(request):
                 opens_at=s.opens_at,
                 closes_at=s.closes_at,
                 max_responses=s.max_responses,
-                linked_event_id=str(s.linked_event_id) if s.linked_event_id else None,
                 created_at=s.created_at,
                 response_count=s.responses.count(),
             )
@@ -115,12 +112,6 @@ def create_survey(request, payload: SurveyIn):
         raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
     _validate_survey_window(payload.opens_at, payload.closes_at)
     data = _validate_feedback_type(None, payload.model_dump())
-    linked_event = None
-    if data["linked_event_id"]:
-        try:
-            linked_event = Event.objects.get(id=data["linked_event_id"])
-        except Event.DoesNotExist:
-            raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
     survey = Survey.objects.create(
         title=payload.title,
         description=payload.description,
@@ -134,7 +125,6 @@ def create_survey(request, payload: SurveyIn):
         closes_at=payload.closes_at,
         max_responses=payload.max_responses,
         feedback_event_type=data["feedback_event_type"],
-        linked_event=linked_event,
         created_by=request.auth,
     )
     audit_log(
@@ -206,8 +196,6 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     updates = _validate_feedback_type(survey, payload.model_dump(exclude_unset=True))
-    if "linked_event_id" in updates:
-        updates = _apply_linked_event_update(updates)
     if "slug" in updates and updates["slug"] != survey.slug:
         if Survey.objects.filter(slug=updates["slug"]).exists():
             raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
