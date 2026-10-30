@@ -1,7 +1,13 @@
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 import pytest
-from community.attendance.analytics import is_pause_candidate
+from community.attendance.analytics import (
+    EMPTY_MEMBER_STATS,
+    MemberAttendanceStats,
+    is_pause_candidate,
+    member_stats_by_user,
+)
 from community.models import (
     AttendanceStatus,
     Event,
@@ -23,7 +29,6 @@ from tests._mcp_members_helpers import (
     make_onboarding,
     member_ids,
 )
-from tests._member_stats_reference import compute_member_stats, user_rsvps_for_attendance
 
 pytestmark = pytest.mark.django_db
 
@@ -94,19 +99,23 @@ def _varied_members() -> list[User]:
     return [regular, lapsed, only_old, unmarked, only_excluded, future_only, cant_go]
 
 
+def _analytics_stats(
+    members: list[User], now: datetime | None = None
+) -> dict[UUID, MemberAttendanceStats]:
+    by_user = member_stats_by_user(User.objects.filter(pk__in=[m.pk for m in members]), now)
+    return {m.pk: by_user.get(m.pk, EMPTY_MEMBER_STATS) for m in members}
+
+
 def test_attendance_matches_the_analytics_screen(admin):
     members = [admin, *_varied_members()]
     rows = {row["id"]: row for row in _rows(admin)}
+    stats_by_id = _analytics_stats(members)
     for member in members:
-        stats = compute_member_stats(user_rsvps_for_attendance(member))
+        stats = stats_by_id[member.pk]
         row = rows[str(member.id)]
         assert _parse(row["last_qualifying_at"]) == stats.last_qualifying_at
         assert row["qualifying_count_12mo"] == stats.qualifying_count_12mo
-    pause_candidates = {
-        str(m.id)
-        for m in members
-        if is_pause_candidate(compute_member_stats(user_rsvps_for_attendance(m)))
-    }
+    pause_candidates = {str(m.id) for m in members if is_pause_candidate(stats_by_id[m.pk])}
     assert member_ids(admin, inactive_for_days=365) == pause_candidates
 
 
@@ -137,8 +146,9 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
     assert rows[str(on_edge.id)]["qualifying_count_12mo"] == 1
     assert rows[str(just_before.id)]["qualifying_count_12mo"] == 0
     assert inactive == ids_of(admin, just_before)
+    stats_by_id = _analytics_stats([on_edge, just_before], now)
     for member in (on_edge, just_before):
-        stats = compute_member_stats(user_rsvps_for_attendance(member), now)
+        stats = stats_by_id[member.pk]
         assert rows[str(member.id)]["qualifying_count_12mo"] == stats.qualifying_count_12mo
         assert is_pause_candidate(stats) == (str(member.id) in inactive)
 
