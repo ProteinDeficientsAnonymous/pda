@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
+import { renderWithProviders } from '@/test/render';
 
 import { AppShell } from './AppShell';
 
@@ -27,10 +27,6 @@ vi.mock('@/auth/useAuth', () => ({
   useHasPermission: vi.fn().mockReturnValue(false),
 }));
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 // Helper that shows the current pathname so navigation tests can verify it.
 function LocationDisplay() {
   const loc = useLocation();
@@ -38,21 +34,20 @@ function LocationDisplay() {
 }
 
 function renderShell(initialPath = '/') {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route path="/" element={<div>home</div>} />
-            <Route path="/calendar" element={<div>calendar page</div>} />
-            <Route path="/profile" element={<div>profile page</div>} />
-            <Route path="/events/add" element={<div>add event page</div>} />
-            <Route path="/login" element={<div>login page</div>} />
-          </Route>
-        </Routes>
-        <LocationDisplay />
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<div>home</div>} />
+          <Route path="/calendar" element={<div>calendar page</div>} />
+          <Route path="/profile" element={<div>profile page</div>} />
+          <Route path="/events/add" element={<div>add event page</div>} />
+          <Route path="/login" element={<div>login page</div>} />
+        </Route>
+      </Routes>
+      <LocationDisplay />
+    </>,
+    { route: initialPath },
   );
 }
 

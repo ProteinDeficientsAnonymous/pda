@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { FeedbackButton } from './FeedbackButton';
 
@@ -38,14 +37,7 @@ function makeUser(overrides: Partial<User> = {}): User {
 }
 
 function renderButton() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/calendar']}>
-        <FeedbackButton />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<FeedbackButton />, { route: '/calendar' });
 }
 
 beforeEach(() => {
