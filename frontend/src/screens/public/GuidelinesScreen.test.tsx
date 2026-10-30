@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useGuidelines } from '@/api/content';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -35,7 +35,7 @@ const baseUser = makeUser({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('GuidelinesScreen', () => {
@@ -56,7 +56,7 @@ describe('GuidelinesScreen', () => {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'member', isDefault: true, permissions: [] }],
     };
-    useAuthStore.setState({ status: 'authed', user: memberUser, accessToken: 'token' });
+    setAuthed(memberUser, 'token');
     mockUseGuidelines.mockReturnValue({
       isPending: false,
       isError: false,
@@ -80,7 +80,7 @@ describe('GuidelinesScreen', () => {
         },
       ],
     };
-    useAuthStore.setState({ status: 'authed', user: editorUser, accessToken: 'token' });
+    setAuthed(editorUser, 'token');
     mockUseGuidelines.mockReturnValue({
       isPending: false,
       isError: false,

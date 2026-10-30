@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useHome } from '@/api/content';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -37,7 +37,7 @@ const baseUser = makeUser({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('HomeScreen', () => {
@@ -65,7 +65,7 @@ describe('HomeScreen', () => {
         },
       ],
     };
-    useAuthStore.setState({ status: 'authed', user: editorUser, accessToken: 'token' });
+    setAuthed(editorUser, 'token');
     mockUseHome.mockReturnValue({
       isPending: false,
       isError: false,

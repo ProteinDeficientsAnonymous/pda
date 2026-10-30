@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed } from '@/test/auth';
 import { creator, makeEvent, makeGuest, nonHost } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -41,14 +41,14 @@ beforeEach(() => {
 
 describe('EventQuestionResponsesScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    useAuthStore.setState({ status: 'authed', user: nonHost, accessToken: 'tok' });
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
   it('shows a notice when the event has no questions', () => {
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText(/no rsvp questions/i)).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText('saved answer')).toBeInTheDocument();

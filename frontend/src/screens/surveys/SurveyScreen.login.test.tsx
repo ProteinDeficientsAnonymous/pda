@@ -7,6 +7,7 @@ import type * as SurveysApi from '@/api/surveys';
 import type { Survey } from '@/api/surveys';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { setUnauthed } from '@/test/auth';
 import { renderWithProviders } from '@/test/render';
 
 const useSurveyMock = vi.fn();
@@ -61,7 +62,7 @@ const loginHref = `/login?redirect=${encodeURIComponent('/surveys/diet?ref=email
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('SurveyScreen login prompts', () => {
