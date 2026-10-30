@@ -8,12 +8,12 @@ from config.media_proxy import serve_media
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404
-from ninja_jwt.tokens import RefreshToken
 from PIL import Image
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 
@@ -45,11 +45,6 @@ def _animated_gif_file(name="dance.gif", content_type="image/gif"):
         loop=0,
     )
     return SimpleUploadedFile(name, buf.getvalue(), content_type=content_type)
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -90,7 +85,7 @@ class TestProfilePhoto:
         response = api_client.post(
             "/api/auth/me/photo/",
             {"photo": photo},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 200
         data = response.json()
@@ -102,35 +97,43 @@ class TestProfilePhoto:
 
     def test_upload_transcodes_png_avatar_to_jpeg(self, api_client, member):
         photo = _noisy_png_file(name="avatar.png")
-        response = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        response = api_client.post(
+            "/api/auth/me/photo/", {"photo": photo}, **auth_headers_for(member)
+        )
         assert response.status_code == 200
         member.refresh_from_db()
         assert member.profile_photo.name.endswith(".jpg")
 
     def test_upload_replaces_existing(self, api_client, member):
         photo1 = _make_test_image()
-        api_client.post("/api/auth/me/photo/", {"photo": photo1}, **_auth(member))
+        api_client.post("/api/auth/me/photo/", {"photo": photo1}, **auth_headers_for(member))
         photo2 = _make_test_image("PNG")
-        response = api_client.post("/api/auth/me/photo/", {"photo": photo2}, **_auth(member))
+        response = api_client.post(
+            "/api/auth/me/photo/", {"photo": photo2}, **auth_headers_for(member)
+        )
         assert response.status_code == 200
         member.refresh_from_db()
         assert ".png" in member.profile_photo.name
 
     def test_upload_rejects_non_image(self, api_client, member):
         fake = SimpleUploadedFile("test.txt", b"not an image", content_type="text/plain")
-        response = api_client.post("/api/auth/me/photo/", {"photo": fake}, **_auth(member))
+        response = api_client.post(
+            "/api/auth/me/photo/", {"photo": fake}, **auth_headers_for(member)
+        )
         assert response.status_code == 400
 
     def test_upload_rejects_too_large(self, api_client, member):
         buf = io.BytesIO(b"\x00" * (6 * 1024 * 1024))
         big = SimpleUploadedFile("big.jpg", buf.read(), content_type="image/jpeg")
-        response = api_client.post("/api/auth/me/photo/", {"photo": big}, **_auth(member))
+        response = api_client.post(
+            "/api/auth/me/photo/", {"photo": big}, **auth_headers_for(member)
+        )
         assert response.status_code == 400
 
     def test_delete_photo(self, api_client, member):
         photo = _make_test_image()
-        api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
-        response = api_client.delete("/api/auth/me/photo/", **_auth(member))
+        api_client.post("/api/auth/me/photo/", {"photo": photo}, **auth_headers_for(member))
+        response = api_client.delete("/api/auth/me/photo/", **auth_headers_for(member))
         assert response.status_code == 200
         body = response.json()
         assert body["profile_photo_url"] == ""
@@ -152,7 +155,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": photo},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 200
         data = response.json()
@@ -166,7 +169,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": photo},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 200
         event.refresh_from_db()
@@ -180,7 +183,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": _animated_gif_file()},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 400
         event.refresh_from_db()
@@ -191,7 +194,7 @@ class TestEventPhoto:
         api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": _make_test_image()},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         event.refresh_from_db()
         old_name = event.photo.name
@@ -205,7 +208,7 @@ class TestEventPhoto:
             api_client.post(
                 f"/api/community/events/{event.id}/photo/",
                 {"photo": _make_test_image()},
-                **_auth(member),
+                **auth_headers_for(member),
             )
         event.refresh_from_db()
         assert event.photo.name == old_name
@@ -216,7 +219,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": photo},
-            **_auth(manager),
+            **auth_headers_for(manager),
         )
         assert response.status_code == 200
 
@@ -230,7 +233,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": photo},
-            **_auth(other),
+            **auth_headers_for(other),
         )
         assert response.status_code == 403
 
@@ -239,7 +242,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": fake},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 400
 
@@ -249,7 +252,7 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": big},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 400
 
@@ -258,11 +261,11 @@ class TestEventPhoto:
         api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": photo},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         response = api_client.get(
             f"/api/community/events/{event.id}/",
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 200
         assert response.json()["photo_url"] != ""
@@ -272,7 +275,7 @@ class TestEventPhoto:
         response = api_client.post(
             "/api/community/events/00000000-0000-0000-0000-000000000000/photo/",
             {"photo": photo},
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 404
 
@@ -281,7 +284,9 @@ class TestEventPhoto:
 class TestMediaProxy:
     def test_serves_uploaded_profile_photo(self, api_client, member):
         photo = _make_test_image()
-        upload = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        upload = api_client.post(
+            "/api/auth/me/photo/", {"photo": photo}, **auth_headers_for(member)
+        )
         assert upload.status_code == 200
         url = upload.json()["profile_photo_url"]
         assert url.startswith("/media/")

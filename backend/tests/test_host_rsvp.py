@@ -5,17 +5,12 @@ from unittest.mock import patch
 import pytest
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -74,7 +69,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
@@ -87,7 +82,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         assert EventRSVP.objects.filter(
@@ -102,7 +97,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{non_member.pk}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=non_member)
@@ -114,7 +109,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(cohost_user),
+            **auth_headers_for(cohost_user),
         )
         assert response.status_code == 200
 
@@ -126,7 +121,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 200
 
@@ -136,7 +131,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
         assert_error_code(response, "perm.denied")
@@ -154,7 +149,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/00000000-0000-0000-0000-000000000000/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 404
 
@@ -164,7 +159,7 @@ class TestSetGuestRsvp:
             "/rsvps/00000000-0000-0000-0000-000000000000/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 404
         assert_error_code(response, "user.not_found")
@@ -176,7 +171,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.WAITLISTED},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 400
         assert_error_code(response, "event.rsvp_invalid_status")
@@ -188,7 +183,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 400
         assert_error_code(response, "event.rsvps_closed_cancelled")
@@ -205,7 +200,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
@@ -224,7 +219,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         waitlisted.refresh_from_db()
@@ -239,7 +234,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
@@ -254,7 +249,7 @@ class TestSetGuestRsvp:
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
@@ -268,7 +263,7 @@ class TestSetGuestRsvp:
                 f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
                 {"status": RSVPStatus.ATTENDING},
                 content_type="application/json",
-                **_auth(host_user),
+                **auth_headers_for(host_user),
             )
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == host_rsvp_event.id
@@ -281,7 +276,7 @@ class TestRemoveGuestRsvp:
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 204
         assert not EventRSVP.objects.filter(event=host_rsvp_event, user=guest).exists()
@@ -292,7 +287,7 @@ class TestRemoveGuestRsvp:
         )
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{non_member.pk}/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 204
         assert not EventRSVP.objects.filter(event=host_rsvp_event, user=non_member).exists()
@@ -301,7 +296,7 @@ class TestRemoveGuestRsvp:
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(cohost_user),
+            **auth_headers_for(cohost_user),
         )
         assert response.status_code == 204
 
@@ -311,7 +306,7 @@ class TestRemoveGuestRsvp:
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 204
 
@@ -319,7 +314,7 @@ class TestRemoveGuestRsvp:
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
         assert_error_code(response, "perm.denied")
@@ -333,7 +328,7 @@ class TestRemoveGuestRsvp:
     def test_event_not_found(self, api_client, host_user, guest):
         response = api_client.delete(
             f"/api/community/events/00000000-0000-0000-0000-000000000000/rsvps/{guest.pk}/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 404
 
@@ -341,7 +336,7 @@ class TestRemoveGuestRsvp:
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}"
             "/rsvps/00000000-0000-0000-0000-000000000000/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 404
         assert_error_code(response, "user.not_found")
@@ -351,7 +346,7 @@ class TestRemoveGuestRsvp:
     ):
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 204
 
@@ -366,7 +361,7 @@ class TestRemoveGuestRsvp:
         )
         response = api_client.delete(
             f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 204
         waitlisted.refresh_from_db()
@@ -379,7 +374,7 @@ class TestRemoveGuestRsvp:
         with patch("community._event_host_rsvps.broadcast_capacity_change") as mock_broadcast:
             api_client.delete(
                 f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
-                **_auth(host_user),
+                **auth_headers_for(host_user),
             )
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == host_rsvp_event.id
