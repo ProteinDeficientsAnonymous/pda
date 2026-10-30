@@ -1,3 +1,10 @@
+# [0.208.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.1...v0.208.0) (2026-10-30)
+
+
+### Features
+
+* **events:** remind hosts to add co-hosts a week before official events ([#1996](https://github.com/ProteinDeficientsAnonymous/pda/issues/1996)) ([378a437](https://github.com/ProteinDeficientsAnonymous/pda/commit/378a437103c654899fd233821605ca0b8bb51796))
+
 ## [0.207.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.0...v0.207.1) (2026-10-30)
 
 
