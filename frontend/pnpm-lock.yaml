@@ -19,7 +19,7 @@ importers:
         version: 3.2.2(react@19.2.5)
       '@hookform/resolvers':
         specifier: ^5.2.2
-        version: 5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.7)
+        version: 5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.91.0(@types/react@19.2.14)(react@19.2.5))(zod@4.6.7)
       '@tanstack/react-query':
         specifier: ^5.99.0
         version: 5.105.0(@types/react@19.2.14)(react@19.2.5)
@@ -73,7 +73,7 @@ importers:
         version: 19.2.5(react@19.2.5)
       react-hook-form:
         specifier: ^7.72.1
-        version: 7.72.1(react@19.2.5)
+        version: 7.91.0(@types/react@19.2.14)(react@19.2.5)
       react-image-crop:
         specifier: ^11.0.10
         version: 11.0.10(react@19.2.5)
@@ -2007,11 +2007,15 @@ packages:
     peerDependencies:
       react: ^19.2.5
 
-  react-hook-form@7.72.1:
-    resolution: {integrity: sha512-RhwBoy2ygeVZje+C+bwJ8g0NjTdBmDlJvAUHTxRjTmSUKPYsKfMphkS2sgEMotsY03bP358yEYlnUeZy//D9Ig==}
+  react-hook-form@7.91.0:
+    resolution: {integrity: sha512-5BEBUnCBwa28AFXYTYmOaB/+CSpJ/+CWVASHEvIGUzFdHyUiPHeRhG7r5hOZ8nZi0yP7pbHdFNXO/p31EKTJFQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
+      '@types/react': '*'
       react: ^16.8.0 || ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   react-image-crop@11.0.10:
     resolution: {integrity: sha512-+5FfDXUgYLLqBh1Y/uQhIycpHCbXkI50a+nbfkB1C0xXXUTwkisHDo2QCB1SQJyHCqIuia4FeyReqXuMDKWQTQ==}
@@ -2512,10 +2516,10 @@ snapshots:
   '@floating-ui/utils@0.2.11':
     optional: true
 
-  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.7)':
+  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.91.0(@types/react@19.2.14)(react@19.2.5))(zod@4.6.7)':
     dependencies:
       '@standard-schema/utils': 0.3.0
-      react-hook-form: 7.72.1(react@19.2.5)
+      react-hook-form: 7.91.0(@types/react@19.2.14)(react@19.2.5)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
       zod: 4.6.7
@@ -3917,9 +3921,11 @@ snapshots:
       react: 19.2.5
       scheduler: 0.27.0
 
-  react-hook-form@7.72.1(react@19.2.5):
+  react-hook-form@7.91.0(@types/react@19.2.14)(react@19.2.5):
     dependencies:
       react: 19.2.5
+    optionalDependencies:
+      '@types/react': 19.2.14
 
   react-image-crop@11.0.10(react@19.2.5):
     dependencies:
