@@ -1984,7 +1984,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Speech Template */
+        patch: operations["community_speech_template_update_speech_template"];
         trace?: never;
     };
     "/api/community/surveys/": {
@@ -5353,6 +5354,17 @@ export interface components {
             updated_at: string;
             /** Walk Pm */
             walk_pm: string;
+        };
+        /** SpeechTemplatePatchIn */
+        SpeechTemplatePatchIn: {
+            /** Open Roles */
+            open_roles?: string[] | null;
+            /** Restaurant Pm */
+            restaurant_pm?: string | null;
+            /** Shared Pm */
+            shared_pm?: string | null;
+            /** Walk Pm */
+            walk_pm?: string | null;
         };
         /** SseTicketOut */
         SseTicketOut: {
@@ -11903,6 +11915,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SpeechTemplateOut"];
+                };
+            };
+        };
+    };
+    community_speech_template_update_speech_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeechTemplatePatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechTemplateOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

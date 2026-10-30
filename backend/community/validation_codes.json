@@ -1214,6 +1214,27 @@
         ]
       }
     ],
+    "SpeechTemplate": [
+      {
+        "name": "INVALID_DOC",
+        "value": "speech_template.invalid_doc",
+        "params": []
+      },
+      {
+        "name": "TOO_MANY_ROLES",
+        "value": "speech_template.too_many_roles",
+        "params": [
+          "max"
+        ]
+      },
+      {
+        "name": "ROLE_TOO_LONG",
+        "value": "speech_template.role_too_long",
+        "params": [
+          "max"
+        ]
+      }
+    ],
     "Connect": [
       {
         "name": "REQUEST_NOT_FOUND",
