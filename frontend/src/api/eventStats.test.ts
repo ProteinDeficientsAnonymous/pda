@@ -1,7 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
@@ -9,6 +6,7 @@ import { eventKeys } from '@/api/events';
 import type { Event } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useSetGuestPayment, withWaitlistOrder } from './eventStats';
 
@@ -54,9 +52,8 @@ describe('useSetGuestPayment', () => {
   });
 
   it('patches the verified mark and caches the mapped event', async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
+    const qc = makeQueryClient();
+    const Wrapper = queryWrapper(qc);
     vi.mocked(apiClient.patch).mockResolvedValue({
       data: {
         id: 'ev1',
@@ -89,9 +86,8 @@ describe('useSetGuestPayment', () => {
   });
 
   it('caches an undone verification as unpaid', async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
+    const qc = makeQueryClient();
+    const Wrapper = queryWrapper(qc);
     vi.mocked(apiClient.patch).mockResolvedValue({
       data: {
         id: 'ev1',

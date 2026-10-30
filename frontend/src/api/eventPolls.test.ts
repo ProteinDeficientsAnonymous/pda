@@ -1,12 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosError } from 'axios';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { VoteChoice } from '@/models/eventPoll';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { mapEventPoll, type WireEventPoll } from './eventPollMapper';
 import { eventPollKeys, useEventPoll, useVotePoll } from './eventPolls';
@@ -72,13 +70,6 @@ function wirePoll(overrides: Partial<WireEventPoll> = {}): WireEventPoll {
   };
 }
 
-function buildWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-  return { qc, Wrapper };
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -133,9 +124,8 @@ describe('mapEventPoll', () => {
 describe('useEventPoll', () => {
   it('returns mapped poll when the API returns 200', async () => {
     mockedGet.mockResolvedValueOnce({ data: wirePoll() });
-    const { Wrapper } = buildWrapper();
 
-    const { result } = renderHook(() => useEventPoll('evt-1', true), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventPoll('evt-1', true), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.id).toBe('poll-1');
@@ -148,17 +138,15 @@ describe('useEventPoll', () => {
       response: { status: 404, data: {} },
     }) as AxiosError;
     mockedGet.mockRejectedValueOnce(err);
-    const { Wrapper } = buildWrapper();
 
-    const { result } = renderHook(() => useEventPoll('evt-1', true), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventPoll('evt-1', true), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toBeNull();
   });
 
   it('is disabled when hasPoll is false', () => {
-    const { Wrapper } = buildWrapper();
-    const { result } = renderHook(() => useEventPoll('evt-1', false), { wrapper: Wrapper });
+    const { result } = renderHook(() => useEventPoll('evt-1', false), { wrapper: queryWrapper() });
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockedGet).not.toHaveBeenCalled();
   });
@@ -170,7 +158,7 @@ describe('useEventPoll', () => {
 
 describe('useVotePoll', () => {
   it('optimistically shifts counts + voter lists on a new yes vote', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventPollKeys.detail('evt-1', true);
     qc.setQueryData(key, mapEventPoll(wirePoll()));
 
@@ -182,7 +170,7 @@ describe('useVotePoll', () => {
       }),
     );
 
-    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: Wrapper });
+    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: queryWrapper(qc) });
 
     result.current.mutate({ 'opt-a': VoteChoice.Yes });
 
@@ -200,14 +188,14 @@ describe('useVotePoll', () => {
   });
 
   it('rolls back to the previous snapshot on error', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventPollKeys.detail('evt-1', true);
     const initial = mapEventPoll(wirePoll());
     qc.setQueryData(key, initial);
 
     mockedPost.mockRejectedValueOnce(new Error('network fail'));
 
-    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: Wrapper });
+    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: queryWrapper(qc) });
 
     await expect(result.current.mutateAsync({ 'opt-a': VoteChoice.Yes })).rejects.toThrow(
       'network fail',
@@ -220,7 +208,7 @@ describe('useVotePoll', () => {
   });
 
   it('shifts a voter from one bucket to another when their choice changes', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const key = eventPollKeys.detail('evt-1', true);
     // Seed with my-user already voting "maybe" on opt-a.
     qc.setQueryData(
@@ -252,7 +240,7 @@ describe('useVotePoll', () => {
       }),
     );
 
-    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: Wrapper });
+    const { result } = renderHook(() => useVotePoll('evt-1'), { wrapper: queryWrapper(qc) });
 
     result.current.mutate({ 'opt-a': VoteChoice.Yes });
 
