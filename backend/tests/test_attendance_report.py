@@ -12,10 +12,11 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 REPORT_URL = "/api/community/events/attendance-report/"
 
@@ -48,15 +49,7 @@ def host_user(db):
 @pytest.fixture
 def events_admin(db):
 
-    admin = User.objects.create_user(
-        phone_number="+12025551801",
-        password="x",
-        first_name="Events",
-        last_name="Admin",
-    )
-    role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
-    return admin
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 def _make_event(host_user, title, days_ago, event_type=EventType.COMMUNITY):

@@ -19,16 +19,9 @@ from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso, past_iso
+from tests._users import make_user
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _make_user(phone: str, name: str = "Member") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-    )
 
 
 def _create_event(api_client, creator: User, co_host_ids: list[str]) -> str:
@@ -63,17 +56,17 @@ def _accept_invite(api_client, event_id: str, invite_id: str, invitee: User) -> 
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550221", "Creator")
+    return make_user(first_name="Creator")
 
 
 @pytest.fixture
 def cohost(db) -> User:
-    return _make_user("+12025550222", "Cohost")
+    return make_user(first_name="Cohost")
 
 
 @pytest.fixture
 def stranger(db) -> User:
-    return _make_user("+12025550223", "Stranger")
+    return make_user(first_name="Stranger")
 
 
 @pytest.fixture

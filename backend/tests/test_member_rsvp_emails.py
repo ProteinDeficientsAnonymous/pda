@@ -1,17 +1,11 @@
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.test import Client
-from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests._time import future_iso
-
-
-def _member(phone="+14155550100", email="member@e.com"):
-    return User.objects.create_user(
-        phone_number=phone, password="p", email=email, first_name="Mem", last_name="Ber"
-    )
+from tests._users import make_user
 
 
 def _event(creator, **kwargs):
@@ -41,7 +35,7 @@ def _subjects(fake, to):
 @pytest.mark.django_db
 class TestMemberRsvpStatusEmail:
     def test_going_emails_member(self, test_user, fake_email_sender):
-        member = _member()
+        member = make_user(email="member@e.com")
         event = _event(test_user)
 
         assert _rsvp(Client(), event, member, RSVPStatus.ATTENDING).status_code == 200
@@ -52,7 +46,7 @@ class TestMemberRsvpStatusEmail:
 
     @pytest.mark.parametrize("status", [RSVPStatus.MAYBE, RSVPStatus.CANT_GO])
     def test_maybe_or_cant_go_does_not_email(self, test_user, fake_email_sender, status):
-        member = _member()
+        member = make_user(email="member@e.com")
         event = _event(test_user)
         client = Client()
         _rsvp(client, event, member, RSVPStatus.ATTENDING)
@@ -61,7 +55,7 @@ class TestMemberRsvpStatusEmail:
         assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
 
     def test_resave_same_status_does_not_email(self, test_user, fake_email_sender):
-        member = _member()
+        member = make_user(email="member@e.com")
         event = _event(test_user, allow_plus_ones=True)
         client = Client()
         _rsvp(client, event, member, RSVPStatus.ATTENDING)
@@ -70,7 +64,7 @@ class TestMemberRsvpStatusEmail:
         assert _subjects(fake_email_sender, "member@e.com") == ["you're in for picnic"]
 
     def test_landing_on_waitlist_does_not_email(self, test_user, fake_email_sender):
-        member = _member()
+        member = make_user(email="member@e.com")
         event = _event(test_user, max_attendees=1)
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
 
@@ -80,7 +74,7 @@ class TestMemberRsvpStatusEmail:
         assert _subjects(fake_email_sender, "member@e.com") == []
 
     def test_member_without_email_is_skipped(self, test_user, fake_email_sender):
-        member = _member(email=None)
+        member = make_user(email=None)
         event = _event(test_user)
 
         assert _rsvp(Client(), event, member, RSVPStatus.ATTENDING).status_code == 200
@@ -89,7 +83,7 @@ class TestMemberRsvpStatusEmail:
 
     def test_send_failure_does_not_fail_rsvp(self, test_user, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("boom")
-        member = _member()
+        member = make_user(email="member@e.com")
         event = _event(test_user)
 
         assert _rsvp(Client(), event, member, RSVPStatus.ATTENDING).status_code == 200
@@ -101,7 +95,7 @@ class TestMemberWaitlistPromotionEmail:
     def test_promoted_member_gets_event_link_not_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user, max_attendees=1)
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
 
         _rsvp(Client(), event, test_user, RSVPStatus.CANT_GO)
@@ -120,7 +114,7 @@ class TestMemberWaitlistPromotionEmail:
             test_user, max_attendees=1, price="$10", venmo_link="https://venmo.com/u/host"
         )
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
 
         _rsvp(Client(), event, test_user, RSVPStatus.CANT_GO)
@@ -132,7 +126,7 @@ class TestMemberWaitlistPromotionEmail:
     def test_capacity_increase_emails_promoted_member(self, test_user, fake_email_sender):
         event = _event(test_user, max_attendees=1)
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
 
         Client().patch(
@@ -161,7 +155,7 @@ def _host_set(event, host, guest, status):
 class TestHostSetRsvpEmail:
     def test_host_seating_waitlisted_member_emails_them(self, test_user, fake_email_sender):
         event = _event(test_user)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
 
         assert _host_set(event, test_user, member, RSVPStatus.ATTENDING).status_code == 200
@@ -170,7 +164,7 @@ class TestHostSetRsvpEmail:
 
     def test_host_setting_cant_go_does_not_email(self, test_user, fake_email_sender):
         event = _event(test_user)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
 
         _host_set(event, test_user, member, RSVPStatus.CANT_GO)
@@ -179,7 +173,7 @@ class TestHostSetRsvpEmail:
 
     def test_host_resave_same_status_does_not_email(self, test_user, fake_email_sender):
         event = _event(test_user)
-        member = _member()
+        member = make_user(email="member@e.com")
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
 
         _host_set(event, test_user, member, RSVPStatus.ATTENDING)
@@ -216,7 +210,7 @@ class TestHostSetRsvpEmail:
 
 @pytest.mark.django_db
 def test_text_part_is_not_html_escaped(test_user, fake_email_sender):
-    member = _member()
+    member = make_user(email="member@e.com")
     event = _event(test_user)
     event.title = "Leah's Potluck & Games"
     event.location = "Joe's Place"

@@ -19,16 +19,9 @@ from users.models import User
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._time import future_iso, past_iso
+from tests._users import make_user
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _make_user(phone: str, name: str = "Member") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-    )
 
 
 def _create_active_event(api_client, creator: User, co_host_ids: list[str]) -> str:
@@ -63,12 +56,12 @@ def _make_event_past(event_id: str) -> None:
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550311", "Creator")
+    return make_user(first_name="Creator")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550312", "Invitee")
+    return make_user(first_name="Invitee")
 
 
 # ─── Tests ────────────────────────────────────────────────────────────────────

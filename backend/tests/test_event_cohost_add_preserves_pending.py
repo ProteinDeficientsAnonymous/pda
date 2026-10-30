@@ -7,30 +7,22 @@ from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-
-def _make_user(phone: str, name: str) -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-        email=f"{name.lower()}@example.com",
-    )
+from tests._users import make_user
 
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550301", "Creator")
+    return make_user(first_name="Creator")
 
 
 @pytest.fixture
 def first_invitee(db) -> User:
-    return _make_user("+12025550302", "First")
+    return make_user(first_name="First")
 
 
 @pytest.fixture
 def second_invitee(db) -> User:
-    return _make_user("+12025550303", "Second")
+    return make_user(first_name="Second")
 
 
 @pytest.fixture

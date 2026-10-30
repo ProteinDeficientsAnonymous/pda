@@ -11,6 +11,7 @@ from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -36,17 +37,7 @@ def admin_headers(admin_user):
 @pytest.fixture
 def manage_users_user(db):
     """A non-superuser with only manage_users permission."""
-    user = User.objects.create_user(
-        phone_number="+12025550002",
-        password="managerpass123",
-        first_name="Manager",
-        last_name="",
-    )
-    role = Role.objects.create(
-        name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES)
 
 
 @pytest.fixture
