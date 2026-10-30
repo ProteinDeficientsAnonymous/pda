@@ -10,9 +10,9 @@ from mcp_gateway.tools.members_read import _page
 from users._member_search import MemberFilters
 from users.models import User
 
+from tests._mcp_tool_helpers import signed_in
 from tests._public_rsvp_helpers import make_non_member
 from tests.test_mcp_members_read import _BUCKETS, _call, _join_request, _joined, _member
-from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -26,7 +26,7 @@ def admin(manage_users_user):
 
 
 def _find(user, **arguments):
-    token = _signed_in(user)
+    token = signed_in(user)
     try:
         return async_to_sync(pda_mcp.call_tool)("find_members", arguments).structured_content  # type: ignore[union-attr]
     finally:
@@ -56,7 +56,7 @@ def _logged_in(days_ago: float, **fields) -> User:
 
 
 def test_hidden_and_forbidden_without_manage_users(test_user):
-    token = _signed_in(test_user)
+    token = signed_in(test_user)
     try:
         assert "find_members" not in {t.name for t in async_to_sync(pda_mcp.list_tools)()}
     finally:

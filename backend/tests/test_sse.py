@@ -6,7 +6,6 @@ from datetime import timedelta
 import psycopg
 import pytest
 from django.conf import settings
-from django.core.cache import caches
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
@@ -30,14 +29,6 @@ class TestFormatNotifyForUser:
         frame = _format_notify_for_user("event_updates", "*:event-1", "user-2")
         assert frame is not None
         assert "event: event_updated" in frame
-
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
 
 
 @pytest.mark.django_db
