@@ -58,7 +58,7 @@ importers:
         version: 3.4.17
       libphonenumber-js:
         specifier: ^1.12.42
-        version: 1.12.42
+        version: 1.13.15
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -1614,9 +1614,6 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
-
-  libphonenumber-js@1.12.42:
-    resolution: {integrity: sha512-oKQFPTibqQwZZkChCDVMFVJXMZdyJNqDWZWYNn8BgyAaK/6yFJEowxCY0RVFirRyWP63hMRuKlkSEd9qlvbWXg==}
 
   libphonenumber-js@1.13.15:
     resolution: {integrity: sha512-AHdhEQeDFEJ4GKDAQ9AwxChy+v2kUILUB3TGQRpkXMkWePjXTU/WQEzWVQoIx/Gz8fE73Wr5SEuZCy2vk8jrMQ==}
@@ -3524,8 +3521,6 @@ snapshots:
       - '@noble/hashes'
 
   json-schema-traverse@1.0.0: {}
-
-  libphonenumber-js@1.12.42: {}
 
   libphonenumber-js@1.13.15: {}
 
