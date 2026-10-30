@@ -3,7 +3,6 @@ import logging
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
-from django.db.models import prefetch_related_objects
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -73,7 +72,6 @@ def _resolve_token_user(token: str) -> User:
     user = NonMemberRsvpToken.resolve_user(token)
     if user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    prefetch_related_objects([user], "roles")
     return user
 
 
@@ -89,7 +87,6 @@ def _eligible_event_rsvps(user):
             "event__tags",
             "event__rsvp_questions",
             "event__poll",
-            "event__surveys",
         )
     )
 

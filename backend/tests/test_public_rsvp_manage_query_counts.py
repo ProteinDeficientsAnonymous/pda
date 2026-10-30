@@ -5,17 +5,14 @@ from django.test.utils import CaptureQueriesContext
 from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event
-
-_seq = {"n": 0}
+from tests._users import make_user
 
 
 def _add_rsvped_events(nonmember: User, count: int) -> None:
     for _ in range(count):
-        _seq["n"] += 1
-        event = make_official_event(title=f"Official {_seq['n']}")
+        event = make_official_event()
         EventRSVP.objects.create(event=event, user=nonmember, status=RSVPStatus.ATTENDING)
-        guest = User.objects.create_user(phone_number=f"+1415111{_seq['n']:04d}", first_name="G")
-        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=make_user(), status=RSVPStatus.ATTENDING)
 
 
 def _count(api_client, token: str, expected_rsvps: int) -> int:
@@ -34,6 +31,6 @@ def test_my_rsvps_prefetches_event_relations(api_client):
     one = _count(api_client, token, 1)
     _add_rsvped_events(nonmember, 4)
     five = _count(api_client, token, 5)
-    # _event_out still looks up the datetime-poll slug and pending co-host invite per event.
-    assert five - one <= 2 * 4
-    assert one <= 18
+    # _event_out still looks up the viewer's pending co-host invite per event.
+    assert five - one <= 4
+    assert one <= 16
