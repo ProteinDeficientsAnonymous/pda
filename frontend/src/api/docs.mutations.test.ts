@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   useCreateDocFolder,
@@ -20,15 +18,6 @@ vi.mock('@/api/client');
 const mockedPost = vi.mocked(apiClient.post);
 const mockedDelete = vi.mocked(apiClient.delete);
 const mockedPut = vi.mocked(apiClient.put);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -46,9 +35,9 @@ describe('useCreateDocFolder', () => {
         documents: [],
       },
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useCreateDocFolder(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useCreateDocFolder(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync({ name: 'guides', parentId: null });
     expect(mockedPost).toHaveBeenCalledWith('/api/community/docs/folders/', {
       name: 'guides',
@@ -74,9 +63,9 @@ describe('useCreateDocument', () => {
         updated_at: '2026-01-01T00:00:00Z',
       },
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useCreateDocument(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useCreateDocument(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync({ title: 'welcome', folderId: 'f1' });
     expect(mockedPost).toHaveBeenCalledWith('/api/community/docs/', {
       title: 'welcome',
@@ -90,9 +79,9 @@ describe('useCreateDocument', () => {
 describe('useDeleteDocument', () => {
   it('should delete by id', async () => {
     mockedDelete.mockResolvedValueOnce({ data: { detail: 'ok' } });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useDeleteDocument(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useDeleteDocument(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync('d9');
     expect(mockedDelete).toHaveBeenCalledWith('/api/community/docs/d9/');
     await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: ['docs', 'folders'] }));
@@ -102,8 +91,8 @@ describe('useDeleteDocument', () => {
 describe('useDeleteDocFolder', () => {
   it('should delete folder', async () => {
     mockedDelete.mockResolvedValueOnce({ data: { detail: 'ok' } });
-    const qc = makeQc();
-    const { result } = renderHook(() => useDeleteDocFolder(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useDeleteDocFolder(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync('f9');
     expect(mockedDelete).toHaveBeenCalledWith('/api/community/docs/folders/f9/');
   });
@@ -112,8 +101,8 @@ describe('useDeleteDocFolder', () => {
 describe('useReorderDocuments', () => {
   it('should put document order', async () => {
     mockedPut.mockResolvedValueOnce({ data: { detail: 'ok' } });
-    const qc = makeQc();
-    const { result } = renderHook(() => useReorderDocuments(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useReorderDocuments(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync(['d2', 'd1']);
     expect(mockedPut).toHaveBeenCalledWith('/api/community/docs/reorder/', { ids: ['d2', 'd1'] });
   });
@@ -122,8 +111,8 @@ describe('useReorderDocuments', () => {
 describe('useReorderDocFolders', () => {
   it('should put folder order', async () => {
     mockedPut.mockResolvedValueOnce({ data: { detail: 'ok' } });
-    const qc = makeQc();
-    const { result } = renderHook(() => useReorderDocFolders(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useReorderDocFolders(), { wrapper: queryWrapper(qc) });
     await result.current.mutateAsync(['b', 'a']);
     expect(mockedPut).toHaveBeenCalledWith('/api/community/docs/folders/reorder/', {
       ids: ['b', 'a'],

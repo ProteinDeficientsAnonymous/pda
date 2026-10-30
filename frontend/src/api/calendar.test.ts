@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useCalendarToken, useRegenerateCalendarToken } from './calendar';
 
@@ -12,15 +10,6 @@ vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -31,8 +20,8 @@ describe('useCalendarToken', () => {
     mockedGet.mockResolvedValueOnce({
       data: { token: 'abc', feed_url: 'https://x.example/feed/?token=abc' },
     });
-    const qc = makeQc();
-    const { result } = renderHook(() => useCalendarToken(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useCalendarToken(), { wrapper: queryWrapper(qc) });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/calendar/token/');
     expect(result.current.data).toEqual({
@@ -47,8 +36,10 @@ describe('useRegenerateCalendarToken', () => {
     mockedPost.mockResolvedValueOnce({
       data: { token: 'newtok', feed_url: 'https://x.example/feed/?token=newtok' },
     });
-    const qc = makeQc();
-    const { result } = renderHook(() => useRegenerateCalendarToken(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useRegenerateCalendarToken(), {
+      wrapper: queryWrapper(qc),
+    });
     await result.current.mutateAsync();
     expect(mockedPost).toHaveBeenCalledWith('/api/community/calendar/token/');
     await waitFor(() =>
