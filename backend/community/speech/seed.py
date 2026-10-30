@@ -1,3 +1,12 @@
+import json
+
+DEFAULT_OPEN_ROLES = [
+    "whatsapp moderators (our biggest need at the moment)",
+    "someone to send out announcements",
+    "event facilitators and planners",
+]
+
+
 def t(text: str, bold: bool = False) -> dict:
     node: dict = {"type": "text", "text": text}
     if bold:
@@ -162,3 +171,18 @@ def _restaurant_doc() -> dict:
 def default_template_docs() -> tuple[dict, dict, dict]:
     """return(tuple): shared, walk and restaurant ProseMirror docs."""
     return _shared_doc(), _walk_doc(), _restaurant_doc()
+
+
+def seed_default_template(template_model) -> None:
+    """Fill the singleton with the default docs, only when none of its three docs has content."""
+    template, _ = template_model.objects.get_or_create(pk=1)
+    docs = (template.shared_pm, template.walk_pm, template.restaurant_pm)
+    if any(d and d.strip() for d in docs):
+        return
+    shared, walk, restaurant = default_template_docs()
+    template.shared_pm = json.dumps(shared)
+    template.walk_pm = json.dumps(walk)
+    template.restaurant_pm = json.dumps(restaurant)
+    if not template.open_roles:
+        template.open_roles = list(DEFAULT_OPEN_ROLES)
+    template.save()
