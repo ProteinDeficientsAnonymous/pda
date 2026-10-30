@@ -1,10 +1,10 @@
 import pytest
 from community._validation import Code
 from community.models import Event, EventType, PageVisibility
-from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 EVENTS_URL = "/api/community/events/"
@@ -17,8 +17,7 @@ def tagger(db):
 
 @pytest.fixture
 def tagger_headers(tagger):
-    refresh = RefreshToken.for_user(tagger)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(tagger)
 
 
 def _create(api_client, headers, event_type, *, allow_plus_ones):

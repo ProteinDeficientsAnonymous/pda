@@ -1,13 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { eventKeys } from '@/api/events';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   eventToFormValues,
@@ -19,9 +17,7 @@ import {
 } from './eventWrites';
 import { textRecipientsKeys } from './textRecipients';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = { status: 'authed', user: { id: 'u-me' } };
@@ -124,9 +120,8 @@ describe('toPartialWireBody', () => {
 describe('useCreateEvent', () => {
   it('should create the event and RSVP questions in one request', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent() });
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
+    const qc = makeQueryClient();
+    const Wrapper = queryWrapper(qc);
     const { result } = renderHook(() => useCreateEvent(), { wrapper: Wrapper });
     const values = eventToFormValues(makeEvent());
 
@@ -167,19 +162,12 @@ describe('useInviteToEvent', () => {
     vi.clearAllMocks();
   });
 
-  function buildWrapper() {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
-    return { qc, Wrapper };
-  }
-
   it('invalidates the text-recipients query so the group-text count refreshes (issue 612)', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { id: EVENT_ID } });
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
 
-    const { result } = renderHook(() => useInviteToEvent(EVENT_ID), { wrapper: Wrapper });
+    const { result } = renderHook(() => useInviteToEvent(EVENT_ID), { wrapper: queryWrapper(qc) });
     result.current.mutate(['user-a']);
 
     await waitFor(() => {
@@ -198,21 +186,13 @@ describe('useUploadEventPhoto', () => {
     vi.clearAllMocks();
   });
 
-  function buildWrapper() {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
-    return { qc, Wrapper };
-  }
-
   // Regression for issue 668: on create the id isn't known until create-event
   // resolves, so the upload must use the id from the mutation variables — not
   // an id captured at hook-call time (which was '' on create → 404).
   it('posts to the event id passed at call-time', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
-    const { Wrapper } = buildWrapper();
 
-    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: queryWrapper() });
     result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type: 'image/png' }) });
 
     await waitFor(() => {
@@ -231,8 +211,7 @@ describe('useUploadEventPhoto', () => {
     ['image/gif', 'event.gif'],
   ])('names the upload %s as %s', async (type, name) => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
-    const { Wrapper } = buildWrapper();
-    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: queryWrapper() });
     result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type }) });
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
@@ -253,9 +232,8 @@ describe('useUpdateEvent cache patching', () => {
   // Routes link by slug (eventPath), so a uuid-only cache write leaves the open
   // page showing the pre-save value until a hard refresh.
   it('writes the updated event to the slug key the detail route reads from', async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
+    const qc = makeQueryClient();
+    const Wrapper = queryWrapper(qc);
 
     qc.setQueryData(
       eventKeys.detail(EVENT_SLUG, true),

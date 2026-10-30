@@ -1,34 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-// Provide a proper localStorage stub before the module loads — Zustand persist
-// calls setItem on every setState, which fails with jsdom's default Storage.
-const storageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string): string | null => store[key] ?? null,
-    setItem: (key: string, value: string): void => {
-      store[key] = value;
-    },
-    removeItem: (key: string): void => {
-      delete store[key];
-    },
-    clear: (): void => {
-      store = {};
-    },
-    get length(): number {
-      return Object.keys(store).length;
-    },
-    key: (index: number): string | null => Object.keys(store)[index] ?? null,
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', { value: storageMock, writable: true });
-
-// Import after localStorage is stubbed so persist middleware picks up our mock.
-const { useAccessibilityStore } = await import('./store');
+import { useAccessibilityStore } from './store';
 
 beforeEach(() => {
-  storageMock.clear();
   useAccessibilityStore.setState({
     themeMode: 'system',
     dyslexiaFont: false,

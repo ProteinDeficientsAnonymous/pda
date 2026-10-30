@@ -1,12 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCreateDevTestEvents } from '@/api/devTools';
 import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
+import { renderWithProviders } from '@/test/render';
 
 import { DevTestEventsButton } from './DevTestEventsButton';
 
@@ -27,14 +26,7 @@ const mockUseAuthStore = vi.mocked(useAuthStore);
 const mockUseCreate = vi.mocked(useCreateDevTestEvents);
 
 function renderButton() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <DevTestEventsButton />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<DevTestEventsButton />);
 }
 
 beforeEach(() => {
