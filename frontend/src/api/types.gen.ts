@@ -1430,6 +1430,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/speech/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Speech */
+        get: operations["community_speech_event_speech_get_event_speech"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/stats/": {
         parameters: {
             query?: never;
@@ -4110,6 +4127,25 @@ export interface components {
             expected: components["schemas"]["EventRsvpQuestionExpectedIn"][];
             /** Questions */
             questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
+        };
+        /** EventSpeechOut */
+        EventSpeechOut: {
+            /** Event Title */
+            event_title: string;
+            /** Html */
+            html: string;
+            /** Official Kind */
+            official_kind: string | null;
+            /** Saved */
+            saved: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
+            /** Values */
+            values: {
+                [key: string]: string | string[];
+            };
         };
         /** EventStatsOut */
         EventStatsOut: {
@@ -10442,6 +10478,46 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_speech_event_speech_get_event_speech: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSpeechOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
