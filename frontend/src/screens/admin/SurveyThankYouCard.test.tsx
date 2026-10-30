@@ -1,8 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { renderWithProviders } from '@/test/render';
 
 import { SurveyThankYouCard } from './SurveyThankYouCard';
 
@@ -11,11 +11,8 @@ vi.mock('@/api/client');
 const mockedPatch = vi.mocked(apiClient.patch);
 
 function renderCard(confirmationMessage = '') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <SurveyThankYouCard surveyId="srv-1" confirmationMessage={confirmationMessage} />
-    </QueryClientProvider>,
+  renderWithProviders(
+    <SurveyThankYouCard surveyId="srv-1" confirmationMessage={confirmationMessage} />,
   );
 }
 

@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 
@@ -56,17 +56,14 @@ function renderDialog(user: User | null, firstName = 'Sam', phoneNumber = '+1202
     user,
     accessToken: user ? 'tok' : null,
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemberPromotionMessageDialog
-        open
-        onClose={() => {}}
-        fullName="Sam Vetterson"
-        firstName={firstName}
-        phoneNumber={phoneNumber}
-      />
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <MemberPromotionMessageDialog
+      open
+      onClose={() => {}}
+      fullName="Sam Vetterson"
+      firstName={firstName}
+      phoneNumber={phoneNumber}
+    />,
   );
 }
 

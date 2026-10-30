@@ -1,27 +1,19 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import type { Event } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { RsvpGuestList } from './RsvpGuestList';
 
 vi.mock('@/api/client');
 
 function renderList(event: Event, canSeeInvited = false) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<RsvpGuestList event={event} canSeeInvited={canSeeInvited} />);
 }
 
 beforeEach(() => {

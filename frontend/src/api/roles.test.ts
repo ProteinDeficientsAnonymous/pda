@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useCreateRole, useDeleteRole, useRoles, useUpdateRole } from './roles';
 
@@ -14,15 +12,6 @@ const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 const mockedPatch = vi.mocked(apiClient.patch);
 const mockedDelete = vi.mocked(apiClient.delete);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -37,8 +26,8 @@ describe('useRoles', () => {
       ],
     });
 
-    const qc = makeQc();
-    const { result } = renderHook(() => useRoles(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useRoles(), { wrapper: queryWrapper(qc) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -56,9 +45,9 @@ describe('useCreateRole', () => {
       data: { id: 'r3', name: 'greeter', is_default: false, permissions: ['manage_events'] },
     });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useCreateRole(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useCreateRole(), { wrapper: queryWrapper(qc) });
 
     const role = await result.current.mutateAsync({
       name: 'greeter',
@@ -91,9 +80,9 @@ describe('useUpdateRole', () => {
       },
     });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useUpdateRole('r3'), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useUpdateRole('r3'), { wrapper: queryWrapper(qc) });
 
     await result.current.mutateAsync({
       permissions: ['manage_events', 'approve_join_requests'],
@@ -113,9 +102,9 @@ describe('useDeleteRole', () => {
   it('calls delete endpoint and invalidates roles query', async () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useDeleteRole(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useDeleteRole(), { wrapper: queryWrapper(qc) });
 
     await result.current.mutateAsync('r3');
 

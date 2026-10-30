@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
@@ -48,18 +48,15 @@ function renderDialog(user: User | null, magicLinkToken: string | null = null) {
     user,
     accessToken: user ? 'tok' : null,
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <TentativeApprovalMessageDialog
-        open
-        onClose={() => {}}
-        fullName="Sam Vetterson"
-        firstName="Sam"
-        phoneNumber="+12025551234"
-        magicLinkToken={magicLinkToken}
-      />
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <TentativeApprovalMessageDialog
+      open
+      onClose={() => {}}
+      fullName="Sam Vetterson"
+      firstName="Sam"
+      phoneNumber="+12025551234"
+      magicLinkToken={magicLinkToken}
+    />,
   );
 }
 

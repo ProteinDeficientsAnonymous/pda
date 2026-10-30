@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { renderWithProviders } from '@/test/render';
 
 import SurveyPreviewScreen from './SurveyPreviewScreen';
 
@@ -40,15 +40,11 @@ const wireSurvey = {
 };
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/admin/surveys/srv-1/preview']}>
-        <Routes>
-          <Route path="/admin/surveys/:id/preview" element={<SurveyPreviewScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id/preview" element={<SurveyPreviewScreen />} />
+    </Routes>,
+    { route: '/admin/surveys/srv-1/preview' },
   );
 }
 

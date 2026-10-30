@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
+import { renderWithProviders } from '@/test/render';
 
 import LoginScreen from './LoginScreen';
 
@@ -14,19 +13,12 @@ vi.mock('@/api/join', () => ({
 vi.mock('@/api/client');
 
 function renderAt(entry: { pathname: string; state?: unknown }) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[entry]}>
-        <LoginScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<LoginScreen />, { route: entry });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('LoginScreen phone prefill', () => {

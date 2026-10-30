@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { GuestListDialog } from './GuestListDialog';
 
@@ -53,19 +52,14 @@ const event = makeEvent({
 });
 
 function renderDialog(canReorderWaitlist: boolean) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <GuestListDialog
-          event={event}
-          canSeeInvited
-          canReorderWaitlist={canReorderWaitlist}
-          initialTab="waitlist"
-          onClose={vi.fn()}
-        />
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <GuestListDialog
+      event={event}
+      canSeeInvited
+      canReorderWaitlist={canReorderWaitlist}
+      initialTab="waitlist"
+      onClose={vi.fn()}
+    />,
   );
 }
 
