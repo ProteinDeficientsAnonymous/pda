@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, reload_event_or_404
 from community._event_invite_email import email_invited_members
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
@@ -106,5 +106,4 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             },
         ),
     )
-    event.refresh_from_db()
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))

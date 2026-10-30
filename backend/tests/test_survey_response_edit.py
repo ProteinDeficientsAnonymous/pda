@@ -2,8 +2,9 @@ import json
 
 import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -48,9 +49,7 @@ class TestMultiResponseEdit:
 
     def test_cannot_edit_another_members_response(self, api_client, auth_headers, repeat_survey):
         other = User.objects.create_user(phone_number="+12025557002", password="otherpass")
-        other_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(other).access_token}"
-        }  # type: ignore
+        other_headers = auth_headers_for(other)
         theirs = _submit(api_client, repeat_survey, "mine", other_headers).json()
         response = _submit(api_client, repeat_survey, "hijack", auth_headers, theirs["id"])
         assert response.status_code == 201
@@ -65,3 +64,49 @@ class TestMultiResponseEdit:
         assert response.status_code == 201
         assert response.json()["id"] != mine["id"]
         assert _answer(SurveyResponse.objects.get(id=mine["id"]), repeat_survey) == "mine"
+
+
+def _submit_with_token(api_client, survey, text, token, response_id, **headers):
+    question = survey.questions.first()
+    url = f"/api/community/surveys/view/{survey.slug}/respond/"
+    url += f"?response_token={token}&response_id={response_id}"
+    payload = json.dumps({"answers": {str(question.id): text}})
+    return api_client.post(url, data=payload, content_type="application/json", **headers)
+
+
+@pytest.mark.django_db
+class TestTokenMultiResponseEdit:
+    @pytest.mark.parametrize("anonymous", [True, False])
+    def test_token_prefills_and_edits_the_response(
+        self, api_client, auth_headers, repeat_survey, anonymous
+    ):
+        repeat_survey.anonymous = anonymous
+        repeat_survey.save(update_fields=["anonymous"])
+        # anonymous mode drops the member link; signed-out visitors never had one
+        headers = auth_headers if anonymous else {}
+        first = _submit(api_client, repeat_survey, "great", headers).json()
+        token = first["response_token"]
+        assert token
+        view_url = f"/api/community/surveys/view/{repeat_survey.slug}/"
+        view = api_client.get(view_url, {"response_token": token}, **headers).json()
+        assert view["my_response_id"] == first["id"]
+        assert _answer(SurveyResponse(answers=view["my_answers"]), repeat_survey) == "great"
+        edited = _submit_with_token(
+            api_client, repeat_survey, "better", token, first["id"], **headers
+        )
+        assert edited.status_code == 200
+        assert edited.json()["id"] == first["id"]
+        assert SurveyResponse.objects.filter(survey=repeat_survey).count() == 1
+
+    def test_response_id_without_matching_token_adds_a_row(self, api_client, repeat_survey):
+        mine = _submit(api_client, repeat_survey, "mine", {}).json()
+        response = _submit_with_token(api_client, repeat_survey, "hijack", "wrong", mine["id"])
+        assert response.status_code == 201
+        assert _answer(SurveyResponse.objects.get(id=mine["id"]), repeat_survey) == "mine"
+
+    def test_token_cannot_edit_a_different_row(self, api_client, repeat_survey):
+        theirs = _submit(api_client, repeat_survey, "theirs", {}).json()
+        token = _submit(api_client, repeat_survey, "mine", {}).json()["response_token"]
+        response = _submit_with_token(api_client, repeat_survey, "hijack", token, theirs["id"])
+        assert response.status_code == 201
+        assert _answer(SurveyResponse.objects.get(id=theirs["id"]), repeat_survey) == "theirs"

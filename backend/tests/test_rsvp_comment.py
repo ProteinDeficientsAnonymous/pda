@@ -2,10 +2,10 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, EventComment, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -31,8 +31,7 @@ def member(db):
 
 @pytest.fixture
 def member_headers(member):
-    refresh = RefreshToken.for_user(member)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(member)
 
 
 def _rsvp(api_client, headers, event, status, comment=None):

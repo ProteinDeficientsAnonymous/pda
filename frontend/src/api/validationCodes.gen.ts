@@ -12,6 +12,7 @@ export const Code = {
     MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
+    DatetimeOffsetRequired: 'event.datetime_offset_required',
     OfficialMustBePublic: 'event.official_must_be_public',
     OfficialNoPlusOnes: 'event.official_no_plus_ones',
     InvalidCreateStatus: 'event.invalid_create_status',
@@ -165,9 +166,6 @@ export const Code = {
     FeedbackTypeTaken: 'survey.feedback_type_taken',
     FeedbackLinkInvalid: 'survey.feedback_link_invalid',
     FeedbackAlreadySubmitted: 'survey.feedback_already_submitted',
-    NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
-    WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
-    PollAlreadyFinalized: 'survey.poll_already_finalized',
     AnswerRequired: 'survey.answer_required',
     AnswerInvalidFormat: 'survey.answer_invalid_format',
     AnswerInvalidOption: 'survey.answer_invalid_option',
@@ -262,6 +260,7 @@ export const Code = {
     NotRemovable: 'cohost_invite.not_removable',
     WouldLeaveHostless: 'cohost_invite.would_leave_hostless',
     EventIsPast: 'cohost_invite.event_is_past',
+    NotMember: 'cohost_invite.not_member',
   },
   WelcomeTemplate: {
     BodyRequired: 'welcome_template.body_required',
@@ -299,6 +298,7 @@ export type ValidationCode =
   | 'event.max_attendees_must_be_at_least_one'
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
+  | 'event.datetime_offset_required'
   | 'event.official_must_be_public'
   | 'event.official_no_plus_ones'
   | 'event.invalid_create_status'
@@ -424,9 +424,6 @@ export type ValidationCode =
   | 'survey.feedback_type_taken'
   | 'survey.feedback_link_invalid'
   | 'survey.feedback_already_submitted'
-  | 'survey.no_datetime_poll_question'
-  | 'survey.winning_datetime_not_in_options'
-  | 'survey.poll_already_finalized'
   | 'survey.answer_required'
   | 'survey.answer_invalid_format'
   | 'survey.answer_invalid_option'
@@ -493,6 +490,7 @@ export type ValidationCode =
   | 'cohost_invite.not_removable'
   | 'cohost_invite.would_leave_hostless'
   | 'cohost_invite.event_is_past'
+  | 'cohost_invite.not_member'
   | 'welcome_template.body_required'
   | 'welcome_template.body_too_long'
   | 'tentative_approval_message.body_required'
@@ -516,6 +514,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.max_attendees_must_be_at_least_one': [],
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
+  'event.datetime_offset_required': [],
   'event.official_must_be_public': [],
   'event.official_no_plus_ones': [],
   'event.invalid_create_status': [],
@@ -641,9 +640,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.feedback_type_taken': [],
   'survey.feedback_link_invalid': [],
   'survey.feedback_already_submitted': [],
-  'survey.no_datetime_poll_question': [],
-  'survey.winning_datetime_not_in_options': [],
-  'survey.poll_already_finalized': [],
   'survey.answer_required': ['label'],
   'survey.answer_invalid_format': ['label'],
   'survey.answer_invalid_option': ['label'],
@@ -710,6 +706,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'cohost_invite.not_removable': [],
   'cohost_invite.would_leave_hostless': [],
   'cohost_invite.event_is_past': [],
+  'cohost_invite.not_member': [],
   'welcome_template.body_required': [],
   'welcome_template.body_too_long': ['max_length'],
   'tentative_approval_message.body_required': [],

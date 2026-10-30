@@ -21,7 +21,7 @@ from community._event_rsvp_answers import (
     find_my_questionnaire_responses,
 )
 from community._event_rsvp_serialize import event_rsvp_question_out, with_guest_photos
-from community._event_schemas import CancellationOut, EventOut, EventSurveyOut, RSVPGuestOut, TagOut
+from community._event_schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community._rsvp_counts import (
     _attending_headcount,
     _guest_rsvp_count,
@@ -29,7 +29,6 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details
 from community._shared import _authenticated_user, _gated
-from community._survey_helpers import survey_is_open
 from community._validation import Code, raise_validation
 from community._waitlist import waitlist_sort_key
 from community.models import (
@@ -39,7 +38,6 @@ from community.models import (
     EventType,
     PageVisibility,
     RSVPStatus,
-    SurveyQuestionType,
     is_official_or_club,
 )
 
@@ -54,6 +52,14 @@ def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
         .filter(id=event_id)
         .first()
     )
+
+
+def reload_event_or_404(event_id: UUID) -> Event:
+    """Reload an event after a write with what _event_out needs prefetched."""
+    event = load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    return event
 
 
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
@@ -256,18 +262,6 @@ def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     event.tags.set(tags)
 
 
-def _get_datetime_poll_slug(event: Event) -> str | None:
-    poll_survey = (
-        event.surveys.filter(
-            is_active=True,
-            questions__field_type=SurveyQuestionType.DATETIME_POLL,
-        )
-        .values_list("slug", flat=True)
-        .first()
-    )
-    return poll_survey
-
-
 def _annotated_or(event: Event, attr: str, fallback):
     """Use an annotated value when present, including 0."""
     annotated = getattr(event, attr, None)
@@ -402,12 +396,6 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         visibility=event.visibility,
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
-        linked_surveys=[
-            EventSurveyOut(id=str(s.id), title=s.title, slug=s.slug)
-            for s in event.surveys.all()
-            if survey_is_open(s)
-        ],
-        datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
         invited_user_names=[visible_display_name(u, auth_user) for u in invited],

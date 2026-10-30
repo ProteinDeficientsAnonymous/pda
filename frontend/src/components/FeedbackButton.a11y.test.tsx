@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
-import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { setAuthed } from '@/test/auth';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { FeedbackButton } from './FeedbackButton';
 
@@ -19,11 +18,7 @@ vi.mock('@/api/feedback', () => ({
   useSubmitFeedback: () => useSubmitFeedbackMock(),
 }));
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -42,19 +37,12 @@ function makeUser(overrides: Partial<User> = {}): User {
 }
 
 function renderButton() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/calendar']}>
-        <FeedbackButton />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<FeedbackButton />, { route: '/calendar' });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
+  setAuthed(makeUser());
   submitFeedbackMock.mockResolvedValue({ html_url: 'https://example.com/1' });
   useSubmitFeedbackMock.mockReturnValue({
     mutateAsync: submitFeedbackMock,

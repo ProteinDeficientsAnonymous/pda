@@ -11,7 +11,11 @@ E2E_PASSWORD = "e2e-test-pass-123"
 
 
 def _random_phone() -> str:
-    return "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+    # the 555 pool is only 10k numbers, so a blind pick can collide with an existing user
+    while True:
+        phone = "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+        if not User.objects.filter(phone_number=phone).exists():
+            return phone
 
 
 def _random_event(scenario: str, **overrides) -> Event:

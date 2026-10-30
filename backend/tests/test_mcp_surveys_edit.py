@@ -1,33 +1,22 @@
 import asyncio
 import json
 from unittest.mock import DEFAULT, patch
-from uuid import uuid4
 
 import pytest
 from audit.models import AuditLogEntry
 from community._surveys import delete_survey_question, get_survey_admin
 from community.models import Survey, SurveyQuestion, SurveyResponse
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
-from users.permissions import PermissionKey
-from users.roles import Role
 
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_surveys_read import _tool_names
+from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 NEW = {"title": "new", "description": ""}
 NOTES = {"label": "notes", "field_type": "textarea"}
 LABELS = ["food?", "why?", "notes"]
 REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
 SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
 TOOL = "mcp_gateway.tools.surveys_edit"
-
-
-@pytest.fixture
-def surveys_admin(test_user):
-    role = Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS])
-    test_user.roles.add(role)
-    return test_user
 
 
 def _survey(*, responses=0, **fields) -> Survey:
@@ -67,16 +56,16 @@ def _when(position, value) -> dict:
 
 
 def _edit(user, survey, **arguments) -> dict:
-    return _run(user, "update_survey", survey=str(survey.pk), **arguments)
+    return run_tool(user, "update_survey", survey=str(survey.pk), **arguments)
 
 
 def _refused(user, survey, **arguments) -> str:
-    return _error(user, "update_survey", survey=str(survey.pk), **arguments)
+    return tool_error(user, "update_survey", survey=str(survey.pk), **arguments)
 
 
 def test_hidden_and_refused_without_manage_surveys(test_user):
     survey = _survey(is_active=False)
-    assert "update_survey" not in _tool_names(test_user)
+    assert "update_survey" not in tool_names(test_user)
     assert "permission" in _refused(test_user, survey, settings={"title": "x"})
     assert Survey.objects.get().title == "retreat"
 
@@ -140,8 +129,7 @@ def test_token_bound_to_changes_and_state_and_single_use(surveys_admin):
 
 def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
     survey = _survey(feedback_event_type="official", anonymous=True, responses=1)
-    for settings in ({"anonymous": False}, {"linked_event_id": str(uuid4())}):
-        assert "always anonymous" in _refused(surveys_admin, survey, settings=settings)
+    assert "always anonymous" in _refused(surveys_admin, survey, settings={"anonymous": False})
     assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["confirm_token"]
 
 
@@ -330,11 +318,9 @@ def test_section_cannot_be_made_required_via_mcp(surveys_admin):
 
 def test_label_change_leaves_stored_options_alone(surveys_admin):
     survey = _survey(is_active=False)
-    stars = ["bad", "", "good"]
-    SurveyQuestion.objects.create(survey=survey, label="r", field_type="rating", options=stars)
-    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"], display_order=1)
-    _edit(surveys_admin, survey, questions=[_update(1, label="r2"), _update(2, label="t2")])
-    assert [q.options for q in SurveyQuestion.objects.all()] == [stars, ["legacy"]]
+    SurveyQuestion.objects.create(survey=survey, label="t", options=["legacy"])
+    _edit(surveys_admin, survey, questions=[_update(1, label="t2")])
+    assert SurveyQuestion.objects.get().options == ["legacy"]
 
 
 def test_unchanged_condition_cleared_when_its_source_is_removed(surveys_admin):

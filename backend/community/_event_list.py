@@ -71,28 +71,28 @@ def _hosted_by(auth_user):
     return Q(created_by=auth_user) | _viewer_is_cohost(auth_user)
 
 
+def _status_q(status: str, auth_user, is_authed) -> Q:
+    """Status and visibility rules: cancelled and draft rows are the viewer's own."""
+    if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
+        return Q(status=status) & _hosted_by(auth_user)
+    q = Q(status=EventStatus.ACTIVE)
+    if not is_authed:
+        q &= Q(visibility=PageVisibility.PUBLIC)
+    elif is_tentative_member(auth_user):
+        q &= tentative_member_event_q()
+    return q
+
+
 def _build_events_queryset(status: str, auth_user, is_authed):
     """Build the events queryset for list_events based on status and auth state."""
     related = ["poll", "tags", _list_rsvp_prefetch(auth_user)]
     if is_authed:
         related.append("co_hosts")
-    if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
-        return (
-            Event.objects.prefetch_related(*related)
-            .annotate(**_list_count_annotations())
-            .filter(status=status)
-            .filter(_hosted_by(auth_user))
-        )
-    qs = (
+    return (
         Event.objects.prefetch_related(*related)
         .annotate(**_list_count_annotations())
-        .filter(status=EventStatus.ACTIVE)
+        .filter(_status_q(status, auth_user, is_authed))
     )
-    if not is_authed:
-        qs = qs.filter(visibility=PageVisibility.PUBLIC)
-    elif is_tentative_member(auth_user):
-        qs = qs.filter(tentative_member_event_q())
-    return qs
 
 
 def _filter_invite_only(events, auth_user, status: str):
@@ -128,13 +128,24 @@ def _filter_window(events, start: datetime | None, end: datetime | None, include
     return events
 
 
-def _filter_scope(events, auth_user, hosted: bool, upcoming: bool):
+def _scope_q(auth_user, hosted: bool, upcoming: bool) -> Q:
     """hosted keeps the viewer's created/co-hosted rows; upcoming drops rows where is_past holds."""
+    q = Q()
     if hosted:
-        events = events.filter(_hosted_by(auth_user))
+        q &= _hosted_by(auth_user)
     if upcoming:
-        events = events.exclude(_is_past_q(timezone.now()))
-    return events
+        q &= ~_is_past_q(timezone.now())
+    return q
+
+
+def _filter_scope(events, auth_user, hosted: bool, upcoming: bool):
+    return events.filter(_scope_q(auth_user, hosted, upcoming))
+
+
+def hosted_events_q(auth_user, *, upcoming: bool) -> Q:
+    """The viewer's drafts plus list_events' hosted=true rows (invite-only never hides a host)."""
+    active = _status_q(EventStatus.ACTIVE, auth_user, True) & _scope_q(auth_user, True, upcoming)
+    return _status_q(EventStatus.DRAFT, auth_user, True) | active
 
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:

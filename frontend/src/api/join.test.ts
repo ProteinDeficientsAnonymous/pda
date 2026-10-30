@@ -1,16 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
 import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './join';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
@@ -21,12 +17,6 @@ function makeAxiosError(status: number, data: Record<string, unknown> = {}): Err
     isAxiosError: true,
     response: { status, data },
   });
-}
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
 }
 
 beforeEach(() => {
@@ -54,7 +44,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -112,7 +102,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -144,7 +134,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -177,7 +167,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -194,7 +184,7 @@ describe('useJoinRequests', () => {
     const forbidden = makeAxiosError(403, { detail: 'Permission denied' });
     mockedGet.mockRejectedValueOnce(forbidden);
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -207,7 +197,7 @@ describe('useJoinRequests', () => {
     const serverError = makeAxiosError(500, { detail: 'Internal error' });
     mockedGet.mockRejectedValueOnce(serverError);
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -239,7 +229,7 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(conflict);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(
@@ -257,7 +247,7 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(conflict);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.not.toBeInstanceOf(
@@ -273,7 +263,7 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(badRequest);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toMatchObject({
@@ -286,7 +276,7 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(networkError);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toThrow('Network Error');

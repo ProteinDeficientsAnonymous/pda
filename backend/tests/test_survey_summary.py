@@ -5,16 +5,12 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from community._validation import Code
 from community.models import Event, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-
-
-def _headers_for(user) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+from tests._auth import auth_headers_for
 
 
 def _user_with_role(phone: str, role_name: str, permission: str) -> User:
@@ -34,19 +30,19 @@ def survey_owner(db):
 
 @pytest.fixture
 def survey_owner_headers(survey_owner):
-    return _headers_for(survey_owner)
+    return auth_headers_for(survey_owner)
 
 
 @pytest.fixture
 def surveys_admin_headers(db):
-    return _headers_for(
+    return auth_headers_for(
         _user_with_role("+12025557020", "surveys_admin", PermissionKey.MANAGE_SURVEYS)
     )
 
 
 @pytest.fixture
 def events_admin_headers(db):
-    return _headers_for(
+    return auth_headers_for(
         _user_with_role("+12025557021", "events_admin", PermissionKey.MANAGE_EVENTS)
     )
 
@@ -77,7 +73,7 @@ def mixed_survey(db, survey_owner):
         survey, "Toppings", SurveyQuestionType.CHECKBOX, ["tofu", "kale", "salsa"], 1
     )
     boolean = _question(survey, "Coming?", SurveyQuestionType.BOOLEAN, order=2)
-    rating = _question(survey, "Vibes", SurveyQuestionType.RATING, order=3)
+    rating = _question(survey, "Vibes", SurveyQuestionType.STARS, order=3)
     text = _question(survey, "Notes", SurveyQuestionType.TEXT, order=4)
     poll = _question(survey, "When", SurveyQuestionType.DATETIME_POLL, [POLL_A, POLL_B], 5)
     SurveyResponse.objects.create(
@@ -160,22 +156,34 @@ class TestSurveySummary:
         assert rows["Colour"]["counts"] == {"red": 0, "blue": 1}
         assert rows["Colour"]["answered"] == 1
 
+    @pytest.mark.parametrize("field_type", [SurveyQuestionType.STARS, SurveyQuestionType.SCALE])
     def test_rating_mean_is_none_without_answers(
-        self, api_client, survey_owner, surveys_admin_headers
+        self, api_client, survey_owner, surveys_admin_headers, field_type
     ):
         survey = Survey.objects.create(title="Empty", slug="empty", created_by=survey_owner)
-        _question(survey, "Vibes", SurveyQuestionType.RATING)
+        _question(survey, "Vibes", field_type)
         response = api_client.get(self._url(survey), **surveys_admin_headers)
         assert response.status_code == 200
         assert response.json() == [
             {
                 "question_id": str(survey.questions.get().id),
-                "field_type": "rating",
+                "field_type": field_type,
                 "counts": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0},
                 "answered": 0,
                 "mean": None,
             }
         ]
+
+    def test_scale_counts_and_mean(self, api_client, survey_owner, surveys_admin_headers):
+        survey = Survey.objects.create(title="Pace", slug="pace", created_by=survey_owner)
+        pace = _question(survey, "Pace", SurveyQuestionType.SCALE)
+        for answer in ("1", "4"):
+            SurveyResponse.objects.create(
+                survey=survey, user=None, answers=_answers({pace: answer})
+            )
+        [row] = api_client.get(self._url(survey), **surveys_admin_headers).json()
+        assert row["counts"] == {"1": 1, "2": 0, "3": 0, "4": 1, "5": 0}
+        assert row["mean"] == 2.5
 
     def test_answers_outside_current_options_keep_their_own_buckets(
         self, api_client, surveys_admin_headers, mixed_survey
@@ -234,6 +242,22 @@ class TestSurveySummary:
         body = response.json()
         assert len(body) == 1
         assert body[0]["tallies"] == {
-            POLL_A: {"yes": 1, "maybe": 0},
-            POLL_B: {"yes": 0, "maybe": 1},
+            POLL_A: {"yes": 1, "maybe": 0, "no": 0},
+            POLL_B: {"yes": 0, "maybe": 1, "no": 0},
         }
+
+    def test_no_availability_is_counted_but_not_listed_as_a_voter(
+        self, api_client, survey_owner_headers, mixed_survey
+    ):
+        poll = mixed_survey.questions.get(field_type=SurveyQuestionType.DATETIME_POLL)
+        voter = User.objects.create_user(phone_number="+12025557099", password="x")
+        SurveyResponse.objects.create(
+            survey=mixed_survey, user=voter, answers=_answers({poll: {POLL_A: "no"}})
+        )
+        response = api_client.get(
+            f"/api/community/surveys/{mixed_survey.id}/tallies/", **survey_owner_headers
+        )
+        assert response.status_code == 200
+        body = response.json()[0]
+        assert body["tallies"][POLL_A] == {"yes": 1, "maybe": 0, "no": 1}
+        assert len(body["voters"][POLL_A]) == 1

@@ -13,12 +13,6 @@ vi.mock('@/api/surveyAdmin', () => ({
   useUpdateSurvey: () => ({ mutateAsync, isPending: false }),
 }));
 
-vi.mock('@/api/events', () => ({
-  useEvents: () => ({
-    data: [{ id: 'evt-1', title: 'Potluck', startDatetime: new Date('2026-10-01T18:00:00Z') }],
-  }),
-}));
-
 const survey: Survey = {
   id: 's1',
   title: 'old title',
@@ -33,12 +27,10 @@ const survey: Survey = {
   closesAt: null,
   maxResponses: null,
   responseCount: 0,
-  linkedEventId: null,
   feedbackEventType: '',
   questions: [],
   myResponseId: null,
   myAnswers: null,
-  pollResult: null,
 };
 
 function fieldError(code: string, field: string) {
@@ -65,19 +57,16 @@ describe('SurveySettingsDialog', () => {
     const title = screen.getByLabelText('title · required');
     expect(title).toHaveValue('old title');
     expect(screen.getByLabelText('slug · required')).toHaveValue('old-slug');
-    expect(screen.getByLabelText('linked event')).toHaveValue('');
 
     await userEvent.clear(title);
     await userEvent.type(title, 'new title');
     await userEvent.selectOptions(screen.getByLabelText('visibility'), 'public');
-    await userEvent.selectOptions(screen.getByLabelText('linked event'), 'evt-1');
     await userEvent.click(screen.getByLabelText('one response per user'));
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
         title: 'new title',
-        description: 'about this survey',
         slug: 'old-slug',
         visibility: 'public',
         oneResponsePerUser: true,
@@ -85,24 +74,10 @@ describe('SurveySettingsDialog', () => {
         opensAt: null,
         closesAt: null,
         maxResponses: null,
-        linkedEventId: 'evt-1',
         feedbackEventType: '',
       });
     });
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it('keeps a linked event that is not in the active list selectable', async () => {
-    renderDialog({ linkedEventId: 'evt-past' });
-    expect(screen.getByLabelText('linked event')).toHaveValue('evt-past');
-
-    await userEvent.click(screen.getByRole('button', { name: 'save' }));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ linkedEventId: 'evt-past' }),
-      );
-    });
   });
 
   it('shows a slug collision as a field error', async () => {
@@ -128,20 +103,6 @@ describe('SurveySettingsDialog', () => {
 
     expect(slug).not.toHaveAttribute('aria-invalid');
     expect(screen.queryByText('a survey with that slug already exists')).not.toBeInTheDocument();
-  });
-
-  it('shows a linked event error on the dropdown, not the generic banner', async () => {
-    mutateAsync.mockRejectedValue(fieldError('event.not_found', 'linked_event_id'));
-    renderDialog({ linkedEventId: 'evt-1' });
-    await userEvent.click(screen.getByRole('button', { name: 'save' }));
-
-    expect(await screen.findByText('event not found')).toBeInTheDocument();
-    const select = screen.getByLabelText('linked event');
-    expect(select).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-
-    await userEvent.selectOptions(select, '');
-    expect(select).not.toHaveAttribute('aria-invalid');
   });
 
   it('falls back to a generic message when the failure carries no field error', async () => {
@@ -195,17 +156,14 @@ describe('SurveySettingsDialog', () => {
     });
   });
 
-  it('forces anonymous on and drops the linked event when a feedback type is picked', async () => {
-    renderDialog({ linkedEventId: 'evt-1', anonymous: false });
-    expect(screen.getByLabelText('linked event')).toHaveValue('evt-1');
+  it('forces anonymous on when a feedback type is picked', async () => {
+    renderDialog({ anonymous: false });
     await userEvent.selectOptions(screen.getByLabelText('feedback survey for'), 'club events');
 
     const anonymous = screen.getByLabelText(/anonymous responses/);
     expect(anonymous).toBeChecked();
     expect(anonymous).toBeDisabled();
     expect(screen.getByText(/always anonymous for feedback surveys/)).toBeInTheDocument();
-    expect(screen.getByLabelText('linked event')).toBeDisabled();
-    expect(screen.getByLabelText('linked event')).toHaveValue('');
 
     await userEvent.click(screen.getByRole('button', { name: 'save' }));
     await waitFor(() => {
@@ -213,7 +171,6 @@ describe('SurveySettingsDialog', () => {
         expect.objectContaining({
           feedbackEventType: 'club',
           anonymous: true,
-          linkedEventId: null,
         }),
       );
     });

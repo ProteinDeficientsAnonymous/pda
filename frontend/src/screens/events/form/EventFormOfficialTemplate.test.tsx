@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import { type Event, EventType } from '@/models/event';
 import { Permission } from '@/models/permissions';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 vi.mock('@/api/eventDescriptionTemplates', () => ({
   useEventDescriptionTemplates: () => ({
@@ -28,14 +27,7 @@ vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
 import { EventForm } from './EventForm';
 
 function renderForm(existing?: Event) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <EventForm existing={existing} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  renderWithProviders(<EventForm existing={existing} />);
 }
 
 describe('EventForm official description template', () => {

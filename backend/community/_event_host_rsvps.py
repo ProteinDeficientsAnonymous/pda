@@ -35,6 +35,7 @@ from community._payment_verification import (
     PaymentVerificationChange,
     apply_payment_verification,
     record_payment_verification,
+    verify_payments,
 )
 from community._rsvp_status_emails import email_host_set_rsvp_status, email_promoted_users
 from community._shared import ErrorOut
@@ -46,12 +47,12 @@ router = Router()
 
 
 def _resolve_host_rsvp_status(
-    event: Event, target_user, status: str, has_plus_one: bool
+    event: Event, target_user, status: str, has_plus_one: bool, existing: EventRSVP | None
 ) -> tuple[str, bool]:
     if event.is_past:
         # Capacity is moot once the event is over — never waitlist an after-the-fact add.
         return status, has_plus_one and event.allow_plus_ones
-    return _resolve_rsvp_status(event, target_user, status, has_plus_one)
+    return _resolve_rsvp_status(event, target_user, status, has_plus_one, existing)
 
 
 def _needs_host_verification(existing: EventRSVP | None, paid_confirmed: bool) -> bool:
@@ -79,22 +80,17 @@ def _apply_host_rsvp_in_transaction(
     event_id, target_user, payload: HostRSVPIn, actor
 ) -> tuple[str, list[str], str | None]:
     """Host-driven RSVP upsert; never payment-gated, and paid_confirmed marks the payment host-verified."""
-    event = (
-        Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users")
-        .get(id=event_id)
-    )
+    event = Event.objects.select_for_update().get(id=event_id)
 
     if not event.rsvp_enabled:
         raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
 
-    final_status, final_plus_one = _resolve_host_rsvp_status(
-        event, target_user, payload.status, payload.has_plus_one
-    )
-
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
+    final_status, final_plus_one = _resolve_host_rsvp_status(
+        event, target_user, payload.status, payload.has_plus_one, existing
+    )
     previous_status = getattr(existing, "status", None)
     # Never stamp here: verification stamps paid_confirmed_at == payment_verified_at itself.
     new_confirmed_at = existing.paid_confirmed_at if existing is not None else None
@@ -237,15 +233,10 @@ def _verify_payments_in_transaction(
         raise_validation(
             Code.Event.PAYMENT_VERIFY_NOT_GUESTS, status_code=400, user_ids=", ".join(missing)
         )
-    applied: list[tuple[EventRSVP, PaymentVerificationChange]] = []
-    skipped: list[str] = []
-    for uid in user_ids:
-        rsvp = rsvps[str(uid)]
-        if rsvp.payment_verified_at is not None:
-            skipped.append(str(uid))
-        else:
-            applied.append((rsvp, apply_payment_verification(rsvp, verified=True, actor=actor)))
-    return applied, skipped
+    picked = [rsvps[str(uid)] for uid in user_ids]
+    to_verify = [r for r in picked if r.payment_verified_at is None]
+    skipped = [str(r.user_id) for r in picked if r.payment_verified_at is not None]
+    return list(zip(to_verify, verify_payments(to_verify, actor), strict=True)), skipped
 
 
 def _load_payment_import_event(request, event_id: UUID) -> Event:

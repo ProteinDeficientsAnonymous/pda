@@ -20,9 +20,15 @@ from mcp_gateway.tools.members_read import _page
 from users._member_search import MemberFilters, MemberSort
 from users.models import User
 
-from tests.test_mcp_members_find import _find, _ids, _new, _of, _set_up
+from tests._mcp_members_helpers import (
+    find_members,
+    ids_of,
+    make_onboarded,
+    make_onboarding,
+    member_ids,
+)
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 _OFFICIAL, _CLUB, _COMMUNITY = EventType.OFFICIAL, EventType.CLUB, EventType.COMMUNITY
 
@@ -52,7 +58,7 @@ def _went(user, *events, attendance=AttendanceStatus.ATTENDED, status=RSVPStatus
 
 
 def _attended(days_ago: float, joined_days_ago: float = 400) -> User:
-    user = _set_up(joined_days_ago)
+    user = make_onboarded(joined_days_ago)
     _went(user, _event(days_ago))
     return user
 
@@ -60,7 +66,7 @@ def _attended(days_ago: float, joined_days_ago: float = 400) -> User:
 def _rows(user, **arguments) -> list[dict]:
     seen, offset = [], 0
     while offset is not None:
-        page = _find(user, limit=3, offset=offset, **arguments)
+        page = find_members(user, limit=3, offset=offset, **arguments)
         seen += page["members"]
         offset = page["next_offset"]
     return seen
@@ -78,7 +84,7 @@ def _varied_members() -> list[User]:
     deleted, undated = _event(3, status=EventStatus.DELETED), _event(None)
 
     regular, lapsed, only_old, unmarked, only_excluded, future_only, cant_go = (
-        _set_up(500) for _ in range(7)
+        make_onboarded(500) for _ in range(7)
     )
     _went(regular, recent_club, old_official, out_of_window, community, undated)
     _went(lapsed, old_official)
@@ -104,7 +110,7 @@ def test_attendance_matches_the_analytics_screen(admin):
         for m in members
         if is_pause_candidate(compute_member_stats(user_rsvps_for_attendance(m)))
     }
-    assert _ids(admin, inactive_for_days=365) == pause_candidates
+    assert member_ids(admin, inactive_for_days=365) == pause_candidates
 
 
 def test_varied_members_get_the_expected_attendance(admin):
@@ -112,26 +118,28 @@ def test_varied_members_get_the_expected_attendance(admin):
     rows = {row["id"]: row for row in _rows(admin)}
     counts = {m: rows[str(m.id)]["qualifying_count_12mo"] for m in (regular, lapsed, cant_go)}
     assert counts == {regular: 2, lapsed: 1, cant_go: 1}
-    assert _ids(admin, never_attended=True) == _of(admin, unmarked, only_excluded)
-    assert _ids(admin, inactive_for_days=365) == _of(admin, only_old, unmarked, only_excluded)
-    assert _ids(admin, inactive_for_days=30) == _of(
+    assert member_ids(admin, never_attended=True) == ids_of(admin, unmarked, only_excluded)
+    assert member_ids(admin, inactive_for_days=365) == ids_of(
+        admin, only_old, unmarked, only_excluded
+    )
+    assert member_ids(admin, inactive_for_days=30) == ids_of(
         admin, lapsed, only_old, unmarked, only_excluded
     )
-    assert str(future_only.id) in _ids(admin, never_attended=False)
+    assert str(future_only.id) in member_ids(admin, never_attended=False)
 
 
 def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
     now = datetime(2026, 10, 24, 12, 0, 0, 123456, tzinfo=UTC)
     monkeypatch.setattr(timezone, "now", lambda: now)
     edge = now - timedelta(days=365)
-    on_edge, just_before = _set_up(500), _set_up(500)
+    on_edge, just_before = make_onboarded(500), make_onboarded(500)
     _went(on_edge, _event_at(edge))
     _went(just_before, _event_at(edge - timedelta(microseconds=1)))
     rows = {row["id"]: row for row in _rows(admin)}
-    inactive = _ids(admin, inactive_for_days=365)
+    inactive = member_ids(admin, inactive_for_days=365)
     assert rows[str(on_edge.id)]["qualifying_count_12mo"] == 1
     assert rows[str(just_before.id)]["qualifying_count_12mo"] == 0
-    assert inactive == _of(admin, just_before)
+    assert inactive == ids_of(admin, just_before)
     for member in (on_edge, just_before):
         stats = compute_member_stats(user_rsvps_for_attendance(member), now)
         assert rows[str(member.id)]["qualifying_count_12mo"] == stats.qualifying_count_12mo
@@ -139,35 +147,35 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
 
 
 def test_inactive_for_days_counts_never_attended(admin):
-    never = _set_up(400)
+    never = make_onboarded(400)
     stale = _attended(100)
     _attended(10)
-    assert _ids(admin, inactive_for_days=30) == _of(admin, never, stale)
-    assert _ids(admin, inactive_for_days=30, never_attended=False) == _of(stale)
-    assert _ids(admin, never_attended=True) == _of(admin, never)
+    assert member_ids(admin, inactive_for_days=30) == ids_of(admin, never, stale)
+    assert member_ids(admin, inactive_for_days=30, never_attended=False) == ids_of(stale)
+    assert member_ids(admin, never_attended=True) == ids_of(admin, never)
 
 
 def test_joined_recently_and_never_attended(admin):
-    match = _new(20)
-    _went(_new(20), _event(5, _CLUB))
-    _new(90)
-    community_only = _new(30)
+    match = make_onboarding(20)
+    _went(make_onboarding(20), _event(5, _CLUB))
+    make_onboarding(90)
+    community_only = make_onboarding(30)
     _went(community_only, _event(5, _COMMUNITY))
-    expected = _of(match, community_only)
-    assert _ids(admin, joined_within_days=60, never_attended=True) == expected
-    assert _ids(admin, joined_within_days=60, inactive_for_days=60) == expected
+    expected = ids_of(match, community_only)
+    assert member_ids(admin, joined_within_days=60, never_attended=True) == expected
+    assert member_ids(admin, joined_within_days=60, inactive_for_days=60) == expected
 
 
 def test_longest_inactive_sorts_by_time_since_last_activity(admin):
     shared = _event(50)
     three_years = _attended(1095, joined_days_ago=1200)
     long_ago = _attended(200)
-    tied = [_set_up(400), _set_up(100), _set_up(100)]
+    tied = [make_onboarded(400), make_onboarded(100), make_onboarded(100)]
     for member in tied:
         _went(member, shared)
-    tied_never = _set_up(50)
+    tied_never = make_onboarded(50)
     User.objects.filter(pk=tied_never.pk).update(date_joined=shared.start_datetime)
-    just_joined = _set_up(2)
+    just_joined = make_onboarded(2)
     recent = _attended(1)
     ties = sorted([*tied, tied_never], key=lambda u: u.pk)
     expected = [three_years, admin, long_ago, *ties, just_joined, recent]
@@ -176,18 +184,18 @@ def test_longest_inactive_sorts_by_time_since_last_activity(admin):
 
 
 def test_default_sort_is_still_newest_member(admin):
-    old, new = _attended(1, joined_days_ago=300), _set_up(5)
+    old, new = _attended(1, joined_days_ago=300), make_onboarded(5)
     assert [row["id"] for row in _rows(admin)] == [str(u.id) for u in (new, old, admin)]
 
 
 def test_longest_inactive_paging_is_stable_with_ties(admin):
     shared = _event(30)
     for _ in range(4):
-        _went(_set_up(), shared)
+        _went(make_onboarded(), shared)
     for _ in range(3):
-        _set_up()
+        make_onboarded()
     User.objects.update(date_joined=timezone.now() - timedelta(days=1))
-    first = _find(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
+    first = find_members(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
     paged = _rows(admin, sort=MemberSort.LONGEST_INACTIVE)
     assert first["total"] == len(paged) == 8
     assert [row["id"] for row in paged] == [row["id"] for row in first["members"]]
@@ -213,4 +221,4 @@ def test_one_page_is_two_queries_with_attendance(admin, django_assert_num_querie
 )
 def test_bad_attendance_arguments_are_rejected(admin, arguments):
     with pytest.raises(ToolError):
-        _find(admin, **arguments)
+        find_members(admin, **arguments)

@@ -55,7 +55,6 @@ export interface WireEvent {
 
   datetime_tbd?: boolean;
   has_poll?: boolean;
-  datetime_poll_slug?: string | null;
 
   created_by_id?: string | null;
   created_by_name?: string | null;
@@ -77,7 +76,6 @@ export interface WireEvent {
     display_order?: number;
   }[];
   viewer_user_id?: string | null;
-  linked_surveys?: { id: string; title: string; slug: string }[];
   invited_user_ids?: string[];
   invited_user_names?: string[];
   invited_user_photo_urls?: string[];
@@ -192,7 +190,6 @@ export function mapEvent(e: WireEvent): Event {
 
     datetimeTbd: e.datetime_tbd ?? false,
     hasPoll: e.has_poll ?? false,
-    datetimePollSlug: e.datetime_poll_slug ?? null,
 
     createdById: e.created_by_id ?? null,
     createdByName: e.created_by_name ?? null,
@@ -207,7 +204,6 @@ export function mapEvent(e: WireEvent): Event {
     myQuestionnaireResponses: mapQuestionnaireResponses(e.my_questionnaire_responses),
     rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
     viewerUserId: e.viewer_user_id ?? null,
-    linkedSurveys: e.linked_surveys ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],
     invitedUserPhotoUrls: e.invited_user_photo_urls ?? [],

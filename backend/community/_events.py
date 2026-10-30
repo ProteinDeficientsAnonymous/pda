@@ -15,6 +15,7 @@ from notifications.service import broadcast_event_created
 from pydantic import BaseModel
 from users._helpers import visible_display_name
 
+from community._cohost_invite_helpers import reject_non_member_cohosts
 from community._event_helpers import (
     _build_guest_list,
     _enforce_type_tag_permission,
@@ -25,6 +26,7 @@ from community._event_helpers import (
     _set_event_tags,
     broadcast_capacity_change,
     is_cohost,
+    reload_event_or_404,
 )
 from community._event_list import (
     EventListQuery,
@@ -227,6 +229,7 @@ def create_event(request, payload: EventIn):
 
     for question in payload.rsvp_questions:
         validate_event_rsvp_question(question)
+    reject_non_member_cohosts(payload.co_host_ids)
 
     event = Event.objects.create(
         title=payload.title,
@@ -349,6 +352,4 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     email_removed_non_members(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
-    # Re-fetch to pick up any M2M changes
-    event.refresh_from_db()
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))

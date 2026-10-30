@@ -108,10 +108,14 @@ def diff_cohost_invites(
     Raises ``Code.CoHostInvite.EVENT_IS_PAST`` if the input would create or
     revive a pending invite on a past event. Removals continue to work — the
     host can still trim the roster after the fact.
+
+    Raises ``Code.CoHostInvite.NOT_MEMBER`` if the input would create or revive
+    an invite for a non-member — only members can host.
     """
     next_ids = _next_ids_excluding_creator(event, co_host_ids)
     existing_by_user = {str(inv.user_id): inv for inv in event.cohost_invites.all()}
     _check_past_event_guard(event, next_ids, existing_by_user)
+    _check_members_only_guard(next_ids, existing_by_user)
 
     newly_invited: list[str] = []
     accepted_co_host_ids_to_remove: list[str] = []
@@ -147,6 +151,7 @@ def add_cohost_invites(
     next_ids = _next_ids_excluding_creator(event, co_host_ids)
     existing_by_user = {str(inv.user_id): inv for inv in event.cohost_invites.all()}
     _check_past_event_guard(event, next_ids, existing_by_user)
+    _check_members_only_guard(next_ids, existing_by_user)
 
     newly_invited: list[str] = []
     with transaction.atomic():
@@ -178,12 +183,32 @@ def _check_past_event_guard(
     (declined / rescinded / expired / removed) that would get flipped back to
     pending. Removals are unaffected; the guard is a no-op for those.
     """
-    if not event.is_past:
-        return
-    for user_id in next_ids:
-        existing = existing_by_user.get(user_id)
-        if existing is None or existing.status not in _ACTIVE_OR_PENDING:
-            raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
+    if event.is_past and _ids_to_upsert(next_ids, existing_by_user):
+        raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
+
+
+def _check_members_only_guard(
+    next_ids: set[str],
+    existing_by_user: dict[str, EventCoHostInvite],
+) -> None:
+    """Raise NOT_MEMBER if any id that would be newly invited or revived is a non-member."""
+    reject_non_member_cohosts(_ids_to_upsert(next_ids, existing_by_user))
+
+
+def reject_non_member_cohosts(user_ids: Iterable[str]) -> None:
+    """Raise NOT_MEMBER if any of ``user_ids`` is not a member (e.g. a tentative member)."""
+    ids = list(user_ids)
+    if ids and User.objects.filter(pk__in=ids, is_member=False).exists():
+        raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=400)
+
+
+def _ids_to_upsert(next_ids: set[str], existing_by_user: dict[str, EventCoHostInvite]) -> list[str]:
+    return [
+        user_id
+        for user_id in next_ids
+        if (existing := existing_by_user.get(user_id)) is None
+        or existing.status not in _ACTIVE_OR_PENDING
+    ]
 
 
 def send_cohost_invite_emails(

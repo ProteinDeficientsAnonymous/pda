@@ -71,7 +71,7 @@ def _validate_rating_answer(answer: str, q: SurveyQuestion) -> None:
 
 
 def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) -> None:
-    """Validate a datetime poll answer (option -> "yes"|"maybe")."""
+    """Validate a datetime poll answer (option -> "yes"|"maybe"|"no")."""
     valid_options = set(q.options or [])
     for option, availability in answer.items():
         if option not in valid_options:
@@ -94,7 +94,8 @@ _TEXT_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], None]] = {
     SurveyQuestionType.SELECT: _validate_choice_answer,
     SurveyQuestionType.NUMBER: _validate_number_answer,
     SurveyQuestionType.BOOLEAN: _validate_boolean_answer,
-    SurveyQuestionType.RATING: _validate_rating_answer,
+    SurveyQuestionType.STARS: _validate_rating_answer,
+    SurveyQuestionType.SCALE: _validate_rating_answer,
 }
 
 _DICT_VALIDATORS: dict[str, Callable[[dict[str, str], SurveyQuestion], None]] = {
