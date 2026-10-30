@@ -7,8 +7,8 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
+from tests._users import make_user
 from tests.conftest import future_iso
 
 URL = "/api/community/official-event-defaults/"
@@ -49,12 +49,7 @@ def _auth(user: User) -> dict:
 
 @pytest.fixture
 def planner(db) -> User:
-    user = User.objects.create_user(phone_number="+12025556200", password="x", first_name="Plan")
-    role = Role.objects.create(
-        name="official_tagger", permissions=[PermissionKey.TAG_OFFICIAL_EVENT]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.TAG_OFFICIAL_EVENT)
 
 
 def _create(api_client, planner: User, **overrides) -> dict:
