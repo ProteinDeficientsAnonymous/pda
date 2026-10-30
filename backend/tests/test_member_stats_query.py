@@ -14,13 +14,15 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from users.models import User
 
-from tests.test_member_attendance_analytics import MEMBERS_URL, _auth, events_admin  # noqa: F401
+from tests._auth import auth_headers_for
+from tests._users import make_user
+from tests.test_member_attendance_analytics import MEMBERS_URL, events_admin  # noqa: F401
 
 _seq = {"n": 0}
 
 
 def _members(count: int) -> list[User]:
-    host = User.objects.create_user(phone_number=f"+1303555{_seq['n']:04d}", password="x")
+    host = make_user()
     events = [
         Event.objects.create(
             title="e",
@@ -39,9 +41,7 @@ def _members(count: int) -> list[User]:
     members = []
     for _ in range(count):
         _seq["n"] += 1
-        user = User.objects.create_user(
-            phone_number=f"+1303666{_seq['n']:04d}", password="x", is_member=True
-        )
+        user = make_user(is_member=True)
         for i, event in enumerate(events[_seq["n"] % 4 :]):
             EventRSVP.objects.create(
                 event=event,
@@ -57,9 +57,7 @@ def _members(count: int) -> list[User]:
 @pytest.mark.django_db
 class TestMemberStatsQuery:
     def test_matches_python_stats(self):
-        members = _members(4) + [
-            User.objects.create_user(phone_number="+13037770000", password="x", is_member=True)
-        ]
+        members = [*_members(4), make_user(is_member=True)]
         now = timezone.now()
         stats = member_stats_by_user(User.objects.filter(is_member=True), now)
         for user in members:
@@ -69,7 +67,7 @@ class TestMemberStatsQuery:
     def test_endpoint_is_constant(self, api_client, events_admin):  # noqa: F811
         def count() -> int:
             with CaptureQueriesContext(connection) as ctx:
-                response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+                response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
             assert response.status_code == 200
             return len(ctx.captured_queries)
 
