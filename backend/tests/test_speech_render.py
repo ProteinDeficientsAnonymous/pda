@@ -83,6 +83,29 @@ class TestSingleBlank:
         assert "<img" not in html
 
 
+class TestListBlank:
+    def test_alone_in_paragraph_becomes_bullet_list(self):
+        t = _template(shared=[_para(_blank("open_roles"))])
+        html = render_speech_html(t, "walk", {"open_roles": ["mods", "announcements"]})
+        assert html == "<ul><li>mods</li><li>announcements</li></ul>"
+
+    def test_empty_list_alone_becomes_placeholder_paragraph(self):
+        t = _template(shared=[_para(_blank("open_roles"))])
+        assert render_speech_html(t, "walk", {"open_roles": []}) == "<p>____</p>"
+        assert render_speech_html(t, "walk", {}) == "<p>____</p>"
+
+    def test_inline_beside_text_is_comma_joined(self):
+        t = _template(shared=[_para(_text("roles: "), _blank("open_roles"))])
+        html = render_speech_html(t, "walk", {"open_roles": ["mods", "announcements"]})
+        assert html == "<p>roles: mods, announcements</p>"
+
+    def test_list_items_are_escaped(self):
+        t = _template(shared=[_para(_blank("upcoming_events"))])
+        html = render_speech_html(t, "walk", {"upcoming_events": ["<b>x</b>"]})
+        assert "&lt;b&gt;" in html
+        assert "<b>" not in html
+
+
 class TestStructure:
     def test_blockquote_passes_through(self):
         t = _template(shared=[{"type": "blockquote", "content": [_para(_text("speaker note"))]}])
