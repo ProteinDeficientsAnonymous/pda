@@ -2,8 +2,9 @@ import json
 
 import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -48,9 +49,7 @@ class TestMultiResponseEdit:
 
     def test_cannot_edit_another_members_response(self, api_client, auth_headers, repeat_survey):
         other = User.objects.create_user(phone_number="+12025557002", password="otherpass")
-        other_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(other).access_token}"
-        }  # type: ignore
+        other_headers = auth_headers_for(other)
         theirs = _submit(api_client, repeat_survey, "mine", other_headers).json()
         response = _submit(api_client, repeat_survey, "hijack", auth_headers, theirs["id"])
         assert response.status_code == 201

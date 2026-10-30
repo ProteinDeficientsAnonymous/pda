@@ -3,7 +3,7 @@ from community.models import DocFolder, Document
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from tests.test_docs import BASE, manage_docs_headers, manage_docs_user  # noqa: F401
+from tests._docs_helpers import BASE, manage_docs_headers, manage_docs_user  # noqa: F401
 
 
 def _make_trees(count: int) -> None:

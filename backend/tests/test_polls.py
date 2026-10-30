@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
-from ninja_jwt.tokens import RefreshToken
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
@@ -37,8 +37,7 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_user)
 
 
 @pytest.fixture

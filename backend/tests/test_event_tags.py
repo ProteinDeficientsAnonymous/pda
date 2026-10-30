@@ -5,11 +5,11 @@ import pytest
 from community.models import Event, EventTag
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -21,7 +21,7 @@ def member_headers(db):
         first_name="Tag",
         last_name="Member",
     )
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"}  # type: ignore
+    return auth_headers_for(member)
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def manage_tags_headers(db):
     )
     role = Role.objects.create(name="tag_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
     admin.roles.add(role)
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"}  # type: ignore
+    return auth_headers_for(admin)
 
 
 @pytest.fixture

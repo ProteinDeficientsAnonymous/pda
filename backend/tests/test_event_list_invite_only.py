@@ -1,20 +1,16 @@
 import pytest
 from community.models import Event, EventStatus, PageVisibility
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
 
 
-def _headers(user: User) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
-
-
 def _listed(api_client, user: User, status: str = EventStatus.ACTIVE) -> list[dict]:
-    response = api_client.get(f"/api/community/events/?status={status}", **_headers(user))
+    response = api_client.get(f"/api/community/events/?status={status}", **auth_headers_for(user))
     assert response.status_code == 200
     return response.json()
 

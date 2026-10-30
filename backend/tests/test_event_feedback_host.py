@@ -12,16 +12,11 @@ from community.models import (
     SurveyResponse,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _event(host: User, *, event_type=EventType.OFFICIAL) -> Event:
@@ -75,7 +70,7 @@ class TestHostFeedback:
         event.co_hosts.add(cohost)
         _response(survey, event)
 
-        res = api_client.get(_url(event), **_auth(cohost))
+        res = api_client.get(_url(event), **auth_headers_for(cohost))
 
         assert res.status_code == 200
         body = res.json()
@@ -87,13 +82,13 @@ class TestHostFeedback:
         assert "submitted_at" not in res.content.decode()
 
     def test_non_host_403(self, api_client, event, survey):
-        assert api_client.get(_url(event), **_auth(make_user())).status_code == 403
+        assert api_client.get(_url(event), **auth_headers_for(make_user())).status_code == 403
 
     def test_manage_events_admin_can_view(self, api_client, event, survey):
         admin = make_user(PermissionKey.MANAGE_EVENTS)
         _response(survey, event)
 
-        res = api_client.get(_url(event), **_auth(admin))
+        res = api_client.get(_url(event), **auth_headers_for(admin))
 
         assert res.status_code == 200
         assert len(res.json()["responses"]) == 1
@@ -103,7 +98,7 @@ class TestHostFeedback:
         _response(survey, event, "mine")
         _response(survey, other_event, "other")
 
-        res = api_client.get(_url(event), **_auth(host))
+        res = api_client.get(_url(event), **auth_headers_for(host))
 
         answers = [next(iter(r["answers"].values()))["answer"] for r in res.json()["responses"]]
         assert answers == ["mine"]
@@ -111,10 +106,10 @@ class TestHostFeedback:
     def test_unknown_event_404(self, api_client, host):
         url = "/api/community/events/00000000-0000-0000-0000-000000000000/feedback/"
 
-        assert api_client.get(url, **_auth(host)).status_code == 404
+        assert api_client.get(url, **auth_headers_for(host)).status_code == 404
 
     def test_no_feedback_survey_returns_no_questions(self, api_client, host):
-        res = api_client.get(_url(_event(host)), **_auth(host))
+        res = api_client.get(_url(_event(host)), **auth_headers_for(host))
 
         assert res.json() == {"questions": [], "responses": []}
 
@@ -122,7 +117,7 @@ class TestHostFeedback:
         SurveyQuestion.objects.create(
             survey=survey, label="about you", field_type=SurveyQuestionType.SECTION
         )
-        res = api_client.get(_url(event), **_auth(host))
+        res = api_client.get(_url(event), **auth_headers_for(host))
 
         assert [q["label"] for q in res.json()["questions"]] == ["how was it?"]
 
@@ -133,7 +128,7 @@ class TestHostFeedback:
             submitted_at=timezone.now() - timedelta(days=3)
         )
 
-        res = api_client.get(_url(event), **_auth(host))
+        res = api_client.get(_url(event), **auth_headers_for(host))
 
         ids = [r["id"] for r in res.json()["responses"]]
         assert ids == [str(new.id), str(old.id)]
@@ -144,14 +139,14 @@ class TestHostFeedback:
             submitted_at=datetime(2026, 3, 11, 2, 0, tzinfo=ZoneInfo("UTC"))
         )
 
-        res = api_client.get(_url(event), **_auth(host))
+        res = api_client.get(_url(event), **auth_headers_for(host))
 
         assert res.json()["responses"][0]["submitted_on"] == "2026-03-10"
 
     def test_same_day_responses_ordered_by_id_not_creation(self, api_client, host, event, survey):
         created = [_response(survey, event, str(i)) for i in range(3)]
 
-        res = api_client.get(_url(event), **_auth(host))
+        res = api_client.get(_url(event), **auth_headers_for(host))
 
         ids = [r["id"] for r in res.json()["responses"]]
         assert ids == sorted(str(r.id) for r in created)
@@ -168,16 +163,16 @@ class TestMyFeedback:
             event=event, user=attendee, token=EventFeedbackRequest.new_token()
         )
 
-        res = api_client.get(self._url(event), **_auth(attendee))
+        res = api_client.get(self._url(event), **auth_headers_for(attendee))
         assert res.json() == {"token": request.token}
 
         request.responded_on = timezone.localdate()
         request.save()
-        res = api_client.get(self._url(event), **_auth(attendee))
+        res = api_client.get(self._url(event), **auth_headers_for(attendee))
         assert res.json() == {"token": None}
 
     def test_my_feedback_none_for_non_attendee(self, api_client, event):
-        res = api_client.get(self._url(event), **_auth(make_user()))
+        res = api_client.get(self._url(event), **auth_headers_for(make_user()))
 
         assert res.json() == {"token": None}
 
@@ -186,6 +181,6 @@ class TestMyFeedback:
             event=event, user=make_user(), token=EventFeedbackRequest.new_token()
         )
 
-        res = api_client.get(self._url(event), **_auth(make_user()))
+        res = api_client.get(self._url(event), **auth_headers_for(make_user()))
 
         assert res.json() == {"token": None}
