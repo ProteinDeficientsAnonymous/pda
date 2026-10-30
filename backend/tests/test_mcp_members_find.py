@@ -10,9 +10,15 @@ from mcp_gateway.tools.members_read import _page
 from users._member_search import MemberFilters
 from users.models import User
 
+from tests._mcp_members_helpers import (
+    BUCKETS,
+    make_join_request,
+    make_joined,
+    make_member,
+    member_totals,
+)
 from tests._mcp_tool_helpers import signed_in
 from tests._public_rsvp_helpers import make_non_member
-from tests.test_mcp_members_read import _BUCKETS, _call, _join_request, _joined, _member
 
 pytestmark = pytest.mark.django_db
 
@@ -42,11 +48,11 @@ def _of(*users) -> set[str]:
 
 
 def _new(days_ago: float = 1, **fields) -> User:
-    return _joined(days_ago, needs_onboarding=True, **fields)
+    return make_joined(days_ago, needs_onboarding=True, **fields)
 
 
 def _set_up(days_ago: float = 1, **fields) -> User:
-    return _joined(days_ago, onboarded_at=timezone.now(), **fields)
+    return make_joined(days_ago, onboarded_at=timezone.now(), **fields)
 
 
 def _logged_in(days_ago: float, **fields) -> User:
@@ -81,7 +87,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
     archived = _set_up(archived_at=timezone.now())
     _set_up(is_active=False)
     make_non_member("+12025550198", "n@e.com")
-    _member(is_member=False)
+    make_member(is_member=False)
     assert {row["id"]: row["status"] for row in _find(admin)["members"]} == {
         **dict.fromkeys(_of(admin, set_up), "active"),
         str(new.id): "still_onboarding",
@@ -95,8 +101,8 @@ def test_totals_match_member_totals_buckets(admin):
     _new(is_paused=True)
     _set_up(archived_at=timezone.now())
     _set_up(is_active=False)
-    totals = _call(admin)
-    for status in _BUCKETS:
+    totals = member_totals(admin)
+    for status in BUCKETS:
         assert _find(admin, filters={"status": [status]})["total"] == totals[status]
 
 
@@ -134,7 +140,7 @@ def test_joined_within_days_uses_membership_start(admin):
     recent = _new(10)
     _new(90)
     approved = _set_up(300)
-    _join_request(approved, days_ago=5)
+    make_join_request(approved, days_ago=5)
     assert _ids(admin, joined_within_days=30) == _of(recent, approved)
 
 
