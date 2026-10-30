@@ -15,10 +15,10 @@ from community.models import (
 )
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
@@ -43,12 +43,7 @@ def survey_owner_headers(survey_owner):
 
 @pytest.fixture
 def events_admin_headers(db):
-    host = User.objects.create_user(
-        phone_number="+12025557021", password="x", first_name="Events", last_name="Manager"
-    )
-    role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    host.roles.add(role)
-    return auth_headers_for(host)
+    return auth_headers_for(make_user(PermissionKey.MANAGE_EVENTS))
 
 
 @pytest.fixture
@@ -88,11 +83,7 @@ class TestSurveyTalliesAuthz:
         assert isinstance(response.json(), list)
 
     def test_manage_surveys_can_read_tallies(self, api_client, db, poll_survey):
-        admin = User.objects.create_user(
-            phone_number="+12025557010", password="x", first_name="Surveys", last_name="Admin"
-        )
-        role = Role.objects.create(name="surveys_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
-        admin.roles.add(role)
+        admin = make_user(PermissionKey.MANAGE_SURVEYS)
         headers = auth_headers_for(admin)
         response = api_client.get(self._url(poll_survey), **headers)
         assert response.status_code == 200

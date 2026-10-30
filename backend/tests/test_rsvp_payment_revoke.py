@@ -7,12 +7,12 @@ from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
-from users.models import Role
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
+from tests._users import make_user
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"
@@ -376,12 +376,7 @@ class TestPaymentStatusVisibility:
 
     def test_event_manager_sees_payment_status(self, api_client, test_user, django_user_model):
         event = self._event_with_a_payer(test_user, django_user_model, "+14155550407")
-        manager = django_user_model.objects.create_user(
-            phone_number="+14155550408", first_name="Manager", is_member=True
-        )
-        manager.roles.add(
-            Role.objects.create(name="event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-        )
+        manager = make_user(PermissionKey.MANAGE_EVENTS)
         assert self._guests(api_client, event, auth_headers_for(manager))["Payer"] is True
 
     def test_event_manager_can_mark_paid(self, api_client, test_user, django_user_model):
@@ -390,12 +385,7 @@ class TestPaymentStatusVisibility:
             phone_number="+14155550409", first_name="Guest", is_member=True
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
-        manager = django_user_model.objects.create_user(
-            phone_number="+14155550410", first_name="Manager", is_member=True
-        )
-        manager.roles.add(
-            Role.objects.create(name="event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-        )
+        manager = make_user(PermissionKey.MANAGE_EVENTS)
 
         response = api_client.patch(
             PAYMENT_URL.format(event_id=event.id, user_id=guest.id),

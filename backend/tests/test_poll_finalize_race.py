@@ -4,19 +4,10 @@ import pytest
 from community.models import Event, EventPoll, PollOption
 from django import db
 from django.test import Client
-from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _make_user(i):
-    return User.objects.create_user(
-        phone_number=f"+1415555{9200 + i}",
-        password="Testpass123!",
-        first_name=f"Finalizer{i}",
-        last_name="",
-    )
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -37,7 +28,7 @@ class TestPollFinalizeRace:
             for i in range(8)
         ]
 
-        cohosts = [_make_user(i) for i in range(len(options))]
+        cohosts = [make_user() for _ in range(len(options))]
         event.co_hosts.set(cohosts)
         results = [None] * len(options)
 

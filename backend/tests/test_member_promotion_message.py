@@ -1,26 +1,15 @@
 import pytest
 from community.models import MemberPromotionMessageTemplate
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def edit_member_message_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003003",
-        password="vetterpass123",
-        first_name="Vetter",
-        last_name="Three",
-    )
-    role = Role.objects.create(
-        name="member_message_editor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
 
 
 @pytest.fixture

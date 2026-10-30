@@ -1,6 +1,5 @@
 from datetime import timedelta
 from io import StringIO
-from itertools import count
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,10 +12,11 @@ from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._users import make_user
+
 pytestmark = pytest.mark.django_db
 
 HOUR = timedelta(hours=1)
-_phones = count(600)
 
 
 @pytest.fixture
@@ -40,13 +40,6 @@ def fake_sender(monkeypatch):
     return fake
 
 
-def _user(first: str) -> User:
-    phone = f"+1202555{next(_phones):04d}"
-    return User.objects.create_user(
-        phone_number=phone, password="pw", first_name=first, email=f"{phone[1:]}@example.test"
-    )
-
-
 def _event(host: User, title: str) -> Event:
     return Event.objects.create(title=title, created_by=host, rsvp_enabled=True)
 
@@ -63,11 +56,11 @@ def _run(*args: str) -> str:
 
 
 def test_one_email_per_host_then_watermark_blocks_resend(run_at, fake_sender):
-    host, cohost = _user("host"), _user("cohost")
+    host, cohost = make_user(first_name="host"), make_user(first_name="cohost")
     hike = _event(host, "hike")
     hike.co_hosts.add(cohost)
-    _rsvp(hike, _user("sam"), run_at - HOUR)
-    _rsvp(_event(host, "potluck"), _user("alex"), run_at - HOUR)
+    _rsvp(hike, make_user(first_name="sam"), run_at - HOUR)
+    _rsvp(_event(host, "potluck"), make_user(first_name="alex"), run_at - HOUR)
 
     _run()
     _run()
@@ -83,9 +76,13 @@ def test_one_email_per_host_then_watermark_blocks_resend(run_at, fake_sender):
 
 def test_failures_keep_watermark_without_stopping_the_run(run_at, fake_sender, monkeypatch):
     fake_sender.send.return_value = SendResult(success=False, error="x")
-    failing, broken, idle = _user("failing"), _user("broken"), _user("idle")
-    _rsvp(_event(failing, "hike"), _user("sam"), run_at - HOUR)
-    _rsvp(_event(broken, "picnic"), _user("alex"), run_at - HOUR)
+    failing, broken, idle = (
+        make_user(first_name="failing"),
+        make_user(first_name="broken"),
+        make_user(first_name="idle"),
+    )
+    _rsvp(_event(failing, "hike"), make_user(first_name="sam"), run_at - HOUR)
+    _rsvp(_event(broken, "picnic"), make_user(first_name="alex"), run_at - HOUR)
     _event(idle, "potluck")
     real_build = command_module.build_host_digest
 
@@ -105,8 +102,8 @@ def test_failures_keep_watermark_without_stopping_the_run(run_at, fake_sender, m
 
 
 def test_dry_run_sends_and_writes_nothing(run_at, fake_sender):
-    host = _user("host")
-    _rsvp(_event(host, "hike"), _user("sam"), run_at - HOUR)
+    host = make_user(first_name="host")
+    _rsvp(_event(host, "hike"), make_user(first_name="sam"), run_at - HOUR)
 
     out = _run("--dry-run")
 

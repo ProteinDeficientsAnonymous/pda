@@ -17,34 +17,12 @@ from community.models import (
 )
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 
 POLL_A = "2030-01-01T10:00:00+00:00"
 POLL_B = "2030-01-02T10:00:00+00:00"
-
-
-@pytest.fixture
-def surveys_admin(db):
-    admin = User.objects.create_user(
-        phone_number="+12025557020",
-        password="x",
-        first_name="Surveys",
-        last_name="Admin",
-    )
-    role = Role.objects.create(name="surveys_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
-    admin.roles.add(role)
-    return admin
-
-
-@pytest.fixture
-def admin_headers(surveys_admin):
-    refresh = RefreshToken.for_user(surveys_admin)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -95,9 +73,9 @@ def _rows(response) -> list[list[str]]:
 @pytest.mark.django_db
 class TestSurveyResponsesCsv:
     def test_one_row_per_response_with_question_columns(
-        self, api_client, admin_headers, csv_survey
+        self, api_client, surveys_admin_headers, csv_survey
     ):
-        response = api_client.get(_url(csv_survey), **admin_headers)
+        response = api_client.get(_url(csv_survey), **surveys_admin_headers)
         assert response.status_code == 200
         assert response["Content-Type"] == "text/csv; charset=utf-8"
         assert response.content.startswith("\ufeff".encode())
@@ -117,12 +95,12 @@ class TestSurveyResponsesCsv:
         assert anon_row[3] == ""
         assert anon_row[4] == ""
 
-    def test_submitted_at_is_iso(self, api_client, admin_headers, csv_survey):
-        rows = _rows(api_client.get(_url(csv_survey), **admin_headers))
+    def test_submitted_at_is_iso(self, api_client, surveys_admin_headers, csv_survey):
+        rows = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))
         submitted = {r.submitted_at.isoformat() for r in csv_survey.responses.all()}
         assert {row[1] for row in rows[1:]} == submitted
 
-    def test_feedback_csv_has_event_column(self, api_client, admin_headers, surveys_admin):
+    def test_feedback_csv_has_event_column(self, api_client, surveys_admin_headers, surveys_admin):
         survey = Survey.objects.create(
             title="Feedback",
             slug="fb-csv",
@@ -140,12 +118,14 @@ class TestSurveyResponsesCsv:
         SurveyResponse.objects.create(survey=survey, event=event, answers=answers)
         SurveyResponse.objects.create(survey=survey, answers=answers)
 
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[0] == ["submitted_at", "event", "Notes"]
         assert sorted(row[1] for row in rows[1:]) == ["", "'=potluck (2026-03-04)"]
 
-    def test_non_feedback_csv_has_no_event_column(self, api_client, admin_headers, csv_survey):
-        assert "event" not in _rows(api_client.get(_url(csv_survey), **admin_headers))[0]
+    def test_non_feedback_csv_has_no_event_column(
+        self, api_client, surveys_admin_headers, csv_survey
+    ):
+        assert "event" not in _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))[0]
 
     def test_requires_manage_surveys(self, api_client, auth_headers, csv_survey):
         response = api_client.get(_url(csv_survey), **auth_headers)
@@ -155,10 +135,10 @@ class TestSurveyResponsesCsv:
     def test_unauthenticated_401(self, api_client, csv_survey):
         assert api_client.get(_url(csv_survey)).status_code == 401
 
-    def test_missing_survey_404(self, api_client, admin_headers):
+    def test_missing_survey_404(self, api_client, surveys_admin_headers):
         response = api_client.get(
             "/api/community/surveys/00000000-0000-0000-0000-000000000000/responses.csv",
-            **admin_headers,
+            **surveys_admin_headers,
         )
         assert response.status_code == 404
 
@@ -188,58 +168,58 @@ class TestSurveyResponsesCsvIdentityAndInjection:
         return survey
 
     def test_labels_names_and_answers_are_all_neutralized(
-        self, api_client, admin_headers, surveys_admin, responder
+        self, api_client, surveys_admin_headers, surveys_admin, responder
     ):
         survey = self._survey_with_answer(
             surveys_admin, responder, label='=HYPERLINK("http://evil")', answer="@SUM(1)"
         )
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[0][2] == '\'=HYPERLINK("http://evil")'
         assert rows[1][0] == "'=Ada Lovelace"
         assert rows[1][2] == "'@SUM(1)"
 
     @pytest.mark.parametrize("prefix", ["=", "+", "-", "@"])
     def test_formula_prefixes_are_neutralized_in_answers(
-        self, api_client, admin_headers, surveys_admin, responder, prefix
+        self, api_client, surveys_admin_headers, surveys_admin, responder, prefix
     ):
         survey = self._survey_with_answer(
             surveys_admin, responder, label="Notes", answer=f"{prefix}cmd"
         )
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[1][2] == f"'{prefix}cmd"
 
     @pytest.mark.parametrize("answer", ["-5", "+2.5", "42"])
     def test_number_answers_stay_numeric(
-        self, api_client, admin_headers, surveys_admin, responder, answer
+        self, api_client, surveys_admin_headers, surveys_admin, responder, answer
     ):
         survey = self._survey_with_answer(surveys_admin, responder, label="Count", answer=answer)
         survey.questions.update(field_type=SurveyQuestionType.NUMBER)
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[1][2] == answer
 
     def test_non_ascii_survives_utf8_decoding(
-        self, api_client, admin_headers, surveys_admin, responder
+        self, api_client, surveys_admin_headers, surveys_admin, responder
     ):
         survey = self._survey_with_answer(
             surveys_admin, responder, label="Notes", answer="crème 🌱"
         )
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[1][2] == "crème 🌱"
 
     def test_hidden_last_name_is_not_exported(
-        self, api_client, admin_headers, surveys_admin, responder
+        self, api_client, surveys_admin_headers, surveys_admin, responder
     ):
         responder.hide_last_name = True
         responder.save(update_fields=["hide_last_name"])
         survey = self._survey_with_answer(surveys_admin, responder, label="Notes", answer="hi")
-        rows = _rows(api_client.get(_url(survey), **admin_headers))
+        rows = _rows(api_client.get(_url(survey), **surveys_admin_headers))
         assert rows[1][0] == "'=Ada"
 
 
 def _add_hidden_name_responses(survey, start, count):
     for i in range(start, start + count):
         user = User.objects.create_user(
-            phone_number=f"+1202555{7100 + i}", password="x", first_name=f"R{i}", last_name="X"
+            phone_number=f"+1202555{7110 + i}", password="x", first_name=f"R{i}", last_name="X"
         )
         user.hide_last_name = True
         user.save(update_fields=["hide_last_name"])
@@ -248,14 +228,16 @@ def _add_hidden_name_responses(survey, start, count):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("suffix", ["responses.csv", "responses/"])
-def test_query_count_does_not_grow_with_responses(api_client, admin_headers, csv_survey, suffix):
+def test_query_count_does_not_grow_with_responses(
+    api_client, surveys_admin_headers, csv_survey, suffix
+):
     url = f"/api/community/surveys/{csv_survey.id}/{suffix}"
     _add_hidden_name_responses(csv_survey, 0, 2)
     with CaptureQueriesContext(connection) as small:
-        assert api_client.get(url, **admin_headers).status_code == 200
+        assert api_client.get(url, **surveys_admin_headers).status_code == 200
     _add_hidden_name_responses(csv_survey, 2, 4)
     with CaptureQueriesContext(connection) as large:
-        assert api_client.get(url, **admin_headers).status_code == 200
+        assert api_client.get(url, **surveys_admin_headers).status_code == 200
     assert len(large) == len(small)
 
 

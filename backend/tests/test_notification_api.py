@@ -11,8 +11,8 @@ from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._events import make_event
 from tests._users import make_user
-from tests.conftest import future_iso
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -59,12 +59,7 @@ def another_user(db) -> User:
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        created_by=inviter,
-    )
+    return make_event(created_by=inviter)
 
 
 # ─── List endpoint ────────────────────────────────────────────────────────────

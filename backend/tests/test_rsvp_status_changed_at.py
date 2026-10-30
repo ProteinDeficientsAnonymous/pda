@@ -2,28 +2,23 @@ from datetime import timedelta
 
 import pytest
 from community._event_nonmember_removal import guard_or_remove_ineligible_non_members
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import EventRSVP, RSVPStatus
 from django.utils import timezone
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._events import make_event, make_rsvp
 
 LONG_AGO = timezone.now() - timedelta(days=30)
 
 
 @pytest.fixture
 def event(test_user):
-    return Event.objects.create(
-        title="Digest Event",
-        start_datetime=future_iso(days=14),
-        rsvp_enabled=True,
-        created_by=test_user,
-    )
+    return make_event(rsvp_enabled=True, created_by=test_user)
 
 
 @pytest.fixture
 def rsvp(event, test_user):
-    return EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+    return make_rsvp(event, test_user, RSVPStatus.ATTENDING)
 
 
 def _backdate(rsvp: EventRSVP) -> EventRSVP:
@@ -121,9 +116,7 @@ class TestStatusChangedAt:
 
     def test_set_by_nonmember_bulk_removal(self, event):
         guest = User.objects.create_user(phone_number="+12025558400", password="x", is_member=False)
-        row = _backdate(
-            EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
-        )
+        row = _backdate(make_rsvp(event, guest))
 
         assert len(guard_or_remove_ineligible_non_members(event, force=True)) == 1
 

@@ -5,12 +5,11 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -270,12 +269,7 @@ class TestAnonymousResponseToken:
         assert resp.status_code == 201
 
     def test_admin_listing_never_exposes_tokens(self, api_client, db, one_per_user_survey):
-        admin = User.objects.create_user(
-            phone_number="+12025557011", password="x", first_name="Surveys", last_name="Admin"
-        )
-        role = Role.objects.create(name="surveys_mgr2", permissions=[PermissionKey.MANAGE_SURVEYS])
-        admin.roles.add(role)
-        admin_headers = auth_headers_for(admin)
+        admin_headers = auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
         api_client.post(
             _respond_url(one_per_user_survey),
             data=_answers(one_per_user_survey, "anon"),
