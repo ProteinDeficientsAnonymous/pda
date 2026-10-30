@@ -14,6 +14,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/events/:id/edit` | Event edit (form handles auth; backend may 401) |
 | `/events/:id/manage-rsvps` | Host/co-host guest management (rsvp-enabled events, including after they end) |
 | `/events/:id/responses` | Host/co-host rsvp question responses + tallies |
+| `/events/:id/speech` | Co-hosts of an official event: fill in the speech blanks + read it aloud (authed; backend 403s non-co-hosts, 404s non-official) |
 | `/events/add` | Create event |
 | `/surveys/:slug` | Public / members survey |
 | `/feedback#<token>` | Public event feedback (anonymous; token in hash) |

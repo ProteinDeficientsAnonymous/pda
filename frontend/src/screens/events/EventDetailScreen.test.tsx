@@ -410,4 +410,47 @@ describe('EventDetailScreen', () => {
       expect(window.location.pathname).toBe(`/events/${BASE_EVENT.slug}`);
     });
   });
+
+  describe('event speech link', () => {
+    const OFFICIAL = makeEvent({
+      eventType: EventType.Official,
+      coHostIds: ['user-me'],
+      createdById: 'user-me',
+    });
+
+    function setEvent(event: typeof OFFICIAL) {
+      mockUseEvent.mockReturnValue({
+        data: event,
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+    }
+
+    it('shows for a co-host of an official event', () => {
+      setAuthed(AUTHED_USER);
+      setEvent(OFFICIAL);
+      renderScreen();
+
+      expect(screen.getByRole('link', { name: 'event speech' })).toHaveAttribute(
+        'href',
+        `/events/${OFFICIAL.id}/speech`,
+      );
+    });
+
+    it('is hidden from a non-host', () => {
+      setAuthed(AUTHED_USER);
+      setEvent({ ...OFFICIAL, coHostIds: ['someone-else'] });
+      renderScreen();
+
+      expect(screen.queryByRole('link', { name: 'event speech' })).not.toBeInTheDocument();
+    });
+
+    it('is hidden on a community event', () => {
+      setAuthed(AUTHED_USER);
+      setEvent({ ...OFFICIAL, eventType: EventType.Community });
+      renderScreen();
+
+      expect(screen.queryByRole('link', { name: 'event speech' })).not.toBeInTheDocument();
+    });
+  });
 });
