@@ -1,10 +1,10 @@
-"""Tests for anchor + milestone due-date math (community/_attendance_clock.py)."""
+"""Tests for anchor + milestone due-date math (community/attendance/clock.py)."""
 
 from datetime import UTC, date, datetime
 
 import pytest
-from community._attendance_analytics import compute_member_stats, user_rsvps_for_attendance
-from community._attendance_clock import (
+from community.attendance.analytics import compute_member_stats, user_rsvps_for_attendance
+from community.attendance.clock import (
     compute_anchor,
     last_qualifying_attendance_date,
     latest_due_milestone,

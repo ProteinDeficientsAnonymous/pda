@@ -10,8 +10,8 @@ from ninja import Query, Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community._event_schemas import _MAX_EVENT_PHOTO_SIZE
-from community._shared import ErrorOut
+from community.events.schemas import _MAX_EVENT_PHOTO_SIZE
+from community.shared import ErrorOut
 
 logger = logging.getLogger("pda")
 

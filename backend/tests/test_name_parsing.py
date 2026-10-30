@@ -1,5 +1,5 @@
 import pytest
-from users._name_parsing import parse_display_name
+from users.name_parsing import parse_display_name
 
 
 @pytest.mark.parametrize(

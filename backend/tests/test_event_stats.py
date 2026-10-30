@@ -3,15 +3,15 @@
 from datetime import timedelta
 
 import pytest
-from community._event_helpers import _cancellations
-from community._event_rsvps import _resolve_cancelled_at, _resolve_pre_cancel_status
-from community._rsvp_counts import (
+from community.events.helpers import _cancellations
+from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from community.rsvps.counts import (
     _attended_count,
     _didnt_go_count,
     _no_response_count,
     _no_show_count,
 )
-from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from community.rsvps.member import _resolve_cancelled_at, _resolve_pre_cancel_status
 from django.conf import settings
 from django.utils import timezone
 

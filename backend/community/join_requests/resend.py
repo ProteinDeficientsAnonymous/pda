@@ -1,0 +1,107 @@
+"""Re-send magic link for an approved join request that hasn't yet onboarded.
+
+Split from ``manage.py`` to keep that file under the 500-line cap.
+"""
+
+import logging
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from config.ratelimit import rate_limit
+from django.db import transaction
+from django.utils import timezone
+from ninja import Router
+from ninja.responses import Status
+from users.helpers import _create_magic_token
+from users.models import MagicLoginToken, User
+from users.permissions import PermissionKey
+
+from community.join_requests.manage import ApproveJoinRequestOut
+from community.models import JoinRequest, JoinRequestStatus
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
+
+router = Router()
+
+
+@router.post(
+    "/join-requests/{id}/resend-magic-link/",
+    response={200: ApproveJoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def resend_magic_link(request, id: UUID):
+    """Mint a fresh magic-login link for an approved join request whose user
+    has not yet onboarded. Invalidates any prior unused magic tokens for the
+    user so the welcome message in the wild can't be claimed twice. Refuses
+    on already-logged-in users (use the members screen's password reset
+    flow for that)."""
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_REQUEST,
+                id=str(id),
+                details={
+                    "endpoint": "resend_magic_link",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="resend_magic_link")
+
+    try:
+        join_request = JoinRequest.objects.get(id=id)
+    except JoinRequest.DoesNotExist:
+        raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
+
+    if join_request.status != JoinRequestStatus.APPROVED:
+        raise_validation(Code.JoinRequest.NOT_APPROVED, status_code=400)
+
+    user = User.objects.filter(phone_number=join_request.phone_number).first()
+    if user is None:
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+    if user.archived_at is not None:
+        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
+    if user.is_paused:
+        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    if not user.needs_onboarding:
+        raise_validation(Code.JoinRequest.ALREADY_LOGGED_IN, status_code=400)
+
+    with transaction.atomic():
+        invalidated = MagicLoginToken.objects.filter(
+            user=user, used=False, expires_at__gt=timezone.now()
+        ).update(used=True)
+        magic_token = _create_magic_token(user)
+    audit_log(
+        logging.INFO,
+        "join_request_magic_link_resent",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={
+                "full_name": join_request.full_name,
+                "first_name": join_request.first_name,
+                "last_name": join_request.last_name,
+                "user_id": str(user.id),
+                "invalidated_token_count": invalidated,
+            },
+        ),
+    )
+    return Status(
+        200,
+        ApproveJoinRequestOut(
+            id=str(join_request.id),
+            first_name=join_request.first_name,
+            full_name=join_request.full_name,
+            phone_number=join_request.phone_number,
+            status=join_request.status,
+            magic_link_token=magic_token,
+            user_id=str(user.id),
+        ),
+    )

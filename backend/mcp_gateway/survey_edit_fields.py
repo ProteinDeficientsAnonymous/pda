@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from community._field_limits import FieldLimit
+from community.field_limits import FieldLimit
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, ConfigDict, Field, create_model

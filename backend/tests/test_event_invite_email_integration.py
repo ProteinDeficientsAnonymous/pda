@@ -37,7 +37,7 @@ class TestEventInviteEmailIntegration:
     def test_sends_email_to_invitee_with_email(
         self, api_client, inviter, invitee_with_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             mock_send.return_value = SendResult(success=True)
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
@@ -52,7 +52,7 @@ class TestEventInviteEmailIntegration:
     def test_skips_email_for_invitee_without_email(
         self, api_client, inviter, invitee_without_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_without_email.pk)]},
@@ -66,7 +66,7 @@ class TestEventInviteEmailIntegration:
         self, api_client, inviter, invitee_with_email, sample_event
     ):
         with patch(
-            "community._event_invite_email.send_event_invite_email",
+            "community.events._invite_email.send_event_invite_email",
             side_effect=RuntimeError("smtp down"),
         ):
             response = api_client.post(
@@ -80,7 +80,7 @@ class TestEventInviteEmailIntegration:
     def test_endpoint_succeeds_when_email_send_reports_failure(
         self, api_client, inviter, invitee_with_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             mock_send.return_value = SendResult(success=False, error="bounced")
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",

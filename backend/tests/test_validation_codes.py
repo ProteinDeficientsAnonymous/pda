@@ -7,7 +7,7 @@ so the frontend owns UI copy.
 """
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 
 from tests._time import future_iso
 

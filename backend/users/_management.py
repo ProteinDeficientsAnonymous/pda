@@ -3,17 +3,17 @@
 import logging
 import re
 
-from community._rsvp_counts import attendance_q, reportable_events_q
-from community._shared import validate_display_name
-from community._validation import Code, ValidationException, raise_validation
 from community.models import AttendanceStatus, EventRSVP
+from community.rsvps.counts import attendance_q, reportable_events_q
+from community.shared import validate_display_name
+from community.validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
 
-from users._helpers import (
+from users.helpers import (
     _check_and_set_email,
     _create_magic_token,
     _create_user_with_role,

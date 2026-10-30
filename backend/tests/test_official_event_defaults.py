@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community._official_event_defaults import OFFICIAL_CASHAPP_LINK, OFFICIAL_RSVP_QUESTIONS
+from community.events.official_defaults import OFFICIAL_CASHAPP_LINK, OFFICIAL_RSVP_QUESTIONS
 from community.models import Event, EventRsvpQuestion, EventType, PageVisibility
 from django.utils import timezone
 from users.models import User

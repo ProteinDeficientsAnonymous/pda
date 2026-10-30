@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from community.dev_tools.seed_guard import is_seed_allowed
 from community.management.commands._seed_staging_data import (
     JOIN_REQUEST_SPECS,
     NON_MEMBER_EVENT_TITLE,
@@ -14,7 +15,6 @@ from community.management.commands._seed_staging_data import (
     cond_phone,
     condition_combinations,
     condition_label,
-    is_seed_allowed,
     joinreq_phone,
     perm_email,
     perm_phone,

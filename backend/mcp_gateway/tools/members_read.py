@@ -2,11 +2,11 @@ from datetime import timedelta
 from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
-from community._attendance_analytics import QUALIFYING_WINDOW_DAYS
+from community.attendance.analytics import QUALIFYING_WINDOW_DAYS
 from django.utils import timezone
 from pydantic import Field
-from users._member_search import MemberFilters, MemberSort, members_matching, with_qualifying_count
-from users._member_status import count_members_by_status
+from users.member_search import MemberFilters, MemberSort, members_matching, with_qualifying_count
+from users.member_status import count_members_by_status
 from users.models import User
 from users.permissions import PermissionKey
 

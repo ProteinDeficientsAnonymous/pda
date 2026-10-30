@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 from django.core.cache import caches
 from django.utils import timezone
 from users.models import MagicLoginToken, User

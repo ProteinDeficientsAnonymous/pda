@@ -1,5 +1,5 @@
 import pytest
-from community._event_feedback_send import due_feedback_events
+from community.event_feedback.send import due_feedback_events
 from community.management.commands._seed_data import (
     COOKING_WORKSHOP_TITLE,
     SEED_EVENT_RSVP_QUESTIONS,

@@ -1,6 +1,6 @@
 import logging
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
@@ -11,8 +11,8 @@ from ninja.responses import Status
 from notifications.service import create_account_deleted_notifications
 
 from users._archive import archive_user
-from users._helpers import _is_last_admin
-from users._refresh_cookie import clear_refresh_cookie
+from users.helpers import _is_last_admin
+from users.refresh_cookie import clear_refresh_cookie
 from users.schemas import DeleteAccountIn, ErrorOut
 
 router = Router()

@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
-from community._host_digest import EventDigest
-from notifications._host_digest_email import send_host_digest_email
+from community.scheduled.host_digest import EventDigest
 from notifications.email_sender import SendResult
+from notifications.host_digest_email import send_host_digest_email
 
 SETTINGS_URL = "https://pda.test/settings"
 EVENT_URL = "https://pda.test/events/south-mountain-hike-2"

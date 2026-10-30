@@ -5,8 +5,6 @@ import io
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community._shared import csv_safe
-from community._validation import Code
 from community.models import (
     Event,
     EventType,
@@ -15,6 +13,8 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
+from community.shared import csv_safe
+from community.validation import Code
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from users.models import User

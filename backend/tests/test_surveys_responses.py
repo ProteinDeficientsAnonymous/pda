@@ -2,7 +2,6 @@ import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventType,
@@ -11,6 +10,7 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
+from community.validation import Code
 from django.conf import settings
 from users.permissions import PermissionKey
 

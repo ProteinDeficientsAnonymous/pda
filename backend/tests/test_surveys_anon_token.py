@@ -3,8 +3,8 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.validation import Code
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code

@@ -1,0 +1,346 @@
+"""Document library — folder endpoints + shared schemas/helpers.
+
+Document (leaf) endpoints live in ``documents.py``; both routers are
+mounted by ``api.py``. The schemas and ``_doc_to_out`` / ``_has_manage_docs``
+helpers stay here so they're imported from a single place.
+"""
+
+import logging
+from collections import defaultdict
+from datetime import datetime
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from ninja import Router
+from ninja.responses import Status
+from pydantic import BaseModel, Field
+from users.permissions import PermissionKey
+
+from community.field_limits import FieldLimit
+from community.models import DocFolder, Document
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
+
+router = Router()
+
+
+# ---------------------------------------------------------------------------
+# Schemas
+# ---------------------------------------------------------------------------
+
+
+class DocumentSummaryOut(BaseModel):
+    id: str
+    title: str
+    display_order: int
+    updated_at: datetime
+
+
+class DocFolderOut(BaseModel):
+    id: str
+    name: str
+    parent_id: str | None
+    display_order: int
+    children: list["DocFolderOut"]
+    documents: list[DocumentSummaryOut]
+
+
+class FolderIn(BaseModel):
+    name: str = Field(max_length=FieldLimit.TITLE)
+    parent_id: str | None = None
+
+
+class FolderPatchIn(BaseModel):
+    name: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    parent_id: str | None = None
+    display_order: int | None = None
+
+
+class DocumentIn(BaseModel):
+    title: str = Field(max_length=FieldLimit.TITLE)
+    folder_id: str
+    content_pm: str = Field(default="", max_length=FieldLimit.CONTENT)
+
+
+class DocumentPatchIn(BaseModel):
+    title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    folder_id: str | None = None
+
+
+class DocumentOut(BaseModel):
+    id: str
+    title: str
+    content: str
+    content_pm: str
+    content_html: str
+    folder_id: str
+    display_order: int
+    created_by_id: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ReorderIn(BaseModel):
+    ids: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _folder_trees(root: DocFolder | None = None) -> list[DocFolderOut]:
+    """param(root): subtree to build; None builds every top-level folder."""
+    children: defaultdict[UUID | None, list[DocFolder]] = defaultdict(list)
+    for f in DocFolder.objects.all():
+        children[f.parent_id].append(f)  # ty: ignore[unresolved-attribute]
+    documents: defaultdict[UUID, list[Document]] = defaultdict(list)
+    for d in Document.objects.only("id", "title", "display_order", "updated_at", "folder"):
+        documents[d.folder_id].append(d)
+
+    def build(folder: DocFolder) -> DocFolderOut:
+        return DocFolderOut(
+            id=str(folder.id),
+            name=folder.name,
+            parent_id=str(folder.parent_id) if folder.parent_id else None,  # ty: ignore[unresolved-attribute]
+            display_order=folder.display_order,
+            children=[build(c) for c in children[folder.id]],
+            documents=[
+                DocumentSummaryOut(
+                    id=str(d.id),
+                    title=d.title,
+                    display_order=d.display_order,
+                    updated_at=d.updated_at,
+                )
+                for d in documents[folder.id]
+            ],
+        )
+
+    return [build(f) for f in ([root] if root is not None else children[None])]
+
+
+def _folder_to_out(folder: DocFolder) -> DocFolderOut:
+    return _folder_trees(folder)[0]
+
+
+def _apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]) -> None:
+    rows = list(model.objects.filter(pk__in=ids).only("id", "display_order"))
+    order = {UUID(pk): i for i, pk in enumerate(ids)}
+    for row in rows:
+        row.display_order = order[row.pk]
+    model.objects.bulk_update(rows, ["display_order"])
+
+
+def _doc_to_out(doc: Document) -> DocumentOut:
+    return DocumentOut(
+        id=str(doc.id),
+        title=doc.title,
+        content=doc.content,
+        content_pm=doc.content_pm,
+        content_html=doc.content_html,
+        folder_id=str(doc.folder_id),
+        display_order=doc.display_order,
+        created_by_id=str(doc.created_by_id) if doc.created_by_id else None,
+        created_at=doc.created_at,
+        updated_at=doc.updated_at,
+    )
+
+
+def _has_manage_docs(user) -> bool:
+    return user.has_permission(PermissionKey.MANAGE_DOCUMENTS)
+
+
+# ---------------------------------------------------------------------------
+# Folder endpoints — named routes FIRST, parameterized LAST
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/docs/folders/",
+    response={200: list[DocFolderOut], 403: ErrorOut},
+    auth=gated_jwt,
+)
+def list_folders(request):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_folders",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
+    return Status(200, _folder_trees())
+
+
+@router.post(
+    "/docs/folders/",
+    response={201: DocFolderOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def create_folder(request, payload: FolderIn):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
+
+    parent = None
+    if payload.parent_id:
+        try:
+            parent = DocFolder.objects.get(pk=payload.parent_id)
+        except DocFolder.DoesNotExist:
+            raise_validation(Code.Docs.PARENT_FOLDER_NOT_FOUND, field="parent_id", status_code=404)
+
+    folder = DocFolder.objects.create(name=payload.name, parent=parent)
+    audit_log(
+        logging.INFO,
+        "doc_folder_created",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER,
+            id=str(folder.id),
+            details={"name": folder.name, "parent_id": str(parent.id) if parent else None},
+        ),
+    )
+    return Status(201, _folder_to_out(folder))
+
+
+@router.put(
+    "/docs/folders/reorder/",
+    response={200: dict, 403: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_folders(request, payload: ReorderIn):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "reorder_folders",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
+
+    _apply_display_order(DocFolder, payload.ids)
+    audit_log(logging.INFO, "doc_folders_reordered", request)
+    return Status(200, {"detail": "Folders reordered."})
+
+
+@router.patch(
+    "/docs/folders/{folder_id}/",
+    response={200: DocFolderOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def update_folder(request, folder_id: str, payload: FolderPatchIn):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOC_FOLDER,
+                id=folder_id,
+                details={
+                    "endpoint": "update_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
+
+    try:
+        folder = DocFolder.objects.get(pk=folder_id)
+    except DocFolder.DoesNotExist:
+        raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
+
+    updates = payload.model_dump(exclude_unset=True)
+    if "parent_id" in updates:
+        pid = updates.pop("parent_id")
+        if pid is None:
+            folder.parent = None
+        else:
+            try:
+                folder.parent = DocFolder.objects.get(pk=pid)
+            except DocFolder.DoesNotExist:
+                raise_validation(
+                    Code.Docs.PARENT_FOLDER_NOT_FOUND, field="parent_id", status_code=404
+                )
+
+    for key, value in updates.items():
+        setattr(folder, key, value)
+    folder.save()
+    audit_log(
+        logging.INFO,
+        "doc_folder_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER,
+            id=folder_id,
+            details={"fields_changed": list(updates.keys())},
+        ),
+    )
+    return Status(200, _folder_to_out(folder))
+
+
+@router.delete(
+    "/docs/folders/{folder_id}/",
+    response={200: dict, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def delete_folder(request, folder_id: str):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOC_FOLDER,
+                id=folder_id,
+                details={
+                    "endpoint": "delete_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
+
+    try:
+        folder = DocFolder.objects.get(pk=folder_id)
+    except DocFolder.DoesNotExist:
+        raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
+
+    folder_name = folder.name
+    folder.delete()
+    audit_log(
+        logging.INFO,
+        "doc_folder_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER, id=folder_id, details={"name": folder_name}
+        ),
+    )
+    return Status(200, {"detail": "Folder deleted."})

@@ -78,7 +78,7 @@ content section of `__all__` (keep both lists tidy).
 
 ### Step 3 — Endpoints: `backend/community/_resources.py` (new file)
 
-Copy `backend/community/_guidelines.py`. **Reuse the existing `GuidelinesOut` /
+Copy `backend/community/content/guidelines.py`. **Reuse the existing `GuidelinesOut` /
 `GuidelinesPatchIn` schemas and the `_singleton_out` / `_apply_update` shape** — every
 singleton page shares the same wire format, so import or replicate them rather than
 inventing new schemas. New file:
@@ -96,10 +96,10 @@ from ninja.responses import Status
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community._content_render import render_content_payload
-from community._field_limits import FieldLimit
-from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community.content._render import render_content_payload
+from community.field_limits import FieldLimit
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
 from community.models import Resources
 
 router = Router()
@@ -172,7 +172,7 @@ def update_resources(request, payload: ResourcesPatchIn):
 > hides the Edit button; a determined client can still call PATCH, so the 403 here is what
 > actually enforces edit access. Never rely on the frontend check alone.
 
-> Tip: if you prefer not to duplicate the schema/helpers, you can `from community._guidelines
+> Tip: if you prefer not to duplicate the schema/helpers, you can `from community.content.guidelines
 > import GuidelinesOut, GuidelinesPatchIn` and reuse them — that's what FAQ and Guidelines
 > already do (they share one `_singleton_out`). The standalone version above is fine too.
 
@@ -376,7 +376,7 @@ fixed set of `/api/community/*` routes.
 |---------|------|
 | Permission key (if new — run `add-new-permission`) | `backend/users/permissions.py`, `frontend/src/models/permissions.ts` |
 | Singleton models | `backend/community/models/content.py`, `models/__init__.py` |
-| Endpoint pattern | `backend/community/_guidelines.py` (FAQ + Guidelines) |
+| Endpoint pattern | `backend/community/content/guidelines.py` (FAQ + Guidelines) |
 | Auth (`gated_jwt`) | `backend/config/auth.py` (account-state chokepoint — use this, not `JWTAuth()`) |
 | Router registration | `backend/community/api.py` |
 | Backend tests | `backend/tests/test_community.py` |
@@ -387,6 +387,6 @@ fixed set of `/api/community/*` routes.
 
 ## Note — not the same as `EditablePage`
 
-PDA also has a generic `EditablePage` model with a `community/_pages.py` router and
+PDA also has a generic `EditablePage` model with a `community/content/pages.py` router and
 `useEditablePage(slug)` hook — that's a *different* mechanism (dynamic, slug-addressed pages).
 This skill scaffolds a **dedicated singleton page** like FAQ/Guidelines. Don't conflate them.

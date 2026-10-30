@@ -1,7 +1,7 @@
 import pytest
-from community._validation import ValidationException
+from community.validation import ValidationException
 from django.db import IntegrityError
-from users._helpers import _check_and_set_email, _normalize_email
+from users.helpers import _check_and_set_email, _normalize_email
 from users.models import User
 
 

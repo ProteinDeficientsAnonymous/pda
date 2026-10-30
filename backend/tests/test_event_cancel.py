@@ -1,8 +1,8 @@
 """Tests for event cancel/uncancel/delete status transitions via PATCH."""
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.models import User
 

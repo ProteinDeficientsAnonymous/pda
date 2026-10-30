@@ -10,7 +10,7 @@ import { eventKeys } from './events';
 import type { operations } from './types.gen';
 
 type ListEventsQuery = NonNullable<
-  operations['community__events_list_events']['parameters']['query']
+  operations['community_events_crud_list_events']['parameters']['query']
 >;
 
 // Any week or day view sits inside its month padded by a week, so one fetch per

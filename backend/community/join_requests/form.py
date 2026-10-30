@@ -1,0 +1,202 @@
+"""Join form configuration endpoints (question CRUD and ordering)."""
+
+import logging
+from uuid import UUID
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from ninja import Router
+from ninja.responses import Status
+from pydantic import BaseModel, Field
+from users.permissions import PermissionKey
+
+from community.field_limits import FieldLimit
+from community.models import JoinFormQuestion, JoinFormQuestionType
+from community.shared import ErrorOut, logger  # noqa: F401
+from community.validation import Code, raise_validation
+
+router = Router()
+
+
+class JoinFormQuestionOut(BaseModel):
+    id: str
+    label: str
+    field_type: JoinFormQuestionType
+    options: list[str] = []
+    required: bool
+    display_order: int
+
+
+class JoinFormQuestionIn(BaseModel):
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: JoinFormQuestionType = JoinFormQuestionType.TEXT
+    options: list[str] = []
+    required: bool = False
+
+
+class JoinFormQuestionOrderIn(BaseModel):
+    question_ids: list[str]
+
+
+def _question_out(q: JoinFormQuestion) -> JoinFormQuestionOut:
+    return JoinFormQuestionOut(
+        id=str(q.id),
+        label=q.label,
+        field_type=q.field_type,
+        options=q.options or [],
+        required=q.required,
+        display_order=q.display_order,
+    )
+
+
+@router.get("/join-form/", response={200: list[JoinFormQuestionOut]}, auth=None)
+def get_join_form(request):
+    questions = JoinFormQuestion.objects.all()
+    return Status(200, [_question_out(q) for q in questions])
+
+
+@router.post(
+    "/join-form/questions/",
+    response={201: JoinFormQuestionOut, 403: ErrorOut},
+    auth=gated_jwt,
+)
+def create_join_form_question(request, payload: JoinFormQuestionIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
+    max_order = JoinFormQuestion.objects.count()
+    q = JoinFormQuestion.objects.create(
+        label=payload.label,
+        field_type=payload.field_type,
+        options=payload.options,
+        required=payload.required,
+        display_order=max_order,
+    )
+    audit_log(
+        logging.INFO,
+        "join_form_question_created",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(q.id), details={"label": q.label}
+        ),
+    )
+    return Status(201, _question_out(q))
+
+
+@router.put(
+    "/join-form/questions/order/",
+    response={200: list[JoinFormQuestionOut], 403: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "reorder_join_form_questions",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
+    for idx, qid in enumerate(payload.question_ids):
+        JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
+    audit_log(logging.INFO, "join_form_questions_reordered", request)
+    questions = JoinFormQuestion.objects.all()
+    return Status(200, [_question_out(q) for q in questions])
+
+
+@router.patch(
+    "/join-form/questions/{question_id}/",
+    response={200: JoinFormQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def update_join_form_question(request, question_id: UUID, payload: JoinFormQuestionIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_FORM_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "update_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
+    try:
+        q = JoinFormQuestion.objects.get(id=question_id)
+    except JoinFormQuestion.DoesNotExist:
+        raise_validation(Code.JoinForm.QUESTION_NOT_FOUND, status_code=404)
+    q.label = payload.label
+    q.field_type = payload.field_type
+    q.options = payload.options
+    q.required = payload.required
+    q.save()
+    audit_log(
+        logging.INFO,
+        "join_form_question_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(question_id), details={"label": q.label}
+        ),
+    )
+    return Status(200, _question_out(q))
+
+
+@router.delete(
+    "/join-form/questions/{question_id}/",
+    response={204: None, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def delete_join_form_question(request, question_id: UUID):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_FORM_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "delete_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                },
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
+    try:
+        q = JoinFormQuestion.objects.get(id=question_id)
+    except JoinFormQuestion.DoesNotExist:
+        raise_validation(Code.JoinForm.QUESTION_NOT_FOUND, status_code=404)
+    label = q.label
+    q.delete()
+    audit_log(
+        logging.INFO,
+        "join_form_question_deleted",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(question_id), details={"label": label}
+        ),
+    )
+    return Status(204, None)

@@ -1,6 +1,6 @@
 import pytest
-from community._shared import _optional_jwt
 from community.models import Event, EventComment, EventRSVP, PageVisibility, RSVPStatus
+from community.shared import _optional_jwt
 from config.auth import gated_jwt
 from django.db import connection
 from django.test import RequestFactory

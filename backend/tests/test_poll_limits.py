@@ -2,9 +2,9 @@ import json
 from itertools import count
 
 import pytest
-from community._polls import MAX_POLL_OPTIONS
-from community._validation import Code
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
+from community.polls.crud import MAX_POLL_OPTIONS
+from community.validation import Code
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from users.models import User

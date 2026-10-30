@@ -2,9 +2,9 @@ from collections import defaultdict
 from typing import Annotated, Any
 from uuid import UUID
 
-from community._cashapp_import_types import MatchConfidence, PaymentProposal
-from community._event_host_rsvps import verify_guest_payments as verify_guest_payments_view
-from community._event_schemas import MAX_BULK_PAYMENT_VERIFY, BulkPaymentVerifyIn
+from community.cashapp.import_types import MatchConfidence, PaymentProposal
+from community.events.schemas import MAX_BULK_PAYMENT_VERIFY, BulkPaymentVerifyIn
+from community.rsvps.host import verify_guest_payments as verify_guest_payments_view
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey

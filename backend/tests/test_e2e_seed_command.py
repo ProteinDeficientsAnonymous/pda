@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from community._attendance_analytics import (
+from community.attendance.analytics import (
     compute_member_stats,
     is_compliant,
     is_pause_candidate,

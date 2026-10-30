@@ -1,7 +1,7 @@
 """Tests for ProseMirror JSON → HTML rendering."""
 
 import pytest
-from community._prosemirror_html import prosemirror_to_html
+from community.content._prosemirror_html import prosemirror_to_html
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for

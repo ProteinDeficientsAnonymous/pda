@@ -4,12 +4,12 @@ from datetime import date
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from notifications._attendance_reminder_email import send_attendance_reminder_email
+from notifications.attendance_reminder_email import send_attendance_reminder_email
 from notifications.email_sender import get_email_sender
-from users._member_search import with_last_qualifying_at
+from users.member_search import with_last_qualifying_at
 from users.models import User
 
-from community._attendance_clock import anchor_from, latest_due_milestone
+from community.attendance.clock import anchor_from, latest_due_milestone
 from community.models import AttendanceReminder
 
 logger = logging.getLogger(__name__)

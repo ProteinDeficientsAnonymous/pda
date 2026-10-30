@@ -2,9 +2,9 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from community import _event_blasts
-from community._validation import Code
+from community.events import blasts
 from community.models import Event, EventEmailBlast, EventRSVP, RSVPStatus
+from community.validation import Code
 from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 from users.permissions import PermissionKey
@@ -212,7 +212,7 @@ class TestEmailBlastSending:
         """A blast fans out to every rsvp — it must not spend transactional quota."""
 
         spy = MagicMock(return_value=fake_email_sender)
-        monkeypatch.setattr(_event_blasts, "get_email_sender", spy)
+        monkeypatch.setattr(blasts, "get_email_sender", spy)
         api_client.post(
             BLAST_URL.format(event_id=event_with_attendees.id),
             _payload(),

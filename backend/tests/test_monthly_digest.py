@@ -6,7 +6,7 @@ from community.management.commands import send_monthly_digest as digest_command
 from community.models import Event, EventType
 from django.core.management import call_command
 from django.utils import timezone
-from notifications._digest_emails import send_monthly_digest_email
+from notifications.digest_emails import send_monthly_digest_email
 from notifications.email_sender import EmailStream, SendResult
 
 from tests._digest_helpers import make_event, make_tentative

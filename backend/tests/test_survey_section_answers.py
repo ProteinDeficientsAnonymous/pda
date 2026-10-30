@@ -3,8 +3,8 @@ import io
 from uuid import uuid4
 
 import pytest
-from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.surveys.validators import _build_survey_answers, _validate_survey_answers
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for

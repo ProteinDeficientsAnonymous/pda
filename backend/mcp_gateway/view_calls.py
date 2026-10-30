@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from community._validation import ValidationException
+from community.validation import ValidationException
 from config.audit import mark_request_via_mcp
 from config.validation_handlers import _serialize_validation_exception
 from django.core.handlers.asgi import ASGIRequest

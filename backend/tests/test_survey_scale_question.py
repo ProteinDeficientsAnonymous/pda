@@ -1,6 +1,6 @@
 import pytest
-from community._survey_schemas import SurveyQuestionIn
 from community.models import SurveyQuestionType
+from community.surveys.schemas import SurveyQuestionIn
 from pydantic import ValidationError
 
 

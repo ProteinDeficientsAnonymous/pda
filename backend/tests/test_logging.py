@@ -126,7 +126,7 @@ class TestApplicationEventLogging:
             caplog.at_level(logging.ERROR, logger="pda.community"),
             pytest.MonkeyPatch.context() as mp,
         ):
-            mp.setattr("community._join_request_submit.send_mail", _fail_send_mail)
+            mp.setattr("community.join_requests.submit.send_mail", _fail_send_mail)
             response = client.post(
                 "/api/community/join-request/",
                 data={

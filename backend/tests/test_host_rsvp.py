@@ -256,7 +256,7 @@ class TestSetGuestRsvp:
     def test_broadcasts_capacity_change_excluding_actor(
         self, api_client, host_rsvp_event, host_user, guest
     ):
-        with patch("community._event_host_rsvps.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.host.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
                 {"status": RSVPStatus.ATTENDING},
@@ -369,7 +369,7 @@ class TestRemoveGuestRsvp:
         self, api_client, host_rsvp_event, host_user, guest
     ):
         EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
-        with patch("community._event_host_rsvps.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.host.broadcast_capacity_change") as mock_broadcast:
             api_client.delete(
                 f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
                 **auth_headers_for(host_user),

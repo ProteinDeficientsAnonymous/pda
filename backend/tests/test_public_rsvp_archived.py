@@ -1,8 +1,8 @@
 """Archived-member/non-member scenarios for the public RSVP flow."""
 
 import pytest
-from community._validation import Code
 from community.models import EventRSVP
+from community.validation import Code
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 

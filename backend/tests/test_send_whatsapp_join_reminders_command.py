@@ -5,8 +5,8 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
-from community._whatsapp_join_reminder import GRACE_DAYS, INTERVAL_DAYS, MAX_REMINDERS
 from community.models import WhatsAppJoinReminder, WhatsAppLinkConfig
+from community.scheduled.whatsapp_join_reminder import GRACE_DAYS, INTERVAL_DAYS, MAX_REMINDERS
 from django.core.management import call_command
 from django.utils import timezone
 from notifications import email_sender as email_sender_module

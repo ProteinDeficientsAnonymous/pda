@@ -2,8 +2,8 @@ import json
 
 import pytest
 from audit.models import AuditLogEntry
-from community._validation import Code
 from community.models import Survey, SurveyResponse
+from community.validation import Code
 
 from tests._asserts import assert_error_code
 

@@ -83,7 +83,7 @@ def main() -> int:
     if head_error_outs == 0 and new_error_outs > 0:
         violations.append(
             f"  - adds `ErrorOut(detail=...)` — use `raise_validation(Code.X.Y, status_code=...)` "
-            f"from `community._validation` instead."
+            f"from `community.validation` instead."
         )
     elif new_error_outs > head_error_outs:
         violations.append(
@@ -112,7 +112,7 @@ def main() -> int:
                 f"❌ validation-error-pattern hook blocked edit to {file_path}:",
                 *violations,
                 "",
-                "see `backend/community/_validation.py` for the `Code` catalog and "
+                "see `backend/community/validation.py` for the `Code` catalog and "
                 "`raise_validation` helper. if you're intentionally leaving a legacy "
                 "string (e.g. for a success response), rename `ErrorOut` locally to avoid "
                 "the match, or exempt this file via the hook.",

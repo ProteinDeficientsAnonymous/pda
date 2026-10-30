@@ -1,13 +1,13 @@
 """Tests for the payment-confirmation helper predicates."""
 
 import pytest
-from community._rsvp_payment import (
+from community.models import EventRSVP, EventType, RSVPStatus
+from community.rsvps.payment import (
     can_see_payment_details,
     event_requires_payment_confirmation,
     payment_enforced_for_event,
     requires_payment_gate,
 )
-from community.models import EventRSVP, EventType, RSVPStatus
 from django.utils import timezone
 
 from tests._payment_helpers import (

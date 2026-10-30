@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community._attendance_analytics import (
+from community.attendance.analytics import (
     compute_member_stats,
     is_pause_candidate,
     user_rsvps_for_attendance,
@@ -17,7 +17,7 @@ from community.models import (
 from django.utils import timezone
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.tools.members_read import _page
-from users._member_search import MemberFilters, MemberSort
+from users.member_search import MemberFilters, MemberSort
 from users.models import User
 
 from tests._mcp_members_helpers import (

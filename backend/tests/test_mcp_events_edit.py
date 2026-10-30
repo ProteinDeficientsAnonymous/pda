@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
-from community._event_description_templates import OFFICIAL_WALK_TEMPLATE
+from community.events.description_templates import OFFICIAL_WALK_TEMPLATE
 from community.models import Event, EventRSVP, EventStatus, EventTag, EventType, RSVPStatus
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var

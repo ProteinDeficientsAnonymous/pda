@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from typing import Annotated, Any
 
-from community._validation import ValidationException
+from community.validation import ValidationException
 from config.validation_handlers import _serialize_pydantic_error, _serialize_validation_exception
 from django.conf import settings
 from mcp.server.mcpserver.exceptions import ToolError

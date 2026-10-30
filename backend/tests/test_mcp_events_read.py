@@ -4,12 +4,12 @@ from datetime import timedelta
 
 import pytest
 from asgiref.sync import async_to_sync
-from community._event_description_templates import (
+from community.events.crud import list_events
+from community.events.description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
-from community._event_list import EventListQuery
-from community._events import list_events
+from community.events.listing import EventListQuery
 from community.models import Event, EventStatus, EventTag, EventType, PageVisibility
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var

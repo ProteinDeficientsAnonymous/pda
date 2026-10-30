@@ -3,8 +3,8 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from community._payment_verification import MISCLICK_WINDOW, apply_payment_verification
 from community.models import EventRSVP, RSVPStatus
+from community.rsvps._payment_verification import MISCLICK_WINDOW, apply_payment_verification
 from django.apps import apps
 from django.utils import timezone
 from notifications.models import Notification, NotificationType

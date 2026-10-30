@@ -2,7 +2,7 @@
 
 import logging
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import Count, Q

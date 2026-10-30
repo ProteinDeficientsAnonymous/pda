@@ -6,13 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from community._cashapp_import_price import PriceSpec
-from community._cashapp_import_review import (
-    load_guests_and_verified,
-    load_payment_context,
-    review_cashapp_csv,
-)
-from community._cashapp_import_types import (
+from community.cashapp.import_types import (
     AmountMismatchLead,
     CashAppReview,
     GapGuest,
@@ -21,11 +15,17 @@ from community._cashapp_import_types import (
     PaymentProposal,
     UnreadableRow,
 )
-from community._event_helpers import _can_edit_event
-from community._event_read_visibility import _enforce_event_read_visibility
-from community._tentative_member_access import event_viewer_for
-from community._validation import Code, ValidationException, raise_validation
+from community.cashapp.price import PriceSpec
+from community.cashapp.review import (
+    load_guests_and_verified,
+    load_payment_context,
+    review_cashapp_csv,
+)
+from community.events.helpers import _can_edit_event
+from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.tentative_member_access import event_viewer_for
 from community.models import Event, parse_event_ref
+from community.validation import Code, ValidationException, raise_validation
 from django.conf import settings
 from django.core.cache import caches
 from mcp.server.mcpserver.exceptions import ToolError

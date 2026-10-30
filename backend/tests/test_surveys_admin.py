@@ -3,9 +3,9 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from community import _surveys, _surveys_responses
-from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from community.surveys import crud, responses
+from community.validation import Code
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
@@ -33,8 +33,8 @@ def survey(db, surveys_admin):
 @pytest.fixture
 def audit_spy(monkeypatch):
     spy = MagicMock()
-    monkeypatch.setattr(_surveys, "audit_log", spy)
-    monkeypatch.setattr(_surveys_responses, "audit_log", spy)
+    monkeypatch.setattr(crud, "audit_log", spy)
+    monkeypatch.setattr(responses, "audit_log", spy)
     return spy
 
 

@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import Event, EventType, PageVisibility
+from community.validation import Code
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code

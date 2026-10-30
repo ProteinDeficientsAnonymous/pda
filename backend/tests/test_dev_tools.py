@@ -1,6 +1,6 @@
 import pytest
-from community._event_rsvp_answers import build_rsvp_answers
 from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.rsvps.answers import build_rsvp_answers
 from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey

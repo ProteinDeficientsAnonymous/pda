@@ -2,13 +2,13 @@ from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
-from community._cashapp_import_csv import (
+from community.cashapp._csv_parser import (
     MAX_ROWS,
     parse_amount,
     parse_cashapp_csv,
     parse_cashapp_datetime,
 )
-from community._validation import Code, ValidationException
+from community.validation import Code, ValidationException
 from django.conf import settings
 
 from tests._cashapp_helpers import HEADER, csv_line, make_csv

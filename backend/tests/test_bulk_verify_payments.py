@@ -3,9 +3,9 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
-from community._event_schemas import MAX_BULK_PAYMENT_VERIFY
-from community._validation import Code
+from community.events.schemas import MAX_BULK_PAYMENT_VERIFY
 from community.models import EventRSVP, EventStatus, RSVPStatus
+from community.validation import Code
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone

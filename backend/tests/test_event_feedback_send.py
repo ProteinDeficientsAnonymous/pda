@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from io import StringIO
 
 import pytest
-from community._event_feedback_send import (
+from community.event_feedback.send import (
     due_feedback_events,
     feedback_cutoff,
     feedback_url,

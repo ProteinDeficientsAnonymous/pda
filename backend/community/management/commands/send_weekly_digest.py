@@ -4,18 +4,18 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from notifications._digest_emails import send_weekly_digest_email
+from notifications.digest_emails import send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._digest import (
+from community.scheduled.digest import (
     digest_events,
     digest_urls,
     send_digest_to_all,
     weekly_digest_recipients,
 )
-from community._login_reminder import send_login_reminders
-from community._tentative_attendance_nudge import send_attendance_nudges
+from community.scheduled.login_reminder import send_login_reminders
+from community.scheduled.tentative_attendance_nudge import send_attendance_nudges
 
 logger = logging.getLogger(__name__)
 

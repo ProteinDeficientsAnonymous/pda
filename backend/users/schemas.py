@@ -1,9 +1,9 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from community._field_limits import FieldLimit
-from community._validation import Code, raise_validation
+from community.field_limits import FieldLimit
 from community.models.choices import EventType
+from community.validation import Code, raise_validation
 from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 

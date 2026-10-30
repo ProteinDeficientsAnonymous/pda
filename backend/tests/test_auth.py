@@ -1,7 +1,7 @@
 """Tests for auth endpoints: login, refresh, me, change-password, onboarding."""
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 

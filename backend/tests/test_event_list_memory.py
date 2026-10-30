@@ -3,7 +3,7 @@
 import io
 
 import pytest
-from community._event_helpers import _event_out, load_event_with_stats_prefetch
+from community.events.helpers import _event_out, load_event_with_stats_prefetch
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection

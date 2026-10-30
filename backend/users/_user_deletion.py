@@ -1,14 +1,14 @@
 import logging
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import ProtectedError
 from ninja.responses import Status
 
 from users._archive import archive_user
-from users._helpers import _is_last_admin
 from users._management import router as management_router
+from users.helpers import _is_last_admin
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import ErrorOut

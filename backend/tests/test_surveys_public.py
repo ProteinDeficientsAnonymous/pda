@@ -5,7 +5,6 @@ import logging
 
 import pytest
 from audit.models import AuditLogEntry
-from community._validation import Code
 from community.models import (
     Survey,
     SurveyQuestion,
@@ -13,6 +12,7 @@ from community.models import (
     SurveyResponse,
     SurveyVisibility,
 )
+from community.validation import Code
 from users.models import User
 from users.permissions import PermissionKey
 

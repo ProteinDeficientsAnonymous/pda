@@ -6,8 +6,8 @@ without re-submitting an RSVP. Always returns the same neutral 200 (no enumerati
 """
 
 import pytest
-from community._public_rsvp_resend import _NEUTRAL_RESPONSE
-from community._validation import Code
+from community.rsvps.public_resend import _NEUTRAL_RESPONSE
+from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import NonMemberRsvpToken

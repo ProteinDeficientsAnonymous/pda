@@ -1,6 +1,6 @@
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
+from community.validation import Code
 from users.models import User
 
 from tests._asserts import assert_error_code

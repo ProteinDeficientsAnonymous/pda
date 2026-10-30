@@ -7,8 +7,8 @@ Covers: cookie set on login/magic-login, refresh via cookie, logout clears cooki
 import pytest
 from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
-from users._refresh_cookie import REFRESH_COOKIE_NAME
 from users.models import MagicLoginToken
+from users.refresh_cookie import REFRESH_COOKIE_NAME
 
 
 @pytest.mark.django_db

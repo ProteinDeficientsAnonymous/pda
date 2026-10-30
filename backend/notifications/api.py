@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from ninja import Query, Router

@@ -5,9 +5,9 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
-from community import _login_reminder as login_reminder
 from community.management.commands import send_weekly_digest as digest_command
 from community.models import Event, EventType, JoinRequest, JoinRequestStatus, LoginReminder
+from community.scheduled import login_reminder
 from django.core.management import call_command
 from django.db.models import F
 from django.utils import timezone

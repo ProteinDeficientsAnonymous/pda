@@ -38,6 +38,7 @@ make agent-test-since # Run pytest subset from git diff
 make agent-lint       # Run ruff (lint + format; minimal output)
 make agent-typecheck  # Run ty type checker (minimal output)
 make agent-complexity # Run cognitive complexity check (minimal output)
+make agent-check-private-modules # Fail if a _module is imported from outside its package
 make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
 make diff-coverage    # Tests + coverage; fail if lines changed vs origin/main are <80% covered
 make agent-frontend-test      # Run Vitest suite (minimal output)

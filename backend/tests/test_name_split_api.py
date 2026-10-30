@@ -1,10 +1,10 @@
 import pytest
-from community._join_request_approval import _provision_approved_user
-from community._validation import ValidationException
+from community.join_requests.approval import _provision_approved_user
 from community.models.join_form import JoinRequest
+from community.validation import ValidationException
 from django.utils import timezone
-from users._name_parsing import parse_display_name
 from users.models import User
+from users.name_parsing import parse_display_name
 from users.schemas import UserOut
 
 

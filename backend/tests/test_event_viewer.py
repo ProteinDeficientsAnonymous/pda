@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community._event_viewer import resolve_event_viewer
+from community.events.viewer import resolve_event_viewer
 from community.models import EventType, PageVisibility
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User

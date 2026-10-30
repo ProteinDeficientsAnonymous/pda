@@ -332,7 +332,7 @@ class TestFinalizePoll:
     ):
         option = poll_with_options.options.first()
         payload = {"winning_option_id": str(option.id)}
-        with patch("community._polls.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.polls.crud.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"/api/community/events/{poll_event.id}/poll/finalize/",
                 data=json.dumps(payload),

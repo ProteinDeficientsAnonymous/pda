@@ -1,11 +1,11 @@
-from community._tentative_member_access import is_tentative_member
-from community._validation import Code, raise_validation
+from community.events.tentative_member_access import is_tentative_member
+from community.validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from ninja import Router
 from ninja.responses import Status
 
-from users._helpers import visible_name
+from users.helpers import visible_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import (

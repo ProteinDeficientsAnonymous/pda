@@ -17,7 +17,7 @@ A pending user (needs password reset / onboarding) must still reach the few
 endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
-from community._validation import Code, ValidationException
+from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
 from users.models import User
