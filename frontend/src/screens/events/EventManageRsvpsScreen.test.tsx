@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { CREATOR, makeEvent, NON_HOST } from '@/test/fixtures';
 
 import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
@@ -20,9 +20,6 @@ const BASE_EVENT = makeEvent({
   coHostIds: ['user-creator'],
   guests: [],
 });
-
-const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
-const nonMember = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
 
 function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -48,7 +45,7 @@ beforeEach(() => {
 
 describe('EventManageRsvpsScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: NON_HOST, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();

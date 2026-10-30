@@ -1,27 +1,3 @@
-// localStorage must be available before Zustand `persist` loads.
-// vi.hoisted runs at the top of the module, before any imports are evaluated.
-const storageMock = vi.hoisted(() => {
-  let store: Record<string, string> = {};
-  const mock = {
-    getItem: (key: string): string | null => store[key] ?? null,
-    setItem: (key: string, value: string): void => {
-      store[key] = value;
-    },
-    removeItem: (key: string): void => {
-      delete store[key];
-    },
-    clear: (): void => {
-      store = {};
-    },
-    get length(): number {
-      return Object.keys(store).length;
-    },
-    key: (index: number): string | null => Object.keys(store)[index] ?? null,
-  };
-  Object.defineProperty(window, 'localStorage', { value: mock, writable: true });
-  return mock;
-});
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -95,7 +71,6 @@ function renderSettings() {
 }
 
 beforeEach(() => {
-  storageMock.clear();
   useAuthStore.setState({ status: 'authed', user: TEST_USER, accessToken: 'tok' });
   useAccessibilityStore.setState({ themeMode: 'system', dyslexiaFont: false, textScale: 1.0 });
   vi.clearAllMocks();
