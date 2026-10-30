@@ -230,15 +230,23 @@ GITHUB_APP_PRIVATE_KEY = (
 )
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+_default_mailer: dict[str, object] = {
+    "BACKEND": "django.core.mail.backends.console.EmailBackend",
+}
 if IS_PRODUCTION and os.environ.get("EMAIL_HOST"):
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ["EMAIL_HOST"]
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
+    _default_mailer = {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": os.environ["EMAIL_HOST"],
+            "username": os.environ.get("EMAIL_HOST_USER", ""),
+            "password": os.environ.get("EMAIL_HOST_PASSWORD", ""),
+            "port": 587,
+            "use_tls": True,
+        },
+    }
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+
+MAILERS = {"default": _default_mailer}
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")

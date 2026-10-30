@@ -5,11 +5,12 @@ from datetime import timedelta
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def _guest_rsvp_url(event, user):
@@ -28,9 +29,7 @@ def cohost(db):
 
 @pytest.fixture
 def manager(db):
-    user = User.objects.create_user(phone_number="+12025559202", password="x", first_name="Mgr")
-    user.roles.add(Role.objects.create(name="past_mgr", permissions=[PermissionKey.MANAGE_EVENTS]))
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture

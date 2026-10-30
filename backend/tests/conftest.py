@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import JoinFormQuestion, JoinRequest
+from community.models import EventType, JoinFormQuestion, JoinRequest, Survey
 from django.conf import settings as django_settings
 from django.core.cache import caches
 from django.db import DatabaseError, connections
@@ -143,6 +143,13 @@ def surveys_admin(db):
 @pytest.fixture
 def surveys_admin_headers(surveys_admin):
     return auth_headers_for(surveys_admin)
+
+
+@pytest.fixture
+def feedback_survey(db):
+    return Survey.objects.create(
+        title="official feedback", slug="official-feedback", feedback_event_type=EventType.OFFICIAL
+    )
 
 
 @pytest.fixture

@@ -14,82 +14,12 @@ from community._rsvp_counts import (
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.conf import settings
 from django.utils import timezone
-from users.models import Role, User
-from users.permissions import PermissionKey
+
+from tests._event_stats_helpers import cohost, host, members, stats_event
 
 ET = settings.COMMUNITY_TZ
 
-
-@pytest.fixture
-def members(db):
-    return [
-        User.objects.create_user(
-            phone_number=f"+1202555090{i}",
-            password="x",
-            first_name=f"Member {i}",
-        )
-        for i in range(1, 5)
-    ]
-
-
-@pytest.fixture
-def host_user(db):
-    return User.objects.create_user(
-        phone_number="+12025558000",
-        password="x",
-        first_name="Host",
-    )
-
-
-@pytest.fixture
-def cohost_user(db):
-    return User.objects.create_user(
-        phone_number="+12025558001",
-        password="x",
-        first_name="Co-host",
-    )
-
-
-@pytest.fixture
-def admin_user(db):
-    admin = User.objects.create_user(
-        phone_number="+12025558002",
-        password="x",
-        first_name="Event",
-        last_name="Admin",
-    )
-    role = Role.objects.create(name="stats_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
-    return admin
-
-
-@pytest.fixture
-def stats_event(db, host_user, cohost_user, members):
-    event = Event.objects.create(
-        title="Stats Event",
-        start_datetime=timezone.now() + timedelta(days=7),
-        end_datetime=timezone.now() + timedelta(days=7, hours=2),
-        rsvp_enabled=True,
-        created_by=host_user,
-    )
-    event.co_hosts.add(cohost_user)
-    event.invited_users.set(members)
-    return event
-
-
-@pytest.fixture
-def open_check_in_event(db, host_user, cohost_user, members):
-    """Event starting in 30 min — check-in window is open."""
-    event = Event.objects.create(
-        title="Check-in Open Event",
-        start_datetime=timezone.now() + timedelta(minutes=30),
-        end_datetime=timezone.now() + timedelta(hours=2),
-        rsvp_enabled=True,
-        created_by=host_user,
-    )
-    event.co_hosts.add(cohost_user)
-    event.invited_users.set(members)
-    return event
+__all__ = ["cohost", "host", "members", "stats_event"]
 
 
 @pytest.mark.django_db
@@ -157,12 +87,12 @@ class TestCancellations:
         assert len(rows) == 1
         assert rows[0].user_id == str(members[1].pk)
 
-    def test_empty_when_no_start_datetime(self, host_user, members):
+    def test_empty_when_no_start_datetime(self, host, members):
         event = Event.objects.create(
             title="TBD Event",
             datetime_tbd=True,
             rsvp_enabled=True,
-            created_by=host_user,
+            created_by=host,
         )
         EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
@@ -177,26 +107,26 @@ class TestCancellations:
         rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
         return self._cancel_at_existing(event, rsvp, cancelled_at=cancelled_at, **fields)
 
-    def _event_at(self, host_user, start):
+    def _event_at(self, host, start):
         return Event.objects.create(
-            title="Timed Event", start_datetime=start, rsvp_enabled=True, created_by=host_user
+            title="Timed Event", start_datetime=start, rsvp_enabled=True, created_by=host
         )
 
-    def test_zero_days_just_after_local_midnight(self, host_user, members):
-        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 14, 0, tzinfo=ET))
+    def test_zero_days_just_after_local_midnight(self, host, members):
+        event = self._event_at(host, timezone.datetime(2026, 6, 15, 14, 0, tzinfo=ET))
         row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 15, 0, 1, tzinfo=ET))
         assert row.days_before_event == 0
         assert row.within_24h is True
         assert row.after_start is False
 
-    def test_prior_local_day_under_24h_is_one_day_and_within_24h(self, host_user, members):
-        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+    def test_prior_local_day_under_24h_is_one_day_and_within_24h(self, host, members):
+        event = self._event_at(host, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
         row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 14, 23, 0, tzinfo=ET))
         assert row.days_before_event == 1
         assert row.within_24h is True
 
-    def test_prior_local_day_over_24h_is_not_within_24h(self, host_user, members):
-        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+    def test_prior_local_day_over_24h_is_not_within_24h(self, host, members):
+        event = self._event_at(host, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
         row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 14, 8, 0, tzinfo=ET))
         assert row.days_before_event == 1
         assert row.within_24h is False
@@ -209,8 +139,8 @@ class TestCancellations:
         assert row.within_24h is False
         assert row.after_start is True
 
-    def test_same_day_cancel_after_start_is_flagged(self, host_user, members):
-        event = self._event_at(host_user, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
+    def test_same_day_cancel_after_start_is_flagged(self, host, members):
+        event = self._event_at(host, timezone.datetime(2026, 6, 15, 9, 0, tzinfo=ET))
         row = self._cancel_at(event, members[0], timezone.datetime(2026, 6, 15, 10, 0, tzinfo=ET))
         assert row.days_before_event == 0
         assert row.within_24h is False
