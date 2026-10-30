@@ -3,6 +3,8 @@
 import warnings
 
 import pytest
+from django.conf import settings as dj_settings
+from django.core import mail
 from django.utils.deprecation import RemovedInDjango70Warning
 
 
@@ -35,19 +37,26 @@ class TestEmailBackendConfig:
         monkeypatch.setenv("EMAIL_HOST_PASSWORD", "secret")
         monkeypatch.setenv("DEFAULT_FROM_EMAIL", "pda@example.com")
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", RemovedInDjango70Warning)
-            settings_module = reload_settings()
+        # The test runner stores a locmem mailer on Django's settings object.
+        # Reloading the module does not replace that, so publish the reloaded
+        # config before asking Django to build a connection.
+        previous_mailers = dj_settings.MAILERS
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RemovedInDjango70Warning)
+                settings_module = reload_settings()
+                dj_settings.MAILERS = settings_module.MAILERS
+                connection = mail.mailers["default"]
+        finally:
+            dj_settings.MAILERS = previous_mailers
         mailer = settings_module.MAILERS["default"]
 
         assert mailer["BACKEND"] == "django.core.mail.backends.smtp.EmailBackend"
-        assert mailer["OPTIONS"] == {
-            "host": "smtp.example.com",
-            "username": "user",
-            "password": "secret",
-            "port": 587,
-            "use_tls": True,
-        }
+        assert connection.host == "smtp.example.com"
+        assert connection.port == 587
+        assert connection.username == "user"
+        assert connection.password == "secret"
+        assert connection.use_tls is True
         assert settings_module.DEFAULT_FROM_EMAIL == "pda@example.com"
 
 
