@@ -13,26 +13,7 @@ from community.models import (
 )
 from django.conf import settings
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
-
-
-@pytest.fixture
-def surveys_admin(db):
-    admin = User.objects.create_user(
-        phone_number="+12025557030", password="x", first_name="Surveys", last_name="Admin"
-    )
-    admin.roles.add(
-        Role.objects.create(name="surveys_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
-    )
-    return admin
-
-
-@pytest.fixture
-def admin_headers(surveys_admin):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(surveys_admin).access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -75,9 +56,9 @@ def anonymous_survey(db, surveys_admin, responder):
 @pytest.mark.django_db
 class TestAnonymousSurveyReports:
     def test_csv_drops_submitted_by_and_truncates_submitted_at(
-        self, api_client, admin_headers, anonymous_survey
+        self, api_client, surveys_admin_headers, anonymous_survey
     ):
-        response = api_client.get(_csv_url(anonymous_survey), **admin_headers)
+        response = api_client.get(_csv_url(anonymous_survey), **surveys_admin_headers)
         assert response.status_code == 200
         rows = _csv_rows(response)
         assert rows[0] == ["submitted_at", "Coming?"]
@@ -90,14 +71,18 @@ class TestAnonymousSurveyReports:
         assert {row[0] for row in rows[1:]} == days
         assert "Secret" not in response.content.decode("utf-8-sig")
 
-    def test_named_survey_csv_keeps_submitted_by(self, api_client, admin_headers, anonymous_survey):
+    def test_named_survey_csv_keeps_submitted_by(
+        self, api_client, surveys_admin_headers, anonymous_survey
+    ):
         Survey.objects.filter(id=anonymous_survey.id).update(anonymous=False)
-        rows = _csv_rows(api_client.get(_csv_url(anonymous_survey), **admin_headers))
+        rows = _csv_rows(api_client.get(_csv_url(anonymous_survey), **surveys_admin_headers))
         assert rows[0][0] == "submitted_by"
         assert "Secret Responder" in {row[0] for row in rows[1:]}
 
-    def test_summary_has_counts_but_no_names(self, api_client, admin_headers, anonymous_survey):
-        response = api_client.get(_summary_url(anonymous_survey), **admin_headers)
+    def test_summary_has_counts_but_no_names(
+        self, api_client, surveys_admin_headers, anonymous_survey
+    ):
+        response = api_client.get(_summary_url(anonymous_survey), **surveys_admin_headers)
         assert response.status_code == 200
         [summary] = response.json()
         assert summary["counts"] == {"yes": 1, "no": 1}
@@ -137,9 +122,9 @@ def conditional_survey(db, surveys_admin):
 @pytest.mark.django_db
 class TestConditionalQuestionReports:
     def test_summary_skips_hidden_unanswered_questions(
-        self, api_client, admin_headers, conditional_survey
+        self, api_client, surveys_admin_headers, conditional_survey
     ):
-        response = api_client.get(_summary_url(conditional_survey), **admin_headers)
+        response = api_client.get(_summary_url(conditional_survey), **surveys_admin_headers)
         assert response.status_code == 200
         by_label = {
             q.label: s
@@ -151,8 +136,10 @@ class TestConditionalQuestionReports:
         assert by_label["Favourite"]["answered"] == 1
         assert by_label["Favourite"]["counts"] == {"tofu": 1, "tempeh": 0}
 
-    def test_csv_leaves_hidden_question_blank(self, api_client, admin_headers, conditional_survey):
-        response = api_client.get(_csv_url(conditional_survey), **admin_headers)
+    def test_csv_leaves_hidden_question_blank(
+        self, api_client, surveys_admin_headers, conditional_survey
+    ):
+        response = api_client.get(_csv_url(conditional_survey), **surveys_admin_headers)
         assert response.status_code == 200
         rows = _csv_rows(response)
         assert rows[0] == ["submitted_by", "submitted_at", "Vegan?", "Favourite"]
