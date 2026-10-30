@@ -14,18 +14,13 @@ from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._users import make_user
+
 _PAST_JOINED = datetime(2020, 1, 1, tzinfo=UTC)
 
 
 def _make_member(phone_number: str, **extra) -> User:
-    user = User.objects.create_user(
-        phone_number=phone_number,
-        password="testpass123",
-        first_name="Test",
-        email=extra.pop("email", f"{phone_number}@example.test"),
-        is_member=True,
-        **extra,
-    )
+    user = make_user(phone_number=phone_number, **extra)
     User.objects.filter(pk=user.pk).update(date_joined=extra.get("date_joined", _PAST_JOINED))
     user.refresh_from_db()
     return user
@@ -74,12 +69,7 @@ class TestSendAttendanceRemindersCommand:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        User.objects.create_user(
-            phone_number="+12025550116",
-            password="testpass123",
-            email="guest@example.test",
-            is_member=False,
-        )
+        make_user(email="guest@example.test", is_member=False)
         with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
             call_command("send_attendance_reminders")
         fake_sender.send.assert_not_called()

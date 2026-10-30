@@ -4,22 +4,15 @@ from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._cashapp_helpers import csv_line, make_csv
 from tests._mcp_tool_helpers import run_tool, tool_error
 from tests._payment_helpers import create_paid_event
-
-
-def make_user(phone: str, *permissions: str, first: str = "Pay", last: str = "Admin") -> User:
-    user = User.objects.create_user(phone_number=phone, first_name=first, last_name=last)
-    if permissions:
-        user.roles.add(Role.objects.create(name=f"role-{phone}", permissions=list(permissions)))
-    return user
+from tests._users import make_user
 
 
 def make_importer() -> User:
-    return make_user("+12025557200", PermissionKey.IMPORT_PAYMENTS)
+    return make_user(PermissionKey.IMPORT_PAYMENTS)
 
 
 def make_event(creator: User, co_host: User | None = None, **fields) -> Event:
@@ -36,11 +29,9 @@ def make_draft(creator: User) -> Event:
     return make_event(creator, status=EventStatus.DRAFT)
 
 
-def add_guest(
-    event: Event, n: int, name: str, said_paid: bool = True, plus_one: bool = False
-) -> User:
+def add_guest(event: Event, name: str, said_paid: bool = True, plus_one: bool = False) -> User:
     first, last = name.split()
-    user = make_user(f"+1202555730{n}", first=first, last=last)
+    user = make_user(first_name=first, last_name=last)
     EventRSVP.objects.create(
         event=event,
         user=user,
@@ -53,11 +44,11 @@ def add_guest(
 
 def make_guests(event: Event) -> dict[str, User]:
     return {
-        "alex": add_guest(event, 1, "Alex Kim"),
-        "sam": add_guest(event, 2, "Sam Lee"),
-        "jo": add_guest(event, 3, "Jo Park", said_paid=False),
-        "riley": add_guest(event, 4, "Riley Chen"),
-        "casey": add_guest(event, 5, "Casey Wu", said_paid=False),
+        "alex": add_guest(event, "Alex Kim"),
+        "sam": add_guest(event, "Sam Lee"),
+        "jo": add_guest(event, "Jo Park", said_paid=False),
+        "riley": add_guest(event, "Riley Chen"),
+        "casey": add_guest(event, "Casey Wu", said_paid=False),
     }
 
 
