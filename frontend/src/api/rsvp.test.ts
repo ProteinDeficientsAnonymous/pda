@@ -1,7 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { calendarEventKeys, monthRange } from '@/api/calendarEvents';
@@ -9,6 +6,7 @@ import { apiClient } from '@/api/client';
 import { eventKeys } from '@/api/events';
 import { RsvpStatus } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useRemoveRsvp, useSetRsvp } from './rsvp';
 
@@ -25,24 +23,16 @@ vi.mock('@/auth/store', () => {
 const EVENT_ID = '11111111-1111-1111-1111-111111111111';
 const EVENT_SLUG = 'summer-potluck';
 
-function buildWrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-  return { qc, Wrapper };
-}
-
 describe('useSetRsvp', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should post questionnaire_responses with the RSVP body', async () => {
-    const { Wrapper } = buildWrapper();
     vi.mocked(apiClient.post).mockResolvedValue({
       data: { id: EVENT_ID, title: 'potluck', my_rsvp: RsvpStatus.Attending },
     });
-    const { result } = renderHook(() => useSetRsvp(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useSetRsvp(), { wrapper: queryWrapper() });
     result.current.mutate({
       eventId: EVENT_ID,
       status: RsvpStatus.Attending,
@@ -65,7 +55,7 @@ describe('useSetRsvp cache patching (issue 1242)', () => {
   });
 
   it('patches a detail query cached under the event slug, not just the uuid', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     // Simulate EventDetailScreen having loaded via the slug URL — the query
     // cache entry backing the visible screen is keyed by slug, not uuid.
     qc.setQueryData(
@@ -76,7 +66,7 @@ describe('useSetRsvp cache patching (issue 1242)', () => {
       data: { id: EVENT_ID, slug: EVENT_SLUG, title: 'potluck', my_rsvp: RsvpStatus.Attending },
     });
 
-    const { result } = renderHook(() => useSetRsvp(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useSetRsvp(), { wrapper: queryWrapper(qc) });
     result.current.mutate({ eventId: EVENT_ID, status: RsvpStatus.Attending });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -87,7 +77,7 @@ describe('useSetRsvp cache patching (issue 1242)', () => {
   });
 
   it('patches the calendar range cache as well as the full list', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     const rangeKey = calendarEventKeys(true, monthRange(new Date()));
     qc.setQueryData(eventKeys.list(true), [makeEvent({ id: EVENT_ID, myRsvp: null })]);
     qc.setQueryData(rangeKey, [makeEvent({ id: EVENT_ID, myRsvp: null })]);
@@ -95,7 +85,7 @@ describe('useSetRsvp cache patching (issue 1242)', () => {
       data: { id: EVENT_ID, title: 'potluck', my_rsvp: RsvpStatus.Attending },
     });
 
-    const { result } = renderHook(() => useSetRsvp(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useSetRsvp(), { wrapper: queryWrapper(qc) });
     result.current.mutate({ eventId: EVENT_ID, status: RsvpStatus.Attending });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -112,7 +102,7 @@ describe('useRemoveRsvp cache invalidation (issue 1242)', () => {
   });
 
   it('invalidates a detail query cached under the event slug, not just the uuid', async () => {
-    const { qc, Wrapper } = buildWrapper();
+    const qc = makeQueryClient();
     qc.setQueryData(
       eventKeys.detail(EVENT_SLUG, true),
       makeEvent({ id: EVENT_ID, slug: EVENT_SLUG, myRsvp: RsvpStatus.Attending }),
@@ -120,7 +110,7 @@ describe('useRemoveRsvp cache invalidation (issue 1242)', () => {
     vi.mocked(apiClient.delete).mockResolvedValue({ data: undefined });
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
 
-    const { result } = renderHook(() => useRemoveRsvp(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useRemoveRsvp(), { wrapper: queryWrapper(qc) });
     result.current.mutate(EVENT_ID);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

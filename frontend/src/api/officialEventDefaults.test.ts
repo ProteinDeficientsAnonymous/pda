@@ -1,22 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
 import { useOfficialEventDefaults } from './officialEventDefaults';
 
 vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -33,7 +25,9 @@ describe('useOfficialEventDefaults', () => {
       },
     });
 
-    const { result } = renderHook(() => useOfficialEventDefaults(true), { wrapper: wrapper() });
+    const { result } = renderHook(() => useOfficialEventDefaults(true), {
+      wrapper: queryWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/official-event-defaults/');
@@ -46,7 +40,9 @@ describe('useOfficialEventDefaults', () => {
   });
 
   it('does not fetch when disabled', () => {
-    const { result } = renderHook(() => useOfficialEventDefaults(false), { wrapper: wrapper() });
+    const { result } = renderHook(() => useOfficialEventDefaults(false), {
+      wrapper: queryWrapper(),
+    });
 
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockedGet).not.toHaveBeenCalled();
