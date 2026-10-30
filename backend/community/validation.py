@@ -298,6 +298,9 @@ class Code:
         TOO_MANY_ROLES = "speech_template.too_many_roles"  # params: { max: int }
         ROLE_TOO_LONG = "speech_template.role_too_long"  # params: { max: int }
 
+    class Speech:
+        INVALID_VALUES = "speech.invalid_values"
+
     class Connect:
         REQUEST_NOT_FOUND = "connect.request_not_found"
         REQUEST_EXPIRED = "connect.request_expired"
