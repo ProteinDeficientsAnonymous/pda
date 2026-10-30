@@ -9,9 +9,9 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification
 from notifications.service import notify_comment_reply
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 from users.models import User
 from users.roles import Role
@@ -32,9 +32,7 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-
-    refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(admin_user)
 
 
 @pytest.fixture
@@ -84,8 +82,7 @@ class TestProfileHidesLastName:
     def test_self_preview_hides_own_last_name(self, api_client, hidden_user):
         """view-my-profile is the peer-facing preview, so the owner's own
         hide_last_name applies to their own view (Issue 791)."""
-        refresh = RefreshToken.for_user(hidden_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(hidden_user)
         response = api_client.get(f"/api/auth/users/{hidden_user.pk}/profile/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -104,8 +101,7 @@ class TestProfileHidesLastName:
             show_phone=False,
             show_email=False,
         )
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(user)
         response = api_client.get(f"/api/auth/users/{user.pk}/profile/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -148,8 +144,7 @@ class TestSearchHidesLastName:
 class TestMeHideLastName:
     def test_me_always_shows_own_last_name(self, api_client, hidden_user):
 
-        refresh = RefreshToken.for_user(hidden_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(hidden_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -172,8 +167,7 @@ class TestMeHideLastName:
 
 @pytest.fixture
 def hidden_headers(hidden_user):
-    refresh = RefreshToken.for_user(hidden_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(hidden_user)
 
 
 @pytest.mark.django_db
