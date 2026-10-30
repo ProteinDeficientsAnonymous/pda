@@ -87,6 +87,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     pendingCohostInvites: [],
     myPendingCohostInviteId: null,
     eventType: EventType.Community,
+    officialKind: null,
     visibility: EventVisibility.Public,
     photoUrl: '',
     photoUpdatedAt: null,

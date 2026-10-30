@@ -180,6 +180,12 @@ describe('mapEvent', () => {
     expect(result.isPast).toBe(true);
   });
 
+  it('maps official_kind, null when absent', () => {
+    expect(mapEvent(wireEvent({ official_kind: 'restaurant' })).officialKind).toBe('restaurant');
+    expect(mapEvent(wireEvent()).officialKind).toBeNull();
+    expect(mapEvent(wireEvent({ official_kind: 'bogus' })).officialKind).toBeNull();
+  });
+
   it('maps nested guests array', () => {
     const result = mapEvent(
       wireEvent({
