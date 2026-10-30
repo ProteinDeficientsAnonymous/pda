@@ -1,29 +1,5 @@
 import pytest
-from tests._auth import auth_headers_for
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
-
-
-@pytest.fixture
-def manage_users_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550201",
-        password="managerpass123",
-        first_name="User",
-        last_name="Manager",
-    )
-    role = Role.objects.create(
-        name="user_manager",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
-    )
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_users_headers(manage_users_user):
-    return auth_headers_for(manage_users_user)
 
 
 @pytest.fixture
