@@ -17,7 +17,7 @@ from mcp_gateway.server import TOOL_PERMISSIONS, current_user, pda_mcp, pda_tool
 from mcp_gateway.view_calls import call_view
 from ninja.responses import Status
 
-from tests.test_mcp_flow import connect, mcp_client, rpc
+from tests._mcp_helpers import connect, mcp_client, rpc
 
 pytestmark = pytest.mark.django_db
 DRAFT = EventIn(title="picnic", status="draft")

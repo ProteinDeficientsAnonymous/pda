@@ -9,12 +9,12 @@ from community.models import (
     SurveyQuestionType,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -34,7 +34,7 @@ def surveys_admin_headers(db):
     )
     role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
     admin.roles.add(role)
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"}  # type: ignore
+    return auth_headers_for(admin)
 
 
 def _view_url(survey):

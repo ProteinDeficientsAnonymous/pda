@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   notificationKeys,
@@ -14,9 +12,7 @@ import {
   useUnreadCount,
 } from './notifications';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 // Mutable auth-status sentinel — tests flip this to simulate authed/unauthed.
 let mockAuthStatus = 'authed';
@@ -29,12 +25,6 @@ vi.mock('@/auth/store', () => ({
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -63,7 +53,7 @@ describe('useNotifications', () => {
     });
 
     const { result } = renderHook(() => useNotifications(true), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -91,7 +81,7 @@ describe('useNotifications', () => {
     mockAuthStatus = 'unauthed';
 
     const { result } = renderHook(() => useNotifications(true), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     // Query is disabled — stays in idle/pending without fetching
@@ -105,7 +95,7 @@ describe('useNotifications', () => {
     mockedGet.mockRejectedValueOnce(apiError);
 
     const { result } = renderHook(() => useNotifications(true), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -134,7 +124,7 @@ describe('useNotificationHistory', () => {
   it('requests the first page with offset 0 and the page size', async () => {
     mockedGet.mockResolvedValueOnce({ data: [makeRow('1')] });
 
-    const { result } = renderHook(() => useNotificationHistory(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useNotificationHistory(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -147,7 +137,7 @@ describe('useNotificationHistory', () => {
     // A page shorter than the page size means we've hit the end.
     mockedGet.mockResolvedValueOnce({ data: [makeRow('1'), makeRow('2')] });
 
-    const { result } = renderHook(() => useNotificationHistory(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useNotificationHistory(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.hasNextPage).toBe(false);
@@ -163,7 +153,7 @@ describe('useUnreadCount', () => {
     mockedGet.mockResolvedValueOnce({ data: { count: 7 } });
 
     const { result } = renderHook(() => useUnreadCount(false), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -182,7 +172,7 @@ describe('useMarkAllNotificationsRead', () => {
     mockedPost.mockResolvedValueOnce({ data: {} });
 
     const { result } = renderHook(() => useMarkAllNotificationsRead(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await result.current.mutateAsync();
@@ -193,14 +183,12 @@ describe('useMarkAllNotificationsRead', () => {
 
   it('rolls the optimistic caches back when the request fails (issue #635)', async () => {
     mockedPost.mockRejectedValueOnce(new Error('boom'));
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = makeQueryClient();
     qc.setQueryData(notificationKeys.unread, 3);
     qc.setQueryData(notificationKeys.bell, [{ id: 'n1', isRead: false }]);
 
-    const localWrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
     const { result } = renderHook(() => useMarkAllNotificationsRead(), {
-      wrapper: localWrapper,
+      wrapper: queryWrapper(qc),
     });
 
     result.current.mutate();

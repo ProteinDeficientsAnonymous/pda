@@ -1,15 +1,11 @@
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.test import Client
-from ninja_jwt.tokens import RefreshToken
 
+from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
 from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _event(creator, **kwargs):
@@ -28,7 +24,7 @@ def _rsvp(client, event, user, status, has_plus_one=False):
         f"/api/community/events/{event.id}/rsvp/",
         {"status": status, "has_plus_one": has_plus_one},
         content_type="application/json",
-        **_headers(user),
+        **auth_headers_for(user),
     )
 
 
@@ -137,7 +133,7 @@ class TestMemberWaitlistPromotionEmail:
             f"/api/community/events/{event.id}/",
             {"max_attendees": 2},
             content_type="application/json",
-            **_headers(test_user),
+            **auth_headers_for(test_user),
         )
 
         assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
@@ -151,7 +147,7 @@ def _host_set(event, host, guest, status):
         f"/api/community/events/{event.id}/rsvps/{guest.pk}/rsvp/",
         {"status": status},
         content_type="application/json",
-        **_headers(host),
+        **auth_headers_for(host),
     )
 
 

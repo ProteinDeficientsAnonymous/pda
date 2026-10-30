@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeEvent } from '@/test/fixtures';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { apiClient } from './client';
 import { eventCommentKeys } from './eventComments';
@@ -15,27 +14,13 @@ vi.mock('./client', () => ({
   setAuthBridge: vi.fn(),
 }));
 
-function makeWrapper() {
-  const qc = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  function wrapper({ children }: { children: ReactNode }) {
-    return createElement(QueryClientProvider, { client: qc }, children);
-  }
-  return { qc, wrapper };
-}
-
-function wrapper({ children }: { children: ReactNode }) {
-  return makeWrapper().wrapper({ children });
-}
-
 describe('useSubmitPublicRsvp', () => {
   beforeEach(() => vi.mocked(apiClient.post).mockReset());
 
   it('posts to the public endpoint with the payload and returns data', async () => {
     const out = { event: { id: 'ev1' }, rsvp: { status: 'attending', has_plus_one: false } };
     vi.mocked(apiClient.post).mockResolvedValue({ data: out });
-    const { result } = renderHook(() => useSubmitPublicRsvp(), { wrapper });
+    const { result } = renderHook(() => useSubmitPublicRsvp(), { wrapper: queryWrapper() });
 
     const payload = {
       first_name: 'Ada',
@@ -66,7 +51,7 @@ describe('useUpdatePublicMyRsvp', () => {
     vi.mocked(apiClient.post).mockResolvedValue({
       data: { event: { id: eventId, slug, title: 'walk', my_rsvp: 'cant_go' } },
     });
-    const { qc, wrapper } = makeWrapper();
+    const qc = makeQueryClient();
     const otherId = '22222222-2222-2222-2222-222222222222';
     const otherSlug = 'other-event';
     qc.setQueryData(
@@ -79,7 +64,9 @@ describe('useUpdatePublicMyRsvp', () => {
     );
     qc.setQueryData(eventKeys.list(false), [makeEvent({ id: eventId, slug })]);
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useUpdatePublicMyRsvp(token), { wrapper });
+    const { result } = renderHook(() => useUpdatePublicMyRsvp(token), {
+      wrapper: queryWrapper(qc),
+    });
 
     result.current.mutate({
       eventId,
@@ -117,12 +104,14 @@ describe('useCancelPublicMyRsvp', () => {
     const eventId = '11111111-1111-1111-1111-111111111111';
     const slug = 'pda-hudson-river-walk';
     vi.mocked(apiClient.delete).mockResolvedValue({ data: null });
-    const { qc, wrapper } = makeWrapper();
+    const qc = makeQueryClient();
     qc.setQueryData(
       eventKeys.detail(slug, false, token),
       makeEvent({ id: eventId, slug, myRsvp: 'attending' }),
     );
-    const { result } = renderHook(() => useCancelPublicMyRsvp(token), { wrapper });
+    const { result } = renderHook(() => useCancelPublicMyRsvp(token), {
+      wrapper: queryWrapper(qc),
+    });
 
     result.current.mutate(eventId);
 
