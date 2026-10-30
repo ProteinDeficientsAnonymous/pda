@@ -2,7 +2,7 @@ import pytest
 from community.models import AttendanceStatus, EventRSVP, RSVPStatus
 
 from tests._auth import auth_headers_for
-from tests.test_event_stats import (
+from tests._event_stats_helpers import (
     admin_user,
     cohost_user,
     host_user,
