@@ -11,15 +11,6 @@ from users._refresh_cookie import REFRESH_COOKIE_NAME
 from users.models import MagicLoginToken
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # login / magic-login are rate-limited (5/m keyed on client IP); isolate counts.
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
-
-
 @pytest.mark.django_db
 class TestLoginRateLimit:
     def test_login_rate_limited_after_five_attempts(self, api_client, test_user):
