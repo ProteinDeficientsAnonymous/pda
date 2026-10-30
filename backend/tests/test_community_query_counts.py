@@ -3,14 +3,11 @@ from datetime import timedelta
 import pytest
 from community.models import (
     AttendanceStatus,
-    Event,
     EventComment,
     EventCommentReaction,
     EventFlag,
-    EventRSVP,
     JoinFormQuestion,
     ReactionEmoji,
-    RSVPStatus,
     Survey,
     SurveyQuestion,
     SurveyQuestionType,
@@ -20,31 +17,21 @@ from django.utils import timezone
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
 from tests._query_counts import assert_constant_queries
-from tests._time import future_iso
 from tests._users import make_user
-
-
-def _event(host, days: int = 5) -> Event:
-    return Event.objects.create(
-        title="Event", start_datetime=timezone.now() + timedelta(days=days), created_by=host
-    )
-
-
-def _rsvp(event: Event, user, **extra) -> EventRSVP:
-    return EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING, **extra)
 
 
 @pytest.mark.django_db
 class TestEventEndpointsQueryCount:
     def test_comments(self, api_client):
         host = make_user(first_name="Host")
-        event = Event.objects.create(title="Chat", start_datetime=future_iso(), created_by=host)
+        event = make_event(created_by=host)
 
         def grow(n: int) -> None:
             for _ in range(n):
                 author = make_user(first_name="Author", hide_last_name=True)
-                _rsvp(event, author)
+                make_rsvp(event, author)
                 comment = EventComment.objects.create(event=event, author=author, body="hi")
                 reply = EventComment.objects.create(
                     event=event, author=host, parent=comment, body="yo"
@@ -60,11 +47,11 @@ class TestEventEndpointsQueryCount:
     @pytest.mark.parametrize("suffix", ["stats/", "text-recipients/"])
     def test_host_rsvp_views(self, api_client, suffix):
         host = make_user(first_name="Host")
-        event = _event(host)
+        event = make_event(created_by=host)
 
         def grow(n: int) -> None:
             for _ in range(n):
-                _rsvp(event, make_user(first_name="Guest"))
+                make_rsvp(event, make_user(first_name="Guest"))
                 event.invited_users.add(make_user(first_name="Invitee"))
 
         url = f"/api/community/events/{event.id}/{suffix}"
@@ -76,7 +63,9 @@ class TestEventEndpointsQueryCount:
         def grow(n: int) -> None:
             for _ in range(n):
                 flagger = make_user(first_name="Flagger")
-                EventFlag.objects.create(event=_event(flagger), flagged_by=flagger, reason="spam")
+                EventFlag.objects.create(
+                    event=make_event(created_by=flagger), flagged_by=flagger, reason="spam"
+                )
 
         assert_constant_queries(
             api_client, "/api/community/event-flags/", grow, auth_headers_for(admin)
@@ -91,7 +80,10 @@ class TestEventEndpointsQueryCount:
         def grow(n: int) -> None:
             for _ in range(n):
                 member = make_user(first_name="Member")
-                _rsvp(_event(member, days=-3), member, attendance=AttendanceStatus.ATTENDED)
+                past = make_event(
+                    created_by=member, start_datetime=timezone.now() - timedelta(days=3)
+                )
+                make_rsvp(past, member, attendance=AttendanceStatus.ATTENDED)
 
         assert_constant_queries(api_client, f"/api/community/{path}", grow, auth_headers_for(admin))
 

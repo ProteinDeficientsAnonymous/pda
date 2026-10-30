@@ -3,14 +3,13 @@ import os
 from io import StringIO
 
 import pytest
-from community.models import Event
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command
 from PIL import Image
 from users.models import User
 
-from tests._time import future_iso
+from tests._events import make_event
 
 
 def _noisy_png(size=(240, 240)) -> bytes:
@@ -36,11 +35,7 @@ def member(db):
 
 @pytest.fixture
 def event(db, member):
-    ev = Event.objects.create(
-        title="Compress Me",
-        start_datetime=future_iso(days=10),
-        created_by=member,
-    )
+    ev = make_event(created_by=member)
     ev.photo.save("original.png", ContentFile(_noisy_png()), save=True)
     return ev
 

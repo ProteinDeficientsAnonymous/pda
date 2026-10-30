@@ -9,13 +9,12 @@ from community.models import (
     SurveyQuestionType,
 )
 from django.utils import timezone
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._time import future_iso
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -29,12 +28,7 @@ def public_text_survey(db):
 
 @pytest.fixture
 def surveys_admin_headers(db):
-    admin = User.objects.create_user(
-        phone_number="+12025557020", password="x", first_name="Surveys", last_name="Admin"
-    )
-    role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
-    admin.roles.add(role)
-    return auth_headers_for(admin)
+    return auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
 
 
 def _view_url(survey):

@@ -13,16 +13,7 @@ from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-
-def _user(phone: str, name: str, *, is_member: bool = True) -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="Testpass123!",
-        first_name=name,
-        last_name="",
-        is_member=is_member,
-    )
+from tests._users import make_user
 
 
 def _image(name: str = "test.jpg") -> SimpleUploadedFile:
@@ -58,7 +49,7 @@ class TestListEventsMemory:
         )
         guests = []
         for i in range(12):
-            guest = _user(f"+14155557{i:03d}", f"Guest{i}")
+            guest = make_user(first_name=f"Guest{i}")
             guests.append(guest)
             EventRSVP.objects.create(
                 event=event,
@@ -66,11 +57,11 @@ class TestListEventsMemory:
                 status=RSVPStatus.ATTENDING,
                 has_plus_one=(i == 0),
             )
-        waitlisted = _user("+14155557999", "Wait")
+        waitlisted = make_user(first_name="Wait")
         EventRSVP.objects.create(
             event=event, user=waitlisted, status=RSVPStatus.WAITLISTED, has_plus_one=True
         )
-        extras = [_user(f"+14155558{i:03d}", f"Inv{i}") for i in range(8)]
+        extras = [make_user(first_name=f"Inv{i}") for i in range(8)]
         event.invited_users.add(guests[0], *extras)
 
         instantiated = _spy_inits(monkeypatch, EventRSVP)
@@ -85,7 +76,7 @@ class TestListEventsMemory:
     def test_list_events_does_not_presign_photos(self, api_client, test_user, auth_headers):
         test_user.profile_photo = _image("creator.jpg")
         test_user.save()
-        cohost = _user("+14155550002", "Co")
+        cohost = make_user(first_name="Co")
         cohost.profile_photo = _image("cohost.jpg")
         cohost.save()
         event = Event.objects.create(
@@ -122,14 +113,14 @@ class TestListEventsMemory:
         assert row["my_rsvp"] == RSVPStatus.MAYBE
 
     def test_list_hides_invite_only_events(self, api_client, test_user, auth_headers):
-        creator = _user("+14155557000", "Host")
+        creator = make_user(first_name="Host")
         hidden = Event.objects.create(
             title="Secret",
             start_datetime=future_iso(days=8),
             visibility=PageVisibility.INVITE_ONLY,
             created_by=creator,
         )
-        hidden.invited_users.add(_user("+14155557001", "Invitee"))
+        hidden.invited_users.add(make_user(first_name="Invitee"))
         response = api_client.get("/api/community/events/", **auth_headers)
         assert response.status_code == 200
         assert all(e["id"] != str(hidden.id) for e in response.json())
@@ -148,12 +139,12 @@ class TestGetEventMemory:
         )
         guests = []
         for i in range(10):
-            guest = _user(f"+14155559{i:03d}", f"DGuest{i}")
+            guest = make_user(first_name=f"DGuest{i}")
             guests.append(guest)
             EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
         event.invited_users.add(guests[0])
 
-        viewer = _user("+14155559111", "Stranger")
+        viewer = make_user(first_name="Stranger")
         headers = auth_headers_for(viewer)
 
         instantiated = _spy_inits(monkeypatch, EventRSVP)
@@ -176,8 +167,8 @@ class TestGetEventMemory:
             created_by=test_user,
         )
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        event.invited_users.add(_user("+14155556400", "Invitee"))
-        attendee = _user("+14155556401", "Going")
+        event.invited_users.add(make_user(first_name="Invitee"))
+        attendee = make_user(first_name="Going")
         EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
         headers = auth_headers_for(attendee)
         response = api_client.get(f"/api/community/events/{event.id}/", **headers)
@@ -190,11 +181,11 @@ class TestGetEventMemory:
     def test_detail_presigns_only_preview_guest_photos(self, api_client, test_user, auth_headers):
         packed = []
         for i in range(6):
-            guest = _user(f"+141555566{i:02d}", f"G{i}")
+            guest = make_user(first_name=f"G{i}")
             guest.profile_photo = _image(f"guest{i}.jpg")
             guest.save()
             packed.append(guest)
-        invitee = _user("+14155556699", "Inv")
+        invitee = make_user(first_name="Inv")
         invitee.profile_photo = _image("inv.jpg")
         invitee.save()
         test_user.profile_photo = _image("host.jpg")
@@ -226,7 +217,7 @@ class TestGetEventMemory:
     def test_guests_endpoint_presigns_every_guest_photo(self, api_client, test_user, auth_headers):
         packed = []
         for i in range(6):
-            guest = _user(f"+141555567{i:02d}", f"P{i}")
+            guest = make_user(first_name=f"P{i}")
             guest.profile_photo = _image(f"p{i}.jpg")
             guest.save()
             packed.append(guest)
@@ -256,10 +247,10 @@ class TestGetEventMemory:
         )
         EventRSVP.objects.create(
             event=event,
-            user=_user("+14155556800", "Going"),
+            user=make_user(first_name="Going"),
             status=RSVPStatus.ATTENDING,
         )
-        stranger = _user("+14155556801", "Stranger")
+        stranger = make_user(first_name="Stranger")
         headers = auth_headers_for(stranger)
         response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
         assert response.status_code == 200
@@ -276,9 +267,9 @@ class TestGetEventMemory:
             rsvp_enabled=True,
             created_by=test_user,
         )
-        attendee = _user("+14155556810", "Going")
+        attendee = make_user(first_name="Going")
         EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
-        event.invited_users.add(_user("+14155556811", "Invitee"))
+        event.invited_users.add(make_user(first_name="Invitee"))
         headers = auth_headers_for(attendee)
         response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
         assert response.status_code == 200
@@ -300,17 +291,17 @@ class TestGetEventMemory:
         self, api_client, test_user, auth_headers
     ):
         attending_members = [
-            _user("+14155556900", "M1"),
-            _user("+14155556901", "M2"),
+            make_user(first_name="M1"),
+            make_user(first_name="M2"),
         ]
-        maybe_member = _user("+14155556902", "MM")
+        maybe_member = make_user(first_name="MM")
         attending_nonmembers = [
-            _user("+14155556903", "N1", is_member=False),
-            _user("+14155556904", "N2", is_member=False),
-            _user("+14155556905", "N3", is_member=False),
+            make_user(first_name="N1", is_member=False),
+            make_user(first_name="N2", is_member=False),
+            make_user(first_name="N3", is_member=False),
         ]
-        maybe_nonmember = _user("+14155556906", "NM", is_member=False)
-        waitlisted = _user("+14155556907", "W")
+        maybe_nonmember = make_user(first_name="NM", is_member=False)
+        waitlisted = make_user(first_name="W")
         for guest in (
             *attending_members,
             maybe_member,
@@ -371,7 +362,7 @@ class TestGetEventMemory:
             rsvp_enabled=True,
             created_by=test_user,
         )
-        invitees = [_user(f"+141555565{i:02d}", f"HInv{i}") for i in range(4)]
+        invitees = [make_user(first_name=f"HInv{i}") for i in range(4)]
         event.invited_users.add(*invitees)
         response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
         assert response.status_code == 200
@@ -388,9 +379,9 @@ class TestGetEventMemory:
             rsvp_enabled=True,
             created_by=test_user,
         )
-        going = _user("+14155556510", "Going")
-        declined = _user("+14155556511", "Declined")
-        unanswered = _user("+14155556512", "Unanswered")
+        going = make_user(first_name="Going")
+        declined = make_user(first_name="Declined")
+        unanswered = make_user(first_name="Unanswered")
         event.invited_users.add(going, declined, unanswered)
         EventRSVP.objects.create(event=event, user=going, status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(event=event, user=declined, status=RSVPStatus.CANT_GO)
@@ -405,18 +396,18 @@ class TestGetEventMemory:
         assert guests.json()["invited_user_ids"] == [str(unanswered.id)]
 
     def test_invite_only_detail_does_not_hydrate_invitees(self, api_client, monkeypatch):
-        creator = _user("+14155556000", "Host")
+        creator = make_user(first_name="Host")
         event = Event.objects.create(
             title="Private",
             start_datetime=future_iso(days=9),
             visibility=PageVisibility.INVITE_ONLY,
             created_by=creator,
         )
-        invitees = [_user(f"+141555561{i:02d}", f"Inv{i}") for i in range(8)]
+        invitees = [make_user(first_name=f"Inv{i}") for i in range(8)]
         event.invited_users.add(*invitees)
         invitee_pks = {u.pk for u in invitees}
 
-        stranger = _user("+14155556200", "Stranger")
+        stranger = make_user(first_name="Stranger")
         headers = auth_headers_for(stranger)
 
         hydrated = {"n": 0}
@@ -442,7 +433,7 @@ class TestGetEventMemory:
         for i in range(8):
             EventRSVP.objects.create(
                 event=event,
-                user=_user(f"+141555563{i:02d}", f"G{i}"),
+                user=make_user(first_name=f"G{i}"),
                 status=RSVPStatus.ATTENDING,
             )
         loaded = load_event_with_stats_prefetch(event.id)

@@ -8,7 +8,7 @@ from notifications.email_sender import SendResult
 from users.models import User
 
 from tests._auth import auth_headers_for
-from tests._time import future_iso
+from tests._events import make_event
 
 
 def _make_user(phone: str, name: str = "", email: str = "") -> User:
@@ -34,12 +34,7 @@ def invitee_without_email(db) -> User:
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        created_by=inviter,
-    )
+    return make_event(created_by=inviter)
 
 
 @pytest.mark.django_db

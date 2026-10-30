@@ -1,25 +1,17 @@
 from unittest.mock import patch
 
 import pytest
-from community.models import Event, EventComment, RSVPStatus
+from community.models import EventComment, RSVPStatus
 from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests._auth import auth_headers_for
-from tests._time import future_iso
+from tests._events import make_event
 
 
 @pytest.fixture
 def rsvp_event(db, test_user):
-    return Event.objects.create(
-        title="RSVP Event",
-        description="An event with RSVPs enabled",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        location="Community Space",
-        rsvp_enabled=True,
-        created_by=test_user,
-    )
+    return make_event(title="RSVP Event", rsvp_enabled=True, created_by=test_user)
 
 
 @pytest.fixture

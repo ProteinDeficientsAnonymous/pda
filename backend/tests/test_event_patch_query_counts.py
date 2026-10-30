@@ -6,15 +6,7 @@ from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-_seq = {"n": 0}
-
-
-def _user() -> User:
-    _seq["n"] += 1
-    return User.objects.create_user(
-        phone_number=f"+1415333{_seq['n']:04d}", password="x", first_name=f"U{_seq['n']}"
-    )
+from tests._users import make_user
 
 
 def _hosted_event(host: User, guests: int) -> Event:
@@ -23,8 +15,8 @@ def _hosted_event(host: User, guests: int) -> Event:
     )
     event.co_hosts.add(host)
     for _ in range(guests):
-        EventRSVP.objects.create(event=event, user=_user(), status=RSVPStatus.ATTENDING)
-        event.invited_users.add(_user())
+        EventRSVP.objects.create(event=event, user=make_user(), status=RSVPStatus.ATTENDING)
+        event.invited_users.add(make_user())
     return event
 
 
@@ -41,7 +33,7 @@ def _patch(api_client, event: Event, headers: dict) -> int:
 
 
 def _invite(api_client, event: Event, headers: dict) -> int:
-    invitee = _user()
+    invitee = make_user()
     with CaptureQueriesContext(connection) as ctx:
         response = api_client.post(
             f"/api/community/events/{event.id}/invitations/",
@@ -56,7 +48,7 @@ def _invite(api_client, event: Event, headers: dict) -> int:
 @pytest.mark.django_db
 @pytest.mark.parametrize(("send", "ceiling"), [(_patch, 26), (_invite, 27)])
 def test_event_write_response_is_bounded(api_client, send, ceiling):
-    host = _user()
+    host = make_user()
     headers = auth_headers_for(host)
     small = send(api_client, _hosted_event(host, 2), headers)
     large = send(api_client, _hosted_event(host, 6), headers)
