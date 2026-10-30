@@ -16,13 +16,6 @@ _URL = "/api/community/request-login-link/"
 _PHONE = "+12025558800"
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
-
-
 @pytest.mark.django_db
 class TestRequestLoginLink:
     def test_returns_200_for_existing_user(self, api_client):

@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
+import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 
 import AdminHubScreen from './AdminHubScreen';
@@ -28,7 +28,7 @@ describe('AdminHubScreen', () => {
         },
       ],
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     renderHub();
 
@@ -37,7 +37,7 @@ describe('AdminHubScreen', () => {
 
   it('hides the docs tile for a user without the permission', () => {
     const user = makeUser({ roles: [] });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     renderHub();
 

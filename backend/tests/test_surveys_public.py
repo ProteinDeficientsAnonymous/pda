@@ -13,11 +13,11 @@ from community.models import (
     SurveyResponse,
     SurveyVisibility,
 )
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
 
@@ -38,17 +38,12 @@ def survey_owner(db):
 
 @pytest.fixture
 def survey_owner_headers(survey_owner):
-    refresh = RefreshToken.for_user(survey_owner)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
-def _headers_for(user) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+    return auth_headers_for(survey_owner)
 
 
 @pytest.fixture
 def events_admin_headers(db):
-    return _headers_for(make_user(PermissionKey.MANAGE_EVENTS))
+    return auth_headers_for(make_user(PermissionKey.MANAGE_EVENTS))
 
 
 @pytest.fixture
@@ -89,9 +84,7 @@ class TestSurveyTalliesAuthz:
 
     def test_manage_surveys_can_read_tallies(self, api_client, db, poll_survey):
         admin = make_user(PermissionKey.MANAGE_SURVEYS)
-        headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
-        }
+        headers = auth_headers_for(admin)
         response = api_client.get(self._url(poll_survey), **headers)
         assert response.status_code == 200
 

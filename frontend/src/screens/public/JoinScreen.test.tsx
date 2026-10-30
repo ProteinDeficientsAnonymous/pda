@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import { renderWithProviders } from '@/test/render';
 
 import JoinScreen from './JoinScreen';
 import JoinSuccessScreen from './JoinSuccessScreen';
@@ -43,26 +43,17 @@ function fillPhone(value = '(555) 123-4567') {
 }
 
 function renderWith(component: ReactElement, initialRoute = '/join') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[initialRoute]}>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(component, { route: initialRoute });
 }
 
 function renderWithRoutes(initialRoute = '/join') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[initialRoute]}>
-        <Routes>
-          <Route path="/join" element={<JoinScreen />} />
-          <Route path="/join/success" element={<JoinSuccessScreen />} />
-          <Route path="/login" element={<div>login page</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/join" element={<JoinScreen />} />
+      <Route path="/join/success" element={<JoinSuccessScreen />} />
+      <Route path="/login" element={<div>login page</div>} />
+    </Routes>,
+    { route: initialRoute },
   );
 }
 
