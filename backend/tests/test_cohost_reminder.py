@@ -4,7 +4,8 @@ from community.models import EventStatus, EventType
 from django.core.management import call_command
 from django.utils import timezone
 
-from tests._digest_helpers import make_event, make_member
+from tests._digest_helpers import make_event
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -26,7 +27,7 @@ class TestDueCohostReminderEvents:
 
     def test_excludes_event_with_cohost(self, host):
         event = make_event(created_by=host)
-        event.co_hosts.add(make_member("+12025556001"))
+        event.co_hosts.add(make_user(phone_number="+12025556001"))
         assert _due() == []
 
     @pytest.mark.parametrize(

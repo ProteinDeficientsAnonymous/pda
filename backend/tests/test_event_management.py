@@ -5,10 +5,10 @@ from community._validation import Code
 from community.api import EventPatchIn
 from community.models import Event, EventStatus
 from django.core.cache import caches
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._time import future_iso, past_iso
 
 
@@ -69,9 +69,7 @@ class TestEventManagement:
             first_name="Regular",
             last_name="Member",
         )
-        headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"  # type: ignore
-        }
+        headers = auth_headers_for(member)
         response = api_client.post(
             "/api/community/events/",
             {

@@ -13,12 +13,12 @@ from community.models import (
     SurveyResponse,
     SurveyVisibility,
 )
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 # ---------------------------------------------------------------------------
@@ -38,12 +38,7 @@ def survey_owner(db):
 
 @pytest.fixture
 def survey_owner_headers(survey_owner):
-    refresh = RefreshToken.for_user(survey_owner)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
-def _headers_for(user) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+    return auth_headers_for(survey_owner)
 
 
 @pytest.fixture
@@ -53,7 +48,7 @@ def events_admin_headers(db):
     )
     role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
     host.roles.add(role)
-    return _headers_for(host)
+    return auth_headers_for(host)
 
 
 @pytest.fixture
@@ -98,9 +93,7 @@ class TestSurveyTalliesAuthz:
         )
         role = Role.objects.create(name="surveys_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
         admin.roles.add(role)
-        headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
-        }
+        headers = auth_headers_for(admin)
         response = api_client.get(self._url(poll_survey), **headers)
         assert response.status_code == 200
 

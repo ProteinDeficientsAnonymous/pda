@@ -2,11 +2,11 @@ import pytest
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from users._helpers import visible_display_name, visible_name
 from users.models import User
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 
@@ -14,10 +14,6 @@ def _user(phone: str, name: str, **extra) -> User:
     return User.objects.create_user(
         phone_number=phone, password="Testpass123!", first_name=name, last_name="Last", **extra
     )
-
-
-def _headers(user: User) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 _seq = {"n": 0}
@@ -75,7 +71,7 @@ class TestListEventsQueryCount:
     def test_admin(self, api_client):
         admin = _user("+12025550901", "Admin")
         admin.roles.add(Role.objects.get(name="admin", is_default=True))
-        self._assert_constant(api_client, admin, _headers(admin))
+        self._assert_constant(api_client, admin, auth_headers_for(admin))
 
 
 def _add_people(event: Event, count: int) -> None:

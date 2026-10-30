@@ -2,15 +2,10 @@
 
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _user(n):
@@ -24,7 +19,7 @@ def _rsvp(api_client, event, user, status="attending", has_plus_one=False):
         f"/api/community/events/{event.id}/rsvp/",
         {"status": status, "has_plus_one": has_plus_one},
         content_type="application/json",
-        **_auth(user),
+        **auth_headers_for(user),
     )
 
 

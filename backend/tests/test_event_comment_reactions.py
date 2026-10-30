@@ -3,10 +3,10 @@ import json
 import pytest
 from community.models import Event, EventComment, EventCommentReaction, EventRSVP, RSVPStatus
 from django.core.cache import caches
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 
@@ -31,8 +31,7 @@ def rsvp_user(db):
 
 @pytest.fixture
 def rsvp_headers(rsvp_user):
-    refresh = RefreshToken.for_user(rsvp_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(rsvp_user)
 
 
 @pytest.fixture
@@ -105,8 +104,7 @@ class TestReactionToggle:
             password="bystanderpass",
             first_name="Bystander",
         )
-        refresh = RefreshToken.for_user(bystander)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(bystander)
         comment = EventComment.objects.create(event=event, author=event.created_by, body="hi")
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/{comment.id}/reactions/",
@@ -128,8 +126,7 @@ class TestReactionToggle:
         EventRSVP.objects.create(
             event=event_with_rsvp, user=other_user, status=RSVPStatus.ATTENDING
         )
-        other_refresh = RefreshToken.for_user(other_user)
-        other_headers = {"HTTP_AUTHORIZATION": f"Bearer {other_refresh.access_token}"}  # type: ignore
+        other_headers = auth_headers_for(other_user)
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
         response = api_client.post(
             f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/",
@@ -169,8 +166,7 @@ class TestReactionToggle:
         EventRSVP.objects.create(
             event=event_with_rsvp, user=other_user, status=RSVPStatus.ATTENDING
         )
-        other_refresh = RefreshToken.for_user(other_user)
-        other_headers = {"HTTP_AUTHORIZATION": f"Bearer {other_refresh.access_token}"}  # type: ignore
+        other_headers = auth_headers_for(other_user)
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
         EventCommentReaction.objects.create(comment=comment, user=other_user, emoji="❤️")
         response = api_client.post(

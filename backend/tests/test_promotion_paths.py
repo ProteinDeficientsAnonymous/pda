@@ -5,19 +5,14 @@ from community._join_request_approval import _promote_tentative_member
 from community._validation import ValidationException
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
 
+from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, payload, url
+from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
 from tests._time import future_iso
-from tests.test_join_request_tentative import _tentative_user_with_rsvp, open_official_event
 
 __all__ = ["open_official_event"]
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _approve(api_client, vettor_headers, jr_id):
@@ -70,7 +65,7 @@ class TestPromotePublicNonMember:
 @pytest.fixture
 def onboarded_tentative(sample_join_request, vettor_user, open_official_event):
     """A tentative applicant who has already onboarded: password, own name."""
-    user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     user.first_name = "Chosen"
     user.last_name = "Name"
     user.needs_onboarding = False
@@ -91,7 +86,7 @@ class TestPromoteTentativeMember:
             f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(event.created_by),
+            **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
         assert user.is_member is True
@@ -117,7 +112,7 @@ class TestPromoteTentativeMember:
             f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(event.created_by),
+            **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
         assert user.needs_onboarding is False
@@ -130,7 +125,7 @@ class TestPromoteTentativeMember:
             f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(event.created_by),
+            **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
         assert user.first_name == "Chosen"
@@ -144,7 +139,7 @@ class TestPromoteTentativeMember:
             f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(event.created_by),
+            **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
         assert user.check_password("theirownpass123")
@@ -168,7 +163,7 @@ class TestTentativeWhoNeverOnboarded:
     def test_promotion_leaves_them_able_to_recover(
         self, api_client, sample_join_request, vettor_user, open_official_event, fake_email_sender
     ):
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         assert user.has_usable_password() is False
         assert user.needs_onboarding is True
 
@@ -176,7 +171,7 @@ class TestTentativeWhoNeverOnboarded:
             f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(open_official_event.created_by),
+            **auth_headers_for(open_official_event.created_by),
         )
 
         user.refresh_from_db()
@@ -191,12 +186,12 @@ class TestTentativeWhoNeverOnboarded:
     ):
         sample_join_request.email = "never-onboarded@example.com"
         sample_join_request.save(update_fields=["email"])
-        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
         api_client.post(
             f"/api/community/events/{open_official_event.id}/rsvps/{user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(open_official_event.created_by),
+            **auth_headers_for(open_official_event.created_by),
         )
         resp = api_client.post(
             "/api/community/request-login-link/",
@@ -215,7 +210,7 @@ class TestTentativeMemberRsvpsViaPublicForm:
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
 
-        tentative_user = _tentative_user_with_rsvp(
+        tentative_user = tentative_user_with_rsvp(
             sample_join_request, open_official_event, vettor_user
         )
         second_event = make_official_event(title="Second Potluck")
@@ -242,7 +237,7 @@ class TestTentativeMemberRsvpsViaPublicForm:
         self, api_client, vettor_user, sample_join_request, open_official_event, fake_email_sender
     ):
 
-        tentative_user = _tentative_user_with_rsvp(
+        tentative_user = tentative_user_with_rsvp(
             sample_join_request, open_official_event, vettor_user
         )
         second_event = make_official_event(
@@ -261,7 +256,7 @@ class TestTentativeMemberRsvpsViaPublicForm:
             f"/api/community/events/{second_event.id}/rsvps/{tentative_user.pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},
             content_type="application/json",
-            **_auth(second_event.created_by),
+            **auth_headers_for(second_event.created_by),
         )
 
         tentative_user.refresh_from_db()

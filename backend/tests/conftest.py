@@ -131,6 +131,21 @@ def vettor_headers(vettor_user):
 
 
 @pytest.fixture
+def surveys_admin(db):
+    user = User.objects.create_user(
+        phone_number="+12025557100", password="x", first_name="Surveys", last_name="Admin"
+    )
+    role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def surveys_admin_headers(surveys_admin):
+    return auth_headers_for(surveys_admin)
+
+
+@pytest.fixture
 def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550010",

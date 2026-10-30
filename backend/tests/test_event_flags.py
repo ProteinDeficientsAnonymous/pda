@@ -10,12 +10,12 @@ from community.models import (
     EventStatus,
     PageVisibility,
 )
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -27,11 +27,6 @@ def _make_user(phone: str, name: str = "Member") -> User:
         password="testpass123",
         first_name=name,
     )
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -72,7 +67,7 @@ class TestFlagSubmission:
             f"/api/community/events/{sample_event.id}/flag/",
             {"reason": "charging money — violates guidelines"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 201
         data = response.json()
@@ -87,7 +82,7 @@ class TestFlagSubmission:
             f"/api/community/events/{sample_event.id}/flag/",
             {"reason": "second flag attempt"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 409
 
@@ -97,7 +92,7 @@ class TestFlagSubmission:
             f"/api/community/events/{fake_id}/flag/",
             {"reason": "some reason"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 404
 
@@ -116,7 +111,7 @@ class TestFlagSubmission:
             f"/api/community/events/{sample_event.id}/flag/",
             {"reason": "charging a fee"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         note = Notification.objects.filter(
             recipient=admin_user,
@@ -136,7 +131,7 @@ class TestFlagList:
         EventFlag.objects.create(event=sample_event, flagged_by=member, reason="bad event")
         response = api_client.get(
             "/api/community/event-flags/",
-            **_auth_headers(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 200
         assert len(response.json()) == 1
@@ -144,7 +139,7 @@ class TestFlagList:
     def test_non_admin_cannot_list_flags(self, api_client, member, sample_event):
         response = api_client.get(
             "/api/community/event-flags/",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 403
 
@@ -164,7 +159,7 @@ class TestFlagList:
 
         response = api_client.get(
             "/api/community/event-flags/?status=pending",
-            **_auth_headers(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 200
         assert len(response.json()) == 1
@@ -182,7 +177,7 @@ class TestFlagReview:
             f"/api/community/event-flags/{flag.id}/",
             {"status": "dismissed"},
             content_type="application/json",
-            **_auth_headers(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 200
         flag.refresh_from_db()
@@ -195,7 +190,7 @@ class TestFlagReview:
             f"/api/community/event-flags/{flag.id}/",
             {"status": "actioned"},
             content_type="application/json",
-            **_auth_headers(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 200
         flag.refresh_from_db()
@@ -207,7 +202,7 @@ class TestFlagReview:
             f"/api/community/event-flags/{flag.id}/",
             {"status": "approved"},
             content_type="application/json",
-            **_auth_headers(admin_user),
+            **auth_headers_for(admin_user),
         )
         assert response.status_code == 400
 
@@ -217,7 +212,7 @@ class TestFlagReview:
             f"/api/community/event-flags/{flag.id}/",
             {"status": "dismissed"},
             content_type="application/json",
-            **_auth_headers(other_member),
+            **auth_headers_for(other_member),
         )
         assert response.status_code == 403
 
@@ -238,7 +233,7 @@ class TestFlagVisibilityGating:
             f"/api/community/events/{event.id}/flag/",
             {"reason": "probing existence"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 403
         assert not EventFlag.objects.filter(event=event).exists()
@@ -253,7 +248,7 @@ class TestFlagVisibilityGating:
             f"/api/community/events/{event.id}/flag/",
             {"reason": "should 404"},
             content_type="application/json",
-            **_auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 404
         assert not EventFlag.objects.filter(event=event).exists()

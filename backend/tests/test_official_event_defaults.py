@@ -4,11 +4,11 @@ import pytest
 from community._official_event_defaults import OFFICIAL_CASHAPP_LINK, OFFICIAL_RSVP_QUESTIONS
 from community.models import Event, EventRsvpQuestion, EventType, PageVisibility
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 URL = "/api/community/official-event-defaults/"
@@ -42,11 +42,6 @@ CUSTOM_QUESTION = {
 }
 
 
-def _auth(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
 @pytest.fixture
 def planner(db) -> User:
     user = User.objects.create_user(phone_number="+12025556200", password="x", first_name="Plan")
@@ -65,7 +60,7 @@ def _create(api_client, planner: User, **overrides) -> dict:
         **overrides,
     }
     response = api_client.post(
-        EVENTS_URL, payload, content_type="application/json", **_auth(planner)
+        EVENTS_URL, payload, content_type="application/json", **auth_headers_for(planner)
     )
     assert response.status_code == 201, response.content
     return response.json()
@@ -73,7 +68,10 @@ def _create(api_client, planner: User, **overrides) -> dict:
 
 def _patch(api_client, planner: User, event_id: str, **changes) -> dict:
     response = api_client.patch(
-        f"{EVENTS_URL}{event_id}/", changes, content_type="application/json", **_auth(planner)
+        f"{EVENTS_URL}{event_id}/",
+        changes,
+        content_type="application/json",
+        **auth_headers_for(planner),
     )
     assert response.status_code == 200, response.content
     return response.json()

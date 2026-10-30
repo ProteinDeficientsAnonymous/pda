@@ -5,13 +5,13 @@ import pytest
 from community import _event_blasts
 from community._validation import Code
 from community.models import Event, EventEmailBlast, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 BLAST_URL = "/api/community/events/{event_id}/email-blast/"
@@ -32,8 +32,7 @@ def host_user(db):
 @pytest.fixture
 def host_headers(host_user):
 
-    refresh = RefreshToken.for_user(host_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(host_user)
 
 
 @pytest.fixture
@@ -51,8 +50,7 @@ def other_user(db):
 @pytest.fixture
 def other_headers(other_user):
 
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_user)
 
 
 @pytest.fixture
@@ -167,9 +165,7 @@ class TestEmailBlastAuth:
         )
         role = Role.objects.create(name="blast_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
         manager.roles.add(role)
-        headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(manager).access_token}"  # type: ignore
-        }
+        headers = auth_headers_for(manager)
         response = api_client.post(
             BLAST_URL.format(event_id=event_with_attendees.id),
             _payload(),

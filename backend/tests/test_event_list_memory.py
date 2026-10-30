@@ -8,10 +8,10 @@ from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from PIL import Image
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 
@@ -154,7 +154,7 @@ class TestGetEventMemory:
         event.invited_users.add(guests[0])
 
         viewer = _user("+14155559111", "Stranger")
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(viewer).access_token}"}
+        headers = auth_headers_for(viewer)
 
         instantiated = _spy_inits(monkeypatch, EventRSVP)
         response = api_client.get(f"/api/community/events/{event.id}/", **headers)
@@ -179,7 +179,7 @@ class TestGetEventMemory:
         event.invited_users.add(_user("+14155556400", "Invitee"))
         attendee = _user("+14155556401", "Going")
         EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(attendee).access_token}"}
+        headers = auth_headers_for(attendee)
         response = api_client.get(f"/api/community/events/{event.id}/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -260,7 +260,7 @@ class TestGetEventMemory:
             status=RSVPStatus.ATTENDING,
         )
         stranger = _user("+14155556801", "Stranger")
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(stranger).access_token}"}
+        headers = auth_headers_for(stranger)
         response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -279,7 +279,7 @@ class TestGetEventMemory:
         attendee = _user("+14155556810", "Going")
         EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
         event.invited_users.add(_user("+14155556811", "Invitee"))
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(attendee).access_token}"}
+        headers = auth_headers_for(attendee)
         response = api_client.get(f"/api/community/events/{event.id}/guests/", **headers)
         assert response.status_code == 200
         body = response.json()
@@ -417,7 +417,7 @@ class TestGetEventMemory:
         invitee_pks = {u.pk for u in invitees}
 
         stranger = _user("+14155556200", "Stranger")
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(stranger).access_token}"}
+        headers = auth_headers_for(stranger)
 
         hydrated = {"n": 0}
         orig = User.__init__
