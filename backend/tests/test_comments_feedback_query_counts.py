@@ -13,7 +13,7 @@ from django.test.utils import CaptureQueriesContext
 
 from tests._auth import auth_headers_for
 from tests._event_comments_helpers import event  # noqa: F401
-from tests.test_event_feedback_send import (  # noqa: F401
+from tests._event_feedback_helpers import (  # noqa: F401
     NOW,
     feedback_survey,
     make_event,
