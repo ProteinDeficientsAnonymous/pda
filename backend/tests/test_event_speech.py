@@ -27,6 +27,15 @@ def _url(event: Event) -> str:
     return f"/api/community/events/{event.id}/speech/"
 
 
+def _pm(text: str) -> str:
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": text}]}],
+        }
+    )
+
+
 def _blank_pm(key: str) -> str:
     return json.dumps(
         {
@@ -136,6 +145,27 @@ class TestGetSpeech:
             assert "Secret" not in data["values"]["facilitators"]
             assert "zed" in data["values"]["facilitators"]
 
+    def test_saved_get_fills_never_saved_blanks_from_prefill(self, api_client, maya):
+        event = _event(maya, location="Spicy Moon, 328 E 6th St")
+        template = SpeechTemplate.get()
+        template.restaurant_pm = _blank_pm("restaurant")
+        template.save()
+        put = api_client.put(
+            _url(event),
+            {"values": {"front_walker": "", "open_roles": []}},
+            content_type="application/json",
+            **auth_headers_for(maya),
+        )
+        assert put.status_code == 200
+        Event.objects.filter(pk=event.pk).update(official_kind=OfficialKind.RESTAURANT)
+
+        data = api_client.get(_url(event), **auth_headers_for(maya)).json()
+
+        assert data["values"]["restaurant"] == "Spicy Moon"
+        assert "Spicy Moon" in data["html"]
+        assert data["values"]["open_roles"] == []
+        assert data["values"]["front_walker"] == ""
+
     def test_walk_has_no_restaurant_prefill(self, api_client, maya):
         event = _event(maya, location="Spicy Moon, 328 E 6th St")
         data = api_client.get(_url(event), **auth_headers_for(maya)).json()
@@ -223,6 +253,16 @@ class TestPutSpeech:
         assert speech.values["front_walker"] == "b"
         assert speech.updated_by == sam
 
+    def test_failed_save_does_not_change_kind(self, api_client, maya, walk, monkeypatch):
+        def boom(*args, **kwargs):
+            raise RuntimeError("db down")
+
+        monkeypatch.setattr(EventSpeech.objects, "update_or_create", boom)
+        with pytest.raises(RuntimeError):
+            self._put(api_client, walk, maya, {"official_kind": "restaurant", "values": {}})
+        walk.refresh_from_db()
+        assert walk.official_kind == OfficialKind.WALK
+
     def test_non_cohost_forbidden(self, api_client, walk):
         outsider = make_user(first_name="out", last_name="Last", is_member=True)
         assert self._put(api_client, walk, outsider, {"values": {}}).status_code == 403
@@ -239,8 +279,33 @@ class TestPutSpeech:
         event = _event(maya, event_type=EventType.COMMUNITY, official_kind="")
         assert self._put(api_client, event, maya, {"values": {}}).status_code == 404
 
+    def test_missing_kind_is_422(self, api_client, maya):
+        event = _event(maya, kind="")
+        response = self._put(api_client, event, maya, {"values": {}})
+        assert response.status_code == 422
+        assert_error_code(response, "speech.kind_required")
+
+    def test_payload_kind_is_saved_on_event(self, api_client, maya):
+        event = _event(maya, kind="")
+        response = self._put(
+            api_client, event, maya, {"official_kind": "walk", "values": {"front_walker": "z"}}
+        )
+        assert response.status_code == 200
+        assert response.json()["official_kind"] == "walk"
+        event.refresh_from_db()
+        assert event.official_kind == "walk"
+
+    def test_invalid_kind_is_422(self, api_client, maya, walk):
+        response = self._put(api_client, walk, maya, {"official_kind": "party", "values": {}})
+        assert response.status_code == 422
+        assert_error_code(response, "event.invalid_official_kind")
+
     def test_bad_values_are_422(self, api_client, maya, walk):
         response = self._put(api_client, walk, maya, {"values": {"open_roles": "x"}})
         assert response.status_code == 422
         assert_error_code(response, "speech.invalid_values")
         assert not EventSpeech.objects.filter(event=walk).exists()
+
+    def test_unknown_keys_are_dropped(self, api_client, maya, walk):
+        self._put(api_client, walk, maya, {"values": {"front_walker": "a", "bogus": "b"}})
+        assert "bogus" not in EventSpeech.objects.get(event=walk).values
