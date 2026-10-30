@@ -1,30 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { QuestionType } from '@/api/questionTypes';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { useSurveyPollTallies, useSurveyQuestionSummaries } from './surveyAdmin';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -44,9 +29,9 @@ describe('useSurveyPollTallies', () => {
         },
       ],
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyPollTallies('srv-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/tallies/');
@@ -65,9 +50,9 @@ describe('useSurveyPollTallies', () => {
 describe('useSurveyQuestionSummaries', () => {
   it('should pass the event filter as event_id', async () => {
     mockedGet.mockResolvedValueOnce({ data: [] });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1', 'ev-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
@@ -88,9 +73,9 @@ describe('useSurveyQuestionSummaries', () => {
         { question_id: 'q2', field_type: 'radio', counts: { red: 1 }, answered: 1 },
       ],
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
@@ -108,8 +93,8 @@ describe('useSurveyQuestionSummaries', () => {
   });
 
   it('should not fetch without a survey id', () => {
-    const qc = makeQc();
-    renderHook(() => useSurveyQuestionSummaries(undefined), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    renderHook(() => useSurveyQuestionSummaries(undefined), { wrapper: queryWrapper(qc) });
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });

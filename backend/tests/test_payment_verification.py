@@ -7,9 +7,9 @@ from community._payment_verification import MISCLICK_WINDOW, apply_payment_verif
 from community.models import EventRSVP, RSVPStatus
 from django.apps import apps
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 
+from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
 
 pytestmark = pytest.mark.django_db
@@ -30,10 +30,6 @@ def guest(django_user_model):
     return django_user_model.objects.create_user(
         phone_number="+14155550501", first_name="Guest", is_member=True
     )
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _host_set(api_client, auth_headers, event, guest, body):
@@ -250,7 +246,7 @@ class TestHostSetRsvpVerifies:
 
         _host_set(
             api_client,
-            _headers(cohost),
+            auth_headers_for(cohost),
             event,
             guest,
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},

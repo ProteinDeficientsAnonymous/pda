@@ -10,11 +10,11 @@ import json
 
 import pytest
 from community.models import Event, EventComment, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from notifications.service import notify_comment_reply, notify_event_comment
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -102,9 +102,7 @@ class TestReplyEndpointTriggersNotification:
         EventRSVP.objects.create(event=event, user=author, status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(event=event, user=replier, status=RSVPStatus.ATTENDING)
         parent = EventComment.objects.create(event=event, author=author, body="parent")
-        replier_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(replier).access_token}"  # type: ignore
-        }
+        replier_headers = auth_headers_for(replier)
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/{parent.id}/replies/",
             data=json.dumps({"body": "reply"}),
@@ -231,9 +229,7 @@ class TestPostCommentEndpointTriggersNotification:
             created_by=test_user,
         )
         EventRSVP.objects.create(event=event, user=commenter, status=RSVPStatus.ATTENDING)
-        commenter_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(commenter).access_token}"  # type: ignore
-        }
+        commenter_headers = auth_headers_for(commenter)
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             data=json.dumps({"body": "first post"}),

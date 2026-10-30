@@ -5,12 +5,12 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -275,9 +275,7 @@ class TestAnonymousResponseToken:
         )
         role = Role.objects.create(name="surveys_mgr2", permissions=[PermissionKey.MANAGE_SURVEYS])
         admin.roles.add(role)
-        admin_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
-        }
+        admin_headers = auth_headers_for(admin)
         api_client.post(
             _respond_url(one_per_user_survey),
             data=_answers(one_per_user_survey, "anon"),

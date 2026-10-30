@@ -24,11 +24,7 @@ vi.mock('@/api/auth', async (importActual) => ({
   updateProfile: vi.fn(),
 }));
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 describe('ConsentScreen', () => {
   const acceptConsents = vi.fn();
