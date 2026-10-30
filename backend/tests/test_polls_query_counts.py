@@ -1,15 +1,16 @@
 import json
 
 import pytest
-from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
+from community.models import EventPoll, PollAvailability, PollOption, PollVote
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from tests.conftest import future_iso
+from tests._events import make_event
+from tests._time import future_iso
 
 
 def _poll(creator, option_count: int) -> EventPoll:
-    event = Event.objects.create(title="p", start_datetime=future_iso(days=90), created_by=creator)
+    event = make_event(created_by=creator)
     poll = EventPoll.objects.create(event=event, created_by=creator)
     for i in range(option_count):
         PollOption.objects.create(poll=poll, datetime=future_iso(days=100 + i), display_order=i)
@@ -56,9 +57,7 @@ class TestPollQueryCounts:
 
     def test_create_is_constant(self, api_client, auth_headers, test_user):
         def create(option_count: int) -> int:
-            event = Event.objects.create(
-                title="c", start_datetime=future_iso(days=90), created_by=test_user
-            )
+            event = make_event(created_by=test_user)
             options = [future_iso(days=100 + i) for i in range(option_count)]
             url = f"/api/community/events/{event.id}/poll/"
             return _post(api_client, url, {"options": options}, auth_headers)
