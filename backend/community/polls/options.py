@@ -39,11 +39,7 @@ def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
         # winning_option is a nullable FK, so select_related on it produces an outer
         # join — Postgres rejects FOR UPDATE there. Lock the poll row on its own first.
         EventPoll.objects.select_for_update().get(event=event)
-        poll = (
-            EventPoll.objects.select_related("winning_option")
-            .prefetch_related("options__votes__user")
-            .get(event=event)
-        )
+        poll = EventPoll.objects.get(event=event)
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.winning_option_id is not None:
