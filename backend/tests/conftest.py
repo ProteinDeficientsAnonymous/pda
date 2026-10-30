@@ -208,6 +208,24 @@ def manage_roles_only_headers(manage_roles_only_user):
 
 
 @pytest.fixture
+def manage_events_user(db):
+    user = User.objects.create_user(
+        phone_number="+14155551234",
+        password="eventmanagerpass123",
+        first_name="Event",
+        last_name="Manager",
+    )
+    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def manage_events_headers(manage_events_user):
+    return auth_headers_for(manage_events_user)
+
+
+@pytest.fixture
 def needs_onboarding_user(db):
     return User.objects.create_user(
         phone_number="+12025550110",
