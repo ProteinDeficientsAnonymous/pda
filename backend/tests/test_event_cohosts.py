@@ -1,8 +1,8 @@
 import pytest
 from community.models import Event, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 
@@ -31,8 +31,7 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_user)
 
 
 @pytest.mark.django_db

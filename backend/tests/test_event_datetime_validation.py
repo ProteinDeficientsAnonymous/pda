@@ -5,10 +5,6 @@ from datetime import datetime, timedelta
 import pytest
 from community._validation import Code
 from community.models import Event
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._time import future_iso, past_iso
@@ -16,22 +12,6 @@ from tests._time import future_iso, past_iso
 
 def _naive_future_iso(days: int, hours: int = 0) -> str:
     return (datetime.now() + timedelta(days=days, hours=hours)).replace(microsecond=0).isoformat()
-
-
-@pytest.fixture
-def manage_events_headers(db):
-    user = User.objects.create_user(
-        phone_number="+14155551236",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager",
-    )
-    role = Role.objects.create(
-        name="event_manager_datetime", permissions=[PermissionKey.MANAGE_EVENTS]
-    )
-    user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture

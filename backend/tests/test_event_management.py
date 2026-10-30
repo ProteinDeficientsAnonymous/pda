@@ -7,31 +7,9 @@ from community.models import Event, EventStatus
 from django.core.cache import caches
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._time import future_iso, past_iso
-
-
-@pytest.fixture
-def manage_events_user(db):
-    """A non-superuser with only manage_events permission."""
-    user = User.objects.create_user(
-        phone_number="+14155551234",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_events_headers(manage_events_user):
-    refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture

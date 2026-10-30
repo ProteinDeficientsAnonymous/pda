@@ -4,16 +4,11 @@ import pytest
 from community._validation import Code
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._time import future_iso
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -63,7 +58,7 @@ class TestCohostsMustBeMembers:
             f"/api/community/events/{event.id}/cohost-invites/",
             data=json.dumps({"user_ids": [str(tentative.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)
@@ -74,7 +69,7 @@ class TestCohostsMustBeMembers:
             f"/api/community/events/{event.id}/",
             data=json.dumps({"co_host_ids": [str(member.pk), str(tentative.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)
@@ -87,7 +82,7 @@ class TestCohostsMustBeMembers:
             "/api/community/events/",
             data=json.dumps(_event_payload([str(tentative.pk)])),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 400
         assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)
@@ -98,7 +93,7 @@ class TestCohostsMustBeMembers:
             "/api/community/events/",
             data=json.dumps(_event_payload([str(member.pk)])),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 201, response.content
         invite = EventCoHostInvite.objects.get(event_id=response.json()["id"], user=member)
@@ -115,7 +110,7 @@ class TestCohostsMustBeMembers:
             f"/api/community/events/{event.id}/",
             data=json.dumps({"co_host_ids": [str(tentative.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200, response.content
 
@@ -127,7 +122,7 @@ class TestCohostsMustBeMembers:
         )
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
-            **_auth_headers(tentative),
+            **auth_headers_for(tentative),
         )
         assert response.status_code == 403
         assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)

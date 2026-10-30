@@ -1,11 +1,8 @@
 import pytest
 from community._validation import Code
 from community.models import EventRSVP, EventType, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._public_rsvp_helpers import (
@@ -13,25 +10,6 @@ from tests._public_rsvp_helpers import (
     make_official_event,
     make_tentative_member,
 )
-
-
-@pytest.fixture
-def manage_events_user(db):
-    user = User.objects.create_user(
-        phone_number="+14155551234",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_events_headers(manage_events_user):
-    refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _patch_official_off(api_client, event, headers, **extra):

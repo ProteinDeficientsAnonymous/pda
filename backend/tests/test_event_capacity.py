@@ -7,9 +7,9 @@ import pytest
 from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._time import future_iso
 
 # ---------------------------------------------------------------------------
@@ -24,11 +24,6 @@ def _make_user(phone, name):
         first_name=name,
         last_name="",
     )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -53,22 +48,22 @@ def user4(db):
 
 @pytest.fixture
 def headers1(user1):
-    return _jwt_headers(user1)
+    return auth_headers_for(user1)
 
 
 @pytest.fixture
 def headers2(user2):
-    return _jwt_headers(user2)
+    return auth_headers_for(user2)
 
 
 @pytest.fixture
 def headers3(user3):
-    return _jwt_headers(user3)
+    return auth_headers_for(user3)
 
 
 @pytest.fixture
 def headers4(user4):
-    return _jwt_headers(user4)
+    return auth_headers_for(user4)
 
 
 @pytest.fixture
