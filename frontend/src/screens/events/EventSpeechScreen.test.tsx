@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { Route, Routes } from 'react-router-dom';
@@ -60,7 +60,9 @@ function httpError(status: number) {
 }
 
 beforeEach(() => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: UNSAVED_WALK });
+  vi.mocked(apiClient.put).mockReset().mockResolvedValue({ data: SAVED_WALK });
 });
 
 describe('EventSpeechScreen', () => {
@@ -109,6 +111,35 @@ describe('EventSpeechScreen', () => {
     expect(await screen.findByText('Walk on the Hudson')).toBeInTheDocument();
   });
 
+  it('saves trimmed values with list items split per line and switches to reading', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    const details = await screen.findByLabelText('walk details');
+    await user.type(details, 'meet at the gate');
+    const roles = screen.getByLabelText('open roles');
+    await user.clear(roles);
+    await user.type(roles, ' greeter {Enter}{Enter}  scribe');
+    await user.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalled();
+    });
+    const [url, body] = vi.mocked(apiClient.put).mock.calls[0] as [
+      string,
+      { values: Record<string, unknown>; event_format?: string },
+    ];
+    expect(url).toBe('/api/community/events/ev1/speech/');
+    expect(body.event_format).toBeUndefined();
+    expect(body.values.walk_details).toBe('meet at the gate');
+    expect(body.values.open_roles).toEqual(['greeter', 'scribe']);
+    expect(body.values).not.toHaveProperty('restaurant');
+
+    expect(await screen.findByText('welcome, ann and bo')).toBeInTheDocument();
+    expect(screen.queryByLabelText('facilitators')).not.toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
   it('styles the reading view for reading aloud', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: SAVED_WALK });
     renderScreen();
@@ -136,5 +167,16 @@ describe('EventSpeechScreen', () => {
     renderScreen();
 
     expect(await screen.findByText('speeches are only for official events')).toBeInTheDocument();
+  });
+
+  it('shows a save error and stays on the form', async () => {
+    vi.mocked(apiClient.put).mockRejectedValue(httpError(500));
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole('button', { name: 'save' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("couldn't save");
+    expect(screen.getByLabelText('facilitators')).toBeInTheDocument();
   });
 });
