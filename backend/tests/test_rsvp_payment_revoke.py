@@ -6,12 +6,12 @@ import pytest
 from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import Role
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
@@ -20,10 +20,6 @@ PAYMENT_URL = "/api/community/events/{event_id}/rsvps/{user_id}/payment/"
 
 def _paid_event(creator, **overrides) -> Event:
     return create_paid_event(created_by=creator, **overrides)
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _verified(host) -> dict:
@@ -67,7 +63,7 @@ class TestHostRevokePayment:
             RSVP_URL.format(event_id=event.id),
             {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
             content_type="application/json",
-            **_headers(guest),
+            **auth_headers_for(guest),
         )
         assert response.status_code == 200, "un-verifying must not re-gate the guest"
 
@@ -105,7 +101,7 @@ class TestHostRevokePayment:
             rsvp_url,
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_headers(guest),
+            **auth_headers_for(guest),
         )
         assert gated.status_code == 400
         assert_error_code(gated, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
@@ -114,7 +110,7 @@ class TestHostRevokePayment:
             rsvp_url,
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
             content_type="application/json",
-            **_headers(guest),
+            **auth_headers_for(guest),
         )
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=event, user=guest).paid_confirmed_at is not None
@@ -136,7 +132,7 @@ class TestHostRevokePayment:
             RSVP_URL.format(event_id=event.id),
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
             content_type="application/json",
-            **_headers(guest),
+            **auth_headers_for(guest),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=event, user=guest)
@@ -257,7 +253,7 @@ class TestHostRevokePayment:
             PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
             {"paid_confirmed": True},
             content_type="application/json",
-            **_headers(cohost),
+            **auth_headers_for(cohost),
         )
         stored = EventRSVP.objects.get(pk=rsvp.pk)
         assert stored.payment_verified_by == test_user
@@ -293,7 +289,7 @@ class TestHostRevokePayment:
             PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
             {"paid_confirmed": False},
             content_type="application/json",
-            **_headers(guest),
+            **auth_headers_for(guest),
         )
         assert response.status_code == 403
         rsvp = EventRSVP.objects.get(pk=seeded.pk)
@@ -322,7 +318,7 @@ class TestHostRevokePayment:
         guest = django_user_model.objects.create_user(
             phone_number="+14155550309", first_name="Guest", is_member=True
         )
-        headers = _headers(guest)
+        headers = auth_headers_for(guest)
         api_client.post(
             RSVP_URL.format(event_id=event.id),
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
@@ -386,7 +382,7 @@ class TestPaymentStatusVisibility:
         manager.roles.add(
             Role.objects.create(name="event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
         )
-        assert self._guests(api_client, event, _headers(manager))["Payer"] is True
+        assert self._guests(api_client, event, auth_headers_for(manager))["Payer"] is True
 
     def test_event_manager_can_mark_paid(self, api_client, test_user, django_user_model):
         event = _paid_event(test_user)
@@ -405,7 +401,7 @@ class TestPaymentStatusVisibility:
             PAYMENT_URL.format(event_id=event.id, user_id=guest.id),
             {"paid_confirmed": True},
             content_type="application/json",
-            **_headers(manager),
+            **auth_headers_for(manager),
         )
         assert response.status_code == 200
         guests = {g["name"]: g for g in response.json()["guests"]}
@@ -420,8 +416,11 @@ class TestPaymentStatusVisibility:
             phone_number="+14155550403", first_name="Nosy", is_member=True
         )
         EventRSVP.objects.create(event=event, user=nosy, status=RSVPStatus.ATTENDING)
-        assert self._guests(api_client, event, _headers(nosy))["Payer"] is False
-        assert self._guests(api_client, event, _headers(nosy), "payment_verified")["Payer"] is False
+        assert self._guests(api_client, event, auth_headers_for(nosy))["Payer"] is False
+        assert (
+            self._guests(api_client, event, auth_headers_for(nosy), "payment_verified")["Payer"]
+            is False
+        )
 
     def test_unverified_guest_still_reads_as_attested_to_the_host(
         self, api_client, auth_headers, test_user, django_user_model
@@ -447,7 +446,9 @@ class TestPaymentStatusVisibility:
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **_verified(test_user)
         )
-        body = api_client.get(f"/api/community/events/{event.id}/", **_headers(guest)).json()
+        body = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(guest)
+        ).json()
         assert body["my_paid_confirmed"] is True
 
         api_client.patch(
@@ -456,5 +457,7 @@ class TestPaymentStatusVisibility:
             content_type="application/json",
             **auth_headers,
         )
-        body = api_client.get(f"/api/community/events/{event.id}/", **_headers(guest)).json()
+        body = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(guest)
+        ).json()
         assert body["my_paid_confirmed"] is True

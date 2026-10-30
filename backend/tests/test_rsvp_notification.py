@@ -1,9 +1,9 @@
 import pytest
 from community.models import Event, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -45,8 +45,7 @@ class TestRsvpNotifications:
     def test_rsvp_attending_notifies_host(
         self, api_client, member_user, event_with_host, host_user
     ):
-        refresh = RefreshToken.for_user(member_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(member_user)
 
         response = api_client.post(
             f"/api/community/events/{event_with_host.id}/rsvp/",
@@ -66,8 +65,7 @@ class TestRsvpNotifications:
         assert "is going" in notifications.first().message
 
     def test_rsvp_maybe_notifies_host(self, api_client, member_user, event_with_host, host_user):
-        refresh = RefreshToken.for_user(member_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(member_user)
 
         response = api_client.post(
             f"/api/community/events/{event_with_host.id}/rsvp/",
@@ -87,8 +85,7 @@ class TestRsvpNotifications:
         assert "might go" in notifications.first().message
 
     def test_rsvp_cant_go_notifies_host(self, api_client, member_user, event_with_host, host_user):
-        refresh = RefreshToken.for_user(member_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(member_user)
 
         response = api_client.post(
             f"/api/community/events/{event_with_host.id}/rsvp/",
@@ -111,8 +108,7 @@ class TestRsvpNotifications:
         self, api_client, member_user, event_with_host, host_user
     ):
         """A can't-go note already notifies via notify_rsvp_declined_note — no duplicate."""
-        refresh = RefreshToken.for_user(member_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(member_user)
 
         response = api_client.post(
             f"/api/community/events/{event_with_host.id}/rsvp/",
@@ -144,8 +140,7 @@ class TestRsvpNotifications:
             created_by=host_user,
             max_attendees=0,
         )
-        refresh = RefreshToken.for_user(member_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(member_user)
 
         response = api_client.post(
             f"/api/community/events/{full_event.id}/rsvp/",
@@ -166,8 +161,7 @@ class TestRsvpNotifications:
         assert "joined the waitlist" in notifications.first().message
 
     def test_rsvp_host_self_rsvp_no_notification(self, api_client, event_with_host, host_user):
-        refresh = RefreshToken.for_user(host_user)
-        auth_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        auth_headers = auth_headers_for(host_user)
 
         response = api_client.post(
             f"/api/community/events/{event_with_host.id}/rsvp/",
