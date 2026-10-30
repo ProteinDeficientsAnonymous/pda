@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, PageVisibility
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from notifications.service import (
     create_event_invite_notifications,
@@ -15,6 +14,7 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -22,11 +22,6 @@ from tests.conftest import future_iso
 
 def _make_user(phone: str, name: str = "") -> User:
     return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -104,7 +99,7 @@ class TestEventInviteIntegration:
             "/api/community/events/",
             payload,
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert create_response.status_code == 201
         event_id = create_response.json()["id"]
@@ -113,7 +108,7 @@ class TestEventInviteIntegration:
             f"/api/community/events/{event_id}/invitations/",
             {"user_ids": [str(invitee.pk)]},
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert invite_response.status_code == 200
         assert Notification.objects.filter(recipient=invitee).count() == 1
@@ -130,7 +125,7 @@ class TestEventInviteIntegration:
             f"/api/community/events/{sample_event.id}/invitations/",
             {"user_ids": [str(invitee.pk), str(another_user.pk)]},
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert response.status_code == 200
         assert Notification.objects.filter(recipient=another_user).count() == 1
@@ -157,7 +152,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -175,7 +170,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert response.status_code == 200
         assert str(invitee.pk) in response.json()["invited_user_ids"]
@@ -195,7 +190,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -215,7 +210,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(another_user),
+            **auth_headers_for(another_user),
         )
         assert response.status_code == 403
 

@@ -5,16 +5,12 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from community._validation import Code
 from community.models import Event, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
-
-
-def _headers_for(user) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+from tests._auth import auth_headers_for
 
 
 def _user_with_role(phone: str, role_name: str, permission: str) -> User:
@@ -34,19 +30,19 @@ def survey_owner(db):
 
 @pytest.fixture
 def survey_owner_headers(survey_owner):
-    return _headers_for(survey_owner)
+    return auth_headers_for(survey_owner)
 
 
 @pytest.fixture
 def surveys_admin_headers(db):
-    return _headers_for(
+    return auth_headers_for(
         _user_with_role("+12025557020", "surveys_admin", PermissionKey.MANAGE_SURVEYS)
     )
 
 
 @pytest.fixture
 def events_admin_headers(db):
-    return _headers_for(
+    return auth_headers_for(
         _user_with_role("+12025557021", "events_admin", PermissionKey.MANAGE_EVENTS)
     )
 

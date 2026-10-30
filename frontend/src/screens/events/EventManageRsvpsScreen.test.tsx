@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { CREATOR, makeEvent, NON_HOST } from '@/test/fixtures';
+import { creator, makeEvent, nonHost } from '@/test/fixtures';
 
 import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
@@ -45,7 +45,7 @@ beforeEach(() => {
 
 describe('EventManageRsvpsScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    useAuthStore.setState({ status: 'authed', user: NON_HOST, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: nonHost, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('EventManageRsvpsScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
@@ -84,14 +84,14 @@ describe('EventManageRsvpsScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/rsvps are off/i)).toBeInTheDocument();
   });
 
   it('renders the panel heading for a host on a future rsvp-enabled event', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
