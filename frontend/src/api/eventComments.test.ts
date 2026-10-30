@@ -12,9 +12,7 @@ import { eventCommentKeys, useEventComments } from './eventComments';
 import { useDeleteComment } from './eventComments';
 import { useToggleReaction } from './eventComments';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = {

@@ -12,9 +12,7 @@ import { makeEvent } from '@/test/fixtures';
 
 import { useRemoveRsvp, useSetRsvp } from './rsvp';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = { status: 'authed', user: { id: 'u-me' } };
