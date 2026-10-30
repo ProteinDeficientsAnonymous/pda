@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -12,6 +10,7 @@ import {
 } from '@/api/notifications';
 import { useAuthStore } from '@/auth/store';
 import { NotificationType } from '@/models/notification';
+import { renderWithProviders } from '@/test/render';
 
 import { NotificationBell } from './NotificationBell';
 
@@ -49,18 +48,8 @@ function makeMutation(overrides = {}) {
   return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, ...overrides };
 }
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderBell(initialPath = '/') {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <NotificationBell />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<NotificationBell />, { route: initialPath });
 }
 
 beforeEach(() => {
@@ -159,14 +148,7 @@ describe('NotificationBell', () => {
     );
 
     // We need to capture navigation — render with a route display
-    const qc = makeQc();
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={['/']}>
-          <NotificationBell />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    renderWithProviders(<NotificationBell />);
 
     // Open the panel
     await user.click(screen.getByRole('button', { name: /notifications \(1 unread\)/i }));

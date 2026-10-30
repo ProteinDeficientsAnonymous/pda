@@ -9,9 +9,9 @@ from community.models import (
     PollOption,
     PollVote,
 )
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -22,8 +22,7 @@ def stranger_headers(db):
         password="strangerpass",
         first_name="Stranger",
     )
-    refresh = RefreshToken.for_user(stranger)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(stranger)
 
 
 @pytest.fixture
@@ -34,8 +33,7 @@ def invitee_headers(db, invite_only_event):
         first_name="Invitee",
     )
     invite_only_event.invited_users.add(invitee)
-    refresh = RefreshToken.for_user(invitee)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(invitee)
 
 
 @pytest.fixture

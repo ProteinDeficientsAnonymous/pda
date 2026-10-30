@@ -3,12 +3,12 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Survey, SurveyQuestionType
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._survey_condition_helpers import equals, make_question
 
 
@@ -19,7 +19,7 @@ def admin_headers(db):
     )
     role = Role.objects.create(name="section_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
     admin.roles.add(role)
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"}  # type: ignore
+    return auth_headers_for(admin)
 
 
 @pytest.fixture

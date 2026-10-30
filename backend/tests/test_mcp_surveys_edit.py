@@ -7,8 +7,6 @@ from audit.models import AuditLogEntry
 from community._surveys import delete_survey_question, get_survey_admin
 from community.models import Survey, SurveyQuestion, SurveyResponse
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 
@@ -19,13 +17,6 @@ LABELS = ["food?", "why?", "notes"]
 REMOVE_VIEW = "mcp_gateway.survey_edit_questions.delete_question_view"
 SETTINGS_VIEW = "mcp_gateway.survey_edit_plan.update_survey_view"
 TOOL = "mcp_gateway.tools.surveys_edit"
-
-
-@pytest.fixture
-def surveys_admin(test_user):
-    role = Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS])
-    test_user.roles.add(role)
-    return test_user
 
 
 def _survey(*, responses=0, **fields) -> Survey:
