@@ -66,6 +66,7 @@ const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderS
 const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
 const SurveyPreview = lazyWithRetry(() => import('@/screens/admin/SurveyPreviewScreen'));
+const SpeechTemplate = lazyWithRetry(() => import('@/screens/admin/SpeechTemplateScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -191,6 +192,10 @@ export const router = createBrowserRouter([
               {
                 element: <RequirePermission perm={Permission.EditJoinQuestions} />,
                 children: [{ path: '/admin/join-form', element: el(<JoinFormAdmin />) }],
+              },
+              {
+                element: <RequirePermission perm={Permission.EditSpeechTemplate} />,
+                children: [{ path: '/admin/event-speech', element: el(<SpeechTemplate />) }],
               },
               {
                 element: <RequirePermission perm={Permission.ManageSurveys} />,

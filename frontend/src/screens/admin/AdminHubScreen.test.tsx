@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Permission } from '@/models/permissions';
 import { setAuthed } from '@/test/auth';
-import { makeUser } from '@/test/fixtures';
+import { makeUser, makeUserWithPermissions } from '@/test/fixtures';
 
 import AdminHubScreen from './AdminHubScreen';
 
@@ -42,5 +42,16 @@ describe('AdminHubScreen', () => {
     renderHub();
 
     expect(screen.queryByText('docs')).not.toBeInTheDocument();
+  });
+
+  it('shows the event speech tile only with the edit_speech_template permission', () => {
+    setAuthed(makeUserWithPermissions([Permission.EditSpeechTemplate]));
+    const { unmount } = renderHub();
+    expect(screen.getByText('event speech')).toBeInTheDocument();
+    unmount();
+
+    setAuthed(makeUser({ roles: [] }));
+    renderHub();
+    expect(screen.queryByText('event speech')).not.toBeInTheDocument();
   });
 });

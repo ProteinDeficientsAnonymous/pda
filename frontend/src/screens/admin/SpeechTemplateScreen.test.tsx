@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,40 @@ beforeEach(() => {
 });
 
 describe('SpeechTemplateScreen', () => {
+  it('shows the three section editors and the open roles textarea', async () => {
+    renderScreen();
+
+    expect(await screen.findByRole('heading', { name: 'everyone hears this' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'walks only' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'restaurants only' })).toBeInTheDocument();
+    expect(screen.getByLabelText('open roles')).toHaveValue('host');
+  });
+
+  it('explains blockquote is for speaker notes', async () => {
+    renderScreen();
+    await screen.findByRole('heading', { name: 'walks only' });
+
+    expect(screen.getByText(/blockquote for speaker notes/)).toBeInTheDocument();
+  });
+
+  it('inserts a blank from the + blank menu and saves walk_pm', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    const walks = (await screen.findByRole('heading', { name: 'walks only' })).closest('section')!;
+
+    await user.click(within(walks).getByRole('button', { name: '+ blank' }));
+    await user.click(screen.getByRole('menuitem', { name: 'walk details' }));
+    fireEvent.focusOut(walks);
+
+    await waitFor(() => {
+      expect(apiClient.patch).toHaveBeenCalled();
+    });
+    const [url, body] = vi.mocked(apiClient.patch).mock.calls[0] as [string, { walk_pm: string }];
+    expect(url).toBe('/api/community/speech-template/');
+    expect(body.walk_pm).toContain('"type":"speechBlank"');
+    expect(body.walk_pm).toContain('"key":"walk_details"');
+  });
+
   it('saves open roles one per line, dropping blanks', async () => {
     const user = userEvent.setup();
     renderScreen();
