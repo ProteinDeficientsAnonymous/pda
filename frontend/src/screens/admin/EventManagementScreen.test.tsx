@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvents } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
 import { makeEvent } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -21,7 +21,7 @@ function renderScreen() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
 });
 

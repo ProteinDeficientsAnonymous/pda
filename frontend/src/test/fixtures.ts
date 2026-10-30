@@ -152,6 +152,16 @@ export function makeUser(overrides: Partial<User> = {}): User {
   };
 }
 
+export function makeUserWithPermissions(
+  permissions: string[],
+  overrides: Partial<User> = {},
+): User {
+  return makeUser({
+    ...overrides,
+    roles: [{ id: 'role-test', name: 'test', isDefault: false, permissions }],
+  });
+}
+
 export const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
 export const NON_HOST = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
 
