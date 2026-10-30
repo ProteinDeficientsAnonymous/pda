@@ -1,3 +1,31 @@
+## [0.209.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.0...v0.209.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pillow to v13 [security] ([#1806](https://github.com/ProteinDeficientsAnonymous/pda/issues/1806)) ([bb00169](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb001696965dd08315dbe12183376aa2274f5ff5))
+
+# [0.209.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.208.0...v0.209.0) (2026-10-30)
+
+
+### Features
+
+* **auth:** lead login link email confirmation with "check your email!" ([#2049](https://github.com/ProteinDeficientsAnonymous/pda/issues/2049)) ([1980907](https://github.com/ProteinDeficientsAnonymous/pda/commit/19809072d52052d677c2b382ef91da31a9ca91c7))
+
+# [0.208.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.1...v0.208.0) (2026-10-30)
+
+
+### Features
+
+* **events:** remind hosts to add co-hosts a week before official events ([#1996](https://github.com/ProteinDeficientsAnonymous/pda/issues/1996)) ([378a437](https://github.com/ProteinDeficientsAnonymous/pda/commit/378a437103c654899fd233821605ca0b8bb51796))
+
+## [0.207.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.207.0...v0.207.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **events:** show real description in link previews for non-public events ([#1995](https://github.com/ProteinDeficientsAnonymous/pda/issues/1995)) ([5d0d130](https://github.com/ProteinDeficientsAnonymous/pda/commit/5d0d130c27ef7ed1682b96b7871e685ff67ac14a))
+
 # [0.207.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.206.1...v0.207.0) (2026-10-28)
 
 

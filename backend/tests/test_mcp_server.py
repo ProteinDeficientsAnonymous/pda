@@ -3,7 +3,7 @@ from asgiref.sync import async_to_sync
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 from mcp.server.mcpserver.exceptions import ToolError
-from mcp_gateway.provider import PdaAccessToken, PdaOAuthProvider
+from mcp_gateway.provider import PdaOAuthProvider
 from mcp_gateway.server import (
     TOOL_PERMISSIONS,
     current_user,
@@ -11,27 +11,18 @@ from mcp_gateway.server import (
     pda_tool,
     require_tool_permission,
 )
-from users.models import User
 from users.permissions import PermissionKey
 
 from tests._mcp_helpers import make_grant, make_tokens
+from tests._mcp_tool_helpers import signed_in
 
 pytestmark = pytest.mark.django_db
-
-
-def _signed_in(user):
-    # Fresh row per sign-in, like the per-request token lookup.
-    fresh = User.objects.get(pk=user.pk)
-    token = PdaAccessToken(
-        token="t", client_id="c", scopes=["pda"], subject=str(user.pk), user=fresh
-    )
-    return auth_context_var.set(AuthenticatedUser(token))
 
 
 @pytest.fixture
 def as_user():
     tokens = []
-    yield lambda user: tokens.append(_signed_in(user))
+    yield lambda user: tokens.append(signed_in(user))
     for token in reversed(tokens):
         auth_context_var.reset(token)
 
