@@ -1,12 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useGuidelines } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import GuidelinesScreen from './GuidelinesScreen';
 
@@ -35,15 +33,6 @@ const baseUser = makeUser({
   weekStart: 'monday',
 });
 
-function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
   useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
@@ -57,7 +46,7 @@ describe('GuidelinesScreen', () => {
       data: undefined,
     } as ReturnType<typeof useGuidelines>);
 
-    renderWith(<GuidelinesScreen />);
+    renderWithProviders(<GuidelinesScreen />);
 
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
@@ -74,7 +63,7 @@ describe('GuidelinesScreen', () => {
       data: baseGuidelinesData,
     } as ReturnType<typeof useGuidelines>);
 
-    renderWith(<GuidelinesScreen />);
+    renderWithProviders(<GuidelinesScreen />);
 
     expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
   });
@@ -98,7 +87,7 @@ describe('GuidelinesScreen', () => {
       data: baseGuidelinesData,
     } as ReturnType<typeof useGuidelines>);
 
-    renderWith(<GuidelinesScreen />);
+    renderWithProviders(<GuidelinesScreen />);
 
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
   });

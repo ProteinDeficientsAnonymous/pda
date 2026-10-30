@@ -1,14 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { mapEventPoll, type WireEventPoll } from '@/api/eventPollMapper';
 import { eventPollKeys } from '@/api/eventPolls';
 import { VoteChoice } from '@/models/eventPoll';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import { PollRespondDialog } from './PollRespondDialog';
 
@@ -59,11 +57,9 @@ function wirePoll(overrides: Partial<WireEventPoll> = {}): WireEventPoll {
 }
 
 function renderDialog(poll = mapEventPoll(wirePoll())) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const qc = makeQueryClient();
   qc.setQueryData(eventPollKeys.detail('evt-1', true), poll);
-  const Wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-  render(<PollRespondDialog open onClose={vi.fn()} poll={poll} />, { wrapper: Wrapper });
+  render(<PollRespondDialog open onClose={vi.fn()} poll={poll} />, { wrapper: queryWrapper(qc) });
   return { qc };
 }
 
@@ -99,11 +95,11 @@ describe('PollRespondDialog retract vote', () => {
     mockedPost.mockResolvedValueOnce({ data: wirePoll() });
 
     const stalePoll = mapEventPoll(wirePoll());
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = makeQueryClient();
     qc.setQueryData(eventPollKeys.detail('evt-1', true), stalePoll);
-    const Wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: qc }, children);
-    render(<PollRespondDialog open onClose={vi.fn()} poll={stalePoll} />, { wrapper: Wrapper });
+    render(<PollRespondDialog open onClose={vi.fn()} poll={stalePoll} />, {
+      wrapper: queryWrapper(qc),
+    });
 
     const maybeButton = screen.getAllByRole('button', { name: /maybe/i })[0]!;
     await userEvent.click(maybeButton);
