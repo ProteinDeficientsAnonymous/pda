@@ -13,18 +13,13 @@ from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._users import make_user
+
 _WHATSAPP_LINK = "https://chat.whatsapp.com/testinvite"
 
 
 def _make_member(phone_number: str, *, joined_days_ago: int = 30, **extra) -> User:
-    user = User.objects.create_user(
-        phone_number=phone_number,
-        password="testpass123",
-        first_name="Test",
-        email=extra.pop("email", f"{phone_number}@example.test"),
-        is_member=True,
-        **extra,
-    )
+    user = make_user(phone_number=phone_number, **extra)
     created = timezone.now() - timedelta(days=joined_days_ago)
     User.objects.filter(pk=user.pk).update(created_at=created)
     user.refresh_from_db()
@@ -103,12 +98,7 @@ class TestRecipientSelection:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        User.objects.create_user(
-            phone_number="+12025550316",
-            password="testpass123",
-            email="guest@example.test",
-            is_member=False,
-        )
+        make_user(email="guest@example.test", is_member=False)
         call_command("send_whatsapp_join_reminders")
         fake_sender.send.assert_not_called()
 

@@ -20,15 +20,11 @@ from community.models import (
 )
 from users.models import User
 
+from tests._users import make_user
+
 
 def _make_user(date_joined: date, **extra) -> User:
-    user = User.objects.create_user(
-        phone_number=extra.pop("phone_number", "+12025550100"),
-        password="testpass123",
-        first_name="Test",
-        is_member=True,
-        **extra,
-    )
+    user = make_user(**extra)
     User.objects.filter(pk=user.pk).update(
         date_joined=datetime.combine(date_joined, datetime.min.time(), tzinfo=UTC)
     )
