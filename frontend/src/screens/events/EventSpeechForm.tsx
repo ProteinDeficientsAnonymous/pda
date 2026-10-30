@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-import type { EventSpeech } from '@/api/eventSpeech';
+import type { EventSpeech, EventSpeechSave, SpeechValues } from '@/api/eventSpeech';
 import { SPEECH_BLANKS, type SpeechBlankKey } from '@/components/RichEditor/SpeechBlankExtension';
+import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import type { OfficialKind } from '@/models/event';
@@ -23,11 +24,22 @@ function toText(value: string | string[] | undefined): string {
   return value ?? '';
 }
 
-interface Props {
-  speech: EventSpeech;
+function toValue(key: SpeechBlankKey, text: string): string | string[] {
+  if (!SPEECH_BLANKS[key].isList) return text.trim();
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
-export function EventSpeechForm({ speech }: Props) {
+interface Props {
+  speech: EventSpeech;
+  saving: boolean;
+  error: string | null;
+  onSave: (input: EventSpeechSave) => void;
+}
+
+export function EventSpeechForm({ speech, saving, error, onSave }: Props) {
   const kind = speech.officialKind;
   const [texts, setTexts] = useState<Record<string, string>>(() =>
     Object.fromEntries(Object.entries(speech.values).map(([k, v]) => [k, toText(v)])),
@@ -35,8 +47,21 @@ export function EventSpeechForm({ speech }: Props) {
 
   const keys = kind ? [...SHARED_KEYS, ...KIND_KEYS[kind]] : [];
 
+  function submit() {
+    if (!kind) return;
+    const values: SpeechValues = {};
+    for (const key of keys) values[key] = toValue(key, texts[key] ?? '');
+    onSave({ values });
+  }
+
   return (
-    <form className="flex flex-col gap-4">
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
       {keys.map((key) => (
         <BlankField
           key={key}
@@ -47,6 +72,16 @@ export function EventSpeechForm({ speech }: Props) {
           }}
         />
       ))}
+      {error ? (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={!kind || saving}>
+          {saving ? 'saving…' : 'save'}
+        </Button>
+      </div>
     </form>
   );
 }
