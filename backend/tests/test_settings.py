@@ -3,7 +3,7 @@
 import warnings
 
 import pytest
-from django.utils.deprecation import RemovedInDjango2028Warning
+from django.utils.deprecation import RemovedInDjango70Warning
 
 
 @pytest.mark.unit
@@ -18,7 +18,7 @@ class TestEmailBackendConfig:
         monkeypatch.delenv("EMAIL_HOST", raising=False)
 
         with warnings.catch_warnings():
-            warnings.simplefilter("error", RemovedInDjango2028Warning)
+            warnings.simplefilter("error", RemovedInDjango70Warning)
             settings_module = reload_settings()
 
         assert (
@@ -36,7 +36,7 @@ class TestEmailBackendConfig:
         monkeypatch.setenv("DEFAULT_FROM_EMAIL", "pda@example.com")
 
         with warnings.catch_warnings():
-            warnings.simplefilter("error", RemovedInDjango2028Warning)
+            warnings.simplefilter("error", RemovedInDjango70Warning)
             settings_module = reload_settings()
         mailer = settings_module.MAILERS["default"]
 

@@ -4,7 +4,7 @@ import warnings
 
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
-from django.utils.deprecation import RemovedInDjango2028Warning
+from django.utils.deprecation import RemovedInDjango70Warning
 
 
 @pytest.mark.django_db
@@ -17,7 +17,7 @@ def test_event_rsvp_from_db_accepts_fetch_mode(test_user):
     created = EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", RemovedInDjango2028Warning)
+        warnings.simplefilter("error", RemovedInDjango70Warning)
         loaded = EventRSVP.objects.get(pk=created.pk)
 
     assert loaded._loaded_status == RSVPStatus.ATTENDING
