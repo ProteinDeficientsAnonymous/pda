@@ -9,22 +9,10 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools.surveys_read import _survey_id
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def surveys_admin(db):
-    user = User.objects.create_user(
-        phone_number="+12025557100", password="x", first_name="Surveys", last_name="Admin"
-    )
-    user.roles.add(Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS]))
-    return user
 
 
 def _survey(slug, days_ago=0, **fields):
