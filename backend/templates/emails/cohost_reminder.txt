@@ -2,7 +2,7 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
 {{ event_title|lower }} is coming up on {{ event_when|lower }} and doesn't have any co-hosts yet.
 
-please add the event's facilitators as co-hosts so they can manage rsvps and check people in:
+please add the event's facilitators as co-hosts so they can check people in and see the event speech:
 
 {{ edit_url }}
 
