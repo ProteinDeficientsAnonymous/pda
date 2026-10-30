@@ -5,25 +5,14 @@ import json
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._users import make_user
 
 
 @pytest.fixture
 def form_admin_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550555",
-        password="adminpass123",
-        first_name="Form",
-        last_name="Admin",
-    )
-    role = Role.objects.create(
-        name="form_admin",
-        permissions=[PermissionKey.EDIT_JOIN_QUESTIONS],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_JOIN_QUESTIONS)
 
 
 @pytest.fixture

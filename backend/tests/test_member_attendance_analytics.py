@@ -13,8 +13,10 @@ from community.models import (
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
+
+from tests._users import make_user
 
 MEMBERS_URL = "/api/community/events/attendance-analytics/members/"
 
@@ -44,11 +46,7 @@ def host_user(db):
 
 @pytest.fixture
 def events_admin(db):
-
-    admin = User.objects.create_user(phone_number="+12025551801", password="x", first_name="Admin")
-    role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
-    return admin
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 def _make_event(host_user, title, days_ago, event_type=EventType.CLUB):

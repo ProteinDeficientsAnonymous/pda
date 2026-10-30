@@ -4,9 +4,9 @@ import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.core import mail
 from notifications.models import Notification, NotificationType
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._users import make_user
 
 
 @pytest.mark.django_db
@@ -390,11 +390,7 @@ class TestJoinRequestSubmission:
         assert response.json()["status"] == JoinRequestStatus.PENDING
 
     def test_submit_creates_notifications_for_approvers(self, api_client, why_join_id, db):
-        approver = User.objects.create_user(
-            phone_number="+12025559001", password="pass", first_name="Approver"
-        )
-        role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
-        approver.roles.add(role)
+        approver = make_user(PermissionKey.APPROVE_JOIN_REQUESTS, email="")
 
         response = api_client.post(
             "/api/community/join-request/",

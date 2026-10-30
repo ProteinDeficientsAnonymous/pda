@@ -12,8 +12,8 @@ from ninja_jwt.tokens import RefreshToken
 from PIL import Image
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
+from tests._users import make_user
 from tests.conftest import future_iso
 
 
@@ -64,14 +64,7 @@ def member(db):
 
 @pytest.fixture
 def manager(db):
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user = User.objects.create_user(
-        phone_number="+12025550202",
-        password="testpass123",
-        first_name="Manager",
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture

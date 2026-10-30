@@ -6,10 +6,11 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 
 
 def _auth(user):
@@ -33,9 +34,7 @@ def cohost(db):
 
 @pytest.fixture
 def manager(db):
-    user = User.objects.create_user(phone_number="+12025559202", password="x", first_name="Mgr")
-    user.roles.add(Role.objects.create(name="past_mgr", permissions=[PermissionKey.MANAGE_EVENTS]))
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture

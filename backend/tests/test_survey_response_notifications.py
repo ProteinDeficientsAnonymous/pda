@@ -4,9 +4,9 @@ import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -20,10 +20,7 @@ def survey(db):
 
 @pytest.fixture
 def survey_manager(db):
-    user = User.objects.create_user(phone_number="+12025558001", password="x", first_name="Sam")
-    role = Role.objects.create(name="survey_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_SURVEYS, email="")
 
 
 def _headers(user) -> dict:
