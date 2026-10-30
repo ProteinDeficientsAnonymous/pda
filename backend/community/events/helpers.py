@@ -19,6 +19,7 @@ from community.cohosts.invite_helpers import get_my_pending_invite
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
     Event,
+    EventFormat,
     EventRSVP,
     EventTag,
     EventType,
@@ -446,6 +447,15 @@ _TYPE_TAG_PERMISSIONS = {
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
+
+
+def _validated_event_format(event_format: str | None, event_type: str) -> str:
+    """Return the format to store ("" when unset); raise if invalid or the event isn't official."""
+    if event_format and (
+        event_format not in EventFormat.values or event_type != EventType.OFFICIAL
+    ):
+        raise_validation(Code.Event.INVALID_EVENT_FORMAT, field="event_format")
+    return event_format or ""
 
 
 def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:

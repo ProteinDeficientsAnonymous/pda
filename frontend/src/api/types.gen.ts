@@ -3415,6 +3415,8 @@ export interface components {
             description: string;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Event Type
              * @default community
@@ -3869,6 +3871,8 @@ export interface components {
             description?: string | null;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /** Event Type */
             event_type?: string | null;
             /** Force */
