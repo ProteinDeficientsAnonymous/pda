@@ -13,6 +13,8 @@ from notifications import sse
 from notifications.models import SseTicket
 from notifications.sse import _format_notify_for_user
 
+from tests._auth import auth_headers_for
+
 
 @pytest.mark.django_db
 class TestFormatNotifyForUser:
@@ -30,11 +32,6 @@ class TestFormatNotifyForUser:
         assert "event: event_updated" in frame
 
 
-def _auth_headers(user) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
 
@@ -50,13 +47,13 @@ class TestSseTicketMint:
         assert response.status_code == 401
 
     def test_mint_returns_ticket(self, test_user, api_client):
-        response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
+        response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         assert response.status_code == 200
         assert response.json()["ticket"]
 
     def test_minted_ticket_is_bound_to_user(self, test_user, api_client):
 
-        response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
+        response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         token = response.json()["ticket"]
         ticket = SseTicket.objects.get(token=token)
         assert ticket.user_id == test_user.pk
