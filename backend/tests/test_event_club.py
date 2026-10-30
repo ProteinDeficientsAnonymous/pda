@@ -1,10 +1,11 @@
 import pytest
 from community.models import Event, EventType
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -23,8 +24,7 @@ def club_event_user(db):
 
 @pytest.fixture
 def club_event_headers(club_event_user):
-    refresh = RefreshToken.for_user(club_event_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(club_event_user)
 
 
 class TestClubEventVisibility:

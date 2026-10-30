@@ -7,16 +7,11 @@ from community._validation import Code
 from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
 from django.apps import apps as django_apps
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _user(n):
@@ -57,7 +52,7 @@ def _reorder(api_client, event, user, ids):
         f"/api/community/events/{event.id}/waitlist/order/",
         {"user_ids": [str(i) for i in ids]},
         content_type="application/json",
-        **_auth(user),
+        **auth_headers_for(user),
     )
 
 

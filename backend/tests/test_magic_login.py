@@ -6,19 +6,10 @@ import pytest
 from community._validation import Code
 from django.core.cache import caches
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import MagicLoginToken, User
 
 from tests._asserts import assert_error_code
-
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
@@ -78,7 +69,7 @@ class TestMagicLogin:
             phone_number="+12025550202", password="otherpass123", first_name="other"
         )
         magic = MagicLoginToken.create_for_user(other)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore
+        headers = auth_headers_for(test_user)
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/", **headers)
         assert response.status_code == 403
         magic.refresh_from_db()
@@ -87,7 +78,7 @@ class TestMagicLogin:
     def test_magic_login_same_user_still_works_when_authed(self, api_client, test_user):
         """Clicking your own magic link while already logged in is allowed."""
         magic = MagicLoginToken.create_for_user(test_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore
+        headers = auth_headers_for(test_user)
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/", **headers)
         assert response.status_code == 200
 

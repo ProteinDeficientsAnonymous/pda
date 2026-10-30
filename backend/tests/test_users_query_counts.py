@@ -6,7 +6,8 @@ from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users.roles import Role
 
-from tests._query_counts import assert_constant_queries, headers_for, make_user
+from tests._auth import auth_headers_for
+from tests._query_counts import assert_constant_queries, make_user
 
 
 def _grow_members(n: int) -> None:
@@ -25,13 +26,13 @@ class TestUserEndpointsQueryCount:
     def test_member_directory(self, api_client):
         viewer = make_user("Viewer", is_member=True)
         assert_constant_queries(
-            api_client, "/api/auth/users/directory/", _grow_members, headers_for(viewer)
+            api_client, "/api/auth/users/directory/", _grow_members, auth_headers_for(viewer)
         )
 
     def test_user_search(self, api_client):
         viewer = make_user("Viewer", is_member=True)
         assert_constant_queries(
-            api_client, "/api/auth/users/search/?q=grow", _grow_members, headers_for(viewer)
+            api_client, "/api/auth/users/search/?q=grow", _grow_members, auth_headers_for(viewer)
         )
 
     def test_user_list(self, api_client, manage_users_headers):

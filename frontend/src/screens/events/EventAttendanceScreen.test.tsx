@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { setAuthed } from '@/test/auth';
-import { CREATOR, makeEvent, NON_HOST } from '@/test/fixtures';
+import { creator, makeEvent, nonHost } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import EventAttendanceScreen from './EventAttendanceScreen';
@@ -46,7 +46,7 @@ beforeEach(() => {
 
 describe('EventAttendanceScreen', () => {
   it('renders the panel for the event creator', () => {
-    setAuthed(CREATOR);
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /check-in/i })).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('EventAttendanceScreen', () => {
   });
 
   it('blocks non-host members with a forbidden notice', () => {
-    setAuthed(NON_HOST);
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe('EventAttendanceScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    setAuthed(CREATOR);
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText(/rsvps are off for this event/i)).toBeInTheDocument();

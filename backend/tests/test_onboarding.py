@@ -4,8 +4,9 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
@@ -96,8 +97,7 @@ class TestOnboardingEmail:
             email="existing@example.com",
             needs_onboarding=True,
         )
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        headers = auth_headers_for(user)
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
             data={"new_password": "abcd1234ABCD!"},
@@ -121,8 +121,7 @@ class TestOnboardingEmail:
         user.set_unusable_password()
         user.save(update_fields=["needs_password_reset", "password"])
 
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        headers = auth_headers_for(user)
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
             data={"new_password": "abcd1234ABCD!"},
@@ -145,7 +144,7 @@ class TestOnboardingEmail:
         )
         user.needs_password_reset = True  # has a usable password AND a pending reset
         user.save(update_fields=["needs_password_reset"])
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        headers = auth_headers_for(user)
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
             data={"new_password": "SamePass123!"},
@@ -168,7 +167,7 @@ class TestOnboardingEmail:
         user.needs_password_reset = True
         user.set_unusable_password()
         user.save(update_fields=["needs_password_reset", "password"])
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        headers = auth_headers_for(user)
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
             data={"new_password": "AnyNewPass123!"},
@@ -183,8 +182,7 @@ class TestSmsConsentSerialized:
     def test_me_reports_needs_sms_consent_when_null(self, api_client, needs_onboarding_user):
         needs_onboarding_user.sms_consent_at = None
         needs_onboarding_user.save(update_fields=["sms_consent_at"])
-        token = RefreshToken.for_user(needs_onboarding_user).access_token
-        resp = api_client.get("/api/auth/me/", HTTP_AUTHORIZATION=f"Bearer {token}")
+        resp = api_client.get("/api/auth/me/", **auth_headers_for(needs_onboarding_user))
         assert resp.status_code == 200, resp.content
         assert resp.json()["needs_sms_consent"] is True
 
