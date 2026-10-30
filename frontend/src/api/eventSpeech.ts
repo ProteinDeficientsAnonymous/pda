@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { OfficialKind } from '@/models/event';
 
 import { apiClient } from './client';
+import { invalidateEventDetail } from './events';
 
 export interface SpeechTemplate {
   sharedPm: string;
@@ -80,6 +81,11 @@ export interface EventSpeech {
   updatedByName: string | null;
 }
 
+export interface EventSpeechSave {
+  officialKind?: OfficialKind;
+  values: SpeechValues;
+}
+
 interface WireEventSpeech {
   event_title: string;
   official_kind: string | null;
@@ -114,6 +120,22 @@ export function useEventSpeech(eventId: string | undefined) {
     queryFn: async () => {
       const { data } = await apiClient.get<WireEventSpeech>(speechUrl(eventId ?? ''));
       return mapSpeech(data);
+    },
+  });
+}
+
+export function useSaveEventSpeech(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EventSpeechSave) => {
+      const body: { values: SpeechValues; official_kind?: string } = { values: input.values };
+      if (input.officialKind) body.official_kind = input.officialKind;
+      const { data } = await apiClient.put<WireEventSpeech>(speechUrl(eventId), body);
+      return mapSpeech(data);
+    },
+    onSuccess: (speech) => {
+      qc.setQueryData(speechKey(eventId), speech);
+      invalidateEventDetail(qc, eventId);
     },
   });
 }

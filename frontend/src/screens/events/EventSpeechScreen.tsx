@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { getApiStatus } from '@/api/apiErrors';
-import { type EventSpeech, useEventSpeech } from '@/api/eventSpeech';
+import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
+import { type EventSpeech, useEventSpeech, useSaveEventSpeech } from '@/api/eventSpeech';
 import { HtmlContent } from '@/components/HtmlContent';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
@@ -29,7 +30,10 @@ export default function EventSpeechScreen() {
 }
 
 function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech }) {
-  const reading = speech.saved && speech.officialKind !== null;
+  const readable = speech.saved && speech.officialKind !== null;
+  const [editing, setEditing] = useState(!readable);
+  const save = useSaveEventSpeech(eventId);
+  const reading = !editing && readable;
 
   return (
     <ContentContainer>
@@ -47,7 +51,19 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
       {reading ? (
         <HtmlContent html={speech.html} className={READING_CLASS} />
       ) : (
-        <EventSpeechForm speech={speech} />
+        <EventSpeechForm
+          speech={speech}
+          saving={save.isPending}
+          error={save.isError ? extractApiErrorOr(save.error, "couldn't save — try again") : null}
+          onSave={(input) => {
+            save.mutate(input, {
+              onSuccess: () => {
+                setEditing(false);
+                window.scrollTo(0, 0);
+              },
+            });
+          }}
+        />
       )}
     </ContentContainer>
   );
