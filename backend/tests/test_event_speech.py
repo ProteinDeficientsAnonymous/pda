@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -7,6 +8,8 @@ from community.models import (
     EventStatus,
     EventType,
     OfficialKind,
+    PageVisibility,
+    SpeechTemplate,
 )
 from users.permissions import PermissionKey
 
@@ -20,6 +23,20 @@ NY = ZoneInfo("America/New_York")
 
 def _url(event: Event) -> str:
     return f"/api/community/events/{event.id}/speech/"
+
+
+def _blank_pm(key: str) -> str:
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "speechBlank", "attrs": {"key": key}}],
+                }
+            ],
+        }
+    )
 
 
 def _event(creator, *, kind: str = OfficialKind.WALK, days: int = 1, **kwargs) -> Event:
@@ -52,6 +69,59 @@ def walk(maya, sam):
 
 @pytest.mark.django_db
 class TestGetSpeech:
+    def test_unsaved_returns_prefill(self, api_client, maya, walk):
+        template = SpeechTemplate.get()
+        template.open_roles = ["greeter", "scribe"]
+        template.shared_pm = _blank_pm("facilitators")
+        template.save()
+        _event(maya, title="walk on the hudson")
+        _event(maya, title="community thing", event_type=EventType.COMMUNITY, official_kind="")
+        _event(maya, title="cancelled", status=EventStatus.CANCELLED)
+        _event(maya, title="earlier", start_datetime=datetime(2030, 5, 10, 18, 0, tzinfo=NY))
+
+        response = api_client.get(_url(walk), **auth_headers_for(maya))
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["saved"] is False
+        assert data["official_kind"] == "walk"
+        assert data["event_title"] == "walk on the hudson"
+        assert data["html"] == ""
+        assert data["updated_at"] is None
+        assert data["updated_by_name"] is None
+        assert data["values"]["facilitators"] == "maya and sam"
+        assert data["values"]["open_roles"] == ["greeter", "scribe"]
+        assert data["values"]["upcoming_events"] == ["5/23 walk on the hudson"]
+        assert data["values"]["restaurant"] == ""
+
+    def test_three_cohosts_use_three_cohosts_join_with_and(self, api_client, maya, sam, walk):
+        zed = make_user(first_name="zed", is_member=True)
+        walk.co_hosts.add(zed)
+        data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
+        assert data["values"]["facilitators"] == "maya, sam and zed"
+
+    def test_upcoming_excludes_the_event_itself(self, api_client, maya, walk):
+        data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
+        assert data["values"]["upcoming_events"] == []
+
+    @pytest.mark.parametrize(
+        "visibility", [PageVisibility.MEMBERS_ONLY, PageVisibility.INVITE_ONLY]
+    )
+    def test_upcoming_skips_non_public_events(self, api_client, maya, walk, visibility):
+        _event(maya, title="secret supper", visibility=visibility)
+        data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
+        assert data["values"]["upcoming_events"] == []
+
+    def test_restaurant_prefill_from_location(self, api_client, maya):
+        event = _event(maya, kind=OfficialKind.RESTAURANT, location="Spicy Moon, 328 E 6th St")
+        data = api_client.get(_url(event), **auth_headers_for(maya)).json()
+        assert data["values"]["restaurant"] == "Spicy Moon"
+
+    def test_restaurant_prefill_when_kind_unset(self, api_client, maya):
+        event = _event(maya, kind="", location="Spicy Moon, 328 E 6th St")
+        data = api_client.get(_url(event), **auth_headers_for(maya)).json()
+        assert data["values"]["restaurant"] == "Spicy Moon"
+
     def test_facilitators_prefill_is_viewer_independent(self, api_client, maya, walk):
         hidden = make_user(first_name="zed", last_name="Secret", is_member=True)
         hidden.hide_last_name = True
@@ -63,6 +133,11 @@ class TestGetSpeech:
             data = api_client.get(_url(walk), **auth_headers_for(viewer)).json()
             assert "Secret" not in data["values"]["facilitators"]
             assert "zed" in data["values"]["facilitators"]
+
+    def test_walk_has_no_restaurant_prefill(self, api_client, maya):
+        event = _event(maya, location="Spicy Moon, 328 E 6th St")
+        data = api_client.get(_url(event), **auth_headers_for(maya)).json()
+        assert data["values"]["restaurant"] == ""
 
     def test_non_cohost_member_forbidden(self, api_client, walk):
         outsider = make_user(first_name="out", last_name="Last", is_member=True)

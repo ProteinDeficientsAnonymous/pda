@@ -2,7 +2,9 @@ from datetime import datetime
 from uuid import UUID
 
 from config.auth import gated_jwt
+from django.conf import settings
 from django.db.models import Prefetch
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
@@ -14,6 +16,8 @@ from community.models import (
     Event,
     EventStatus,
     EventType,
+    OfficialKind,
+    PageVisibility,
     SpeechTemplate,
 )
 from community.shared import ErrorOut
@@ -21,6 +25,8 @@ from community.speech.blanks import SpeechValues
 from community.validation import Code, raise_validation
 
 router = Router()
+
+_UPCOMING_LIMIT = 5
 
 
 class EventSpeechOut(BaseModel):
@@ -60,10 +66,35 @@ def _join_names(names: list[str]) -> str:
     return f"{', '.join(names[:-1])} and {names[-1]}"
 
 
+def _format_upcoming(event: Event) -> str:
+    local = event.start_datetime.astimezone(settings.COMMUNITY_TZ)  # ty: ignore[possibly-missing-attribute]
+    return f"{local.month}/{local.day} {event.title}"
+
+
+def _upcoming_events(event: Event) -> list[str]:
+    after = max(timezone.now(), event.start_datetime) if event.start_datetime else timezone.now()
+    upcoming = (
+        Event.objects.filter(
+            event_type=EventType.OFFICIAL,
+            status=EventStatus.ACTIVE,
+            visibility=PageVisibility.PUBLIC,
+            start_datetime__gt=after,
+        )
+        .exclude(pk=event.pk)
+        .order_by("start_datetime")[:_UPCOMING_LIMIT]
+    )
+    return [_format_upcoming(e) for e in upcoming]
+
+
 def prefill_values(event: Event, template: SpeechTemplate) -> SpeechValues:
+    restaurant = ""
+    if event.official_kind != OfficialKind.WALK:
+        restaurant = event.location.split(",", 1)[0].strip()
     return {
         "facilitators": _join_names([visible_display_name(u, None) for u in event.co_hosts.all()]),
         "open_roles": list(template.open_roles),
+        "upcoming_events": _upcoming_events(event),
+        "restaurant": restaurant,
     }
 
 
