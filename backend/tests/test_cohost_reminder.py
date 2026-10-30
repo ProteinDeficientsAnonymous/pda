@@ -1,11 +1,10 @@
-from datetime import timedelta
-
 import pytest
 from community._cohost_reminder import due_cohost_reminder_events, send_due_cohost_reminders
-from community.models import Event, EventStatus, EventType
+from community.models import EventStatus, EventType
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import User
+
+from tests._digest_helpers import make_event, make_member
 
 
 @pytest.fixture
@@ -15,16 +14,8 @@ def host(test_user):
     return test_user
 
 
-def _make_event(host, **kwargs):
-    defaults = {
-        "title": "Vegan Potluck",
-        "event_type": EventType.OFFICIAL,
-        "status": EventStatus.ACTIVE,
-        "start_datetime": timezone.now() + timedelta(days=5),
-        "created_by": host,
-    }
-    defaults.update(kwargs)
-    return Event.objects.create(**defaults)
+def _make_event(host, days_out: float = 5, **extra):
+    return make_event("Vegan Potluck", days_out, created_by=host, **extra)
 
 
 def _due():
@@ -39,9 +30,7 @@ class TestDueCohostReminderEvents:
 
     def test_excludes_event_with_cohost(self, host):
         event = _make_event(host)
-        event.co_hosts.add(
-            User.objects.create_user(phone_number="+12025556001", password="pw", first_name="Co")
-        )
+        event.co_hosts.add(make_member("+12025556001"))
         assert _due() == []
 
     @pytest.mark.parametrize(
@@ -51,14 +40,19 @@ class TestDueCohostReminderEvents:
             {"event_type": EventType.CLUB},
             {"status": EventStatus.DRAFT},
             {"status": EventStatus.CANCELLED},
-            {"start_datetime": timezone.now() + timedelta(days=8)},
-            {"start_datetime": timezone.now() - timedelta(hours=1)},
-            {"start_datetime": None},
+            {"days_out": 8},
+            {"days_out": -0.05},
             {"cohost_reminder_sent_at": timezone.now()},
         ],
     )
     def test_excludes_ineligible(self, host, overrides):
         _make_event(host, **overrides)
+        assert _due() == []
+
+    def test_excludes_tbd_start(self, host):
+        event = _make_event(host)
+        event.start_datetime = None
+        event.save(update_fields=["start_datetime"])
         assert _due() == []
 
 
