@@ -134,7 +134,7 @@ importers:
         version: 10.5.0(postcss@8.5.23)
       axe-core:
         specifier: ^4.11.3
-        version: 4.11.3
+        version: 4.14.0
       axios-mock-adapter:
         specifier: ^2.1.0
         version: 2.1.0(axios@1.15.0)
@@ -1188,8 +1188,8 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  axe-core@4.11.3:
-    resolution: {integrity: sha512-zBQouZixDTbo3jMGqHKyePxYxr1e5W8UdTmBQ7sNtaA9M2bE32daxxPLS/jojhKOHxQ7LWwPjfiwf/fhaJWzlg==}
+  axe-core@4.14.0:
+    resolution: {integrity: sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==}
     engines: {node: '>=4'}
 
   axios-mock-adapter@2.1.0:
@@ -3020,7 +3020,7 @@ snapshots:
       postcss: 8.5.23
       postcss-value-parser: 4.2.0
 
-  axe-core@4.11.3: {}
+  axe-core@4.14.0: {}
 
   axios-mock-adapter@2.1.0(axios@1.15.0):
     dependencies:
@@ -3861,7 +3861,7 @@ snapshots:
   vitest-axe@0.1.0(vitest@4.1.12):
     dependencies:
       aria-query: 5.3.2
-      axe-core: 4.11.3
+      axe-core: 4.14.0
       chalk: 5.6.2
       dom-accessibility-api: 0.5.16
       lodash-es: 4.18.1
