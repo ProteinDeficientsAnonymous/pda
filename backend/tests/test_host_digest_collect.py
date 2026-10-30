@@ -1,5 +1,4 @@
 from datetime import timedelta
-from itertools import count
 
 import pytest
 from community._host_digest import (
@@ -25,23 +24,16 @@ from users._helpers import visible_display_name
 from users.models import User
 from users.roles import Role
 
+from tests._users import make_user
+
 pytestmark = pytest.mark.django_db
 
 HOUR = timedelta(hours=1)
-_phones = count(200)
 
 
 @pytest.fixture
 def run_at():
     return timezone.now()
-
-
-def _user(first: str, last: str = "", **extra) -> User:
-    phone = f"+1202555{next(_phones):04d}"
-    extra.setdefault("email", f"{phone[1:]}@example.test")
-    return User.objects.create_user(
-        phone_number=phone, password="pw", first_name=first, last_name=last, **extra
-    )
 
 
 def _event(host: User, title: str = "hike", **extra) -> Event:
@@ -70,7 +62,7 @@ def _only_event(host: User, run_at):
 
 
 def test_groups_rsvps_by_current_status(run_at):
-    host = _user("host")
+    host = make_user(first_name="host")
     event = _event(host)
     rsvps = [
         ("removed", RSVPStatus.REMOVED),
@@ -81,7 +73,7 @@ def test_groups_rsvps_by_current_status(run_at):
         ("jo", RSVPStatus.WAITLISTED),
     ]
     for minutes_ago, (name, status) in zip(range(60, 0, -1), rsvps, strict=False):
-        _rsvp(event, _user(name), status, run_at - timedelta(minutes=minutes_ago))
+        _rsvp(event, make_user(first_name=name), status, run_at - timedelta(minutes=minutes_ago))
 
     assert _only_event(host, run_at).rsvp_groups == [
         ("going", ["sam", "alex"]),
@@ -93,7 +85,11 @@ def test_groups_rsvps_by_current_status(run_at):
 
 
 def test_excludes_cohost_rsvps_and_comments(run_at):
-    host_a, host_b, guest = _user("ana"), _user("bea"), _user("guest")
+    host_a, host_b, guest = (
+        make_user(first_name="ana"),
+        make_user(first_name="bea"),
+        make_user(first_name="guest"),
+    )
     event = _event(host_a)
     event.co_hosts.add(host_b)
     at = run_at - HOUR
@@ -108,7 +104,7 @@ def test_excludes_cohost_rsvps_and_comments(run_at):
 
 
 def test_event_eligibility(run_at):
-    host = _user("host")
+    host = make_user(first_name="host")
     included = {
         "upcoming": {},
         "tbd": {"start_datetime": None, "datetime_tbd": True},
@@ -136,9 +132,9 @@ def test_event_eligibility(run_at):
 
 
 def test_capacity_line(run_at):
-    host = _user("host")
-    goers = [_user(f"goer{i}") for i in range(10)]
-    waiters = [_user(f"waiter{i}") for i in range(3)]
+    host = make_user(first_name="host")
+    goers = [make_user(first_name=f"goer{i}") for i in range(10)]
+    waiters = [make_user(first_name=f"waiter{i}") for i in range(3)]
     at = run_at - HOUR
     full = _event(host, "full", max_attendees=12)
     for i, goer in enumerate(goers):
@@ -162,25 +158,25 @@ def test_capacity_line(run_at):
 
 
 def test_recipients_filter(run_at):
-    included = _user("host")
+    included = make_user(first_name="host")
     _event(included, "first")
     eligible = _event(included, "second")
     eligible.co_hosts.add(
-        _user("no email", email=None),
-        _user("blank email", email=""),
-        _user("opted out", host_digest_opt_out=True),
-        _user("paused", is_paused=True),
-        _user("archived", archived_at=run_at),
-        _user("non member", is_member=False),
+        make_user(first_name="no email", email=None),
+        make_user(first_name="blank email", email=""),
+        make_user(first_name="opted out", host_digest_opt_out=True),
+        make_user(first_name="paused", is_paused=True),
+        make_user(first_name="archived", archived_at=run_at),
+        make_user(first_name="non member", is_member=False),
     )
-    _event(_user("ineligible only"), "cancelled", status=EventStatus.CANCELLED)
+    _event(make_user(first_name="ineligible only"), "cancelled", status=EventStatus.CANCELLED)
 
     assert list(digest_recipients(run_at)) == [included]
 
 
 def test_events_sorted_tbd_last_with_when_and_url(run_at, settings):
     settings.FRONTEND_BASE_URL = "https://pda.example.com"
-    host, guest = _user("host"), _user("guest")
+    host, guest = make_user(first_name="host"), make_user(first_name="guest")
     same_start = run_at + timedelta(days=3)
     events = [
         _event(host, "tbd", start_datetime=run_at - 72 * HOUR, datetime_tbd=True),
@@ -205,7 +201,7 @@ def test_events_sorted_tbd_last_with_when_and_url(run_at, settings):
 
 
 def test_cohost_of_another_event_counts_as_guest(run_at):
-    host, other_host = _user("host"), _user("x")
+    host, other_host = make_user(first_name="host"), make_user(first_name="x")
     _event(other_host, "a")
     event_b = _event(host, "b")
     _rsvp(event_b, other_host, RSVPStatus.ATTENDING, run_at - HOUR)
@@ -218,7 +214,7 @@ def test_cohost_of_another_event_counts_as_guest(run_at):
 
 
 def test_comments_count_excludes_deleted_includes_replies(run_at):
-    host, guest = _user("host"), _user("guest")
+    host, guest = make_user(first_name="host"), make_user(first_name="guest")
     event = _event(host, location="secret spot")
     at = run_at - HOUR
     parent = _comment(event, guest, at)
@@ -236,12 +232,15 @@ def test_comments_count_excludes_deleted_includes_replies(run_at):
 
 def test_window_edges(run_at):
     last_sent = run_at - 6 * HOUR
-    host, guest = _user("host", host_digest_last_sent_at=last_sent), _user("guest")
+    host, guest = (
+        make_user(first_name="host", host_digest_last_sent_at=last_sent),
+        make_user(first_name="guest"),
+    )
     event = _event(host)
     after_run = run_at + timedelta(seconds=1)
-    _rsvp(event, _user("at last sent"), RSVPStatus.ATTENDING, last_sent)
-    _rsvp(event, _user("at run"), RSVPStatus.ATTENDING, run_at)
-    _rsvp(event, _user("after run"), RSVPStatus.ATTENDING, after_run)
+    _rsvp(event, make_user(first_name="at last sent"), RSVPStatus.ATTENDING, last_sent)
+    _rsvp(event, make_user(first_name="at run"), RSVPStatus.ATTENDING, run_at)
+    _rsvp(event, make_user(first_name="after run"), RSVPStatus.ATTENDING, after_run)
     for at in (last_sent, run_at, after_run):
         _comment(event, guest, at)
 
@@ -251,11 +250,11 @@ def test_window_edges(run_at):
 
 
 def test_null_watermark_uses_24h(run_at):
-    host, guest = _user("host"), _user("guest")
+    host, guest = make_user(first_name="host"), make_user(first_name="guest")
     event = _event(host)
-    _rsvp(event, _user("recent"), RSVPStatus.ATTENDING, run_at - 23 * HOUR)
-    _rsvp(event, _user("stale"), RSVPStatus.ATTENDING, run_at - 25 * HOUR)
-    _rsvp(event, _user("never stamped"), RSVPStatus.ATTENDING, None)
+    _rsvp(event, make_user(first_name="recent"), RSVPStatus.ATTENDING, run_at - 23 * HOUR)
+    _rsvp(event, make_user(first_name="stale"), RSVPStatus.ATTENDING, run_at - 25 * HOUR)
+    _rsvp(event, make_user(first_name="never stamped"), RSVPStatus.ATTENDING, None)
     _comment(event, guest, run_at - 23 * HOUR)
     _comment(event, guest, run_at - 25 * HOUR)
 
@@ -265,23 +264,23 @@ def test_null_watermark_uses_24h(run_at):
 
 
 def test_no_activity_returns_none(run_at):
-    host, guest = _user("host"), _user("guest")
+    host, guest = make_user(first_name="host"), make_user(first_name="guest")
     event = _event(host, max_attendees=2)
     long_ago = run_at - timedelta(days=3)
     _rsvp(event, guest, RSVPStatus.ATTENDING, long_ago)
-    _rsvp(event, _user("other"), RSVPStatus.ATTENDING, long_ago)
+    _rsvp(event, make_user(first_name="other"), RSVPStatus.ATTENDING, long_ago)
     _comment(event, guest, long_ago)
 
     assert build_host_digest(host, run_at) is None
-    assert build_host_digest(_user("hosts nothing"), run_at) is None
+    assert build_host_digest(make_user(first_name="hosts nothing"), run_at) is None
 
 
 @pytest.mark.parametrize("host_is_admin", [False, True])
 def test_hidden_last_name_respected(run_at, host_is_admin):
-    host = _user("host")
+    host = make_user(first_name="host")
     if host_is_admin:
         host.roles.add(Role.objects.get(name="admin", is_default=True))
-    guest = _user("jo", "privatesurname", hide_last_name=True)
+    guest = make_user(first_name="jo", last_name="privatesurname", hide_last_name=True)
     _rsvp(_event(host), guest, RSVPStatus.ATTENDING, run_at - HOUR)
 
     [(_, names)] = _only_event(host, run_at).rsvp_groups
@@ -298,13 +297,16 @@ def _digest_query_count(host_pk, run_at) -> int:
 
 
 def test_query_count_constant(run_at):
-    host = _user("host")
+    host = make_user(first_name="host")
     at = run_at - HOUR
     first = _event(host, "first")
-    _rsvp(first, _user("solo"), RSVPStatus.ATTENDING, at)
+    _rsvp(first, make_user(first_name="solo"), RSVPStatus.ATTENDING, at)
     baseline = _digest_query_count(host.pk, run_at)
 
-    guests = [_user(f"guest{i}", "last", hide_last_name=i % 2 == 0) for i in range(4)]
+    guests = [
+        make_user(first_name=f"guest{i}", last_name="last", hide_last_name=i % 2 == 0)
+        for i in range(4)
+    ]
     statuses = list(RSVPStatus)
     events = [first, *(_event(host, f"extra {i}") for i in range(4))]
     for i, guest in enumerate(guests[:3]):

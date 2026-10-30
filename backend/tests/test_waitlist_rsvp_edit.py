@@ -2,16 +2,10 @@
 
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
-from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _user(n):
-    return User.objects.create_user(
-        phone_number=f"+1202555{9300 + n}", password="x", first_name=f"U{n}"
-    )
 
 
 def _rsvp(api_client, event, user, status="attending", has_plus_one=False):
@@ -35,13 +29,13 @@ def event(db):
         rsvp_enabled=True,
         max_attendees=2,
         allow_plus_ones=True,
-        created_by=_user(0),
+        created_by=make_user(),
     )
 
 
 @pytest.fixture
 def seated(event):
-    users = [_user(1), _user(2)]
+    users = [make_user(), make_user()]
     for u in users:
         EventRSVP.objects.create(event=event, user=u, status=RSVPStatus.ATTENDING)
     return users
@@ -50,7 +44,7 @@ def seated(event):
 @pytest.fixture
 def line(event, seated):
     """Head of the line has a +1; second in line is solo."""
-    head, second = _user(3), _user(4)
+    head, second = make_user(), make_user()
     EventRSVP.objects.create(
         event=event, user=head, status=RSVPStatus.WAITLISTED, has_plus_one=True
     )

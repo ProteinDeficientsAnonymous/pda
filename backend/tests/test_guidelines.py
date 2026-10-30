@@ -2,11 +2,10 @@ import json
 
 import pytest
 from community.models import CommunityGuidelines
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def _pm(text: str) -> str:
@@ -25,17 +24,7 @@ def _pm(text: str) -> str:
 
 @pytest.fixture
 def manage_guidelines_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550002001",
-        password="editorpass123",
-        first_name="Guidelines",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="guidelines_editor", permissions=[PermissionKey.EDIT_GUIDELINES]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_GUIDELINES)
 
 
 @pytest.fixture

@@ -15,28 +15,25 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
-def _make_user(phone: str, name: str = "") -> User:
-    return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
-
-
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550102", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def another_user(db) -> User:
-    return _make_user("+12025550103", "Carol")
+    return make_user(first_name="Carol")
 
 
 @pytest.fixture
@@ -220,14 +217,8 @@ class TestCanSeeInvited:
 
 @pytest.mark.django_db
 class TestCreateJoinRequestNotifications:
-    def _make_user_with_permission(self, phone: str, permission: str) -> User:
-        user = _make_user(phone)
-        role = Role.objects.create(name=f"role_{phone}", permissions=[permission])
-        user.roles.add(role)
-        return user
-
     def test_notifies_user_with_approve_permission(self, db):
-        user = self._make_user_with_permission("+12025550201", PermissionKey.APPROVE_JOIN_REQUESTS)
+        user = make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
         create_join_request_notifications("Sprout")
         notif = Notification.objects.get(recipient=user)
         assert notif.notification_type == NotificationType.JOIN_REQUEST
@@ -236,19 +227,19 @@ class TestCreateJoinRequestNotifications:
         assert "Sprout" in notif.message
 
     def test_notifies_admin_role_user(self, db):
-        user = _make_user("+12025550202")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         user.roles.add(admin_role)
         create_join_request_notifications("Sprout")
         assert Notification.objects.filter(recipient=user).count() == 1
 
     def test_no_notification_for_unpermissioned_user(self, db):
-        user = _make_user("+12025550203")
+        user = make_user()
         create_join_request_notifications("Sprout")
         assert Notification.objects.filter(recipient=user).count() == 0
 
     def test_no_duplicate_for_user_with_admin_and_explicit_permission(self, db):
-        user = _make_user("+12025550204")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         extra_role = Role.objects.create(
             name="also_approver",
@@ -259,7 +250,7 @@ class TestCreateJoinRequestNotifications:
         assert Notification.objects.filter(recipient=user).count() == 1
 
     def test_message_contains_display_name(self, db):
-        self._make_user_with_permission("+12025550205", PermissionKey.APPROVE_JOIN_REQUESTS)
+        make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
         create_join_request_notifications("Luna Green")
         notif = Notification.objects.first()
         assert notif is not None
@@ -291,7 +282,7 @@ class TestPgNotifyIntegration:
         assert str(invitee.pk) in called_ids
 
     def test_join_request_callsnotify_users(self, db):
-        user = _make_user("+12025550301")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         user.roles.add(admin_role)
         with patch("notifications.service.notify_users") as mock_notify:
