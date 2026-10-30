@@ -1237,6 +1237,11 @@
     ],
     "Speech": [
       {
+        "name": "FORMAT_REQUIRED",
+        "value": "speech.format_required",
+        "params": []
+      },
+      {
         "name": "INVALID_VALUES",
         "value": "speech.invalid_values",
         "params": []

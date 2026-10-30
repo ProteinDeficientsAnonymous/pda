@@ -3609,6 +3609,17 @@
       },
       "EventSpeechIn": {
         "properties": {
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "values": {
             "additionalProperties": true,
             "title": "Values",

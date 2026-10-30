@@ -3,6 +3,7 @@ from uuid import UUID
 
 from config.auth import gated_jwt
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Prefetch
 from django.utils import timezone
 from ninja import Router
@@ -11,7 +12,7 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 from users.models import User
 
-from community.events.helpers import is_cohost
+from community.events.helpers import _validated_event_format, is_cohost
 from community.models import (
     Event,
     EventFormat,
@@ -32,6 +33,7 @@ _UPCOMING_LIMIT = 5
 
 
 class EventSpeechIn(BaseModel):
+    event_format: str | None = None
     values: dict
 
 
@@ -123,7 +125,7 @@ def _out(event: Event, template: SpeechTemplate, viewer) -> EventSpeechOut:
             updated_by_name=None,
         )
     updater = speech.updated_by
-    values = speech.values
+    values = {**prefill_values(event, template), **speech.values}
     return EventSpeechOut(
         event_title=event.title,
         event_format=event_format,
@@ -152,12 +154,21 @@ def get_event_speech(request, event_id: UUID):
 )
 def put_event_speech(request, event_id: UUID, payload: EventSpeechIn):
     event = _load_cohost_event(request, event_id)
+    event_format = (
+        _validated_event_format(payload.event_format, event.event_type) or event.event_format
+    )
+    if not event_format:
+        raise_validation(Code.Speech.FORMAT_REQUIRED, field="event_format")
     try:
         values = clean_values(payload.values)
     except ValueError:
         raise_validation(Code.Speech.INVALID_VALUES, field="values")
-    speech, _ = EventSpeech.objects.update_or_create(
-        event=event, defaults={"values": values, "updated_by": request.auth}
-    )
+    with transaction.atomic():
+        if event_format != event.event_format:
+            event.event_format = event_format
+            event.save(update_fields=["event_format"])
+        speech, _ = EventSpeech.objects.update_or_create(
+            event=event, defaults={"values": values, "updated_by": request.auth}
+        )
     event.speech = speech
     return Status(200, _out(event, SpeechTemplate.get(), request.auth))
