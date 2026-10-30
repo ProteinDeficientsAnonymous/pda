@@ -5,11 +5,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _user(phone: str, name: str) -> User:
-    return User.objects.create_user(phone_number=phone, password="Testpass123!", first_name=name)
 
 
 def _headers(user: User) -> dict:
@@ -24,9 +21,9 @@ def _listed(api_client, user: User, status: str = EventStatus.ACTIVE) -> list[di
 
 @pytest.fixture
 def party(db):
-    creator = _user("+12025551001", "Creator")
-    cohosts = [_user(f"+1202555110{i}", f"Co{i}") for i in range(3)]
-    invitees = [_user(f"+1202555120{i}", f"Inv{i}") for i in range(3)]
+    creator = make_user(first_name="Creator")
+    cohosts = [make_user(first_name=f"Co{i}") for i in range(3)]
+    invitees = [make_user(first_name=f"Inv{i}") for i in range(3)]
     event = Event.objects.create(
         title="Private party",
         start_datetime=future_iso(days=5),
@@ -39,13 +36,11 @@ def party(db):
 
 
 def _manage_events_user() -> User:
-    user = _user("+12025551301", "Manager")
-    user.roles.add(Role.objects.create(name="ev_mgr", permissions=[PermissionKey.MANAGE_EVENTS]))
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS, first_name="Manager")
 
 
 def _admin_user() -> User:
-    user = _user("+12025551302", "Admin")
+    user = make_user(first_name="Admin")
     user.roles.add(Role.objects.get(name="admin", is_default=True))
     return user
 
@@ -72,7 +67,7 @@ class TestInviteOnlyListVisibility:
 
     def test_uninvited_member_does_not_see_it(self, api_client, party):
         event, *_ = party
-        stranger = _user("+12025551303", "Stranger")
+        stranger = make_user(first_name="Stranger")
         assert str(event.id) not in [e["id"] for e in _listed(api_client, stranger)]
 
     def test_public_event_listed_once_with_many_cohosts(self, api_client, party):
@@ -89,9 +84,9 @@ class TestInviteOnlyListVisibility:
 @pytest.mark.django_db
 class TestOwnDraftsList:
     def test_creator_and_cohost_see_draft_once_others_do_not(self, api_client):
-        creator = _user("+12025551401", "Creator")
-        cohost = _user("+12025551402", "Cohost")
-        stranger = _user("+12025551403", "Stranger")
+        creator = make_user(first_name="Creator")
+        cohost = make_user(first_name="Cohost")
+        stranger = make_user(first_name="Stranger")
         draft = Event.objects.create(
             title="Draft", created_by=creator, status=EventStatus.DRAFT, datetime_tbd=True
         )

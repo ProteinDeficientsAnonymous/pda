@@ -1,26 +1,15 @@
 import pytest
 from community.models import WelcomeMessageTemplate
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 
 
 @pytest.fixture
 def edit_welcome_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003001",
-        password="vetterpass123",
-        first_name="Welcome",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="welcome_editor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
 
 
 @pytest.fixture

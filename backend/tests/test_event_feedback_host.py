@@ -13,19 +13,15 @@ from community.models import (
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
+
+from tests._users import make_user
 
 
 def _auth(user):
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
-def _user(n: int, **extra) -> User:
-    return User.objects.create_user(
-        phone_number=f"+1202555{n:04d}", password="x", first_name=f"User{n}", **extra
-    )
 
 
 def _event(host: User, *, event_type=EventType.OFFICIAL) -> Event:
@@ -40,7 +36,7 @@ def _event(host: User, *, event_type=EventType.OFFICIAL) -> Event:
 
 @pytest.fixture
 def host(db):
-    return _user(1)
+    return make_user()
 
 
 @pytest.fixture
@@ -75,7 +71,7 @@ def _url(event: Event) -> str:
 @pytest.mark.django_db
 class TestHostFeedback:
     def test_cohost_sees_responses_without_names_or_times(self, api_client, event, survey):
-        cohost = _user(2)
+        cohost = make_user()
         event.co_hosts.add(cohost)
         _response(survey, event)
 
@@ -91,11 +87,10 @@ class TestHostFeedback:
         assert "submitted_at" not in res.content.decode()
 
     def test_non_host_403(self, api_client, event, survey):
-        assert api_client.get(_url(event), **_auth(_user(3))).status_code == 403
+        assert api_client.get(_url(event), **_auth(make_user())).status_code == 403
 
     def test_manage_events_admin_can_view(self, api_client, event, survey):
-        admin = _user(4)
-        admin.roles.add(Role.objects.create(name="ev", permissions=[PermissionKey.MANAGE_EVENTS]))
+        admin = make_user(PermissionKey.MANAGE_EVENTS)
         _response(survey, event)
 
         res = api_client.get(_url(event), **_auth(admin))
@@ -168,7 +163,7 @@ class TestMyFeedback:
         return f"/api/community/events/{event.id}/my-feedback/"
 
     def test_my_feedback_returns_token_until_responded(self, api_client, event):
-        attendee = _user(5)
+        attendee = make_user()
         request = EventFeedbackRequest.objects.create(
             event=event, user=attendee, token=EventFeedbackRequest.new_token()
         )
@@ -182,15 +177,15 @@ class TestMyFeedback:
         assert res.json() == {"token": None}
 
     def test_my_feedback_none_for_non_attendee(self, api_client, event):
-        res = api_client.get(self._url(event), **_auth(_user(6)))
+        res = api_client.get(self._url(event), **_auth(make_user()))
 
         assert res.json() == {"token": None}
 
     def test_my_feedback_ignores_other_users_tokens(self, api_client, event):
         EventFeedbackRequest.objects.create(
-            event=event, user=_user(7), token=EventFeedbackRequest.new_token()
+            event=event, user=make_user(), token=EventFeedbackRequest.new_token()
         )
 
-        res = api_client.get(self._url(event), **_auth(_user(8)))
+        res = api_client.get(self._url(event), **_auth(make_user()))
 
         assert res.json() == {"token": None}
