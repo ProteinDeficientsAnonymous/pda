@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
@@ -10,6 +8,7 @@ import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
 import { RejectionReason } from '@/api/rejectionEmail';
 import { useUpdateUser } from '@/api/users';
 import { makeRequest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import JoinRequestsScreen from './JoinRequestsScreen';
 
@@ -40,14 +39,7 @@ vi.mock('@/api/content', () => ({
 const mockUseJoinRequests = vi.mocked(useJoinRequests);
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <JoinRequestsScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<JoinRequestsScreen />);
 }
 
 function mockResult(data: JoinRequestSummary[]) {

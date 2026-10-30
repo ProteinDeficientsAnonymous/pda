@@ -15,8 +15,6 @@ from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from mcp_gateway.confirm import MAX_AGE_SECONDS
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools import surveys_write
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
 
@@ -28,13 +26,6 @@ FOOD = {"label": "food?", "field_type": "radio", "options": ["vegan", "very vega
 WHY = {"label": "why?", "show_if": {"position": 1, "value": "very vegan"}}
 SECTION = {"label": "about you", "field_type": "section", "description": " optional "}
 POLL = {"label": "when", "field_type": "datetime_poll", "options": ["2099-11-07T11:00"]}
-
-
-@pytest.fixture
-def surveys_admin(test_user):
-    role = Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS])
-    test_user.roles.add(role)
-    return test_user
 
 
 def _create(user, questions=(NAME, NOTES), **settings) -> dict:
