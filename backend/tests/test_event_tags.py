@@ -7,9 +7,9 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 from tests.conftest import future_iso
 
 
@@ -26,14 +26,7 @@ def member_headers(db):
 
 @pytest.fixture
 def manage_tags_headers(db):
-    admin = User.objects.create_user(
-        phone_number="+14155550222",
-        password="adminpass123",
-        first_name="Tag",
-        last_name="Admin",
-    )
-    role = Role.objects.create(name="tag_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
+    admin = make_user(PermissionKey.MANAGE_EVENTS)
     return auth_headers_for(admin)
 
 
