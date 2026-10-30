@@ -19,7 +19,7 @@ importers:
         version: 3.2.2(react@19.2.5)
       '@hookform/resolvers':
         specifier: ^5.2.2
-        version: 5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.6)
+        version: 5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.7)
       '@tanstack/react-query':
         specifier: ^5.99.0
         version: 5.105.0(@types/react@19.2.14)(react@19.2.5)
@@ -91,7 +91,7 @@ importers:
         version: 3.5.0
       zod:
         specifier: ^4.3.6
-        version: 4.6.6
+        version: 4.6.7
       zustand:
         specifier: ^5.0.12
         version: 5.0.16(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
@@ -2344,8 +2344,8 @@ packages:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
 
-  zod@4.6.6:
-    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
   zustand@5.0.16:
     resolution: {integrity: sha512-Uv7e327ihlCfayfja3hDc0M64Upev1LWBKpRobdK4NyovDDPeeX4imWXc/wzC1yc6fkYPoAY/ncKVPAs2jrtQw==}
@@ -2511,13 +2511,13 @@ snapshots:
   '@floating-ui/utils@0.2.11':
     optional: true
 
-  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.6)':
+  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(react-hook-form@7.72.1(react@19.2.5))(zod@4.6.7)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.72.1(react@19.2.5)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
-      zod: 4.6.6
+      zod: 4.6.7
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -4190,7 +4190,7 @@ snapshots:
 
   yargs-parser@21.1.1: {}
 
-  zod@4.6.6: {}
+  zod@4.6.7: {}
 
   zustand@5.0.16(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5)):
     optionalDependencies:
