@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community._event_helpers import _can_edit_event
+from community.events.helpers import _can_edit_event
 from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
