@@ -12,15 +12,6 @@ from users.models import MagicLoginToken, User
 from tests._asserts import assert_error_code
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
-
-
 @pytest.mark.django_db
 class TestMagicLogin:
     def test_magic_login_valid_returns_tokens(self, api_client, test_user):
