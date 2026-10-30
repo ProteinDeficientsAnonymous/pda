@@ -4,18 +4,9 @@ import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from django import db
 from django.test import Client
-from users.models import User
 
 from tests._auth import auth_headers_for
-
-
-def _make_user(i):
-    return User.objects.create_user(
-        phone_number=f"+1415556{9200 + i}",
-        password="Testpass123!",
-        first_name=f"Racer{i}",
-        last_name="",
-    )
+from tests._users import make_user
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -30,7 +21,7 @@ class TestSurveyCapacityRace:
             field_type=SurveyQuestionType.TEXT,
         )
         thread_count = 8
-        users = [_make_user(i) for i in range(thread_count)]
+        users = [make_user() for _ in range(thread_count)]
         results = [None] * thread_count
 
         def submit(i):
