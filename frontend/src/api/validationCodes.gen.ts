@@ -291,6 +291,7 @@ export const Code = {
     RoleTooLong: 'speech_template.role_too_long',
   },
   Speech: {
+    KindRequired: 'speech.kind_required',
     InvalidValues: 'speech.invalid_values',
   },
   Connect: {
@@ -516,6 +517,7 @@ export type ValidationCode =
   | 'speech_template.invalid_doc'
   | 'speech_template.too_many_roles'
   | 'speech_template.role_too_long'
+  | 'speech.kind_required'
   | 'speech.invalid_values'
   | 'connect.request_not_found'
   | 'connect.request_expired'
@@ -737,6 +739,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'speech_template.invalid_doc': [],
   'speech_template.too_many_roles': ['max'],
   'speech_template.role_too_long': ['max'],
+  'speech.kind_required': [],
   'speech.invalid_values': [],
   'connect.request_not_found': [],
   'connect.request_expired': [],

@@ -299,6 +299,7 @@ class Code:
         ROLE_TOO_LONG = "speech_template.role_too_long"  # params: { max: int }
 
     class Speech:
+        KIND_REQUIRED = "speech.kind_required"
         INVALID_VALUES = "speech.invalid_values"
 
     class Connect:

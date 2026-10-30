@@ -3609,6 +3609,17 @@
       },
       "EventSpeechIn": {
         "properties": {
+          "official_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Kind"
+          },
           "values": {
             "additionalProperties": true,
             "title": "Values",

@@ -1237,6 +1237,11 @@
     ],
     "Speech": [
       {
+        "name": "KIND_REQUIRED",
+        "value": "speech.kind_required",
+        "params": []
+      },
+      {
         "name": "INVALID_VALUES",
         "value": "speech.invalid_values",
         "params": []

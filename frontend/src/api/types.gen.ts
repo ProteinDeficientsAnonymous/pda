@@ -4131,6 +4131,8 @@ export interface components {
         };
         /** EventSpeechIn */
         EventSpeechIn: {
+            /** Official Kind */
+            official_kind?: string | null;
             /** Values */
             values: {
                 [key: string]: unknown;

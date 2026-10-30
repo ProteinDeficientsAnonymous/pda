@@ -652,6 +652,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     }
 
     // Event speech
+    case Code.Speech.KindRequired:
+      return 'pick walk or restaurant first';
     case Code.Speech.InvalidValues:
       return 'one of the speech blanks is not valid';
 
