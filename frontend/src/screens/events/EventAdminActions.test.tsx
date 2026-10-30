@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -9,6 +7,7 @@ import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
 import { makeUser as makeBaseUser, makeEvent } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventAdminActions } from './EventAdminActions';
 
@@ -47,18 +46,8 @@ const BASE_EVENT = makeEvent({
   invitePermission: InvitePermission.CoHostsOnly,
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderActions(event: Event) {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter>
-        <EventAdminActions event={event} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<EventAdminActions event={event} />);
 }
 
 beforeEach(() => {
