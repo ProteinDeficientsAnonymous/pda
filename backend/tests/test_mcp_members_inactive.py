@@ -20,8 +20,13 @@ from mcp_gateway.tools.members_read import _page
 from users._member_search import MemberFilters, MemberSort
 from users.models import User
 
-from tests._mcp_members_helpers import find_members, ids_of, member_ids
-from tests.test_mcp_members_find import _new, _set_up
+from tests._mcp_members_helpers import (
+    find_members,
+    ids_of,
+    make_onboarded,
+    make_onboarding,
+    member_ids,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -53,7 +58,7 @@ def _went(user, *events, attendance=AttendanceStatus.ATTENDED, status=RSVPStatus
 
 
 def _attended(days_ago: float, joined_days_ago: float = 400) -> User:
-    user = _set_up(joined_days_ago)
+    user = make_onboarded(joined_days_ago)
     _went(user, _event(days_ago))
     return user
 
@@ -79,7 +84,7 @@ def _varied_members() -> list[User]:
     deleted, undated = _event(3, status=EventStatus.DELETED), _event(None)
 
     regular, lapsed, only_old, unmarked, only_excluded, future_only, cant_go = (
-        _set_up(500) for _ in range(7)
+        make_onboarded(500) for _ in range(7)
     )
     _went(regular, recent_club, old_official, out_of_window, community, undated)
     _went(lapsed, old_official)
@@ -127,7 +132,7 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
     now = datetime(2026, 10, 24, 12, 0, 0, 123456, tzinfo=UTC)
     monkeypatch.setattr(timezone, "now", lambda: now)
     edge = now - timedelta(days=365)
-    on_edge, just_before = _set_up(500), _set_up(500)
+    on_edge, just_before = make_onboarded(500), make_onboarded(500)
     _went(on_edge, _event_at(edge))
     _went(just_before, _event_at(edge - timedelta(microseconds=1)))
     rows = {row["id"]: row for row in _rows(admin)}
@@ -142,7 +147,7 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
 
 
 def test_inactive_for_days_counts_never_attended(admin):
-    never = _set_up(400)
+    never = make_onboarded(400)
     stale = _attended(100)
     _attended(10)
     assert member_ids(admin, inactive_for_days=30) == ids_of(admin, never, stale)
@@ -151,10 +156,10 @@ def test_inactive_for_days_counts_never_attended(admin):
 
 
 def test_joined_recently_and_never_attended(admin):
-    match = _new(20)
-    _went(_new(20), _event(5, _CLUB))
-    _new(90)
-    community_only = _new(30)
+    match = make_onboarding(20)
+    _went(make_onboarding(20), _event(5, _CLUB))
+    make_onboarding(90)
+    community_only = make_onboarding(30)
     _went(community_only, _event(5, _COMMUNITY))
     expected = ids_of(match, community_only)
     assert member_ids(admin, joined_within_days=60, never_attended=True) == expected
@@ -165,12 +170,12 @@ def test_longest_inactive_sorts_by_time_since_last_activity(admin):
     shared = _event(50)
     three_years = _attended(1095, joined_days_ago=1200)
     long_ago = _attended(200)
-    tied = [_set_up(400), _set_up(100), _set_up(100)]
+    tied = [make_onboarded(400), make_onboarded(100), make_onboarded(100)]
     for member in tied:
         _went(member, shared)
-    tied_never = _set_up(50)
+    tied_never = make_onboarded(50)
     User.objects.filter(pk=tied_never.pk).update(date_joined=shared.start_datetime)
-    just_joined = _set_up(2)
+    just_joined = make_onboarded(2)
     recent = _attended(1)
     ties = sorted([*tied, tied_never], key=lambda u: u.pk)
     expected = [three_years, admin, long_ago, *ties, just_joined, recent]
@@ -179,16 +184,16 @@ def test_longest_inactive_sorts_by_time_since_last_activity(admin):
 
 
 def test_default_sort_is_still_newest_member(admin):
-    old, new = _attended(1, joined_days_ago=300), _set_up(5)
+    old, new = _attended(1, joined_days_ago=300), make_onboarded(5)
     assert [row["id"] for row in _rows(admin)] == [str(u.id) for u in (new, old, admin)]
 
 
 def test_longest_inactive_paging_is_stable_with_ties(admin):
     shared = _event(30)
     for _ in range(4):
-        _went(_set_up(), shared)
+        _went(make_onboarded(), shared)
     for _ in range(3):
-        _set_up()
+        make_onboarded()
     User.objects.update(date_joined=timezone.now() - timedelta(days=1))
     first = find_members(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
     paged = _rows(admin, sort=MemberSort.LONGEST_INACTIVE)

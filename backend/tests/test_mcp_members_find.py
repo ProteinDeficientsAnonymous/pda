@@ -15,8 +15,9 @@ from tests._mcp_members_helpers import (
     find_members,
     ids_of,
     make_join_request,
-    make_joined,
     make_member,
+    make_onboarded,
+    make_onboarding,
     member_ids,
     member_totals,
 )
@@ -34,16 +35,8 @@ def admin(manage_users_user):
     return manage_users_user
 
 
-def _new(days_ago: float = 1, **fields) -> User:
-    return make_joined(days_ago, needs_onboarding=True, **fields)
-
-
-def _set_up(days_ago: float = 1, **fields) -> User:
-    return make_joined(days_ago, onboarded_at=timezone.now(), **fields)
-
-
 def _logged_in(days_ago: float, **fields) -> User:
-    user = _set_up(**fields)
+    user = make_onboarded(**fields)
     User.objects.filter(pk=user.pk).update(last_login=timezone.now() - timedelta(days=days_ago))
     return user
 
@@ -68,11 +61,11 @@ def test_bad_arguments_are_rejected(admin, arguments):
 
 
 def test_status_defaults_to_live_members_and_skips_non_members(admin):
-    set_up = _set_up()
-    new = _new()
-    paused = _new(is_paused=True)
-    archived = _set_up(archived_at=timezone.now())
-    _set_up(is_active=False)
+    set_up = make_onboarded()
+    new = make_onboarding()
+    paused = make_onboarding(is_paused=True)
+    archived = make_onboarded(archived_at=timezone.now())
+    make_onboarded(is_active=False)
     make_non_member("+12025550198", "n@e.com")
     make_member(is_member=False)
     assert {row["id"]: row["status"] for row in find_members(admin)["members"]} == {
@@ -83,18 +76,20 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
 
 
 def test_totals_match_member_totals_buckets(admin):
-    _set_up()
-    _new()
-    _new(is_paused=True)
-    _set_up(archived_at=timezone.now())
-    _set_up(is_active=False)
+    make_onboarded()
+    make_onboarding()
+    make_onboarding(is_paused=True)
+    make_onboarded(archived_at=timezone.now())
+    make_onboarded(is_active=False)
     totals = member_totals(admin)
     for status in BUCKETS:
         assert find_members(admin, filters={"status": [status]})["total"] == totals[status]
 
 
 def test_rows_leave_out_contact_unless_asked(admin):
-    member = _new(email="m@e.com", has_joined_whatsapp=True, whatsapp_reminder_opt_out=True)
+    member = make_onboarding(
+        email="m@e.com", has_joined_whatsapp=True, whatsapp_reminder_opt_out=True
+    )
     row = find_members(admin, filters={"whatsapp_joined": True})["members"][0]
     assert set(row) == {
         "id",
@@ -120,21 +115,21 @@ def test_rows_leave_out_contact_unless_asked(admin):
 
 def test_one_page_is_two_queries(admin, django_assert_num_queries):
     for _ in range(3):
-        _new()
+        make_onboarding()
     with django_assert_num_queries(2):
         assert len(_page(MemberFilters(), limit=2, offset=0, include_contact=True)["members"]) == 2
 
 
 def test_joined_within_days_uses_membership_start(admin):
-    recent = _new(10)
-    _new(90)
-    approved = _set_up(300)
+    recent = make_onboarding(10)
+    make_onboarding(90)
+    approved = make_onboarded(300)
     make_join_request(approved, days_ago=5)
     assert member_ids(admin, joined_within_days=30) == ids_of(recent, approved)
 
 
 def test_login_filters(admin):
-    never = _new()
+    never = make_onboarding()
     stale = _logged_in(40)
     _logged_in(5)
     assert member_ids(admin, never_logged_in=True) == ids_of(never)
@@ -145,8 +140,8 @@ def test_login_filters(admin):
 
 def test_whatsapp_filters(admin):
     User.objects.filter(pk=admin.pk).update(has_joined_whatsapp=True)
-    missing = _new()
-    opted_out = _new(whatsapp_reminder_opt_out=True)
+    missing = make_onboarding()
+    opted_out = make_onboarding(whatsapp_reminder_opt_out=True)
     assert member_ids(admin, whatsapp_joined=False) == ids_of(missing, opted_out)
     assert member_ids(admin, whatsapp_joined=False, whatsapp_reminder_opt_out=True) == ids_of(
         opted_out
@@ -155,15 +150,15 @@ def test_whatsapp_filters(admin):
 
 def test_joined_recently_and_never_signed_in_finds_new_members(admin):
     # Every app-created member starts still_onboarding, so the default status must include them.
-    match = _new(20)
-    User.objects.filter(pk=_new(20).pk).update(last_login=timezone.now())
-    _new(90)
+    match = make_onboarding(20)
+    User.objects.filter(pk=make_onboarding(20).pk).update(last_login=timezone.now())
+    make_onboarding(90)
     assert member_ids(admin, joined_within_days=60, never_logged_in=True) == ids_of(match)
 
 
 def test_paging_is_stable_with_ties(admin):
     for _ in range(5):
-        _new()
+        make_onboarding()
     User.objects.update(date_joined=timezone.now() - timedelta(days=1))
     seen, offset = [], 0
     while offset is not None:

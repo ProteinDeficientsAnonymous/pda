@@ -47,6 +47,14 @@ def make_joined(days_ago: float, **fields) -> User:
     return user
 
 
+def make_onboarding(days_ago: float = 1, **fields) -> User:
+    return make_joined(days_ago, needs_onboarding=True, **fields)
+
+
+def make_onboarded(days_ago: float = 1, **fields) -> User:
+    return make_joined(days_ago, onboarded_at=timezone.now(), **fields)
+
+
 def make_join_request(
     user, days_ago: float, status=JoinRequestStatus.APPROVED, linked=True, phone=None
 ):
