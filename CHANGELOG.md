@@ -1,3 +1,10 @@
+## [0.209.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.2...v0.209.3) (2026-10-30)
+
+
+### Performance Improvements
+
+* 1923 - promote the waitlist in one load and one bulk update ([#1929](https://github.com/ProteinDeficientsAnonymous/pda/issues/1929)) ([9700e87](https://github.com/ProteinDeficientsAnonymous/pda/commit/9700e87bd66786f2199f22faebb71c1b1cbd6db9))
+
 ## [0.209.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.1...v0.209.2) (2026-10-30)
 
 
