@@ -7,27 +7,19 @@ from notifications.models import Notification, NotificationType
 from notifications.service import notify_users
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._events import make_event, make_rsvp
+from tests._users import make_user
 
-_seq = {"n": 0}
 
-
-def _waitlisted_event(host: User, waitlisted: int, *, position_order: list[int] | None = None):
-    event = Event.objects.create(
+def _waitlisted_event(host: User, waitlisted: int):
+    event = make_event(
         title="Capped",
-        start_datetime=future_iso(days=10),
         rsvp_enabled=True,
         allow_plus_ones=True,
         max_attendees=1,
         created_by=host,
     )
-    rsvps = []
-    for _ in range(waitlisted):
-        _seq["n"] += 1
-        user = User.objects.create_user(
-            phone_number=f"+1415444{_seq['n']:04d}", password="x", first_name="Wait"
-        )
-        rsvps.append(EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.WAITLISTED))
+    rsvps = [make_rsvp(event, make_user(), RSVPStatus.WAITLISTED) for _ in range(waitlisted)]
     return Event.objects.get(pk=event.pk), rsvps
 
 
