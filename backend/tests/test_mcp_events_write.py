@@ -13,7 +13,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
 from users.models import User
 
-from tests.test_geocode import _FakeResp
+from tests._http_helpers import FakeResp
 from tests.test_mcp_server import _signed_in
 
 pytestmark = pytest.mark.django_db
@@ -102,7 +102,7 @@ def test_rate_limit_shared_with_website(test_user, api_client, auth_headers):
 def test_find_location_returns_candidates(test_user):
     props = {"name": "grand army plaza", "street": "flatbush ave", "city": "New York"}
     feature = {"geometry": {"coordinates": [-73.97, 40.67]}, "properties": props}
-    with patch("community._geocode.httpx.get", return_value=_FakeResp({"features": [feature]})):
+    with patch("community._geocode.httpx.get", return_value=FakeResp({"features": [feature]})):
         result = _run(test_user, "find_location", query="grand army plaza")
     place = {"name": "grand army plaza", "address": "flatbush ave, New York"}
     assert result == {"result": [{**place, "lat": 40.67, "lon": -73.97}]}
