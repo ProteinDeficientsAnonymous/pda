@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { screen } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { CREATOR, makeEvent, makeGuest, NON_HOST } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import EventQuestionResponsesScreen from './EventQuestionResponsesScreen';
 
@@ -22,16 +22,12 @@ const BASE_EVENT = makeEvent({
 });
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/ev1/responses']}>
-        <Routes>
-          <Route path="/events/:id/responses" element={<EventQuestionResponsesScreen />} />
-          <Route path="/events/:id" element={<div>event detail</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/events/:id/responses" element={<EventQuestionResponsesScreen />} />
+      <Route path="/events/:id" element={<div>event detail</div>} />
+    </Routes>,
+    { route: '/events/ev1/responses' },
   );
 }
 
