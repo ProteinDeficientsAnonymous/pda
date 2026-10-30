@@ -1,9 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, screen } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { authClient } from '@/api/client';
+import { renderWithProviders } from '@/test/render';
 
 import FeedbackScreen from './FeedbackScreen';
 
@@ -15,15 +15,11 @@ const mockedGet = vi.mocked(authClient.get);
 const mockedPost = vi.mocked(authClient.post);
 
 function renderScreen(entry = '/feedback#tok-1') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[entry]}>
-        <Routes>
-          <Route path="/feedback" element={<FeedbackScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/feedback" element={<FeedbackScreen />} />
+    </Routes>,
+    { route: entry },
   );
 }
 
