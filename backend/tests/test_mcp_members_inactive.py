@@ -20,7 +20,8 @@ from mcp_gateway.tools.members_read import _page
 from users._member_search import MemberFilters, MemberSort
 from users.models import User
 
-from tests.test_mcp_members_find import _find, _ids, _new, _of, _set_up
+from tests._mcp_members_helpers import find_members, ids_of, member_ids
+from tests.test_mcp_members_find import _new, _set_up
 
 pytestmark = pytest.mark.django_db
 
@@ -60,7 +61,7 @@ def _attended(days_ago: float, joined_days_ago: float = 400) -> User:
 def _rows(user, **arguments) -> list[dict]:
     seen, offset = [], 0
     while offset is not None:
-        page = _find(user, limit=3, offset=offset, **arguments)
+        page = find_members(user, limit=3, offset=offset, **arguments)
         seen += page["members"]
         offset = page["next_offset"]
     return seen
@@ -104,7 +105,7 @@ def test_attendance_matches_the_analytics_screen(admin):
         for m in members
         if is_pause_candidate(compute_member_stats(user_rsvps_for_attendance(m)))
     }
-    assert _ids(admin, inactive_for_days=365) == pause_candidates
+    assert member_ids(admin, inactive_for_days=365) == pause_candidates
 
 
 def test_varied_members_get_the_expected_attendance(admin):
@@ -112,12 +113,14 @@ def test_varied_members_get_the_expected_attendance(admin):
     rows = {row["id"]: row for row in _rows(admin)}
     counts = {m: rows[str(m.id)]["qualifying_count_12mo"] for m in (regular, lapsed, cant_go)}
     assert counts == {regular: 2, lapsed: 1, cant_go: 1}
-    assert _ids(admin, never_attended=True) == _of(admin, unmarked, only_excluded)
-    assert _ids(admin, inactive_for_days=365) == _of(admin, only_old, unmarked, only_excluded)
-    assert _ids(admin, inactive_for_days=30) == _of(
+    assert member_ids(admin, never_attended=True) == ids_of(admin, unmarked, only_excluded)
+    assert member_ids(admin, inactive_for_days=365) == ids_of(
+        admin, only_old, unmarked, only_excluded
+    )
+    assert member_ids(admin, inactive_for_days=30) == ids_of(
         admin, lapsed, only_old, unmarked, only_excluded
     )
-    assert str(future_only.id) in _ids(admin, never_attended=False)
+    assert str(future_only.id) in member_ids(admin, never_attended=False)
 
 
 def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
@@ -128,10 +131,10 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
     _went(on_edge, _event_at(edge))
     _went(just_before, _event_at(edge - timedelta(microseconds=1)))
     rows = {row["id"]: row for row in _rows(admin)}
-    inactive = _ids(admin, inactive_for_days=365)
+    inactive = member_ids(admin, inactive_for_days=365)
     assert rows[str(on_edge.id)]["qualifying_count_12mo"] == 1
     assert rows[str(just_before.id)]["qualifying_count_12mo"] == 0
-    assert inactive == _of(admin, just_before)
+    assert inactive == ids_of(admin, just_before)
     for member in (on_edge, just_before):
         stats = compute_member_stats(user_rsvps_for_attendance(member), now)
         assert rows[str(member.id)]["qualifying_count_12mo"] == stats.qualifying_count_12mo
@@ -142,9 +145,9 @@ def test_inactive_for_days_counts_never_attended(admin):
     never = _set_up(400)
     stale = _attended(100)
     _attended(10)
-    assert _ids(admin, inactive_for_days=30) == _of(admin, never, stale)
-    assert _ids(admin, inactive_for_days=30, never_attended=False) == _of(stale)
-    assert _ids(admin, never_attended=True) == _of(admin, never)
+    assert member_ids(admin, inactive_for_days=30) == ids_of(admin, never, stale)
+    assert member_ids(admin, inactive_for_days=30, never_attended=False) == ids_of(stale)
+    assert member_ids(admin, never_attended=True) == ids_of(admin, never)
 
 
 def test_joined_recently_and_never_attended(admin):
@@ -153,9 +156,9 @@ def test_joined_recently_and_never_attended(admin):
     _new(90)
     community_only = _new(30)
     _went(community_only, _event(5, _COMMUNITY))
-    expected = _of(match, community_only)
-    assert _ids(admin, joined_within_days=60, never_attended=True) == expected
-    assert _ids(admin, joined_within_days=60, inactive_for_days=60) == expected
+    expected = ids_of(match, community_only)
+    assert member_ids(admin, joined_within_days=60, never_attended=True) == expected
+    assert member_ids(admin, joined_within_days=60, inactive_for_days=60) == expected
 
 
 def test_longest_inactive_sorts_by_time_since_last_activity(admin):
@@ -187,7 +190,7 @@ def test_longest_inactive_paging_is_stable_with_ties(admin):
     for _ in range(3):
         _set_up()
     User.objects.update(date_joined=timezone.now() - timedelta(days=1))
-    first = _find(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
+    first = find_members(admin, sort=MemberSort.LONGEST_INACTIVE, limit=100)
     paged = _rows(admin, sort=MemberSort.LONGEST_INACTIVE)
     assert first["total"] == len(paged) == 8
     assert [row["id"] for row in paged] == [row["id"] for row in first["members"]]
@@ -213,4 +216,4 @@ def test_one_page_is_two_queries_with_attendance(admin, django_assert_num_querie
 )
 def test_bad_attendance_arguments_are_rejected(admin, arguments):
     with pytest.raises(ToolError):
-        _find(admin, **arguments)
+        find_members(admin, **arguments)

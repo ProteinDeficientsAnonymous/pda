@@ -21,6 +21,22 @@ def member_totals(user, **arguments):
         auth_context_var.reset(token)
 
 
+def find_members(user, **arguments):
+    token = signed_in(user)
+    try:
+        return async_to_sync(pda_mcp.call_tool)("find_members", arguments).structured_content  # type: ignore[union-attr]
+    finally:
+        auth_context_var.reset(token)
+
+
+def member_ids(user, **filters) -> set[str]:
+    return {row["id"] for row in find_members(user, filters=filters)["members"]}
+
+
+def ids_of(*users) -> set[str]:
+    return {str(u.id) for u in users}
+
+
 def make_member(**fields) -> User:
     return User.objects.create_user(phone_number=next(_phones), first_name="M", **fields)
 
