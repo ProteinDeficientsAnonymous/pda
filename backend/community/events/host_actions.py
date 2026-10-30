@@ -14,6 +14,7 @@ from community.events.helpers import (
     _can_edit_event,
     _cancellations,
     _event_out,
+    load_editable_event,
     load_event_with_stats_prefetch,
 )
 from community.events.schemas import (
@@ -140,20 +141,11 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="60/m")
 def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn):
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .filter(id=event_id)
-        .first()
-    )
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="set_attendance")
+    event = load_editable_event(request.auth, event_id, "set_attendance")
     if not _check_in_open(event):
         raise_validation(Code.Event.ATTENDANCE_OPENS_LATER, status_code=400)
 
-    rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
+    rsvp = event.rsvps.select_related("user").filter(user_id=user_id).first()
     if rsvp is None:
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
     if payload.for_plus_one and not rsvp.has_plus_one:
