@@ -5,17 +5,12 @@ from datetime import timedelta
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._users import make_user
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _guest_rsvp_url(event, user):
@@ -74,7 +69,7 @@ class TestHostAddsGuestAfterEventEnds:
             _guest_rsvp_url(past_event, guest),
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(actor),
+            **auth_headers_for(actor),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=past_event, user=guest)
@@ -85,7 +80,7 @@ class TestHostAddsGuestAfterEventEnds:
             _guest_rsvp_url(past_event, guest),
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(other),
+            **auth_headers_for(other),
         )
         assert response.status_code == 403
         assert_error_code(response, "perm.denied")
@@ -98,7 +93,7 @@ class TestHostAddsGuestAfterEventEnds:
             _guest_rsvp_url(past_event, guest),
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=past_event, user=guest).status == RSVPStatus.ATTENDING
@@ -110,7 +105,7 @@ class TestHostAddsGuestAfterEventEnds:
             _guest_rsvp_url(past_event, guest),
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(host),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         fake_email_sender.send.assert_not_called()
@@ -124,7 +119,7 @@ class TestHostAddsGuestAfterEventEnds:
         waitlisted = EventRSVP.objects.create(
             event=past_event, user=other, status=RSVPStatus.WAITLISTED
         )
-        response = api_client.delete(_guest_rsvp_url(past_event, guest), **_auth(host))
+        response = api_client.delete(_guest_rsvp_url(past_event, guest), **auth_headers_for(host))
         assert response.status_code == 204
         assert not EventRSVP.objects.filter(event=past_event, user=guest).exists()
         waitlisted.refresh_from_db()
@@ -138,7 +133,7 @@ class TestMemberSelfRsvpAfterEventEnds:
             f"/api/community/events/{past_event.id}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(guest),
+            **auth_headers_for(guest),
         )
         assert response.status_code == 400
         assert_error_code(response, "event.rsvps_closed_past")
@@ -146,6 +141,8 @@ class TestMemberSelfRsvpAfterEventEnds:
 
     def test_member_cannot_withdraw_after_end(self, api_client, past_event, guest):
         EventRSVP.objects.create(event=past_event, user=guest, status=RSVPStatus.ATTENDING)
-        response = api_client.delete(f"/api/community/events/{past_event.id}/rsvp/", **_auth(guest))
+        response = api_client.delete(
+            f"/api/community/events/{past_event.id}/rsvp/", **auth_headers_for(guest)
+        )
         assert response.status_code == 400
         assert_error_code(response, "event.rsvps_closed_past")

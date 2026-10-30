@@ -14,16 +14,10 @@ from community._rsvp_counts import (
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.conf import settings
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
 
 ET = settings.COMMUNITY_TZ
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture

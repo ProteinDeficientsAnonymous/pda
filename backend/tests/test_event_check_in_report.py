@@ -12,13 +12,9 @@ from community.models import (
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -110,7 +106,7 @@ def stocked_event(past_event, members, guest_user):
 class TestCheckInReportEndpoint:
     def test_host_gets_report(self, api_client, stocked_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{stocked_event.id}/report/", **auth_headers_for(host_user)
         )
         assert response.status_code == 200
         data = response.json()
@@ -121,7 +117,7 @@ class TestCheckInReportEndpoint:
 
     def test_guest_rsvp_tagged_not_member(self, api_client, stocked_event, host_user, guest_user):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{stocked_event.id}/report/", **auth_headers_for(host_user)
         )
         attended = response.json()["attended"]
         guest_row = next(r for r in attended if r["user_id"] == str(guest_user.pk))
@@ -129,7 +125,7 @@ class TestCheckInReportEndpoint:
 
     def test_canceled_includes_cancelled_at(self, api_client, stocked_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{stocked_event.id}/report/", **auth_headers_for(host_user)
         )
         canceled = response.json()["canceled"]
         assert len(canceled) == 1
@@ -137,14 +133,14 @@ class TestCheckInReportEndpoint:
 
     def test_attended_includes_checked_in_at(self, api_client, stocked_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{stocked_event.id}/report/", **auth_headers_for(host_user)
         )
         attended = response.json()["attended"]
         assert all(r["checked_in_at"] is not None for r in attended)
 
     def test_non_host_forbidden(self, api_client, stocked_event, other_member):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report/", **_auth(other_member)
+            f"/api/community/events/{stocked_event.id}/report/", **auth_headers_for(other_member)
         )
         assert response.status_code == 403
 
@@ -165,7 +161,7 @@ class TestCheckInReportEndpoint:
             plus_one_attendance=AttendanceStatus.DIDNT_GO,
         )
         response = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         )
         data = response.json()
         assert data["attended_count"] == 1
@@ -178,13 +174,13 @@ class TestCheckInReportEndpoint:
     def test_not_found(self, api_client, host_user):
         response = api_client.get(
             "/api/community/events/00000000-0000-0000-0000-000000000000/report/",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 404
 
     def test_event_not_ended_rejected(self, api_client, future_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{future_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{future_event.id}/report/", **auth_headers_for(host_user)
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.check_in_report_not_yet_available"
@@ -195,7 +191,7 @@ class TestCheckInReportEndpoint:
         EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.MAYBE)
         EventRSVP.objects.create(event=past_event, user=members[1], status=RSVPStatus.WAITLISTED)
         response = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         )
         data = response.json()
         assert data["unmarked_count"] == 2
@@ -207,7 +203,7 @@ class TestCheckInReportEndpoint:
     def test_removed_rsvps_excluded(self, api_client, past_event, members, host_user):
         EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.REMOVED)
         response = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         )
         data = response.json()
         total = (
@@ -224,7 +220,9 @@ class TestCheckInReportEndpoint:
         host.first_name, host.last_name, host.hide_last_name = "Ada", "Lovelace", True
         host.save(update_fields=["first_name", "last_name", "hide_last_name"])
         EventRSVP.objects.create(event=past_event, user=host, status=RSVPStatus.ATTENDING)
-        response = api_client.get(f"/api/community/events/{past_event.id}/report/", **_auth(host))
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host)
+        )
         row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
         assert row["name"] == "Ada Lovelace"
 
@@ -234,7 +232,7 @@ class TestCheckInReportEndpoint:
         member = members[0]
         rsvp = EventRSVP.objects.create(event=past_event, user=member, status=RSVPStatus.ATTENDING)
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["unmarked_count"] == 1
         assert report["attended_count"] == 0
@@ -242,7 +240,7 @@ class TestCheckInReportEndpoint:
         rsvp.checked_in_at = timezone.now()
         rsvp.save(update_fields=["attendance", "checked_in_at"])
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["unmarked_count"] == 0, "member should not be in unmarked after mark-in"
         assert report["attended_count"] == 1, "member should be in attended after mark-in"
@@ -257,7 +255,7 @@ class TestCheckInReportEndpoint:
         rsvp.checked_in_at = timezone.now()
         rsvp.save(update_fields=["attendance", "checked_in_at"])
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["unmarked_count"] == 0, "maybe RSVP marked in should not stay unmarked"
         assert report["attended_count"] == 1
@@ -271,7 +269,7 @@ class TestCheckInReportEndpoint:
         rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["no_show_count"] == 0, "a cant-go marked didn't-attend isn't a no-show"
         assert report["canceled_count"] == 1
@@ -285,7 +283,7 @@ class TestCheckInReportEndpoint:
         rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["didnt_go_count"] == 1, "a maybe marked didn't-attend isn't left unmarked"
         assert report["didnt_go"][0]["user_id"] == str(member.pk)
@@ -300,7 +298,7 @@ class TestCheckInReportEndpoint:
         rsvp.attendance = AttendanceStatus.DIDNT_GO
         rsvp.save(update_fields=["attendance"])
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         assert report["no_show_count"] == 1
         assert report["no_shows"][0]["user_id"] == str(member.pk)
@@ -310,7 +308,7 @@ class TestCheckInReportEndpoint:
 class TestCheckInReportCsvEndpoint:
     def test_host_downloads_csv(self, api_client, stocked_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report.csv", **_auth(host_user)
+            f"/api/community/events/{stocked_event.id}/report.csv", **auth_headers_for(host_user)
         )
         assert response.status_code == 200
         assert response["Content-Type"] == "text/csv; charset=utf-8"
@@ -321,7 +319,7 @@ class TestCheckInReportCsvEndpoint:
     def test_column_selection_respected(self, api_client, stocked_event, host_user):
         response = api_client.get(
             f"/api/community/events/{stocked_event.id}/report.csv?columns=name,attendance",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         header = response.content.decode("utf-8-sig").splitlines()[0]
         assert header == "name,attendance"
@@ -329,20 +327,20 @@ class TestCheckInReportCsvEndpoint:
     def test_unknown_column_rejected(self, api_client, stocked_event, host_user):
         response = api_client.get(
             f"/api/community/events/{stocked_event.id}/report.csv?columns=name,not_a_column",
-            **_auth(host_user),
+            **auth_headers_for(host_user),
         )
         assert response.status_code == 422
         assert response.json()["detail"][0]["code"] == "event.check_in_report_invalid_column"
 
     def test_non_host_forbidden(self, api_client, stocked_event, other_member):
         response = api_client.get(
-            f"/api/community/events/{stocked_event.id}/report.csv", **_auth(other_member)
+            f"/api/community/events/{stocked_event.id}/report.csv", **auth_headers_for(other_member)
         )
         assert response.status_code == 403
 
     def test_event_not_ended_rejected(self, api_client, future_event, host_user):
         response = api_client.get(
-            f"/api/community/events/{future_event.id}/report.csv", **_auth(host_user)
+            f"/api/community/events/{future_event.id}/report.csv", **auth_headers_for(host_user)
         )
         assert response.status_code == 400
 
@@ -351,10 +349,10 @@ class TestCheckInReportCsvEndpoint:
         EventRSVP.objects.create(event=past_event, user=members[1], status=RSVPStatus.MAYBE)
         EventRSVP.objects.create(event=past_event, user=members[2], status=RSVPStatus.REMOVED)
         report = api_client.get(
-            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
         csv_body = api_client.get(
-            f"/api/community/events/{past_event.id}/report.csv", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report.csv", **auth_headers_for(host_user)
         ).content.decode("utf-8-sig")
         data_rows = [line for line in csv_body.splitlines()[1:] if line]
         report_total = (
@@ -375,7 +373,8 @@ class TestCheckInReportCsvEndpoint:
         )
         EventRSVP.objects.create(event=past_event, user=attacker, status=RSVPStatus.ATTENDING)
         response = api_client.get(
-            f"/api/community/events/{past_event.id}/report.csv?columns=name", **_auth(host_user)
+            f"/api/community/events/{past_event.id}/report.csv?columns=name",
+            **auth_headers_for(host_user),
         )
         body = response.content.decode("utf-8-sig")
         assert "'=HYPERLINK(1)" in body
@@ -400,8 +399,8 @@ def test_query_count_does_not_grow_with_rsvps(api_client, past_event, host_user,
     url = f"/api/community/events/{past_event.id}/{suffix}"
     _add_hidden_name_rsvps(past_event, 0, 2)
     with CaptureQueriesContext(connection) as small:
-        assert api_client.get(url, **_auth(host_user)).status_code == 200
+        assert api_client.get(url, **auth_headers_for(host_user)).status_code == 200
     _add_hidden_name_rsvps(past_event, 2, 4)
     with CaptureQueriesContext(connection) as large:
-        assert api_client.get(url, **_auth(host_user)).status_code == 200
+        assert api_client.get(url, **auth_headers_for(host_user)).status_code == 200
     assert len(large) == len(small)

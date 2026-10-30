@@ -4,9 +4,9 @@ import json
 
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
-from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 
@@ -17,8 +17,7 @@ def form_admin_user(db):
 
 @pytest.fixture
 def form_admin_headers(form_admin_user):
-    refresh = RefreshToken.for_user(form_admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(form_admin_user)
 
 
 def _make_questions(count: int) -> list[JoinFormQuestion]:

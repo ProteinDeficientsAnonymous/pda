@@ -12,18 +12,13 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 MEMBERS_URL = "/api/community/events/attendance-analytics/members/"
-
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -65,7 +60,7 @@ def _make_event(host_user, title, days_ago, event_type=EventType.CLUB):
 @pytest.mark.django_db
 class TestMemberAttendanceAnalyticsEndpoint:
     def test_requires_manage_events_permission(self, api_client, member):
-        response = api_client.get(MEMBERS_URL, **_auth(member))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(member))
         assert response.status_code == 403
 
     def test_unauthenticated_rejected(self, api_client):
@@ -83,7 +78,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
                 attendance=AttendanceStatus.ATTENDED,
             )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         assert response.status_code == 200
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["qualifying_count_12mo"] == 2
@@ -103,7 +98,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             attendance=AttendanceStatus.ATTENDED,
         )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["qualifying_count_12mo"] == 0
         assert row["community_count"] == 1
@@ -120,7 +115,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             attendance=AttendanceStatus.ATTENDED,
         )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["qualifying_count_12mo"] == 0
         # last_qualifying_at is not window-bound — it's the true last attendance.
@@ -143,7 +138,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             cancelled_at=timezone.now(),
         )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
@@ -159,12 +154,12 @@ class TestMemberAttendanceAnalyticsEndpoint:
             attendance=AttendanceStatus.DIDNT_GO,
         )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
 
     def test_never_attended_is_pause_candidate(self, api_client, host_user, member, events_admin):
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["last_qualifying_at"] is None
         assert row["is_pause_candidate"] is True
@@ -185,7 +180,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             attendance=AttendanceStatus.ATTENDED,
         )
 
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
@@ -198,7 +193,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             is_member=True,
             is_paused=True,
         )
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(paused.pk))
         assert row["is_paused"] is True
         assert row["is_pause_candidate"] is False
@@ -212,7 +207,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             is_member=True,
             archived_at=timezone.now(),
         )
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]
         assert str(archived.pk) not in ids
 
@@ -221,7 +216,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         guest = User.objects.create_user(
             phone_number="+12025552004", password="x", first_name="Guest", is_member=False
         )
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]
         assert str(guest.pk) not in ids
 
@@ -235,7 +230,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             status=RSVPStatus.CANT_GO,
             attendance=AttendanceStatus.ATTENDED,
         )
-        response = api_client.get(MEMBERS_URL, **_auth(events_admin))
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["qualifying_count_12mo"] == 1
         assert row["last_qualifying_at"] is not None

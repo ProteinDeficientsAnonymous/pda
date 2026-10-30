@@ -2,10 +2,10 @@ import json
 
 import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 
@@ -21,10 +21,6 @@ def survey(db):
 @pytest.fixture
 def survey_manager(db):
     return make_user(PermissionKey.MANAGE_SURVEYS, email="")
-
-
-def _headers(user) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -59,7 +55,7 @@ class TestSurveyResponseNotifications:
         assert note.related_user_id is None
 
     def test_submitter_with_manage_surveys_is_not_notified(self, submit, survey, survey_manager):
-        submit(survey, **_headers(survey_manager))
+        submit(survey, **auth_headers_for(survey_manager))
         assert not _survey_notes().exists()
 
     def test_updating_existing_response_does_not_notify(
@@ -76,12 +72,12 @@ class TestSurveyResponseNotifications:
     ):
         survey.anonymous = True
         survey.save()
-        assert submit(survey, **_headers(survey_manager)).status_code == 201
+        assert submit(survey, **auth_headers_for(survey_manager)).status_code == 201
         note = _survey_notes().get()
         assert note.recipient_id == survey_manager.id
         assert note.related_user_id is None
 
     def test_list_exposes_survey_id(self, api_client, submit, survey, survey_manager):
         submit(survey)
-        resp = api_client.get("/api/notifications/", **_headers(survey_manager))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(survey_manager))
         assert resp.json()[0]["survey_id"] == str(survey.id)
