@@ -8,8 +8,8 @@ from django.test.utils import CaptureQueriesContext
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
+from tests._users import make_user
 from tests.conftest import future_iso
 
 
@@ -26,14 +26,7 @@ def member_headers(db):
 
 @pytest.fixture
 def manage_tags_headers(db):
-    admin = User.objects.create_user(
-        phone_number="+14155550222",
-        password="adminpass123",
-        first_name="Tag",
-        last_name="Admin",
-    )
-    role = Role.objects.create(name="tag_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
+    admin = make_user(PermissionKey.MANAGE_EVENTS)
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"}  # type: ignore
 
 

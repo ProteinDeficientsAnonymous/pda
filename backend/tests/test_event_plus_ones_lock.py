@@ -2,29 +2,17 @@ import pytest
 from community._validation import Code
 from community.models import Event, EventType, PageVisibility
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 
 EVENTS_URL = "/api/community/events/"
 
 
 @pytest.fixture
 def tagger(db):
-    user = User.objects.create_user(
-        phone_number="+14155557777",
-        password="taggerpass123",
-        first_name="Type",
-        last_name="Tagger",
-    )
-    role = Role.objects.create(
-        name="type_tagger",
-        permissions=[PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT)
 
 
 @pytest.fixture

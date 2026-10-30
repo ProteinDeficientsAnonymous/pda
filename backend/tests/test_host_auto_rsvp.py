@@ -13,9 +13,9 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 from tests.conftest import future_iso
 
 EVENTS_URL = "/api/community/events/"
@@ -29,13 +29,7 @@ def _auth(user: User) -> dict:
 
 @pytest.fixture
 def host(db) -> User:
-    user = User.objects.create_user(phone_number="+12025556100", password="x", first_name="Host")
-    role = Role.objects.create(
-        name="auto_rsvp_tagger",
-        permissions=[PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT, email="")
 
 
 @pytest.fixture

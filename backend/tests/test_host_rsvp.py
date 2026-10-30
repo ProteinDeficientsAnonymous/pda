@@ -6,10 +6,11 @@ import pytest
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 from tests.conftest import future_iso
 
 
@@ -30,10 +31,7 @@ def cohost_user(db):
 
 @pytest.fixture
 def admin_user(db):
-    admin = User.objects.create_user(phone_number="+12025559102", password="x", first_name="Admin")
-    role = Role.objects.create(name="rsvp_admin", permissions=[PermissionKey.MANAGE_EVENTS])
-    admin.roles.add(role)
-    return admin
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture

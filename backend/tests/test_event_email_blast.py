@@ -9,9 +9,9 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._users import make_user
 from tests.conftest import future_iso
 
 BLAST_URL = "/api/community/events/{event_id}/email-blast/"
@@ -159,14 +159,7 @@ class TestEmailBlastAuth:
         self, api_client, event_with_attendees, fake_email_sender
     ):
 
-        manager = User.objects.create_user(
-            phone_number="+14155550400",
-            password="x",
-            first_name="Manager",
-            email="mgr@example.com",
-        )
-        role = Role.objects.create(name="blast_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-        manager.roles.add(role)
+        manager = make_user(PermissionKey.MANAGE_EVENTS)
         headers = {
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(manager).access_token}"  # type: ignore
         }

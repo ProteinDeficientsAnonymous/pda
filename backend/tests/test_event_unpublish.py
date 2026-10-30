@@ -7,9 +7,9 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._users import grant
 from tests.conftest import future_iso, past_iso
 
 
@@ -134,8 +134,7 @@ class TestUnpublishActive:
     def test_manager_without_host_role_can_unpublish(
         self, api_client, future_active_event, other_member, other_headers
     ):
-        role = Role.objects.create(name="unpublish_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-        other_member.roles.add(role)
+        grant(other_member, PermissionKey.MANAGE_EVENTS)
         response = api_client.patch(
             f"/api/community/events/{future_active_event.id}/",
             data=json.dumps({"status": "draft"}),
