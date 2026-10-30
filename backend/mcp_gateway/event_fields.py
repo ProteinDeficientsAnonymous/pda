@@ -2,7 +2,7 @@ from typing import Any
 
 from community.events.schemas import EventIn, EventPatchIn
 from community.events.tags import list_event_tags
-from community.models import EventType, PageVisibility, is_official_or_club
+from community.models import EventType, OfficialKind, PageVisibility, is_official_or_club
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field, create_model
 from users.models import User
@@ -30,7 +30,10 @@ class EventFields(BaseModel):
     rsvp_enabled: bool = Field(False, description="let members rsvp on the site")
     event_type: EventType = Field(EventType.COMMUNITY, description="official/club need permission")
     visibility: PageVisibility = Field(PageVisibility.PUBLIC, description="official/club: public")
-    tags: list[str] = Field(default_factory=list, description="existing tag names, e.g. walk")
+    official_kind: OfficialKind | None = Field(
+        None, description="official events only: walk or restaurant"
+    )
+    tags: list[str] = Field(default_factory=list, description="existing tag names, e.g. side quest")
     whatsapp_link: str = Field("", description="whatsapp group or community invite link")
     partiful_link: str = Field("", description="partiful event link")
     other_link: str = Field("", description="any other link for the event")

@@ -7,9 +7,11 @@ from audit.models import AuditLogEntry
 from community.models import Event, EventTag
 from community.validation import Code
 from users.models import User
+from users.permissions import PermissionKey
 
 from tests._http_helpers import FakeResp
 from tests._mcp_tool_helpers import run_tool, tool_error
+from tests._users import grant
 
 pytestmark = pytest.mark.django_db
 WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
@@ -26,6 +28,29 @@ def test_creates_draft_as_member_via_mcp(test_user):
     entry = AuditLogEntry.objects.get(target_id=summary["id"])
     assert (entry.action, entry.actor) == ("event_created_draft", test_user)
     assert entry.details["via"] == "mcp"
+
+
+@pytest.fixture
+def official_planner(test_user):
+    grant(test_user, PermissionKey.TAG_OFFICIAL_EVENT)
+    return test_user
+
+
+def test_create_official_event_saves_kind(official_planner):
+    fields = {**WALK, "event_type": "official", "official_kind": "walk"}
+    summary = run_tool(official_planner, "create_event", fields=fields)
+    assert summary["official_kind"] == "walk"
+    assert Event.objects.get(pk=summary["id"]).official_kind == "walk"
+
+
+def test_create_refuses_kind_on_non_official_event(test_user):
+    error = tool_error(test_user, "create_event", fields={**WALK, "official_kind": "walk"})
+    assert json.loads(error)["status"] == 422
+
+
+def test_create_refuses_unknown_kind(official_planner):
+    fields = {**WALK, "event_type": "official", "official_kind": "picnic"}
+    assert "official_kind" in tool_error(official_planner, "create_event", fields=fields)
 
 
 @pytest.mark.parametrize(("is_member", "event_type"), [(True, "official"), (False, "community")])
