@@ -14,7 +14,7 @@ from community.models import (
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _make_test_image(fmt="JPEG", filename="test.jpg", content_type="image/jpeg"):

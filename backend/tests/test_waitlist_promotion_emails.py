@@ -3,7 +3,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _one_spot_event(creator):

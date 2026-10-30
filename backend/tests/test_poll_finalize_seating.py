@@ -13,7 +13,7 @@ from community.models import (
 )
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _finalize(api_client, headers, event, option):

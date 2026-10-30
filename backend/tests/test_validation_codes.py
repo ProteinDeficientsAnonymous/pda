@@ -9,7 +9,7 @@ so the frontend owns UI copy.
 import pytest
 from community._validation import Code
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def base_event() -> dict:

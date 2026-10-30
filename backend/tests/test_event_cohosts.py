@@ -4,7 +4,7 @@ from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._events import make_event
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

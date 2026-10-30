@@ -2,7 +2,7 @@ import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from users.models import NonMemberRsvpToken, User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

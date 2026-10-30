@@ -4,8 +4,8 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 
 from tests._auth import auth_headers_for
+from tests._time import future_iso
 from tests._users import make_user
-from tests.conftest import future_iso
 
 
 def _rsvp(api_client, event, user, status="attending", has_plus_one=False):

@@ -9,7 +9,7 @@ Validates that:
 
 import pytest
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def base_event() -> dict:

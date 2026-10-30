@@ -15,7 +15,7 @@ from notifications.service import notify_comment_reply, notify_event_comment
 from users.models import User
 
 from tests._auth import auth_headers_for
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.mark.django_db

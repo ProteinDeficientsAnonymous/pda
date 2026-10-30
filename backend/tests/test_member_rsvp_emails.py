@@ -4,8 +4,8 @@ from django.test import Client
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_non_member, make_tentative_member
+from tests._time import future_iso
 from tests._users import make_user
-from tests.conftest import future_iso
 
 
 def _event(creator, **kwargs):

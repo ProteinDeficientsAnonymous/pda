@@ -6,8 +6,8 @@ from community.models.choices import CoHostInviteStatus
 from users.models import User
 
 from tests._auth import auth_headers_for
+from tests._time import future_iso, past_iso
 from tests._users import make_user
-from tests.conftest import future_iso, past_iso
 
 
 @pytest.fixture

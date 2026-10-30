@@ -17,7 +17,7 @@ from community.models import (
 )
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp/"
 

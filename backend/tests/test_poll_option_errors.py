@@ -8,7 +8,7 @@ from community._validation import Code
 from community.models import Event, EventPoll, PollOption
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

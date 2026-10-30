@@ -6,8 +6,8 @@ from community.models import Event, EventRSVP, RSVPStatus
 from notifications.models import Notification, NotificationType
 
 from tests._auth import auth_headers_for
+from tests._time import future_iso
 from tests._users import make_user
-from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -15,7 +15,7 @@ from notifications.email_sender import SendResult
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
-from tests.conftest import future_iso, past_iso
+from tests._time import future_iso, past_iso
 
 GET_URL = "/api/community/public/my-rsvps/"
 

@@ -10,7 +10,7 @@ from users.models import NonMemberRsvpToken, User
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, payload, url
 from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 __all__ = ["open_official_event"]
 

@@ -13,8 +13,8 @@ from django.test.utils import CaptureQueriesContext
 
 from tests._auth import auth_headers_for
 from tests._event_feedback_helpers import NOW, make_ended_event, make_rsvp
+from tests._time import future_iso
 from tests._users import make_user
-from tests.conftest import future_iso
 
 
 def _count(call) -> int:
