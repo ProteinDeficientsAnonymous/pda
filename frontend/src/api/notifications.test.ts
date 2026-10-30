@@ -12,9 +12,7 @@ import {
   useUnreadCount,
 } from './notifications';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 // Mutable auth-status sentinel — tests flip this to simulate authed/unauthed.
 let mockAuthStatus = 'authed';

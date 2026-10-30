@@ -34,7 +34,7 @@ def make_tentative(phone_number: str, **extra) -> User:
     return user
 
 
-def make_event(title: str, days_out: float, **extra) -> Event:
+def make_event(title: str = "Vegan Potluck", days_out: float = 5, **extra) -> Event:
     extra.setdefault("event_type", EventType.OFFICIAL)
     return Event.objects.create(
         title=title,
