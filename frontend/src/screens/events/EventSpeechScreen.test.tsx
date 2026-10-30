@@ -63,6 +63,21 @@ beforeEach(() => {
 });
 
 describe('EventSpeechScreen', () => {
+  it('shows the shared and walk blanks only, prefilled, with lists as textareas', async () => {
+    renderScreen();
+
+    expect(await screen.findByLabelText('facilitators')).toHaveValue('ann and bo');
+    expect(screen.getByLabelText('front walker')).toBeInTheDocument();
+    expect(screen.getByLabelText('back walker')).toBeInTheDocument();
+    expect(screen.getByLabelText('walk details')).toBeInTheDocument();
+    expect(screen.queryByLabelText('restaurant')).not.toBeInTheDocument();
+
+    const roles = screen.getByLabelText('open roles');
+    expect(roles.tagName).toBe('TEXTAREA');
+    expect(roles).toHaveValue('greeter\nphotographer');
+    expect(screen.getByLabelText('facilitators').tagName).toBe('INPUT');
+  });
+
   it('shows the event title, keeping its casing', async () => {
     renderScreen();
 
