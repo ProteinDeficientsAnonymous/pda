@@ -37,26 +37,6 @@ def official_event_headers(official_event_user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-@pytest.fixture
-def manage_events_user(db):
-    """A non-superuser with only manage_events permission."""
-    user = User.objects.create_user(
-        phone_number="+14155551234",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_events_headers(manage_events_user):
-    refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
 @pytest.mark.django_db
 class TestEventVisibility:
     def test_events_public(self, api_client):
