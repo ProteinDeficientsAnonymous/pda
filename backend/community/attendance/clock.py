@@ -26,7 +26,7 @@ _MILESTONES_DESCENDING = [
 
 
 def last_qualifying_attendance_date(user: User) -> date | None:
-    """Date of compute_member_stats().last_qualifying_at — same rsvps, read via SQL."""
+    """Date of member_stats_by_user()'s last_qualifying_at — same rsvps, read via SQL."""
     # One filter() call so the rsvps__ conditions bind to the same rsvp row.
     latest = (
         Event.objects.filter(
