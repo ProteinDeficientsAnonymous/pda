@@ -27,11 +27,7 @@ vi.mock('@/api/auth', () => ({
 
 // Also mock the client so setAuthBridge (called at store module load) doesn't
 // set up real axios interceptors in the test environment.
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockUser = makeUser({
   id: 'user-1',

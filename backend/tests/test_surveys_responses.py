@@ -12,12 +12,12 @@ from community.models import (
     SurveyResponse,
 )
 from django.conf import settings
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -27,8 +27,7 @@ def admin_headers(db):
     )
     role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
     user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(user)
 
 
 @pytest.fixture
