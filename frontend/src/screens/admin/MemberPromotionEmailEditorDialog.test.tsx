@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberPromotionEmail } from '@/api/content';
+import { renderWithProviders } from '@/test/render';
 
 import { MemberPromotionEmailEditorDialog } from './MemberPromotionEmailEditorDialog';
 
@@ -26,11 +26,8 @@ function renderEditor(
   template: MemberPromotionEmail | null = { body: 'hi', updatedAt: '2026-01-01' },
 ) {
   const onClose = vi.fn();
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const utils = render(
-    <QueryClientProvider client={qc}>
-      <MemberPromotionEmailEditorDialog open onClose={onClose} template={template} />
-    </QueryClientProvider>,
+  const utils = renderWithProviders(
+    <MemberPromotionEmailEditorDialog open onClose={onClose} template={template} />,
   );
   return { ...utils, onClose };
 }
