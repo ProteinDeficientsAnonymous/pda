@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
 import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
@@ -25,7 +26,7 @@ function wire(id: string, title: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('calendar ranges', () => {

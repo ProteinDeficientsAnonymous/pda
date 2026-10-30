@@ -6,10 +6,10 @@ import { useAttendanceImportEventOptions } from '@/api/attendanceImport';
 import { useMarkAttendance } from '@/api/attendanceMark';
 import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { makeMember, makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeMember, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import MembersScreen from './MembersScreen';
@@ -36,10 +36,7 @@ const mutate = vi.fn();
 
 // The built-in "admin" role grants every permission, which would hide the gate.
 function staffUser(permissions: string[]): User {
-  return {
-    ...makeUser({ id: 'me', fullName: 'Staff User' }),
-    roles: [{ id: 'role-staff', name: 'staff', isDefault: false, permissions }],
-  };
+  return makeUserWithPermissions(permissions, { id: 'me', fullName: 'Staff User' });
 }
 
 function renderScreen() {
@@ -68,20 +65,12 @@ beforeEach(() => {
       makeMember({ id: 'm2', fullName: 'Grace Hopper' }),
     ],
   } as unknown as ReturnType<typeof useUsers>);
-  useAuthStore.setState({
-    status: 'authed',
-    user: staffUser([Permission.ManageUsers]),
-    accessToken: 'tok',
-  });
+  setAuthed(staffUser([Permission.ManageUsers]));
 });
 
 describe('marking members attended from the members screen', () => {
   it('hides the selection checkboxes without the manage users permission', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: staffUser([Permission.ManageEvents]),
-      accessToken: 'tok',
-    });
+    setAuthed(staffUser([Permission.ManageEvents]));
 
     renderScreen();
 

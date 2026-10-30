@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
 import { renderWithProviders } from '@/test/render';
 
 import { AppShell } from './AppShell';
@@ -52,7 +52,7 @@ function renderShell(initialPath = '/') {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
 });
 

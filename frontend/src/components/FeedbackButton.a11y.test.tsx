@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
-import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { setAuthed } from '@/test/auth';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -42,7 +42,7 @@ function renderButton() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
+  setAuthed(makeUser());
   submitFeedbackMock.mockResolvedValue({ html_url: 'https://example.com/1' });
   useSubmitFeedbackMock.mockReturnValue({
     mutateAsync: submitFeedbackMock,
