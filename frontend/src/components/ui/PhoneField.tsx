@@ -52,7 +52,7 @@ export function PhoneField({
         {...(autoComplete !== undefined ? { autoComplete } : {})}
         value={value}
         onChange={(next) => {
-          onChange((next as string | undefined) ?? '');
+          onChange(next ?? '');
         }}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}

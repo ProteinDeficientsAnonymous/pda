@@ -2,25 +2,15 @@
 
 import pytest
 from community._prosemirror_html import prosemirror_to_html
-from users.models import Role, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def edit_homepage_headers(db):
-    user = User.objects.create_user(
-        phone_number="+12025550999",
-        password="testpass",
-        first_name="PM",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="pm_homepage_editor",
-        permissions=[PermissionKey.EDIT_HOMEPAGE],
-    )
-    user.roles.add(role)
+    user = make_user(PermissionKey.EDIT_HOMEPAGE)
     return auth_headers_for(user)
 
 

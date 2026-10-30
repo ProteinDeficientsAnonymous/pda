@@ -6,31 +6,12 @@ import pytest
 from community import _surveys, _surveys_responses
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 
 JSON = "application/json"
 MISSING_ID = "00000000-0000-0000-0000-000000000000"
-
-
-@pytest.fixture
-def surveys_admin(db):
-    user = User.objects.create_user(
-        phone_number="+12025557100", password="x", first_name="Surveys", last_name="Admin"
-    )
-    role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def admin_headers(surveys_admin):
-    refresh = RefreshToken.for_user(surveys_admin)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -71,9 +52,9 @@ def _put(client, url, payload, headers):
 
 @pytest.mark.django_db
 class TestListSurveysAdmin:
-    def test_lists_surveys_with_response_count(self, api_client, admin_headers, survey):
+    def test_lists_surveys_with_response_count(self, api_client, surveys_admin_headers, survey):
         SurveyResponse.objects.create(survey=survey, answers={})
-        response = api_client.get("/api/community/surveys/admin/", **admin_headers)
+        response = api_client.get("/api/community/surveys/admin/", **surveys_admin_headers)
         assert response.status_code == 200
         [row] = response.json()
         assert row["id"] == str(survey.id)
@@ -86,7 +67,7 @@ class TestListSurveysAdmin:
 
 @pytest.mark.django_db
 class TestCreateSurvey:
-    def test_creates_survey(self, api_client, admin_headers, surveys_admin):
+    def test_creates_survey(self, api_client, surveys_admin_headers, surveys_admin):
         payload = {
             "title": "New survey",
             "description": "tell us things",
@@ -95,7 +76,7 @@ class TestCreateSurvey:
             "is_active": False,
             "one_response_per_user": True,
         }
-        response = _post(api_client, "/api/community/surveys/", payload, admin_headers)
+        response = _post(api_client, "/api/community/surveys/", payload, surveys_admin_headers)
         assert response.status_code == 201
         data = response.json()
         assert data["slug"] == "new-survey"
@@ -106,12 +87,12 @@ class TestCreateSurvey:
         assert data["created_by_id"] == str(surveys_admin.id)
         assert Survey.objects.get(slug="new-survey").created_by == surveys_admin
 
-    def test_duplicate_slug_400(self, api_client, admin_headers, survey):
+    def test_duplicate_slug_400(self, api_client, surveys_admin_headers, survey):
         response = _post(
             api_client,
             "/api/community/surveys/",
             {"title": "Dup", "slug": survey.slug},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.SLUG_ALREADY_EXISTS, "slug")
@@ -120,27 +101,31 @@ class TestCreateSurvey:
 
 @pytest.mark.django_db
 class TestGetSurveyAdmin:
-    def test_returns_survey_with_questions(self, api_client, admin_headers, survey):
-        response = api_client.get(f"/api/community/surveys/{survey.id}/admin/", **admin_headers)
+    def test_returns_survey_with_questions(self, api_client, surveys_admin_headers, survey):
+        response = api_client.get(
+            f"/api/community/surveys/{survey.id}/admin/", **surveys_admin_headers
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == str(survey.id)
         assert [q["label"] for q in data["questions"]] == ["First", "Second"]
 
-    def test_missing_404(self, api_client, admin_headers):
-        response = api_client.get(f"/api/community/surveys/{MISSING_ID}/admin/", **admin_headers)
+    def test_missing_404(self, api_client, surveys_admin_headers):
+        response = api_client.get(
+            f"/api/community/surveys/{MISSING_ID}/admin/", **surveys_admin_headers
+        )
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.NOT_FOUND)
 
 
 @pytest.mark.django_db
 class TestUpdateSurvey:
-    def test_patches_only_sent_fields(self, api_client, admin_headers, survey):
+    def test_patches_only_sent_fields(self, api_client, surveys_admin_headers, survey):
         response = _patch(
             api_client,
             f"/api/community/surveys/{survey.id}/",
             {"title": "Renamed", "is_active": False},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 200
         survey.refresh_from_db()
@@ -149,53 +134,63 @@ class TestUpdateSurvey:
         assert survey.slug == "feedback"
         assert response.json()["questions"][0]["label"] == "First"
 
-    def test_slug_collision_400(self, api_client, admin_headers, survey):
+    def test_slug_collision_400(self, api_client, surveys_admin_headers, survey):
         Survey.objects.create(title="Other", slug="taken")
         response = _patch(
-            api_client, f"/api/community/surveys/{survey.id}/", {"slug": "taken"}, admin_headers
+            api_client,
+            f"/api/community/surveys/{survey.id}/",
+            {"slug": "taken"},
+            surveys_admin_headers,
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Survey.SLUG_ALREADY_EXISTS, "slug")
         survey.refresh_from_db()
         assert survey.slug == "feedback"
 
-    def test_same_slug_is_not_a_collision(self, api_client, admin_headers, survey):
+    def test_same_slug_is_not_a_collision(self, api_client, surveys_admin_headers, survey):
         response = _patch(
             api_client,
             f"/api/community/surveys/{survey.id}/",
             {"slug": survey.slug},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 200
 
-    def test_missing_404(self, api_client, admin_headers):
+    def test_missing_404(self, api_client, surveys_admin_headers):
         response = _patch(
-            api_client, f"/api/community/surveys/{MISSING_ID}/", {"title": "x"}, admin_headers
+            api_client,
+            f"/api/community/surveys/{MISSING_ID}/",
+            {"title": "x"},
+            surveys_admin_headers,
         )
         assert response.status_code == 404
 
 
 @pytest.mark.django_db
 class TestDeleteSurvey:
-    def test_deletes_survey_and_questions(self, api_client, admin_headers, survey):
-        response = api_client.delete(f"/api/community/surveys/{survey.id}/", **admin_headers)
+    def test_deletes_survey_and_questions(self, api_client, surveys_admin_headers, survey):
+        response = api_client.delete(
+            f"/api/community/surveys/{survey.id}/", **surveys_admin_headers
+        )
         assert response.status_code == 204
         assert not Survey.objects.filter(id=survey.id).exists()
         assert not SurveyQuestion.objects.filter(survey_id=survey.id).exists()
 
-    def test_missing_404(self, api_client, admin_headers):
-        response = api_client.delete(f"/api/community/surveys/{MISSING_ID}/", **admin_headers)
+    def test_missing_404(self, api_client, surveys_admin_headers):
+        response = api_client.delete(
+            f"/api/community/surveys/{MISSING_ID}/", **surveys_admin_headers
+        )
         assert response.status_code == 404
 
 
 @pytest.mark.django_db
 class TestSurveyQuestions:
-    def test_create_appends_at_end(self, api_client, admin_headers, survey):
+    def test_create_appends_at_end(self, api_client, surveys_admin_headers, survey):
         response = _post(
             api_client,
             f"/api/community/surveys/{survey.id}/questions/",
             {"label": "Third", "field_type": "checkbox", "options": ["x", "y"], "required": True},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 201
         data = response.json()
@@ -205,22 +200,22 @@ class TestSurveyQuestions:
         assert data["required"] is True
         assert survey.questions.count() == 3
 
-    def test_create_on_missing_survey_404(self, api_client, admin_headers):
+    def test_create_on_missing_survey_404(self, api_client, surveys_admin_headers):
         response = _post(
             api_client,
             f"/api/community/surveys/{MISSING_ID}/questions/",
             {"label": "x"},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 404
 
-    def test_update_replaces_all_fields(self, api_client, admin_headers, survey):
+    def test_update_replaces_all_fields(self, api_client, surveys_admin_headers, survey):
         q = survey.questions.get(label="Second")
         response = _patch(
             api_client,
             f"/api/community/surveys/{survey.id}/questions/{q.id}/",
             {"label": "Second!", "field_type": "select", "options": ["c"], "required": True},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 200
         q.refresh_from_db()
@@ -229,32 +224,32 @@ class TestSurveyQuestions:
         assert q.options == ["c"]
         assert q.required is True
 
-    def test_update_scoped_to_survey_404(self, api_client, admin_headers, survey):
+    def test_update_scoped_to_survey_404(self, api_client, surveys_admin_headers, survey):
         other = Survey.objects.create(title="Other", slug="other")
         q = survey.questions.first()
         response = _patch(
             api_client,
             f"/api/community/surveys/{other.id}/questions/{q.id}/",
             {"label": "hijack"},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.QUESTION_NOT_FOUND)
         q.refresh_from_db()
         assert q.label == "First"
 
-    def test_delete_question(self, api_client, admin_headers, survey):
+    def test_delete_question(self, api_client, surveys_admin_headers, survey):
         q = survey.questions.first()
         response = api_client.delete(
-            f"/api/community/surveys/{survey.id}/questions/{q.id}/", **admin_headers
+            f"/api/community/surveys/{survey.id}/questions/{q.id}/", **surveys_admin_headers
         )
         assert response.status_code == 204
         assert not SurveyQuestion.objects.filter(id=q.id).exists()
         assert survey.questions.count() == 1
 
-    def test_delete_missing_question_404(self, api_client, admin_headers, survey):
+    def test_delete_missing_question_404(self, api_client, surveys_admin_headers, survey):
         response = api_client.delete(
-            f"/api/community/surveys/{survey.id}/questions/{MISSING_ID}/", **admin_headers
+            f"/api/community/surveys/{survey.id}/questions/{MISSING_ID}/", **surveys_admin_headers
         )
         assert response.status_code == 404
         assert_error_code(response, Code.Survey.QUESTION_NOT_FOUND)
@@ -262,13 +257,13 @@ class TestSurveyQuestions:
 
 @pytest.mark.django_db
 class TestReorderSurveyQuestions:
-    def test_reorders_by_position_in_payload(self, api_client, admin_headers, survey):
+    def test_reorders_by_position_in_payload(self, api_client, surveys_admin_headers, survey):
         first, second = list(survey.questions.all())
         response = _put(
             api_client,
             f"/api/community/surveys/{survey.id}/questions/order/",
             {"question_ids": [str(second.id), str(first.id)]},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 200
         assert [q["label"] for q in response.json()] == ["Second", "First"]
@@ -276,7 +271,7 @@ class TestReorderSurveyQuestions:
         second.refresh_from_db()
         assert (second.display_order, first.display_order) == (0, 1)
 
-    def test_ignores_questions_from_other_surveys(self, api_client, admin_headers, survey):
+    def test_ignores_questions_from_other_surveys(self, api_client, surveys_admin_headers, survey):
         other = Survey.objects.create(title="Other", slug="other")
         foreign = SurveyQuestion.objects.create(
             survey=other, label="Foreign", field_type=SurveyQuestionType.TEXT, display_order=5
@@ -285,18 +280,18 @@ class TestReorderSurveyQuestions:
             api_client,
             f"/api/community/surveys/{survey.id}/questions/order/",
             {"question_ids": [str(foreign.id)]},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 200
         foreign.refresh_from_db()
         assert foreign.display_order == 5
 
-    def test_missing_survey_404(self, api_client, admin_headers):
+    def test_missing_survey_404(self, api_client, surveys_admin_headers):
         response = _put(
             api_client,
             f"/api/community/surveys/{MISSING_ID}/questions/order/",
             {"question_ids": []},
-            admin_headers,
+            surveys_admin_headers,
         )
         assert response.status_code == 404
 
@@ -304,13 +299,15 @@ class TestReorderSurveyQuestions:
 @pytest.mark.django_db
 class TestListSurveyResponses:
     def test_lists_member_and_anonymous_responses(
-        self, api_client, admin_headers, survey, test_user
+        self, api_client, surveys_admin_headers, survey, test_user
     ):
         member_row = SurveyResponse.objects.create(
             survey=survey, user=test_user, answers={"q": {"label": "First", "answer": "hi"}}
         )
         anon_row = SurveyResponse.objects.create(survey=survey, answers={})
-        response = api_client.get(f"/api/community/surveys/{survey.id}/responses/", **admin_headers)
+        response = api_client.get(
+            f"/api/community/surveys/{survey.id}/responses/", **surveys_admin_headers
+        )
         assert response.status_code == 200
         by_id = {r["id"]: r for r in response.json()}
         assert set(by_id) == {str(member_row.id), str(anon_row.id)}
@@ -320,9 +317,9 @@ class TestListSurveyResponses:
         assert by_id[str(anon_row.id)]["user_id"] is None
         assert by_id[str(anon_row.id)]["user_name"] is None
 
-    def test_missing_survey_404(self, api_client, admin_headers):
+    def test_missing_survey_404(self, api_client, surveys_admin_headers):
         response = api_client.get(
-            f"/api/community/surveys/{MISSING_ID}/responses/", **admin_headers
+            f"/api/community/surveys/{MISSING_ID}/responses/", **surveys_admin_headers
         )
         assert response.status_code == 404
 

@@ -1,3 +1,10 @@
+## [0.209.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.1...v0.209.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pillow-heif to v1 [security] ([#1807](https://github.com/ProteinDeficientsAnonymous/pda/issues/1807)) ([202d1cd](https://github.com/ProteinDeficientsAnonymous/pda/commit/202d1cda1fdd328ed9d545727fea641657c21cce))
+
 ## [0.209.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.0...v0.209.1) (2026-10-30)
 
 

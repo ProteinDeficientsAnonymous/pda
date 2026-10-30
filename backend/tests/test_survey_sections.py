@@ -3,23 +3,17 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Survey, SurveyQuestionType
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._survey_condition_helpers import equals, make_question
+from tests._users import make_user
 
 
 @pytest.fixture
 def admin_headers(db):
-    admin = User.objects.create_user(
-        phone_number="+12025557301", password="x", first_name="Sect", last_name="Admin"
-    )
-    role = Role.objects.create(name="section_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
-    admin.roles.add(role)
-    return auth_headers_for(admin)
+    return auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
 
 
 @pytest.fixture
