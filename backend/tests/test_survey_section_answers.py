@@ -5,12 +5,11 @@ from uuid import uuid4
 import pytest
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
 from tests._survey_condition_helpers import make_question
+from tests._users import make_user
 
 
 def _question(field_type, **fields):
@@ -35,8 +34,7 @@ class TestSectionAnswers:
 
 @pytest.mark.django_db
 def test_csv_leaves_out_sections(api_client):
-    admin = User.objects.create_user(phone_number="+12025557302", password="x")
-    admin.roles.add(Role.objects.create(name="csv_mgr", permissions=[PermissionKey.MANAGE_SURVEYS]))
+    admin = make_user(PermissionKey.MANAGE_SURVEYS)
     survey = Survey.objects.create(title="Sections", slug="sections")
     make_question(survey, "about you", SurveyQuestionType.SECTION, order=0)
     text = make_question(survey, "name", SurveyQuestionType.TEXT, order=1)
