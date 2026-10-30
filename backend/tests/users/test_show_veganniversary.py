@@ -1,5 +1,5 @@
 import pytest
-from ninja_jwt.tokens import RefreshToken
+from tests._auth import auth_headers_for
 from users._auth import _apply_me_patch, _save_me_patch
 from users.models import User
 from users.schemas import MePatchIn
@@ -62,8 +62,7 @@ class TestProfileRespectsShowVeganniversary:
             veganniversary_year=2019,
             show_veganniversary=False,
         )
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(user)
         response = api_client.get(f"/api/auth/users/{user.pk}/profile/", **headers)
         assert response.status_code == 200
         assert response.json()["veganniversary"] is None
@@ -84,8 +83,7 @@ class TestMeVeganniversaryPrivacy:
                 "show_veganniversary",
             ]
         )
-        refresh = RefreshToken.for_user(test_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 200
         assert response.json()["veganniversary"] == {"month": 6, "day": 15, "year": 2019}
@@ -121,8 +119,7 @@ class TestMeVeganniversaryPrivacy:
         assert test_user.has_seen_veganniversary is True
 
     def test_me_has_seen_veganniversary_defaults_false(self, api_client, test_user):
-        refresh = RefreshToken.for_user(test_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 200
         assert response.json()["has_seen_veganniversary"] is False

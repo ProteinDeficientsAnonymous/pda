@@ -2,14 +2,10 @@ import pytest
 from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import Role, User
 from users.permissions import PermissionKey
 
-
-def _auth(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+from tests._auth import auth_headers_for
 
 
 def _csv(rows: list[str]) -> SimpleUploadedFile:
@@ -67,7 +63,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(plain_member),
+            **auth_headers_for(plain_member),
         )
         assert response.status_code == 403
 
@@ -82,7 +78,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         body = response.json()
@@ -94,7 +90,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["alice smith,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert len(body["matched"]) == 1
@@ -103,7 +99,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["Nobody Here,Maybe,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["matched"] == []
@@ -123,7 +119,7 @@ class TestPreviewEndpoint:
                     ]
                 )
             },
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["matched"] == []
@@ -147,7 +143,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["Sam,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["matched"] == []
@@ -158,7 +154,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["matched"][0]["has_existing_rsvp"] is False
@@ -170,7 +166,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             f"/api/community/events/attendance-import/preview/?event_id={past_event.id}",
             {"csv_file": _csv(["Alice Smith,Going,Yes,2026-01-01 00:00:00"])},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["matched"][0]["has_existing_rsvp"] is True
@@ -182,7 +178,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": bad},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 400
 
@@ -193,7 +189,7 @@ class TestPreviewEndpoint:
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
             {"csv_file": empty},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 400
 
@@ -217,7 +213,7 @@ class TestCommitEndpoint:
             "/api/community/events/attendance-import/commit/",
             {"event_id": str(past_event.id), "rows": []},
             content_type="application/json",
-            **_auth(plain_member),
+            **auth_headers_for(plain_member),
         )
         assert response.status_code == 403
 
@@ -229,7 +225,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         body = response.json()
@@ -250,7 +246,7 @@ class TestCommitEndpoint:
                 ],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         rsvp = EventRSVP.objects.get(event=past_event, user=alice)
@@ -269,7 +265,7 @@ class TestCommitEndpoint:
                 ],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         rsvp = EventRSVP.objects.get(event=past_event, user=alice)
         assert rsvp.attendance == AttendanceStatus.UNKNOWN
@@ -282,7 +278,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), skip=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["skipped_count"] == 1
@@ -293,7 +289,7 @@ class TestCommitEndpoint:
             "/api/community/events/attendance-import/commit/",
             {"event_id": str(past_event.id), "rows": [self._row(user_id=None, skip=False)]},
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "attendance_import.ambiguous_user_pick"
@@ -314,7 +310,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         body = response.json()
         assert body["updated_count"] == 1
@@ -330,7 +326,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         body = response.json()
@@ -348,7 +344,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         event = Event.objects.get(id=response.json()["event_id"])
@@ -364,7 +360,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         past_event.refresh_from_db()
@@ -379,7 +375,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         event = Event.objects.get(id=response.json()["event_id"])
         assert event.event_type == EventType.COMMUNITY
@@ -397,7 +393,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         event = Event.objects.get(id=response.json()["event_id"])
@@ -413,7 +409,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id), checked_in=True)],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "attendance_import.invalid_event_type"
@@ -423,7 +419,7 @@ class TestCommitEndpoint:
             "/api/community/events/attendance-import/commit/",
             {"rows": [self._row(user_id=str(alice.id))]},
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 400
 
@@ -435,7 +431,7 @@ class TestCommitEndpoint:
                 "rows": [self._row(user_id=str(alice.id))],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 404
 
@@ -452,9 +448,11 @@ class TestCommitEndpoint:
                 ],
             },
             content_type="application/json",
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
-        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        response = api_client.get(
+            "/api/community/events/attendance-report/", **auth_headers_for(events_admin)
+        )
         row = next(r for r in response.json()["events"] if r["event_id"] == str(past_event.id))
         assert row["attended_count"] == 1
         assert row["no_show_count"] == 1
@@ -464,7 +462,7 @@ class TestCommitEndpoint:
 class TestEventOptionsEndpoint:
     def test_forbidden_without_permission(self, api_client, plain_member):
         response = api_client.get(
-            "/api/community/events/attendance-import/events/", **_auth(plain_member)
+            "/api/community/events/attendance-import/events/", **auth_headers_for(plain_member)
         )
         assert response.status_code == 403
 
@@ -472,7 +470,7 @@ class TestEventOptionsEndpoint:
         response = api_client.get(
             "/api/community/events/attendance-import/events/",
             {"q": "potluck"},
-            **_auth(events_admin),
+            **auth_headers_for(events_admin),
         )
         assert response.status_code == 200
         titles = [e["title"] for e in response.json()]
