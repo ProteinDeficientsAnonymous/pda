@@ -2,7 +2,7 @@ from datetime import timedelta
 from itertools import product
 
 import pytest
-from community._attendance_analytics import (
+from community.attendance.analytics import (
     EMPTY_MEMBER_STATS,
     compute_member_stats,
     member_stats_by_user,
