@@ -10,30 +10,19 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
+from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
 URL = "/api/community/events/{event_id}/rsvps/payments/verify/"
 
 
-def _user_with(django_user_model, phone: str, *permissions: str):
-    user = django_user_model.objects.create_user(phone_number=phone, first_name="Imp")
-    user.roles.add(Role.objects.create(name=f"role-{phone}", permissions=list(permissions)))
-    return user
-
-
 @pytest.fixture
-def importer(django_user_model):
-    return _user_with(
-        django_user_model,
-        "+14155550601",
-        PermissionKey.IMPORT_PAYMENTS,
-        PermissionKey.MANAGE_EVENTS,
-    )
+def importer(db):
+    return make_user(PermissionKey.IMPORT_PAYMENTS, PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture
@@ -170,7 +159,7 @@ def test_is_rate_limited(api_client, importer, event, django_user_model):
 
 def test_import_permission_alone_cannot_see_payments(api_client, event, django_user_model):
     guest = _guest(django_user_model, 1, event)
-    import_only = _user_with(django_user_model, "+14155550602", PermissionKey.IMPORT_PAYMENTS)
+    import_only = make_user(PermissionKey.IMPORT_PAYMENTS)
     response = _verify(api_client, import_only, event.id, [guest.id])
     assert response.status_code == 403
     assert EventRSVP.objects.get(user=guest).payment_verified_at is None
@@ -178,7 +167,7 @@ def test_import_permission_alone_cannot_see_payments(api_client, event, django_u
 
 def test_co_host_with_import_permission_can_verify(api_client, event, django_user_model):
     guest = _guest(django_user_model, 1, event)
-    co_host = _user_with(django_user_model, "+14155550603", PermissionKey.IMPORT_PAYMENTS)
+    co_host = make_user(PermissionKey.IMPORT_PAYMENTS)
     event.co_hosts.add(co_host)
     response = _verify(api_client, co_host, event.id, [guest.id])
     assert response.status_code == 200

@@ -7,18 +7,10 @@ from community._validation import Code
 from community.models import Event, Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
-
-
-def _user_with_role(phone: str, role_name: str, permission: str) -> User:
-    user = User.objects.create_user(
-        phone_number=phone, password="x", first_name="Role", last_name="Holder"
-    )
-    user.roles.add(Role.objects.create(name=role_name, permissions=[permission]))
-    return user
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -35,16 +27,12 @@ def survey_owner_headers(survey_owner):
 
 @pytest.fixture
 def surveys_admin_headers(db):
-    return auth_headers_for(
-        _user_with_role("+12025557020", "surveys_admin", PermissionKey.MANAGE_SURVEYS)
-    )
+    return auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
 
 
 @pytest.fixture
 def events_admin_headers(db):
-    return auth_headers_for(
-        _user_with_role("+12025557021", "events_admin", PermissionKey.MANAGE_EVENTS)
-    )
+    return auth_headers_for(make_user(PermissionKey.MANAGE_EVENTS))
 
 
 POLL_A = "2030-01-01T10:00:00+00:00"

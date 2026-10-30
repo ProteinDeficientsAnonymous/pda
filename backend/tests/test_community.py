@@ -6,9 +6,9 @@ import pytest
 from community.models import EditablePage, PageVisibility
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def _pm(text: str) -> str:
@@ -32,18 +32,7 @@ def _pm(text: str) -> str:
 
 @pytest.fixture
 def manage_guidelines_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550401",
-        password="guidelinespass",
-        first_name="Guidelines",
-        last_name="Manager",
-    )
-    role = Role.objects.create(
-        name="content_manager",
-        permissions=[PermissionKey.EDIT_GUIDELINES],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_GUIDELINES)
 
 
 @pytest.fixture
@@ -53,18 +42,7 @@ def manage_guidelines_headers(manage_guidelines_user):
 
 @pytest.fixture
 def edit_homepage_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550402",
-        password="homepagepass",
-        first_name="Homepage",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="homepage_editor",
-        permissions=[PermissionKey.EDIT_HOMEPAGE],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_HOMEPAGE)
 
 
 @pytest.fixture
@@ -74,18 +52,7 @@ def edit_homepage_headers(edit_homepage_user):
 
 @pytest.fixture
 def edit_faq_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550403",
-        password="faqpass",
-        first_name="FAQ",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="faq_editor",
-        permissions=[PermissionKey.EDIT_FAQ],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_FAQ)
 
 
 @pytest.fixture

@@ -12,22 +12,16 @@ from community.models import (
     SurveyResponse,
 )
 from django.conf import settings
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def admin_headers(db):
-    user = User.objects.create_user(
-        phone_number="+12025557020", password="x", first_name="Surveys", last_name="Admin"
-    )
-    role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
-    user.roles.add(role)
-    return auth_headers_for(user)
+    return auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
 
 
 @pytest.fixture
