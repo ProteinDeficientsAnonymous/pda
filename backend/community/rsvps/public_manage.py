@@ -81,7 +81,13 @@ def _eligible_event_rsvps(user):
     return (
         user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
         .select_related("event", "event__created_by")
-        .prefetch_related("event__co_hosts", "event__invited_users", "event__rsvps__user")
+        .prefetch_related(
+            "event__co_hosts",
+            "event__rsvps__user",
+            "event__tags",
+            "event__rsvp_questions",
+            "event__poll",
+        )
     )
 
 
@@ -192,10 +198,10 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     fresh_event = (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "rsvps__user")
         .get(id=event.id)
     )
-    final_rsvp = user.event_rsvps.get(event=fresh_event)
+    final_rsvp = next(r for r in fresh_event.rsvps.all() if r.user_id == user.pk)
     return Status(
         200,
         PublicRsvpOut(
