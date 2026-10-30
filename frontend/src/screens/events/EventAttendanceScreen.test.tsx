@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { creator, makeEvent, nonHost } from '@/test/fixtures';
 
 import EventAttendanceScreen from './EventAttendanceScreen';
 
@@ -25,9 +25,6 @@ const BASE_EVENT = makeEvent({
   coHostIds: ['user-creator'],
   guests: [],
 });
-
-const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
-const nonMember = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
 
 function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -53,7 +50,7 @@ beforeEach(() => {
 
 describe('EventAttendanceScreen', () => {
   it('renders the panel for the event creator', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /check-in/i })).toBeInTheDocument();
@@ -61,7 +58,7 @@ describe('EventAttendanceScreen', () => {
   });
 
   it('blocks non-host members with a forbidden notice', () => {
-    useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: nonHost, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
@@ -79,7 +76,7 @@ describe('EventAttendanceScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/rsvps are off for this event/i)).toBeInTheDocument();
