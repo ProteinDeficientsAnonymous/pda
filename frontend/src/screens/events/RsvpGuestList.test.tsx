@@ -10,12 +10,7 @@ import { renderWithProviders } from '@/test/render';
 
 import { RsvpGuestList } from './RsvpGuestList';
 
-vi.mock('@/api/client', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 function renderList(event: Event, canSeeInvited = false) {
   return renderWithProviders(<RsvpGuestList event={event} canSeeInvited={canSeeInvited} />);

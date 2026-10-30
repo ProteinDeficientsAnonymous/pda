@@ -6,13 +6,7 @@ import { renderWithProviders } from '@/test/render';
 
 import { EventCommentsCard } from './EventCommentsCard';
 
-vi.mock('@/api/client', () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    delete: vi.fn(),
-  },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/auth/store', () => {
   const state = {
