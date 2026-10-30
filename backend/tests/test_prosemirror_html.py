@@ -238,3 +238,15 @@ class TestContentPmEndpoint:
         assert data["content_pm"] != ""
         assert data["content"] == ""
         assert data["content_html"] == "<p>hi</p>"
+
+
+class TestSpeechBlank:
+    def test_renders_label_span(self):
+        blank = '{"type":"speechBlank","attrs":{"key":"walk_details"}}'
+        assert prosemirror_to_html(_doc(_para(blank))) == (
+            '<p><span class="speech-blank">walk details</span></p>'
+        )
+
+    def test_unknown_key_renders_nothing(self):
+        blank = '{"type":"speechBlank","attrs":{"key":"nope"}}'
+        assert prosemirror_to_html(_doc(_para(blank))) == "<p><br></p>"

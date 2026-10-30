@@ -30,6 +30,7 @@ _ALLOWED_TAGS = {
     "ol",
     "p",
     "s",
+    "span",
     "strong",
     "u",
     "ul",
@@ -48,7 +49,10 @@ _ALLOWED_ATTRIBUTES = {
 # `mailto:` is link-only — `_attribute_filter` rejects it on image `src`.
 _ALLOWED_URL_SCHEMES = {"http", "https", "mailto"}
 
-_ALLOWED_CLASSES = {"a": {"cta", "cta--primary", "cta--secondary"}}
+_ALLOWED_CLASSES = {
+    "a": {"cta", "cta--primary", "cta--secondary"},
+    "span": {"speech-blank"},
+}
 
 _ALLOWED_TEXT_ALIGN = {"left", "center", "right"}
 # Anchored to a declaration boundary (start or after `;`) so a prefixed property
