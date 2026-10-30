@@ -9,19 +9,15 @@ from community.models import EventRSVP, EventStatus, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
 from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
 URL = "/api/community/events/{event_id}/rsvps/payments/verify/"
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 @pytest.fixture
@@ -47,7 +43,7 @@ def _verify(api_client, user, event_id, user_ids):
         URL.format(event_id=event_id),
         {"user_ids": [str(uid) for uid in user_ids]},
         content_type="application/json",
-        **_headers(user),
+        **auth_headers_for(user),
     )
 
 

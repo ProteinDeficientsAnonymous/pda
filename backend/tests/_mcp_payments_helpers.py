@@ -4,17 +4,18 @@ from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey
+from users.roles import Role
 
-from tests import _users
 from tests._cashapp_helpers import csv_line, make_csv
+from tests._mcp_tool_helpers import run_tool, tool_error
 from tests._payment_helpers import create_paid_event
-from tests.test_mcp_events_write import _error, _run
 
 
-def make_user(
-    phone: str, *permissions: PermissionKey, first: str = "Pay", last: str = "Admin"
-) -> User:
-    return _users.make_user(*permissions, phone_number=phone, first_name=first, last_name=last)
+def make_user(phone: str, *permissions: str, first: str = "Pay", last: str = "Admin") -> User:
+    user = User.objects.create_user(phone_number=phone, first_name=first, last_name=last)
+    if permissions:
+        user.roles.add(Role.objects.create(name=f"role-{phone}", permissions=list(permissions)))
+    return user
 
 
 def make_importer() -> User:
@@ -76,11 +77,11 @@ def make_csv_text(*extra_lines: str) -> str:
 
 
 def review(user: User, event: Event, csv_text: str) -> dict:
-    return _run(user, "review_cashapp_payments", event=str(event.pk), csv_text=csv_text)
+    return run_tool(user, "review_cashapp_payments", event=str(event.pk), csv_text=csv_text)
 
 
 def review_refused(user: User, event_ref: str, csv_text: str) -> str:
-    return _error(user, "review_cashapp_payments", event=event_ref, csv_text=csv_text)
+    return tool_error(user, "review_cashapp_payments", event=event_ref, csv_text=csv_text)
 
 
 def verified_ids(event: Event) -> set[str]:

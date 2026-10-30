@@ -2,15 +2,11 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _headers(user: User) -> dict:
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _hosted_event(host: User, guests: int) -> Event:
@@ -53,7 +49,7 @@ def _invite(api_client, event: Event, headers: dict) -> int:
 @pytest.mark.parametrize(("send", "ceiling"), [(_patch, 26), (_invite, 27)])
 def test_event_write_response_is_bounded(api_client, send, ceiling):
     host = make_user()
-    headers = _headers(host)
+    headers = auth_headers_for(host)
     small = send(api_client, _hosted_event(host, 2), headers)
     large = send(api_client, _hosted_event(host, 6), headers)
     assert large == small

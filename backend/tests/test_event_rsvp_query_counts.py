@@ -2,8 +2,8 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from ninja_jwt.tokens import RefreshToken
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
 
@@ -31,7 +31,7 @@ def _drop_plus_one(api_client, guests: int) -> int:
     EventRSVP.objects.create(
         event=event, user=member, status=RSVPStatus.ATTENDING, has_plus_one=True
     )
-    headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"}
+    headers = auth_headers_for(member)
     with CaptureQueriesContext(connection) as ctx:
         response = api_client.post(
             f"/api/community/events/{event.id}/rsvp/",

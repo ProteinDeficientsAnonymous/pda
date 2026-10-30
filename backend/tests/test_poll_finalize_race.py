@@ -4,15 +4,10 @@ import pytest
 from community.models import Event, EventPoll, PollOption
 from django import db
 from django.test import Client
-from ninja_jwt.tokens import RefreshToken
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -44,7 +39,7 @@ class TestPollFinalizeRace:
                     f"/api/community/events/{event.id}/poll/finalize/",
                     {"winning_option_id": str(options[i].id)},
                     content_type="application/json",
-                    **_jwt_headers(cohosts[i]),
+                    **auth_headers_for(cohosts[i]),
                 )
                 results[i] = resp.status_code
             finally:

@@ -3,20 +3,15 @@
 import pytest
 from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -41,22 +36,22 @@ def user4(db):
 
 @pytest.fixture
 def headers1(user1):
-    return _jwt_headers(user1)
+    return auth_headers_for(user1)
 
 
 @pytest.fixture
 def headers2(user2):
-    return _jwt_headers(user2)
+    return auth_headers_for(user2)
 
 
 @pytest.fixture
 def headers3(user3):
-    return _jwt_headers(user3)
+    return auth_headers_for(user3)
 
 
 @pytest.fixture
 def headers4(user4):
-    return _jwt_headers(user4)
+    return auth_headers_for(user4)
 
 
 @pytest.fixture
@@ -281,7 +276,7 @@ class TestPromoteOnCapacityIncrease:
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 3},
@@ -301,7 +296,7 @@ class TestPromoteOnCapacityIncrease:
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 1},

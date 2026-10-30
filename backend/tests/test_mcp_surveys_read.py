@@ -9,22 +9,10 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
 from mcp_gateway.tools.surveys_read import _survey_id
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
 
-from tests.test_mcp_server import _signed_in
+from tests._mcp_tool_helpers import signed_in, tool_names
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def surveys_admin(db):
-    user = User.objects.create_user(
-        phone_number="+12025557100", password="x", first_name="Surveys", last_name="Admin"
-    )
-    user.roles.add(Role.objects.create(name="surveys", permissions=[PermissionKey.MANAGE_SURVEYS]))
-    return user
 
 
 def _survey(slug, days_ago=0, **fields):
@@ -35,25 +23,17 @@ def _survey(slug, days_ago=0, **fields):
 
 
 def _call(user, name, **arguments):
-    token = _signed_in(user)
+    token = signed_in(user)
     try:
         return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
     finally:
         auth_context_var.reset(token)
 
 
-def _tool_names(user) -> set[str]:
-    token = _signed_in(user)
-    try:
-        return {tool.name for tool in async_to_sync(pda_mcp.list_tools)()}
-    finally:
-        auth_context_var.reset(token)
-
-
 def test_survey_tools_need_manage_surveys(test_user, surveys_admin):
     survey = _survey("feedback")
-    assert {"list_surveys", "get_survey"} & _tool_names(test_user) == set()
-    assert {"list_surveys", "get_survey"} <= _tool_names(surveys_admin)
+    assert {"list_surveys", "get_survey"} & tool_names(test_user) == set()
+    assert {"list_surveys", "get_survey"} <= tool_names(surveys_admin)
     for name, arguments in (("list_surveys", {}), ("get_survey", {"survey": survey.slug})):
         with pytest.raises(ToolError, match="permission"):
             _call(test_user, name, **arguments)
