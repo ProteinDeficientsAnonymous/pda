@@ -651,6 +651,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'a role is too long';
     }
 
+    // Event speech
+    case Code.Speech.InvalidValues:
+      return 'one of the speech blanks is not valid';
+
     case Code.Connect.RequestNotFound:
       return 'this connection request was not found';
     case Code.Connect.RequestExpired:

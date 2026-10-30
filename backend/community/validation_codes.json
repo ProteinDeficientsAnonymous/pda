@@ -1235,6 +1235,13 @@
         ]
       }
     ],
+    "Speech": [
+      {
+        "name": "INVALID_VALUES",
+        "value": "speech.invalid_values",
+        "params": []
+      }
+    ],
     "Connect": [
       {
         "name": "REQUEST_NOT_FOUND",
