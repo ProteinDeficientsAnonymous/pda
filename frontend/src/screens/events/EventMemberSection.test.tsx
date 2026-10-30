@@ -1,13 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { Permission } from '@/models/permissions';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventMemberSection } from './EventMemberSection';
 
@@ -87,14 +86,7 @@ const MANAGER = {
 };
 
 function renderSection(event: Event, token?: string) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <EventMemberSection event={event} token={token} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<EventMemberSection event={event} token={token} />);
 }
 
 beforeEach(() => {
@@ -113,13 +105,13 @@ const COHOST_BOB = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bo
 
 describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(ACCEPTED_COHOST_EVENT);
     expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
   });
 
   it('renders a step-down × on the creator chip when viewing self', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(ACCEPTED_COHOST_EVENT);
     expect(screen.getByRole('button', { name: /step down as host/i })).toBeInTheDocument();
     expect(
@@ -128,13 +120,13 @@ describe('EventMemberSection — accepted host row', () => {
   });
 
   it('does NOT render a step-down × on the creator chip for outsider', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection(ACCEPTED_COHOST_EVENT);
     expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
   });
 
   it('does NOT render × on accepted co-host chip for outsider', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection(ACCEPTED_COHOST_EVENT);
     expect(
       screen.queryByRole('button', { name: /remove bob as co-host/i }),
@@ -142,7 +134,7 @@ describe('EventMemberSection — accepted host row', () => {
   });
 
   it('host removal fires the mutation immediately (no confirm)', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /remove bob as co-host/i }));
     expect(removeCohostMutate).toHaveBeenCalledWith(
@@ -152,13 +144,13 @@ describe('EventMemberSection — accepted host row', () => {
   });
 
   it('shows step-down × when viewer is the cohost themselves', () => {
-    useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
+    setAuthed(COHOST_BOB);
     renderSection(ACCEPTED_COHOST_EVENT);
     expect(screen.getByRole('button', { name: /step down as host/i })).toBeInTheDocument();
   });
 
   it('self-step-down shows confirm dialog and does NOT fire mutation until confirmed', async () => {
-    useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
+    setAuthed(COHOST_BOB);
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
     // Dialog appears; mutation has NOT fired yet.
@@ -175,7 +167,7 @@ describe('EventMemberSection — accepted host row', () => {
   });
 
   it('cancelling the step-down confirm does NOT fire the mutation', async () => {
-    useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
+    setAuthed(COHOST_BOB);
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
@@ -185,13 +177,13 @@ describe('EventMemberSection — accepted host row', () => {
   });
 
   it('does NOT offer step-down when the viewer is the only host', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...BASE_EVENT, coHostIds: ['user-creator'], coHostNames: ['Alice'] });
     expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
   });
 
   it('creator self-step-down shows confirm dialog and fires the removal mutation', async () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
     expect(removeCohostMutate).not.toHaveBeenCalled();
@@ -208,7 +200,7 @@ describe('EventMemberSection — accepted host row', () => {
 
 describe('EventMemberSection — past event gates (#385)', () => {
   it('disables the + button on past events with a tooltip explaining why', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...BASE_EVENT, isPast: true });
     const addBtn = screen.getByRole('button', { name: /add co-host/i });
     expect(addBtn).toBeDisabled();
@@ -220,14 +212,14 @@ describe('EventMemberSection — past event gates (#385)', () => {
   });
 
   it('+ button is enabled on non-past events for host viewer', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(BASE_EVENT);
     const addBtn = screen.getByRole('button', { name: /add co-host/i });
     expect(addBtn).toBeEnabled();
   });
 
   it('hides × on accepted host chips for past events', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...ACCEPTED_COHOST_EVENT, isPast: true });
     expect(
       screen.queryByRole('button', { name: /remove bob as co-host/i }),
@@ -237,7 +229,7 @@ describe('EventMemberSection — past event gates (#385)', () => {
 
 describe('EventMemberSection — manage events permission holder (Issue 1189)', () => {
   it('shows the enabled + button for a non-cohost with manage events permission', () => {
-    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    setAuthed(MANAGER);
     renderSection(BASE_EVENT);
     expect(screen.getByRole('button', { name: /add co-host/i })).toBeEnabled();
   });
@@ -247,31 +239,31 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
 
   it('hides the comments card when rsvp is disabled for the event', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...BASE_EVENT, rsvpEnabled: false });
     expect(screen.queryByTestId('comments-card')).not.toBeInTheDocument();
   });
 
   it('shows the comments section when rsvp is enabled', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection(RSVP_ENABLED_EVENT);
     expect(screen.getByTestId('comments-card')).toBeInTheDocument();
   });
 
   it('hides the invite members button when rsvp is disabled (#667)', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...BASE_EVENT, rsvpEnabled: false });
     expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
   });
 
   it('shows the invite members button when rsvp is enabled and the viewer may invite', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
   it("renders the invite members button inside the who's going section (#788)", () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
     const rsvpCard = screen.getByRole('heading', { name: "who's going" }).closest('section');
     expect(rsvpCard).not.toBeNull();
@@ -287,35 +279,35 @@ describe('EventMemberSection — host actions gating', () => {
   };
 
   it('shows email blast and group text to a co-host', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection(RSVP_ON);
     expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
   it('shows email blast and group text to a manage_events holder', () => {
-    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    setAuthed(MANAGER);
     renderSection(RSVP_ON);
     expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
   it('keeps them on a past event — hosts still follow up with attendees', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...RSVP_ON, isPast: true });
     expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
   it('keeps them on a cancelled event', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
     expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
   it('hides them from a plain member', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection(RSVP_ON);
     expect(screen.queryByRole('button', { name: /email blast/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /group text/i })).not.toBeInTheDocument();
@@ -330,21 +322,21 @@ describe("EventMemberSection — who's going stays visible once closed", () => {
   };
 
   it('shows the guest list on a past event', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...RSVP_ON, isPast: true });
     expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
     expect(screen.getByTestId('guest-list')).toBeInTheDocument();
   });
 
   it('shows the guest list on a cancelled event', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
     expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
     expect(screen.getByTestId('guest-list')).toBeInTheDocument();
   });
 
   it('falls back to the standalone invited card only when rsvp is off', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...RSVP_ON, rsvpEnabled: false, invitedCount: 3 });
     expect(screen.queryByRole('heading', { name: "who's going" })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'invited' })).toBeInTheDocument();
@@ -353,13 +345,13 @@ describe("EventMemberSection — who's going stays visible once closed", () => {
 
 describe('EventMemberSection — capacity note', () => {
   it('shows spots left under "who\'s going" when the event has a capacity', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: 20, attendingCount: 8 });
     expect(screen.getByText('12/20 spots left')).toBeInTheDocument();
   });
 
   it('hides the capacity note when the event has no capacity limit', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: null, attendingCount: 8 });
     expect(screen.queryByText(/spots left/i)).not.toBeInTheDocument();
   });
@@ -373,31 +365,31 @@ describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
   };
 
   it('hides invite for a non-cohost who has NOT rsvpd', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: null });
     expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
   });
 
   it('shows invite for a non-cohost who rsvpd attending', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.Attending });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
   it('shows invite for a non-cohost who rsvpd maybe', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.Maybe });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
   it('hides invite for a non-cohost who rsvpd cant_go', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.CantGo });
     expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
   });
 
   it('never shows invite to a non-cohost when invitePermission is co_hosts_only', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({
       ...ALL_MEMBERS_EVENT,
       invitePermission: InvitePermission.CoHostsOnly,
@@ -407,13 +399,13 @@ describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
   });
 
   it('shows invite to the creator regardless of their own rsvp', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: null });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
   it('shows invite to a non-cohost event manager regardless of their own rsvp', () => {
-    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    setAuthed(MANAGER);
     renderSection({
       ...ALL_MEMBERS_EVENT,
       invitePermission: InvitePermission.CoHostsOnly,
@@ -423,7 +415,7 @@ describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
   });
 
   it('shows invite to a co-host regardless of their own rsvp, even when co_hosts_only', () => {
-    useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
+    setAuthed(COHOST_BOB);
     renderSection({
       ...ACCEPTED_COHOST_EVENT,
       rsvpEnabled: true,
@@ -436,7 +428,7 @@ describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
 
 describe('EventMemberSection — pending host row', () => {
   it('renders pending invitee chips for a host viewer', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({
       ...BASE_EVENT,
       pendingCohostInvites: [
@@ -455,7 +447,7 @@ describe('EventMemberSection — pending host row', () => {
   });
 
   it('shows the rescind button only when the viewer is a host', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({
       ...BASE_EVENT,
       pendingCohostInvites: [
@@ -474,14 +466,14 @@ describe('EventMemberSection — pending host row', () => {
 
   it('does not render pending chips when the backend hasnt returned any (non-host viewer)', () => {
     // Backend gates the list — a non-host gets [].
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    setAuthed(STRANGER);
     renderSection({ ...BASE_EVENT, pendingCohostInvites: [] });
 
     expect(screen.queryByText(/pending/i)).not.toBeInTheDocument();
   });
 
   it('fires the rescind mutation when × is clicked', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderSection({
       ...BASE_EVENT,
       pendingCohostInvites: [
@@ -513,7 +505,7 @@ describe('EventMemberSection — token-holding non-member (Issue 904)', () => {
   };
 
   beforeEach(() => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
   });
 
   it("renders the read experience — location, who's going, and comments", () => {

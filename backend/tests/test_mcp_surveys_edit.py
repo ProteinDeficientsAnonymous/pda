@@ -8,8 +8,7 @@ from community._surveys import delete_survey_question, get_survey_admin
 from community.models import Survey, SurveyQuestion, SurveyResponse
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_surveys_read import _tool_names
+from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 
 pytestmark = pytest.mark.django_db
 NEW = {"title": "new", "description": ""}
@@ -57,16 +56,16 @@ def _when(position, value) -> dict:
 
 
 def _edit(user, survey, **arguments) -> dict:
-    return _run(user, "update_survey", survey=str(survey.pk), **arguments)
+    return run_tool(user, "update_survey", survey=str(survey.pk), **arguments)
 
 
 def _refused(user, survey, **arguments) -> str:
-    return _error(user, "update_survey", survey=str(survey.pk), **arguments)
+    return tool_error(user, "update_survey", survey=str(survey.pk), **arguments)
 
 
 def test_hidden_and_refused_without_manage_surveys(test_user):
     survey = _survey(is_active=False)
-    assert "update_survey" not in _tool_names(test_user)
+    assert "update_survey" not in tool_names(test_user)
     assert "permission" in _refused(test_user, survey, settings={"title": "x"})
     assert Survey.objects.get().title == "retreat"
 

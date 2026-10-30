@@ -1,7 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toastError = vi.hoisted(() => vi.fn());
@@ -16,6 +15,7 @@ import {
   useSurveyResponses,
 } from '@/api/surveyAdmin';
 import { formatPollOption } from '@/components/questions/pollOption';
+import { renderWithProviders } from '@/test/render';
 
 import SurveyResponsesScreen from './SurveyResponsesScreen';
 
@@ -117,15 +117,11 @@ function setup({
   mockTallies.mockReturnValue(mockQuery(tallies));
   mockSummaries.mockReturnValue(mockQuery(summaries, summaryState));
 
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/admin/surveys/srv-1/responses']}>
-        <Routes>
-          <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+    </Routes>,
+    { route: '/admin/surveys/srv-1/responses' },
   );
 }
 
@@ -248,15 +244,11 @@ describe('SurveyResponsesScreen summaries', () => {
     mockResponses.mockReturnValue(mockQuery([]));
     mockTallies.mockReturnValue(mockQuery([]));
     mockSummaries.mockReturnValue(mockQuery([]));
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={['/admin/surveys/srv-1/responses']}>
-          <Routes>
-            <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+      </Routes>,
+      { route: '/admin/surveys/srv-1/responses' },
     );
     expect(screen.queryByText('question summaries')).not.toBeInTheDocument();
   });
