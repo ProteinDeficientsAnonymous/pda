@@ -16,12 +16,7 @@ import {
 } from './calendarEvents';
 import { eventKeys } from './events';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn() },
-  authClient: { get: vi.fn(), post: vi.fn() },
-  setAuthBridge: vi.fn(),
-  getCurrentAccessToken: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const localIso = (y: number, m: number, d: number) => new Date(y, m, d).toISOString();
 

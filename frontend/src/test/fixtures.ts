@@ -162,8 +162,8 @@ export function makeUserWithPermissions(
   });
 }
 
-export const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
-export const NON_HOST = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
+export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
+export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
 
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {

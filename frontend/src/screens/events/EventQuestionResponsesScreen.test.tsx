@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { setAuthed } from '@/test/auth';
-import { CREATOR, makeEvent, makeGuest, NON_HOST } from '@/test/fixtures';
+import { creator, makeEvent, makeGuest, nonHost } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import EventQuestionResponsesScreen from './EventQuestionResponsesScreen';
@@ -41,14 +41,14 @@ beforeEach(() => {
 
 describe('EventQuestionResponsesScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    setAuthed(NON_HOST);
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
   it('shows a notice when the event has no questions', () => {
-    setAuthed(CREATOR);
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText(/no rsvp questions/i)).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    setAuthed(CREATOR);
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /question responses/i })).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe('EventQuestionResponsesScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    setAuthed(CREATOR);
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByText('saved answer')).toBeInTheDocument();

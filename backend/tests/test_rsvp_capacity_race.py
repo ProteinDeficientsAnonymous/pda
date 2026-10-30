@@ -4,9 +4,9 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from django import db
 from django.test import Client
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -17,11 +17,6 @@ def _make_user(i):
         first_name=f"Racer{i}",
         last_name="",
     )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -48,7 +43,7 @@ class TestRsvpCapacityRace:
                     f"/api/community/events/{event.id}/rsvp/",
                     {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
                     content_type="application/json",
-                    **_jwt_headers(users[i]),
+                    **auth_headers_for(users[i]),
                 )
                 results[i] = resp.status_code
             finally:

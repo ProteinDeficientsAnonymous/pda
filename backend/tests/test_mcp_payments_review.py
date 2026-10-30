@@ -21,7 +21,7 @@ from tests._mcp_payments_helpers import (
     review_refused,
     verified_ids,
 )
-from tests.test_mcp_surveys_read import _tool_names
+from tests._mcp_tool_helpers import tool_names
 
 pytestmark = pytest.mark.django_db
 
@@ -47,8 +47,8 @@ def csv_text():
 
 
 def test_review_tool_needs_import_payments(test_user, importer, event, csv_text):
-    assert "review_cashapp_payments" not in _tool_names(test_user)
-    assert "review_cashapp_payments" in _tool_names(importer)
+    assert "review_cashapp_payments" not in tool_names(test_user)
+    assert "review_cashapp_payments" in tool_names(importer)
     assert "permission" in review_refused(test_user, str(event.pk), csv_text)
 
 

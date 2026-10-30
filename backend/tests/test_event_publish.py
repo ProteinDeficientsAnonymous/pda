@@ -3,11 +3,11 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Event, EventStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso, past_iso
 
 
@@ -23,8 +23,7 @@ def creator(db):
 
 @pytest.fixture
 def creator_headers(creator):
-    refresh = RefreshToken.for_user(creator)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(creator)
 
 
 @pytest.fixture
@@ -39,8 +38,7 @@ def other_member(db):
 
 @pytest.fixture
 def other_headers(other_member):
-    refresh = RefreshToken.for_user(other_member)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_member)
 
 
 @pytest.fixture
@@ -55,8 +53,7 @@ def cohost(db):
 
 @pytest.fixture
 def cohost_headers(cohost):
-    refresh = RefreshToken.for_user(cohost)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(cohost)
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
 import pytest
 from community.models import RSVPStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event
 
 
@@ -15,8 +15,7 @@ def other_user(db):
 
 @pytest.fixture
 def other_auth_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+    return auth_headers_for(other_user)
 
 
 @pytest.fixture
@@ -24,8 +23,7 @@ def event_manager_headers(db):
     user = User.objects.create_user(phone_number="+15550001111")
     role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
     user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+    return auth_headers_for(user)
 
 
 @pytest.mark.django_db
