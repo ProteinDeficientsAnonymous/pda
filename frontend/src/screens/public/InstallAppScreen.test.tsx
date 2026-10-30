@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -15,7 +15,7 @@ const baseUser = makeUser({
 });
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('InstallAppScreen', () => {
@@ -46,13 +46,13 @@ describe('InstallAppScreen', () => {
   });
 
   it('is accessible to unauthenticated user — renders without crash and key text visible', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderWithProviders(<InstallAppScreen />);
     expect(screen.getByText(/add pda to your home screen/i)).toBeInTheDocument();
   });
 
   it('is accessible to authenticated user', () => {
-    useAuthStore.setState({ status: 'authed', user: baseUser, accessToken: 'token' });
+    setAuthed(baseUser, 'token');
     renderWithProviders(<InstallAppScreen />);
     expect(screen.getByRole('heading', { name: /install the app/i })).toBeInTheDocument();
     expect(screen.getByText(/add pda to your home screen/i)).toBeInTheDocument();

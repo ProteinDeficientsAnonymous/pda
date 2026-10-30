@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed } from '@/test/auth';
 import { CREATOR, makeEvent, NON_HOST } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe('EventManageRsvpsScreen', () => {
   it('shows a forbidden notice for a non-host', () => {
-    useAuthStore.setState({ status: 'authed', user: NON_HOST, accessToken: 'tok' });
+    setAuthed(NON_HOST);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('EventManageRsvpsScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
@@ -80,14 +80,14 @@ describe('EventManageRsvpsScreen', () => {
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderScreen();
 
     expect(screen.getByText(/rsvps are off/i)).toBeInTheDocument();
   });
 
   it('renders the panel heading for a host on a future rsvp-enabled event', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(CREATOR);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();

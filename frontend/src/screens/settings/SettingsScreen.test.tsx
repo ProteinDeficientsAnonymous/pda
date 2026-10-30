@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccessibilityStore } from '@/accessibility/store';
 import * as authApi from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
+import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -60,7 +61,7 @@ function renderSettings() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'authed', user: TEST_USER, accessToken: 'tok' });
+  setAuthed(TEST_USER);
   useAccessibilityStore.setState({ themeMode: 'system', dyslexiaFont: false, textScale: 1.0 });
   vi.clearAllMocks();
   // The store's updateProfile reads .id off the resolved user; resolve a real one
