@@ -10,10 +10,10 @@ from django.http import Http404
 from PIL import Image
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._auth import auth_headers_for
 from tests._events import make_event
+from tests._users import make_user
 
 
 def _make_test_image(fmt="JPEG", size=(20, 20)):
@@ -58,14 +58,7 @@ def member(db):
 
 @pytest.fixture
 def manager(db):
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user = User.objects.create_user(
-        phone_number="+12025550202",
-        password="testpass123",
-        first_name="Manager",
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS)
 
 
 @pytest.fixture
