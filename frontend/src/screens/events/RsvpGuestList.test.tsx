@@ -11,12 +11,7 @@ import { makeEvent, makeGuest } from '@/test/fixtures';
 
 import { RsvpGuestList } from './RsvpGuestList';
 
-vi.mock('@/api/client', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 function renderList(event: Event, canSeeInvited = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

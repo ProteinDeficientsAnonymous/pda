@@ -7,9 +7,7 @@ import { authClient } from '@/api/client';
 
 import FeedbackScreen from './FeedbackScreen';
 
-vi.mock('@/api/client', () => ({
-  authClient: { get: vi.fn(), post: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(authClient.get);
 const mockedPost = vi.mocked(authClient.post);

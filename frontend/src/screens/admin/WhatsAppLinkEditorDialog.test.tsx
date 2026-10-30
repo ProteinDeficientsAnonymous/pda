@@ -10,11 +10,7 @@ import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 
 const mutateAsyncMock = vi.fn();
 
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/api/content', () => ({
   useUpdateWhatsAppLink: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),

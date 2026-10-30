@@ -9,11 +9,7 @@ import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenSto
 import SurveyScreen from './SurveyScreen';
 import SurveyThanksScreen from './SurveyThanksScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const toastError = vi.fn();
 vi.mock('sonner', () => ({

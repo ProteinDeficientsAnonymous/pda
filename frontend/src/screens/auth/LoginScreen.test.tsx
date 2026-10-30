@@ -11,11 +11,7 @@ vi.mock('@/api/join', () => ({
   checkPhone: vi.fn(),
 }));
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 function renderAt(entry: { pathname: string; state?: unknown }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

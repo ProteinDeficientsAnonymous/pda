@@ -11,10 +11,7 @@ import { makeEvent, makeGuest } from '@/test/fixtures';
 
 import { GuestListDialog } from './GuestListDialog';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), put: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 vi.mock('@/components/SortableList', () => ({
   SortableList: ({

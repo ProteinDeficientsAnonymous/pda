@@ -6,11 +6,7 @@ import { apiClient } from '@/api/client';
 
 import { SurveyThankYouCard } from './SurveyThankYouCard';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedPatch = vi.mocked(apiClient.patch);
 
