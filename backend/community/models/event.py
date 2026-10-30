@@ -12,6 +12,7 @@ from community.models.choices import (
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
+    EventFormat,
     EventStatus,
     EventType,
     InvitePermission,
@@ -86,6 +87,12 @@ class Event(models.Model):
         max_length=20,
         choices=EventType.choices,
         default=EventType.COMMUNITY,
+    )
+    event_format = models.CharField(
+        max_length=20,
+        choices=EventFormat.choices,
+        blank=True,
+        default="",
     )
     visibility = models.CharField(
         max_length=20,
