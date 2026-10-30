@@ -129,6 +129,36 @@ def _walk_doc() -> dict:
     )
 
 
+def _restaurant_doc() -> dict:
+    return _doc(
+        h("Restaurant stuff"),
+        p(
+            "A reminder that the buffet is included but any drinks you order will be extra and "
+            "you'll order and pay for those separately!"
+        ),
+        p(
+            "About halfway through we'll prompt you to shuffle and mix up who you're talking "
+            "to! It will be a little chaotic but i promise at the end you'll all have someone "
+            "new to talk to and it'll work out!"
+        ),
+        p(
+            "Let's give a big thank you to ",
+            blank("restaurant"),
+            " for having us! Now let's take our group photos!",
+        ),
+        note("take the pics and then encourage everyone to meet new friends"),
+        note(
+            "facilitators can lead intros (name, pronouns, ",
+            blank("intro_question"),
+            ", name once more)",
+        ),
+        note(
+            "when you do the shuffle, remind them again that it'll be chaotic but the dust "
+            "will settle and it'll all work out"
+        ),
+    )
+
+
 def default_template_docs() -> tuple[dict, dict, dict]:
     """return(tuple): shared, walk and restaurant ProseMirror docs."""
-    return _shared_doc(), _walk_doc(), _doc()
+    return _shared_doc(), _walk_doc(), _restaurant_doc()
