@@ -3,9 +3,9 @@ import json
 import pytest
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests._auth import auth_headers_for
 from tests.conftest import future_iso
 
 
@@ -16,11 +16,6 @@ def _make_user(phone: str, name: str = "Member", email: str | None = "") -> User
         first_name=name,
         email=email,
     )
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -57,7 +52,7 @@ class TestEventEditPreservesCohosts:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"title": "Updated Potluck"}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
 
         assert response.status_code == 200, response.content
@@ -87,7 +82,7 @@ class TestEventEditPreservesCohosts:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"title": "Updated Potluck"}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
 
         assert response.status_code == 200, response.content
@@ -118,7 +113,7 @@ class TestEventEditPreservesCohosts:
             f"/api/community/events/{event_id}/",
             data=json.dumps({"title": "Updated Potluck", "co_host_ids": []}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
 
         assert response.status_code == 200, response.content

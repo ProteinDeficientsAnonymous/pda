@@ -2,17 +2,16 @@
 
 import pytest
 from community._prosemirror_html import prosemirror_to_html
-from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 
 @pytest.fixture
 def edit_homepage_headers(db):
     user = make_user(PermissionKey.EDIT_HOMEPAGE)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+    return auth_headers_for(user)
 
 
 def _doc(*children):

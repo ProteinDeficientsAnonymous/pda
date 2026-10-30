@@ -1,6 +1,5 @@
 import pytest
 from community._validation import Code, ValidationException
-from ninja_jwt.tokens import RefreshToken
 from users.api import (
     _create_user_with_role,
     _validate_admin_role_change,
@@ -11,6 +10,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 # ---------------------------------------------------------------------------
@@ -31,8 +31,7 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(admin_user)
 
 
 @pytest.fixture
@@ -43,8 +42,7 @@ def manage_users_user(db):
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_users_user)
 
 
 # ---------------------------------------------------------------------------

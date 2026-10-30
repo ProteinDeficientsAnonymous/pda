@@ -6,21 +6,9 @@ from unittest.mock import patch
 import httpx
 import pytest
 
+from tests._http_helpers import FakeResp
+
 _URL = "/api/community/geocode/"
-
-
-class _FakeResp:
-    def __init__(self, payload, *, json_error=None):
-        self._payload = payload
-        self._json_error = json_error
-
-    def raise_for_status(self):
-        return None
-
-    def json(self):
-        if self._json_error is not None:
-            raise self._json_error
-        return self._payload
 
 
 @pytest.mark.django_db
@@ -43,7 +31,7 @@ class TestGeocodeBounds:
 
     def test_accepts_valid_request(self, api_client, auth_headers):
         with patch("community._geocode.httpx.get") as mock_get:
-            mock_get.return_value = _FakeResp({"type": "FeatureCollection", "features": []})
+            mock_get.return_value = FakeResp({"type": "FeatureCollection", "features": []})
             response = api_client.get(f"{_URL}?q=brooklyn&limit=5", **auth_headers)
         assert response.status_code == 200
         assert response.json() == {"type": "FeatureCollection", "features": []}
@@ -56,7 +44,7 @@ class TestGeocodeBounds:
             "bbox": [-74.2, 40.4, -73.7, 40.9],
         }
         with patch("community._geocode.httpx.get") as mock_get:
-            mock_get.return_value = _FakeResp(payload)
+            mock_get.return_value = FakeResp(payload)
             response = api_client.get(f"{_URL}?q=brooklyn&limit=5", **auth_headers)
         assert response.status_code == 200
         assert response.json() == payload
@@ -87,7 +75,7 @@ class TestGeocodeUpstreamErrors:
         # ValueError). This must degrade to a graceful 502, not a 500.
         decode_error = json.JSONDecodeError("Expecting value", "<html>", 0)
         with patch("community._geocode.httpx.get") as mock_get:
-            mock_get.return_value = _FakeResp(None, json_error=decode_error)
+            mock_get.return_value = FakeResp(None, json_error=decode_error)
             response = api_client.get(f"{_URL}?q=brooklyn&limit=5", **auth_headers)
         assert response.status_code == 502
         assert "unavailable" in response.json()["detail"]
