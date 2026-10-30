@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenStorage';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyScreen from './SurveyScreen';
 import SurveyThanksScreen from './SurveyThanksScreen';
@@ -27,20 +27,13 @@ vi.mock('sonner', () => ({
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 
-function makeQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderScreen(slug = 'feedback', qc = makeQueryClient()) {
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/surveys/${slug}`]}>
-        <Routes>
-          <Route path="/surveys/:slug" element={<SurveyScreen />} />
-          <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/surveys/:slug" element={<SurveyScreen />} />
+      <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
+    </Routes>,
+    { route: `/surveys/${slug}`, qc },
   );
 }
 
