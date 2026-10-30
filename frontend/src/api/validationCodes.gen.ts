@@ -285,6 +285,11 @@ export const Code = {
     ReasonTextRequired: 'rejection_email.reason_text_required',
     ReasonTextTooLong: 'rejection_email.reason_text_too_long',
   },
+  SpeechTemplate: {
+    InvalidDoc: 'speech_template.invalid_doc',
+    TooManyRoles: 'speech_template.too_many_roles',
+    RoleTooLong: 'speech_template.role_too_long',
+  },
   Connect: {
     RequestNotFound: 'connect.request_not_found',
     RequestExpired: 'connect.request_expired',
@@ -505,6 +510,9 @@ export type ValidationCode =
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
   | 'rejection_email.reason_text_too_long'
+  | 'speech_template.invalid_doc'
+  | 'speech_template.too_many_roles'
+  | 'speech_template.role_too_long'
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
@@ -722,6 +730,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],
   'rejection_email.reason_text_too_long': ['max_length'],
+  'speech_template.invalid_doc': [],
+  'speech_template.too_many_roles': ['max'],
+  'speech_template.role_too_long': ['max'],
   'connect.request_not_found': [],
   'connect.request_expired': [],
   'connect.request_already_used': [],
