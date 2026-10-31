@@ -39,7 +39,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.15"
 
       # uv is needed by the release's prepareCmd (`uv lock` keeps uv.lock in sync
       # with the bumped pyproject.toml version).
