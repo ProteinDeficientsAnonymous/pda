@@ -36,7 +36,7 @@ class JoinFormQuestionIn(BaseModel):
 
 
 class JoinFormQuestionOrderIn(BaseModel):
-    question_ids: list[str]
+    question_ids: list[UUID]
 
 
 def _question_out(q: JoinFormQuestion) -> JoinFormQuestionOut:
@@ -115,7 +115,7 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
-    order = {UUID(qid): idx for idx, qid in enumerate(payload.question_ids)}
+    order = {qid: idx for idx, qid in enumerate(payload.question_ids)}
     if order:
         JoinFormQuestion.objects.filter(id__in=order).update(
             display_order=Case(*(When(id=qid, then=Value(idx)) for qid, idx in order.items()))
