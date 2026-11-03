@@ -5,7 +5,6 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
-from django.db.models import Case, Value, When
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
@@ -116,10 +115,10 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     order = {qid: idx for idx, qid in enumerate(payload.question_ids)}
-    if order:
-        JoinFormQuestion.objects.filter(id__in=order).update(
-            display_order=Case(*(When(id=qid, then=Value(idx)) for qid, idx in order.items()))
-        )
+    JoinFormQuestion.objects.bulk_update(
+        [JoinFormQuestion(id=qid, display_order=idx) for qid, idx in order.items()],
+        ["display_order"],
+    )
     audit_log(logging.INFO, "join_form_questions_reordered", request)
     questions = JoinFormQuestion.objects.all()
     return Status(200, [_question_out(q) for q in questions])
