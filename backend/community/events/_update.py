@@ -35,7 +35,6 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     if "event_type" in updates:
         _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
-    _validated_event_format(updates.get("event_format"), effective_type)
     effective_visibility = updates.get("visibility", event.visibility)
     if _is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
@@ -89,11 +88,12 @@ def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
 
 def _resolve_event_format(event: Event, updates: dict) -> None:
     """Treat a null format as unchanged, and clear the format when the event stops being official."""
-    if updates.get("event_type", event.event_type) != EventType.OFFICIAL:
-        if event.event_format or "event_format" in updates:
-            updates["event_format"] = ""
-    elif updates.get("event_format", "") is None:
+    effective_type = updates.get("event_type", event.event_type)
+    _validated_event_format(updates.get("event_format"), effective_type)
+    if updates.get("event_format", "") is None:
         del updates["event_format"]
+    if effective_type != EventType.OFFICIAL and event.event_format:
+        updates["event_format"] = ""
 
 
 def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
