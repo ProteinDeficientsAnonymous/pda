@@ -167,3 +167,11 @@ def test_paging_is_stable_with_ties(admin):
         seen += [row["id"] for row in page["members"]]
         offset = page["next_offset"]
     assert sorted(seen) == sorted(str(u.id) for u in User.objects.all())
+
+
+def test_name_filter_matches_every_word_in_first_or_last_name(admin):
+    leeds = make_member(last_name="Leeds")
+    samuels = make_member(last_name="Samuels")
+    assert member_ids(admin, name="lee") == ids_of(leeds)
+    assert member_ids(admin, name="m LEEDS") == ids_of(leeds)
+    assert member_ids(admin, name="sam") == ids_of(samuels)
