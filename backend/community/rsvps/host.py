@@ -14,6 +14,7 @@ from community.events.helpers import (
     _can_edit_event,
     _event_out,
     broadcast_capacity_change,
+    load_editable_event,
     load_event_with_stats_prefetch,
 )
 from community.events.read_visibility import _enforce_event_read_visibility
@@ -127,16 +128,7 @@ def _apply_host_rsvp_in_transaction(
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     """Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872)."""
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .filter(id=event_id)
-        .first()
-    )
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="set_guest_rsvp")
+    event = load_editable_event(request.auth, event_id, "set_guest_rsvp")
 
     _validate_rsvp_status(payload.status)
 
@@ -192,16 +184,7 @@ def _apply_payment_change_in_transaction(
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPPaymentIn):
     """Let a host verify or un-verify a guest's payment without touching their rsvp status."""
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .filter(id=event_id)
-        .first()
-    )
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="set_guest_payment")
+    event = load_editable_event(request.auth, event_id, "set_guest_payment")
 
     with transaction.atomic():
         change = _apply_payment_change_in_transaction(
@@ -293,16 +276,7 @@ def verify_guest_payments(request, event_id: UUID, payload: BulkPaymentVerifyIn)
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
     """Let an event host/co-host/manager remove another user's rsvp entirely."""
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users")
-        .filter(id=event_id)
-        .first()
-    )
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="remove_guest_rsvp")
+    event = load_editable_event(request.auth, event_id, "remove_guest_rsvp")
 
     try:
         target_user = UserModel.objects.get(id=user_id)
@@ -320,9 +294,6 @@ def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
             type=AuditTargetType.EVENT, id=str(event_id), details={"user_id": str(user_id)}
         ),
     )
-    event = load_event_with_stats_prefetch(event_id)
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     email_promoted_users(request, event, promoted_user_ids)
     return Status(204, None)

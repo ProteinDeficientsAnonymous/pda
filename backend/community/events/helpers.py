@@ -416,9 +416,22 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
 
 def _can_edit_event(user, event: Event) -> bool:
     """Check if user can edit/delete this event (host or manager)."""
+    if "co_hosts" in getattr(event, "_prefetched_objects_cache", {}):
+        is_host = any(c.pk == user.pk for c in event.co_hosts.all())
+        return is_host or user.has_permission(PermissionKey.MANAGE_EVENTS)
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     return event.co_hosts.filter(pk=user.pk).exists()
+
+
+def load_editable_event(user, event_id: UUID, action: str) -> Event:
+    """Light load for host actions: 404 if missing, 403 unless `user` can edit it."""
+    event = Event.objects.prefetch_related("co_hosts").filter(id=event_id).first()
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if not _can_edit_event(user, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action=action)
+    return event
 
 
 # Event types that require an explicit permission to tag. Community events need
