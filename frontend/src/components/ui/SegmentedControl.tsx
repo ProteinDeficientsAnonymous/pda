@@ -4,7 +4,7 @@ interface Props<T> {
   name: string;
   ariaLabel: string;
   options: { value: T; label: string }[];
-  value: T | null;
+  value: T;
   onChange: (value: T) => void;
   className?: string;
 }

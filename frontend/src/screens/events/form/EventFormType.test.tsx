@@ -78,7 +78,7 @@ describe('EventFormType', () => {
         canTagClub={false}
       />,
     );
-    await userEvent.click(screen.getByRole('switch'));
+    await userEvent.click(screen.getByRole('switch', { name: 'make it an official pda event' }));
     expect(onChange).toHaveBeenCalledWith({ eventType: EventType.Community });
   });
 
@@ -91,14 +91,12 @@ describe('EventFormType', () => {
         canTagClub
       />,
     );
-    const switches = screen.getAllByRole('switch');
-    expect(switches).toHaveLength(2);
-    // official checked, club unchecked — single-value type is mutually exclusive
-    expect(switches[0]).toHaveAttribute('aria-checked', 'true');
-    expect(switches[1]).toHaveAttribute('aria-checked', 'false');
+    // single-value type is mutually exclusive
+    expect(screen.getByRole('switch', { name: 'make it an official pda event' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'make it a pda club event' })).not.toBeChecked();
   });
 
-  it('shows the format control for an official event, on create or edit', () => {
+  it('shows the walk toggle, on by default, for an official event', () => {
     render(
       <EventFormType
         values={values({ eventType: EventType.Official })}
@@ -107,12 +105,10 @@ describe('EventFormType', () => {
         canTagClub={false}
       />,
     );
-    expect(screen.getByRole('radiogroup', { name: 'event format' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'walk' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'restaurant' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: "it's a walk" })).toBeChecked();
   });
 
-  it('choosing restaurant patches eventFormat', async () => {
+  it('turning the walk toggle off patches eventFormat to restaurant', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
@@ -122,31 +118,18 @@ describe('EventFormType', () => {
         canTagClub={false}
       />,
     );
-    await userEvent.click(screen.getByRole('radio', { name: 'restaurant' }));
+    await userEvent.click(screen.getByRole('switch', { name: "it's a walk" }));
     expect(onChange).toHaveBeenCalledWith({ eventFormat: 'restaurant' });
   });
 
-  it('shows no selection when an older official event has no format', () => {
-    render(
-      <EventFormType
-        values={values({ eventType: EventType.Official, eventFormat: null })}
-        onChange={vi.fn()}
-        canTagOfficial
-        canTagClub={false}
-      />,
-    );
-    expect(screen.getByRole('radio', { name: 'walk' })).not.toBeChecked();
-    expect(screen.getByRole('radio', { name: 'restaurant' })).not.toBeChecked();
-  });
-
-  it('hides the format control unless the event is official', () => {
+  it('hides the walk toggle unless the event is official', () => {
     render(
       <EventFormType values={values()} onChange={vi.fn()} canTagOfficial canTagClub={false} />,
     );
-    expect(screen.queryByRole('radiogroup', { name: 'event format' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();
   });
 
-  it('hides the format control without the official tag permission', () => {
+  it('hides the walk toggle without the official tag permission', () => {
     render(
       <EventFormType
         values={values({ eventType: EventType.Official })}
@@ -155,6 +138,6 @@ describe('EventFormType', () => {
         canTagClub
       />,
     );
-    expect(screen.queryByRole('radiogroup', { name: 'event format' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();
   });
 });

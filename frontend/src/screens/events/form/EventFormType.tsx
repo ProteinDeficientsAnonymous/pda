@@ -1,12 +1,6 @@
 import type { EventFormValues } from '@/api/eventWrites';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Toggle } from '@/components/ui/Toggle';
 import { EventFormat, EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
-
-const FORMAT_OPTIONS = [
-  { value: EventFormat.Walk, label: 'walk' },
-  { value: EventFormat.Restaurant, label: 'restaurant' },
-];
 
 interface Props {
   values: EventFormValues;
@@ -40,13 +34,11 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
         />
       ) : null}
       {canTagOfficial && values.eventType === EventType.Official ? (
-        <SegmentedControl
-          name="event-format"
-          ariaLabel="event format"
-          options={FORMAT_OPTIONS}
-          value={values.eventFormat}
-          onChange={(eventFormat) => {
-            onChange({ eventFormat });
+        <Toggle
+          label="it's a walk"
+          checked={values.eventFormat === EventFormat.Walk}
+          onChange={(checked) => {
+            onChange({ eventFormat: checked ? EventFormat.Walk : EventFormat.Restaurant });
           }}
         />
       ) : null}
