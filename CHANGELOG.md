@@ -1,3 +1,10 @@
+## [0.209.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.3...v0.209.4) (2026-11-04)
+
+
+### Performance Improvements
+
+* 1923 - authorize host actions with a light load ([#1940](https://github.com/ProteinDeficientsAnonymous/pda/issues/1940)) ([b428b8d](https://github.com/ProteinDeficientsAnonymous/pda/commit/b428b8d7c3fb1873608c00b56f40963122ce7937))
+
 ## [0.209.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.2...v0.209.3) (2026-10-30)
 
 
