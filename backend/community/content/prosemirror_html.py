@@ -9,19 +9,29 @@ from typing import Any
 from community.speech.blanks import BLANKS
 
 
+def parse_prosemirror_doc(pm_json: str) -> dict | None:
+    """Parse a ProseMirror JSON string; empty, blank, or malformed input returns None."""
+    if not pm_json or not pm_json.strip():
+        return None
+    try:
+        doc = json.loads(pm_json)
+    except ValueError:
+        return None
+    if not isinstance(doc, dict) or doc.get("type") != "doc":
+        return None
+    return doc
+
+
 def prosemirror_to_html(pm_json: str) -> str:
     """Convert a TipTap/ProseMirror JSON string to HTML.
 
     Empty, blank, or malformed input returns "".
     """
-    if not pm_json or not pm_json.strip():
-        return ""
-    try:
-        doc = json.loads(pm_json)
-    except (json.JSONDecodeError, ValueError):
-        return ""
-    if not isinstance(doc, dict) or doc.get("type") != "doc":
-        return ""
+    doc = parse_prosemirror_doc(pm_json)
+    return prosemirror_doc_to_html(doc) if doc else ""
+
+
+def prosemirror_doc_to_html(doc: dict) -> str:
     return _render_nodes(doc.get("content") or [])
 
 

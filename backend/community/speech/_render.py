@@ -1,23 +1,16 @@
-import copy
-import json
 from typing import Any
 
 from community.content.html_sanitize import sanitize_content_html
-from community.content.prosemirror_html import prosemirror_to_html
-from community.models import SpeechTemplate
+from community.content.prosemirror_html import parse_prosemirror_doc, prosemirror_doc_to_html
+from community.models import EventFormat, SpeechTemplate
 from community.speech.blanks import BLANKS, SpeechValues
 
 _PLACEHOLDER = "____"
 
 
 def _doc_content(pm_json: str) -> list[dict]:
-    if not pm_json or not pm_json.strip():
-        return []
-    try:
-        doc = json.loads(pm_json)
-    except ValueError:
-        return []
-    if not isinstance(doc, dict) or doc.get("type") != "doc":
+    doc = parse_prosemirror_doc(pm_json)
+    if doc is None:
         return []
     return [n for n in (doc.get("content") or []) if isinstance(n, dict)]
 
@@ -36,8 +29,7 @@ def _text_node(text: str) -> dict:
 
 def _inline_text(node: dict, values: SpeechValues) -> str:
     key = _blank_key(node)
-    blank = BLANKS.get(key)
-    if blank is None:
+    if key not in BLANKS:
         return _PLACEHOLDER
     value = values.get(key)
     return value if isinstance(value, str) and value else _PLACEHOLDER
@@ -56,8 +48,9 @@ def _fill_node(node: dict, values: SpeechValues) -> dict:
 
 
 def render_speech_html(template: SpeechTemplate, event_format: str, values: SpeechValues) -> str:
-    format_pm = template.restaurant_pm if event_format == "restaurant" else template.walk_pm
-    content = copy.deepcopy(_doc_content(template.shared_pm) + _doc_content(format_pm))
+    format_pm = (
+        template.restaurant_pm if event_format == EventFormat.RESTAURANT else template.walk_pm
+    )
+    content = _doc_content(template.shared_pm) + _doc_content(format_pm)
     filled = [_fill_node(node, values) for node in content]
-    doc = {"type": "doc", "content": filled}
-    return sanitize_content_html(prosemirror_to_html(json.dumps(doc)))
+    return sanitize_content_html(prosemirror_doc_to_html({"type": "doc", "content": filled}))
