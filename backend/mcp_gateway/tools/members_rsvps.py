@@ -60,14 +60,11 @@ def _page(member_id: UUID, since_days: int | None, limit: int, offset: int) -> d
 @pda_tool(
     PermissionKey.MANAGE_USERS,
     description=(
-        "list one member's rsvps with the event and the attendance a host marked, latest event "
-        "first, undated last. find the member's id with find_members (filter by name). every rsvp "
-        "is listed whatever its status (attending, maybe, cant_go, waitlisted, removed) and "
-        "whatever the event's status (cancelled, draft and deleted events included); attendance "
-        "is unknown until a host marks attended or didnt_go. qualifying is true when the rsvp "
-        "counts toward the member's qualifying attendance in find_members and the members "
-        "analytics screen. cancelled_at is set when the member cancelled their rsvp. paged: "
-        "fetch more with offset=next_offset, keeping the same member and since_days."
+        "list one member's rsvps, latest event first, with the attendance a host marked "
+        "(unknown until marked). get the id from find_members by name. every rsvp is listed, "
+        "including cancelled, draft and deleted events. qualifying = counts toward qualifying "
+        "attendance in find_members and the analytics screen. paged: fetch more with "
+        "offset=next_offset, keeping the same member and since_days."
     ),
 )
 async def member_rsvps(
