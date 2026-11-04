@@ -128,6 +128,17 @@ class TestImages:
         # src is escaped as an HTML attribute value
         assert 'src="a&quot;b"' in html
 
+    def test_inline_image_hard_break_and_unknown_node(self):
+        pm = _doc(
+            _para(
+                _text("a"),
+                '{"type":"hardBreak"}',
+                '{"type":"image","attrs":{"src":"a\\"b"}}',
+                '{"type":"mystery"}',
+            )
+        )
+        assert prosemirror_to_html(pm) == '<p>a<br><img src="a&quot;b"></p>'
+
 
 class TestCta:
     def test_primary(self):
