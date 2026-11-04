@@ -28,14 +28,10 @@ def prosemirror_to_html(pm_json: str) -> str:
     Empty, blank, or malformed input returns "".
     """
     doc = parse_prosemirror_doc(pm_json)
-    return prosemirror_doc_to_html(doc) if doc else ""
+    return render_nodes(doc.get("content") or []) if doc else ""
 
 
-def prosemirror_doc_to_html(doc: dict) -> str:
-    return _render_nodes(doc.get("content") or [])
-
-
-def _render_nodes(nodes: list[Any]) -> str:
+def render_nodes(nodes: list[Any]) -> str:
     return "".join(_render_node(n) for n in nodes if isinstance(n, dict))
 
 
@@ -67,7 +63,7 @@ def _render_list_item(content: list[Any], _attrs: dict) -> str:
     # paragraph's text into the <li> so HTML matches the Delta renderer.
     if len(content) == 1 and isinstance(content[0], dict) and content[0].get("type") == "paragraph":
         return f"<li>{_render_inline(content[0].get('content') or [])}</li>"
-    return f"<li>{_render_nodes(content)}</li>"
+    return f"<li>{render_nodes(content)}</li>"
 
 
 def _render_cta(_content: list[Any], attrs: dict) -> str:
@@ -87,10 +83,10 @@ def _render_cta(_content: list[Any], attrs: dict) -> str:
 _BLOCK_RENDERERS = {
     "paragraph": _render_paragraph,
     "heading": _render_heading,
-    "bulletList": lambda c, _a: f"<ul>{_render_nodes(c)}</ul>",
-    "orderedList": lambda c, _a: f"<ol>{_render_nodes(c)}</ol>",
+    "bulletList": lambda c, _a: f"<ul>{render_nodes(c)}</ul>",
+    "orderedList": lambda c, _a: f"<ol>{render_nodes(c)}</ol>",
     "listItem": _render_list_item,
-    "blockquote": lambda c, _a: f"<blockquote>{_render_nodes(c)}</blockquote>",
+    "blockquote": lambda c, _a: f"<blockquote>{render_nodes(c)}</blockquote>",
     "horizontalRule": lambda _c, _a: "<hr>",
     "hardBreak": lambda _c, _a: "<br>",
     "image": lambda _c, a: f'<img src="{escape(a.get("src", ""))}">',

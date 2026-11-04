@@ -1,7 +1,7 @@
 from typing import Any
 
 from community.content.html_sanitize import sanitize_content_html
-from community.content.prosemirror_html import parse_prosemirror_doc, prosemirror_doc_to_html
+from community.content.prosemirror_html import parse_prosemirror_doc, render_nodes
 from community.models import EventFormat, SpeechTemplate
 from community.speech.blanks import BLANKS, SpeechValues
 
@@ -53,4 +53,4 @@ def render_speech_html(template: SpeechTemplate, event_format: str, values: Spee
     )
     content = _doc_content(template.shared_pm) + _doc_content(format_pm)
     filled = [_fill_node(node, values) for node in content]
-    return sanitize_content_html(prosemirror_doc_to_html({"type": "doc", "content": filled}))
+    return sanitize_content_html(render_nodes(filled))
