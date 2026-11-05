@@ -111,7 +111,7 @@ export function GuestListDialog({
         <div
           role="tablist"
           aria-label="guest status"
-          className="flex gap-1 overflow-x-auto px-4 pb-2"
+          className="flex shrink-0 gap-1 overflow-x-auto px-4 pb-2"
         >
           {tabs.map((t) => (
             <button
