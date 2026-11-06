@@ -73,7 +73,7 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     return True
 
 
-def _create_magic_token(
+def create_magic_token(
     user: User,
     *,
     requires_password_reset: bool = False,
@@ -92,7 +92,7 @@ def _create_magic_token(
     return str(magic.token)
 
 
-def _magic_login_url(token: str) -> str:
+def magic_login_url(token: str) -> str:
     return f"{settings.FRONTEND_BASE_URL}/magic-login/{token}"
 
 
@@ -191,7 +191,7 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def _create_user_with_role(  # noqa: PLR0913
+def create_user_with_role(  # noqa: PLR0913
     phone: str,
     first_name: str,
     last_name: str,
@@ -241,11 +241,11 @@ def _create_user_with_role(  # noqa: PLR0913
     except Role.DoesNotExist:
         user.delete()
         raise_validation(Code.Role.NOT_FOUND, field="role_id", status_code=404)
-    magic_token = _create_magic_token(user)
+    magic_token = create_magic_token(user)
     return user, magic_token
 
 
-def _validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
+def validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
     """Raise ValidationException if an admin role change is invalid.
 
     Guards both directions:
@@ -272,7 +272,7 @@ def _validate_admin_role_change(user: User, requesting_user: User, new_roles: li
         raise_validation(Code.Role.CANNOT_REMOVE_LAST_ADMIN, status_code=400)
 
 
-def _validate_member_role_required(new_roles: list[Role]) -> None:
+def validate_member_role_required(new_roles: list[Role]) -> None:
     """Raise ValidationException if the new role set is missing the built-in member role."""
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if not member_role:
