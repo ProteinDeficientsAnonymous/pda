@@ -5820,6 +5820,8 @@ export interface components {
              * @default false
              */
             attendance_nudge_opt_out: boolean;
+            /** Attendance Paused At */
+            attendance_paused_at?: string | null;
             /**
              * Attended Count
              * @default 0
@@ -5964,6 +5966,8 @@ export interface components {
              * @default
              */
             pronouns: string;
+            /** Restored At */
+            restored_at?: string | null;
             /** Roles */
             roles: components["schemas"]["RoleOut"][];
             /**
