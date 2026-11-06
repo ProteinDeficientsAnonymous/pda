@@ -43,7 +43,7 @@ def archive_user(request, user: User) -> list[str]:
     return removed_role_ids
 
 
-def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
+def _release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
     event_ids = EventRSVP.objects.filter(
         upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
@@ -63,15 +63,15 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         )
 
 
-def upcoming_hosted_events(user: User, event_filter: Q | None = None):
+def _upcoming_hosted_events(user: User, event_filter: Q | None = None):
     return Event.objects.filter(
         upcoming_events_q(), event_filter or Q(), pk__in=user.co_hosted_events.values("pk")
     ).annotate(host_count=Count("co_hosts"))
 
 
-def step_down_as_cohost(user: User, event_filter: Q | None = None) -> None:
+def _step_down_as_cohost(user: User, event_filter: Q | None = None) -> None:
     """Leave every upcoming event that has another host; sole-hosted events are left as-is."""
-    events = upcoming_hosted_events(user, event_filter).filter(host_count__gt=1)
+    events = _upcoming_hosted_events(user, event_filter).filter(host_count__gt=1)
     for event in events:
         event.co_hosts.remove(user)
         EventCoHostInvite.objects.filter(

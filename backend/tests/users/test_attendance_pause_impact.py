@@ -4,7 +4,7 @@ import pytest
 from community.models import EventRSVP, EventStatus, EventType, RSVPStatus
 from django.utils import timezone
 from tests._events import make_event, make_rsvp
-from users._archive import release_upcoming_rsvps, step_down_as_cohost
+from users._archive import _release_upcoming_rsvps, _step_down_as_cohost
 from users._attendance_pause import KEPT_EVENT_Q, attendance_pause_impact
 
 
@@ -82,7 +82,7 @@ class TestArchiveHelperEventFilter:
         make_rsvp(official, member)
         make_rsvp(community, member)
 
-        release_upcoming_rsvps(rf.get("/"), member, ~KEPT_EVENT_Q)
+        _release_upcoming_rsvps(rf.get("/"), member, ~KEPT_EVENT_Q)
 
         assert EventRSVP.objects.get(event=official, user=member).status == RSVPStatus.ATTENDING
         assert EventRSVP.objects.get(event=community, user=member).status == RSVPStatus.CANT_GO
@@ -93,7 +93,7 @@ class TestArchiveHelperEventFilter:
         official.co_hosts.add(member)
         community.co_hosts.add(member)
 
-        step_down_as_cohost(member, ~KEPT_EVENT_Q)
+        _step_down_as_cohost(member, ~KEPT_EVENT_Q)
 
         assert official.co_hosts.filter(pk=member.pk).exists()
         assert not community.co_hosts.filter(pk=member.pk).exists()
