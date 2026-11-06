@@ -26,12 +26,12 @@ from users._archive import (
     _upcoming_hosted_events,
     upcoming_events_q,
 )
+from users.helpers import grant_membership
 from users.models import HAS_EMAIL, User
 
 logger = logging.getLogger(__name__)
 
 KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
-MEMBER_OR_ATTENDANCE_PAUSED_Q = Q(is_member=True) | Q(attendance_paused_at__isnull=False)
 
 
 @dataclass
@@ -174,14 +174,11 @@ def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | 
 
 
 def _unpause(request, user: User) -> None:
-    # users.api → community.join_requests → users.api would cycle at import time.
-    from community.join_requests.approval import _grant_membership
-
     with transaction.atomic():
         user.attendance_paused_at = None
         user.is_member = True
         user.save(update_fields=["attendance_paused_at", "is_member"])
-        _grant_membership(user)
+        grant_membership(user)
         audit_log(
             logging.WARNING,
             "user_attendance_unpaused",
