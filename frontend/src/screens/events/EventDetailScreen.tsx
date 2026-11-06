@@ -7,7 +7,7 @@ import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { canManageEvent, canPublicRsvp, eventPath, EventType, isHosting } from '@/models/event';
+import { canManageEvent, canPublicRsvp, eventPath, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
@@ -121,7 +121,7 @@ export default function EventDetailScreen() {
       <WhenLine event={event} />
       <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
-      {event.eventType === EventType.Official && user && isHosting(event, user.id) ? (
+      {event.eventType === EventType.Official && canManageEvent(event, user) ? (
         <Link
           to={`/events/${event.id}/speech`}
           className="text-foreground-secondary hover:text-foreground mt-2 inline-block text-sm underline"

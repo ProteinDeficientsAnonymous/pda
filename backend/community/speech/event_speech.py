@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 from users.models import User
 
-from community.events.helpers import is_cohost, validated_event_format
+from community.events.helpers import can_edit_event, validated_event_format
 from community.models import (
     Event,
     EventFormat,
@@ -62,9 +62,9 @@ def _load_event(event_id: UUID) -> Event:
     return event
 
 
-def _load_cohost_event(request, event_id: UUID) -> Event:
+def _load_editable_event(request, event_id: UUID) -> Event:
     event = _load_event(event_id)
-    if not is_cohost(request.auth, {str(u.pk) for u in event.co_hosts.all()}):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Speech.HOSTS_ONLY, status_code=403)
     return event
 
@@ -143,7 +143,7 @@ def _out(event: Event, template: SpeechTemplate, viewer) -> EventSpeechOut:
     auth=gated_jwt,
 )
 def get_event_speech(request, event_id: UUID):
-    event = _load_cohost_event(request, event_id)
+    event = _load_editable_event(request, event_id)
     return Status(200, _out(event, SpeechTemplate.get(), request.auth))
 
 
@@ -153,7 +153,7 @@ def get_event_speech(request, event_id: UUID):
     auth=gated_jwt,
 )
 def put_event_speech(request, event_id: UUID, payload: EventSpeechIn):
-    event = _load_cohost_event(request, event_id)
+    event = _load_editable_event(request, event_id)
     event_format = (
         validated_event_format(payload.event_format, event.event_type) or event.event_format
     )
