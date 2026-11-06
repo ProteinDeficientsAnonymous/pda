@@ -16,7 +16,7 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
-from mcp_gateway.tools.events_read import _my_events
+from mcp_gateway.tools.events_read import my_events
 from mcp_gateway.view_calls import call_view
 
 from tests._mcp_tool_helpers import signed_in
@@ -77,7 +77,7 @@ def test_list_my_events_bounds_the_page_in_sql(test_user, django_assert_num_quer
     _event(test_user, "past", days=-3)
     _event(test_user, "draft", status=EventStatus.DRAFT)
     with django_assert_num_queries(2):
-        rows = _my_events(test_user, include_past=False, limit=2, offset=0)
+        rows = my_events(test_user, include_past=False, limit=2, offset=0)
     assert [r["title"] for r in rows] == ["mine 0", "mine 1", "mine 2"]
 
 

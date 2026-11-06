@@ -49,7 +49,7 @@ def _row(user: User, fields: tuple[str, ...]) -> dict[str, Any]:
     return {"id": str(user.id), "name": user.full_name, **values}
 
 
-def _page(
+def members_page(
     filters: MemberFilters,
     limit: int,
     offset: int,
@@ -108,7 +108,7 @@ async def find_members(
         int, Field(ge=0, le=100_000, description="next_offset from the previous page")
     ] = 0,
 ) -> dict[str, Any]:
-    return await sync_to_async(_page)(
+    return await sync_to_async(members_page)(
         filters or MemberFilters(), limit, offset, include_contact, sort
     )
 
