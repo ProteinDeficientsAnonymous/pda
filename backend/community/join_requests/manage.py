@@ -245,6 +245,13 @@ def _phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
     )
 
 
+def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
+    event = jr.approved_via_event
+    if event is None:
+        return {"approved_via_event_id": None, "approved_via_event_title": None}
+    return {"approved_via_event_id": str(event.id), "approved_via_event_title": event.title}
+
+
 def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
@@ -270,8 +277,7 @@ def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> J
         tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
-        approved_via_event_id=str(jr.approved_via_event_id) if jr.approved_via_event_id else None,
-        approved_via_event_title=jr.approved_via_event.title if jr.approved_via_event else None,
+        **_approving_event_fields(jr),
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         rejection_reason=jr.rejection_reason,
