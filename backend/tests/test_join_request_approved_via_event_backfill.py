@@ -13,7 +13,7 @@ __all__ = ["open_official_event"]
 pytestmark = pytest.mark.django_db
 
 backfill = importlib.import_module(
-    "community.migrations.0126_backfill_joinrequest_approved_via_event"
+    "community.migrations.0130_backfill_joinrequest_approved_via_event"
 )
 
 

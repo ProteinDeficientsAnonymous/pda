@@ -49,8 +49,8 @@ def backfill_approved_via_event(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("audit", "0002_alter_auditlogentry_target_type"),
-        ("community", "0125_joinrequest_approved_via_event"),
+        ("audit", "0005_speech_template_target_type"),
+        ("community", "0129_joinrequest_approved_via_event"),
     ]
 
     operations = [
