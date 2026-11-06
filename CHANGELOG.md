@@ -1,3 +1,10 @@
+## [0.221.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.0...v0.221.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* finish half-applied archive helper rename ([#2168](https://github.com/ProteinDeficientsAnonymous/pda/issues/2168)) ([dcba8f4](https://github.com/ProteinDeficientsAnonymous/pda/commit/dcba8f4d863908b7c525bb77735f407110aca67d))
+
 # [0.221.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.220.0...v0.221.0) (2026-11-06)
 
 
