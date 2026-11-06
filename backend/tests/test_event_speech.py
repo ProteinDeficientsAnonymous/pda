@@ -116,12 +116,6 @@ class TestGetSpeech:
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["facilitators"] == "maya, sam and zed"
 
-    def test_facilitator_without_first_name_falls_back(self, api_client, maya, walk):
-        nameless = make_user(first_name="", last_name="", show_phone=False, is_member=True)
-        walk.co_hosts.add(nameless)
-        data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
-        assert data["values"]["facilitators"].endswith(" and member")
-
     def test_upcoming_excludes_the_event_itself(self, api_client, maya, walk):
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["upcoming_events"] == []

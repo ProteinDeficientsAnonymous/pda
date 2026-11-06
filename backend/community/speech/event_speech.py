@@ -95,16 +95,12 @@ def _upcoming_events(event: Event) -> list[str]:
     return [_format_upcoming(e) for e in upcoming]
 
 
-def _first_name(user: User) -> str:
-    return user.first_name.strip() or visible_display_name(user, None)
-
-
 def prefill_values(event: Event, template: SpeechTemplate) -> SpeechValues:
     restaurant = ""
     if event.event_format != EventFormat.WALK:
         restaurant = event.location.split(",", 1)[0].strip()
     return {
-        "facilitators": _join_names([_first_name(u) for u in event.co_hosts.all()]),
+        "facilitators": _join_names([u.first_name.strip() for u in event.co_hosts.all()]),
         "open_roles": list(template.open_roles),
         "upcoming_events": _upcoming_events(event),
         "restaurant": restaurant,
