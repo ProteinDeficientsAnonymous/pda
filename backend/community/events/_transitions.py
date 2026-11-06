@@ -17,7 +17,7 @@ from notifications.service import (
 from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import diff_cohost_invites, send_cohost_invite_emails
-from community.events.helpers import _has_attendees, event_out
+from community.events.helpers import event_out, has_attendees
 from community.models import Event, EventRSVP, EventStatus
 from community.rsvps.counts import _host_crew_ids
 from community.validation import Code, raise_validation
@@ -40,7 +40,7 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
     """ACTIVE → CANCELLED. Raises ValidationException on failure."""
     if event.is_past:
         raise_validation(Code.Event.PAST_CANNOT_BE_CANCELLED, status_code=400)
-    if not _has_attendees(event):
+    if not has_attendees(event):
         raise_validation(Code.Event.NO_ATTENDEES_CANNOT_BE_CANCELLED, status_code=400)
     event.status = EventStatus.CANCELLED
     event.save(update_fields=["status"])
@@ -51,7 +51,7 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
 
 def _delete_event(request, event: Event) -> None:
     """ACTIVE|CANCELLED|DRAFT → DELETED. Raises ValidationException on failure."""
-    if event.status == EventStatus.ACTIVE and not event.is_past and _has_attendees(event):
+    if event.status == EventStatus.ACTIVE and not event.is_past and has_attendees(event):
         raise_validation(Code.Event.CANCEL_BEFORE_DELETE, status_code=400)
     event.status = EventStatus.DELETED
     event.deleted_at = timezone.now()

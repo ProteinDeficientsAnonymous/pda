@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community.events.helpers import (
-    _my_rsvp_fields,
-    _tags_out,
-    _viewer_rsvp_rows,
+    my_rsvp_fields,
+    tags_out,
+    viewer_rsvp_rows,
 )
 from community.events.schemas import EventListOut
 from community.events.tentative_member_access import (
@@ -151,7 +151,7 @@ def hosted_events_q(auth_user, *, upcoming: bool) -> Q:
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
     auth_user = event_viewer_for(auth_user, e)
     is_authed = is_authed and auth_user is not None
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(_viewer_rsvp_rows(e, auth_user), auth_user)
+    my_rsvp_status, my_paid_confirmed = my_rsvp_fields(viewer_rsvp_rows(e, auth_user), auth_user)
     return EventListOut(
         id=str(e.id),
         slug=e.slug,
@@ -176,5 +176,5 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         status=e.status,
         is_partiful_import=e.is_partiful_import,
         is_legacy=e.is_legacy,
-        tags=_tags_out(e),
+        tags=tags_out(e),
     )

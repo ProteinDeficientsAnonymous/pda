@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import pytest
-from community.events.helpers import _cancellations
+from community.events.helpers import cancellations
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     _attended_count,
@@ -55,7 +55,7 @@ class TestCancellations:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        rows = _cancellations(stats_event)
+        rows = cancellations(stats_event)
         assert len(rows) == 1
         assert rows[0].user_id == str(members[0].pk)
         assert rows[0].cancelled_at == cancelled_at
@@ -74,7 +74,7 @@ class TestCancellations:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        rows = _cancellations(stats_event)
+        rows = cancellations(stats_event)
         assert rows[0].days_before_event == 2
 
     def test_excludes_attending_users(self, stats_event, members):
@@ -83,7 +83,7 @@ class TestCancellations:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        rows = _cancellations(stats_event)
+        rows = cancellations(stats_event)
         assert len(rows) == 1
         assert rows[0].user_id == str(members[1].pk)
 
@@ -96,12 +96,12 @@ class TestCancellations:
         )
         EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
-        assert _cancellations(event) == []
+        assert cancellations(event) == []
 
     def _cancel_at_existing(self, event, rsvp, **fields):
         EventRSVP.objects.filter(pk=rsvp.pk).update(**fields)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
-        return _cancellations(event)[0]
+        return cancellations(event)[0]
 
     def _cancel_at(self, event, user, cancelled_at, **fields):
         rsvp = EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)

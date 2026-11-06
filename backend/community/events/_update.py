@@ -6,11 +6,11 @@ from django.utils import timezone
 
 from community.cohosts.helpers import _update_co_hosts
 from community.events.helpers import (
-    _enforce_type_tag_permission,
-    _is_invalid_typed_visibility,
-    _set_event_tags,
-    _validated_event_format,
     can_edit_event,
+    enforce_type_tag_permission,
+    is_invalid_typed_visibility,
+    set_event_tags,
+    validated_event_format,
 )
 from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
@@ -33,10 +33,10 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
     """Validate PATCH payload fields. Raises ValidationException on failure."""
     if "event_type" in updates:
-        _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
+        enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_typed_visibility(effective_type, effective_visibility):
+    if is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
     # While a poll is active, the poll is the source of truth for when. Block
     # direct edits to start/end so the event time can't drift from the poll.
@@ -89,7 +89,7 @@ def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
 def _resolve_event_format(event: Event, updates: dict) -> None:
     """Treat a null format as unchanged, and clear the format when the event stops being official."""
     effective_type = updates.get("event_type", event.event_type)
-    _validated_event_format(updates.get("event_format"), effective_type)
+    validated_event_format(updates.get("event_format"), effective_type)
     if updates.get("event_format", "") is None:
         del updates["event_format"]
     if effective_type != EventType.OFFICIAL and event.event_format:
@@ -152,7 +152,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
     if co_host_ids is not None:
         _update_co_hosts(event, co_host_ids, request.auth)
     if tag_ids is not None:
-        _set_event_tags(event, tag_ids)
+        set_event_tags(event, tag_ids)
     event.save()
     audit_log(
         logging.INFO,

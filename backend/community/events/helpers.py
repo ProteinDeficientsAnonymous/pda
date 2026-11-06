@@ -102,7 +102,7 @@ def _guest_list_sort_key(rsvp: EventRSVP) -> tuple:
     return (status_rank, ())
 
 
-def _build_guest_list(
+def build_guest_list(
     rsvps,
     can_see_phones: bool,
     viewer=None,
@@ -134,7 +134,7 @@ def _build_guest_list(
     ]
 
 
-def _find_my_rsvp(rsvps, user):
+def find_my_rsvp(rsvps, user):
     """Find requesting user's own RSVP row."""
     if user is None:
         return None
@@ -144,9 +144,9 @@ def _find_my_rsvp(rsvps, user):
     return None
 
 
-def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
+def my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
-    my_rsvp = _find_my_rsvp(rsvps, user)
+    my_rsvp = find_my_rsvp(rsvps, user)
     if my_rsvp is None:
         return None, False
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
@@ -159,7 +159,7 @@ def _declined_outright(r: EventRSVP) -> bool:
     return r.cancelled_at - r.created_at < timedelta(seconds=5)
 
 
-def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
+def cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Currently-CANT_GO RSVPs with lead time in local calendar days, plus raw-24h and after-start flags."""
     if event.start_datetime is None:
         return []
@@ -187,7 +187,7 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     return rows
 
 
-def _has_attendees(event: Event) -> bool:
+def has_attendees(event: Event) -> bool:
     """Return True if the event has any invited users or attending RSVPs."""
     if event.invited_users.exists():
         return True
@@ -226,7 +226,7 @@ def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str
     return my_rsvp_status is not None and my_rsvp_status != RSVPStatus.REMOVED
 
 
-def _can_see_invite_only(
+def can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
     """Invite-only visibility from already-loaded id sets (calendar feed)."""
@@ -247,12 +247,12 @@ def _get_creator_name(creator, viewer=None) -> str | None:
     return visible_display_name(creator, viewer)
 
 
-def _tags_out(event: Event) -> list[TagOut]:
+def tags_out(event: Event) -> list[TagOut]:
     """Serialize an event's tags (uses the prefetched `tags` relation)."""
     return [TagOut(id=str(t.id), name=t.name, slug=t.slug) for t in event.tags.all()]
 
 
-def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
+def set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     """Replace an event's tags with the curated tags matching `tag_ids`.
 
     Unknown ids are silently dropped — the tag set is admin-curated, so a stale
@@ -271,7 +271,7 @@ def _annotated_or(event: Event, attr: str, fallback):
     return fallback()
 
 
-def _viewer_rsvp_rows(event: Event, auth_user) -> list:
+def viewer_rsvp_rows(event: Event, auth_user) -> list:
     cached = getattr(event, "_viewer_rsvps", None)
     if cached is not None:
         return cached
@@ -282,10 +282,10 @@ def _viewer_rsvp_rows(event: Event, auth_user) -> list:
     return list(event.rsvps.filter(user=auth_user))
 
 
-def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
+def event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
     """Load every RSVP only when the viewer can see guests or questionnaire responses."""
-    viewer_rsvps = _viewer_rsvp_rows(event, auth_user)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(viewer_rsvps, auth_user)
+    viewer_rsvps = viewer_rsvp_rows(event, auth_user)
+    my_rsvp_status, my_paid_confirmed = my_rsvp_fields(viewer_rsvps, auth_user)
     can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     if not (can_see_guests or responses_visible):
         return viewer_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
@@ -296,7 +296,7 @@ def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, respons
     return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
 
 
-def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
+def invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
     if not _can_see_invited(auth_user, creator, co_host_ids):
         return [], 0
     responded_user_ids = {rsvp.user_id for rsvp in rsvps}
@@ -338,10 +338,10 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
     )
     payment_status_visible = can_manage
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
+    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
+    invited, invited_count = invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
 
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
@@ -376,7 +376,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         **_host_fields(event, creator, co_hosts, auth_user),
         guests=with_guest_photos(
             (
-                _build_guest_list(
+                build_guest_list(
                     all_rsvps,
                     viewer_is_cohost,
                     auth_user,
@@ -409,7 +409,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         is_legacy=event.is_legacy,
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
-        tags=_tags_out(event),
+        tags=tags_out(event),
         rsvp_questions=[
             event_rsvp_question_out(question) for question in event.rsvp_questions.all()
         ],
@@ -444,12 +444,12 @@ _TYPE_TAG_PERMISSIONS = {
 }
 
 
-def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+def is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
 
 
-def _validated_event_format(event_format: str | None, event_type: str) -> str:
+def validated_event_format(event_format: str | None, event_type: str) -> str:
     """Return the format to store ("" when unset); raise if invalid or the event isn't official."""
     if event_format and (
         event_format not in EventFormat.values or event_type != EventType.OFFICIAL
@@ -458,7 +458,7 @@ def _validated_event_format(event_format: str | None, event_type: str) -> str:
     return event_format or ""
 
 
-def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+def enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
     """Raise 403 if the event type requires a tag permission the user lacks."""
     required = _TYPE_TAG_PERMISSIONS.get(event_type)
     if required is None or request.auth.has_permission(required):

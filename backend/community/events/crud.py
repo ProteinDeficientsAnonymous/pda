@@ -23,17 +23,17 @@ from community.events._update import (
     _promote_if_capacity_increased,
 )
 from community.events.helpers import (
-    _build_guest_list,
-    _enforce_type_tag_permission,
-    _event_rsvp_payload,
-    _invited_payload,
-    _is_invalid_typed_visibility,
-    _set_event_tags,
-    _validated_event_format,
     broadcast_capacity_change,
+    build_guest_list,
+    enforce_type_tag_permission,
     event_out,
+    event_rsvp_payload,
+    invited_payload,
     is_cohost,
+    is_invalid_typed_visibility,
     reload_event_or_404,
+    set_event_tags,
+    validated_event_format,
 )
 from community.events.listing import (
     EventListQuery,
@@ -145,13 +145,13 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
     viewer_is_cohost = is_cohost(auth_user, co_host_ids)
     payment_status_visible = viewer_is_cohost
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps, _status, _paid, can_see_guests = _event_rsvp_payload(
+    all_rsvps, _status, _paid, can_see_guests = event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, _count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
+    invited, _count = invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
     guests = with_guest_photos(
         (
-            _build_guest_list(
+            build_guest_list(
                 all_rsvps,
                 viewer_is_cohost,
                 auth_user,
@@ -209,12 +209,12 @@ def create_event(request, payload: EventIn):
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    _enforce_type_tag_permission(request, payload.event_type, "create_event")
+    enforce_type_tag_permission(request, payload.event_type, "create_event")
 
-    if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
+    if is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
-    event_format = _validated_event_format(payload.event_format, payload.event_type)
+    event_format = validated_event_format(payload.event_format, payload.event_type)
 
     if payload.allow_plus_ones and is_official_or_club(payload.event_type):
         raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
@@ -261,7 +261,7 @@ def create_event(request, payload: EventIn):
         created_by=request.auth,
     )
     _set_event_participants(request, event, payload.co_host_ids)
-    _set_event_tags(event, payload.tag_ids)
+    set_event_tags(event, payload.tag_ids)
     EventRsvpQuestion.objects.bulk_create(
         [
             EventRsvpQuestion(

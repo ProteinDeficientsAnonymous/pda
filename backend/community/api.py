@@ -28,8 +28,8 @@ from community.events.geocode import router as geocode_router
 
 # Re-export symbols imported directly in tests
 from community.events.helpers import (  # noqa: F401
-    _build_guest_list,
-    _find_my_rsvp,
+    build_guest_list,
+    find_my_rsvp,
     is_cohost,
 )
 from community.events.host_actions import router as event_host_actions_router
