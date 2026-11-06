@@ -295,4 +295,21 @@ describe('EventDetailKebabMenu', () => {
       expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
     }
   });
+
+  it.each(['event speech', 'check-in'])('closes the menu after picking %s', async (name) => {
+    renderMenu({ showSpeech: true });
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('opens the group text dialog and closes the menu', async () => {
+    renderMenu();
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'group text' }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByTestId('group-text-dialog')).toBeInTheDocument();
+  });
 });
