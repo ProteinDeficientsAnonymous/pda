@@ -1,13 +1,15 @@
 from dataclasses import dataclass, field
 
-from community.models import Event, EventType
-from community.models.choices import is_official_or_club
-from django.db.models import Count, Q
+from community.events.tentative_member_access import (
+    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_EVENT_TYPES,
+)
+from community.models import Event
+from django.db.models import Q
 
-from users._archive import _HELD_RSVP_STATUSES, upcoming_events_q
+from users._archive import _HELD_RSVP_STATUSES, _upcoming_hosted_events, upcoming_events_q
 from users.models import User
 
-QUALIFYING_EVENT_Q = Q(event_type__in=(EventType.OFFICIAL, EventType.CLUB))
+KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
 
 
 @dataclass
@@ -26,13 +28,8 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     return(PauseImpact): events per bucket, soonest first
     """
     impact = PauseImpact()
-    hosted = (
-        Event.objects.filter(upcoming_events_q(), pk__in=user.co_hosted_events.values("pk"))
-        .annotate(host_count=Count("co_hosts"))
-        .order_by("start_datetime")
-    )
-    for event in hosted:
-        if is_official_or_club(event.event_type):
+    for event in _upcoming_hosted_events(user).order_by("start_datetime"):
+        if event.event_type in KEPT_EVENT_TYPES:
             impact.kept_hosting.append(event)
         elif event.host_count > 1:
             impact.removed_hosting.append(event)
@@ -50,8 +47,6 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         .order_by("start_datetime")
     )
     for event in rsvped:
-        bucket = (
-            impact.kept_rsvps if is_official_or_club(event.event_type) else impact.removed_rsvps
-        )
+        bucket = impact.kept_rsvps if event.event_type in KEPT_EVENT_TYPES else impact.removed_rsvps
         bucket.append(event)
     return impact
