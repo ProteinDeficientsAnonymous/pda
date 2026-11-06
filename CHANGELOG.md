@@ -1,3 +1,15 @@
+# [0.216.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.215.0...v0.216.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **feedback:** reword reminder email subject ([#2152](https://github.com/ProteinDeficientsAnonymous/pda/issues/2152)) ([fd17a7d](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd17a7d1ef31e111fd0c420a7d9a66674ef6a386))
+
+
+### Features
+
+* backfill the approving event for past check-in promotions ([#2140](https://github.com/ProteinDeficientsAnonymous/pda/issues/2140)) ([43ef0c0](https://github.com/ProteinDeficientsAnonymous/pda/commit/43ef0c0dc6ae9b53913c5bf58a1f0cccd33192b0))
+
 # [0.215.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.1...v0.215.0) (2026-11-06)
 
 
