@@ -15,14 +15,14 @@ from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch
 from users.helpers import (
-    _check_and_set_email,
     _create_magic_token,
     _create_user_with_role,
-    _is_admin,
-    _resolve_name_fields,
-    _strip_non_member_roles,
     _validate_admin_role_change,
     _validate_member_role_required,
+    check_and_set_email,
+    is_admin,
+    resolve_name_fields,
+    strip_non_member_roles,
     visible_name,
 )
 from users.models import ADMIN_ENTERED_PHONE_REGION, User, validate_phone
@@ -211,7 +211,7 @@ def search_users(request, q: str = ""):
         name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
         qs = qs.filter(name_q | phone_q)
     qs = qs.order_by("first_name", "last_name")
-    needs_non_admin_filter = bool(q) and not _is_admin(request.auth)
+    needs_non_admin_filter = bool(q) and not is_admin(request.auth)
     # Non-admins post-filter in Python (the DB can match a hidden last name),
     # so fetch some headroom before capping to 10. Admins take the top 10
     # straight from the DB.
@@ -331,7 +331,7 @@ def _audit_user_update(
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
+        details = {"removed_role_ids": strip_non_member_roles(user)} if payload.is_paused else None
         audit_log(
             logging.WARNING,
             action,
@@ -368,7 +368,7 @@ def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str
         return
     if requester_id == str(user.pk):
         raise_validation(Code.User.CANNOT_PAUSE_SELF, status_code=400)
-    if _is_admin(user):
+    if is_admin(user):
         raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
 
 
@@ -376,9 +376,9 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    _resolve_name_fields(user, payload)
+    resolve_name_fields(user, payload)
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user_id)
+        check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
     _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
