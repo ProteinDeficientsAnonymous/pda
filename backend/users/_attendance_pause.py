@@ -11,11 +11,11 @@ from django.db.models import Q
 from django.utils import timezone
 
 from users._archive import (
-    _HELD_RSVP_STATUSES,
-    _release_upcoming_rsvps,
-    _step_down_as_cohost,
-    _upcoming_hosted_events,
+    HELD_RSVP_STATUSES,
+    release_upcoming_rsvps,
+    step_down_as_cohost,
     upcoming_events_q,
+    upcoming_hosted_events,
 )
 from users.models import User
 
@@ -38,7 +38,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     return(PauseImpact): events per bucket, soonest first
     """
     impact = PauseImpact()
-    for event in _upcoming_hosted_events(user).order_by("start_datetime"):
+    for event in upcoming_hosted_events(user).order_by("start_datetime"):
         if event.event_type in KEPT_EVENT_TYPES:
             impact.kept_hosting.append(event)
         elif event.host_count > 1:
@@ -51,7 +51,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         Event.objects.filter(
             upcoming_events_q(),
             rsvps__user=user,
-            rsvps__status__in=_HELD_RSVP_STATUSES,
+            rsvps__status__in=HELD_RSVP_STATUSES,
         )
         .exclude(pk__in=[e.pk for e in impact.drafted_events])
         .order_by("start_datetime")
@@ -71,8 +71,8 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     """
     with transaction.atomic():
         impact = attendance_pause_impact(user)
-        _release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
-        _step_down_as_cohost(user, ~KEPT_EVENT_Q)
+        release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
+        step_down_as_cohost(user, ~KEPT_EVENT_Q)
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
         ).exclude(event__event_type__in=KEPT_EVENT_TYPES).update(
