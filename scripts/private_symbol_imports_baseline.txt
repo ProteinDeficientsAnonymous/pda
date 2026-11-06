@@ -35,7 +35,7 @@ backend/community/rsvps/host_auto.py: community.rsvps.member._RsvpApply communit
 backend/community/rsvps/member.py: community.events.read_visibility._enforce_event_read_visibility community.rsvps.counts._attending_headcount_db
 backend/community/rsvps/public_manage.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction community.rsvps.member._post_rsvp_comment community.rsvps.member._validate_rsvp_status community.rsvps.public_shared._email_details community.rsvps.public_shared._load_public_rsvp_event community.rsvps.public_shared._log_email_failure
 backend/community/rsvps/public_submit.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction community.rsvps.member._post_rsvp_comment community.rsvps.member._validate_rsvp_status community.rsvps.public_shared._email_details community.rsvps.public_shared._load_public_rsvp_event community.rsvps.public_shared._log_email_failure
-backend/community/rsvps/status_emails.py: community.rsvps.public_shared._email_details community.rsvps.public_shared._event_links community.rsvps.public_shared._format_event_when community.rsvps.public_shared._log_email_failure community.rsvps.public_shared._unpaid_user_ids
+backend/community/rsvps/status_emails.py: community.rsvps.public_shared._email_details community.rsvps.public_shared._event_links community.rsvps.public_shared._log_email_failure community.rsvps.public_shared._unpaid_user_ids
 backend/community/rsvps/waitlist.py: community.rsvps.counts._attending_headcount_db
 backend/community/scheduled/login_reminder.py: users.helpers._magic_login_url
 backend/community/scheduled/tentative_attendance_nudge.py: community.models.event._is_past_q
