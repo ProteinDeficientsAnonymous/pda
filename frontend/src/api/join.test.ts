@@ -64,6 +64,8 @@ describe('useJoinRequests', () => {
         tentativeByName: null,
         approvedAt: null,
         approvedByName: null,
+        approvedViaEventId: null,
+        approvedViaEventTitle: null,
         rejectedAt: null,
         rejectedByName: null,
         rejectionReason: null,
