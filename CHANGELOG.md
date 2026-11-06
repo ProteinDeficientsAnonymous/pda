@@ -1,3 +1,39 @@
+# [0.212.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.211.0...v0.212.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **speech:** show coded save errors on the speech template screen ([#2145](https://github.com/ProteinDeficientsAnonymous/pda/issues/2145)) ([ae1ee65](https://github.com/ProteinDeficientsAnonymous/pda/commit/ae1ee6529dcd882ef7d574ad5627b9a495d1ea89))
+* **speech:** show host-only and non-official speech errors as event notices ([#2144](https://github.com/ProteinDeficientsAnonymous/pda/issues/2144)) ([1995aae](https://github.com/ProteinDeficientsAnonymous/pda/commit/1995aaea5783491f7c4de78e3fa51b2d3803a791))
+
+
+### Features
+
+* **editor:** add a speech blank node to the rich editor ([#2096](https://github.com/ProteinDeficientsAnonymous/pda/issues/2096)) ([301fb29](https://github.com/ProteinDeficientsAnonymous/pda/commit/301fb299bd8456da71d5276a66cc241e7830aee8))
+* **events:** accept event format on event create and edit ([#2079](https://github.com/ProteinDeficientsAnonymous/pda/issues/2079)) ([3026e26](https://github.com/ProteinDeficientsAnonymous/pda/commit/3026e26ae8034212e0072e57a921ee78ba704f12))
+* **events:** map event format on the frontend event model ([#2080](https://github.com/ProteinDeficientsAnonymous/pda/issues/2080)) ([26041a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/26041a14300293484142b43fe6d27ae020b77142))
+* **events:** pick walk or restaurant on official events ([#2081](https://github.com/ProteinDeficientsAnonymous/pda/issues/2081)) ([0eb0515](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eb0515c37e282c236428c60bb6659ee668bf4e4))
+* **mcp:** set event format through event tools ([#2082](https://github.com/ProteinDeficientsAnonymous/pda/issues/2082)) ([913b8a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/913b8a9bf063f75055341c8c5616359cee6de608))
+* **speech:** add default shared and walk speech docs ([#2093](https://github.com/ProteinDeficientsAnonymous/pda/issues/2093)) ([eac3734](https://github.com/ProteinDeficientsAnonymous/pda/commit/eac373458a52de59a0f1dd2f520a17ed45d00687))
+* **speech:** add speech template api hooks and open roles editor ([#2097](https://github.com/ProteinDeficientsAnonymous/pda/issues/2097)) ([e4b8aef](https://github.com/ProteinDeficientsAnonymous/pda/commit/e4b8aefe7e53762f17aa1cd1c0e116fb6fa70866))
+* **speech:** add speech template model, permission and read endpoint ([#2083](https://github.com/ProteinDeficientsAnonymous/pda/issues/2083)) ([7c31600](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c31600a94a21d3d03031a807e479e7ff53bda37))
+* **speech:** add the default restaurant speech doc ([#2094](https://github.com/ProteinDeficientsAnonymous/pda/issues/2094)) ([7209dfe](https://github.com/ProteinDeficientsAnonymous/pda/commit/7209dfee3f84da1390ff542c71bc7e1078e9438d))
+* **speech:** define speech blanks and render them as labels ([#2085](https://github.com/ProteinDeficientsAnonymous/pda/issues/2085)) ([9fb6324](https://github.com/ProteinDeficientsAnonymous/pda/commit/9fb6324788e99b7bbfb8c69fbb3f6b7658b8556d))
+* **speech:** edit a saved speech and pick the format when the event has none ([#2102](https://github.com/ProteinDeficientsAnonymous/pda/issues/2102)) ([cf72da1](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf72da15415c1f79038b7a4348c9abfd649806c2))
+* **speech:** edit speech template sections from the admin hub ([#2098](https://github.com/ProteinDeficientsAnonymous/pda/issues/2098)) ([bdeb52e](https://github.com/ProteinDeficientsAnonymous/pda/commit/bdeb52ecbcee8de26846356f8a420906df59250d))
+* **speech:** let editors update the speech template ([#2084](https://github.com/ProteinDeficientsAnonymous/pda/issues/2084)) ([0a0ac88](https://github.com/ProteinDeficientsAnonymous/pda/commit/0a0ac883f596cbbddb0fede06111177a374dcbe1))
+* **speech:** link co-hosts to the event speech page ([#2103](https://github.com/ProteinDeficientsAnonymous/pda/issues/2103)) ([93fc904](https://github.com/ProteinDeficientsAnonymous/pda/commit/93fc904becdef3bfe1ba6812c9aff9b7ab58e379))
+* **speech:** prefill upcoming events and the restaurant name ([#2090](https://github.com/ProteinDeficientsAnonymous/pda/issues/2090)) ([f7bed4e](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7bed4e20bdcc1c5c53e7870d0b1af6fa7229e01))
+* **speech:** read a saved event speech aloud ([#2099](https://github.com/ProteinDeficientsAnonymous/pda/issues/2099)) ([6c2c3cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c2c3cb129d11f79d5ece8a84d69847feac2ed4b))
+* **speech:** read an event speech prefill as a co-host ([#2089](https://github.com/ProteinDeficientsAnonymous/pda/issues/2089)) ([b4a1817](https://github.com/ProteinDeficientsAnonymous/pda/commit/b4a1817d815dc8e295557225debf24b9259e0be0))
+* **speech:** render a speech from the template with single blanks filled ([#2087](https://github.com/ProteinDeficientsAnonymous/pda/issues/2087)) ([585a3e1](https://github.com/ProteinDeficientsAnonymous/pda/commit/585a3e1077efa4f11a7e760af57a4db0f86be4df))
+* **speech:** render list blanks as bullets or comma lists ([#2088](https://github.com/ProteinDeficientsAnonymous/pda/issues/2088)) ([01dc0c7](https://github.com/ProteinDeficientsAnonymous/pda/commit/01dc0c7a523a5a055a6d5792b8be905c8fa44d8c))
+* **speech:** save an event speech as a co-host ([#2091](https://github.com/ProteinDeficientsAnonymous/pda/issues/2091)) ([1f41d12](https://github.com/ProteinDeficientsAnonymous/pda/commit/1f41d12e6a460b3037c2c1becd55f1d0e2d1f66b))
+* **speech:** save the speech blanks and switch to the reading view ([#2101](https://github.com/ProteinDeficientsAnonymous/pda/issues/2101)) ([1dff982](https://github.com/ProteinDeficientsAnonymous/pda/commit/1dff982614574e58bc0e4f6de5deb254c762e165))
+* **speech:** seed the default speech template ([#2095](https://github.com/ProteinDeficientsAnonymous/pda/issues/2095)) ([9e0a393](https://github.com/ProteinDeficientsAnonymous/pda/commit/9e0a393381a52afa1e5287767830554e4292af2d))
+* **speech:** set the event format when saving a speech and keep prefill for unsaved blanks ([#2092](https://github.com/ProteinDeficientsAnonymous/pda/issues/2092)) ([0fbc175](https://github.com/ProteinDeficientsAnonymous/pda/commit/0fbc17557910d0feaf2b76b1ce1edd679ee1bea1))
+* **speech:** show the prefilled speech blanks for the event's format ([#2100](https://github.com/ProteinDeficientsAnonymous/pda/issues/2100)) ([4b801f1](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b801f1c46e145dac5ba666ea1d3000a7488dfbd))
+
 # [0.211.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.210.0...v0.211.0) (2026-11-06)
 
 
