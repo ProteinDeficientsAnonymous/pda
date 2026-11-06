@@ -60,6 +60,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/flagged-events` | `manage_events` |
 | `/admin/whatsapp` | `manage_whatsapp` |
 | `/admin/join-form` | `edit_join_questions` |
+| `/admin/event-speech` | `edit_speech_template` (speech template + open roles) |
 | `/admin/surveys` | `manage_surveys` |
 | `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |
