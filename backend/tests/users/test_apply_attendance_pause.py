@@ -108,7 +108,20 @@ class TestApplyAttendancePause:
         assert statuses[community.pk] == CoHostInviteStatus.RESCINDED
         assert statuses[official.pk] == CoHostInviteStatus.PENDING
 
+    def test_moves_sole_hosted_event_to_draft_without_rsvps(self, rf, member, other_user):
+        event = _event(member)
+        _rsvp(event, member)
+        _rsvp(event, other_user)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        event.refresh_from_db()
+        assert event.status == EventStatus.DRAFT
+        assert event.co_hosts.count() == 0
+        assert not EventRSVP.objects.filter(event=event).exists()
+
     def test_writes_audit_log(self, rf, member, other_user, django_capture_on_commit_callbacks):
+        drafted = _event(member)
         removed = _event(other_user)
         _rsvp(removed, member)
 
@@ -117,4 +130,5 @@ class TestApplyAttendancePause:
 
         entry = AuditLogEntry.objects.get(action="user_attendance_paused")
         assert entry.target_id == str(member.pk)
+        assert entry.details["drafted_event_ids"] == [str(drafted.pk)]
         assert entry.details["removed_rsvp_event_ids"] == [str(removed.pk)]

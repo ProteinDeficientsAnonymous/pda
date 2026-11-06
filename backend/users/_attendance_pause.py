@@ -5,13 +5,25 @@ from community.models import (
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
+    EventRSVP,
+    EventStatus,
     EventType,
 )
 from community.models.choices import is_official_or_club
+from community.rsvps.public_shared import _format_event_when
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from notifications.email_sender import get_email_sender
+from notifications.event_unpublished_email import (
+    EventUnpublishedEmailDetails,
+    send_event_unpublished_email,
+)
+from notifications.service import (
+    broadcast_cohost_change,
+    create_event_unpublished_notifications,
+)
 
 from users._archive import (
     _HELD_RSVP_STATUSES,
@@ -20,7 +32,9 @@ from users._archive import (
     upcoming_events_q,
 )
 from users.helpers import _strip_non_member_roles
-from users.models import User
+from users.models import HAS_EMAIL, User
+
+logger = logging.getLogger(__name__)
 
 QUALIFYING_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 QUALIFYING_EVENT_Q = Q(event_type__in=QUALIFYING_EVENT_TYPES)
@@ -82,6 +96,9 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     """
     with transaction.atomic():
         impact = attendance_pause_impact(user)
+        # Drafting first deletes the user's own RSVP there, so releasing can't promote its waitlist.
+        for event in impact.drafted_events:
+            _move_to_draft(event, user)
         _release_upcoming_rsvps(request, user, ~QUALIFYING_EVENT_Q)
         _step_down_as_cohost(user, ~QUALIFYING_EVENT_Q)
         EventCoHostInvite.objects.filter(user=user, status=CoHostInviteStatus.PENDING).exclude(
@@ -94,6 +111,51 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         user.save(update_fields=["attendance_paused_at", "is_member", "has_joined_whatsapp"])
         _audit_pause(request, user, impact, removed_role_ids)
     return impact
+
+
+def _move_to_draft(event: Event, user: User) -> None:
+    event.co_hosts.remove(user)
+    EventCoHostInvite.objects.filter(
+        event=event, user=user, status=CoHostInviteStatus.ACCEPTED
+    ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
+    event.status = EventStatus.DRAFT
+    event.save(update_fields=["status"])
+    rsvps = EventRSVP.objects.filter(event=event)
+    guest_ids = [
+        str(uid)
+        for uid in rsvps.filter(status__in=_HELD_RSVP_STATUSES)
+        .exclude(user=user)
+        .values_list("user_id", flat=True)
+    ]
+    rsvps.delete()
+    broadcast_cohost_change(event)
+    transaction.on_commit(lambda: _notify_unpublished(event, guest_ids))
+
+
+def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
+    if not guest_ids:
+        return
+    try:
+        create_event_unpublished_notifications(event, guest_ids)
+    except Exception:  # noqa: BLE001 — the pause has committed; a failed notice must not undo it
+        logger.warning("event_unpublished_notifications_failed", exc_info=True)
+    sender = get_email_sender()
+    for guest in User.objects.filter(pk__in=guest_ids).filter(HAS_EMAIL):
+        try:
+            result = send_event_unpublished_email(
+                sender=sender,
+                details=EventUnpublishedEmailDetails(
+                    to=guest.email or "",
+                    display_name=guest.first_name,
+                    event_title=event.title,
+                    event_when=_format_event_when(event),
+                ),
+            )
+        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+            logger.warning("event_unpublished_email_send_exception", exc_info=True)
+            continue
+        if not result.success:
+            logger.warning("event_unpublished_email_failed", extra={"error": result.error})
 
 
 def _strip_membership(user: User) -> list[str]:
