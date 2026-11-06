@@ -1,21 +1,16 @@
-import logging
 from datetime import datetime
 from enum import StrEnum
+from uuid import UUID
 
 from community.validation import Code, raise_validation
-from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja.responses import Status
 from pydantic import BaseModel
 
-from users._attendance_pause import (
-    MEMBER_OR_ATTENDANCE_PAUSED_Q,
-    PauseImpact,
-    attendance_pause_impact,
-)
+from users._attendance_pause import PauseImpact, attendance_pause_impact
+from users._management import _require_manage_users
 from users._management import router as management_router
 from users.models import User
-from users.permissions import PermissionKey
 from users.schemas import ErrorOut
 
 router = management_router
@@ -72,25 +67,10 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
     response={200: AttendancePausePreviewOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
-def attendance_pause_preview(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "attendance_pause_preview",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="attendance_pause_preview")
+def attendance_pause_preview(request, user_id: UUID):
+    _require_manage_users(request, "attendance_pause_preview", str(user_id))
     try:
-        user = User.objects.filter(MEMBER_OR_ATTENDANCE_PAUSED_Q).get(pk=user_id)
+        user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
