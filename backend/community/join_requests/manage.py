@@ -81,6 +81,8 @@ class JoinRequestOut(BaseModel):
     tentative_by_name: str | None = None
     approved_at: datetime | None = None
     approved_by_name: str | None = None
+    approved_via_event_id: str | None = None
+    approved_via_event_title: str | None = None
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     rejection_reason: str = ""
@@ -268,6 +270,8 @@ def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> J
         tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
+        approved_via_event_id=str(jr.approved_via_event_id) if jr.approved_via_event_id else None,
+        approved_via_event_title=jr.approved_via_event.title if jr.approved_via_event else None,
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         rejection_reason=jr.rejection_reason,
@@ -315,7 +319,7 @@ def list_join_requests(request):
             status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
             phone_number__in=expired_phones,
         )
-        .select_related("user", "tentative_by", "approved_by", "rejected_by")
+        .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
