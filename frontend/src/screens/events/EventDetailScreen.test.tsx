@@ -1,4 +1,5 @@
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -412,7 +413,7 @@ describe('EventDetailScreen', () => {
     });
   });
 
-  describe('event speech link', () => {
+  describe('event speech menu item', () => {
     const OFFICIAL = makeEvent({
       eventType: EventType.Official,
       coHostIds: ['user-me'],
@@ -427,15 +428,39 @@ describe('EventDetailScreen', () => {
       } as ReturnType<typeof useEvent>);
     }
 
-    it('shows for a co-host of an official event', () => {
+    async function openKebab() {
+      await userEvent.click(screen.getByRole('button', { name: /event settings/i }));
+    }
+
+    it('shows for a co-host of an official event', async () => {
       setAuthed(AUTHED_USER);
       setEvent(OFFICIAL);
       renderScreen();
+      await openKebab();
 
-      expect(screen.getByRole('link', { name: 'event speech' })).toHaveAttribute(
+      expect(screen.getByRole('menuitem', { name: 'event speech' })).toHaveAttribute(
         'href',
         `/events/${OFFICIAL.id}/speech`,
       );
+    });
+
+    it('shows for a manage events holder who is not a host', async () => {
+      setAuthed(makeUserWithPermissions([Permission.ManageEvents], { id: 'user-me' }));
+      setEvent({ ...OFFICIAL, coHostIds: ['someone-else'] });
+      renderScreen();
+      await openKebab();
+
+      expect(screen.getByRole('menuitem', { name: 'event speech' })).toBeInTheDocument();
+    });
+
+    it('opens a speech-only menu when rsvps are off', async () => {
+      setAuthed(AUTHED_USER);
+      setEvent({ ...OFFICIAL, rsvpEnabled: false });
+      renderScreen();
+      await openKebab();
+
+      expect(screen.getByRole('menuitem', { name: 'event speech' })).toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: 'check-in' })).not.toBeInTheDocument();
     });
 
     it('is hidden from a non-host', () => {
@@ -443,23 +468,16 @@ describe('EventDetailScreen', () => {
       setEvent({ ...OFFICIAL, coHostIds: ['someone-else'] });
       renderScreen();
 
-      expect(screen.queryByRole('link', { name: 'event speech' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
     });
 
-    it('shows for a manage events holder who is not a host', () => {
-      setAuthed(makeUserWithPermissions([Permission.ManageEvents], { id: 'user-me' }));
-      setEvent({ ...OFFICIAL, coHostIds: ['someone-else'] });
-      renderScreen();
-
-      expect(screen.getByRole('link', { name: 'event speech' })).toBeInTheDocument();
-    });
-
-    it('is hidden on a community event', () => {
+    it('is hidden on a community event', async () => {
       setAuthed(AUTHED_USER);
       setEvent({ ...OFFICIAL, eventType: EventType.Community });
       renderScreen();
+      await openKebab();
 
-      expect(screen.queryByRole('link', { name: 'event speech' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: 'event speech' })).not.toBeInTheDocument();
     });
   });
 });

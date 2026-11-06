@@ -29,7 +29,9 @@ def invitee_without_email(db) -> User:
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return make_event(created_by=inviter)
+    event = make_event(created_by=inviter, rsvp_enabled=True)
+    event.co_hosts.add(inviter)
+    return event
 
 
 @pytest.mark.django_db
