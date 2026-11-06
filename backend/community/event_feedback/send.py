@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -19,6 +19,7 @@ from community.models import (
     Survey,
 )
 from community.models.event import _is_past_q
+from community.shared import local_midnight
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -30,12 +31,8 @@ FEEDBACK_LOOKBACK = timedelta(days=7)
 REMINDER_AFTER_DAYS = 3
 
 
-def _local_midnight(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=settings.COMMUNITY_TZ)
-
-
 def feedback_cutoff(now: datetime) -> datetime:
-    return _local_midnight(timezone.localtime(now, settings.COMMUNITY_TZ).date())
+    return local_midnight(timezone.localtime(now, settings.COMMUNITY_TZ).date())
 
 
 def feedback_url(token: str) -> str:
@@ -151,9 +148,9 @@ def send_first_requests(now: datetime) -> tuple[int, int]:
 def send_reminders(now: datetime) -> tuple[int, int]:
     """Send the single reminder to non-responders three local days after the first email."""
     today = timezone.localtime(now, settings.COMMUNITY_TZ).date()
-    first_sent_before = _local_midnight(today - timedelta(days=REMINDER_AFTER_DAYS - 1))
+    first_sent_before = local_midnight(today - timedelta(days=REMINDER_AFTER_DAYS - 1))
     first_sent_after = (
-        _local_midnight(today) - FEEDBACK_LOOKBACK - timedelta(days=REMINDER_AFTER_DAYS)
+        local_midnight(today) - FEEDBACK_LOOKBACK - timedelta(days=REMINDER_AFTER_DAYS)
     )
     due = EventFeedbackRequest.objects.filter(
         first_sent_at__lt=first_sent_before,
