@@ -100,7 +100,7 @@ def prefill_values(event: Event, template: SpeechTemplate) -> SpeechValues:
     if event.event_format != EventFormat.WALK:
         restaurant = event.location.split(",", 1)[0].strip()
     return {
-        "facilitators": _join_names([visible_display_name(u, None) for u in event.co_hosts.all()]),
+        "facilitators": _join_names([u.first_name.strip() for u in event.co_hosts.all()]),
         "open_roles": list(template.open_roles),
         "upcoming_events": _upcoming_events(event),
         "restaurant": restaurant,
