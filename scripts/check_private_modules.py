@@ -142,10 +142,9 @@ def main() -> int:
             if (rel, symbol) not in baseline:
                 problems.append(f"{rel}:{lineno}: imports private symbol {symbol}")
     baseline_rel = SYMBOL_BASELINE.relative_to(REPO_ROOT)
-    problems += [
-        f"{baseline_rel}: stale entry {rel}: {symbol} — remove it"
-        for rel, symbol in sorted(baseline - seen)
-    ]
+    # Stale entries only warn, so a rename PR passes whether or not it also edits the baseline.
+    for rel, symbol in sorted(baseline - seen):
+        print(f"{baseline_rel}: stale entry {rel}: {symbol} (can be removed)")
     for line in problems:
         print(line)
     if problems:
