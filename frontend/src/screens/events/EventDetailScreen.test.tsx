@@ -5,9 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { EventType, InvitePermission } from '@/models/event';
+import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 import { setAuthed, setUnauthed } from '@/test/auth';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import EventDetailScreen from './EventDetailScreen';
@@ -443,6 +444,14 @@ describe('EventDetailScreen', () => {
       renderScreen();
 
       expect(screen.queryByRole('link', { name: 'event speech' })).not.toBeInTheDocument();
+    });
+
+    it('shows for a manage events holder who is not a host', () => {
+      setAuthed(makeUserWithPermissions([Permission.ManageEvents], { id: 'user-me' }));
+      setEvent({ ...OFFICIAL, coHostIds: ['someone-else'] });
+      renderScreen();
+
+      expect(screen.getByRole('link', { name: 'event speech' })).toBeInTheDocument();
     });
 
     it('is hidden on a community event', () => {

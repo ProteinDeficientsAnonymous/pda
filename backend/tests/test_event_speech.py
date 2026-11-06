@@ -179,9 +179,9 @@ class TestGetSpeech:
         assert response.status_code == 403
         assert_error_code(response, "speech.hosts_only")
 
-    def test_manage_events_without_cohost_forbidden(self, api_client, walk):
+    def test_manage_events_without_cohost_allowed(self, api_client, walk):
         admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
-        assert api_client.get(_url(walk), **auth_headers_for(admin)).status_code == 403
+        assert api_client.get(_url(walk), **auth_headers_for(admin)).status_code == 200
 
     def test_anonymous_unauthorized(self, api_client, walk):
         assert api_client.get(_url(walk)).status_code == 401
@@ -275,9 +275,9 @@ class TestPutSpeech:
         assert response.status_code == 403
         assert_error_code(response, "speech.hosts_only")
 
-    def test_manage_events_without_cohost_forbidden(self, api_client, walk):
+    def test_manage_events_without_cohost_allowed(self, api_client, walk):
         admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
-        assert self._put(api_client, walk, admin, {"values": {}}).status_code == 403
+        assert self._put(api_client, walk, admin, {"values": {}}).status_code == 200
 
     def test_anonymous_unauthorized(self, api_client, walk):
         response = api_client.put(_url(walk), {"values": {}}, content_type="application/json")

@@ -209,7 +209,9 @@ describe('EventSpeechScreen', () => {
     renderScreen();
 
     expect(
-      await screen.findByText("only this event's hosts can see or edit its speech"),
+      await screen.findByText(
+        "only this event's hosts and event managers can see or edit its speech",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'back to event' })).toBeInTheDocument();

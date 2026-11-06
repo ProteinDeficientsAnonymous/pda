@@ -657,7 +657,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Speech.InvalidValues:
       return 'one of the speech blanks is not valid';
     case Code.Speech.HostsOnly:
-      return "only this event's hosts can see or edit its speech";
+      return "only this event's hosts and event managers can see or edit its speech";
     case Code.Speech.OfficialEventRequired:
       return 'speeches are only for official events';
 
