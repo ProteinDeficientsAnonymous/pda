@@ -143,6 +143,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a speech blank is not valid', () => {
+    expect(messageForCode({ code: Code.Speech.InvalidValues, field: 'values' })).toBe(
+      'one of the speech blanks is not valid',
+    );
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
