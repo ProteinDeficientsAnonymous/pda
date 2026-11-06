@@ -1,3 +1,10 @@
+# [0.210.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.4...v0.210.0) (2026-11-06)
+
+
+### Features
+
+* 2130 - let mcp survey tools set feedback_event_type ([#2131](https://github.com/ProteinDeficientsAnonymous/pda/issues/2131)) ([77539ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/77539ef2b37e1da8191af00013a04f94d1ad5aeb))
+
 ## [0.209.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.3...v0.209.4) (2026-11-04)
 
 
