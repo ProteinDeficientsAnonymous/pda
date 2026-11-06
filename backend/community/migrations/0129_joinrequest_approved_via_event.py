@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0124_event_cohost_reminder_sent_at"),
+        ("community", "0128_seed_speech_template"),
     ]
 
     operations = [
