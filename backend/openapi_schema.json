@@ -9650,7 +9650,7 @@
     },
     "/api/auth/users/{user_id}/attendance-pause-preview/": {
       "get": {
-        "operationId": "users__attendance_pause_api_attendance_pause_preview",
+        "operationId": "users_attendance_pause_api_attendance_pause_preview",
         "parameters": [
           {
             "in": "path",
