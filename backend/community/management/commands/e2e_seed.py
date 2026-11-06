@@ -33,33 +33,33 @@ from community.models import (
     SurveyQuestionType,
 )
 
-from ._e2e_attendance import _seed_attendance_analytics, _seed_attendance_report
+from ._e2e_attendance import seed_attendance_analytics, seed_attendance_report
 from ._e2e_common import (
     E2E_PASSWORD,
-    _access_token,
-    _member_user,
-    _non_member_user,
-    _random_event,
-    _random_phone,
+    issue_access_token,
+    member_user,
+    non_member_user,
+    random_event,
+    random_phone,
 )
 
 
 def _seed_member() -> dict:
-    event = _random_event("member")
-    phone = _random_phone()
-    user = _member_user(phone)
+    event = random_event("member")
+    phone = random_phone()
+    user = member_user(phone)
     return {
         "event_id": str(event.id),
         "event_title": event.title,
         "event_location": event.location,
         "user_phone": phone,
         "user_password": E2E_PASSWORD,
-        "access_token": _access_token(user),
+        "access_token": issue_access_token(user),
     }
 
 
 def _seed_public_new() -> dict:
-    event = _random_event("public-new")
+    event = random_event("public-new")
     return {
         "event_id": str(event.id),
         "event_title": event.title,
@@ -68,9 +68,9 @@ def _seed_public_new() -> dict:
 
 
 def _seed_public_returning() -> dict:
-    event = _random_event("public-returning")
-    phone = _random_phone()
-    user = _non_member_user(phone)
+    event = random_event("public-returning")
+    phone = random_phone()
+    user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
     token = NonMemberRsvpToken.issue_or_extend(user)
     return {
@@ -83,10 +83,10 @@ def _seed_public_returning() -> dict:
 
 def _seed_public_recognized() -> dict:
     # non-member with an email, no token on this device
-    prior_event = _random_event("public-recognized-prior")
-    target_event = _random_event("public-recognized")
-    phone = _random_phone()
-    user = _non_member_user(phone)
+    prior_event = random_event("public-recognized-prior")
+    target_event = random_event("public-recognized")
+    phone = random_phone()
+    user = non_member_user(phone)
     EventRSVP.objects.create(event=prior_event, user=user, status=RSVPStatus.ATTENDING)
     return {
         "event_id": str(target_event.id),
@@ -96,28 +96,28 @@ def _seed_public_recognized() -> dict:
 
 
 def _seed_comments() -> dict:
-    event = _random_event("comments")
-    phone = _random_phone()
-    user = _non_member_user(phone)
+    event = random_event("comments")
+    phone = random_phone()
+    user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
     token = NonMemberRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
 def _seed_my_rsvps() -> dict:
-    event = _random_event("my-rsvps")
-    phone = _random_phone()
-    user = _non_member_user(phone)
+    event = random_event("my-rsvps")
+    phone = random_phone()
+    user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
     token = NonMemberRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
 def _seed_live_updates() -> dict:
-    event = _random_event("live-updates")
-    phone_a, phone_b = _random_phone(), _random_phone()
-    _member_user(phone_a)
-    user_b = _member_user(phone_b)
+    event = random_event("live-updates")
+    phone_a, phone_b = random_phone(), random_phone()
+    member_user(phone_a)
+    user_b = member_user(phone_b)
     EventRSVP.objects.create(event=event, user=user_b, status=RSVPStatus.ATTENDING)
     return {
         "event_id": str(event.id),
@@ -154,7 +154,7 @@ _SCREEN_SLUGS = ("potluck", "hike", "picnic")
 _CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
 
 
-def _month_end(now: datetime, *, months_ago: int = 0) -> datetime:
+def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
     index = now.year * 12 + now.month - 1 - months_ago
     year, month0 = divmod(index, 12)
     last_day = calendar.monthrange(year, month0 + 1)[1]
@@ -182,9 +182,9 @@ def _seed_member_screens() -> dict:
         caches["ratelimit"].clear()
     Event.objects.filter(slug__in=_SCREEN_SLUGS).delete()
     now = timezone.now()
-    potluck_at = _month_end(now)
-    hike_at = _month_end(now, months_ago=1)  # previous month stays past for the check-in report
-    picnic_at = _month_end(now)
+    potluck_at = month_end(now)
+    hike_at = month_end(now, months_ago=1)  # previous month stays past for the check-in report
+    picnic_at = month_end(now)
     Survey.objects.filter(slug="potluck-feedback").delete()
     DocFolder.objects.filter(name="guides").delete()
     JoinRequest.objects.filter(phone_number="+17025550007").delete()
@@ -342,9 +342,9 @@ def _seed_member_screens() -> dict:
     return {
         "password": E2E_PASSWORD,
         "seed_phone": seed.phone_number,
-        "seed_token": _access_token(seed),
+        "seed_token": issue_access_token(seed),
         "jamie_id": str(jamie.id),
-        "jamie_token": _access_token(jamie),
+        "jamie_token": issue_access_token(jamie),
         "ash_phone": "+17025550004",
         "digest_html": digest_html,
         "event_id": str(event.id),
@@ -416,7 +416,7 @@ _FEEDBACK_QUESTION = "e2e: how was it?"
 def _seed_event_feedback() -> dict:
     # club, not official: the dev seed already owns the official feedback survey slot
     start = timezone.now() - timedelta(days=1)
-    event = _random_event(
+    event = random_event(
         "event-feedback",
         start_datetime=start,
         end_datetime=start + timedelta(hours=2),
@@ -436,7 +436,7 @@ def _seed_event_feedback() -> dict:
         label=_FEEDBACK_QUESTION,
         defaults={"field_type": SurveyQuestionType.TEXT, "required": True},
     )
-    attendee = _member_user(_random_phone())
+    attendee = member_user(random_phone())
     EventRSVP.objects.create(
         event=event,
         user=attendee,
@@ -462,8 +462,8 @@ SCENARIOS = {
     "comments": _seed_comments,
     "my-rsvps": _seed_my_rsvps,
     "live-updates": _seed_live_updates,
-    "attendance-report": _seed_attendance_report,
-    "attendance-analytics": _seed_attendance_analytics,
+    "attendance-report": seed_attendance_report,
+    "attendance-analytics": seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
     "event-feedback": _seed_event_feedback,
 }

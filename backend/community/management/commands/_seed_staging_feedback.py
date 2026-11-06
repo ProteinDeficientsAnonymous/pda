@@ -98,7 +98,7 @@ _ANSWER_BUILDERS: dict[str, Callable[[SurveyQuestion, int], str | list[str] | No
 }
 
 
-def _build_answers(questions: list[SurveyQuestion], index: int) -> dict:
+def build_answers(questions: list[SurveyQuestion], index: int) -> dict:
     answers = {}
     for question in questions:
         builder = _ANSWER_BUILDERS.get(question.field_type)
@@ -133,7 +133,7 @@ def _seed_attendee(survey: Survey, event: Event, user: User, index: int, respond
     submitted = sent + timedelta(hours=2 + index * 5)
     questions = list(survey.questions.order_by("display_order"))
     response = SurveyResponse.objects.create(
-        survey=survey, event=event, answers=_build_answers(questions, index)
+        survey=survey, event=event, answers=build_answers(questions, index)
     )
     SurveyResponse.objects.filter(pk=response.pk).update(submitted_at=submitted)
     request.responded_on = submitted.date()
