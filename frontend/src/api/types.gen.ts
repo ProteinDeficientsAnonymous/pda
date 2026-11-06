@@ -6010,6 +6010,8 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
+            /** Attendance Paused */
+            attendance_paused?: boolean | null;
             /** Email */
             email?: string | null;
             /** First Name */

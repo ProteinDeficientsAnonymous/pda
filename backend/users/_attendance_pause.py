@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 QUALIFYING_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 QUALIFYING_EVENT_Q = Q(event_type__in=QUALIFYING_EVENT_TYPES)
+MEMBER_OR_ATTENDANCE_PAUSED_Q = Q(is_member=True) | Q(attendance_paused_at__isnull=False)
 
 
 @dataclass
@@ -180,3 +181,32 @@ def _audit_pause(request, user: User, impact: PauseImpact, removed_role_ids: lis
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk), details=details),
     )
+
+
+def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | None) -> bool:
+    """Pause or silently unpause the user per the PATCH flag; returns True if anything changed."""
+    is_paused = user.attendance_paused_at is not None
+    if attendance_paused is None or attendance_paused == is_paused:
+        return False
+    if attendance_paused:
+        apply_attendance_pause(request, user)
+    else:
+        _unpause(request, user)
+    return True
+
+
+def _unpause(request, user: User) -> None:
+    # users.api → community.join_requests → users.api would cycle at import time.
+    from community.join_requests.approval import _grant_membership
+
+    with transaction.atomic():
+        user.attendance_paused_at = None
+        user.is_member = True
+        user.save(update_fields=["attendance_paused_at", "is_member"])
+        _grant_membership(user)
+        audit_log(
+            logging.WARNING,
+            "user_attendance_unpaused",
+            request,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+        )
