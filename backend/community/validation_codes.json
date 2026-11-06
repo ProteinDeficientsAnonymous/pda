@@ -1245,6 +1245,16 @@
         "name": "INVALID_VALUES",
         "value": "speech.invalid_values",
         "params": []
+      },
+      {
+        "name": "HOSTS_ONLY",
+        "value": "speech.hosts_only",
+        "params": []
+      },
+      {
+        "name": "OFFICIAL_EVENT_REQUIRED",
+        "value": "speech.official_event_required",
+        "params": []
       }
     ],
     "Connect": [

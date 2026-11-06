@@ -58,14 +58,14 @@ def _load_event(event_id: UUID) -> Event:
         .first()
     )
     if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        raise_validation(Code.Speech.OFFICIAL_EVENT_REQUIRED, status_code=404)
     return event
 
 
 def _load_cohost_event(request, event_id: UUID) -> Event:
     event = _load_event(event_id)
     if not is_cohost(request.auth, {str(u.pk) for u in event.co_hosts.all()}):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="edit_event_speech")
+        raise_validation(Code.Speech.HOSTS_ONLY, status_code=403)
     return event
 
 
