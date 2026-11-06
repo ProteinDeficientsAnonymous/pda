@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
-from community.events.helpers import _can_see_invite_only
+from community.events.helpers import _can_see_invite_only, event_co_host_ids
 from community.events.read_visibility import _enforce_event_read_visibility
 from community.models import (
     DEFAULT_EVENT_DURATION,
@@ -146,7 +146,7 @@ def calendar_feed(request, token: str = ""):
 
     for event in _feed_events(user):
         if event.visibility == PageVisibility.INVITE_ONLY:
-            co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+            co_host_ids = event_co_host_ids(event)
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
             if not _can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
                 continue
