@@ -2572,6 +2572,17 @@
             ],
             "title": "End Datetime"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "event_type": {
             "default": "community",
             "title": "Event Type",

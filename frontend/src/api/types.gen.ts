@@ -3683,6 +3683,8 @@ export interface components {
             description: string;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Event Type
              * @default community

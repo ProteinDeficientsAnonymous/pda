@@ -393,6 +393,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
+        event_format=event.event_format or None,
         visibility=event.visibility,
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
