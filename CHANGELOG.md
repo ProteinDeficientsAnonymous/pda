@@ -1,3 +1,11 @@
+## [0.214.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.0...v0.214.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** save a walk/restaurant format when editing official events ([#2150](https://github.com/ProteinDeficientsAnonymous/pda/issues/2150)) ([1639145](https://github.com/ProteinDeficientsAnonymous/pda/commit/1639145bb5e96d45fbf8da4a9b69b7f74543bd7c))
+* **speech:** add walker prompts to the speech form ([#2151](https://github.com/ProteinDeficientsAnonymous/pda/issues/2151)) ([e6cc8e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6cc8e2f8224c140ea1d1ef9bdef650ca137e6ac))
+
 # [0.214.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.213.0...v0.214.0) (2026-11-06)
 
 
