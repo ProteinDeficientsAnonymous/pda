@@ -117,6 +117,32 @@ describe('messageForCode', () => {
     );
   });
 
+  it('explains speech template errors', () => {
+    expect(messageForCode({ code: Code.SpeechTemplate.InvalidDoc, field: 'walk_pm' })).toBe(
+      'that speech section is not valid',
+    );
+    expect(
+      messageForCode({
+        code: Code.SpeechTemplate.TooManyRoles,
+        field: 'open_roles',
+        params: { max: 20 },
+      }),
+    ).toBe('at most 20 open roles');
+    expect(messageForCode({ code: Code.SpeechTemplate.TooManyRoles, field: 'open_roles' })).toBe(
+      'too many open roles',
+    );
+    expect(
+      messageForCode({
+        code: Code.SpeechTemplate.RoleTooLong,
+        field: 'open_roles',
+        params: { max: 200 },
+      }),
+    ).toBe('each role must be at most 200 characters');
+    expect(messageForCode({ code: Code.SpeechTemplate.RoleTooLong, field: 'open_roles' })).toBe(
+      'a role is too long',
+    );
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,

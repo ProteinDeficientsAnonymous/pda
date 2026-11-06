@@ -637,6 +637,20 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'reason text is too long';
     }
 
+    // Speech template
+    case Code.SpeechTemplate.InvalidDoc:
+      return 'that speech section is not valid';
+    case Code.SpeechTemplate.TooManyRoles: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null ? `at most ${String(max)} open roles` : 'too many open roles';
+    }
+    case Code.SpeechTemplate.RoleTooLong: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null
+        ? `each role must be at most ${String(max)} characters`
+        : 'a role is too long';
+    }
+
     case Code.Connect.RequestNotFound:
       return 'this connection request was not found';
     case Code.Connect.RequestExpired:
