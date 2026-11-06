@@ -4,7 +4,6 @@ import pytest
 from audit.models import AuditLogEntry
 from community.models import (
     CoHostInviteStatus,
-    Event,
     EventCoHostInvite,
     EventRSVP,
     EventStatus,
@@ -12,24 +11,9 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
+from tests._events import make_event, make_rsvp
 from users._attendance_pause import apply_attendance_pause
-from users.models import User
 from users.roles import Role
-
-
-def _event(creator: User, event_type=EventType.COMMUNITY, **extra) -> Event:
-    return Event.objects.create(
-        title="potluck",
-        event_type=event_type,
-        start_datetime=timezone.now() + timedelta(days=3),
-        created_by=creator,
-        status=EventStatus.ACTIVE,
-        **extra,
-    )
-
-
-def _rsvp(event: Event, user: User, status=RSVPStatus.ATTENDING) -> EventRSVP:
-    return EventRSVP.objects.create(event=event, user=user, status=status)
 
 
 @pytest.mark.django_db
@@ -56,9 +40,9 @@ class TestApplyAttendancePause:
         assert member.roles.count() == 0
 
     def test_removes_other_rsvp_and_promotes_waitlist(self, rf, member, other_user):
-        event = _event(other_user, max_attendees=1)
-        _rsvp(event, member)
-        waiting = _rsvp(event, other_user, RSVPStatus.WAITLISTED)
+        event = make_event(created_by=other_user, max_attendees=1)
+        make_rsvp(event, member)
+        waiting = make_rsvp(event, other_user, RSVPStatus.WAITLISTED)
 
         apply_attendance_pause(rf.get("/"), member)
 
@@ -69,10 +53,10 @@ class TestApplyAttendancePause:
         assert waiting.status == RSVPStatus.ATTENDING
 
     @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
-    def test_leaves_qualifying_rsvp_and_hosting(self, rf, member, other_user, event_type):
-        rsvped = _event(other_user, event_type)
-        _rsvp(rsvped, member)
-        hosted = _event(member, event_type)
+    def test_leaves_official_and_club_rsvp_and_hosting(self, rf, member, other_user, event_type):
+        rsvped = make_event(created_by=other_user, event_type=event_type)
+        make_rsvp(rsvped, member)
+        hosted = make_event(created_by=member, event_type=event_type)
 
         apply_attendance_pause(rf.get("/"), member)
 
@@ -82,7 +66,7 @@ class TestApplyAttendancePause:
         assert list(hosted.co_hosts.all()) == [member]
 
     def test_steps_down_from_shared_hosting(self, rf, member, other_user):
-        event = _event(other_user)
+        event = make_event(created_by=other_user)
         event.co_hosts.add(member)
         EventCoHostInvite.objects.create(
             event=event, user=member, status=CoHostInviteStatus.ACCEPTED
@@ -95,8 +79,8 @@ class TestApplyAttendancePause:
         assert invite.status == CoHostInviteStatus.REMOVED
 
     def test_rescinds_pending_invites_on_other_events_only(self, rf, member, other_user):
-        community = _event(other_user)
-        official = _event(other_user, EventType.OFFICIAL)
+        community = make_event(created_by=other_user)
+        official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
         for event in (community, official):
             EventCoHostInvite.objects.create(event=event, user=member)
 
@@ -108,9 +92,22 @@ class TestApplyAttendancePause:
         assert statuses[community.pk] == CoHostInviteStatus.RESCINDED
         assert statuses[official.pk] == CoHostInviteStatus.PENDING
 
+    def test_leaves_pending_invites_on_past_events(self, rf, member, other_user):
+        past = make_event(created_by=other_user, start_datetime=timezone.now() - timedelta(days=3))
+        EventCoHostInvite.objects.create(event=past, user=member)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        invite = EventCoHostInvite.objects.get(event=past, user=member)
+        assert invite.status == CoHostInviteStatus.PENDING
+
     def test_writes_audit_log(self, rf, member, other_user, django_capture_on_commit_callbacks):
-        removed = _event(other_user)
-        _rsvp(removed, member)
+        vettor = Role.objects.create(name="vettor")
+        member.roles.add(vettor)
+        removed = make_event(created_by=other_user)
+        make_rsvp(removed, member)
+        shared = make_event(created_by=other_user)
+        shared.co_hosts.add(member)
 
         with django_capture_on_commit_callbacks(execute=True):
             apply_attendance_pause(rf.get("/"), member)
@@ -118,3 +115,5 @@ class TestApplyAttendancePause:
         entry = AuditLogEntry.objects.get(action="user_attendance_paused")
         assert entry.target_id == str(member.pk)
         assert entry.details["removed_rsvp_event_ids"] == [str(removed.pk)]
+        assert entry.details["removed_role_ids"] == [str(vettor.pk)]
+        assert entry.details["removed_hosting_event_ids"] == [str(shared.pk)]
