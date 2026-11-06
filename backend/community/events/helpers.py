@@ -79,6 +79,10 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     transaction.on_commit(_run)
 
 
+def event_co_host_ids(event: Event) -> set[str]:
+    return {str(u.pk) for u in event.co_hosts.all()}
+
+
 def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     """Creator is always a co-host (added on event creation), so this covers both."""
     if requesting_user is None:

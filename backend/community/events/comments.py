@@ -26,6 +26,7 @@ from community.events._comment_schemas import (
     ReactionToggleIn,
     ReactorOut,
 )
+from community.events.helpers import event_co_host_ids
 from community.events.read_visibility import _enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -50,10 +51,6 @@ def _viewer_has_rsvp(event: Event, user) -> bool:
     return EventRSVP.objects.filter(event=event, user=user).exists()
 
 
-def _co_host_pks(event: Event) -> set[str]:
-    return {str(u.pk) for u in event.co_hosts.all()}
-
-
 def _can_post_comments(
     event: Event,
     user,
@@ -64,7 +61,7 @@ def _can_post_comments(
         return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if str(user.pk) in (_co_host_pks(event) if co_host_pks is None else co_host_pks):
+    if str(user.pk) in (event_co_host_ids(event) if co_host_pks is None else co_host_pks):
         return True
     return _viewer_has_rsvp(event, user)
 
@@ -82,7 +79,7 @@ def _can_delete_comment(
         return True
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    return str(user.pk) in (_co_host_pks(event) if co_host_pks is None else co_host_pks)
+    return str(user.pk) in (event_co_host_ids(event) if co_host_pks is None else co_host_pks)
 
 
 def _reactions_summary(
@@ -152,7 +149,7 @@ def _comment_out(
 
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
-    co_host_pks = _co_host_pks(event)
+    co_host_pks = event_co_host_ids(event)
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:

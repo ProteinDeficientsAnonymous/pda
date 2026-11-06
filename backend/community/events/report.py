@@ -16,7 +16,12 @@ from community.events._report_schemas import (
     ReportBucket,
     ReportPlusOne,
 )
-from community.events.helpers import _can_edit_event, is_cohost, load_event_with_stats_prefetch
+from community.events.helpers import (
+    _can_edit_event,
+    event_co_host_ids,
+    is_cohost,
+    load_event_with_stats_prefetch,
+)
 from community.models import AttendanceStatus, Event, RSVPStatus
 from community.shared import ErrorOut, csv_response, csv_safe
 from community.validation import Code, raise_validation
@@ -97,7 +102,7 @@ def _classify_rsvp(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict
 
 
 def _build_report(event: Event, viewer) -> CheckInReportOut:
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    co_host_ids = event_co_host_ids(event)
     can_see_phones = is_cohost(viewer, co_host_ids)
 
     buckets = {
@@ -180,7 +185,7 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     event = _load_and_authorize(request, event_id)
     selected = _parse_columns(columns)
 
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    co_host_ids = event_co_host_ids(event)
     can_see_phones = is_cohost(request.auth, co_host_ids)
 
     buf = io.StringIO()
