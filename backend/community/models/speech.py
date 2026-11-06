@@ -22,3 +22,18 @@ class SpeechTemplate(models.Model):
     def get(cls) -> "SpeechTemplate":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class EventSpeech(models.Model):
+    event = models.OneToOneField("community.Event", on_delete=models.CASCADE, related_name="speech")
+    values = models.JSONField(default=dict)
+    updated_by = models.ForeignKey(
+        "users.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+
+    def __str__(self):
+        return f"Speech for {self.event_id}"

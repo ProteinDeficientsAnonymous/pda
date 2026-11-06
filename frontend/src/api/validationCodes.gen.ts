@@ -290,6 +290,9 @@ export const Code = {
     TooManyRoles: 'speech_template.too_many_roles',
     RoleTooLong: 'speech_template.role_too_long',
   },
+  Speech: {
+    InvalidValues: 'speech.invalid_values',
+  },
   Connect: {
     RequestNotFound: 'connect.request_not_found',
     RequestExpired: 'connect.request_expired',
@@ -513,6 +516,7 @@ export type ValidationCode =
   | 'speech_template.invalid_doc'
   | 'speech_template.too_many_roles'
   | 'speech_template.role_too_long'
+  | 'speech.invalid_values'
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
@@ -733,6 +737,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'speech_template.invalid_doc': [],
   'speech_template.too_many_roles': ['max'],
   'speech_template.role_too_long': ['max'],
+  'speech.invalid_values': [],
   'connect.request_not_found': [],
   'connect.request_expired': [],
   'connect.request_already_used': [],
