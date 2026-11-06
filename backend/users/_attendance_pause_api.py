@@ -8,7 +8,7 @@ from ninja.responses import Status
 from pydantic import BaseModel
 
 from users._attendance_pause import PauseImpact, attendance_pause_impact
-from users._management import _require_manage_users
+from users._management import require_manage_users
 from users._management import router as management_router
 from users.models import User
 from users.schemas import ErrorOut
@@ -68,7 +68,7 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
     auth=gated_jwt,
 )
 def attendance_pause_preview(request, user_id: UUID):
-    _require_manage_users(request, "attendance_pause_preview", str(user_id))
+    require_manage_users(request, "attendance_pause_preview", str(user_id))
     try:
         user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:

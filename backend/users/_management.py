@@ -60,7 +60,7 @@ def _require_permission(
     raise_validation(Code.Perm.DENIED, status_code=403, action=endpoint)
 
 
-def _require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
+def require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
     _require_permission(request, PermissionKey.MANAGE_USERS, endpoint, user_id)
 
 
@@ -119,7 +119,7 @@ def create_user(request, payload: UserCreateIn):
     auth=gated_jwt,
 )
 def bulk_create_users(request, payload: BulkUserCreateIn):
-    _require_manage_users(request, "bulk_create_users")
+    require_manage_users(request, "bulk_create_users")
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
     results: list[BulkUserResult] = []
@@ -242,7 +242,7 @@ def search_users(request, q: str = ""):
     auth=gated_jwt,
 )
 def list_users(request, include_non_members: bool = False):
-    _require_manage_users(request, "list_users")
+    require_manage_users(request, "list_users")
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
@@ -273,7 +273,7 @@ def list_users(request, include_non_members: bool = False):
     auth=gated_jwt,
 )
 def list_member_attended_events(request, user_id: str):
-    _require_manage_users(request, "list_member_attended_events", user_id)
+    require_manage_users(request, "list_member_attended_events", user_id)
     if not User.objects.filter(pk=user_id, archived_at__isnull=True).exists():
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     rsvps = (
@@ -303,7 +303,7 @@ def list_member_attended_events(request, user_id: str):
     auth=gated_jwt,
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
-    _require_manage_users(request, "update_user", user_id)
+    require_manage_users(request, "update_user", user_id)
     editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
     try:
         user = editable.get(pk=user_id)
@@ -393,7 +393,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     auth=gated_jwt,
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
-    _require_manage_users(request, "update_user_roles", user_id)
+    require_manage_users(request, "update_user_roles", user_id)
     try:
         user = User.objects.members().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:

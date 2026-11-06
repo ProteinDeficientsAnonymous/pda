@@ -7,7 +7,7 @@ from django.db.models import ProtectedError
 from ninja.responses import Status
 
 from users._archive import archive_user
-from users._management import _require_manage_users
+from users._management import require_manage_users
 from users._management import router as management_router
 from users.helpers import _is_last_admin
 from users.models import User
@@ -24,7 +24,7 @@ router = management_router
     auth=gated_jwt,
 )
 def delete_user(request, user_id: str):
-    _require_manage_users(request, "delete_user", user_id)
+    require_manage_users(request, "delete_user", user_id)
     try:
         user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:
@@ -61,7 +61,7 @@ def hard_delete_user(request, user_id: str):
     gone for good. Restricted to never-logged-in accounts — an approved entry the
     person never actually claimed — so a real member's data is never destroyed.
     """
-    _require_manage_users(request, "hard_delete_user", user_id)
+    require_manage_users(request, "hard_delete_user", user_id)
     try:
         user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:
