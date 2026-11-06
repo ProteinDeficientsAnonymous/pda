@@ -1,19 +1,14 @@
 import logging
 from dataclasses import dataclass, field
 
-from community.models import (
-    CoHostInviteStatus,
-    Event,
-    EventCoHostInvite,
-    EventRSVP,
-    EventStatus,
-    EventType,
+from community.events.tentative_member_access import (
+    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_EVENT_TYPES,
 )
-from community.models.choices import is_official_or_club
+from community.models import CoHostInviteStatus, Event, EventCoHostInvite, EventRSVP, EventStatus
 from community.rsvps.public_shared import _format_event_when
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.utils import timezone
 from notifications.email_sender import get_email_sender
 from notifications.event_unpublished_email import (
@@ -29,15 +24,14 @@ from users._archive import (
     _HELD_RSVP_STATUSES,
     _release_upcoming_rsvps,
     _step_down_as_cohost,
+    _upcoming_hosted_events,
     upcoming_events_q,
 )
-from users.helpers import _strip_non_member_roles
 from users.models import HAS_EMAIL, User
 
 logger = logging.getLogger(__name__)
 
-QUALIFYING_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
-QUALIFYING_EVENT_Q = Q(event_type__in=QUALIFYING_EVENT_TYPES)
+KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
 
 
 @dataclass
@@ -56,13 +50,8 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     return(PauseImpact): events per bucket, soonest first
     """
     impact = PauseImpact()
-    hosted = (
-        Event.objects.filter(upcoming_events_q(), pk__in=user.co_hosted_events.values("pk"))
-        .annotate(host_count=Count("co_hosts"))
-        .order_by("start_datetime")
-    )
-    for event in hosted:
-        if is_official_or_club(event.event_type):
+    for event in _upcoming_hosted_events(user).order_by("start_datetime"):
+        if event.event_type in KEPT_EVENT_TYPES:
             impact.kept_hosting.append(event)
         elif event.host_count > 1:
             impact.removed_hosting.append(event)
@@ -80,15 +69,13 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         .order_by("start_datetime")
     )
     for event in rsvped:
-        bucket = (
-            impact.kept_rsvps if is_official_or_club(event.event_type) else impact.removed_rsvps
-        )
+        bucket = impact.kept_rsvps if event.event_type in KEPT_EVENT_TYPES else impact.removed_rsvps
         bucket.append(event)
     return impact
 
 
 def apply_attendance_pause(request, user: User) -> PauseImpact:
-    """Attendance-pause the user and release what they hold on non-qualifying upcoming events.
+    """Attendance-pause the user and release what they hold on upcoming events of other types.
 
     param(request): the triggering request, for audit and promoted-member email logging
     param(user): the member to pause
@@ -99,11 +86,13 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         # Drafting first deletes the user's own RSVP there, so releasing can't promote its waitlist.
         for event in impact.drafted_events:
             _move_to_draft(event, user)
-        _release_upcoming_rsvps(request, user, ~QUALIFYING_EVENT_Q)
-        _step_down_as_cohost(user, ~QUALIFYING_EVENT_Q)
-        EventCoHostInvite.objects.filter(user=user, status=CoHostInviteStatus.PENDING).exclude(
-            event__event_type__in=QUALIFYING_EVENT_TYPES
-        ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
+        _release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
+        _step_down_as_cohost(user, ~KEPT_EVENT_Q)
+        EventCoHostInvite.objects.filter(
+            upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
+        ).exclude(event__event_type__in=KEPT_EVENT_TYPES).update(
+            status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()
+        )
         removed_role_ids = _strip_membership(user)
         user.attendance_paused_at = timezone.now()
         user.is_member = False
@@ -159,11 +148,8 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
 
 
 def _strip_membership(user: User) -> list[str]:
-    removed_role_ids = _strip_non_member_roles(user)
-    member_role = user.roles.filter(name="member", is_default=True).first()
-    if member_role:
-        user.roles.remove(member_role)
-        removed_role_ids.append(str(member_role.id))
+    removed_role_ids = [str(pk) for pk in user.roles.values_list("pk", flat=True)]
+    user.roles.clear()
     return removed_role_ids
 
 
