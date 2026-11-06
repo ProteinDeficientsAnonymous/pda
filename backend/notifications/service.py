@@ -208,6 +208,26 @@ def create_account_deleted_notifications(user: User) -> None:
     notify_users(str(recipient.pk) for recipient in recipients)
 
 
+def _create_event_notifications(
+    event: Event,
+    recipient_ids: list[str],
+    notification_type: NotificationType,
+    message: str,
+) -> None:
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=notification_type,
+                event=event,
+                message=message,
+            )
+            for user_id in recipient_ids
+        ]
+    )
+    notify_users(recipient_ids)
+
+
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
     canceller_id = str(canceller.pk)
     invited_ids = {str(u.pk) for u in event.invited_users.all()}
@@ -219,33 +239,18 @@ def create_event_cancellation_notifications(event: Event, canceller: User) -> No
     recipient_ids = list((invited_ids | rsvp_ids) - {canceller_id})
     if not recipient_ids:
         return
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.EVENT_CANCELLED,
-                event=event,
-                message=f"{event.title} was cancelled",
-            )
-            for user_id in recipient_ids
-        ]
+    _create_event_notifications(
+        event, recipient_ids, NotificationType.EVENT_CANCELLED, f"{event.title} was cancelled"
     )
-    notify_users(recipient_ids)
 
 
 def create_event_unpublished_notifications(event: Event, recipient_ids: list[str]) -> None:
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.EVENT_UNPUBLISHED,
-                event=event,
-                message=f"{event.title} was unpublished and your rsvp was removed",
-            )
-            for user_id in recipient_ids
-        ]
+    _create_event_notifications(
+        event,
+        recipient_ids,
+        NotificationType.EVENT_UNPUBLISHED,
+        f"{event.title} was unpublished and your rsvp was removed",
     )
-    notify_users(recipient_ids)
 
 
 def create_event_invite_notifications(
@@ -256,18 +261,12 @@ def create_event_invite_notifications(
     inviter_id = str(inviter.pk)
     inviter_name = visible_display_name(inviter, None)
     notified_ids = [uid for uid in new_user_ids if str(uid) != inviter_id]
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.EVENT_INVITE,
-                event=event,
-                message=f"{inviter_name} invited you to {event.title}",
-            )
-            for user_id in notified_ids
-        ]
+    _create_event_notifications(
+        event,
+        notified_ids,
+        NotificationType.EVENT_INVITE,
+        f"{inviter_name} invited you to {event.title}",
     )
-    notify_users(notified_ids)
 
 
 def create_waitlist_promoted_notifications(

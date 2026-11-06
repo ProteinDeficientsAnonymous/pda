@@ -13,7 +13,7 @@ from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
 
-from users._attendance_pause import MEMBER_OR_ATTENDANCE_PAUSED_Q, apply_attendance_pause_patch
+from users._attendance_pause import apply_attendance_pause_patch
 from users.helpers import (
     _check_and_set_email,
     _create_magic_token,
@@ -354,7 +354,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
-    editable = User.objects.filter(MEMBER_OR_ATTENDANCE_PAUSED_Q).prefetch_related("roles")
+    editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
     try:
         user = editable.get(pk=user_id)
     except User.DoesNotExist:
