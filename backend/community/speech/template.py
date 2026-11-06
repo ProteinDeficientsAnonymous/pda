@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime
 
@@ -9,6 +8,7 @@ from ninja.responses import Status
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community.content.prosemirror_html import parse_prosemirror_doc
 from community.field_limits import FieldLimit
 from community.models import SpeechTemplate
 from community.shared import ErrorOut
@@ -47,13 +47,7 @@ def _out(obj: SpeechTemplate) -> SpeechTemplateOut:
 
 
 def _validate_pm(field: str, value: str) -> None:
-    if not value.strip():
-        return
-    try:
-        doc = json.loads(value)
-    except ValueError:
-        doc = None
-    if not isinstance(doc, dict) or doc.get("type") != "doc":
+    if value.strip() and parse_prosemirror_doc(value) is None:
         raise_validation(Code.SpeechTemplate.INVALID_DOC, field=field)
 
 
