@@ -231,7 +231,7 @@ def _event_ics_description(event, target_url: str, is_authed: bool) -> str:
     line so users can jump back to the event page (#347).
 
     whatsapp/partiful/other links are member-only and match the gating in
-    `_event_out` — anon callers never receive them (#445).
+    `event_out` — anon callers never receive them (#445).
     """
     parts = []
     if event.description:

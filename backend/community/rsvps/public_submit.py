@@ -14,7 +14,7 @@ from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
 
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
@@ -73,7 +73,7 @@ class PublicRsvpPhoneCheckOut(BaseModel):
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
     """Mimic a real submission's shape (no rows created, no email) so bots register success."""
     return PublicRsvpOut(
-        event=_event_out(event, None),
+        event=event_out(event, None),
         rsvp=PublicRsvpStateOut(status=status, has_plus_one=has_plus_one),
         rsvp_token="",
     )
@@ -317,7 +317,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     return Status(
         200,
         PublicRsvpOut(
-            event=_event_out(fresh_event, user),
+            event=event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
             rsvp_token=returned_token,
         ),

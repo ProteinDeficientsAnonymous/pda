@@ -21,7 +21,7 @@ from community.cashapp.review import (
     load_payment_context,
     review_cashapp_csv,
 )
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.events.read_visibility import _enforce_event_read_visibility
 from community.events.tentative_member_access import event_viewer_for
 from community.models import Event, parse_event_ref
@@ -88,7 +88,7 @@ def _review_event(
 ) -> tuple[CashAppReview, list[GuestRecord], set[str]]:
     """Payment status follows the guest list's rule: co-hosts and manage_events only."""
     try:
-        if not _can_edit_event(user, event):
+        if not can_edit_event(user, event):
             raise_validation(Code.Perm.DENIED, status_code=403, action="review_cashapp_payments")
         guests, verified = load_guests_and_verified(event)
         review = review_cashapp_csv(csv_text, load_payment_context(event), guests, verified)

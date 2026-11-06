@@ -5,7 +5,7 @@ from community.events.crud import create_event as create_event_view
 from community.events.crud import get_event as get_event_view
 from community.events.crud import update_event as update_event_view
 from community.events.geocode import GeocodeQuery, geocode
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.events.nonmember_removal import ineligible_non_member_rsvps
 from community.events.schemas import EventPatchIn
 from community.models import Event, EventStatus, EventType
@@ -99,7 +99,7 @@ def _non_members_removed(request: Any, event_id: str, payload: EventPatchIn) -> 
     """Mirrors update_event: count non-member rsvps the edit would remove, on an unsaved copy."""
     event = Event.objects.get(pk=event_id)
     # Same gate as update_event's save, so non-editors never see the count.
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
     if not event.is_public_rsvp_eligible:
         return 0

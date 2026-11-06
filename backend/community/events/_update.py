@@ -6,11 +6,11 @@ from django.utils import timezone
 
 from community.cohosts.helpers import _update_co_hosts
 from community.events.helpers import (
-    _can_edit_event,
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
     _validated_event_format,
+    can_edit_event,
 )
 from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
@@ -97,7 +97,7 @@ def _resolve_event_format(event: Event, updates: dict) -> None:
 
 
 def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
-    if _can_edit_event(request.auth, event):
+    if can_edit_event(request.auth, event):
         return
     audit_log(
         logging.WARNING,

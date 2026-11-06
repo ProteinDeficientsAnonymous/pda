@@ -56,7 +56,7 @@ def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
 
 
 def reload_event_or_404(event_id: UUID) -> Event:
-    """Reload an event after a write with what _event_out needs prefetched."""
+    """Reload an event after a write with what event_out needs prefetched."""
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
@@ -325,7 +325,7 @@ def _host_fields(event: Event, creator, co_hosts, auth_user) -> dict:
     }
 
 
-def _event_out(event: Event, requesting_user=None) -> EventOut:
+def event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
@@ -416,7 +416,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     )
 
 
-def _can_edit_event(user, event: Event) -> bool:
+def can_edit_event(user, event: Event) -> bool:
     """Check if user can edit/delete this event (host or manager)."""
     if "co_hosts" in getattr(event, "_prefetched_objects_cache", {}):
         is_host = any(c.pk == user.pk for c in event.co_hosts.all())
@@ -431,7 +431,7 @@ def load_editable_event(user, event_id: UUID, action: str) -> Event:
     event = Event.objects.prefetch_related("co_hosts").filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(user, event):
+    if not can_edit_event(user, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action=action)
     return event
 

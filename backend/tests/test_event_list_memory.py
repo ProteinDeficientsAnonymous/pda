@@ -3,7 +3,7 @@
 import io
 
 import pytest
-from community.events.helpers import _event_out, load_event_with_stats_prefetch
+from community.events.helpers import event_out, load_event_with_stats_prefetch
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
@@ -438,7 +438,7 @@ class TestGetEventMemory:
             )
         loaded = load_event_with_stats_prefetch(event.id)
         with CaptureQueriesContext(connection) as ctx:
-            out = _event_out(loaded, test_user)
+            out = event_out(loaded, test_user)
         rsvp_sql = [q["sql"] for q in ctx.captured_queries if "community_eventrsvp" in q["sql"]]
         assert out.attending_count == 8
         assert len(out.guests) == 8

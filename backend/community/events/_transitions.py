@@ -17,7 +17,7 @@ from notifications.service import (
 from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import diff_cohost_invites, send_cohost_invite_emails
-from community.events.helpers import _event_out, _has_attendees
+from community.events.helpers import _has_attendees, event_out
 from community.models import Event, EventRSVP, EventStatus
 from community.rsvps.counts import _host_crew_ids
 from community.validation import Code, raise_validation
@@ -208,6 +208,6 @@ def _handle_status_update(request, event: Event, new_status: str, notify: bool):
 
     # After a delete transition the event is gone — stop further processing
     if new_status == EventStatus.DELETED:
-        return Status(200, _event_out(event, request.auth))
+        return Status(200, event_out(event, request.auth))
 
     return None
