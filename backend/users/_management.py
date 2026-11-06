@@ -13,6 +13,7 @@ from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
 
+from users._attendance_pause import apply_attendance_pause_patch
 from users.helpers import (
     _check_and_set_email,
     _create_magic_token,
@@ -42,6 +43,19 @@ from users.schemas import (
 )
 
 router = Router()
+
+
+def _require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
+    if request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        return
+    details = {"endpoint": endpoint, "required_permission": PermissionKey.MANAGE_USERS}
+    target = (
+        AuditTarget(details=details)
+        if user_id is None
+        else AuditTarget(type=AuditTargetType.USER, id=user_id, details=details)
+    )
+    audit_log(logging.WARNING, "permission_denied", request, persist=False, target=target)
+    raise_validation(Code.Perm.DENIED, status_code=403, action=endpoint)
 
 
 @router.post(
@@ -337,24 +351,10 @@ def list_member_attended_events(request, user_id: str):
     auth=gated_jwt,
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "update_user",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
+    _require_manage_users(request, "update_user", user_id)
+    editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
     try:
-        user = User.objects.members().prefetch_related("roles").get(pk=user_id)
+        user = editable.get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
@@ -363,6 +363,8 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
+    if apply_attendance_pause_patch(request, user, payload.attendance_paused):
+        user = editable.get(pk=user_id)
     return Status(200, UserOut.from_user(user))
 
 
@@ -426,6 +428,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
+    _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
     if payload.has_joined_whatsapp is not None:

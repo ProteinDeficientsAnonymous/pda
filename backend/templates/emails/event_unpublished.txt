@@ -1,0 +1,9 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ event_title|lower }}{% if event_when %} on {{ event_when|lower }}{% endif %} has been unpublished because its host can't run it anymore.
+
+your rsvp was removed. sorry for the change of plans.
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
