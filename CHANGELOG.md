@@ -1,3 +1,10 @@
+# [0.211.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.210.0...v0.211.0) (2026-11-06)
+
+
+### Features
+
+* **events:** add read-only event format to events ([#2078](https://github.com/ProteinDeficientsAnonymous/pda/issues/2078)) ([128d10b](https://github.com/ProteinDeficientsAnonymous/pda/commit/128d10b166c12cff6220b159bc783371cadc3520))
+
 # [0.210.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.4...v0.210.0) (2026-11-06)
 
 
