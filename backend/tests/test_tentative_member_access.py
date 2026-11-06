@@ -56,6 +56,17 @@ def tentative_user(db):
     return user
 
 
+@pytest.fixture
+def attendance_paused_member(db):
+    return User.objects.create(
+        phone_number="+16505551235",
+        first_name="Paused",
+        is_member=False,
+        attendance_paused_at=timezone.now(),
+        guidelines_consent_at=timezone.now(),
+    )
+
+
 @pytest.mark.django_db
 class TestCheckPhoneTentative:
     def test_tentative_applicant_can_reach_the_login_step(self, api_client, tentative_user):
@@ -147,23 +158,25 @@ class TestTentativeEventAccess:
         assert by_title["Official"]["location"] == "123 Sprout Lane"
         assert by_title["Potluck"]["location"] == ""
 
-    def test_can_rsvp_to_official_event(self, api_client, tentative_user, host):
+    @pytest.mark.parametrize("rsvper", ["tentative_user", "attendance_paused_member"])
+    def test_can_rsvp_to_official_event(self, api_client, request, rsvper, host):
         event = _event("Official", EventType.OFFICIAL, host=host)
         response = api_client.post(
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **auth_headers_for(tentative_user),
+            **auth_headers_for(request.getfixturevalue(rsvper)),
         )
         assert response.status_code == 200
 
-    def test_cannot_rsvp_to_community_event(self, api_client, tentative_user, host):
+    @pytest.mark.parametrize("rsvper", ["tentative_user", "attendance_paused_member"])
+    def test_cannot_rsvp_to_community_event(self, api_client, request, rsvper, host):
         event = _event("Potluck", EventType.COMMUNITY, host=host)
         response = api_client.post(
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **auth_headers_for(tentative_user),
+            **auth_headers_for(request.getfixturevalue(rsvper)),
         )
         assert response.status_code == 403
 

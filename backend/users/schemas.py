@@ -319,6 +319,7 @@ class UserPatchIn(BaseModel):
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
+    attendance_paused: bool | None = None
     has_joined_whatsapp: bool | None = None
 
 

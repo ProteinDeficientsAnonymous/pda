@@ -8044,6 +8044,17 @@
       },
       "UserPatchIn": {
         "properties": {
+          "attendance_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused"
+          },
           "email": {
             "anyOf": [
               {
