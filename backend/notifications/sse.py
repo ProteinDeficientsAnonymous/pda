@@ -54,7 +54,7 @@ def _build_async_dsn() -> str:
     return f"postgresql://{db['USER']}:{db['PASSWORD']}@{host}:{port}/{db['NAME']}"
 
 
-def _format_notify_for_user(channel: str, payload: str, user_id: str) -> str | None:
+def format_notify_for_user(channel: str, payload: str, user_id: str) -> str | None:
     """Turn a pg_notify payload into an SSE frame for this user, or None to skip."""
     if channel == _PG_CHANNEL:
         if payload == user_id:
@@ -83,7 +83,7 @@ async def _sse_generator(user_id: str):
             while not conn.closed:
                 async with aclosing(conn.notifies(timeout=_HEARTBEAT_INTERVAL)) as notifies:
                     async for notify in notifies:
-                        frame = _format_notify_for_user(notify.channel, notify.payload, user_id)
+                        frame = format_notify_for_user(notify.channel, notify.payload, user_id)
                         if frame is not None:
                             yield frame
                 yield ": heartbeat\n\n"
