@@ -398,6 +398,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     coHostIds: e.coHostIds,
     tagIds: e.tags.map((t) => t.id),
     status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
-    eventFormat: e.eventFormat,
+    // A blank format would render the walk toggle off yet save nothing, since null means "unchanged" on PATCH.
+    eventFormat: e.eventFormat ?? EventFormat.Walk,
   };
 }

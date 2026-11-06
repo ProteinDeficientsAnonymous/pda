@@ -4585,6 +4585,10 @@ export interface components {
             approved_at?: string | null;
             /** Approved By Name */
             approved_by_name?: string | null;
+            /** Approved Via Event Id */
+            approved_via_event_id?: string | null;
+            /** Approved Via Event Title */
+            approved_via_event_title?: string | null;
             /**
              * Attended Club Count
              * @default 0

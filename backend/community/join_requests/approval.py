@@ -177,7 +177,8 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     join_request.status = JoinRequestStatus.APPROVED
     join_request.approved_at = timezone.now()
     join_request.approved_by = actor
-    join_request.save(update_fields=["status", "approved_at", "approved_by"])
+    join_request.approved_via_event = event
+    join_request.save(update_fields=["status", "approved_at", "approved_by", "approved_via_event"])
     return True
 
 

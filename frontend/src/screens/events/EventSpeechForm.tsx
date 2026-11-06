@@ -20,6 +20,11 @@ const FORMAT_KEYS: Record<EventFormat, SpeechBlankKey[]> = {
   restaurant: ['restaurant'],
 };
 
+const HINTS: Partial<Record<SpeechBlankKey, string>> = {
+  front_walker: "who's the walk leader?",
+  back_walker: "who's in the back of the group?",
+};
+
 const FORMAT_OPTIONS = [
   { value: EventFormat.Walk, label: 'walk' },
   { value: EventFormat.Restaurant, label: 'restaurant' },
@@ -137,6 +142,7 @@ function BlankField({
   return (
     <TextField
       label={label}
+      hint={HINTS[blankKey]}
       value={value}
       onChange={(e) => {
         onChange(e.target.value);

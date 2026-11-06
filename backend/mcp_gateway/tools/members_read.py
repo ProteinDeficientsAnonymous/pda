@@ -5,12 +5,14 @@ from asgiref.sync import sync_to_async
 from community.attendance.analytics import QUALIFYING_WINDOW_DAYS
 from django.utils import timezone
 from pydantic import Field
+from users.api import search_users
 from users.member_search import MemberFilters, MemberSort, members_matching, with_qualifying_count
 from users.member_status import count_members_by_status
 from users.models import User
 from users.permissions import PermissionKey
 
-from mcp_gateway.server import pda_tool
+from mcp_gateway.server import current_user, pda_tool
+from mcp_gateway.view_calls import call_view
 
 
 @pda_tool(
@@ -109,3 +111,16 @@ async def find_members(
     return await sync_to_async(_page)(
         filters or MemberFilters(), limit, offset, include_contact, sort
     )
+
+
+@pda_tool(
+    description=(
+        "look up members by name or phone number to get their ids, e.g. for invite_to_event. "
+        "returns up to 10 matches with id and name; you're never in the results."
+    )
+)
+async def search_members(
+    query: Annotated[str, Field(min_length=1, max_length=100, description="name or phone")],
+) -> list[dict[str, str]]:
+    rows = await call_view(search_users, await current_user(), q=query)
+    return [{"id": row["id"], "name": row["full_name"]} for row in rows]

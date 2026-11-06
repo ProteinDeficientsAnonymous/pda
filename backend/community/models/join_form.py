@@ -64,6 +64,14 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="approved_join_requests",
     )
+    # Set when a tentative applicant is auto-approved by checking in at this event.
+    approved_via_event = models.ForeignKey(
+        "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
     rejected_at = models.DateTimeField(null=True, blank=True)
     rejected_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
