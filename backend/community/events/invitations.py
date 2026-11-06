@@ -36,7 +36,7 @@ class InviteIn(BaseModel):
     user_ids: list[str] = Field(..., min_length=1, max_length=100)
 
 
-def _can_invite_to_event(user, event: Event) -> bool:
+def can_invite_to_event(user, event: Event) -> bool:
     """Permission gate only — the RSVP nudge for all_members is frontend UX,
     intentionally not enforced here (Issue 688)."""
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
@@ -62,7 +62,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    if not _can_invite_to_event(request.auth, event):
+    if not can_invite_to_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
