@@ -1,3 +1,10 @@
+# [0.214.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.213.0...v0.214.0) (2026-11-06)
+
+
+### Features
+
+* **speech:** move the event speech link into the event settings menu ([#2147](https://github.com/ProteinDeficientsAnonymous/pda/issues/2147)) ([7c66e65](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c66e65c11d656d82501cc52db3f9720898bc178))
+
 # [0.213.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.212.0...v0.213.0) (2026-11-06)
 
 
