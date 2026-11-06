@@ -14,7 +14,7 @@ from notifications.service import broadcast_event_update
 from users.helpers import visible_display_name
 from users.permissions import PermissionKey
 
-from community.cohosts.helpers import _pending_cohost_invites_out
+from community.cohosts.helpers import pending_cohost_invites_out
 from community.cohosts.invite_helpers import get_my_pending_invite
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
@@ -343,7 +343,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
     )
     invited, invited_count = invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
 
-    pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
+    pending_invites_out = pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     return EventOut(

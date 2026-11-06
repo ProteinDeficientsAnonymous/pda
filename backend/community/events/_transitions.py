@@ -67,7 +67,7 @@ def _uncancel_event(request, event: Event) -> None:
     _audit_event(request, event, "event_uncancelled")
 
 
-def _set_event_participants(request, event: Event, co_host_ids: list) -> None:
+def set_event_participants(request, event: Event, co_host_ids: list) -> None:
     """Attach co-hosts to the event and send invite notifications.
 
     Co-hosts go through the invite-approval flow: requested ids become PENDING
@@ -173,7 +173,7 @@ def _apply_status_transition(request, event: Event, new_status: str, notify: boo
     )
 
 
-def _handle_status_update(request, event: Event, new_status: str, notify: bool):
+def handle_status_update(request, event: Event, new_status: str, notify: bool):
     """Apply a status transition from update_event.
 
     Returns a Status response to send immediately (for DELETE, which exits early
