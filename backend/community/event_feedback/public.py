@@ -40,7 +40,7 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
 
 def _public_survey_out(survey: Survey) -> SurveyOut:
     # token holders are unauthenticated: hide live counts and admin-only metadata
-    return _survey_out(survey, include_questions=True).model_copy(
+    return _survey_out(survey, include_questions=True, count_responses=False).model_copy(
         update={
             "slug": "",
             "response_count": 0,
