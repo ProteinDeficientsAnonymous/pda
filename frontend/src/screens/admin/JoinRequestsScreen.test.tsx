@@ -393,6 +393,30 @@ describe('JoinRequestsScreen tentative section', () => {
     expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
   });
 
+  it('shows both the tentative approval and the check-in event that auto-approved them', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.APPROVED,
+        tentativeAt: '2026-03-01T18:00:00Z',
+        tentativeByName: 'Sam Vettor',
+        approvedAt: '2026-03-08T19:00:00Z',
+        approvedByName: 'Hal Host',
+        approvedViaEventId: 'e1',
+        approvedViaEventTitle: 'Board Games',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
+
+    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+    expect(screen.getByText(/auto approved after joining/)).toHaveTextContent(
+      /auto approved after joining board games on mar 8/,
+    );
+    expect(screen.getByRole('link', { name: 'board games' })).toHaveAttribute('href', '/events/e1');
+    expect(screen.queryByText(/approved by hal host/)).not.toBeInTheDocument();
+  });
+
   it('shows a manually approve button for tentative requests', async () => {
     mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
 

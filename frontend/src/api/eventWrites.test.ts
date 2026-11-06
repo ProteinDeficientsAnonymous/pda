@@ -124,9 +124,17 @@ describe('event format', () => {
     expect(emptyEventFormValues().eventFormat).toBe('walk');
   });
 
-  it('keeps an older official event without a format as null', () => {
+  it('defaults an official event without a format to walk so saving stores it', () => {
     const form = eventToFormValues(makeEvent({ eventType: EventType.Official, eventFormat: null }));
-    expect(form.eventFormat).toBeNull();
+    expect(form.eventFormat).toBe('walk');
+    expect(toWireBody(form).event_format).toBe('walk');
+  });
+
+  it('saves a format when a formatless event is switched to official', () => {
+    const form = eventToFormValues(
+      makeEvent({ eventType: EventType.Community, eventFormat: null }),
+    );
+    expect(toWireBody({ ...form, eventType: EventType.Official }).event_format).toBe('walk');
   });
 
   it('reads the saved format', () => {

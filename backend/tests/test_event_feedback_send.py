@@ -248,7 +248,7 @@ class TestReminders:
         assert fake_email_sender.send.call_count == 1
         kwargs = fake_email_sender.send.call_args.kwargs
         assert kwargs["to"] == pending.user.email
-        assert kwargs["subject"] == "still keen to hear about vegan potluck"
+        assert kwargs["subject"] == "we'd still love to hear about vegan potluck"
         assert feedback_url(pending.token) in kwargs["text"]
         pending.refresh_from_db()
         assert pending.reminder_sent_at == NOW
