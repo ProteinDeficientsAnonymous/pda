@@ -55,6 +55,14 @@ def _event_links(event: Event) -> list[str]:
     return [link for link in (event.whatsapp_link, event.partiful_link, event.other_link) if link]
 
 
+def manage_rsvp_url(token: str) -> str:
+    return f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token}"
+
+
+def event_page_url(event: Event) -> str:
+    return f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}"
+
+
 def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails:
     return RsvpEmailDetails(
         to=user.email,
@@ -63,7 +71,7 @@ def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails
         event_when=_format_event_when(event),
         event_location=event.location,
         event_links=_event_links(event),
-        manage_url=f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token_str}",
+        manage_url=manage_rsvp_url(token_str),
         join_url=f"{settings.FRONTEND_BASE_URL}/join",
     )
 
