@@ -32,6 +32,10 @@ describe('SpeechBlankExtension', () => {
     expect(editor.getHTML()).toContain('walk details');
   });
 
+  it('uses the blank label as plain text', () => {
+    expect(makeEditor().getText()).toBe('walk: walk details');
+  });
+
   it('reparses the rendered chip', () => {
     const html = makeEditor().getHTML();
     const editor = new Editor({ extensions: [StarterKit, SpeechBlankExtension], content: html });
