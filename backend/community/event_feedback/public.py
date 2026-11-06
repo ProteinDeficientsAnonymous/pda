@@ -13,7 +13,7 @@ from community.event_feedback._schemas import EventFeedbackOut, EventFeedbackSub
 from community.models import EventFeedbackRequest, EventStatus, Survey, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 from community.shared import ErrorOut
-from community.surveys.helpers import _survey_out, survey_is_open
+from community.surveys.helpers import survey_is_open, survey_out
 from community.surveys.schemas import SurveyAnswersIn, SurveyOut
 from community.surveys.validators import _build_survey_answers, _validate_survey_answers
 from community.validation import Code, raise_validation
@@ -40,7 +40,7 @@ def _feedback_request_or_404(token: str, *, for_update: bool = False) -> EventFe
 
 def _public_survey_out(survey: Survey) -> SurveyOut:
     # token holders are unauthenticated: hide live counts and admin-only metadata
-    return _survey_out(survey, include_questions=True).model_copy(
+    return survey_out(survey, include_questions=True).model_copy(
         update={
             "slug": "",
             "response_count": 0,
