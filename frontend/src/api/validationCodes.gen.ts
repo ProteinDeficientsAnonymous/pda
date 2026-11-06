@@ -293,6 +293,8 @@ export const Code = {
   Speech: {
     FormatRequired: 'speech.format_required',
     InvalidValues: 'speech.invalid_values',
+    HostsOnly: 'speech.hosts_only',
+    OfficialEventRequired: 'speech.official_event_required',
   },
   Connect: {
     RequestNotFound: 'connect.request_not_found',
@@ -519,6 +521,8 @@ export type ValidationCode =
   | 'speech_template.role_too_long'
   | 'speech.format_required'
   | 'speech.invalid_values'
+  | 'speech.hosts_only'
+  | 'speech.official_event_required'
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
@@ -741,6 +745,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'speech_template.role_too_long': ['max'],
   'speech.format_required': [],
   'speech.invalid_values': [],
+  'speech.hosts_only': [],
+  'speech.official_event_required': [],
   'connect.request_not_found': [],
   'connect.request_expired': [],
   'connect.request_already_used': [],

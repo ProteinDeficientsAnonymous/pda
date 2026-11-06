@@ -301,6 +301,8 @@ class Code:
     class Speech:
         FORMAT_REQUIRED = "speech.format_required"
         INVALID_VALUES = "speech.invalid_values"
+        HOSTS_ONLY = "speech.hosts_only"
+        OFFICIAL_EVENT_REQUIRED = "speech.official_event_required"
 
     class Connect:
         REQUEST_NOT_FOUND = "connect.request_not_found"

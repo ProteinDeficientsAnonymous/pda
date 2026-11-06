@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { type EventSpeech, useEventSpeech, useSaveEventSpeech } from '@/api/eventSpeech';
+import { Code } from '@/api/validationCodes';
 import { HtmlContent } from '@/components/HtmlContent';
 import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { EventForbiddenNotice } from './EventForbiddenNotice';
 import { EventSpeechForm } from './EventSpeechForm';
 
 const READING_CLASS = [
@@ -14,17 +16,19 @@ const READING_CLASS = [
   '[&_blockquote]:my-3 [&_blockquote]:border-yellow-400 [&_blockquote]:text-sm [&_blockquote]:italic',
 ].join(' ');
 
+const LOAD_ERROR = "couldn't load this speech — try refreshing";
+const NOTICE_CODES = [Code.Speech.HostsOnly, Code.Speech.OfficialEventRequired];
+
 export default function EventSpeechScreen() {
   const { id } = useParams<{ id: string }>();
   const { data: speech, isPending, isError, error } = useEventSpeech(id);
 
   if (isPending) return <ContentLoading />;
   if (isError) {
-    const status = getApiStatus(error);
-    if (status === 403)
-      return <ContentError message="only this event's hosts can see its speech" />;
-    if (status === 404) return <ContentError message="speeches are only for official events" />;
-    return <ContentError message="couldn't load this speech — try refreshing" />;
+    if (NOTICE_CODES.some((code) => hasErrorCode(error, code))) {
+      return <EventForbiddenNotice eventId={id} message={extractApiErrorOr(error, LOAD_ERROR)} />;
+    }
+    return <ContentError message={LOAD_ERROR} />;
   }
 
   return <SpeechBody eventId={id ?? ''} speech={speech} />;

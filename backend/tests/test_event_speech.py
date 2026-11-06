@@ -175,7 +175,9 @@ class TestGetSpeech:
 
     def test_non_cohost_member_forbidden(self, api_client, walk):
         outsider = make_user(first_name="out", last_name="Last", is_member=True)
-        assert api_client.get(_url(walk), **auth_headers_for(outsider)).status_code == 403
+        response = api_client.get(_url(walk), **auth_headers_for(outsider))
+        assert response.status_code == 403
+        assert_error_code(response, "speech.hosts_only")
 
     def test_manage_events_without_cohost_forbidden(self, api_client, walk):
         admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
@@ -186,7 +188,9 @@ class TestGetSpeech:
 
     def test_community_event_not_found(self, api_client, maya):
         event = _event(maya, event_type=EventType.COMMUNITY, event_format="")
-        assert api_client.get(_url(event), **auth_headers_for(maya)).status_code == 404
+        response = api_client.get(_url(event), **auth_headers_for(maya))
+        assert response.status_code == 404
+        assert_error_code(response, "speech.official_event_required")
 
     def test_deleted_event_not_found(self, api_client, maya, walk):
         Event.objects.filter(pk=walk.pk).update(status=EventStatus.DELETED)
@@ -267,7 +271,9 @@ class TestPutSpeech:
 
     def test_non_cohost_forbidden(self, api_client, walk):
         outsider = make_user(first_name="out", last_name="Last", is_member=True)
-        assert self._put(api_client, walk, outsider, {"values": {}}).status_code == 403
+        response = self._put(api_client, walk, outsider, {"values": {}})
+        assert response.status_code == 403
+        assert_error_code(response, "speech.hosts_only")
 
     def test_manage_events_without_cohost_forbidden(self, api_client, walk):
         admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)

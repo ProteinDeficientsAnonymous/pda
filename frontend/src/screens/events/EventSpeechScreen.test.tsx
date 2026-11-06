@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { Code } from '@/api/validationCodes';
 import { renderWithProviders } from '@/test/render';
 
 import EventSpeechScreen from './EventSpeechScreen';
@@ -52,10 +53,10 @@ function renderScreen() {
   );
 }
 
-function httpError(status: number) {
+function httpError(status: number, code?: string) {
   return new AxiosError('fail', 'ERR', undefined, undefined, {
     status,
-    data: {},
+    data: code ? { detail: [{ code, field: null }] } : {},
   } as AxiosResponse);
 }
 
@@ -203,20 +204,31 @@ describe('EventSpeechScreen', () => {
     expect(within(container as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('explains a 403', async () => {
-    vi.mocked(apiClient.get).mockRejectedValue(httpError(403));
+  it('explains a hosts-only error', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(httpError(403, Code.Speech.HostsOnly));
     renderScreen();
 
     expect(
-      await screen.findByText("only this event's hosts can see its speech"),
+      await screen.findByText("only this event's hosts can see or edit its speech"),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'back to event' })).toBeInTheDocument();
   });
 
-  it('explains a 404', async () => {
-    vi.mocked(apiClient.get).mockRejectedValue(httpError(404));
+  it('explains a non-official event', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(httpError(404, Code.Speech.OfficialEventRequired));
     renderScreen();
 
     expect(await screen.findByText('speeches are only for official events')).toBeInTheDocument();
+  });
+
+  it('shows a load error for an uncoded failure', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(httpError(500));
+    renderScreen();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "couldn't load this speech — try refreshing",
+    );
   });
 
   it('shows a save error and stays on the form', async () => {
