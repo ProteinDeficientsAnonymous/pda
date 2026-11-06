@@ -2,6 +2,7 @@
 
 from ninja import Router
 
+from users._attendance_pause_api import router as attendance_pause_router
 from users._auth import router as auth_router
 from users._magic_links import router as magic_links_router
 from users._magic_login import router as magic_login_router
@@ -26,6 +27,7 @@ __all__ = [
 ]
 
 assert user_deletion_router is management_router
+assert attendance_pause_router is management_router
 
 router = Router()
 router.add_router("", roles_router)
