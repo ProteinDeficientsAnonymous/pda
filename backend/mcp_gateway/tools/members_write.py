@@ -3,8 +3,7 @@ from uuid import UUID
 
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
-from users.api import update_user
-from users.attendance_pause_api import attendance_pause_preview
+from users.api import attendance_pause_preview, update_user
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import UserPatchIn
@@ -16,7 +15,7 @@ from mcp_gateway.view_calls import call_view
 
 async def _member(member_id: UUID) -> User:
     try:
-        return await User.objects.aget(pk=member_id)
+        return await User.objects.members_or_attendance_paused().aget(pk=member_id)
     except User.DoesNotExist:
         raise ToolError(f"no member with id {member_id}") from None
 
@@ -51,7 +50,7 @@ async def set_attendance_pause(
 
     events: list[dict[str, Any]] = []
     if paused:
-        preview = await call_view(attendance_pause_preview, user, user_id=str(member.pk))
+        preview = await call_view(attendance_pause_preview, user, user_id=member.pk)
         events = preview["events"]
     bound = Confirmed(
         user.pk,

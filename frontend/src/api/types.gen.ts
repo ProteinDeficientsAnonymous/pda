@@ -332,7 +332,7 @@ export interface paths {
             cookie?: never;
         };
         /** Attendance Pause Preview */
-        get: operations["users_attendance_pause_api_attendance_pause_preview"];
+        get: operations["users__attendance_pause_api_attendance_pause_preview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7066,7 +7066,7 @@ export interface operations {
             };
         };
     };
-    users_attendance_pause_api_attendance_pause_preview: {
+    users__attendance_pause_api_attendance_pause_preview: {
         parameters: {
             query?: never;
             header?: never;
