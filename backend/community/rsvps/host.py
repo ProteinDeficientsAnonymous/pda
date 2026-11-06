@@ -11,9 +11,9 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community.events.helpers import (
-    _can_edit_event,
-    _event_out,
     broadcast_capacity_change,
+    can_edit_event,
+    event_out,
     load_editable_event,
     load_event_with_stats_prefetch,
 )
@@ -163,7 +163,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     if not event.is_past:
         email_host_set_rsvp_status(request, event, target_user, previous_status, final_status)
     email_promoted_users(request, event, promoted_user_ids)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 def _apply_payment_change_in_transaction(
@@ -195,7 +195,7 @@ def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPP
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 CASHAPP_IMPORT_SOURCE = "cashapp_import"
@@ -228,7 +228,7 @@ def _load_payment_import_event(request, event_id: UUID) -> Event:
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     _enforce_event_read_visibility(event, request.auth)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
     return event
 

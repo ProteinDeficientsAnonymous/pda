@@ -23,7 +23,7 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community.events._invite_email import email_invited_members
-from community.events.helpers import _event_out, reload_event_or_404
+from community.events.helpers import event_out, reload_event_or_404
 from community.events.schemas import EventOut
 from community.models import Event, InvitePermission
 from community.shared import ErrorOut
@@ -106,4 +106,4 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             },
         ),
     )
-    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))
+    return Status(200, event_out(reload_event_or_404(event_id), request.auth))

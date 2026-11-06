@@ -12,7 +12,7 @@ from notifications.service import notify_rsvp_status_changed
 from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut, RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
@@ -124,7 +124,7 @@ def list_my_rsvps(request, token: str = ""):
     for rsvp in _eligible_event_rsvps(user):
         items.append(
             PublicRsvpManageItemOut(
-                event=_event_out(rsvp.event, user),
+                event=event_out(rsvp.event, user),
                 status=rsvp.status,
                 has_plus_one=rsvp.has_plus_one,
             )
@@ -199,7 +199,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     return Status(
         200,
         PublicRsvpOut(
-            event=_event_out(fresh_event, user),
+            event=event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
             rsvp_token=rsvp_token.token,
         ),

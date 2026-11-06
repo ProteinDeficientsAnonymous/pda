@@ -10,7 +10,7 @@ from ninja.files import UploadedFile
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
-from community.events.helpers import _event_out
+from community.events.helpers import event_out
 from community.events.schemas import (
     _ALLOWED_IMAGE_TYPES,
     _MAX_EVENT_PHOTO_SIZE,
@@ -77,4 +77,4 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         request,
         target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))

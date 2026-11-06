@@ -28,7 +28,7 @@ from community.cohosts.invite_helpers import (
     expire_stale_cohost_invites,
     send_cohost_invite_emails,
 )
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
 from community.rsvps.host_auto import auto_rsvp_host
@@ -91,7 +91,7 @@ def add_cohosts(request, event_id: UUID, payload: AddCoHostsIn):
             exclude_user_ids={str(request.auth.pk)},
             extra_user_ids=set(newly_invited),
         )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.post(
@@ -126,7 +126,7 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
     event = _reload_event_for_response(event_id)
     broadcast_cohost_change(event, exclude_user_ids={str(request.auth.pk)})
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.post(
@@ -154,7 +154,7 @@ def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
     create_cohost_invite_declined_notification(invite.event, invite.user, inviter_id)
 
     event = _reload_event_for_response(event_id)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.delete(
@@ -198,7 +198,7 @@ def remove_cohost(request, event_id: UUID, user_id: UUID):
     broadcast_cohost_change(
         event, exclude_user_ids={str(request.auth.pk)}, extra_user_ids={str(user_id)}
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.delete(
@@ -227,4 +227,4 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
         exclude_user_ids={str(request.auth.pk)},
         extra_user_ids={str(invite.user_id)},
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))

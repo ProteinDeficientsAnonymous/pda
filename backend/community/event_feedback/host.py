@@ -10,7 +10,7 @@ from community.event_feedback._host_schemas import (
     HostFeedbackResponseOut,
     MyEventFeedbackOut,
 )
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.models import Event, EventFeedbackRequest, SurveyQuestionType, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 from community.shared import ErrorOut
@@ -37,7 +37,7 @@ def get_event_feedback(request, event_id: UUID):
     event = Event.objects.filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="event_feedback")
 
     survey = feedback_survey_for(event.event_type)

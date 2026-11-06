@@ -1,5 +1,5 @@
 from community.cohosts.invite_helpers import has_pending_cohost_invite
-from community.events.helpers import _can_edit_event, _can_see_invite_only
+from community.events.helpers import _can_see_invite_only, can_edit_event
 from community.models import Event, PageVisibility
 from community.validation import Code, raise_validation
 
@@ -7,10 +7,10 @@ from community.validation import Code, raise_validation
 def _can_see_draft(event: Event, auth_user) -> bool:
     """Pending cohost invitees can see the draft they were invited to so they
     can find the accept/decline banner. They aren't accepted co-hosts yet,
-    so `_can_edit_event` returns False — without this branch, they'd 404."""
+    so `can_edit_event` returns False — without this branch, they'd 404."""
     if not auth_user:
         return False
-    return _can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
+    return can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
 
 
 def _enforce_event_read_visibility(event: Event, auth_user) -> None:

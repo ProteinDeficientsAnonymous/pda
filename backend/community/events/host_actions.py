@@ -11,9 +11,9 @@ from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import (
-    _can_edit_event,
     _cancellations,
-    _event_out,
+    can_edit_event,
+    event_out,
     load_editable_event,
     load_event_with_stats_prefetch,
 )
@@ -59,7 +59,7 @@ def get_event_stats(request, event_id: UUID):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_event_stats")
     return Status(
         200,
@@ -107,7 +107,7 @@ def get_text_recipients(request, event_id: UUID):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_text_recipients")
     return Status(200, _build_text_recipients(event))
 
@@ -182,4 +182,4 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))

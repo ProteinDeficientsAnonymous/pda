@@ -25,13 +25,13 @@ from community.events._update import (
 from community.events.helpers import (
     _build_guest_list,
     _enforce_type_tag_permission,
-    _event_out,
     _event_rsvp_payload,
     _invited_payload,
     _is_invalid_typed_visibility,
     _set_event_tags,
     _validated_event_format,
     broadcast_capacity_change,
+    event_out,
     is_cohost,
     reload_event_or_404,
 )
@@ -180,7 +180,7 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
 def get_event(request, event_id: str):
     """Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest."""
     event, viewer = _get_visible_event(request, event_id)
-    return Status(200, _event_out(event, viewer))
+    return Status(200, event_out(event, viewer))
 
 
 @router.get(
@@ -294,7 +294,7 @@ def create_event(request, payload: EventIn):
             },
         ),
     )
-    return Status(201, _event_out(event, request.auth))
+    return Status(201, event_out(event, request.auth))
 
 
 def _announce_rsvp_changes(
@@ -356,4 +356,4 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     email_removed_non_members(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
-    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))
+    return Status(200, event_out(reload_event_or_404(event_id), request.auth))

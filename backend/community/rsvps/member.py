@@ -18,9 +18,9 @@ from notifications.service import (
 )
 
 from community.events.helpers import (
-    _can_edit_event,
-    _event_out,
     broadcast_capacity_change,
+    can_edit_event,
+    event_out,
     load_event_with_stats_prefetch,
 )
 from community.events.read_visibility import _enforce_event_read_visibility
@@ -53,13 +53,13 @@ def _validate_rsvp_access(user, event) -> None:
     # cohost invitee) still must not RSVP, so guard drafts to editors below.
     _enforce_event_read_visibility(event, event_viewer_for(user, event))
     enforce_tentative_member_write_access(user, event, "rsvp_tentative_member_event")
-    if event.is_draft and not _can_edit_event(user, event):
+    if event.is_draft and not can_edit_event(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
     if not event.rsvp_enabled:
         raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
-    if event.is_past and not _can_edit_event(user, event):
+    if event.is_past and not can_edit_event(user, event):
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
 
 
@@ -413,7 +413,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     if final_status != previous_status:
         email_member_rsvp_status(request, event, request.auth, final_status)
     email_promoted_users(request, event, promoted_user_ids)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.delete(
@@ -450,7 +450,7 @@ def _validate_rsvp_delete_access(event: Event, user) -> None:
     # toward the headcount. (The cancelled / past freezes still apply.)
     _enforce_event_read_visibility(event, event_viewer_for(user, event))
     enforce_tentative_member_write_access(user, event, "rsvp_tentative_member_event")
-    if event.is_draft and not _can_edit_event(user, event):
+    if event.is_draft and not can_edit_event(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
     raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
 
@@ -475,7 +475,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
         _validate_rsvp_delete_access(event, user)
     if event.is_cancelled:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
-    if event.is_past and not _can_edit_event(user, event):
+    if event.is_past and not can_edit_event(user, event):
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
 
     was_attending = rsvp.status == RSVPStatus.ATTENDING
