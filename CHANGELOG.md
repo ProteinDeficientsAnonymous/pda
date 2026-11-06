@@ -1,3 +1,10 @@
+# [0.220.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.219.0...v0.220.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - apply the attendance pause ([#2155](https://github.com/ProteinDeficientsAnonymous/pda/issues/2155)) ([93a4382](https://github.com/ProteinDeficientsAnonymous/pda/commit/93a438285b7a439f79b5d78333bc2b80d7665a0d))
+
 # [0.219.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.1...v0.219.0) (2026-11-06)
 
 
