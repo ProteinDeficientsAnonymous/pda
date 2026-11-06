@@ -19,12 +19,12 @@ from notifications.event_unpublished_email import (
 from notifications.service import create_event_unpublished_notifications
 
 from users._archive import (
-    _HELD_RSVP_STATUSES,
-    _leave_cohost,
-    _release_upcoming_rsvps,
-    _step_down_as_cohost,
-    _upcoming_hosted_events,
+    HELD_RSVP_STATUSES,
+    leave_cohost,
+    release_upcoming_rsvps,
+    step_down_as_cohost,
     upcoming_events_q,
+    upcoming_hosted_events,
 )
 from users.helpers import grant_membership
 from users.models import HAS_EMAIL, User
@@ -50,7 +50,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     return(PauseImpact): events per bucket, soonest first
     """
     impact = PauseImpact()
-    for event in _upcoming_hosted_events(user).order_by("start_datetime"):
+    for event in upcoming_hosted_events(user).order_by("start_datetime"):
         if event.event_type in KEPT_EVENT_TYPES:
             impact.kept_hosting.append(event)
         elif event.host_count > 1:
@@ -63,7 +63,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         Event.objects.filter(
             upcoming_events_q(),
             rsvps__user=user,
-            rsvps__status__in=_HELD_RSVP_STATUSES,
+            rsvps__status__in=HELD_RSVP_STATUSES,
         )
         .exclude(pk__in=[e.pk for e in impact.drafted_events])
         .order_by("start_datetime")
@@ -86,8 +86,8 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         # Drafting first deletes the user's own RSVP there, so releasing can't promote its waitlist.
         for event in impact.drafted_events:
             _move_to_draft(event, user)
-        _release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
-        _step_down_as_cohost(user, ~KEPT_EVENT_Q)
+        release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
+        step_down_as_cohost(user, ~KEPT_EVENT_Q)
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
         ).exclude(event__event_type__in=KEPT_EVENT_TYPES).update(
@@ -103,13 +103,13 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
 
 
 def _move_to_draft(event: Event, user: User) -> None:
-    _leave_cohost(event, user)
+    leave_cohost(event, user)
     event.status = EventStatus.DRAFT
     event.save(update_fields=["status"])
     rsvps = EventRSVP.objects.filter(event=event)
     guest_ids = [
         str(uid)
-        for uid in rsvps.filter(status__in=_HELD_RSVP_STATUSES)
+        for uid in rsvps.filter(status__in=HELD_RSVP_STATUSES)
         .exclude(user=user)
         .values_list("user_id", flat=True)
     ]
