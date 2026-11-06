@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { type EventSpeech, useEventSpeech, useSaveEventSpeech } from '@/api/eventSpeech';
 import { HtmlContent } from '@/components/HtmlContent';
+import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventSpeechForm } from './EventSpeechForm';
@@ -45,9 +46,24 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
       </Link>
       <div className="mb-1 flex items-center justify-between gap-2">
         <h1 className="text-2xl font-medium tracking-tight">event speech</h1>
+        {reading ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              save.reset();
+              setEditing(true);
+            }}
+          >
+            edit
+          </Button>
+        ) : null}
       </div>
       <p className="text-foreground-secondary text-lg">{speech.eventTitle}</p>
-      <div className="mb-6" />
+      {speech.saved && speech.updatedByName ? (
+        <p className="text-muted mb-6 text-sm">updated by {speech.updatedByName.toLowerCase()}</p>
+      ) : (
+        <div className="mb-6" />
+      )}
       {reading ? (
         <HtmlContent html={speech.html} className={READING_CLASS} />
       ) : (
@@ -63,6 +79,13 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
               },
             });
           }}
+          onCancel={
+            readable
+              ? () => {
+                  setEditing(false);
+                }
+              : undefined
+          }
         />
       )}
     </ContentContainer>

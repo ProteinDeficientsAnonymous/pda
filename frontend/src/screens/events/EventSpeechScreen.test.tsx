@@ -111,6 +111,43 @@ describe('EventSpeechScreen', () => {
     expect(await screen.findByText('Walk on the Hudson')).toBeInTheDocument();
   });
 
+  it('opens a saved speech with no format in the form with the format picker', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...SAVED_WALK, event_format: null, html: '' },
+    });
+    renderScreen();
+
+    expect(await screen.findByRole('radiogroup', { name: 'event format' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'cancel' })).not.toBeInTheDocument();
+  });
+
+  it('asks for walk or restaurant first when the event has no format', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...UNSAVED_WALK, event_format: null },
+    });
+    const user = userEvent.setup();
+    renderScreen();
+
+    const choice = await screen.findByRole('radiogroup', { name: 'event format' });
+    expect(screen.queryByLabelText('front walker')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'save' })).toBeDisabled();
+
+    await user.click(within(choice).getByLabelText('restaurant'));
+    expect(
+      screen.getByLabelText('restaurant', { selector: 'input:not([type=radio])' }),
+    ).toBeVisible();
+    expect(screen.queryByLabelText('front walker')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'save' }));
+
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalled();
+    });
+    const body = vi.mocked(apiClient.put).mock.calls[0]?.[1] as { event_format: string };
+    expect(body.event_format).toBe('restaurant');
+  });
+
   it('saves trimmed values with list items split per line and switches to reading', async () => {
     const user = userEvent.setup();
     renderScreen();
@@ -138,6 +175,19 @@ describe('EventSpeechScreen', () => {
     expect(await screen.findByText('welcome, ann and bo')).toBeInTheDocument();
     expect(screen.queryByLabelText('facilitators')).not.toBeInTheDocument();
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('reads a saved speech and reopens the form from the edit button', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: SAVED_WALK });
+    const user = userEvent.setup();
+    renderScreen();
+
+    expect(await screen.findByText('welcome, ann and bo')).toBeInTheDocument();
+    expect(screen.getByText('updated by Ann'.toLowerCase())).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'edit' }));
+
+    expect(screen.getByLabelText('walk details')).toHaveValue('meet at the gate');
   });
 
   it('styles the reading view for reading aloud', async () => {

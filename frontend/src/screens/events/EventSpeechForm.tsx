@@ -3,9 +3,10 @@ import { useState } from 'react';
 import type { EventSpeech, EventSpeechSave, SpeechValues } from '@/api/eventSpeech';
 import { SPEECH_BLANKS, type SpeechBlankKey } from '@/components/RichEditor/SpeechBlankExtension';
 import { Button } from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-import type { EventFormat } from '@/models/event';
+import { EventFormat } from '@/models/event';
 
 const SHARED_KEYS: SpeechBlankKey[] = [
   'facilitators',
@@ -18,6 +19,11 @@ const FORMAT_KEYS: Record<EventFormat, SpeechBlankKey[]> = {
   walk: ['front_walker', 'back_walker', 'walk_details'],
   restaurant: ['restaurant'],
 };
+
+const FORMAT_OPTIONS = [
+  { value: EventFormat.Walk, label: 'walk' },
+  { value: EventFormat.Restaurant, label: 'restaurant' },
+];
 
 function toText(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value.join('\n');
@@ -37,10 +43,12 @@ interface Props {
   saving: boolean;
   error: string | null;
   onSave: (input: EventSpeechSave) => void;
+  onCancel?: (() => void) | undefined;
 }
 
-export function EventSpeechForm({ speech, saving, error, onSave }: Props) {
-  const format = speech.eventFormat;
+export function EventSpeechForm({ speech, saving, error, onSave, onCancel }: Props) {
+  const formatIsLocked = speech.eventFormat !== null;
+  const [format, setFormat] = useState<EventFormat | null>(speech.eventFormat);
   const [texts, setTexts] = useState<Record<string, string>>(() =>
     Object.fromEntries(Object.entries(speech.values).map(([k, v]) => [k, toText(v)])),
   );
@@ -51,7 +59,7 @@ export function EventSpeechForm({ speech, saving, error, onSave }: Props) {
     if (!format) return;
     const values: SpeechValues = {};
     for (const key of keys) values[key] = toValue(key, texts[key] ?? '');
-    onSave({ values });
+    onSave(formatIsLocked ? { values } : { eventFormat: format, values });
   }
 
   return (
@@ -62,6 +70,19 @@ export function EventSpeechForm({ speech, saving, error, onSave }: Props) {
         submit();
       }}
     >
+      {formatIsLocked ? null : (
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium">is this a walk or a restaurant?</p>
+          <SegmentedControl
+            name="speech-format"
+            ariaLabel="event format"
+            className="self-start"
+            options={FORMAT_OPTIONS}
+            value={format}
+            onChange={setFormat}
+          />
+        </div>
+      )}
       {keys.map((key) => (
         <BlankField
           key={key}
@@ -81,6 +102,11 @@ export function EventSpeechForm({ speech, saving, error, onSave }: Props) {
         <Button type="submit" disabled={!format || saving}>
           {saving ? 'saving…' : 'save'}
         </Button>
+        {onCancel ? (
+          <Button variant="secondary" onClick={onCancel}>
+            cancel
+          </Button>
+        ) : null}
       </div>
     </form>
   );
