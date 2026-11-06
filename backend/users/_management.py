@@ -45,10 +45,12 @@ from users.schemas import (
 router = Router()
 
 
-def _require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
-    if request.auth.has_permission(PermissionKey.MANAGE_USERS):
+def _require_permission(
+    request, key: PermissionKey, endpoint: str, user_id: str | None = None
+) -> None:
+    if request.auth.has_permission(key):
         return
-    details = {"endpoint": endpoint, "required_permission": PermissionKey.MANAGE_USERS}
+    details = {"endpoint": endpoint, "required_permission": key}
     target = (
         AuditTarget(details=details)
         if user_id is None
@@ -58,26 +60,17 @@ def _require_manage_users(request, endpoint: str, user_id: str | None = None) ->
     raise_validation(Code.Perm.DENIED, status_code=403, action=endpoint)
 
 
+def require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
+    _require_permission(request, PermissionKey.MANAGE_USERS, endpoint, user_id)
+
+
 @router.post(
     "/create-user/",
     response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
     auth=gated_jwt,
 )
 def create_user(request, payload: UserCreateIn):
-    if not request.auth.has_permission(PermissionKey.CREATE_USER):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "create_user",
-                    "required_permission": PermissionKey.CREATE_USER,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
+    _require_permission(request, PermissionKey.CREATE_USER, "create_user")
 
     if payload.last_name:
         validate_display_name(payload.last_name, field="last_name")
@@ -126,20 +119,7 @@ def create_user(request, payload: UserCreateIn):
     auth=gated_jwt,
 )
 def bulk_create_users(request, payload: BulkUserCreateIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "bulk_create_users",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="bulk_create_users")
+    require_manage_users(request, "bulk_create_users")
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
     results: list[BulkUserResult] = []
@@ -262,20 +242,7 @@ def search_users(request, q: str = ""):
     auth=gated_jwt,
 )
 def list_users(request, include_non_members: bool = False):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "list_users",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
+    require_manage_users(request, "list_users")
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
@@ -306,22 +273,7 @@ def list_users(request, include_non_members: bool = False):
     auth=gated_jwt,
 )
 def list_member_attended_events(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "list_member_attended_events",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="list_member_attended_events")
+    require_manage_users(request, "list_member_attended_events", user_id)
     if not User.objects.filter(pk=user_id, archived_at__isnull=True).exists():
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     rsvps = (
@@ -351,7 +303,7 @@ def list_member_attended_events(request, user_id: str):
     auth=gated_jwt,
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
-    _require_manage_users(request, "update_user", user_id)
+    require_manage_users(request, "update_user", user_id)
     editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
     try:
         user = editable.get(pk=user_id)
@@ -441,22 +393,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     auth=gated_jwt,
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "update_user_roles",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
+    require_manage_users(request, "update_user_roles", user_id)
     try:
         user = User.objects.members().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:

@@ -1,3 +1,14 @@
+# [0.221.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.220.0...v0.221.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add the event unpublished notice ([#2156](https://github.com/ProteinDeficientsAnonymous/pda/issues/2156)) ([51d85f3](https://github.com/ProteinDeficientsAnonymous/pda/commit/51d85f3a389cc287409878be7fc3de721134bc5e))
+* 1515 - attendance pause and unpause via user PATCH ([#2158](https://github.com/ProteinDeficientsAnonymous/pda/issues/2158)) ([f3bcd33](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3bcd3334c7ef41ed7995f8b8adfc968b80f53fb))
+* 1515 - attendance pause preview endpoint ([#2159](https://github.com/ProteinDeficientsAnonymous/pda/issues/2159)) ([64de912](https://github.com/ProteinDeficientsAnonymous/pda/commit/64de912d04e029065fc0e52cd48822b4f215cb82))
+* 1515 - draft sole-hosted events on attendance pause ([#2157](https://github.com/ProteinDeficientsAnonymous/pda/issues/2157)) ([1e7cbc1](https://github.com/ProteinDeficientsAnonymous/pda/commit/1e7cbc13b910c3cc649de35204a5d7d313af2701))
+* **mcp:** 1515 - attendance pause members over mcp ([#2160](https://github.com/ProteinDeficientsAnonymous/pda/issues/2160)) ([5e4fc0f](https://github.com/ProteinDeficientsAnonymous/pda/commit/5e4fc0fac96d9645caf9ae9f3d522a575c126bae))
+
 # [0.220.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.219.0...v0.220.0) (2026-11-06)
 
 
