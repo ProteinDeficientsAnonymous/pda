@@ -24,5 +24,5 @@ def send_event_feedback_email(  # noqa: PLR0913
     html = render_to_string(f"emails/{name}.html", context)
     text = render_to_string(f"emails/{name}.txt", context)
     title = event_title.lower()
-    subject = f"still keen to hear about {title}" if reminder else f"how was {title}?"
+    subject = f"we'd still love to hear about {title}" if reminder else f"how was {title}?"
     return sender.send(to=to, subject=subject, html=html, text=text)
