@@ -1,3 +1,10 @@
+# [0.215.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.1...v0.215.0) (2026-11-06)
+
+
+### Features
+
+* record the event whose check-in auto-approved a join request ([#2139](https://github.com/ProteinDeficientsAnonymous/pda/issues/2139)) ([7e3053c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e3053c38e9c33a4019fd8c3fa45d6e2b37aa652))
+
 ## [0.214.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.0...v0.214.1) (2026-11-06)
 
 
