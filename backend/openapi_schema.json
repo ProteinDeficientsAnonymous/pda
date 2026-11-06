@@ -4601,6 +4601,28 @@
             ],
             "title": "Approved By Name"
           },
+          "approved_via_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Id"
+          },
+          "approved_via_event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Title"
+          },
           "attended_club_count": {
             "default": 0,
             "title": "Attended Club Count",

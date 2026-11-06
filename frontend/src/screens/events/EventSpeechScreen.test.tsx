@@ -73,6 +73,8 @@ describe('EventSpeechScreen', () => {
     expect(await screen.findByLabelText('facilitators')).toHaveValue('ann and bo');
     expect(screen.getByLabelText('front walker')).toBeInTheDocument();
     expect(screen.getByLabelText('back walker')).toBeInTheDocument();
+    expect(screen.getByText("who's the walk leader?")).toBeInTheDocument();
+    expect(screen.getByText("who's in the back of the group?")).toBeInTheDocument();
     expect(screen.getByLabelText('walk details')).toBeInTheDocument();
     expect(screen.queryByLabelText('restaurant')).not.toBeInTheDocument();
 

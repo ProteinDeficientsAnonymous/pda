@@ -8,7 +8,7 @@ from users._auth import router as auth_router
 from users._magic_links import router as magic_links_router
 from users._magic_login import router as magic_login_router
 from users._management import router as management_router
-from users._management import update_user  # re-exported
+from users._management import search_users, update_user  # re-exported
 from users._members import router as members_router
 from users._roles import router as roles_router
 from users._self_delete import router as self_delete_router
@@ -25,6 +25,7 @@ __all__ = [
     "_validate_member_role_required",
     "attendance_pause_preview",
     "router",
+    "search_users",
     "update_user",
 ]
 
