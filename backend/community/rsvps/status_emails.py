@@ -25,9 +25,9 @@ from community.rsvps.public_shared import (
 from community.shared import logger
 
 
-def _tentative_q() -> Exists:
+def _tentative_q(user_ref: str = "pk") -> Exists:
     return Exists(
-        JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
+        JoinRequest.objects.filter(user=OuterRef(user_ref), status=JoinRequestStatus.TENTATIVE)
     )
 
 
