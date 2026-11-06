@@ -18,6 +18,12 @@ describe('messageForCode', () => {
     ).toBe('date and time must include a timezone');
   });
 
+  it('says only official events can have an event format', () => {
+    expect(messageForCode({ code: Code.Event.InvalidEventFormat, field: 'event_format' })).toBe(
+      'only official events can be a walk or restaurant',
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(

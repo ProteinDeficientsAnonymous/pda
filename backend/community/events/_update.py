@@ -10,8 +10,9 @@ from community.events.helpers import (
     _enforce_type_tag_permission,
     _is_invalid_typed_visibility,
     _set_event_tags,
+    _validated_event_format,
 )
-from community.models import Event, EventSlugAlias, is_official_or_club
+from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
 from community.rsvps.waitlist import promote_from_waitlist
 from community.validation import Code, raise_validation
@@ -85,6 +86,16 @@ def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
         updates["allow_plus_ones"] = False
 
 
+def _resolve_event_format(event: Event, updates: dict) -> None:
+    """Treat a null format as unchanged, and clear the format when the event stops being official."""
+    effective_type = updates.get("event_type", event.event_type)
+    _validated_event_format(updates.get("event_format"), effective_type)
+    if updates.get("event_format", "") is None:
+        del updates["event_format"]
+    if effective_type != EventType.OFFICIAL and event.event_format:
+        updates["event_format"] = ""
+
+
 def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     if _can_edit_event(request.auth, event):
         return
@@ -127,6 +138,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)
     _lock_typed_plus_ones(event, updates)
+    _resolve_event_format(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())

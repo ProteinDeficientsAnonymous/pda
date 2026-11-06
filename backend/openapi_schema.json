@@ -2097,6 +2097,18 @@
             ],
             "title": "End Datetime"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "event_type": {
             "default": "community",
             "maxLength": 20,
@@ -2934,6 +2946,18 @@
               }
             ],
             "title": "End Datetime"
+          },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
           },
           "event_type": {
             "anyOf": [

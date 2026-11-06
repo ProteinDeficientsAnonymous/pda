@@ -56,6 +56,7 @@ export const Code = {
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
     SlugInvalid: 'event.slug_invalid',
     SlugTaken: 'event.slug_taken',
+    InvalidEventFormat: 'event.invalid_event_format',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -342,6 +343,7 @@ export type ValidationCode =
   | 'event.check_in_report_invalid_column'
   | 'event.slug_invalid'
   | 'event.slug_taken'
+  | 'event.invalid_event_format'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -558,6 +560,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.check_in_report_invalid_column': ['column'],
   'event.slug_invalid': [],
   'event.slug_taken': [],
+  'event.invalid_event_format': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
