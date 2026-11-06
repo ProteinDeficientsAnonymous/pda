@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 from users.models import User
 
-from community.events.helpers import _validated_event_format, is_cohost
+from community.events.helpers import is_cohost, validated_event_format
 from community.models import (
     Event,
     EventFormat,
@@ -155,7 +155,7 @@ def get_event_speech(request, event_id: UUID):
 def put_event_speech(request, event_id: UUID, payload: EventSpeechIn):
     event = _load_cohost_event(request, event_id)
     event_format = (
-        _validated_event_format(payload.event_format, event.event_type) or event.event_format
+        validated_event_format(payload.event_format, event.event_type) or event.event_format
     )
     if not event_format:
         raise_validation(Code.Speech.FORMAT_REQUIRED, field="event_format")

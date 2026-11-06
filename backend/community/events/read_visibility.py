@@ -1,5 +1,5 @@
 from community.cohosts.invite_helpers import has_pending_cohost_invite
-from community.events.helpers import _can_see_invite_only, can_edit_event
+from community.events.helpers import can_edit_event, can_see_invite_only
 from community.models import Event, PageVisibility
 from community.validation import Code, raise_validation
 
@@ -32,7 +32,7 @@ def _can_see_invite_only_event(user, event: Event) -> bool:
     """Invite-only visibility without hydrating invitees."""
     if user is None:
         return False
-    if _can_see_invite_only(
+    if can_see_invite_only(
         user, {str(c.id) for c in event.co_hosts.all()}, set(), event.created_by_id
     ):
         return True

@@ -11,8 +11,8 @@ from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import (
-    _cancellations,
     can_edit_event,
+    cancellations,
     event_out,
     load_editable_event,
     load_event_with_stats_prefetch,
@@ -72,7 +72,7 @@ def get_event_stats(request, event_id: UUID):
             attended_count=_attended_count(event),
             didnt_go_count=_didnt_go_count(event),
             not_marked_count=_not_marked_count(event),
-            cancellations=_cancellations(event, request.auth),
+            cancellations=cancellations(event, request.auth),
         ),
     )
 
