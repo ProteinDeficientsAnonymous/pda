@@ -33,7 +33,7 @@ _STATIC_PAGES = {
 }
 
 
-def _absolute(path: str) -> str:
+def absolute(path: str) -> str:
     """Absolute URL under FRONTEND_BASE_URL; pass through existing http(s) URLs."""
     if not path:
         return ""
@@ -65,8 +65,8 @@ def _site_preview(request, path: str):
         request,
         title=title,
         description=description,
-        url=_absolute(path),
-        image=_absolute(_LOGO_PATH),
+        url=absolute(path),
+        image=absolute(_LOGO_PATH),
     )
 
 
@@ -80,8 +80,8 @@ def event_og_preview(request, event_id: str):
         request,
         title=event.title,
         description=_truncate(event.description, _OG_DESCRIPTION_MAX),
-        url=_absolute(f"/events/{event.slug or event.id}"),
-        image=_absolute(media_path(event.photo) or _LOGO_PATH),
+        url=absolute(f"/events/{event.slug or event.id}"),
+        image=absolute(media_path(event.photo) or _LOGO_PATH),
     )
 
 
@@ -97,8 +97,8 @@ def survey_og_preview(request, slug: str):
         request,
         title=survey.title,
         description=description or _STATIC_PAGES[""][1],
-        url=_absolute(f"/surveys/{survey.slug}"),
-        image=_absolute(_LOGO_PATH),
+        url=absolute(f"/surveys/{survey.slug}"),
+        image=absolute(_LOGO_PATH),
     )
 
 
@@ -112,6 +112,6 @@ def static_page_og_preview(request, page: str):
         request,
         title=title,
         description=description,
-        url=_absolute(f"/{page}"),
-        image=_absolute(_LOGO_PATH),
+        url=absolute(f"/{page}"),
+        image=absolute(_LOGO_PATH),
     )

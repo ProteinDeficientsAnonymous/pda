@@ -39,18 +39,11 @@ backend/community/rsvps/status_emails.py: community.rsvps.public_shared._email_d
 backend/community/rsvps/waitlist.py: community.rsvps.counts._attending_headcount_db
 backend/community/scheduled/login_reminder.py: users.helpers._magic_login_url
 backend/community/scheduled/tentative_attendance_nudge.py: community.models.event._is_past_q
-backend/community/shared.py: config.auth._HARD_ACCOUNT_BLOCKS
 backend/community/surveys/crud.py: community.surveys.helpers._survey_out community.surveys.helpers._survey_question_out community.surveys.helpers._validate_anonymous_change community.surveys.helpers._validate_feedback_type community.surveys.helpers._validate_survey_window
 backend/community/surveys/public.py: community.shared._authenticated_user community.shared._optional_jwt community.surveys.helpers._has_finalize_permission community.surveys.helpers._response_to_update community.surveys.helpers._submit_out community.surveys.helpers._survey_out community.surveys.helpers._tally_question community.surveys.validators._build_survey_answers community.surveys.validators._validate_survey_answers
 backend/community/surveys/reports.py: community.surveys.responses._day_only community.surveys.responses._load_survey_for_responses community.surveys.responses._ordered_responses
 backend/mcp_gateway/cashapp_review.py: community.events.read_visibility._enforce_event_read_visibility
-backend/mcp_gateway/fields.py: config.validation_handlers._serialize_pydantic_error config.validation_handlers._serialize_validation_exception
-backend/mcp_gateway/survey_edit_fields.py: mcp_gateway.event_fields._no_default
 backend/mcp_gateway/tools/events_read.py: community.models.event._is_past_q
-backend/mcp_gateway/tools/surveys_edit.py: mcp_gateway.tools.surveys_read._survey_id
-backend/mcp_gateway/tools/surveys_read.py: mcp_gateway.view_calls._tool_error
-backend/mcp_gateway/view_calls.py: config.validation_handlers._serialize_validation_exception
-backend/notifications/event_feedback_notifications.py: notifications.service._event_recipient_ids
 backend/tests/_tentative_helpers.py: community.join_requests.approval._provision_tentative_user
 backend/tests/test_api.py: users.api._create_user_with_role users.api._validate_admin_role_change users.api._validate_member_role_required
 backend/tests/test_e2e_seed_command.py: community.management.commands._e2e_common._random_phone community.management.commands.e2e_seed._month_end
@@ -59,17 +52,11 @@ backend/tests/test_event_stats.py: community.rsvps.counts._attended_count commun
 backend/tests/test_giphy.py: community._giphy._full_gif_url community._giphy._parse_gif
 backend/tests/test_join_request_email.py: community.join_requests.submit._send_join_request_email
 backend/tests/test_join_request_tentative.py: community.join_requests.approval._provision_tentative_user
-backend/tests/test_mcp_events_read.py: mcp_gateway.tools.events_read._my_events
-backend/tests/test_mcp_members_find.py: mcp_gateway.tools.members_read._page
-backend/tests/test_mcp_members_inactive.py: mcp_gateway.tools.members_read._page
-backend/tests/test_mcp_surveys_read.py: mcp_gateway.tools.surveys_read._survey_id
-backend/tests/test_media_path.py: config.og_preview._absolute
 backend/tests/test_name_split_api.py: community.join_requests.approval._provision_approved_user
 backend/tests/test_promotion_paths.py: community.join_requests.approval._promote_tentative_member
 backend/tests/test_public_rsvp_resend.py: community.rsvps.public_resend._NEUTRAL_RESPONSE
 backend/tests/test_roles_prefetch_query_counts.py: community.shared._optional_jwt
 backend/tests/test_seed_staging_feedback.py: community.management.commands._seed_staging_feedback._build_answers
-backend/tests/test_sse.py: notifications.sse._format_notify_for_user
 backend/tests/test_survey_checkbox_list_answers.py: community.surveys.reports._csv_answer_cell community.surveys.reports._summarize_question
 backend/tests/test_survey_section_answers.py: community.surveys.validators._build_survey_answers community.surveys.validators._validate_survey_answers
 backend/tests/test_survey_validators.py: community.surveys.validators._build_survey_answers community.surveys.validators._validate_boolean_answer community.surveys.validators._validate_checkbox_answer community.surveys.validators._validate_choice_answer community.surveys.validators._validate_datetime_poll_answer community.surveys.validators._validate_number_answer community.surveys.validators._validate_one_answer community.surveys.validators._validate_survey_answers

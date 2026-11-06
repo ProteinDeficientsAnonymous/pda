@@ -6,7 +6,7 @@ from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
-from mcp_gateway.tools.members_read import _page
+from mcp_gateway.tools.members_read import members_page
 from users.member_search import MemberFilters
 from users.models import User
 
@@ -117,7 +117,10 @@ def test_one_page_is_two_queries(admin, django_assert_num_queries):
     for _ in range(3):
         make_onboarding()
     with django_assert_num_queries(2):
-        assert len(_page(MemberFilters(), limit=2, offset=0, include_contact=True)["members"]) == 2
+        assert (
+            len(members_page(MemberFilters(), limit=2, offset=0, include_contact=True)["members"])
+            == 2
+        )
 
 
 def test_joined_within_days_uses_membership_start(admin):
