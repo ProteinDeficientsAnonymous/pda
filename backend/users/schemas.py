@@ -166,6 +166,8 @@ class UserOut(BaseModel):
     attendance_nudge_opt_out: bool = False
     host_digest_opt_out: bool = False
     is_paused: bool = False
+    attendance_paused_at: datetime | None = None
+    restored_at: datetime | None = None
     has_joined_whatsapp: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
@@ -216,6 +218,8 @@ class UserOut(BaseModel):
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
             host_digest_opt_out=user.host_digest_opt_out,
             is_paused=user.is_paused,
+            attendance_paused_at=user.attendance_paused_at,
+            restored_at=user.restored_at,
             has_joined_whatsapp=user.has_joined_whatsapp,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,

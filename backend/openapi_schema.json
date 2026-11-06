@@ -7750,6 +7750,18 @@
             "title": "Attendance Nudge Opt Out",
             "type": "boolean"
           },
+          "attendance_paused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused At"
+          },
           "attended_count": {
             "default": 0,
             "title": "Attended Count",
@@ -7928,6 +7940,18 @@
             "default": "",
             "title": "Pronouns",
             "type": "string"
+          },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
           },
           "roles": {
             "items": {
