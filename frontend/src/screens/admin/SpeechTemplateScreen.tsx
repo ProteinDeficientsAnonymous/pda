@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { extractApiError } from '@/api/apiErrors';
 import { useSpeechTemplate, useUpdateSpeechTemplate } from '@/api/eventSpeech';
 import { AutosaveStatus } from '@/components/AutosaveStatus';
 import { RichEditor } from '@/components/RichEditor/RichEditor';
@@ -18,14 +19,33 @@ function parseRoles(text: string): string[] {
     .filter(Boolean);
 }
 
+function useSectionAutosave(onSave: (value: string) => Promise<void>) {
+  const [error, setError] = useState<string | null>(null);
+  const autosave = useAutosave({
+    onSave: (value) =>
+      onSave(value).then(
+        () => {
+          setError(null);
+        },
+        (err: unknown) => {
+          setError(extractApiError(err));
+          throw err;
+        },
+      ),
+  });
+  return { ...autosave, error };
+}
+
 function SectionShell({
   title,
   status,
+  error,
   children,
   onBlur,
 }: {
   title: string;
   status: Parameters<typeof AutosaveStatus>[0]['status'];
+  error: string | null;
   children: React.ReactNode;
   onBlur: () => void;
 }) {
@@ -36,6 +56,11 @@ function SectionShell({
         <AutosaveStatus status={status} />
       </div>
       {children}
+      {error ? (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -50,12 +75,13 @@ function PmSection({
   onSave: (pm: string) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(initial);
-  const autosave = useAutosave({ onSave });
+  const autosave = useSectionAutosave(onSave);
 
   return (
     <SectionShell
       title={title}
       status={autosave.status}
+      error={autosave.error}
       onBlur={() => {
         void autosave.flush(draft);
       }}
@@ -82,12 +108,13 @@ function OpenRolesSection({
   onSave: (roles: string[]) => Promise<void>;
 }) {
   const [text, setText] = useState(initial.join('\n'));
-  const autosave = useAutosave({ onSave: (value) => onSave(parseRoles(value)) });
+  const autosave = useSectionAutosave((value) => onSave(parseRoles(value)));
 
   return (
     <SectionShell
       title="open roles"
       status={autosave.status}
+      error={autosave.error}
       onBlur={() => {
         void autosave.flush(text);
       }}
