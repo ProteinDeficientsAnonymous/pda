@@ -1,8 +1,10 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AxiosError, type AxiosResponse } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { Code } from '@/api/validationCodes';
 import { renderWithProviders } from '@/test/render';
 
 import SpeechTemplateScreen from './SpeechTemplateScreen';
@@ -79,5 +81,39 @@ describe('SpeechTemplateScreen', () => {
         open_roles: ['a', 'b'],
       });
     });
+  });
+
+  it('shows the coded reason when a save is rejected', async () => {
+    vi.mocked(apiClient.patch).mockRejectedValue(
+      new AxiosError('fail', 'ERR', undefined, undefined, {
+        status: 422,
+        data: {
+          detail: [
+            { code: Code.SpeechTemplate.TooManyRoles, field: 'open_roles', params: { max: 1 } },
+          ],
+        },
+      } as AxiosResponse),
+    );
+    const user = userEvent.setup();
+    renderScreen();
+    const roles = await screen.findByLabelText('open roles');
+
+    await user.type(roles, '{enter}b');
+    fireEvent.blur(roles);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('at most 1 open roles');
+  });
+
+  it('shows only the badge for an uncoded save failure', async () => {
+    vi.mocked(apiClient.patch).mockRejectedValue(new Error('network'));
+    const user = userEvent.setup();
+    renderScreen();
+    const roles = await screen.findByLabelText('open roles');
+
+    await user.type(roles, '{enter}b');
+    fireEvent.blur(roles);
+
+    expect(await screen.findByText("couldn't save")).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
