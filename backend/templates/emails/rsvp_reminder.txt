@@ -1,0 +1,14 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ event_title|lower }} is tomorrow. {% if status == "attending" %}you're going 🌱{% elif status == "maybe" %}you rsvp'd maybe — please confirm so the host can plan.{% else %}you're on the waitlist — we'll email you if a spot opens up.{% endif %}
+
+when: {{ event_when|lower }}{% if event_location %}
+where: {{ event_location|lower }}{% endif %}
+
+plans changed? update your rsvp so someone else can take your spot:
+
+{{ rsvp_url }}
+
+— pda
+{% endautoescape %}
+{% include "emails/_no_reply_footer.txt" %}
