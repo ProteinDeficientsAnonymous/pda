@@ -165,7 +165,7 @@ def test_creates_choice_questions_with_trimmed_options(surveys_admin):
         ((NAME,), {"title": " "}, "at least 1 character"),
         ((NAME,), {"title": "🌱🌱"}, "give a slug"),
         ((NAME,), {"closes_on": "2099-07-04"}, "closes_on"),
-        ((NAME,), {"feedback_event_type": "official"}, "feedback_event_type"),
+        ((NAME,), {"feedback_event_type": "community"}, "feedback_event_type"),
     ],
 )
 def test_bad_input_refused_before_writing(surveys_admin, questions, changes, message):
@@ -212,6 +212,21 @@ def test_scale_labels_and_poll_times_stored_like_the_builder(surveys_admin):
         ["2099-11-07T16:00:00.000Z"],
     ]
     assert summary["questions"][3]["option_times"] == ["2099-11-07T11:00:00-05:00"]
+
+
+def test_creates_a_feedback_survey(surveys_admin):
+    summary = _create(surveys_admin, feedback_event_type="club")
+    assert (summary["feedback_event_type"], summary["anonymous"], summary["url"]) == (
+        "club",
+        True,
+        None,
+    )
+
+
+def test_taken_feedback_type_refused(surveys_admin, feedback_survey):
+    error = json.loads(_create_refused(surveys_admin, feedback_event_type="official"))
+    assert (error["status"], error["detail"][0]["code"]) == (400, Code.Survey.FEEDBACK_TYPE_TAKEN)
+    assert Survey.objects.get() == feedback_survey
 
 
 def test_duplicate_slug_refused(surveys_admin):
