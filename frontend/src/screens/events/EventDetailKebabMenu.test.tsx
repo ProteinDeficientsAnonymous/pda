@@ -25,6 +25,7 @@ function renderMenu(
   overrides: {
     eventHasEnded?: boolean;
     canManageRsvps?: boolean;
+    showSpeech?: boolean;
     event?: Partial<Event>;
   } = {},
 ) {
@@ -33,7 +34,8 @@ function renderMenu(
       <EventDetailKebabMenu
         event={makeEvent(overrides.event)}
         eventHasEnded={overrides.eventHasEnded ?? false}
-        canManageRsvps={overrides.canManageRsvps ?? false}
+        canManageRsvps={overrides.canManageRsvps ?? true}
+        showSpeech={overrides.showSpeech ?? false}
       />
     </MemoryRouter>,
   );
@@ -265,5 +267,32 @@ describe('EventDetailKebabMenu', () => {
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: 'email blast' })).not.toBeInTheDocument();
+  });
+
+  it('shows event speech linking to the speech route', async () => {
+    renderMenu({ showSpeech: true, event: { id: 'ev9' } });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: 'event speech' })).toHaveAttribute(
+      'href',
+      '/events/ev9/speech',
+    );
+  });
+
+  it('hides event speech by default', async () => {
+    renderMenu();
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'event speech' })).not.toBeInTheDocument();
+  });
+
+  it('hides rsvp tools when only the speech is available', async () => {
+    renderMenu({ canManageRsvps: false, showSpeech: true, eventHasEnded: true });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: 'event speech' })).toBeInTheDocument();
+    for (const name of ['check-in', 'check-in report', 'feedback', 'email blast', 'group text']) {
+      expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
+    }
   });
 });
