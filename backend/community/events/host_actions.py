@@ -23,7 +23,7 @@ from community.events.schemas import (
     EventStatsOut,
     TextRecipientsOut,
 )
-from community.join_requests.approval import _maybe_promote_tentative, send_join_approval
+from community.join_requests.approval import maybe_promote_tentative, send_join_approval
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     _attended_count,
@@ -131,7 +131,7 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
         return False
-    return _maybe_promote_tentative(rsvp.user, rsvp.event, actor)
+    return maybe_promote_tentative(rsvp.user, rsvp.event, actor)
 
 
 @router.post(

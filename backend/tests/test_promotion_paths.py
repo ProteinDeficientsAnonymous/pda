@@ -1,7 +1,7 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community.join_requests.approval import _promote_tentative_member
+from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from community.validation import ValidationException
 from django.utils import timezone
@@ -153,7 +153,7 @@ class TestPromoteTentativeMember:
         user.first_name = ""
         user.save(update_fields=["first_name"])
         with pytest.raises(ValidationException):
-            _promote_tentative_member(user, sample_join_request)
+            promote_tentative_member(user, sample_join_request)
 
 
 @pytest.mark.django_db

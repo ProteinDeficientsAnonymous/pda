@@ -7,7 +7,7 @@ from community.models import (
     EventStatus,
     RSVPStatus,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from community.rsvps.status_emails import email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
 from django.db import transaction
@@ -23,7 +23,7 @@ _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
 
 
 def upcoming_events_q(prefix: str = "") -> Q:
-    return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~_is_past_q(timezone.now(), prefix)
+    return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~is_past_q(timezone.now(), prefix)
 
 
 def archive_user(request, user: User) -> list[str]:

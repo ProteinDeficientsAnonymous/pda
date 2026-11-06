@@ -23,7 +23,7 @@ from community.models import (
     EventStatus,
     PageVisibility,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from community.rsvps.counts import (
     attending_count_annotation,
     waitlisted_count_annotation,
@@ -134,7 +134,7 @@ def _scope_q(auth_user, hosted: bool, upcoming: bool) -> Q:
     if hosted:
         q &= _hosted_by(auth_user)
     if upcoming:
-        q &= ~_is_past_q(timezone.now())
+        q &= ~is_past_q(timezone.now())
     return q
 
 

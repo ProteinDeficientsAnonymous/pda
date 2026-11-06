@@ -5,7 +5,7 @@ from community.validation import Code, raise_validation
 
 # Event types a tentative member (signed in, not yet is_member) engages
 # with fully. They're also the two types whose check-in promotes them to member
-# (see _maybe_promote_tentative), so this is the path into the community.
+# (see maybe_promote_tentative), so this is the path into the community.
 TENTATIVE_MEMBER_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
