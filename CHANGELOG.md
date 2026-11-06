@@ -1,3 +1,15 @@
+# [0.213.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.212.0...v0.213.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **speech:** list facilitators by first name only ([#2148](https://github.com/ProteinDeficientsAnonymous/pda/issues/2148)) ([4cb455b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4cb455b45181dbb8ee6dad5d1b0d4bdc0e0847e2))
+
+
+### Features
+
+* **speech:** let event managers open and edit an event's speech ([#2146](https://github.com/ProteinDeficientsAnonymous/pda/issues/2146)) ([11a3ba4](https://github.com/ProteinDeficientsAnonymous/pda/commit/11a3ba48cc57ad2735f1068f5462abd415512efb))
+
 # [0.212.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.211.0...v0.212.0) (2026-11-06)
 
 
