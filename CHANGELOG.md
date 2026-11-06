@@ -1,3 +1,10 @@
+## [0.218.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.0...v0.218.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** enforce the website's invite rule in the invitations api ([#2162](https://github.com/ProteinDeficientsAnonymous/pda/issues/2162)) ([8e7a901](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e7a901dc2e31cea58b90fa52aa232bd097ab93e))
+
 # [0.218.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.217.0...v0.218.0) (2026-11-06)
 
 
