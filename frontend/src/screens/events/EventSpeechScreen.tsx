@@ -7,6 +7,7 @@ import { HtmlContent } from '@/components/HtmlContent';
 import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { EventForbiddenNotice } from './EventForbiddenNotice';
 import { EventSpeechForm } from './EventSpeechForm';
 
 const READING_CLASS = [
@@ -21,9 +22,14 @@ export default function EventSpeechScreen() {
   if (isPending) return <ContentLoading />;
   if (isError) {
     const status = getApiStatus(error);
-    if (status === 403)
-      return <ContentError message="only this event's hosts can see its speech" />;
-    if (status === 404) return <ContentError message="speeches are only for official events" />;
+    if (status === 403) {
+      return (
+        <EventForbiddenNotice eventId={id} message="only this event's hosts can see its speech" />
+      );
+    }
+    if (status === 404) {
+      return <EventForbiddenNotice eventId={id} message="speeches are only for official events" />;
+    }
     return <ContentError message="couldn't load this speech — try refreshing" />;
   }
 

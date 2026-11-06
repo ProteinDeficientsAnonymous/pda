@@ -210,6 +210,8 @@ describe('EventSpeechScreen', () => {
     expect(
       await screen.findByText("only this event's hosts can see its speech"),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'back to event' })).toBeInTheDocument();
   });
 
   it('explains a 404', async () => {
