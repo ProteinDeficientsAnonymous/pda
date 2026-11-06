@@ -1,3 +1,10 @@
+# [0.218.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.217.0...v0.218.0) (2026-11-06)
+
+
+### Features
+
+* **mcp:** invite members to events through mcp ([#2161](https://github.com/ProteinDeficientsAnonymous/pda/issues/2161)) ([ef5858e](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef5858e892e7e9ac715226e05478f5a6039cc8be))
+
 # [0.217.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.216.0...v0.217.0) (2026-11-06)
 
 
