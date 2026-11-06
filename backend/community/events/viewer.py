@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from users.models import NonMemberRsvpToken, User
 
 from community.models import Event
-from community.shared import _authenticated_user
+from community.shared import authenticated_user
 
 
 def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
@@ -18,7 +18,7 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     event_out/_build_list_out); it never satisfies member/creator/co-host
     checks, and posting still requires an actual RSVP (see _can_post_comments).
     """
-    auth_user = _authenticated_user(getattr(request, "auth", None))
+    auth_user = authenticated_user(getattr(request, "auth", None))
     if auth_user is not None:
         return auth_user
 

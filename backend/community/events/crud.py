@@ -49,7 +49,7 @@ from community.events.nonmember_removal import (
     guard_or_remove_ineligible_non_members,
 )
 from community.events.official_defaults import apply_official_defaults
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     EventIn,
     EventListOut,
@@ -75,7 +75,7 @@ from community.rsvps.answers import can_see_guest_questionnaire_responses
 from community.rsvps.host_auto import auto_rsvp_host, auto_rsvp_hosts
 from community.rsvps.serialize import with_guest_photos
 from community.rsvps.status_emails import email_promoted_users
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -93,10 +93,10 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
         raise_validation(Code.Event.START_DATETIME_MUST_BE_FUTURE, field="start_datetime")
 
 
-@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
+@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=optional_jwt)
 def list_events(request, params: Query[EventListQuery]):
     """start/end bound a calendar window; include_imported=false drops partiful/legacy rows."""
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     is_authed = auth_user is not None
     status = params.status
 
@@ -126,7 +126,7 @@ def _get_visible_event(request, event_id: str):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
-    _enforce_event_read_visibility(event, viewer)
+    enforce_event_read_visibility(event, viewer)
     return event, viewer
 
 
@@ -140,7 +140,7 @@ class EventGuestsOut(BaseModel):
 def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
-    auth_user = _authenticated_user(requesting_user)
+    auth_user = authenticated_user(requesting_user)
     co_host_ids = {str(u.id) for u in co_hosts}
     viewer_is_cohost = is_cohost(auth_user, co_host_ids)
     payment_status_visible = viewer_is_cohost
@@ -175,7 +175,7 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
 @router.get(
     "/events/{event_id}/",
     response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event(request, event_id: str):
     """Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest."""
@@ -186,7 +186,7 @@ def get_event(request, event_id: str):
 @router.get(
     "/events/{event_id}/guests/",
     response={200: EventGuestsOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event_guests(request, event_id: str):
     """Full signed guest and invited photos, same visibility as event detail."""

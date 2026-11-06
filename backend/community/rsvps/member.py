@@ -23,7 +23,7 @@ from community.events.helpers import (
     event_out,
     load_event_with_stats_prefetch,
 )
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
 from community.events.tentative_member_access import (
     enforce_tentative_member_write_access,
@@ -51,7 +51,7 @@ def _validate_rsvp_access(user, event) -> None:
     # caller can't see (403), and members-only-to-anon events — the same gating
     # get_event applies. Draft events the caller can merely *see* (e.g. a pending
     # cohost invitee) still must not RSVP, so guard drafts to editors below.
-    _enforce_event_read_visibility(event, event_viewer_for(user, event))
+    enforce_event_read_visibility(event, event_viewer_for(user, event))
     enforce_tentative_member_write_access(user, event, "rsvp_tentative_member_event")
     if event.is_draft and not can_edit_event(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
@@ -448,7 +448,7 @@ def _validate_rsvp_delete_access(event: Event, user) -> None:
     # even if the event later turned invite-only / draft and excluded them —
     # their stale RSVP would otherwise be unremovable while still counting
     # toward the headcount. (The cancelled / past freezes still apply.)
-    _enforce_event_read_visibility(event, event_viewer_for(user, event))
+    enforce_event_read_visibility(event, event_viewer_for(user, event))
     enforce_tentative_member_write_access(user, event, "rsvp_tentative_member_event")
     if event.is_draft and not can_edit_event(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")

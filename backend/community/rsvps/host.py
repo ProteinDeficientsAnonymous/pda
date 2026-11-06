@@ -17,7 +17,7 @@ from community.events.helpers import (
     load_editable_event,
     load_event_with_stats_prefetch,
 )
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     BulkPaymentVerifyIn,
     BulkPaymentVerifyOut,
@@ -227,7 +227,7 @@ def _load_payment_import_event(request, event_id: UUID) -> Event:
     event = Event.objects.select_related("created_by").filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    _enforce_event_read_visibility(event, request.auth)
+    enforce_event_read_visibility(event, request.auth)
     if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
     return event
