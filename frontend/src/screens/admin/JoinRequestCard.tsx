@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import {
   type JoinRequestAttendedEvent,
@@ -241,6 +242,20 @@ function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
 
 function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
   if (request.status === JoinRequestStatus.APPROVED && request.approvedAt) {
+    if (request.approvedViaEventId) {
+      return (
+        <>
+          <p className="text-muted mt-3 text-xs">
+            auto approved after joining{' '}
+            <Link to={`/events/${request.approvedViaEventId}`} className="hover:underline">
+              {(request.approvedViaEventTitle ?? 'an event').toLowerCase()}
+            </Link>{' '}
+            on {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+          </p>
+          <LoginStatus onboardedAt={request.onboardedAt} />
+        </>
+      );
+    }
     const who = request.approvedByName ?? 'an admin';
     return (
       <>

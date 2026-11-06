@@ -93,7 +93,9 @@ export default function EventDetailScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
-  const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
+  const canManage = isAuthed && canManageEvent(event, user);
+  const canManageRsvps = canManage && event.rsvpEnabled;
+  const showSpeech = canManage && event.eventType === EventType.Official;
   // viewerUserId is set by the backend's viewer resolver only when the caller
   // resolved to a real identity (member, or a valid token on an eligible event);
   // an invalid/expired token gets the same locked shape as no token at all, so
@@ -107,12 +109,13 @@ export default function EventDetailScreen() {
           {event.title}
         </h1>
         <EventBadge event={event} />
-        {showKebab ? (
+        {canManageRsvps || showSpeech ? (
           <div className="ml-auto">
             <EventDetailKebabMenu
               event={event}
               eventHasEnded={event.isPast}
-              canManageRsvps={showKebab}
+              canManageRsvps={canManageRsvps}
+              showSpeech={showSpeech}
             />
           </div>
         ) : null}
@@ -121,14 +124,6 @@ export default function EventDetailScreen() {
       <WhenLine event={event} />
       <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
-      {event.eventType === EventType.Official && canManageEvent(event, user) ? (
-        <Link
-          to={`/events/${event.id}/speech`}
-          className="text-foreground-secondary hover:text-foreground mt-2 inline-block text-sm underline"
-        >
-          event speech
-        </Link>
-      ) : null}
       <div className="mt-3">
         <MemberRsvpControl
           event={event}
