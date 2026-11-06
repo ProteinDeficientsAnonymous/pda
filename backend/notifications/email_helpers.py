@@ -1,11 +1,15 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
 
 from notifications.email_sender import EmailSender, SendResult
+
+if TYPE_CHECKING:
+    from community.models import Event
 
 
 def format_eastern_datetime(dt: datetime) -> str:
@@ -14,6 +18,12 @@ def format_eastern_datetime(dt: datetime) -> str:
         .strftime("%A, %B %d at %I:%M %p")
         .replace(" 0", " ")
     )
+
+
+def format_event_when(event: "Event", tbd: str = "to be decided") -> str:
+    if event.datetime_tbd or event.start_datetime is None:
+        return tbd
+    return format_eastern_datetime(event.start_datetime)
 
 
 @dataclass(frozen=True)

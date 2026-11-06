@@ -101,9 +101,22 @@ class TestApplyAttendancePause:
         invite = EventCoHostInvite.objects.get(event=past, user=member)
         assert invite.status == CoHostInviteStatus.PENDING
 
+    def test_moves_sole_hosted_event_to_draft_without_rsvps(self, rf, member, other_user):
+        event = make_event(created_by=member)
+        make_rsvp(event, member)
+        make_rsvp(event, other_user)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        event.refresh_from_db()
+        assert event.status == EventStatus.DRAFT
+        assert event.co_hosts.count() == 0
+        assert not EventRSVP.objects.filter(event=event).exists()
+
     def test_writes_audit_log(self, rf, member, other_user, django_capture_on_commit_callbacks):
         vettor = Role.objects.create(name="vettor")
         member.roles.add(vettor)
+        drafted = make_event(created_by=member)
         removed = make_event(created_by=other_user)
         make_rsvp(removed, member)
         shared = make_event(created_by=other_user)
@@ -114,6 +127,7 @@ class TestApplyAttendancePause:
 
         entry = AuditLogEntry.objects.get(action="user_attendance_paused")
         assert entry.target_id == str(member.pk)
+        assert entry.details["drafted_event_ids"] == [str(drafted.pk)]
         assert entry.details["removed_rsvp_event_ids"] == [str(removed.pk)]
         assert entry.details["removed_role_ids"] == [str(vettor.pk)]
         assert entry.details["removed_hosting_event_ids"] == [str(shared.pk)]

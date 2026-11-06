@@ -68,6 +68,12 @@ class UserManager(BaseUserManager):
         """
         return self.get_queryset().filter(is_member=True)
 
+    def members_or_attendance_paused(self):
+        """Members plus attendance-paused ex-members, who admins still manage as members."""
+        return self.get_queryset().filter(
+            models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
+        )
+
     def active_members(self):
         """Members who should appear on member-facing surfaces.
 

@@ -324,6 +324,23 @@ export interface paths {
         patch: operations["users__management_update_user"];
         trace?: never;
     };
+    "/api/auth/users/{user_id}/attendance-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attendance Pause Preview */
+        get: operations["users__attendance_pause_api_attendance_pause_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/attended-events/": {
         parameters: {
             query?: never;
@@ -2645,6 +2662,11 @@ export interface components {
             skipped_count: number;
             /** Updated Count */
             updated_count: number;
+        };
+        /** AttendancePausePreviewOut */
+        AttendancePausePreviewOut: {
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
         };
         /** AttendanceReportOut */
         AttendanceReportOut: {
@@ -4986,6 +5008,27 @@ export interface components {
             /** Pronouns */
             pronouns?: string | null;
         };
+        /** PauseImpactEventOut */
+        PauseImpactEventOut: {
+            /** Id */
+            id: string;
+            outcome: components["schemas"]["PauseOutcome"];
+            role: components["schemas"]["PauseRole"];
+            /** Start Datetime */
+            start_datetime: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * PauseOutcome
+         * @enum {string}
+         */
+        PauseOutcome: "kept" | "removed" | "drafted";
+        /**
+         * PauseRole
+         * @enum {string}
+         */
+        PauseRole: "rsvp" | "hosting";
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
             /** Id */
@@ -6014,6 +6057,8 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
+            /** Attendance Paused */
+            attendance_paused?: boolean | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -7016,6 +7061,46 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__attendance_pause_api_attendance_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

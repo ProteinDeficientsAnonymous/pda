@@ -325,6 +325,22 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
+      "AttendancePausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "AttendancePausePreviewOut",
+        "type": "object"
+      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -5670,6 +5686,62 @@
         "title": "OnboardingIn",
         "type": "object"
       },
+      "PauseImpactEventOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PauseOutcome"
+          },
+          "role": {
+            "$ref": "#/components/schemas/PauseRole"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_datetime",
+          "role",
+          "outcome"
+        ],
+        "title": "PauseImpactEventOut",
+        "type": "object"
+      },
+      "PauseOutcome": {
+        "enum": [
+          "kept",
+          "removed",
+          "drafted"
+        ],
+        "title": "PauseOutcome",
+        "type": "string"
+      },
+      "PauseRole": {
+        "enum": [
+          "rsvp",
+          "hosting"
+        ],
+        "title": "PauseRole",
+        "type": "string"
+      },
       "PendingCoHostInviteOut": {
         "properties": {
           "id": {
@@ -8044,6 +8116,17 @@
       },
       "UserPatchIn": {
         "properties": {
+          "attendance_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused"
+          },
           "email": {
             "anyOf": [
               {
@@ -9582,6 +9665,64 @@
           }
         ],
         "summary": "Update User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/{user_id}/attendance-pause-preview/": {
+      "get": {
+        "operationId": "users__attendance_pause_api_attendance_pause_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Pause Preview",
         "tags": [
           "auth"
         ]
