@@ -90,8 +90,18 @@ class SseTicket(models.Model):
     token = models.CharField(max_length=64, unique=True, db_index=True)
     user = models.ForeignKey(
         "users.User",
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="sse_tickets",
+    )
+    # Set only on anonymous tickets: the one public event whose pings they receive.
+    event = models.ForeignKey(
+        "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="+",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -109,5 +119,13 @@ class SseTicket(models.Model):
         return cls.objects.create(
             token=secrets.token_urlsafe(32),
             user=user,
+            expires_at=timezone.now() + _SSE_TICKET_TTL,
+        )
+
+    @classmethod
+    def mint_for_event(cls, event) -> "SseTicket":
+        return cls.objects.create(
+            token=secrets.token_urlsafe(32),
+            event=event,
             expires_at=timezone.now() + _SSE_TICKET_TTL,
         )
