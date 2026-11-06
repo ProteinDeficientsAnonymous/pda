@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EventFormat } from '@/models/event';
 
 import { apiClient } from './client';
+import { invalidateEventDetail } from './events';
 
 export interface SpeechTemplate {
   sharedPm: string;
@@ -80,6 +81,11 @@ export interface EventSpeech {
   updatedByName: string | null;
 }
 
+export interface EventSpeechSave {
+  eventFormat?: EventFormat;
+  values: SpeechValues;
+}
+
 interface WireEventSpeech {
   event_title: string;
   event_format: string | null;
@@ -94,7 +100,7 @@ const speechKey = (eventId: string) => ['event-speech', eventId] as const;
 const speechUrl = (eventId: string) => `/api/community/events/${eventId}/speech/`;
 
 function mapSpeech(data: WireEventSpeech): EventSpeech {
-  const format = Object.values(EventFormat).find((k) => k === data.event_format) ?? null;
+  const format = Object.values(EventFormat).find((f) => f === data.event_format) ?? null;
   return {
     eventTitle: data.event_title,
     eventFormat: format,
@@ -114,6 +120,22 @@ export function useEventSpeech(eventId: string | undefined) {
     queryFn: async () => {
       const { data } = await apiClient.get<WireEventSpeech>(speechUrl(eventId ?? ''));
       return mapSpeech(data);
+    },
+  });
+}
+
+export function useSaveEventSpeech(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EventSpeechSave) => {
+      const body: { values: SpeechValues; event_format?: string } = { values: input.values };
+      if (input.eventFormat) body.event_format = input.eventFormat;
+      const { data } = await apiClient.put<WireEventSpeech>(speechUrl(eventId), body);
+      return mapSpeech(data);
+    },
+    onSuccess: (speech) => {
+      qc.setQueryData(speechKey(eventId), speech);
+      invalidateEventDetail(qc, eventId);
     },
   });
 }
