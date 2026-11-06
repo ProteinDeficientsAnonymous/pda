@@ -18,7 +18,7 @@ router = Router()
 
 # Neutral response for every outcome (match, no match, member, honeypot, bad
 # phone) so the endpoint never reveals whether an account exists.
-_NEUTRAL_RESPONSE = (
+NEUTRAL_RESPONSE = (
     "if that phone and email match a non-member rsvp, we've emailed you a fresh "
     "link — check your inbox, including spam. if you have a member account, "
     "sign in instead"
@@ -36,7 +36,7 @@ class ResendManageLinkOut(BaseModel):
 
 
 def _neutral() -> Status:
-    return Status(200, ResendManageLinkOut(detail=_NEUTRAL_RESPONSE))
+    return Status(200, ResendManageLinkOut(detail=NEUTRAL_RESPONSE))
 
 
 def _find_non_member(phone: str) -> User | None:

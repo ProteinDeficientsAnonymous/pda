@@ -114,7 +114,7 @@ def populate_cohosts(event, *, accepted_count: int, invited_count: int, invited_
 
 
 def _split_by_capacity(going: int, max_attendees: int | None) -> tuple[int, int]:
-    """Returns (attending, waitlisted), mirroring _apply_rsvp_in_transaction."""
+    """Returns (attending, waitlisted), mirroring apply_rsvp_in_transaction."""
     if max_attendees is not None and going > max_attendees:
         return max_attendees, going - max_attendees
     return going, 0

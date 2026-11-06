@@ -11,7 +11,7 @@ from community.rsvps.counts import (
     _no_response_count,
     _no_show_count,
 )
-from community.rsvps.member import _resolve_cancelled_at, _resolve_pre_cancel_status
+from community.rsvps.member import resolve_cancelled_at, resolve_pre_cancel_status
 from django.conf import settings
 from django.utils import timezone
 
@@ -180,10 +180,10 @@ class TestResolveCancelledAt:
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
         )
-        assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) is not None
+        assert resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) is not None
 
     def test_stamps_for_brand_new_cant_go(self):
-        assert _resolve_cancelled_at(None, RSVPStatus.CANT_GO) is not None
+        assert resolve_cancelled_at(None, RSVPStatus.CANT_GO) is not None
 
     def test_clears_when_leaving_cant_go(self, stats_event, members):
         cancelled = stats_event.start_datetime - timedelta(days=1)
@@ -193,7 +193,7 @@ class TestResolveCancelledAt:
             status=RSVPStatus.CANT_GO,
             cancelled_at=cancelled,
         )
-        assert _resolve_cancelled_at(rsvp, RSVPStatus.ATTENDING) is None
+        assert resolve_cancelled_at(rsvp, RSVPStatus.ATTENDING) is None
 
     def test_preserves_original_cancel_time_when_still_cant_go(self, stats_event, members):
         cancelled = stats_event.start_datetime - timedelta(days=5)
@@ -203,7 +203,7 @@ class TestResolveCancelledAt:
             status=RSVPStatus.CANT_GO,
             cancelled_at=cancelled,
         )
-        assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
+        assert resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
 
 
 @pytest.mark.django_db
@@ -212,14 +212,14 @@ class TestResolvePreCancelStatus:
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
         )
-        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.ATTENDING
+        assert resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.ATTENDING
 
     def test_stamps_prior_status_on_transition_from_maybe(self, stats_event, members):
         rsvp = EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.MAYBE)
-        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
+        assert resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
 
     def test_none_for_brand_new_cant_go(self):
-        assert _resolve_pre_cancel_status(None, RSVPStatus.CANT_GO) is None
+        assert resolve_pre_cancel_status(None, RSVPStatus.CANT_GO) is None
 
     def test_clears_when_leaving_cant_go(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
@@ -228,7 +228,7 @@ class TestResolvePreCancelStatus:
             status=RSVPStatus.CANT_GO,
             pre_cancel_status=RSVPStatus.ATTENDING,
         )
-        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.ATTENDING) is None
+        assert resolve_pre_cancel_status(rsvp, RSVPStatus.ATTENDING) is None
 
     def test_preserves_original_pre_cancel_status_when_still_cant_go(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
@@ -237,7 +237,7 @@ class TestResolvePreCancelStatus:
             status=RSVPStatus.CANT_GO,
             pre_cancel_status=RSVPStatus.MAYBE,
         )
-        assert _resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
+        assert resolve_pre_cancel_status(rsvp, RSVPStatus.CANT_GO) == RSVPStatus.MAYBE
 
 
 @pytest.mark.django_db
