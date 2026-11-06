@@ -1,19 +1,10 @@
-from datetime import timedelta
-
 import pytest
-from community.models import Event, EventRSVP, EventType, RSVPStatus
-from django.utils import timezone
+from community.models import EventType
 from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
+from users import _attendance_pause_api
+from users._attendance_pause import PauseImpact
 from users.models import User
-
-
-def _event(creator: User, event_type=EventType.COMMUNITY, title="potluck") -> Event:
-    return Event.objects.create(
-        title=title,
-        event_type=event_type,
-        start_datetime=timezone.now() + timedelta(days=3),
-        created_by=creator,
-    )
 
 
 def _preview(api_client, user: User, headers: dict):
@@ -25,9 +16,9 @@ class TestAttendancePausePreview:
     def test_lists_each_event_with_role_and_outcome(
         self, api_client, manage_users_headers, member, other_user
     ):
-        drafted = _event(member, title="book club")
-        kept = _event(other_user, EventType.OFFICIAL, title="meetup")
-        EventRSVP.objects.create(event=kept, user=member, status=RSVPStatus.ATTENDING)
+        drafted = make_event(created_by=member, title="book club")
+        kept = make_event(created_by=other_user, event_type=EventType.OFFICIAL, title="meetup")
+        make_rsvp(kept, member)
 
         response = _preview(api_client, member, manage_users_headers)
 
@@ -38,6 +29,29 @@ class TestAttendancePausePreview:
         assert events[str(drafted.pk)]["role"] == "hosting"
         assert events[str(drafted.pk)]["outcome"] == "drafted"
         assert events[str(drafted.pk)]["title"] == "book club"
+
+    def test_maps_every_bucket_to_its_role_and_outcome(
+        self, api_client, manage_users_headers, member, monkeypatch
+    ):
+        impact = PauseImpact(
+            kept_rsvps=[make_event(title="kept rsvp")],
+            removed_rsvps=[make_event(title="removed rsvp")],
+            kept_hosting=[make_event(title="kept hosting")],
+            removed_hosting=[make_event(title="removed hosting")],
+            drafted_events=[make_event(title="drafted")],
+        )
+        monkeypatch.setattr(_attendance_pause_api, "attendance_pause_impact", lambda _: impact)
+
+        response = _preview(api_client, member, manage_users_headers)
+
+        pairs = {e["title"]: (e["role"], e["outcome"]) for e in response.json()["events"]}
+        assert pairs == {
+            "kept rsvp": ("rsvp", "kept"),
+            "removed rsvp": ("rsvp", "removed"),
+            "kept hosting": ("hosting", "kept"),
+            "removed hosting": ("hosting", "removed"),
+            "drafted": ("hosting", "drafted"),
+        }
 
     def test_empty_when_nothing_upcoming(self, api_client, manage_users_headers, member):
         response = _preview(api_client, member, manage_users_headers)

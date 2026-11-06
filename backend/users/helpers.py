@@ -11,11 +11,13 @@ from community.shared import validate_display_name
 from community.validation import Code, raise_validation
 from django.conf import settings
 from django.db.models import prefetch_related_objects
+from django.utils import timezone
 
 from users.models import (
     ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
+    NonMemberRsvpToken,
     User,
     validate_phone,
 )
@@ -290,3 +292,14 @@ def _strip_non_member_roles(user: User) -> list[str]:
         return []
     user.roles.remove(*removed)
     return [str(r.id) for r in removed]
+
+
+def grant_membership(user: User) -> None:
+    """Add the default member role and revoke any scoped rsvp tokens."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if member_role:
+        user.roles.add(member_role)
+
+    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+        revoked_at=timezone.now()
+    )

@@ -41,7 +41,7 @@ def delete_user(request, user_id: str):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_user")
     try:
-        user = User.objects.members().get(pk=user_id)
+        user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
@@ -93,7 +93,7 @@ def hard_delete_user(request, user_id: str):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="hard_delete_user")
     try:
-        user = User.objects.members().get(pk=user_id)
+        user = User.objects.members_or_attendance_paused().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):

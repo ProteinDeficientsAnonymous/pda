@@ -5,9 +5,8 @@ from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import _create_user_with_role
-from users.helpers import ConsentTimestamps, _create_magic_token
-from users.models import NonMemberRsvpToken, User
-from users.roles import Role
+from users.helpers import ConsentTimestamps, _create_magic_token, grant_membership
+from users.models import User
 
 from community.models import (
     JoinRequestStatus,
@@ -50,17 +49,6 @@ def _reactivate_archived_user(existing_user, join_request):
     return _create_magic_token(existing_user)
 
 
-def _grant_membership(user) -> None:
-    """Add the default member role and revoke any scoped rsvp tokens."""
-    member_role = Role.objects.filter(name="member", is_default=True).first()
-    if member_role:
-        user.roles.add(member_role)
-
-    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
-        revoked_at=timezone.now()
-    )
-
-
 def _promote_public_non_member(user, join_request) -> str:
     """Promote a publicly-RSVP'd non-member in place; returns their replacement login token.
 
@@ -85,7 +73,7 @@ def _promote_public_non_member(user, join_request) -> str:
             "sms_consent_at",
         ]
     )
-    _grant_membership(user)
+    grant_membership(user)
     return _create_magic_token(user)
 
 
@@ -103,7 +91,7 @@ def _promote_tentative_member(user, join_request) -> None:
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(update_fields=["is_member", "guidelines_consent_at", "sms_consent_at"])
-    _grant_membership(user)
+    grant_membership(user)
 
 
 _DEFAULT_MEMBER_PROMOTION_EMAIL = "you now have full member access."

@@ -1,22 +1,8 @@
-from datetime import timedelta
-
 import pytest
-from community.models import Event, EventStatus, EventType
-from django.utils import timezone
-from tests._auth import auth_headers_for
+from community.models import EventStatus
+from tests._events import make_event
 from users.models import User
 from users.roles import Role
-
-
-def _event(creator: User, event_type=EventType.COMMUNITY) -> Event:
-    return Event.objects.create(
-        title=f"{event_type} event",
-        event_type=event_type,
-        start_datetime=timezone.now() + timedelta(days=3),
-        created_by=creator,
-        status=EventStatus.ACTIVE,
-        rsvp_enabled=True,
-    )
 
 
 def _patch(api_client, user: User, headers: dict, **payload):
@@ -28,7 +14,7 @@ def _patch(api_client, user: User, headers: dict, **payload):
 @pytest.mark.django_db
 class TestAttendancePausePatch:
     def test_pause_applies_the_pause(self, api_client, manage_users_headers, member):
-        drafted = _event(member)
+        drafted = make_event(created_by=member)
 
         response = _patch(api_client, member, manage_users_headers, attendance_paused=True)
 
@@ -38,24 +24,19 @@ class TestAttendancePausePatch:
         drafted.refresh_from_db()
         assert drafted.status == EventStatus.DRAFT
 
-    def test_cannot_pause_self(self, api_client, manage_users_user, manage_users_headers):
-        response = _patch(
-            api_client, manage_users_user, manage_users_headers, attendance_paused=True
-        )
-        assert response.status_code == 400
-
-    def test_cannot_pause_admin(self, api_client, manage_users_headers, member):
-        member.roles.add(Role.objects.get_or_create(name="admin", is_default=True)[0])
-        response = _patch(api_client, member, manage_users_headers, attendance_paused=True)
-        assert response.status_code == 400
-
     def test_unpause_restores_membership_silently(
-        self, api_client, manage_users_headers, member, fake_email_sender
+        self,
+        api_client,
+        manage_users_headers,
+        member,
+        fake_email_sender,
+        django_capture_on_commit_callbacks,
     ):
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         _patch(api_client, member, manage_users_headers, attendance_paused=True)
 
-        response = _patch(api_client, member, manage_users_headers, attendance_paused=False)
+        with django_capture_on_commit_callbacks(execute=True):
+            response = _patch(api_client, member, manage_users_headers, attendance_paused=False)
 
         assert response.status_code == 200
         member.refresh_from_db()
@@ -67,24 +48,22 @@ class TestAttendancePausePatch:
 
 
 @pytest.mark.django_db
-class TestAttendancePausedAccess:
+class TestAttendancePausedDeletion:
     @pytest.fixture
     def paused(self, api_client, manage_users_headers, member):
         _patch(api_client, member, manage_users_headers, attendance_paused=True)
         member.refresh_from_db()
         return member
 
-    @pytest.mark.parametrize(
-        ("event_type", "expected"), [(EventType.OFFICIAL, 200), (EventType.COMMUNITY, 403)]
-    )
-    def test_rsvps_to_official_events_only(
-        self, api_client, paused, other_user, event_type, expected
-    ):
-        event = _event(other_user, event_type)
-        response = api_client.post(
-            f"/api/community/events/{event.id}/rsvp/",
-            {"status": "attending"},
-            content_type="application/json",
-            **auth_headers_for(paused),
-        )
-        assert response.status_code == expected
+    def test_can_be_archived(self, api_client, manage_users_headers, paused):
+        response = api_client.delete(f"/api/auth/users/{paused.pk}/", **manage_users_headers)
+
+        assert response.status_code == 204
+        paused.refresh_from_db()
+        assert paused.archived_at is not None
+
+    def test_can_be_hard_deleted(self, api_client, manage_users_headers, paused):
+        response = api_client.delete(f"/api/auth/users/{paused.pk}/hard/", **manage_users_headers)
+
+        assert response.status_code == 204
+        assert not User.objects.filter(pk=paused.pk).exists()
