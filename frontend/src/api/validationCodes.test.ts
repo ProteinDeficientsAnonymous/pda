@@ -149,6 +149,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('asks for the event format before saving a speech', () => {
+    expect(messageForCode({ code: Code.Speech.FormatRequired, field: 'event_format' })).toBe(
+      'pick walk or restaurant first',
+    );
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
