@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
-from users.api import create_user_with_role
+from users.api import _create_user_with_role
 from users.helpers import ConsentTimestamps, _create_magic_token, grant_membership
 from users.models import User
 
@@ -202,7 +202,7 @@ def provision_approved_user(
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
         first_name, last_name = _resolve_names(join_request)
-        _, magic_token = create_user_with_role(
+        _, magic_token = _create_user_with_role(
             join_request.phone_number,
             first_name,
             last_name,

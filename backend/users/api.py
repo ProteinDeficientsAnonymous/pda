@@ -14,15 +14,15 @@ from users._roles import router as roles_router
 from users._self_delete import router as self_delete_router
 from users._user_deletion import router as user_deletion_router
 from users.helpers import (  # re-exported
-    create_user_with_role,
-    validate_admin_role_change,
-    validate_member_role_required,
+    _create_user_with_role,
+    _validate_admin_role_change,
+    _validate_member_role_required,
 )
 
 __all__ = [
-    "create_user_with_role",
-    "validate_admin_role_change",
-    "validate_member_role_required",
+    "_create_user_with_role",
+    "_validate_admin_role_change",
+    "_validate_member_role_required",
     "attendance_pause_preview",
     "router",
     "search_users",

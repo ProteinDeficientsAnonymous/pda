@@ -191,7 +191,7 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def create_user_with_role(  # noqa: PLR0913
+def _create_user_with_role(  # noqa: PLR0913
     phone: str,
     first_name: str,
     last_name: str,
@@ -245,7 +245,7 @@ def create_user_with_role(  # noqa: PLR0913
     return user, magic_token
 
 
-def validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
+def _validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
     """Raise ValidationException if an admin role change is invalid.
 
     Guards both directions:
@@ -272,7 +272,7 @@ def validate_admin_role_change(user: User, requesting_user: User, new_roles: lis
         raise_validation(Code.Role.CANNOT_REMOVE_LAST_ADMIN, status_code=400)
 
 
-def validate_member_role_required(new_roles: list[Role]) -> None:
+def _validate_member_role_required(new_roles: list[Role]) -> None:
     """Raise ValidationException if the new role set is missing the built-in member role."""
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if not member_role:
