@@ -204,6 +204,10 @@ class TestStyleAndClassConstraints:
         result = sanitize_content_html('<a class="evil" href="https://x.test">x</a>')
         assert "evil" not in result
 
+    def test_span_keeps_only_speech_blank_class(self):
+        html = '<span class="speech-blank evil" style="color: red" onclick="x()">hi</span>'
+        assert sanitize_content_html(html) == '<span class="speech-blank">hi</span>'
+
 
 class TestRelInjection:
     def test_blank_target_link_gets_safe_rel(self):
