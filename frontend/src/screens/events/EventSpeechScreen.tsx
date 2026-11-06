@@ -5,6 +5,8 @@ import { type EventSpeech, useEventSpeech } from '@/api/eventSpeech';
 import { HtmlContent } from '@/components/HtmlContent';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { EventSpeechForm } from './EventSpeechForm';
+
 const READING_CLASS = [
   'text-lg [overflow-wrap:anywhere]',
   '[&_blockquote]:my-3 [&_blockquote]:border-yellow-400 [&_blockquote]:text-sm [&_blockquote]:italic',
@@ -42,7 +44,11 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
       </div>
       <p className="text-foreground-secondary text-lg">{speech.eventTitle}</p>
       <div className="mb-6" />
-      {reading ? <HtmlContent html={speech.html} className={READING_CLASS} /> : null}
+      {reading ? (
+        <HtmlContent html={speech.html} className={READING_CLASS} />
+      ) : (
+        <EventSpeechForm speech={speech} />
+      )}
     </ContentContainer>
   );
 }

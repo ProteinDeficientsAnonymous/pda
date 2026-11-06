@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -63,6 +64,45 @@ beforeEach(() => {
 });
 
 describe('EventSpeechScreen', () => {
+  it('shows the shared and walk blanks only, prefilled, with lists as textareas', async () => {
+    renderScreen();
+
+    expect(await screen.findByLabelText('facilitators')).toHaveValue('ann and bo');
+    expect(screen.getByLabelText('front walker')).toBeInTheDocument();
+    expect(screen.getByLabelText('back walker')).toBeInTheDocument();
+    expect(screen.getByLabelText('walk details')).toBeInTheDocument();
+    expect(screen.queryByLabelText('restaurant')).not.toBeInTheDocument();
+
+    const roles = screen.getByLabelText('open roles');
+    expect(roles.tagName).toBe('TEXTAREA');
+    expect(roles).toHaveValue('greeter\nphotographer');
+    expect(screen.getByLabelText('facilitators').tagName).toBe('INPUT');
+  });
+
+  it('lets the host edit text and list blanks', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    const facilitators = await screen.findByLabelText('facilitators');
+    await user.clear(facilitators);
+    await user.type(facilitators, 'cy');
+    expect(facilitators).toHaveValue('cy');
+
+    const roles = screen.getByLabelText('open roles');
+    await user.type(roles, '{enter}driver');
+    expect(roles).toHaveValue('greeter\nphotographer\ndriver');
+  });
+
+  it('shows an empty field for a blank with no prefill', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { ...UNSAVED_WALK, event_format: 'restaurant' },
+    });
+    renderScreen();
+
+    expect(await screen.findByLabelText('restaurant')).toHaveValue('');
+    expect(screen.queryByLabelText('walk details')).not.toBeInTheDocument();
+  });
+
   it('shows the event title, keeping its casing', async () => {
     renderScreen();
 
