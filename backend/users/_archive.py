@@ -18,7 +18,7 @@ from notifications.service import broadcast_cohost_change
 from users.helpers import _strip_non_member_roles
 from users.models import User
 
-_HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
+HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
 
 
@@ -38,14 +38,14 @@ def archive_user(request, user: User) -> list[str]:
         user.calendar_token = ""
         user.save(update_fields=["archived_at", "calendar_token"])
         removed_role_ids = _strip_non_member_roles(user)
-        _release_upcoming_rsvps(request, user)
-        _step_down_as_cohost(user)
+        release_upcoming_rsvps(request, user)
+        step_down_as_cohost(user)
     return removed_role_ids
 
 
 def _release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
     event_ids = EventRSVP.objects.filter(
-        upcoming_events_q("event__"), user=user, status__in=_HELD_RSVP_STATUSES
+        upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
     events = Event.objects.select_for_update().filter(event_filter or Q(), id__in=list(event_ids))
     for event in events:

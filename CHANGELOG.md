@@ -1,3 +1,73 @@
+# [0.220.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.219.0...v0.220.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - apply the attendance pause ([#2155](https://github.com/ProteinDeficientsAnonymous/pda/issues/2155)) ([93a4382](https://github.com/ProteinDeficientsAnonymous/pda/commit/93a438285b7a439f79b5d78333bc2b80d7665a0d))
+
+# [0.219.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.1...v0.219.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add attendance pause fields ([#2153](https://github.com/ProteinDeficientsAnonymous/pda/issues/2153)) ([d8c7ede](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8c7ede42da06184f153852adfeb6b528892ee86))
+* 1515 - sort upcoming events by attendance pause impact ([#2154](https://github.com/ProteinDeficientsAnonymous/pda/issues/2154)) ([84944cd](https://github.com/ProteinDeficientsAnonymous/pda/commit/84944cdb672626b236265a3f8e6a4077364bbfd7))
+
+## [0.218.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.0...v0.218.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** enforce the website's invite rule in the invitations api ([#2162](https://github.com/ProteinDeficientsAnonymous/pda/issues/2162)) ([8e7a901](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e7a901dc2e31cea58b90fa52aa232bd097ab93e))
+
+# [0.218.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.217.0...v0.218.0) (2026-11-06)
+
+
+### Features
+
+* **mcp:** invite members to events through mcp ([#2161](https://github.com/ProteinDeficientsAnonymous/pda/issues/2161)) ([ef5858e](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef5858e892e7e9ac715226e05478f5a6039cc8be))
+
+# [0.217.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.216.0...v0.217.0) (2026-11-06)
+
+
+### Features
+
+* show which event auto-approved a join request ([#2141](https://github.com/ProteinDeficientsAnonymous/pda/issues/2141)) ([2751198](https://github.com/ProteinDeficientsAnonymous/pda/commit/27511986e3f1d9b5e7832a02d1d4ce0b0c0a57c5))
+
+# [0.216.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.215.0...v0.216.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **feedback:** reword reminder email subject ([#2152](https://github.com/ProteinDeficientsAnonymous/pda/issues/2152)) ([fd17a7d](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd17a7d1ef31e111fd0c420a7d9a66674ef6a386))
+
+
+### Features
+
+* backfill the approving event for past check-in promotions ([#2140](https://github.com/ProteinDeficientsAnonymous/pda/issues/2140)) ([43ef0c0](https://github.com/ProteinDeficientsAnonymous/pda/commit/43ef0c0dc6ae9b53913c5bf58a1f0cccd33192b0))
+
+# [0.215.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.1...v0.215.0) (2026-11-06)
+
+
+### Features
+
+* record the event whose check-in auto-approved a join request ([#2139](https://github.com/ProteinDeficientsAnonymous/pda/issues/2139)) ([7e3053c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e3053c38e9c33a4019fd8c3fa45d6e2b37aa652))
+
+## [0.214.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.0...v0.214.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** save a walk/restaurant format when editing official events ([#2150](https://github.com/ProteinDeficientsAnonymous/pda/issues/2150)) ([1639145](https://github.com/ProteinDeficientsAnonymous/pda/commit/1639145bb5e96d45fbf8da4a9b69b7f74543bd7c))
+* **speech:** add walker prompts to the speech form ([#2151](https://github.com/ProteinDeficientsAnonymous/pda/issues/2151)) ([e6cc8e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6cc8e2f8224c140ea1d1ef9bdef650ca137e6ac))
+
+# [0.214.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.213.0...v0.214.0) (2026-11-06)
+
+
+### Features
+
+* **speech:** move the event speech link into the event settings menu ([#2147](https://github.com/ProteinDeficientsAnonymous/pda/issues/2147)) ([7c66e65](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c66e65c11d656d82501cc52db3f9720898bc178))
+
 # [0.213.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.212.0...v0.213.0) (2026-11-06)
 
 

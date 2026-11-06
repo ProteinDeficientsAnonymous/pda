@@ -153,6 +153,8 @@ export interface JoinRequestSummary {
   tentativeByName: string | null;
   approvedAt: string | null;
   approvedByName: string | null;
+  approvedViaEventId: string | null;
+  approvedViaEventTitle: string | null;
   rejectedAt: string | null;
   rejectedByName: string | null;
   rejectionReason: RejectionReason | null;
@@ -198,6 +200,8 @@ interface WireJoinRequest {
   tentative_by_name?: string | null;
   approved_at?: string | null;
   approved_by_name?: string | null;
+  approved_via_event_id?: string | null;
+  approved_via_event_title?: string | null;
   rejected_at?: string | null;
   rejected_by_name?: string | null;
   rejection_reason?: RejectionReason | '';
@@ -232,6 +236,8 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     tentativeByName: w.tentative_by_name ?? null,
     approvedAt: w.approved_at ?? null,
     approvedByName: w.approved_by_name ?? null,
+    approvedViaEventId: w.approved_via_event_id ?? null,
+    approvedViaEventTitle: w.approved_via_event_title ?? null,
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
     rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
