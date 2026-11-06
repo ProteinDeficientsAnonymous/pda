@@ -7,6 +7,7 @@ from django.db.models import Exists, OuterRef
 from notifications.email_helpers import (
     MemberRsvpEmailDetails,
     RsvpEmailDetails,
+    format_event_when,
     send_member_rsvp_status_email,
     send_rsvp_confirmation_email,
     send_rsvp_waitlist_promoted_email,
@@ -18,7 +19,6 @@ from community.models import Event, JoinRequest, JoinRequestStatus, RSVPStatus
 from community.rsvps.public_shared import (
     _email_details,
     _event_links,
-    _format_event_when,
     _log_email_failure,
     _unpaid_user_ids,
 )
@@ -41,7 +41,7 @@ def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
         to=user.email or "",
         display_name=user.first_name,
         event_title=event.title,
-        event_when=_format_event_when(event),
+        event_when=format_event_when(event),
         event_location=event.location,
         event_links=_event_links(event),
         event_url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}",

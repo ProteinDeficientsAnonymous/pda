@@ -12,12 +12,12 @@ from notifications.service import (
     broadcast_event_created,
     create_event_cancellation_notifications,
     create_event_invite_notifications,
-    notify_users,
 )
 from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import diff_cohost_invites, send_cohost_invite_emails
 from community.events.helpers import event_out, has_attendees
+from community.events.unpublish import clear_unpublished_side_effects
 from community.models import Event, EventRSVP, EventStatus
 from community.rsvps.counts import _host_crew_ids
 from community.validation import Code, raise_validation
@@ -107,7 +107,7 @@ def _publish_draft(request, event: Event) -> None:
 def _notify_new_invitees(request, event: Event) -> None:
     """Notify invited members who don't already have an invite for this event.
 
-    Unpublish deletes the EVENT_INVITE rows (see `_unpublish_event`), so a
+    Unpublish deletes the EVENT_INVITE rows (see `clear_unpublished_side_effects`), so a
     publish → unpublish → publish cycle re-creates them — each invitee holds
     exactly one invite notification at any time. The filter also skips any
     rows that survived from an earlier publish, so nobody is re-notified.
@@ -141,25 +141,7 @@ def _unpublish_event(request, event: Event) -> None:
         raise_validation(Code.Event.HAS_RSVPS, status_code=400)
     event.status = EventStatus.DRAFT
     event.save(update_fields=["status"])
-    # A draft is invisible to invitees, so its in-app invites go with the
-    # publish that made them visible — republish re-creates them via
-    # _notify_new_invitees, leaving each invitee exactly one at any time.
-    # Email can't be recalled; only the Notification rows are deleted.
-    invitee_ids = [
-        str(uid)
-        for uid in Notification.objects.filter(
-            event=event,
-            notification_type=NotificationType.EVENT_INVITE,
-        ).values_list("recipient_id", flat=True)
-    ]
-    Notification.objects.filter(
-        event=event,
-        notification_type=NotificationType.EVENT_INVITE,
-    ).delete()
-    # Live calendars and the invite bell stay stale unless we ping after commit.
-    transaction.on_commit(lambda: broadcast_event_created(event))
-    if invitee_ids:
-        transaction.on_commit(lambda ids=invitee_ids: notify_users(ids))
+    clear_unpublished_side_effects(event)
     _audit_event(request, event, "event_unpublished")
 
 

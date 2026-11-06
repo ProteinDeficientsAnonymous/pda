@@ -4,24 +4,23 @@ from dataclasses import dataclass, field
 from community.events.tentative_member_access import (
     TENTATIVE_MEMBER_EVENT_TYPES as KEPT_EVENT_TYPES,
 )
+from community.events.unpublish import clear_unpublished_side_effects
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite, EventRSVP, EventStatus
-from community.rsvps.public_shared import _format_event_when
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from notifications.email_sender import get_email_sender
+from notifications.email_helpers import format_event_when
+from notifications.email_sender import get_email_sender, send_best_effort
 from notifications.event_unpublished_email import (
     EventUnpublishedEmailDetails,
     send_event_unpublished_email,
 )
-from notifications.service import (
-    broadcast_cohost_change,
-    create_event_unpublished_notifications,
-)
+from notifications.service import create_event_unpublished_notifications
 
 from users._archive import (
     _HELD_RSVP_STATUSES,
+    _leave_cohost,
     _release_upcoming_rsvps,
     _step_down_as_cohost,
     _upcoming_hosted_events,
@@ -103,10 +102,7 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
 
 
 def _move_to_draft(event: Event, user: User) -> None:
-    event.co_hosts.remove(user)
-    EventCoHostInvite.objects.filter(
-        event=event, user=user, status=CoHostInviteStatus.ACCEPTED
-    ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
+    _leave_cohost(event, user)
     event.status = EventStatus.DRAFT
     event.save(update_fields=["status"])
     rsvps = EventRSVP.objects.filter(event=event)
@@ -117,7 +113,7 @@ def _move_to_draft(event: Event, user: User) -> None:
         .values_list("user_id", flat=True)
     ]
     rsvps.delete()
-    broadcast_cohost_change(event)
+    clear_unpublished_side_effects(event)
     transaction.on_commit(lambda: _notify_unpublished(event, guest_ids))
 
 
@@ -129,22 +125,18 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
     except Exception:  # noqa: BLE001 — the pause has committed; a failed notice must not undo it
         logger.warning("event_unpublished_notifications_failed", exc_info=True)
     sender = get_email_sender()
+    event_when = format_event_when(event, tbd="")
     for guest in User.objects.filter(pk__in=guest_ids).filter(HAS_EMAIL):
-        try:
-            result = send_event_unpublished_email(
-                sender=sender,
-                details=EventUnpublishedEmailDetails(
-                    to=guest.email or "",
-                    display_name=guest.first_name,
-                    event_title=event.title,
-                    event_when=_format_event_when(event),
-                ),
-            )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
-            logger.warning("event_unpublished_email_send_exception", exc_info=True)
-            continue
-        if not result.success:
-            logger.warning("event_unpublished_email_failed", extra={"error": result.error})
+        details = EventUnpublishedEmailDetails(
+            to=guest.email or "",
+            display_name=guest.first_name,
+            event_title=event.title,
+            event_when=event_when,
+        )
+        send_best_effort(
+            lambda d=details: send_event_unpublished_email(sender=sender, details=d),
+            "event_unpublished_email",
+        )
 
 
 def _strip_membership(user: User) -> list[str]:

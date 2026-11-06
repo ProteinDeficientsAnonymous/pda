@@ -17,7 +17,7 @@ from django.db.models import (
     When,
     prefetch_related_objects,
 )
-from notifications.email_helpers import format_eastern_datetime
+from notifications.email_helpers import format_event_when
 from users.helpers import visible_display_name
 from users.models import User
 
@@ -107,12 +107,6 @@ def capacity_line(event: Event) -> str:
     return line
 
 
-def _when(event: Event) -> str:
-    if event.datetime_tbd or event.start_datetime is None:
-        return "to be decided"
-    return format_eastern_datetime(event.start_datetime)
-
-
 def _in_window(field: str, window: Window) -> Q:
     start, end = window
     return Q(**{f"{field}__gt": start, f"{field}__lte": end})
@@ -161,7 +155,7 @@ def _comment_counts(event_ids: list[UUID], window: Window) -> dict[UUID, int]:
 def _event_digest(event: Event, names: dict[str, list[str]], comment_count: int) -> EventDigest:
     return EventDigest(
         title=event.title,
-        when=_when(event),
+        when=format_event_when(event),
         url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}",
         capacity_line=capacity_line(event),
         rsvp_groups=[(label, names[label]) for label in LABEL_ORDER if names.get(label)],

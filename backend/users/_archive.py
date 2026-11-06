@@ -73,8 +73,12 @@ def _step_down_as_cohost(user: User, event_filter: Q | None = None) -> None:
     """Leave every upcoming event that has another host; sole-hosted events are left as-is."""
     events = _upcoming_hosted_events(user, event_filter).filter(host_count__gt=1)
     for event in events:
-        event.co_hosts.remove(user)
-        EventCoHostInvite.objects.filter(
-            event=event, user=user, status=CoHostInviteStatus.ACCEPTED
-        ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
+        _leave_cohost(event, user)
         broadcast_cohost_change(event)
+
+
+def _leave_cohost(event: Event, user: User) -> None:
+    event.co_hosts.remove(user)
+    EventCoHostInvite.objects.filter(
+        event=event, user=user, status=CoHostInviteStatus.ACCEPTED
+    ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
