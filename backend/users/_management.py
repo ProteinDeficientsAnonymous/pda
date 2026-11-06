@@ -16,13 +16,13 @@ from ninja.responses import Status
 from users._attendance_pause import apply_attendance_pause_patch
 from users.helpers import (
     _check_and_set_email,
-    _create_magic_token,
-    _create_user_with_role,
     _is_admin,
     _resolve_name_fields,
     _strip_non_member_roles,
-    _validate_admin_role_change,
-    _validate_member_role_required,
+    create_magic_token,
+    create_user_with_role,
+    validate_admin_role_change,
+    validate_member_role_required,
     visible_name,
 )
 from users.models import ADMIN_ENTERED_PHONE_REGION, User, validate_phone
@@ -78,7 +78,7 @@ def create_user(request, payload: UserCreateIn):
     last_name = payload.last_name.strip()
     validate_display_name(first_name, field="first_name")
 
-    user, magic_token = _create_user_with_role(
+    user, magic_token = create_user_with_role(
         payload.phone_number,
         first_name,
         last_name,
@@ -161,7 +161,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         if member_role:
             user.roles.add(member_role)
 
-        magic_token = _create_magic_token(user)
+        magic_token = create_magic_token(user)
         results.append(
             BulkUserResult(
                 row=i + 1,
@@ -403,8 +403,8 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if len(roles) != len(payload.role_ids):
         raise_validation(Code.User.ROLE_IDS_NOT_FOUND, field="role_ids", status_code=400)
 
-    _validate_admin_role_change(user, request.auth, roles)
-    _validate_member_role_required(roles)
+    validate_admin_role_change(user, request.auth, roles)
+    validate_member_role_required(roles)
 
     old_role_ids = [str(r.id) for r in user.roles.all()]
     user.roles.set(roles)
