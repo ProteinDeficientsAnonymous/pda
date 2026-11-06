@@ -233,6 +233,21 @@ def create_event_cancellation_notifications(event: Event, canceller: User) -> No
     notify_users(recipient_ids)
 
 
+def create_event_unpublished_notifications(event: Event, recipient_ids: list[str]) -> None:
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=NotificationType.EVENT_UNPUBLISHED,
+                event=event,
+                message=f"{event.title} was unpublished and your rsvp was removed",
+            )
+            for user_id in recipient_ids
+        ]
+    )
+    notify_users(recipient_ids)
+
+
 def create_event_invite_notifications(
     event: Event,
     new_user_ids: Iterable[str],
