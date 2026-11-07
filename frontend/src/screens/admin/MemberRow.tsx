@@ -5,12 +5,13 @@ import type { Member } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { attendedCountLabel } from './attendedCountLabel';
+import { PauseBadges } from './PauseBadges';
 
 export function MemberRow({ member }: { member: Member }) {
   const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
 
   // Non-members have no detail page, so the row is a plain div, not a link.
-  if (!member.isMember) {
+  if (!isManagedMember(member)) {
     return (
       <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
         <MemberRowBody member={member} initials={initials} />
@@ -29,7 +30,9 @@ export function MemberRow({ member }: { member: Member }) {
 }
 
 function MemberRowBody({ member, initials }: { member: Member; initials: string }) {
-  const hasTags = !member.isMember || member.roles.length > 0 || member.isPaused;
+  const managed = isManagedMember(member);
+  const hasTags =
+    !managed || member.roles.length > 0 || member.isPaused || member.attendancePausedAt !== null;
   return (
     <>
       <div className="flex items-center gap-3">
@@ -78,12 +81,8 @@ function MemberRowBody({ member, initials }: { member: Member; initials: string 
               {role.name}
             </span>
           ))}
-          {member.isPaused ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-              paused
-            </span>
-          ) : null}
-          {!member.isMember ? (
+          <PauseBadges member={member} />
+          {!managed ? (
             <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
               non-member
             </span>
@@ -92,4 +91,8 @@ function MemberRowBody({ member, initials }: { member: Member; initials: string 
       ) : null}
     </>
   );
+}
+
+function isManagedMember(member: Member): boolean {
+  return member.isMember || member.attendancePausedAt !== null;
 }

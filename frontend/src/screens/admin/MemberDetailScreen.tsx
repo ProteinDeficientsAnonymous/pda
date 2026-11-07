@@ -26,6 +26,8 @@ import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/we
 
 import { attendedCountLabel } from './attendedCountLabel';
 import { MemberConnectedApps } from './MemberConnectedApps';
+import { MemberPauseToggles } from './MemberPauseToggles';
+import { PauseBadges } from './PauseBadges';
 
 export default function MemberDetailScreen() {
   const { id = '' } = useParams<{ id: string }>();
@@ -79,11 +81,9 @@ function MemberDetailView({ member }: { member: Member }) {
           {member.email ? (
             <p className="text-foreground-secondary text-sm">{member.email}</p>
           ) : null}
-          {member.isPaused ? (
-            <span className="bg-warning-subtle text-warning mt-1 rounded-full px-2 py-0.5 text-xs">
-              paused
-            </span>
-          ) : null}
+          <div className="mt-1 flex flex-wrap justify-center gap-1">
+            <PauseBadges member={member} />
+          </div>
         </div>
       </header>
 
@@ -364,7 +364,10 @@ function MemberEditForm({
   const [lastName, setLastName] = useState(member.lastName);
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
-  const [isPaused, setIsPaused] = useState(member.isPaused);
+  const [pause, setPause] = useState({
+    isPaused: member.isPaused,
+    attendancePaused: member.attendancePausedAt !== null,
+  });
   const [error, setError] = useState<string | null>(null);
   const targetIsAdmin = member.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
 
@@ -381,7 +384,9 @@ function MemberEditForm({
     if (lastName.trim() !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
-    if (isPaused !== member.isPaused) patch.isPaused = isPaused;
+    if (pause.isPaused !== member.isPaused) patch.isPaused = pause.isPaused;
+    if (pause.attendancePaused !== (member.attendancePausedAt !== null))
+      patch.attendancePaused = pause.attendancePaused;
 
     if (Object.keys(patch).length === 0) {
       onSaved();
@@ -438,13 +443,7 @@ function MemberEditForm({
           setEmail(e.target.value);
         }}
       />
-      <Toggle
-        label="pause account"
-        checked={isPaused}
-        onChange={setIsPaused}
-        disabled={targetIsAdmin}
-      />
-      {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
+      <MemberPauseToggles value={pause} onChange={setPause} targetIsAdmin={targetIsAdmin} />
 
       {error ? (
         <p role="alert" className="text-sm text-red-600">
