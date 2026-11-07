@@ -1,0 +1,9 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+your pda account is active again. here's the link to rejoin the whatsapp community:
+
+{{ whatsapp_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
