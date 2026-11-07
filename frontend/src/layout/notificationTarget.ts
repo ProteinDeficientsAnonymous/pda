@@ -28,6 +28,7 @@ export function notificationTarget(n: AppNotification): string | null {
     case NotificationType.JoinRequest:
       return '/join-requests';
     case NotificationType.MagicLinkRequest:
+    case NotificationType.MemberRestored:
       return n.relatedUserId ? `/admin/members/${n.relatedUserId}` : '/admin/members';
     default:
       return null;

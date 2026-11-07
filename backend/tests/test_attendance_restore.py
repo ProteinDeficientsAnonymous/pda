@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
+from community.join_requests import check_in_promotion
 from community.models import (
     AttendanceStatus,
     EventType,
@@ -11,6 +12,7 @@ from community.models import (
     WhatsAppLinkConfig,
 )
 from django.utils import timezone
+from notifications.models import Notification, NotificationType
 from users.models import User
 from users.roles import Role
 
@@ -160,3 +162,25 @@ class TestRestoreEmail:
     def test_no_email_without_a_restore(self, api_client, host, paused, fake_email_sender):
         _check_in(api_client, host, paused)
         fake_email_sender.send.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestRestoreNotification:
+    def test_notifies_approvers(self, api_client, host, paused, vettor_user):
+        _attended(paused)
+        _check_in(api_client, host, paused)
+
+        notification = Notification.objects.get(notification_type=NotificationType.MEMBER_RESTORED)
+        assert notification.recipient == vettor_user
+        assert notification.related_user == paused
+
+    def test_failed_notification_keeps_the_restore(
+        self, api_client, host, paused, vettor_user, monkeypatch
+    ):
+        def boom(_user):
+            raise RuntimeError("db hiccup")
+
+        monkeypatch.setattr(check_in_promotion, "create_member_restored_notifications", boom)
+        _attended(paused)
+        _check_in(api_client, host, paused)
+        assert paused.attendance_paused_at is None

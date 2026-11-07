@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
 from notifications.email_sender import get_email_sender, send_best_effort
+from notifications.service import create_member_restored_notifications
 from users.helpers import grant_membership
 from users.models import User
 
@@ -23,6 +24,8 @@ from community.models import (
     is_official_or_club,
 )
 from community.shared import render_template_placeholders
+
+logger = logging.getLogger(__name__)
 
 
 class CheckInOutcome(StrEnum):
@@ -88,3 +91,11 @@ def send_member_restored(user: User) -> None:
         ),
         "member_restored_email",
     )
+
+
+def notify_member_restored(user: User) -> None:
+    """Best-effort approver notification. A failure must not roll back the restore."""
+    try:
+        create_member_restored_notifications(user)
+    except Exception:  # noqa: BLE001 — the restore has committed
+        logger.warning("member_restored_notifications_failed", exc_info=True)
