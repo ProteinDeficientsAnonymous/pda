@@ -14,7 +14,7 @@ from community.events.helpers import can_edit_event
 from community.models import Event, EventFeedbackRequest, SurveyQuestionType, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 from community.shared import ErrorOut
-from community.surveys.helpers import _survey_question_out
+from community.surveys.helpers import survey_question_out
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -42,7 +42,7 @@ def get_event_feedback(request, event_id: UUID):
 
     survey = feedback_survey_for(event.event_type)
     asked = survey.questions.exclude(field_type=SurveyQuestionType.SECTION) if survey else []
-    questions = [_survey_question_out(q) for q in asked]
+    questions = [survey_question_out(q) for q in asked]
     # Day-only ordering with an id tiebreak so row order can't reveal submit order within a day.
     responses = sorted(
         (_response_out(r) for r in SurveyResponse.objects.filter(event=event)),

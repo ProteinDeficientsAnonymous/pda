@@ -28,7 +28,7 @@ from community.rsvps.counts import (
     attending_count_annotation,
     waitlisted_count_annotation,
 )
-from community.shared import _gated
+from community.shared import gated
 
 
 class EventListQuery(BaseModel):
@@ -159,7 +159,7 @@ def event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         description=e.description,
         start_datetime=e.start_datetime,
         end_datetime=e.end_datetime,
-        location=_gated(e.location, "", is_authed),
+        location=gated(e.location, "", is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
         price=e.price,

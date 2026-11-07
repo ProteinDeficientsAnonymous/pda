@@ -13,7 +13,7 @@ def _can_see_draft(event: Event, auth_user) -> bool:
     return can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
 
 
-def _enforce_event_read_visibility(event: Event, auth_user) -> None:
+def enforce_event_read_visibility(event: Event, auth_user) -> None:
     """Raise the right ValidationException if `auth_user` shouldn't see this event."""
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)

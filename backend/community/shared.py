@@ -71,7 +71,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         return result
 
 
-_optional_jwt = OptionalJWTAuth()
+optional_jwt = OptionalJWTAuth()
 
 
 class ErrorOut(BaseModel):
@@ -180,13 +180,13 @@ def flatten_to_single_line(value: str) -> str:
     return " ".join(value.splitlines()).strip()
 
 
-def _authenticated_user(requesting_user) -> "UserModel | None":
+def authenticated_user(requesting_user) -> "UserModel | None":
     """Return the user if authenticated, None if anonymous."""
     if requesting_user is None or isinstance(requesting_user, AnonymousUser):
         return None
     return requesting_user
 
 
-def _gated(value, default, visible: bool):
+def gated(value, default, visible: bool):
     """Return value if visible, default otherwise."""
     return value if visible else default

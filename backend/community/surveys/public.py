@@ -19,14 +19,14 @@ from community.models import (
     SurveyResponse,
     SurveyVisibility,
 )
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.surveys.helpers import (
-    _has_finalize_permission,
-    _response_to_update,
-    _submit_out,
-    _survey_out,
-    _tally_question,
+    has_finalize_permission,
+    response_to_update,
+    submit_out,
     survey_is_open,
+    survey_out,
+    tally_question,
 )
 from community.surveys.schemas import (
     PollResultsOut,
@@ -60,14 +60,14 @@ def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) ->
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_survey_public(request, slug: str, response_token: str = ""):
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     survey = _visible_survey_or_404(slug, auth_user)
     return Status(
         200,
-        _survey_out(
+        survey_out(
             survey,
             include_questions=True,
             requesting_user=auth_user,
@@ -85,7 +85,7 @@ def get_survey_public(request, slug: str, response_token: str = ""):
         404: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(
@@ -95,7 +95,7 @@ def submit_survey_response(
     response_token: str = "",
     response_id: UUID | None = None,
 ):
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     # select_for_update() serializes concurrent submits against the same survey row,
     # so the max_responses check-then-create can't race past the cap (issue #1465).
     with transaction.atomic():
@@ -105,7 +105,7 @@ def submit_survey_response(
         if survey.anonymous:
             # Audit rows and request log lines would re-link the submitter by timestamp.
             mark_request_anonymized(request)
-        existing = _response_to_update(survey, response_user, response_token, response_id)
+        existing = response_to_update(survey, response_user, response_token, response_id)
         if not survey_is_open(survey, check_cap=existing is None):
             raise_validation(Code.Survey.CLOSED, status_code=400)
         questions = {str(q.id): q for q in survey.questions.all()}
@@ -117,7 +117,7 @@ def submit_survey_response(
             existing.answers = answers
             existing.save(update_fields=["answers"])
             audit_log(logging.INFO, "survey_response_updated", request, target=target)
-            return Status(200, _submit_out(existing, user_name))
+            return Status(200, submit_out(existing, user_name))
         # without a member link the token is the only way back to this row for editing
         anonymous_token = secrets.token_urlsafe(32) if response_user is None else None
         response = SurveyResponse.objects.create(
@@ -125,7 +125,7 @@ def submit_survey_response(
         )
         audit_log(logging.INFO, "survey_response_submitted", request, target=target)
         transaction.on_commit(lambda: notify_survey_response(survey, response_user))
-        return Status(201, _submit_out(response, user_name))
+        return Status(201, submit_out(response, user_name))
 
 
 @router.get(
@@ -141,7 +141,7 @@ def get_survey_tallies(request, survey_id: UUID):
 
     # Tallies expose voter names/photos — gate to MANAGE_SURVEYS / MANAGE_EVENTS /
     # survey owner. Without this any authed user could enumerate voters by UUID.
-    if not _has_finalize_permission(request, survey):
+    if not has_finalize_permission(request, survey):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -160,7 +160,7 @@ def get_survey_tallies(request, survey_id: UUID):
     ]
     responses = list(survey.responses.select_related("user").all())
     tallies = [
-        _tally_question(q, responses, request.auth, include_voters=not survey.anonymous)
+        tally_question(q, responses, request.auth, include_voters=not survey.anonymous)
         for q in poll_questions
     ]
     return Status(200, tallies)

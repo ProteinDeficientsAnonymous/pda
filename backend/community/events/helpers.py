@@ -39,7 +39,7 @@ from community.rsvps.counts import (
 from community.rsvps.payment import can_see_payment_details
 from community.rsvps.serialize import event_rsvp_question_out, with_guest_photos
 from community.rsvps.waitlist import waitlist_sort_key
-from community.shared import _authenticated_user, _gated
+from community.shared import authenticated_user, gated
 from community.validation import Code, raise_validation
 
 if TYPE_CHECKING:
@@ -328,7 +328,7 @@ def _host_fields(event: Event, creator, co_hosts, auth_user) -> dict:
 def event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
-    auth_user = _authenticated_user(requesting_user)
+    auth_user = authenticated_user(requesting_user)
     is_authed = auth_user is not None
     show_payment_details = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
@@ -353,16 +353,16 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         description=event.description,
         start_datetime=event.start_datetime,
         end_datetime=event.end_datetime,
-        location=_gated(event.location, "", is_authed),
-        latitude=_gated(_float_or_none(event.latitude), None, is_authed),
-        longitude=_gated(_float_or_none(event.longitude), None, is_authed),
-        whatsapp_link=_gated(event.whatsapp_link, "", is_authed),
-        partiful_link=_gated(event.partiful_link, "", is_authed),
-        other_link=_gated(event.other_link, "", is_authed),
+        location=gated(event.location, "", is_authed),
+        latitude=gated(_float_or_none(event.latitude), None, is_authed),
+        longitude=gated(_float_or_none(event.longitude), None, is_authed),
+        whatsapp_link=gated(event.whatsapp_link, "", is_authed),
+        partiful_link=gated(event.partiful_link, "", is_authed),
+        other_link=gated(event.other_link, "", is_authed),
         price=event.price,
-        venmo_link=_gated(event.venmo_link, "", show_payment_details),
-        cashapp_link=_gated(event.cashapp_link, "", show_payment_details),
-        zelle_info=_gated(event.zelle_info, "", show_payment_details),
+        venmo_link=gated(event.venmo_link, "", show_payment_details),
+        cashapp_link=gated(event.cashapp_link, "", show_payment_details),
+        zelle_info=gated(event.zelle_info, "", show_payment_details),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,

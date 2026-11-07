@@ -15,7 +15,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community.events.helpers import can_see_invite_only
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.models import (
     DEFAULT_EVENT_DURATION,
     Event,
@@ -23,7 +23,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
-from community.shared import _authenticated_user, _gated, _optional_jwt
+from community.shared import authenticated_user, gated, optional_jwt
 from community.validation import ValidationException
 
 router = Router()
@@ -162,7 +162,7 @@ def calendar_feed(request, token: str = ""):
 # Intentionally public ("add to calendar"), but the optional JWT lets an
 # authenticated member receive full member-only data while anon callers get
 # only the public subset.
-@router.get("/events/{event_id}/ics/", auth=_optional_jwt)
+@router.get("/events/{event_id}/ics/", auth=optional_jwt)
 def single_event_ics(request, event_id: str):
     try:
         event = (
@@ -173,7 +173,7 @@ def single_event_ics(request, event_id: str):
     except Event.DoesNotExist:
         return HttpResponse("Event not found.", status=404, content_type="text/plain")
 
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     is_authed = auth_user is not None
 
     # Apply the canonical event-read visibility rules so the ICS gate stays in
@@ -181,7 +181,7 @@ def single_event_ics(request, event_id: str):
     # draft (403), members-only-non-official-for-anon (404), and invite-only
     # (403) — not just the invite-only tier.
     try:
-        _enforce_event_read_visibility(event, auth_user)
+        enforce_event_read_visibility(event, auth_user)
     except ValidationException as exc:
         return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
@@ -219,7 +219,7 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
     desc = _event_ics_description(event, target_url, is_authed)
     if desc:
         vevent.add("description", desc)
-    location = _gated(event.location, "", is_authed)
+    location = gated(event.location, "", is_authed)
     if location:
         vevent.add("location", location)
     return vevent
@@ -236,9 +236,9 @@ def _event_ics_description(event, target_url: str, is_authed: bool) -> str:
     parts = []
     if event.description:
         parts.append(event.description)
-    whatsapp = _gated(event.whatsapp_link, "", is_authed)
-    partiful = _gated(event.partiful_link, "", is_authed)
-    other = _gated(event.other_link, "", is_authed)
+    whatsapp = gated(event.whatsapp_link, "", is_authed)
+    partiful = gated(event.partiful_link, "", is_authed)
+    other = gated(event.other_link, "", is_authed)
     if whatsapp:
         parts.append(f"WhatsApp: {whatsapp}")
     if partiful:

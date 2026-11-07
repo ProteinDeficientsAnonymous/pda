@@ -252,7 +252,7 @@ def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
     return {"approved_via_event_id": str(event.id), "approved_via_event_title": event.title}
 
 
-def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
+def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
@@ -332,7 +332,7 @@ def list_join_requests(request):
     )
     join_requests = list(join_requests)
     lookups = _phone_lookups(join_requests)
-    return Status(200, [_join_request_out(jr, lookups) for jr in join_requests])
+    return Status(200, [join_request_out(jr, lookups) for jr in join_requests])
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:

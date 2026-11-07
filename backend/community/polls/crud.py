@@ -18,7 +18,7 @@ from users.helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community.events.helpers import broadcast_capacity_change
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
     Event,
@@ -37,7 +37,7 @@ from community.polls._schemas import (
     EventPollVoteIn,
     VoterOut,
 )
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -146,7 +146,7 @@ def _build_my_votes(options, auth_user) -> dict[str, str]:
 
 
 def poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
-    auth_user = _authenticated_user(requesting_user)
+    auth_user = authenticated_user(requesting_user)
     is_authed = auth_user is not None
     if "options" not in getattr(poll, "_prefetched_objects_cache", {}):
         prefetch_related_objects([poll], "options__votes__user")
@@ -224,11 +224,11 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
 @router.get(
     "/events/{event_id}/poll/",
     response={200: EventPollOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event_poll(request, event_id: UUID):
     viewer = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(_get_visible_event(event_id), viewer)
+    enforce_event_read_visibility(_get_visible_event(event_id), viewer)
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -247,7 +247,7 @@ def get_event_poll(request, event_id: UUID):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
-    _enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
+    enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
     try:
         poll = (
             EventPoll.objects.select_related("winning_option", "event")
