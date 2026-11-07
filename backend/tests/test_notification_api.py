@@ -3,6 +3,7 @@ count, mark-read). Service- and integration-level tests live in
 test_in_app_notifications.py."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from community.models import Event
@@ -252,3 +253,42 @@ class TestMarkReadAPI:
         )
         assert response.status_code == 200
         assert Notification.objects.filter(recipient=invitee, is_read=False).count() == 0
+
+    @patch("notifications.api.notify_read_state_changed")
+    def test_mark_one_read_pings_other_clients(self, ping, api_client, invitee, sample_event):
+        notif = Notification.objects.create(
+            recipient=invitee,
+            notification_type=NotificationType.EVENT_INVITE,
+            event=sample_event,
+            message="test",
+        )
+        api_client.post(
+            f"/api/notifications/{notif.id}/read/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_called_once_with(str(invitee.pk))
+
+    @patch("notifications.api.notify_read_state_changed")
+    def test_mark_all_read_pings_only_when_something_changed(
+        self, ping, api_client, invitee, sample_event
+    ):
+        api_client.post(
+            "/api/notifications/read-all/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_not_called()
+
+        Notification.objects.create(
+            recipient=invitee,
+            notification_type=NotificationType.EVENT_INVITE,
+            event=sample_event,
+            message="test",
+        )
+        api_client.post(
+            "/api/notifications/read-all/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_called_once_with(str(invitee.pk))
