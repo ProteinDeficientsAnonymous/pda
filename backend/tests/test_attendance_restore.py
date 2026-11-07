@@ -92,6 +92,23 @@ class TestRestoreOnCheckIn:
         _check_in(api_client, host, paused, for_plus_one=True)
         assert paused.attendance_paused_at is not None
 
+    def test_host_marking_themselves_never_restores(self, api_client, paused):
+        _attended(paused)
+        _check_in(api_client, paused, paused)
+        assert paused.attendance_paused_at is not None
+
+    def test_host_marking_themselves_never_promotes(self, api_client, paused):
+        paused.attendance_paused_at = None
+        paused.save(update_fields=["attendance_paused_at"])
+        JoinRequest.objects.create(
+            first_name="Paused",
+            phone_number=paused.phone_number,
+            user=paused,
+            status=JoinRequestStatus.TENTATIVE,
+        )
+        _check_in(api_client, paused, paused)
+        assert paused.is_member is False
+
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
         jr = JoinRequest.objects.create(
             first_name="Paused",

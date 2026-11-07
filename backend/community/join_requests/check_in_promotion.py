@@ -23,7 +23,8 @@ class CheckInOutcome(StrEnum):
 
 def maybe_promote_non_member(request, user: User, event) -> CheckInOutcome | None:
     """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
-    if not is_official_or_club(event.event_type):
+    # A host marking their own attendance can't vouch for themselves.
+    if user.pk == request.auth.pk or not is_official_or_club(event.event_type):
         return None
     # Checked first so a stale TENTATIVE request can't promote a paused member on one check-in.
     if user.attendance_paused_at is not None:
