@@ -6,7 +6,7 @@ from community.events.description_templates import get_event_description_templat
 from community.events.listing import hosted_events_q
 from community.events.tags import list_event_tags as list_event_tags_view
 from community.models import Event
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from django.db.models import BooleanField, Case, F, When
 from django.utils import timezone
 from pydantic import Field
@@ -36,7 +36,7 @@ def _summary(event: Event) -> dict[str, Any]:
 def my_events(user: User, include_past: bool, limit: int, offset: int) -> list[dict[str, Any]]:
     """Upcoming first, undated (tbd) last, then past newest first; id breaks ties for paging."""
     past = Case(
-        When(_is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
+        When(is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
     )
     rows = (
         Event.objects.filter(hosted_events_q(user, upcoming=not include_past))

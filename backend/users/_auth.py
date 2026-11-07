@@ -183,7 +183,7 @@ _ME_PATCH_COLUMN_GROUPS = {
 }
 
 
-def _save_me_patch(user, changed: list[str]) -> None:
+def save_me_patch(user, changed: list[str]) -> None:
     """Write only the patched columns so a second in-flight save cannot restore them."""
     fields: list[str] = []
     for name in changed:
@@ -192,7 +192,7 @@ def _save_me_patch(user, changed: list[str]) -> None:
         user.save(update_fields=fields)
 
 
-def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
+def apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
     Raises ValidationException on invalid input — caller lets it propagate
@@ -228,13 +228,13 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=gated_jwt)
 def update_me(request, payload: MePatchIn):
     user = request.auth
-    changed = _apply_me_patch(user, payload)
+    changed = apply_me_patch(user, payload)
     # Setting either contact toggle means they've made the privacy choice the consent gate asks for.
     stamped: list[str] = []
     if payload.show_phone is not None or payload.show_email is not None:
         stamped = stamp_consents(user, [ConsentType.CONTACT_PRIVACY])
         changed.extend(stamped)
-    _save_me_patch(user, changed)
+    save_me_patch(user, changed)
     if stamped:
         audit_log(
             logging.INFO,
