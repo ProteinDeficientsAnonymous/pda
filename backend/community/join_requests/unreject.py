@@ -7,7 +7,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
-from community.join_requests.manage import JoinRequestOut, _join_request_out
+from community.join_requests.manage import JoinRequestOut, join_request_out
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -62,4 +62,4 @@ def unreject_join_request(request, id: UUID):
         ),
     )
 
-    return Status(200, _join_request_out(join_request))
+    return Status(200, join_request_out(join_request))
