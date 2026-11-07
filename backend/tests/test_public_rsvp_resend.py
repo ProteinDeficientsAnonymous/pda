@@ -6,7 +6,7 @@ without re-submitting an RSVP. Always returns the same neutral 200 (no enumerati
 """
 
 import pytest
-from community.rsvps.public_resend import _NEUTRAL_RESPONSE
+from community.rsvps.public_resend import NEUTRAL_RESPONSE
 from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
@@ -101,7 +101,7 @@ class TestResendManageLink:
         response = post(api_client)
 
         assert response.status_code == 200
-        assert response.json()["detail"] == _NEUTRAL_RESPONSE
+        assert response.json()["detail"] == NEUTRAL_RESPONSE
 
     def test_archived_non_member_still_gets_link(self, api_client, fake_email_sender):
         user = make_non_member(PHONE, EMAIL)

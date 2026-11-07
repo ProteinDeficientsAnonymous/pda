@@ -17,10 +17,10 @@ from users.models import NonMemberRsvpToken, User
 
 from community.models import Event, JoinRequest, JoinRequestStatus, RSVPStatus
 from community.rsvps.public_shared import (
-    _email_details,
-    _event_links,
-    _log_email_failure,
-    _unpaid_user_ids,
+    collect_event_links,
+    email_details,
+    log_email_failure,
+    unpaid_user_ids,
 )
 from community.shared import logger
 
@@ -43,7 +43,7 @@ def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
         event_title=event.title,
         event_when=format_event_when(event),
         event_location=event.location,
-        event_links=_event_links(event),
+        event_links=collect_event_links(event),
         event_url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}",
     )
 
@@ -84,11 +84,11 @@ def _email_non_member(
 ) -> None:
     try:
         token = NonMemberRsvpToken.issue_or_extend(user)
-        result = send(_email_details(event, user, token.token))
+        result = send(email_details(event, user, token.token))
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
     except Exception as exc:
-        _log_email_failure(request, event, user, exc)
+        log_email_failure(request, event, user, exc)
 
 
 def email_host_set_rsvp_status(
@@ -130,7 +130,7 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
         .exclude(email__isnull=True)
         .annotate(is_tentative=_tentative_q())
     )
-    unpaid = _unpaid_user_ids(event, promoted_user_ids)
+    unpaid = unpaid_user_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
