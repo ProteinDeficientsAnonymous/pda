@@ -8,6 +8,7 @@ class Code:
         NOT_FOUND = "event.not_found"
         START_DATETIME_REQUIRED_UNLESS_TBD = "event.start_datetime_required_unless_tbd"
         MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE = "event.max_attendees_must_be_at_least_one"
+        PRICE_INVALID = "event.price_invalid"
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
         DATETIME_OFFSET_REQUIRED = "event.datetime_offset_required"

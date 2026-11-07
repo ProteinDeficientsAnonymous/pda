@@ -112,8 +112,8 @@ def _update_refused(user, event, changes=PRICE, **arguments) -> str:
 
 def test_draft_edit_applies_directly(test_user, make_event):
     event = make_event(EventStatus.DRAFT)
-    assert _update(test_user, event)["price"] == "$20"
-    assert Event.objects.get(pk=event.pk).price == "$20"
+    assert _update(test_user, event)["price"] == "20"
+    assert Event.objects.get(pk=event.pk).price == "20"
 
 
 def test_live_edit_previews_then_applies_with_token(test_user, make_event):
@@ -125,7 +125,7 @@ def test_live_edit_previews_then_applies_with_token(test_user, make_event):
         test_user, event, {"price": "$25"}, confirm_token=preview["confirm_token"]
     )
     _update(test_user, event, confirm_token=preview["confirm_token"])
-    assert Event.objects.get(pk=event.pk).price == "$20"
+    assert Event.objects.get(pk=event.pk).price == "20"
     entry = AuditLogEntry.objects.get(action="event_updated", target_id=str(event.pk))
     assert entry.details["via"] == "mcp"
 
@@ -252,7 +252,7 @@ def test_fields_outside_event_fields_are_ignored(test_user, make_event, vettor_u
     extra = {"status": "active", "slug": "taken-over", "co_host_ids": [str(vettor_user.pk)]}
     _update(test_user, event, {**PRICE, **extra})
     event.refresh_from_db()
-    assert (event.price, event.status, event.slug) == ("$20", EventStatus.DRAFT, slug)
+    assert (event.price, event.status, event.slug) == ("20", EventStatus.DRAFT, slug)
     assert list(event.co_hosts.all()) == [test_user]
 
 

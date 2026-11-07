@@ -19,6 +19,7 @@ from community.events._field_validators import (
     validate_partiful_url,
     validate_zelle_info,
 )
+from community.events.price import parse_price, price_text
 from community.field_limits import FieldLimit
 from community.models import (
     RSVP_CHOICE_TYPES,
@@ -366,6 +367,11 @@ class EventIn(BaseModel):
     def validate_other(cls, v: str) -> str:
         return validate_generic_url(v or "", field="other_link")
 
+    @field_validator("price", mode="before")
+    @classmethod
+    def validate_price(cls, v: object) -> str:
+        return price_text(parse_price(v))
+
     @field_validator("zelle_info", mode="after")
     @classmethod
     def validate_zelle(cls, v: str) -> str:
@@ -437,6 +443,11 @@ class EventPatchIn(BaseModel):
         if v is None:
             return None
         return validate_generic_url(v, field="other_link")
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def validate_price(cls, v: object) -> str | None:
+        return None if v is None else price_text(parse_price(v))
 
     @field_validator("zelle_info", mode="after")
     @classmethod
