@@ -50,6 +50,7 @@ const member: Member = {
   isMember: true,
   isSuperuser: false,
   isPaused: false,
+  attendancePausedAt: null,
   hasJoinedWhatsapp: false,
   needsOnboarding: false,
   loginLinkRequested: false,
@@ -165,6 +166,44 @@ describe('MemberDetailScreen edit form', () => {
     expect(updateMutateAsync).not.toHaveBeenCalledWith(
       expect.objectContaining({ firstName: expect.anything() }),
     );
+  });
+
+  it.each([
+    ['guidelines violation pause', { isPaused: true }],
+    ['event rqmt pause', { attendancePaused: true }],
+  ])('saves the %s toggle as its own field', async (label, patch) => {
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole('switch', { name: label }));
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(updateMutateAsync).toHaveBeenCalledWith(patch);
+  });
+
+  it('unpauses an event rqmt pause and shows its badge', async () => {
+    vi.mocked(useUsers).mockReturnValue({
+      data: [{ ...member, attendancePausedAt: new Date('2026-03-01') }],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    renderScreen();
+    expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole('switch', { name: 'event rqmt pause' }));
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(updateMutateAsync).toHaveBeenCalledWith({ attendancePaused: false });
+  });
+
+  it('disables both pause toggles for an admin', async () => {
+    const adminRole = { id: 'r-admin', name: 'admin', isDefault: true, permissions: [] };
+    vi.mocked(useUsers).mockReturnValue({
+      data: [{ ...member, roles: [adminRole] }],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
+    expect(screen.getByRole('switch', { name: 'guidelines violation pause' })).toBeDisabled();
+    expect(screen.getByRole('switch', { name: 'event rqmt pause' })).toBeDisabled();
   });
 });
 
