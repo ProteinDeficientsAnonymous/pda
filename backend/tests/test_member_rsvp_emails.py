@@ -111,7 +111,7 @@ class TestMemberWaitlistPromotionEmail:
 
     def test_promoted_unpaid_member_is_told_to_pay(self, test_user, fake_email_sender):
         event = _event(
-            test_user, max_attendees=1, price="$10", venmo_link="https://venmo.com/u/host"
+            test_user, max_attendees=1, price="10", venmo_link="https://venmo.com/u/host"
         )
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
         member = make_user(email="member@e.com")

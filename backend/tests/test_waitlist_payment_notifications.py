@@ -31,7 +31,7 @@ class TestWaitlistPromotionPaymentMessaging:
 
     def test_free_event_promotion_keeps_the_plain_message(self, test_user, django_user_model):
 
-        event = _paid_event(test_user, max_attendees=1, price="", venmo_link="")
+        event = _paid_event(test_user, max_attendees=1, price=None, venmo_link="")
         waiting = django_user_model.objects.create_user(
             phone_number="+14155550113", first_name="Waiting", is_member=True
         )

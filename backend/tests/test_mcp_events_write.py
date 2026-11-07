@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from functools import partial
 from unittest.mock import patch
 
@@ -19,10 +20,10 @@ WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
 
 def test_creates_draft_as_member_via_mcp(test_user):
     EventTag.objects.create(name="walk")
-    fields = {**WALK, "price": "$15", "latitude": 40.67, "longitude": -73.97, "tags": ["Walk"]}
+    fields = {**WALK, "price": "15", "latitude": 40.67, "longitude": -73.97, "tags": ["Walk"]}
     summary = run_tool(test_user, "create_event", fields=fields)
     event = Event.objects.get(pk=summary["id"])
-    assert (event.status, event.created_by, event.price) == ("draft", test_user, "15")
+    assert (event.status, event.created_by, event.price) == ("draft", test_user, Decimal("15"))
     assert (summary["start_datetime"], summary["tags"]) == ("2099-11-07T11:00:00-05:00", ["walk"])
     assert summary["url"].endswith(f"/events/{event.slug or event.id}")
     entry = AuditLogEntry.objects.get(target_id=summary["id"])

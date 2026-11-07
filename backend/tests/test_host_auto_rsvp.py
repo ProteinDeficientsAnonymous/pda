@@ -19,7 +19,7 @@ from tests._time import future_iso
 from tests._users import make_user
 
 EVENTS_URL = "/api/community/events/"
-PAID = {"price": "$10", "venmo_link": "https://venmo.com/x"}
+PAID = {"price": "10", "venmo_link": "https://venmo.com/x"}
 
 
 @pytest.fixture

@@ -22,6 +22,7 @@ from community.cashapp.review import (
     review_cashapp_csv,
 )
 from community.events.helpers import can_edit_event
+from community.events.price import price_text
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.tentative_member_access import event_viewer_for
 from community.models import Event, parse_event_ref
@@ -102,7 +103,7 @@ async def _review(user: User, event: Event, csv_text: str) -> LoadedReview:
     summary = {
         "id": str(event.id),
         "title": event.title,
-        "price": event.price,
+        "price": price_text(event.price),
         "url": f"{BASE_URL}/events/{event.slug or event.id}",
     }
     guest_map = {g.user_id: g for g in guests}

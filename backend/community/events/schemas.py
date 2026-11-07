@@ -447,7 +447,8 @@ class EventPatchIn(BaseModel):
     @field_validator("price", mode="before")
     @classmethod
     def validate_price(cls, v: object) -> str | None:
-        return None if v is None else price_text(parse_price(v))
+        # Blank clears the price (stored as null).
+        return None if v is None else price_text(parse_price(v)) or None
 
     @field_validator("zelle_info", mode="after")
     @classmethod

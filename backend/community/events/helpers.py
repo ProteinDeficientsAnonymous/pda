@@ -16,6 +16,7 @@ from users.permissions import PermissionKey
 
 from community.cohosts.helpers import pending_cohost_invites_out
 from community.cohosts.invite_helpers import get_my_pending_invite
+from community.events.price import price_text
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
     Event,
@@ -359,7 +360,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         whatsapp_link=gated(event.whatsapp_link, "", is_authed),
         partiful_link=gated(event.partiful_link, "", is_authed),
         other_link=gated(event.other_link, "", is_authed),
-        price=event.price,
+        price=price_text(event.price),
         venmo_link=gated(event.venmo_link, "", show_payment_details),
         cashapp_link=gated(event.cashapp_link, "", show_payment_details),
         zelle_info=gated(event.zelle_info, "", show_payment_details),
