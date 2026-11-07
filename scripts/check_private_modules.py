@@ -11,7 +11,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND = REPO_ROOT / "backend"
 SKIP_DIRS = frozenset({".venv", "node_modules", "__pycache__"})
 MODULE_EXEMPT_DIRS = frozenset({"tests"})
-SYMBOL_BASELINE = REPO_ROOT / "scripts" / "private_symbol_imports_baseline.txt"
 
 
 def _module_parts(path: Path) -> list[str]:
@@ -95,15 +94,6 @@ def _violation(importer: list[str], module: list[str]) -> str | None:
     return None
 
 
-def _load_baseline() -> set[tuple[str, str]]:
-    entries: set[tuple[str, str]] = set()
-    for line in SYMBOL_BASELINE.read_text().splitlines():
-        if line.strip():
-            rel, symbols = line.split(":", 1)
-            entries.update((rel, symbol) for symbol in symbols.split())
-    return entries
-
-
 def _check_file(path: Path) -> tuple[list[str], list[tuple[int, str]]]:
     """Scan one file's imports.
     param path(Path): file to scan
@@ -130,27 +120,17 @@ def _module_violations(
 
 
 def main() -> int:
-    baseline = _load_baseline()
-    seen: set[tuple[str, str]] = set()
     problems: list[str] = []
     for path in _iter_python_files():
         rel = str(path.relative_to(REPO_ROOT))
         module_problems, symbols = _check_file(path)
         problems += [f"{rel}:{p}" for p in module_problems]
-        for lineno, symbol in symbols:
-            seen.add((rel, symbol))
-            if (rel, symbol) not in baseline:
-                problems.append(f"{rel}:{lineno}: imports private symbol {symbol}")
-    baseline_rel = SYMBOL_BASELINE.relative_to(REPO_ROOT)
-    # Stale entries only warn, so a rename PR passes whether or not it also edits the baseline.
-    for rel, symbol in sorted(baseline - seen):
-        print(f"{baseline_rel}: stale entry {rel}: {symbol} (can be removed)")
+        problems += [f"{rel}:{n}: imports private symbol {s}" for n, s in symbols]
     for line in problems:
         print(line)
     if problems:
         print("drop the underscore from a symbol or module that other modules import")
     return 1 if problems else 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
