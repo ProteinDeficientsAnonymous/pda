@@ -22,7 +22,7 @@ from community.cashapp.review import (
     review_cashapp_csv,
 )
 from community.events.helpers import can_edit_event
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.tentative_member_access import event_viewer_for
 from community.models import Event, parse_event_ref
 from community.validation import Code, ValidationException, raise_validation
@@ -77,7 +77,7 @@ def _visible_event(user: User, event_ref: str) -> Event:
     try:
         if event is None:
             raise_validation(Code.Event.NOT_FOUND, status_code=404)
-        _enforce_event_read_visibility(event, event_viewer_for(user, event))
+        enforce_event_read_visibility(event, event_viewer_for(user, event))
     except ValidationException as exc:
         raise validation_tool_error(exc) from exc
     return event

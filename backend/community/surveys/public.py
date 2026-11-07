@@ -19,7 +19,7 @@ from community.models import (
     SurveyResponse,
     SurveyVisibility,
 )
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.surveys.helpers import (
     has_finalize_permission,
     response_to_update,
@@ -60,10 +60,10 @@ def _visible_survey_or_404(slug: str, auth_user, *, for_update: bool = False) ->
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_survey_public(request, slug: str, response_token: str = ""):
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     survey = _visible_survey_or_404(slug, auth_user)
     return Status(
         200,
@@ -85,7 +85,7 @@ def get_survey_public(request, slug: str, response_token: str = ""):
         404: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(
@@ -95,7 +95,7 @@ def submit_survey_response(
     response_token: str = "",
     response_id: UUID | None = None,
 ):
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     # select_for_update() serializes concurrent submits against the same survey row,
     # so the max_responses check-then-create can't race past the cap (issue #1465).
     with transaction.atomic():
