@@ -289,6 +289,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/restored/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Restored Members */
+        get: operations["users__restored_list_restored_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/search/": {
         parameters: {
             query?: never;
@@ -5373,6 +5390,36 @@ export interface components {
             /** Magic Link Token */
             magic_link_token: string;
         };
+        /** RestoredEventOut */
+        RestoredEventOut: {
+            /** Event Id */
+            event_id: string;
+            /**
+             * Start Datetime
+             * Format: date-time
+             */
+            start_datetime: string;
+            /** Title */
+            title: string;
+        };
+        /** RestoredMemberOut */
+        RestoredMemberOut: {
+            /** Full Name */
+            full_name: string;
+            /** Has Joined Whatsapp */
+            has_joined_whatsapp: boolean;
+            /** Id */
+            id: string;
+            /** Phone Number */
+            phone_number: string;
+            /** Recent Events */
+            recent_events: components["schemas"]["RestoredEventOut"][];
+            /**
+             * Restored At
+             * Format: date-time
+             */
+            restored_at: string;
+        };
         /** RoleIn */
         RoleIn: {
             /** Name */
@@ -6926,6 +6973,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberDirectoryOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__restored_list_restored_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoredMemberOut"][];
                 };
             };
             /** @description Forbidden */
