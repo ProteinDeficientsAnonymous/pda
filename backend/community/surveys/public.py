@@ -34,7 +34,7 @@ from community.surveys.schemas import (
     SurveyOut,
     SurveySubmitOut,
 )
-from community.surveys.validators import _build_survey_answers, _validate_survey_answers
+from community.surveys.validators import build_survey_answers, validate_survey_answers
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -109,8 +109,8 @@ def submit_survey_response(
         if not survey_is_open(survey, check_cap=existing is None):
             raise_validation(Code.Survey.CLOSED, status_code=400)
         questions = {str(q.id): q for q in survey.questions.all()}
-        _validate_survey_answers(payload.answers, questions)
-        answers = _build_survey_answers(payload.answers, questions)
+        validate_survey_answers(payload.answers, questions)
+        answers = build_survey_answers(payload.answers, questions)
         user_name = visible_display_name(auth_user, auth_user) if response_user else None
         target = AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug})
         if existing:
