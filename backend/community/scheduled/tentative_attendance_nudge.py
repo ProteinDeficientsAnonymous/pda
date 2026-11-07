@@ -17,7 +17,7 @@ from community.models import (
     RSVPStatus,
     TentativeAttendanceNudge,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 
 # Just under 1w / 1w / 2w / 4w so a drifting weekly cron lands ~1 week, 2 weeks, 1 month, then monthly.
 _FIRST_GAPS = (timedelta(days=6), timedelta(days=6), timedelta(days=13))
@@ -37,7 +37,7 @@ def _candidates(now: datetime) -> QuerySet:
         status__in=_SIGNED_UP,
         event__event_type__in=(EventType.OFFICIAL, EventType.CLUB),
         event__status=EventStatus.ACTIVE,
-    ).exclude(_is_past_q(now, "event__"))
+    ).exclude(is_past_q(now, "event__"))
     return (
         User.objects.active_tentative_members()
         .filter(HAS_EMAIL, attendance_nudge_opt_out=False)

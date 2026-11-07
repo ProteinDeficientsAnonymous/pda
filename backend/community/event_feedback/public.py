@@ -15,7 +15,7 @@ from community.models.event_feedback import feedback_survey_for
 from community.shared import ErrorOut
 from community.surveys.helpers import _survey_out, survey_is_open
 from community.surveys.schemas import SurveyAnswersIn, SurveyOut
-from community.surveys.validators import _build_survey_answers, _validate_survey_answers
+from community.surveys.validators import build_survey_answers, validate_survey_answers
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -114,12 +114,12 @@ def submit_event_feedback(request, payload: SurveyAnswersIn, token: str = Feedba
         feedback_request = _feedback_request_or_404(token, for_update=True)
         survey = _open_feedback_survey(feedback_request)
         questions = {str(q.id): q for q in survey.questions.all()}
-        _validate_survey_answers(payload.answers, questions)
+        validate_survey_answers(payload.answers, questions)
         SurveyResponse.objects.create(
             survey=survey,
             user=None,
             event=feedback_request.event,
-            answers=_build_survey_answers(payload.answers, questions),
+            answers=build_survey_answers(payload.answers, questions),
         )
         feedback_request.responded_on = timezone.localdate(timezone=settings.COMMUNITY_TZ)
         feedback_request.save(update_fields=["responded_on"])

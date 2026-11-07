@@ -35,7 +35,7 @@ from community.rsvps.answers import (
     answers_required_for_status,
     build_rsvp_answers,
 )
-from community.rsvps.counts import _attending_headcount_db
+from community.rsvps.counts import attending_headcount_db
 from community.rsvps.payment import requires_payment_gate
 from community.rsvps.status_emails import email_member_rsvp_status, email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -63,7 +63,7 @@ def _validate_rsvp_access(user, event) -> None:
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
 
 
-def _resolve_rsvp_status(
+def resolve_rsvp_status(
     event: Event, user, requested_status: str, has_plus_one: bool, existing: EventRSVP | None
 ) -> tuple[str, bool]:
     """Resolve final RSVP status accounting for capacity limits.
@@ -78,7 +78,7 @@ def _resolve_rsvp_status(
     if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
         return requested_status, has_plus_one
 
-    headcount = _attending_headcount_db(event, exclude_user=user)
+    headcount = attending_headcount_db(event, exclude_user=user)
     new_spots = 1 + (1 if has_plus_one else 0)
 
     if headcount + new_spots <= event.max_attendees:
@@ -124,7 +124,7 @@ def _line_may_move(existing: EventRSVP | None, final_status: str, final_plus_one
     return final_status != RSVPStatus.ATTENDING or (existing.has_plus_one and not final_plus_one)
 
 
-def _validate_rsvp_status(status: str) -> None:
+def validate_rsvp_status(status: str) -> None:
     """Raise ValidationException if the requested RSVP status is invalid."""
     valid_statuses = {RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.CANT_GO}
     if status == RSVPStatus.WAITLISTED or status not in valid_statuses:
@@ -136,7 +136,7 @@ def _validate_rsvp_status(status: str) -> None:
         )
 
 
-def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
+def resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     """Timestamp the transition into CANT_GO; clear it on any other status.
 
     Preserves the original cancel time when a member re-saves while already
@@ -149,7 +149,7 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
-def _resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) -> str | None:
+def resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) -> str | None:
     """Status before the first cant_go transition; cleared when leaving cant_go."""
     if final_status != RSVPStatus.CANT_GO:
         return None
@@ -160,7 +160,7 @@ def _resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) ->
     return existing.status
 
 
-def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> bool:
+def post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> bool:
     """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go).
 
     Returns True if a decline notification was sent, so the caller can skip the
@@ -170,7 +170,7 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
     if not cleaned_comment:
         return False
     try:
-        # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
+        # Fresh fetch, not the row-locked event from apply_rsvp_in_transaction — its co_hosts
         # prefetch predates this (already-committed) transaction and could be stale.
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
         if final_status == RSVPStatus.CANT_GO:
@@ -286,7 +286,7 @@ def _rsvp_unchanged(
 
 
 @dataclass(frozen=True, slots=True)
-class _RsvpApply:
+class RsvpApply:
     status: str
     has_plus_one: bool = False
     paid_confirmed: bool = False
@@ -295,9 +295,7 @@ class _RsvpApply:
     skip_host_gates: bool = False
 
 
-def _apply_rsvp_in_transaction(
-    event_id, user, rsvp: _RsvpApply
-) -> tuple[str, list[str], str | None]:
+def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, list[str], str | None]:
     """Execute RSVP upsert inside a locked transaction.
 
     Returns (final_status, promoted_user_ids, previous_status). promoted_user_ids is the
@@ -324,7 +322,7 @@ def _apply_rsvp_in_transaction(
     if not gate_exempt and requires_payment_gate(event, existing, rsvp.status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 
-    final_status, final_plus_one = _resolve_rsvp_status(
+    final_status, final_plus_one = resolve_rsvp_status(
         event, user, rsvp.status, rsvp.has_plus_one, existing
     )
     final_status = _keep_waitlist_place(event, existing, final_status)
@@ -349,8 +347,8 @@ def _apply_rsvp_in_transaction(
         defaults={
             "status": final_status,
             "has_plus_one": final_plus_one,
-            "cancelled_at": _resolve_cancelled_at(existing, final_status),
-            "pre_cancel_status": _resolve_pre_cancel_status(existing, final_status),
+            "cancelled_at": resolve_cancelled_at(existing, final_status),
+            "pre_cancel_status": resolve_pre_cancel_status(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
             "questionnaire_responses": answers_snapshot,
         },
@@ -374,13 +372,13 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    _validate_rsvp_status(payload.status)
+    validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = apply_rsvp_in_transaction(
             event_id,
             request.auth,
-            _RsvpApply(
+            RsvpApply(
                 status=payload.status,
                 has_plus_one=payload.has_plus_one,
                 paid_confirmed=payload.paid_confirmed,
@@ -388,7 +386,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
             ),
         )
 
-    sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
+    sent_decline_note = post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
 
     audit_log(
         logging.INFO,

@@ -1,5 +1,5 @@
 from community.models import Event, EventRSVP, PollAvailability, PollOption, RSVPStatus
-from community.rsvps.member import _apply_rsvp_in_transaction, _RsvpApply
+from community.rsvps.member import RsvpApply, apply_rsvp_in_transaction
 from community.validation import ValidationException
 
 
@@ -16,7 +16,7 @@ def _seat_or_skip(event: Event, user, existing: EventRSVP | None) -> None:
     if existing is not None and existing.status == RSVPStatus.CANT_GO:
         return
     try:
-        _apply_rsvp_in_transaction(event.id, user, _RsvpApply(status=RSVPStatus.ATTENDING))
+        apply_rsvp_in_transaction(event.id, user, RsvpApply(status=RSVPStatus.ATTENDING))
     except ValidationException:
         pass
 

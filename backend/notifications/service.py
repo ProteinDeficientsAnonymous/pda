@@ -348,7 +348,7 @@ def notify_comment_reaction(comment, reactor: User) -> None:
     notify_users([str(comment.author_id)])
 
 
-def _event_recipient_ids(event, *, exclude: str) -> list[str]:
+def event_recipient_ids(event, *, exclude: str) -> list[str]:
     """Host + co-hosts, excluding `exclude` (usually the actor triggering the notification)."""
     recipient_ids: set[str] = set()
     if event.created_by_id is not None:
@@ -360,7 +360,7 @@ def _event_recipient_ids(event, *, exclude: str) -> list[str]:
 
 def notify_rsvp_declined_note(event, author, note: str) -> None:
     """Notify host + co-hosts that someone who can't go left a note. Ephemeral: not stored elsewhere."""
-    recipient_id_list = _event_recipient_ids(event, exclude=str(author.pk))
+    recipient_id_list = event_recipient_ids(event, exclude=str(author.pk))
     if not recipient_id_list:
         return
     name = visible_display_name(author, None)
@@ -386,7 +386,7 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
 
 def notify_checkin_reminder(event: Event) -> None:
     """Notify creator + co-hosts that a club/official event just started — go check people in."""
-    recipient_id_list = _event_recipient_ids(event, exclude="")
+    recipient_id_list = event_recipient_ids(event, exclude="")
     if not recipient_id_list:
         return
     message = f"{event.title} just started — head to check-in to check people in."
@@ -409,7 +409,7 @@ def notify_event_comment(comment) -> None:
     if comment.parent_id is not None:
         return
     event = comment.event
-    recipient_id_list = _event_recipient_ids(event, exclude=str(comment.author_id))
+    recipient_id_list = event_recipient_ids(event, exclude=str(comment.author_id))
     if not recipient_id_list:
         return
     commenter_name = visible_display_name(comment.author, None)
@@ -446,7 +446,7 @@ def notify_rsvp_status_changed(event: Event, rsvper: User, status: str) -> None:
     status_word = _RSVP_STATUS_WORDS.get(status)
     if status_word is None:
         return
-    recipient_id_list = _event_recipient_ids(event, exclude=str(rsvper.pk))
+    recipient_id_list = event_recipient_ids(event, exclude=str(rsvper.pk))
     if not recipient_id_list:
         return
     rsvper_name = visible_display_name(rsvper, None)

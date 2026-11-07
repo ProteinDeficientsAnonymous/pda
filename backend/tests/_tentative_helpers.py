@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.join_requests.approval import _provision_tentative_user
+from community.join_requests.approval import provision_tentative_user
 from community.models import Event, EventRSVP, EventType, JoinRequestStatus, RSVPStatus
 from django.utils import timezone
 from users.models import User
@@ -22,7 +22,7 @@ def open_official_event(db):
 
 def tentative_user_with_rsvp(join_request, event, vettor):
 
-    _provision_tentative_user(join_request, vettor)
+    provision_tentative_user(join_request, vettor)
     join_request.status = JoinRequestStatus.TENTATIVE
     join_request.save(update_fields=["status"])
     join_request.refresh_from_db()
