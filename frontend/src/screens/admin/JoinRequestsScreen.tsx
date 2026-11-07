@@ -20,11 +20,13 @@ import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 import { RejectJoinRequestDialog } from './RejectJoinRequestDialog';
+import { RestoredMembersList } from './RestoredMembersList';
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 const Filter = {
   ALL: 'all',
   ...JoinRequestStatus,
+  RESTORED: 'restored',
 } as const;
 type Filter = (typeof Filter)[keyof typeof Filter];
 
@@ -34,6 +36,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
+  { value: Filter.RESTORED, label: 'restored' },
 ];
 
 export default function JoinRequestsScreen() {
@@ -185,7 +188,9 @@ export default function JoinRequestsScreen() {
         />
       </div>
 
-      <SortHint filter={filter} hasRows={visible.length > 0} />
+      {filter === Filter.RESTORED ? null : (
+        <SortHint filter={filter} hasRows={visible.length > 0} />
+      )}
 
       {error ? (
         <p role="alert" className="text-destructive mb-3 text-sm">
@@ -193,7 +198,9 @@ export default function JoinRequestsScreen() {
         </p>
       ) : null}
 
-      {visible.length === 0 ? (
+      {filter === Filter.RESTORED ? (
+        <RestoredMembersList query={query} />
+      ) : visible.length === 0 ? (
         <p className="text-muted text-sm">
           {query.trim() ? 'nothing matches — try a different search' : 'nothing here 🌿'}
         </p>
