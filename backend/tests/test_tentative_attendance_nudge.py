@@ -154,6 +154,16 @@ class TestTentativeAttendanceNudge:
         call_command("send_weekly_digest")
         assert _nudge_calls(fake_email_sender) == []
 
+    def test_skips_attendance_paused_member(self, fake_email_sender):
+        User.objects.create(
+            phone_number="+12025550414",
+            email="+12025550414@example.test",
+            onboarded_at=timezone.now() - timedelta(days=8),
+            attendance_paused_at=timezone.now(),
+        )
+        call_command("send_weekly_digest")
+        assert _nudge_calls(fake_email_sender) == []
+
     def test_falls_back_to_tentative_date_without_onboarded_at(self, fake_email_sender):
         _make_tentative("+12025550410", onboarded_at=None)
         call_command("send_weekly_digest")

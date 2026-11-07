@@ -245,6 +245,15 @@ class TestWeeklyDigestTentativeMembers:
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()
 
+    def test_sends_to_attendance_paused_member(self, fake_email_sender):
+        paused = make_user(
+            phone_number="+12025550273", is_member=False, attendance_paused_at=timezone.now()
+        )
+        make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_email_sender.send.assert_called_once()
+        assert fake_email_sender.send.call_args.kwargs["to"] == paused.email
+
 
 @pytest.mark.django_db
 class TestWeeklyDigestOnFirstOfMonth:

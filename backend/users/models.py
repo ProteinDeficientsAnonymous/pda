@@ -4,11 +4,12 @@ from datetime import timedelta
 
 import phonenumbers
 from community.models.choices import JoinRequestStatus
+from community.models.join_form import JoinRequest
 from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, prefetch_related_objects
+from django.db.models import Exists, OuterRef, Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -20,6 +21,12 @@ ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+
+
+def signed_in_non_member_q() -> Q:
+    """Non-members who can sign in: a TENTATIVE join request, or attendance-paused."""
+    tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
+    return Q(is_member=False) & (Q(Exists(tentative)) | Q(attendance_paused_at__isnull=False))
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -96,18 +103,14 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
+    def signed_in_non_members(self):
+        """Non-members who can sign in: tentative applicants and attendance-paused ex-members."""
+        return self.get_queryset().filter(signed_in_non_member_q())
+
     def active_tentative_members(self):
-        """Signed-in tentative applicants, filtered like ``active_members``."""
-        return (
-            self.get_queryset()
-            .filter(
-                is_member=False,
-                join_requests__status=JoinRequestStatus.TENTATIVE,
-                is_active=True,
-                is_paused=False,
-                archived_at__isnull=True,
-            )
-            .distinct()
+        """Signed-in non-members, filtered like ``active_members``."""
+        return self.signed_in_non_members().filter(
+            is_active=True, is_paused=False, archived_at__isnull=True
         )
 
     def with_permission(self, key: str):
