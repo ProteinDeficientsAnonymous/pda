@@ -1,3 +1,10 @@
+## [0.222.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.0...v0.222.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **events:** keep guest list status tabs from collapsing on long lists ([#2185](https://github.com/ProteinDeficientsAnonymous/pda/issues/2185)) ([888d494](https://github.com/ProteinDeficientsAnonymous/pda/commit/888d4945ea795ec6c02a9fadc43b223258f681ef))
+
 # [0.222.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.1...v0.222.0) (2026-11-07)
 
 
