@@ -14,7 +14,12 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
+from users.models import (
+    PUBLIC_FORM_PHONE_REGION,
+    User,
+    signed_in_non_member_q,
+    validate_phone,
+)
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
@@ -294,7 +299,7 @@ def check_phone(request, payload: CheckPhoneIn):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
     if (
         User.objects.filter(phone_number=normalized, archived_at__isnull=True)
-        .filter(Q(is_member=True) | Q(join_requests__status=JoinRequestStatus.TENTATIVE))
+        .filter(Q(is_member=True) | signed_in_non_member_q())
         .exists()
     ):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))
