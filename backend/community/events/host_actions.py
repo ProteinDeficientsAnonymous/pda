@@ -24,7 +24,11 @@ from community.events.schemas import (
     TextRecipientsOut,
 )
 from community.join_requests.approval import send_join_approval
-from community.join_requests.check_in_promotion import CheckInOutcome, maybe_promote_non_member
+from community.join_requests.check_in_promotion import (
+    CheckInOutcome,
+    maybe_promote_non_member,
+    send_member_restored,
+)
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     attending_headcount,
@@ -166,6 +170,8 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
             display_name=rsvp.user.full_name,
             first_name=rsvp.user.first_name,
         )
+    elif outcome == CheckInOutcome.RESTORED:
+        send_member_restored(rsvp.user)
 
     audit_log(
         logging.INFO,
