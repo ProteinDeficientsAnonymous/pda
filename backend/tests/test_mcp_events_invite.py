@@ -2,10 +2,11 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
-from community.models import Event, EventStatus, InvitePermission
+from community.models import Event, EventStatus, InvitePermission, RSVPStatus
 from django.utils import timezone
 from notifications.models import Notification
 
+from tests._events import make_rsvp
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 from tests._users import make_user
 
@@ -16,6 +17,7 @@ pytestmark = pytest.mark.django_db
 def make_event(test_user):
     def make(status=EventStatus.ACTIVE, days=7, **fields) -> Event:
         start = timezone.now() + timedelta(days=days)
+        fields = {"rsvp_enabled": True, **fields}
         event = Event.objects.create(
             title="walk", created_by=test_user, start_datetime=start, status=status, **fields
         )
@@ -83,17 +85,24 @@ def test_refuses_already_invited_and_unknown_members(test_user, guest, make_even
     assert "use search_members" in _refused(test_user, event, onboarding)
 
 
-def test_non_host_needs_the_event_to_allow_member_invites(guest, make_event):
+def test_non_host_needs_member_invites_allowed_and_an_rsvp(guest, make_event):
     event = make_event(invite_permission=InvitePermission.CO_HOSTS_ONLY)
     member = make_user()
+    make_rsvp(event, member, RSVPStatus.MAYBE)
     assert "permission" in _refused(member, event, guest)
     Event.objects.filter(pk=event.pk).update(invite_permission=InvitePermission.ALL_MEMBERS)
     assert _invite(member, event, guest)["would_invite"] == ["Robin Oak"]
+    event.rsvps.filter(user=member).update(status=RSVPStatus.CANT_GO)
+    assert "permission" in _refused(member, event, guest)
 
 
 @pytest.mark.parametrize(
     ("fields", "reason"),
-    [({"status": EventStatus.CANCELLED}, "cancelled"), ({"days": -7}, "already happened")],
+    [
+        ({"status": EventStatus.CANCELLED}, "cancelled"),
+        ({"days": -7}, "already happened"),
+        ({"rsvp_enabled": False}, "doesn't take rsvps"),
+    ],
 )
-def test_refuses_cancelled_and_past_events(test_user, guest, make_event, fields, reason):
+def test_refuses_closed_events(test_user, guest, make_event, fields, reason):
     assert reason in _refused(test_user, make_event(**fields), guest)

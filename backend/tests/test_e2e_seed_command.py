@@ -8,8 +8,8 @@ from community.attendance.analytics import (
     is_pause_candidate,
     user_rsvps_for_attendance,
 )
-from community.management.commands._e2e_common import _random_phone
-from community.management.commands.e2e_seed import _month_end
+from community.management.commands._e2e_common import random_phone
+from community.management.commands.e2e_seed import month_end
 from community.models import (
     AttendanceStatus,
     Document,
@@ -165,8 +165,8 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
 def test_month_end_in_january_uses_prior_december():
 
     now = datetime(2026, 1, 4, 12, 0, tzinfo=UTC)
-    assert _month_end(now) == datetime(2026, 1, 31, 22, 0, tzinfo=UTC)
-    assert _month_end(now, months_ago=1) == datetime(2025, 12, 31, 22, 0, tzinfo=UTC)
+    assert month_end(now) == datetime(2026, 1, 31, 22, 0, tzinfo=UTC)
+    assert month_end(now, months_ago=1) == datetime(2025, 12, 31, 22, 0, tzinfo=UTC)
 
 
 @pytest.mark.django_db
@@ -275,4 +275,4 @@ def test_random_phone_skips_numbers_already_taken(monkeypatch):
     monkeypatch.setattr(
         "community.management.commands._e2e_common.secrets.randbelow", lambda _n: next(picks)
     )
-    assert _random_phone() == "+12025550002"
+    assert random_phone() == "+12025550002"

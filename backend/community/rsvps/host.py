@@ -17,7 +17,7 @@ from community.events.helpers import (
     load_editable_event,
     load_event_with_stats_prefetch,
 )
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     BulkPaymentVerifyIn,
     BulkPaymentVerifyOut,
@@ -33,11 +33,11 @@ from community.rsvps._payment_verification import (
     verify_payments,
 )
 from community.rsvps.member import (
-    _resolve_cancelled_at,
-    _resolve_pre_cancel_status,
-    _resolve_rsvp_status,
-    _validate_rsvp_status,
     payment_audit_details,
+    resolve_cancelled_at,
+    resolve_pre_cancel_status,
+    resolve_rsvp_status,
+    validate_rsvp_status,
 )
 from community.rsvps.status_emails import email_host_set_rsvp_status, email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -53,7 +53,7 @@ def _resolve_host_rsvp_status(
     if event.is_past:
         # Capacity is moot once the event is over — never waitlist an after-the-fact add.
         return status, has_plus_one and event.allow_plus_ones
-    return _resolve_rsvp_status(event, target_user, status, has_plus_one, existing)
+    return resolve_rsvp_status(event, target_user, status, has_plus_one, existing)
 
 
 def _needs_host_verification(existing: EventRSVP | None, paid_confirmed: bool) -> bool:
@@ -106,8 +106,8 @@ def _apply_host_rsvp_in_transaction(
         defaults={
             "status": final_status,
             "has_plus_one": final_plus_one,
-            "cancelled_at": _resolve_cancelled_at(existing, final_status),
-            "pre_cancel_status": _resolve_pre_cancel_status(existing, final_status),
+            "cancelled_at": resolve_cancelled_at(existing, final_status),
+            "pre_cancel_status": resolve_pre_cancel_status(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
         },
     )
@@ -130,7 +130,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     """Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872)."""
     event = load_editable_event(request.auth, event_id, "set_guest_rsvp")
 
-    _validate_rsvp_status(payload.status)
+    validate_rsvp_status(payload.status)
 
     try:
         target_user = UserModel.objects.get(id=user_id)
@@ -227,7 +227,7 @@ def _load_payment_import_event(request, event_id: UUID) -> Event:
     event = Event.objects.select_related("created_by").filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    _enforce_event_read_visibility(event, request.auth)
+    enforce_event_read_visibility(event, request.auth)
     if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="verify_guest_payments")
     return event

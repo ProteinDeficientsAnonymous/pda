@@ -1,5 +1,5 @@
 import pytest
-from community.join_requests.approval import _provision_tentative_user
+from community.join_requests.approval import provision_tentative_user
 from community.models import (
     AttendanceStatus,
     Event,
@@ -281,7 +281,7 @@ class TestTentativeRsvpEvents:
         self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
     ):
 
-        _provision_tentative_user(sample_join_request, vettor_user)
+        provision_tentative_user(sample_join_request, vettor_user)
         sample_join_request.status = JoinRequestStatus.TENTATIVE
         sample_join_request.save(update_fields=["status"])
         sample_join_request.refresh_from_db()

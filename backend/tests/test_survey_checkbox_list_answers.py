@@ -4,7 +4,7 @@ import pytest
 from community._question_answers import checkbox_values
 from community.models import ShowIfOperator, Survey, SurveyQuestionType, SurveyResponse
 from community.surveys.conditions import visible_question_ids
-from community.surveys.reports import _csv_answer_cell, _summarize_question
+from community.surveys.reports import csv_answer_cell, summarize_question
 from community.validation import Code
 
 from tests._asserts import assert_error_code
@@ -94,10 +94,10 @@ class TestCheckboxListAnswers:
         response = SurveyResponse.objects.create(
             survey=survey, answers={str(interests.id): {"label": "Interests", "answer": answer}}
         )
-        summary = _summarize_question(interests, [response])
+        summary = summarize_question(interests, [response])
         assert summary.counts == {CLUBS: 1, "potlucks": 1}
         assert summary.answered == 1
-        assert _csv_answer_cell(interests, answer) == f"{CLUBS}\npotlucks"
+        assert csv_answer_cell(interests, answer) == f"{CLUBS}\npotlucks"
 
     def test_legacy_comma_string_is_stored_as_list(self, api_client, survey, interests):
         response = _submit(api_client, survey, {str(interests.id): "potlucks"})

@@ -163,21 +163,25 @@ class TestUpdateUser:
         )
         assert response.status_code == 403
 
-    def test_cannot_pause_own_account(self, api_client, manage_users_headers, manage_users_user):
+    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_own_account(
+        self, api_client, manage_users_headers, manage_users_user, payload
+    ):
         response = api_client.patch(
             f"/api/auth/users/{manage_users_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 400
 
-    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user):
+    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user, payload):
         admin_role = Role.objects.get(name="admin", is_default=True)
         other_user.roles.add(admin_role)
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
@@ -185,6 +189,7 @@ class TestUpdateUser:
         assert_error_code(response, Code.User.CANNOT_PAUSE_ADMIN)
         other_user.refresh_from_db()
         assert other_user.is_paused is False
+        assert other_user.attendance_paused_at is None
 
     def test_admin_list_includes_paused_users(self, api_client, manage_users_headers, other_user):
         other_user.is_paused = True

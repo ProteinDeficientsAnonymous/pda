@@ -68,6 +68,12 @@ class UserManager(BaseUserManager):
         """
         return self.get_queryset().filter(is_member=True)
 
+    def members_or_attendance_paused(self):
+        """Members plus attendance-paused ex-members, who admins still manage as members."""
+        return self.get_queryset().filter(
+            models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
+        )
+
     def active_members(self):
         """Members who should appear on member-facing surfaces.
 
@@ -167,6 +173,9 @@ class User(AbstractUser):
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
     is_paused = models.BooleanField(default=False)
+    attendance_paused_at = models.DateTimeField(null=True, blank=True)
+    restored_at = models.DateTimeField(null=True, blank=True)
+    attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     login_link_requested = models.BooleanField(default=False)

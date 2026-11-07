@@ -3,7 +3,7 @@ from uuid import UUID
 
 from asgiref.sync import sync_to_async
 from community.events.crud import get_event as get_event_view
-from community.events.invitations import InviteIn, can_invite_to_event
+from community.events.invitations import InviteIn, can_invite_to_event, closed_to_invites
 from community.events.invitations import invite_to_event as invite_to_event_view
 from community.models import Event, EventStatus
 from mcp.server.mcpserver.exceptions import ToolError
@@ -21,29 +21,33 @@ MemberIds = Annotated[
 ]
 
 
+_CLOSED = {
+    "invite_to_cancelled_event": "this event is cancelled",
+    "invite_to_past_event": "this event has already happened",
+    "invite_without_rsvp": "this event doesn't take rsvps",
+}
+
+
 def _invitable(user: User, event_id: str, ids: list[UUID]) -> dict[str, str]:
-    if not can_invite_to_event(user, Event.objects.get(pk=event_id)):
+    event = Event.objects.get(pk=event_id)
+    closed = closed_to_invites(event)
+    if closed:
+        raise ToolError(f"{_CLOSED[closed]}, so nobody can be invited")
+    if not can_invite_to_event(user, event):
         raise ToolError(FORBIDDEN)
     # The same members the website's invite picker offers.
     members = User.objects.active_members().filter(needs_onboarding=False, pk__in=ids)
     return {str(m.pk): visible_display_name(m, user) for m in members}
 
 
-def _refuse_closed(event: dict[str, Any]) -> None:
-    if event["status"] == EventStatus.CANCELLED:
-        raise ToolError("this event is cancelled, so nobody can be invited")
-    if event["is_past"]:
-        raise ToolError("this event has already happened, so nobody can be invited")
-
-
 @pda_tool(
     description=(
-        "invite members to an event, by ids from search_members. hosts can always invite; other "
-        "members only when the event lets everyone invite. on a draft, invitees are saved right "
-        "away and notified when it's published. on a published event each new invitee gets a "
-        "notification and an email, so the first call invites nobody and returns who would be "
-        "invited plus a confirm_token: show the names, get an explicit yes, then call again with "
-        "the same members and the token."
+        "invite members to an event, by ids from search_members. the event must take rsvps. hosts "
+        "can always invite; other members only when the event lets everyone invite and they've "
+        "rsvp'd going or maybe. on a draft, invitees are saved right away and notified when it's "
+        "published. on a published event each new invitee gets a notification and an email, so "
+        "the first call invites nobody and returns who would be invited plus a confirm_token: "
+        "show the names, get an explicit yes, then call again with the same members and the token."
     )
 )
 async def invite_to_event(
@@ -51,7 +55,6 @@ async def invite_to_event(
 ) -> dict[str, Any]:
     user = await current_user()
     body = await call_view(get_event_view, user, event_id=event)
-    _refuse_closed(body)
     names = await sync_to_async(_invitable)(user, body["id"], member_ids)
     unknown = sorted({str(i) for i in member_ids} - names.keys())
     if unknown:

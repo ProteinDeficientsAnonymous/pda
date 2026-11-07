@@ -1,3 +1,43 @@
+## [0.221.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.0...v0.221.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* finish half-applied archive helper rename ([#2168](https://github.com/ProteinDeficientsAnonymous/pda/issues/2168)) ([dcba8f4](https://github.com/ProteinDeficientsAnonymous/pda/commit/dcba8f4d863908b7c525bb77735f407110aca67d))
+
+# [0.221.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.220.0...v0.221.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add the event unpublished notice ([#2156](https://github.com/ProteinDeficientsAnonymous/pda/issues/2156)) ([51d85f3](https://github.com/ProteinDeficientsAnonymous/pda/commit/51d85f3a389cc287409878be7fc3de721134bc5e))
+* 1515 - attendance pause and unpause via user PATCH ([#2158](https://github.com/ProteinDeficientsAnonymous/pda/issues/2158)) ([f3bcd33](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3bcd3334c7ef41ed7995f8b8adfc968b80f53fb))
+* 1515 - attendance pause preview endpoint ([#2159](https://github.com/ProteinDeficientsAnonymous/pda/issues/2159)) ([64de912](https://github.com/ProteinDeficientsAnonymous/pda/commit/64de912d04e029065fc0e52cd48822b4f215cb82))
+* 1515 - draft sole-hosted events on attendance pause ([#2157](https://github.com/ProteinDeficientsAnonymous/pda/issues/2157)) ([1e7cbc1](https://github.com/ProteinDeficientsAnonymous/pda/commit/1e7cbc13b910c3cc649de35204a5d7d313af2701))
+* **mcp:** 1515 - attendance pause members over mcp ([#2160](https://github.com/ProteinDeficientsAnonymous/pda/issues/2160)) ([5e4fc0f](https://github.com/ProteinDeficientsAnonymous/pda/commit/5e4fc0fac96d9645caf9ae9f3d522a575c126bae))
+
+# [0.220.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.219.0...v0.220.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - apply the attendance pause ([#2155](https://github.com/ProteinDeficientsAnonymous/pda/issues/2155)) ([93a4382](https://github.com/ProteinDeficientsAnonymous/pda/commit/93a438285b7a439f79b5d78333bc2b80d7665a0d))
+
+# [0.219.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.1...v0.219.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add attendance pause fields ([#2153](https://github.com/ProteinDeficientsAnonymous/pda/issues/2153)) ([d8c7ede](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8c7ede42da06184f153852adfeb6b528892ee86))
+* 1515 - sort upcoming events by attendance pause impact ([#2154](https://github.com/ProteinDeficientsAnonymous/pda/issues/2154)) ([84944cd](https://github.com/ProteinDeficientsAnonymous/pda/commit/84944cdb672626b236265a3f8e6a4077364bbfd7))
+
+## [0.218.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.0...v0.218.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** enforce the website's invite rule in the invitations api ([#2162](https://github.com/ProteinDeficientsAnonymous/pda/issues/2162)) ([8e7a901](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e7a901dc2e31cea58b90fa52aa232bd097ab93e))
+
 # [0.218.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.217.0...v0.218.0) (2026-11-06)
 
 

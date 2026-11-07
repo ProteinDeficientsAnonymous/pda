@@ -13,11 +13,11 @@ from ninja.responses import Status
 from community.models import Event, EventPoll, EventStatus, PollOption, PollVote
 from community.polls._schemas import EventPollOut, PollOptionIn
 from community.polls.crud import (
-    _can_manage_poll,
-    _check_option_cap,
-    _duplicate_option_time_guard,
-    _poll_out,
-    _validate_poll_options,
+    can_manage_poll,
+    check_option_cap,
+    duplicate_option_time_guard,
+    poll_out,
+    validate_poll_options,
 )
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -31,7 +31,7 @@ def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_manage_poll(user, event):
+    if not can_manage_poll(user, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_poll_option")
     if event.status == EventStatus.CANCELLED:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
@@ -58,12 +58,12 @@ def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
-    _validate_poll_options([payload.datetime], require_at_least_one=False)
+    validate_poll_options([payload.datetime], require_at_least_one=False)
     with transaction.atomic():
         _, poll = _get_active_poll(request.auth, event_id)
         next_order = poll.options.count()
-        _check_option_cap(next_order + 1)
-        with _duplicate_option_time_guard():
+        check_option_cap(next_order + 1)
+        with duplicate_option_time_guard():
             PollOption.objects.create(
                 poll=poll, datetime=payload.datetime, display_order=next_order
             )
@@ -80,7 +80,7 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
         .prefetch_related("options__votes__user")
         .get(pk=poll.pk)
     )
-    return Status(201, _poll_out(poll_fresh, request.auth))
+    return Status(201, poll_out(poll_fresh, request.auth))
 
 
 @router.patch(
@@ -90,14 +90,14 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
-    _validate_poll_options([payload.datetime], require_at_least_one=False)
+    validate_poll_options([payload.datetime], require_at_least_one=False)
     with transaction.atomic():
         _, poll = _get_active_poll(request.auth, event_id)
         try:
             option = poll.options.get(id=option_id)
         except PollOption.DoesNotExist:
             raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
-        with _duplicate_option_time_guard():
+        with duplicate_option_time_guard():
             option.datetime = payload.datetime
             option.save(update_fields=["datetime"])
             # Votes were cast for the old datetime and no longer represent this option.
@@ -117,7 +117,7 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
         .prefetch_related("options__votes__user")
         .get(pk=poll.pk)
     )
-    return Status(200, _poll_out(poll_fresh, request.auth))
+    return Status(200, poll_out(poll_fresh, request.auth))
 
 
 @router.delete(
@@ -151,4 +151,4 @@ def delete_poll_option(request, event_id: UUID, option_id: UUID):
         .prefetch_related("options__votes__user")
         .get(pk=poll.pk)
     )
-    return Status(200, _poll_out(poll_fresh, request.auth))
+    return Status(200, poll_out(poll_fresh, request.auth))

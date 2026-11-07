@@ -22,7 +22,7 @@ from notifications.cohost_notifications import (
 from notifications.service import broadcast_cohost_change
 from pydantic import BaseModel, Field
 
-from community.cohosts.helpers import _can_manage_cohost_invites
+from community.cohosts.helpers import can_manage_cohost_invites
 from community.cohosts.invite_helpers import (
     add_cohost_invites,
     expire_stale_cohost_invites,
@@ -77,7 +77,7 @@ def add_cohosts(request, event_id: UUID, payload: AddCoHostsIn):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
-    if not _can_manage_cohost_invites(request.auth, co_host_ids):
+    if not can_manage_cohost_invites(request.auth, co_host_ids):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
 
     newly_invited = add_cohost_invites(event, payload.user_ids, request.auth)
@@ -177,7 +177,7 @@ def remove_cohost(request, event_id: UUID, user_id: UUID):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=404)
 
     is_self = str(user_id) == str(request.auth.pk)
-    if not (is_self or _can_manage_cohost_invites(request.auth, co_host_ids)):
+    if not (is_self or can_manage_cohost_invites(request.auth, co_host_ids)):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     # No past-event guard: cleaning up a stale roster after the fact is allowed.
     if co_host_ids <= {str(user_id)}:
@@ -215,7 +215,7 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
     if invite.status != CoHostInviteStatus.PENDING:
         raise_validation(Code.CoHostInvite.NOT_REMOVABLE, status_code=400)
-    if not _can_manage_cohost_invites(request.auth, co_host_ids):
+    if not can_manage_cohost_invites(request.auth, co_host_ids):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     invite.status = CoHostInviteStatus.RESCINDED
     invite.decided_at = timezone.now()

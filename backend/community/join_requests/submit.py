@@ -18,7 +18,7 @@ from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
-from community.join_requests.manage import JoinRequestOut, _join_request_out
+from community.join_requests.manage import JoinRequestOut, join_request_out
 from community.models import (
     JoinFormQuestion,
     JoinFormQuestionType,
@@ -114,7 +114,7 @@ def _build_custom_answers(
     return result
 
 
-def _send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
+def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
     if not settings.VETTING_EMAIL:
         return
@@ -276,13 +276,13 @@ def submit_join_request(request, payload: JoinRequestIn):
             details={"full_name": full_name},
         ),
     )
-    _send_join_request_email(full_name, validated_phone, custom_answers)
+    send_join_request_email(full_name, validated_phone, custom_answers)
     try:
         create_join_request_notifications(full_name)
     except Exception:
         logger.exception("Failed to create join request notifications")
 
-    return Status(201, _join_request_out(join_request))
+    return Status(201, join_request_out(join_request))
 
 
 @router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
