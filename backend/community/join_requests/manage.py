@@ -315,15 +315,17 @@ def list_join_requests(request):
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
     # Legacy users onboarded before onboarded_at existed have it as null;
     # treat them as past the grace window.
-    expired_phones = User.objects.filter(
-        Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True),
-        needs_onboarding=False,
-        has_joined_whatsapp=True,
-    ).values_list("phone_number", flat=True)
+    expired = Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True)
+    expired &= Q(needs_onboarding=False, has_joined_whatsapp=True)
+    # A pause clears has_joined_whatsapp; these members belong on the restored list instead.
+    paused_or_restored = Q(attendance_paused_at__isnull=False) | Q(restored_at__isnull=False)
+    dropped_phones = User.objects.filter(expired | paused_or_restored).values_list(
+        "phone_number", flat=True
+    )
     join_requests = (
         JoinRequest.objects.exclude(
             status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
-            phone_number__in=expired_phones,
+            phone_number__in=dropped_phones,
         )
         .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
         .prefetch_related(
