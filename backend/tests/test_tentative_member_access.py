@@ -78,6 +78,16 @@ class TestCheckPhoneTentative:
         assert response.status_code == 200
         assert response.json()["status"] == "member"
 
+    def test_attendance_paused_member_can_reach_the_login_step(
+        self, api_client, attendance_paused_member
+    ):
+        response = api_client.post(
+            "/api/community/check-phone/",
+            {"phone_number": attendance_paused_member.phone_number},
+            content_type="application/json",
+        )
+        assert response.json()["status"] == "member"
+
     def test_archived_tentative_applicant_stays_unknown(self, api_client, tentative_user):
         tentative_user.archived_at = timezone.now()
         tentative_user.save(update_fields=["archived_at"])
