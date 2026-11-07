@@ -3,7 +3,6 @@ from collections.abc import Callable
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
-from django.db.models import Exists, OuterRef
 from notifications.email_helpers import (
     MemberRsvpEmailDetails,
     RsvpEmailDetails,
@@ -15,7 +14,7 @@ from notifications.email_helpers import (
 from notifications.email_sender import SendResult, get_email_sender
 from users.models import NonMemberRsvpToken, User
 
-from community.models import Event, JoinRequest, JoinRequestStatus, RSVPStatus
+from community.models import Event, RSVPStatus
 from community.rsvps.public_shared import (
     collect_event_links,
     email_details,
@@ -25,15 +24,9 @@ from community.rsvps.public_shared import (
 from community.shared import logger
 
 
-def _tentative_q() -> Exists:
-    return Exists(
-        JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-    )
-
-
 def _gets_member_emails(user: User) -> bool:
-    """Members and tentative members get member emails; public rsvpers get manage links."""
-    return user.is_member or User.objects.filter(pk=user.pk).filter(_tentative_q()).exists()
+    """Members and signed-in non-members get member emails; public rsvpers get manage links."""
+    return user.is_member or User.objects.signed_in_non_members().filter(pk=user.pk).exists()
 
 
 def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
@@ -125,17 +118,13 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
     """Email everyone promoted off the waitlist. Best-effort per user."""
     if not promoted_user_ids:
         return
-    promoted = (
-        User.objects.filter(id__in=promoted_user_ids)
-        .exclude(email__isnull=True)
-        .annotate(is_tentative=_tentative_q())
-    )
+    promoted = User.objects.filter(id__in=promoted_user_ids).exclude(email__isnull=True)
     unpaid = unpaid_user_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
         payment_pending = str(user.id) in unpaid
-        if user.is_member or user.is_tentative:
+        if _gets_member_emails(user):
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:
             _email_promoted_non_member(request, event, user, payment_pending)

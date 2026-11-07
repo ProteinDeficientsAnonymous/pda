@@ -6,9 +6,9 @@ from users.models import User
 
 from tests._asserts import assert_error_code
 from tests._public_rsvp_helpers import (
+    SIGNED_IN_NON_MEMBER_FACTORIES,
     make_non_member,
     make_official_event,
-    make_tentative_member,
 )
 
 
@@ -161,12 +161,13 @@ def _emails_to(fake_email_sender, to):
 
 
 @pytest.mark.django_db
+@SIGNED_IN_NON_MEMBER_FACTORIES
 class TestTentativeMemberOnIneligibleEvent:
     def test_tentative_member_kept_when_event_stays_official(
-        self, api_client, manage_events_headers, fake_email_sender
+        self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
-        tentative = make_tentative_member("+14155559020", "tentative@e.com")
+        tentative = make_signed_in("+14155559020", "tentative@e.com")
         non_member = make_non_member("+14155559021", "public@e.com")
         for user in (tentative, non_member):
             EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
@@ -184,10 +185,10 @@ class TestTentativeMemberOnIneligibleEvent:
         assert _emails_to(fake_email_sender, "tentative@e.com") == []
 
     def test_tentative_member_not_counted_toward_removal_conflict(
-        self, api_client, manage_events_headers, fake_email_sender
+        self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
-        tentative = make_tentative_member("+14155559022", "tentative2@e.com")
+        tentative = make_signed_in("+14155559022", "tentative2@e.com")
         EventRSVP.objects.create(event=event, user=tentative, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
@@ -200,10 +201,10 @@ class TestTentativeMemberOnIneligibleEvent:
         assert response.status_code == 200
 
     def test_tentative_member_removed_from_community_event_without_email(
-        self, api_client, manage_events_headers, fake_email_sender
+        self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
-        tentative = make_tentative_member("+14155559023", "tentative3@e.com")
+        tentative = make_signed_in("+14155559023", "tentative3@e.com")
         EventRSVP.objects.create(event=event, user=tentative, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)

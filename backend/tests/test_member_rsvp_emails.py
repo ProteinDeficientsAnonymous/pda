@@ -3,7 +3,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from django.test import Client
 
 from tests._auth import auth_headers_for
-from tests._public_rsvp_helpers import make_non_member, make_tentative_member
+from tests._public_rsvp_helpers import SIGNED_IN_NON_MEMBER_FACTORIES, make_non_member
 from tests._time import future_iso
 from tests._users import make_user
 
@@ -180,13 +180,17 @@ class TestHostSetRsvpEmail:
 
         assert _subjects(fake_email_sender, "member@e.com") == []
 
-    def test_host_set_tentative_member_gets_member_email(self, test_user, fake_email_sender):
+    @SIGNED_IN_NON_MEMBER_FACTORIES
+    def test_host_set_tentative_member_gets_member_email(
+        self, test_user, fake_email_sender, make_signed_in
+    ):
         event = _event(test_user)
-        tentative = make_tentative_member("+14155550101", "tentative@e.com")
+        tentative = make_signed_in("+14155550101", "tentative@e.com")
 
         _host_set(event, test_user, tentative, RSVPStatus.ATTENDING)
 
         assert _subjects(fake_email_sender, "tentative@e.com") == ["you're in for picnic"]
+        assert "/my-rsvps?token=" not in fake_email_sender.send.call_args.kwargs["text"]
 
     def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user)

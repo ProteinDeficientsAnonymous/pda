@@ -6,6 +6,7 @@ test_public_rsvp_capacity.py (capacity/waitlist/robustness) to stay under the
 per-file line limit. The common request builders and factories live here.
 """
 
+import pytest
 from community.models import (
     Event,
     EventStatus,
@@ -15,6 +16,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from django.utils import timezone
 from users.models import User
 
 from tests._time import future_iso
@@ -84,3 +86,17 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
         status=JoinRequestStatus.TENTATIVE,
     )
     return user
+
+
+def make_attendance_paused_member(phone, email, name="Paused Sprout"):
+    user = make_non_member(phone, email, name=name)
+    user.attendance_paused_at = timezone.now()
+    user.save(update_fields=["attendance_paused_at"])
+    return user
+
+
+SIGNED_IN_NON_MEMBER_FACTORIES = pytest.mark.parametrize(
+    "make_signed_in",
+    [make_tentative_member, make_attendance_paused_member],
+    ids=["tentative", "attendance_paused"],
+)
