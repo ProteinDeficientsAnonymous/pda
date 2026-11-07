@@ -19,7 +19,7 @@ from community.cohosts.invite_helpers import diff_cohost_invites, send_cohost_in
 from community.events.helpers import event_out, has_attendees
 from community.events.unpublish import clear_unpublished_side_effects
 from community.models import Event, EventRSVP, EventStatus
-from community.rsvps.counts import _host_crew_ids
+from community.rsvps.counts import host_crew_ids
 from community.validation import Code, raise_validation
 
 
@@ -67,7 +67,7 @@ def _uncancel_event(request, event: Event) -> None:
     _audit_event(request, event, "event_uncancelled")
 
 
-def _set_event_participants(request, event: Event, co_host_ids: list) -> None:
+def set_event_participants(request, event: Event, co_host_ids: list) -> None:
     """Attach co-hosts to the event and send invite notifications.
 
     Co-hosts go through the invite-approval flow: requested ids become PENDING
@@ -136,7 +136,7 @@ def _unpublish_event(request, event: Event) -> None:
     # so the check can't race an in-flight rsvp into a now-draft event.
     locked = Event.objects.select_for_update().get(pk=event.pk)
     # Current co-hosts only — a stepped-down creator's RSVP still blocks.
-    host_ids = _host_crew_ids(locked)
+    host_ids = host_crew_ids(locked)
     if EventRSVP.objects.filter(event=locked).exclude(user_id__in=host_ids).exists():
         raise_validation(Code.Event.HAS_RSVPS, status_code=400)
     event.status = EventStatus.DRAFT
@@ -173,7 +173,7 @@ def _apply_status_transition(request, event: Event, new_status: str, notify: boo
     )
 
 
-def _handle_status_update(request, event: Event, new_status: str, notify: bool):
+def handle_status_update(request, event: Event, new_status: str, notify: bool):
     """Apply a status transition from update_event.
 
     Returns a Status response to send immediately (for DELETE, which exits early

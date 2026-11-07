@@ -49,7 +49,7 @@ async def _tags(names: list[str], user: User) -> dict[str, str]:
     return {tag["name"]: tag["id"] for tag in picked}
 
 
-def _no_default(schema: dict[str, Any]) -> None:
+def no_default(schema: dict[str, Any]) -> None:
     schema.pop("default", None)
 
 
@@ -59,7 +59,7 @@ EventChanges = create_model(
     **{
         name: (
             field.rebuild_annotation(),
-            Field(None, description=field.description, json_schema_extra=_no_default),
+            Field(None, description=field.description, json_schema_extra=no_default),
         )
         for name, field in EventFields.model_fields.items()
     },

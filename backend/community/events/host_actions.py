@@ -23,17 +23,17 @@ from community.events.schemas import (
     EventStatsOut,
     TextRecipientsOut,
 )
-from community.join_requests.approval import _maybe_promote_tentative, send_join_approval
+from community.join_requests.approval import maybe_promote_tentative, send_join_approval
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
-    _attended_count,
-    _attending_headcount,
-    _cant_go_count,
-    _didnt_go_count,
-    _maybe_count,
-    _no_response_count,
-    _not_marked_count,
-    _waitlisted_count,
+    attending_headcount,
+    count_attended,
+    count_cant_go,
+    count_didnt_go,
+    count_maybe,
+    count_no_response,
+    count_not_marked,
+    count_waitlisted,
 )
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -64,14 +64,14 @@ def get_event_stats(request, event_id: UUID):
     return Status(
         200,
         EventStatsOut(
-            going_count=_attending_headcount(event),
-            maybe_count=_maybe_count(event),
-            cant_go_count=_cant_go_count(event),
-            no_response_count=_no_response_count(event),
-            waitlisted_count=_waitlisted_count(event),
-            attended_count=_attended_count(event),
-            didnt_go_count=_didnt_go_count(event),
-            not_marked_count=_not_marked_count(event),
+            going_count=attending_headcount(event),
+            maybe_count=count_maybe(event),
+            cant_go_count=count_cant_go(event),
+            no_response_count=count_no_response(event),
+            waitlisted_count=count_waitlisted(event),
+            attended_count=count_attended(event),
+            didnt_go_count=count_didnt_go(event),
+            not_marked_count=count_not_marked(event),
             cancellations=cancellations(event, request.auth),
         ),
     )
@@ -131,7 +131,7 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
         return False
-    return _maybe_promote_tentative(rsvp.user, rsvp.event, actor)
+    return maybe_promote_tentative(rsvp.user, rsvp.event, actor)
 
 
 @router.post(

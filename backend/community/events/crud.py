@@ -16,11 +16,11 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 
 from community.cohosts.invite_helpers import reject_non_member_cohosts
-from community.events._transitions import _handle_status_update, _set_event_participants
+from community.events._transitions import handle_status_update, set_event_participants
 from community.events._update import (
-    _apply_field_updates,
-    _guard_can_edit_event,
-    _promote_if_capacity_increased,
+    apply_field_updates,
+    guard_can_edit_event,
+    promote_if_capacity_increased,
 )
 from community.events.helpers import (
     broadcast_capacity_change,
@@ -37,12 +37,12 @@ from community.events.helpers import (
 )
 from community.events.listing import (
     EventListQuery,
-    _build_events_queryset,
-    _event_list_out,
-    _filter_invite_only,
-    _filter_scope,
-    _filter_window,
-    _list_count_annotations,
+    build_events_queryset,
+    event_list_out,
+    filter_invite_only,
+    filter_scope,
+    filter_window,
+    list_count_annotations,
 )
 from community.events.nonmember_removal import (
     email_removed_non_members,
@@ -103,14 +103,14 @@ def list_events(request, params: Query[EventListQuery]):
     if (params.hosted or status in (EventStatus.CANCELLED, EventStatus.DRAFT)) and not is_authed:
         raise_validation(Code.Event.AUTH_REQUIRED, status_code=403)
 
-    events = _filter_invite_only(
-        _build_events_queryset(status, auth_user, is_authed), auth_user, status
+    events = filter_invite_only(
+        build_events_queryset(status, auth_user, is_authed), auth_user, status
     )
-    events = _filter_window(events, params.start, params.end, params.include_imported)
-    events = _filter_scope(events, auth_user, params.hosted, params.upcoming)
+    events = filter_window(events, params.start, params.end, params.include_imported)
+    events = filter_scope(events, auth_user, params.hosted, params.upcoming)
     return Status(
         200,
-        [_event_list_out(e, auth_user, is_authed) for e in events],
+        [event_list_out(e, auth_user, is_authed) for e in events],
     )
 
 
@@ -120,7 +120,7 @@ def _get_visible_event(request, event_id: str):
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "tags", "rsvp_questions", "poll")
-            .annotate(**_list_count_annotations())
+            .annotate(**list_count_annotations())
             .get(ref.as_q())
         )
     except Event.DoesNotExist:
@@ -260,7 +260,7 @@ def create_event(request, payload: EventIn):
         status=payload.status,
         created_by=request.auth,
     )
-    _set_event_participants(request, event, payload.co_host_ids)
+    set_event_participants(request, event, payload.co_host_ids)
     set_event_tags(event, payload.tag_ids)
     EventRsvpQuestion.objects.bulk_create(
         [
@@ -323,7 +323,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    _guard_can_edit_event(request, event, event_id)
+    guard_can_edit_event(request, event, event_id)
 
     updates = payload.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
@@ -339,18 +339,18 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
 
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
-        _apply_field_updates(request, event, event_id, updates)
+        apply_field_updates(request, event, event_id, updates)
         apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:
             removed_user_ids = guard_or_remove_ineligible_non_members(event, force)
 
         if new_status is not None:
-            early = _handle_status_update(request, event, new_status, notify_attendees)
+            early = handle_status_update(request, event, new_status, notify_attendees)
             if early is not None:
                 return early
 
-        promoted_user_ids = _promote_if_capacity_increased(event, updates, old_max_attendees)
+        promoted_user_ids = promote_if_capacity_increased(event, updates, old_max_attendees)
         hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
     email_removed_non_members(request, event, removed_user_ids)

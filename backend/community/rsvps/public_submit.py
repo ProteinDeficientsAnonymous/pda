@@ -19,18 +19,18 @@ from community.events.schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
 from community.rsvps.member import (
-    _apply_rsvp_in_transaction,
-    _post_rsvp_comment,
-    _RsvpApply,
-    _validate_rsvp_status,
+    RsvpApply,
+    apply_rsvp_in_transaction,
     payment_audit_details,
+    post_rsvp_comment,
+    validate_rsvp_status,
 )
 from community.rsvps.public_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
-    _email_details,
-    _load_public_rsvp_event,
-    _log_email_failure,
+    email_details,
+    load_public_rsvp_event,
+    log_email_failure,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.shared import ErrorOut, validate_display_name
@@ -144,13 +144,13 @@ def _send_confirmation_email(
     try:
         result = send_rsvp_confirmation_email(
             sender=get_email_sender(),
-            details=_email_details(event, user, token_str),
+            details=email_details(event, user, token_str),
             waitlisted=waitlisted,
         )
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
     except Exception as exc:
-        _log_email_failure(request, event, user, exc)
+        log_email_failure(request, event, user, exc)
 
 
 _RECOGNIZED_EMAIL_COOLDOWN_SECONDS = 300
@@ -213,7 +213,7 @@ def _send_recognized_login_link(request, user: User) -> None:
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     """Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended."""
-    _load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
+    load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
@@ -243,7 +243,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
 )
 @rate_limit(key_func=client_ip, rate="5/h")
 def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
-    event = _load_public_rsvp_event(event_id)
+    event = load_public_rsvp_event(event_id)
 
     # Honeypot trip — decoy 200 before validation, so bots get no feedback.
     if payload.website.strip():
@@ -263,7 +263,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         validate_display_name(last_name, field="last_name")
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
-    _validate_rsvp_status(payload.status)
+    validate_rsvp_status(payload.status)
 
     with transaction.atomic():
         user, created = _resolve_non_member(
@@ -273,10 +273,10 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             email=normalized_email,
             phone=validated_phone,
         )
-        final_status, promoted_user_ids, _previous_status = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, _previous_status = apply_rsvp_in_transaction(
             event.id,
             user,
-            _RsvpApply(
+            RsvpApply(
                 status=payload.status,
                 paid_confirmed=payload.paid_confirmed,
                 answers=payload.questionnaire_responses,
@@ -299,7 +299,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         ),
     )
 
-    _post_rsvp_comment(event.id, user, final_status, payload.comment)
+    post_rsvp_comment(event.id, user, final_status, payload.comment)
 
     waitlisted = final_status == RSVPStatus.WAITLISTED
     _send_confirmation_email(request, event, user, token.token, waitlisted)

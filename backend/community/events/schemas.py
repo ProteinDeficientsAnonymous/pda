@@ -12,12 +12,12 @@ from pydantic import (
 )
 
 from community.events._field_validators import (
-    _validate_datetime_has_offset,
-    _validate_event_slug,
-    _validate_generic_url,
-    _validate_max_attendees,
-    _validate_partiful_url,
-    _validate_zelle_info,
+    check_max_attendees,
+    validate_datetime_has_offset,
+    validate_event_slug,
+    validate_generic_url,
+    validate_partiful_url,
+    validate_zelle_info,
 )
 from community.field_limits import FieldLimit
 from community.models import (
@@ -359,27 +359,27 @@ class EventIn(BaseModel):
     @field_validator("partiful_link", mode="before")
     @classmethod
     def validate_partiful(cls, v: str) -> str:
-        return _validate_partiful_url(v or "", field="partiful_link")
+        return validate_partiful_url(v or "", field="partiful_link")
 
     @field_validator("other_link", mode="before")
     @classmethod
     def validate_other(cls, v: str) -> str:
-        return _validate_generic_url(v or "", field="other_link")
+        return validate_generic_url(v or "", field="other_link")
 
     @field_validator("zelle_info", mode="after")
     @classmethod
     def validate_zelle(cls, v: str) -> str:
-        return _validate_zelle_info(v) or ""
+        return validate_zelle_info(v) or ""
 
     @field_validator("max_attendees", mode="after")
     @classmethod
     def validate_max_attendees(cls, v: int | None) -> int | None:
-        return _validate_max_attendees(v)
+        return check_max_attendees(v)
 
     @field_validator("start_datetime", "end_datetime", mode="after")
     @classmethod
     def validate_datetime_offset(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
-        return _validate_datetime_has_offset(v, info)
+        return validate_datetime_has_offset(v, info)
 
 
 class EventPatchIn(BaseModel):
@@ -415,7 +415,7 @@ class EventPatchIn(BaseModel):
     @field_validator("slug", mode="after")
     @classmethod
     def validate_slug(cls, v: str | None) -> str | None:
-        return None if v is None else _validate_event_slug(v)
+        return None if v is None else validate_event_slug(v)
 
     @field_validator("whatsapp_link", mode="before")
     @classmethod
@@ -429,33 +429,33 @@ class EventPatchIn(BaseModel):
     def validate_partiful(cls, v: str | None) -> str | None:
         if v is None:
             return None
-        return _validate_partiful_url(v, field="partiful_link")
+        return validate_partiful_url(v, field="partiful_link")
 
     @field_validator("other_link", mode="before")
     @classmethod
     def validate_other(cls, v: str | None) -> str | None:
         if v is None:
             return None
-        return _validate_generic_url(v, field="other_link")
+        return validate_generic_url(v, field="other_link")
 
     @field_validator("zelle_info", mode="after")
     @classmethod
     def validate_zelle(cls, v: str | None) -> str | None:
-        return _validate_zelle_info(v)
+        return validate_zelle_info(v)
 
     @field_validator("max_attendees", mode="after")
     @classmethod
     def validate_max_attendees(cls, v: int | None) -> int | None:
-        return _validate_max_attendees(v)
+        return check_max_attendees(v)
 
     @field_validator("start_datetime", "end_datetime", mode="after")
     @classmethod
     def validate_datetime_offset(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
-        return _validate_datetime_has_offset(v, info)
+        return validate_datetime_has_offset(v, info)
 
 
-_MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
-_ALLOWED_IMAGE_TYPES = {
+MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_EVENT_PHOTO_TYPES = {
     "image/jpeg",
     "image/png",
     "image/webp",

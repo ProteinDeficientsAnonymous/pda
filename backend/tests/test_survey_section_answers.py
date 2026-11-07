@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
-from community.surveys.validators import _build_survey_answers, _validate_survey_answers
+from community.surveys.validators import build_survey_answers, validate_survey_answers
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -19,15 +19,15 @@ def _question(field_type, **fields):
 class TestSectionAnswers:
     def test_required_section_is_not_enforced(self):
         section = _question(SurveyQuestionType.SECTION, required=True)
-        _validate_survey_answers({}, {str(section.id): section})
+        validate_survey_answers({}, {str(section.id): section})
 
     def test_answers_to_sections_are_dropped(self):
         section = _question(SurveyQuestionType.SECTION)
         text = _question(SurveyQuestionType.TEXT)
         questions = {str(section.id): section, str(text.id): text}
         answers: dict[str, str | dict[str, str]] = {str(section.id): "sneaky", str(text.id): "hi"}
-        _validate_survey_answers(answers, questions)
-        assert _build_survey_answers(answers, questions) == {
+        validate_survey_answers(answers, questions)
+        assert build_survey_answers(answers, questions) == {
             str(text.id): {"label": "q", "answer": "hi"}
         }
 

@@ -4,7 +4,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.utils import timezone
 
-from community.cohosts.helpers import _update_co_hosts
+from community.cohosts.helpers import update_co_hosts
 from community.events.helpers import (
     can_edit_event,
     enforce_type_tag_permission,
@@ -62,7 +62,7 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     _validate_event_datetimes(effective_start, effective_end, effective_tbd, check_past=check_past)
 
 
-def _promote_if_capacity_increased(
+def promote_if_capacity_increased(
     event: Event, updates: dict, old_max_attendees: int | None
 ) -> list[str]:
     """Promote waitlisted users if `max_attendees` grew. Must run inside the locked transaction."""
@@ -96,7 +96,7 @@ def _resolve_event_format(event: Event, updates: dict) -> None:
         updates["event_format"] = ""
 
 
-def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
+def guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     if can_edit_event(request.auth, event):
         return
     audit_log(
@@ -129,7 +129,7 @@ def _apply_slug_update(event: Event, updates: dict) -> None:
     rename_event_slug(event, new_slug)
 
 
-def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
+def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
     """Apply non-status field edits to an event. Raises ValidationException on failure."""
     if not updates:
         return
@@ -150,7 +150,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
-        _update_co_hosts(event, co_host_ids, request.auth)
+        update_co_hosts(event, co_host_ids, request.auth)
     if tag_ids is not None:
         set_event_tags(event, tag_ids)
     event.save()

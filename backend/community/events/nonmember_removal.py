@@ -5,7 +5,7 @@ from users.models import NonMemberRsvpToken, User
 
 from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
 from community.models import Event, EventRSVP, JoinRequestStatus, RSVPStatus
-from community.rsvps.public_shared import _email_details, _log_email_failure
+from community.rsvps.public_shared import email_details, log_email_failure
 from community.validation import Code, raise_validation
 
 
@@ -49,9 +49,9 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
             token = NonMemberRsvpToken.issue_or_extend(user)
             result = send_rsvp_removed_email(
                 sender=get_email_sender(),
-                details=_email_details(event, user, token.token),
+                details=email_details(event, user, token.token),
             )
             if not result.success:
                 raise RuntimeError(result.error or "send returned failure")
         except Exception as exc:
-            _log_email_failure(request, event, user, exc)
+            log_email_failure(request, event, user, exc)

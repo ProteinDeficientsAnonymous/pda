@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-from community._giphy import _full_gif_url, _parse_gif
+from community._giphy import full_gif_url, parse_gif
 
 _URL = "/api/community/giphy/search/"
 
@@ -213,13 +213,13 @@ class TestImageSearch:
     ],
 )
 def test_full_gif_url(images, expected):
-    assert _full_gif_url(images) == expected
+    assert full_gif_url(images) == expected
 
 
 @pytest.mark.unit
 def test_parse_gif_drops_malformed_size():
     assert (
-        _parse_gif(
+        parse_gif(
             {
                 "id": "bad",
                 "title": "party",

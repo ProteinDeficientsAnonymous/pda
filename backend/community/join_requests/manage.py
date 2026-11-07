@@ -20,8 +20,8 @@ from community.attendance.analytics import attended_events
 from community.field_limits import FieldLimit
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
-    _provision_approved_user,
-    _provision_tentative_user,
+    provision_approved_user,
+    provision_tentative_user,
     send_join_approval,
 )
 from community.models import (
@@ -380,10 +380,10 @@ def _apply_status_transition(
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
-            _, magic_token = _provision_tentative_user(join_request, actor)
+            _, magic_token = provision_tentative_user(join_request, actor)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = _provision_approved_user(
+            magic_token, user_created = provision_approved_user(
                 join_request, actor, was_tentative=was_tentative
             )
             return join_request, magic_token, user_created, was_tentative

@@ -4,8 +4,8 @@ from django.conf import settings
 from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
-from users.api import _create_user_with_role
-from users.helpers import ConsentTimestamps, _create_magic_token, grant_membership
+from users.api import create_user_with_role
+from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
 from users.models import User
 
 from community.models import (
@@ -46,7 +46,7 @@ def _reactivate_archived_user(existing_user, join_request):
             "sms_consent_at",
         ]
     )
-    return _create_magic_token(existing_user)
+    return create_magic_token(existing_user)
 
 
 def _promote_public_non_member(user, join_request) -> str:
@@ -74,10 +74,10 @@ def _promote_public_non_member(user, join_request) -> str:
         ]
     )
     grant_membership(user)
-    return _create_magic_token(user)
+    return create_magic_token(user)
 
 
-def _promote_tentative_member(user, join_request) -> None:
+def promote_tentative_member(user, join_request) -> None:
     """Promote a tentatively-approved applicant in place; they onboarded already.
 
     Only membership changes: no token to mint, no needs_onboarding re-flag
@@ -119,7 +119,7 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
-def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
+def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
     Reuses a non-member already linked or matched by phone; else creates one.
@@ -157,10 +157,10 @@ def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]
     if changed:
         user.save(update_fields=changed)
 
-    return user, _create_magic_token(user)
+    return user, create_magic_token(user)
 
 
-def _maybe_promote_tentative(user, event, actor) -> bool:
+def maybe_promote_tentative(user, event, actor) -> bool:
     """Promote a tentative applicant to full member when they check in.
 
     Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
@@ -173,7 +173,7 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     if join_request is None:
         return False
 
-    _promote_tentative_member(user, join_request)
+    promote_tentative_member(user, join_request)
     join_request.status = JoinRequestStatus.APPROVED
     join_request.approved_at = timezone.now()
     join_request.approved_by = actor
@@ -182,7 +182,7 @@ def _maybe_promote_tentative(user, event, actor) -> bool:
     return True
 
 
-def _provision_approved_user(
+def provision_approved_user(
     join_request, requesting_user, *, was_tentative: bool
 ) -> tuple[str | None, bool]:
     """Create, reactivate, or promote the user for an approved join request.
@@ -195,14 +195,14 @@ def _provision_approved_user(
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:
         if was_tentative:
-            _promote_tentative_member(join_request.user, join_request)
+            promote_tentative_member(join_request.user, join_request)
             return None, False
         return _promote_public_non_member(join_request.user, join_request), False
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
         first_name, last_name = _resolve_names(join_request)
-        _, magic_token = _create_user_with_role(
+        _, magic_token = create_user_with_role(
             join_request.phone_number,
             first_name,
             last_name,
