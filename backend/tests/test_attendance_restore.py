@@ -2,7 +2,14 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry
-from community.models import AttendanceStatus, EventType, JoinRequest, JoinRequestStatus
+from community.models import (
+    AttendanceStatus,
+    EventType,
+    JoinRequest,
+    JoinRequestStatus,
+    MemberRestoredEmailTemplate,
+    WhatsAppLinkConfig,
+)
 from django.utils import timezone
 from users.models import User
 from users.roles import Role
@@ -116,3 +123,40 @@ class TestRestoreOnCheckIn:
         assert paused.is_member is False
         jr.refresh_from_db()
         assert jr.status == JoinRequestStatus.TENTATIVE
+
+
+@pytest.mark.django_db
+class TestRestoreEmail:
+    def _restore(self, api_client, host, paused):
+        paused.email = "paused@example.com"
+        paused.save(update_fields=["email"])
+        _attended(paused)
+        _check_in(api_client, host, paused)
+
+    def test_emails_the_template_with_name_and_whatsapp_link(
+        self, api_client, host, paused, fake_email_sender
+    ):
+        WhatsAppLinkConfig.objects.update_or_create(pk=1, defaults={"link": "https://wa.me/x"})
+        MemberRestoredEmailTemplate.objects.update_or_create(
+            pk=1, defaults={"body": "hey ${FIRST_NAME}, rejoin: ${WHATSAPP_LINK}"}
+        )
+        self._restore(api_client, host, paused)
+
+        kwargs = fake_email_sender.send.call_args.kwargs
+        assert kwargs["to"] == "paused@example.com"
+        assert "welcome back" in kwargs["subject"]
+        assert "hey Paused, rejoin: https://wa.me/x" in kwargs["text"]
+
+    def test_default_body_includes_whatsapp_link(self, api_client, host, paused, fake_email_sender):
+        WhatsAppLinkConfig.objects.update_or_create(pk=1, defaults={"link": "https://wa.me/x"})
+        self._restore(api_client, host, paused)
+        assert "https://wa.me/x" in fake_email_sender.send.call_args.kwargs["text"]
+
+    def test_failed_email_keeps_the_restore(self, api_client, host, paused, fake_email_sender):
+        fake_email_sender.send.side_effect = RuntimeError("smtp down")
+        self._restore(api_client, host, paused)
+        assert paused.attendance_paused_at is None
+
+    def test_no_email_without_a_restore(self, api_client, host, paused, fake_email_sender):
+        _check_in(api_client, host, paused)
+        fake_email_sender.send.assert_not_called()
