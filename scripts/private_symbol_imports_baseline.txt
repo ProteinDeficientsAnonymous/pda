@@ -1,84 +1,22 @@
 backend/community/_feedback.py: community.shared._optional_jwt
-backend/community/_giphy.py: community.events.schemas._MAX_EVENT_PHOTO_SIZE
-backend/community/_login_link.py: users.helpers._create_magic_token users.helpers._magic_login_url
-backend/community/cohosts/invites.py: community.cohosts.helpers._can_manage_cohost_invites
 backend/community/content/documents.py: community.content.docs._apply_display_order community.content.docs._doc_to_out community.content.docs._has_manage_docs
 backend/community/content/pages.py: community.shared._optional_jwt
 backend/community/event_feedback/host.py: community.surveys.helpers._survey_question_out
-backend/community/event_feedback/public.py: community.surveys.helpers._survey_out community.surveys.validators._build_survey_answers community.surveys.validators._validate_survey_answers
-backend/community/event_feedback/send.py: community.models.event._is_past_q
-backend/community/events/_transitions.py: community.rsvps.counts._host_crew_ids
-backend/community/events/_update.py: community.cohosts.helpers._update_co_hosts
+backend/community/event_feedback/public.py: community.surveys.helpers._survey_out
 backend/community/events/calendar.py: community.events.read_visibility._enforce_event_read_visibility community.shared._authenticated_user community.shared._gated community.shared._optional_jwt
 backend/community/events/comments.py: community.events.read_visibility._enforce_event_read_visibility community.shared._optional_jwt
-backend/community/events/crud.py: community.events._transitions._handle_status_update community.events._transitions._set_event_participants community.events._update._apply_field_updates community.events._update._guard_can_edit_event community.events._update._promote_if_capacity_increased community.events.listing._build_events_queryset community.events.listing._event_list_out community.events.listing._filter_invite_only community.events.listing._filter_scope community.events.listing._filter_window community.events.listing._list_count_annotations community.events.read_visibility._enforce_event_read_visibility community.shared._authenticated_user community.shared._optional_jwt
+backend/community/events/crud.py: community.events.read_visibility._enforce_event_read_visibility community.shared._authenticated_user community.shared._optional_jwt
 backend/community/events/flags.py: community.events.read_visibility._enforce_event_read_visibility
-backend/community/events/helpers.py: community.cohosts.helpers._pending_cohost_invites_out community.rsvps.counts._attending_headcount community.rsvps.counts._guest_rsvp_count community.rsvps.counts._waitlisted_count community.shared._authenticated_user community.shared._gated
-backend/community/events/host_actions.py: community.join_requests.approval._maybe_promote_tentative community.rsvps.counts._attended_count community.rsvps.counts._attending_headcount community.rsvps.counts._cant_go_count community.rsvps.counts._didnt_go_count community.rsvps.counts._maybe_count community.rsvps.counts._no_response_count community.rsvps.counts._not_marked_count community.rsvps.counts._waitlisted_count
-backend/community/events/listing.py: community.models.event._is_past_q community.shared._gated
-backend/community/events/nonmember_removal.py: community.rsvps.public_shared._email_details community.rsvps.public_shared._log_email_failure
-backend/community/events/photos.py: community.events.schemas._ALLOWED_IMAGE_TYPES community.events.schemas._MAX_EVENT_PHOTO_SIZE
-backend/community/events/schemas.py: community.events._field_validators._validate_datetime_has_offset community.events._field_validators._validate_event_slug community.events._field_validators._validate_generic_url community.events._field_validators._validate_max_attendees community.events._field_validators._validate_partiful_url community.events._field_validators._validate_zelle_info
+backend/community/events/helpers.py: community.shared._authenticated_user community.shared._gated
+backend/community/events/listing.py: community.shared._gated
 backend/community/events/viewer.py: community.shared._authenticated_user
-backend/community/join_requests/approval.py: users.api._create_user_with_role users.helpers._create_magic_token
-backend/community/join_requests/manage.py: community.join_requests.approval._provision_approved_user community.join_requests.approval._provision_tentative_user
-backend/community/join_requests/resend.py: users.helpers._create_magic_token
 backend/community/join_requests/submit.py: community.join_requests.manage._join_request_out
 backend/community/join_requests/unreject.py: community.join_requests.manage._join_request_out
-backend/community/management/commands/_e2e_attendance.py: community.management.commands._e2e_common._member_user community.management.commands._e2e_common._non_member_user community.management.commands._e2e_common._random_event community.management.commands._e2e_common._random_phone
-backend/community/management/commands/e2e_seed.py: community.management.commands._e2e_attendance._seed_attendance_analytics community.management.commands._e2e_attendance._seed_attendance_report community.management.commands._e2e_common._access_token community.management.commands._e2e_common._member_user community.management.commands._e2e_common._non_member_user community.management.commands._e2e_common._random_event community.management.commands._e2e_common._random_phone
-backend/community/polls/_finalize.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction
 backend/community/polls/crud.py: community.events.read_visibility._enforce_event_read_visibility community.shared._authenticated_user community.shared._optional_jwt
-backend/community/polls/options.py: community.polls.crud._can_manage_poll community.polls.crud._check_option_cap community.polls.crud._duplicate_option_time_guard community.polls.crud._poll_out community.polls.crud._validate_poll_options
-backend/community/rsvps/host.py: community.events.read_visibility._enforce_event_read_visibility community.rsvps.member._resolve_cancelled_at community.rsvps.member._resolve_pre_cancel_status community.rsvps.member._resolve_rsvp_status community.rsvps.member._validate_rsvp_status
-backend/community/rsvps/host_auto.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction
-backend/community/rsvps/member.py: community.events.read_visibility._enforce_event_read_visibility community.rsvps.counts._attending_headcount_db
-backend/community/rsvps/public_manage.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction community.rsvps.member._post_rsvp_comment community.rsvps.member._validate_rsvp_status community.rsvps.public_shared._email_details community.rsvps.public_shared._load_public_rsvp_event community.rsvps.public_shared._log_email_failure
-backend/community/rsvps/public_submit.py: community.rsvps.member._RsvpApply community.rsvps.member._apply_rsvp_in_transaction community.rsvps.member._post_rsvp_comment community.rsvps.member._validate_rsvp_status community.rsvps.public_shared._email_details community.rsvps.public_shared._load_public_rsvp_event community.rsvps.public_shared._log_email_failure
-backend/community/rsvps/status_emails.py: community.rsvps.public_shared._email_details community.rsvps.public_shared._event_links community.rsvps.public_shared._log_email_failure community.rsvps.public_shared._unpaid_user_ids
-backend/community/rsvps/waitlist.py: community.rsvps.counts._attending_headcount_db
-backend/community/scheduled/login_reminder.py: users.helpers._magic_login_url
-backend/community/scheduled/tentative_attendance_nudge.py: community.models.event._is_past_q
-backend/community/shared.py: config.auth._HARD_ACCOUNT_BLOCKS
+backend/community/rsvps/host.py: community.events.read_visibility._enforce_event_read_visibility
+backend/community/rsvps/member.py: community.events.read_visibility._enforce_event_read_visibility
 backend/community/surveys/crud.py: community.surveys.helpers._survey_out community.surveys.helpers._survey_question_out community.surveys.helpers._validate_anonymous_change community.surveys.helpers._validate_feedback_type community.surveys.helpers._validate_survey_window
-backend/community/surveys/public.py: community.shared._authenticated_user community.shared._optional_jwt community.surveys.helpers._has_finalize_permission community.surveys.helpers._response_to_update community.surveys.helpers._submit_out community.surveys.helpers._survey_out community.surveys.helpers._tally_question community.surveys.validators._build_survey_answers community.surveys.validators._validate_survey_answers
-backend/community/surveys/reports.py: community.surveys.responses._day_only community.surveys.responses._load_survey_for_responses community.surveys.responses._ordered_responses
+backend/community/surveys/public.py: community.shared._authenticated_user community.shared._optional_jwt community.surveys.helpers._has_finalize_permission community.surveys.helpers._response_to_update community.surveys.helpers._submit_out community.surveys.helpers._survey_out community.surveys.helpers._tally_question
 backend/mcp_gateway/cashapp_review.py: community.events.read_visibility._enforce_event_read_visibility
-backend/mcp_gateway/fields.py: config.validation_handlers._serialize_pydantic_error config.validation_handlers._serialize_validation_exception
-backend/mcp_gateway/survey_edit_fields.py: mcp_gateway.event_fields._no_default
-backend/mcp_gateway/tools/events_read.py: community.models.event._is_past_q
-backend/mcp_gateway/tools/surveys_edit.py: mcp_gateway.tools.surveys_read._survey_id
-backend/mcp_gateway/tools/surveys_read.py: mcp_gateway.view_calls._tool_error
-backend/mcp_gateway/view_calls.py: config.validation_handlers._serialize_validation_exception
-backend/notifications/event_feedback_notifications.py: notifications.service._event_recipient_ids
-backend/tests/_tentative_helpers.py: community.join_requests.approval._provision_tentative_user
-backend/tests/test_api.py: users.api._create_user_with_role users.api._validate_admin_role_change users.api._validate_member_role_required
-backend/tests/test_e2e_seed_command.py: community.management.commands._e2e_common._random_phone community.management.commands.e2e_seed._month_end
-backend/tests/test_event_is_past.py: community.models.event._is_past_q
-backend/tests/test_event_stats.py: community.rsvps.counts._attended_count community.rsvps.counts._didnt_go_count community.rsvps.counts._no_response_count community.rsvps.counts._no_show_count community.rsvps.member._resolve_cancelled_at community.rsvps.member._resolve_pre_cancel_status
-backend/tests/test_giphy.py: community._giphy._full_gif_url community._giphy._parse_gif
 backend/tests/test_join_request_email.py: community.join_requests.submit._send_join_request_email
-backend/tests/test_join_request_tentative.py: community.join_requests.approval._provision_tentative_user
-backend/tests/test_mcp_events_read.py: mcp_gateway.tools.events_read._my_events
-backend/tests/test_mcp_members_find.py: mcp_gateway.tools.members_read._page
-backend/tests/test_mcp_members_inactive.py: mcp_gateway.tools.members_read._page
-backend/tests/test_mcp_surveys_read.py: mcp_gateway.tools.surveys_read._survey_id
-backend/tests/test_media_path.py: config.og_preview._absolute
-backend/tests/test_name_split_api.py: community.join_requests.approval._provision_approved_user
-backend/tests/test_promotion_paths.py: community.join_requests.approval._promote_tentative_member
-backend/tests/test_public_rsvp_resend.py: community.rsvps.public_resend._NEUTRAL_RESPONSE
 backend/tests/test_roles_prefetch_query_counts.py: community.shared._optional_jwt
-backend/tests/test_seed_staging_feedback.py: community.management.commands._seed_staging_feedback._build_answers
-backend/tests/test_sse.py: notifications.sse._format_notify_for_user
-backend/tests/test_survey_checkbox_list_answers.py: community.surveys.reports._csv_answer_cell community.surveys.reports._summarize_question
-backend/tests/test_survey_section_answers.py: community.surveys.validators._build_survey_answers community.surveys.validators._validate_survey_answers
-backend/tests/test_survey_validators.py: community.surveys.validators._build_survey_answers community.surveys.validators._validate_boolean_answer community.surveys.validators._validate_checkbox_answer community.surveys.validators._validate_choice_answer community.surveys.validators._validate_datetime_poll_answer community.surveys.validators._validate_number_answer community.surveys.validators._validate_one_answer community.surveys.validators._validate_survey_answers
-backend/tests/test_user_model.py: users.helpers._check_and_set_email users.helpers._normalize_email
-backend/tests/users/test_show_veganniversary.py: users._auth._apply_me_patch users._auth._save_me_patch
-backend/users/_archive.py: community.models.event._is_past_q users.helpers._strip_non_member_roles
-backend/users/_auth.py: users.helpers._check_and_set_email users.helpers._require_first_name users.helpers._resolve_name_fields
-backend/users/_magic_links.py: users.helpers._create_magic_token
-backend/users/_management.py: users.helpers._check_and_set_email users.helpers._create_magic_token users.helpers._create_user_with_role users.helpers._is_admin users.helpers._resolve_name_fields users.helpers._strip_non_member_roles users.helpers._validate_admin_role_change users.helpers._validate_member_role_required
-backend/users/_self_delete.py: users.helpers._is_last_admin
-backend/users/_user_deletion.py: users.helpers._is_last_admin
-backend/users/api.py: users.helpers._create_user_with_role users.helpers._validate_admin_role_change users.helpers._validate_member_role_required
