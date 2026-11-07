@@ -1,3 +1,10 @@
+# [0.222.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.1...v0.222.0) (2026-11-07)
+
+
+### Features
+
+* add zoom controls to event speech reading view ([#2177](https://github.com/ProteinDeficientsAnonymous/pda/issues/2177)) ([8ece930](https://github.com/ProteinDeficientsAnonymous/pda/commit/8ece9302b659d8d99b0e68b286a0fb8455eb0824))
+
 ## [0.221.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.0...v0.221.1) (2026-11-06)
 
 
