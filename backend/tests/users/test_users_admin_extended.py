@@ -207,6 +207,17 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    def test_admin_list_includes_attendance_paused(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.is_member = False
+        other_user.attendance_paused_at = timezone.now()
+        other_user.save(update_fields=["is_member", "attendance_paused_at"])
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert str(other_user.pk) in ids
+
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user
     ):
