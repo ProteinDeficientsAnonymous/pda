@@ -6,10 +6,10 @@ import pytest
 from community.events.helpers import cancellations
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
-    _attended_count,
-    _didnt_go_count,
-    _no_response_count,
-    _no_show_count,
+    count_attended,
+    count_didnt_go,
+    count_no_response,
+    count_no_shows,
 )
 from community.rsvps.member import _resolve_cancelled_at, _resolve_pre_cancel_status
 from django.conf import settings
@@ -29,7 +29,7 @@ class TestNoResponseCount:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps").get(
             pk=stats_event.pk
         )
-        assert _no_response_count(stats_event) == 3
+        assert count_no_response(stats_event) == 3
 
     def test_user_with_rsvp_not_counted_as_no_response(self, stats_event, members):
         for m in members:
@@ -37,7 +37,7 @@ class TestNoResponseCount:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps").get(
             pk=stats_event.pk
         )
-        assert _no_response_count(stats_event) == 0
+        assert count_no_response(stats_event) == 0
 
 
 @pytest.mark.django_db
@@ -273,8 +273,8 @@ class TestAttendanceCounts:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        assert _attended_count(stats_event) == 2
-        assert _didnt_go_count(stats_event) == 2
+        assert count_attended(stats_event) == 2
+        assert count_didnt_go(stats_event) == 2
 
     def test_no_show_requires_was_going(self, stats_event, members):
         EventRSVP.objects.create(
@@ -293,4 +293,4 @@ class TestAttendanceCounts:
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
         )
-        assert _no_show_count(stats_event) == 1
+        assert count_no_shows(stats_event) == 1

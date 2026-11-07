@@ -32,9 +32,9 @@ from community.rsvps.answers import (
     find_my_questionnaire_responses,
 )
 from community.rsvps.counts import (
-    _attending_headcount,
-    _guest_rsvp_count,
-    _waitlisted_count,
+    attending_headcount,
+    count_guest_rsvps,
+    count_waitlisted,
 )
 from community.rsvps.payment import can_see_payment_details
 from community.rsvps.serialize import event_rsvp_question_out, with_guest_photos
@@ -367,11 +367,9 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
-        attending_count=_annotated_or(
-            event, "attending_count", lambda: _attending_headcount(event)
-        ),
-        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
-        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
+        attending_count=_annotated_or(event, "attending_count", lambda: attending_headcount(event)),
+        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: count_waitlisted(event)),
+        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: count_guest_rsvps(event)),
         invited_count=invited_count,
         **_host_fields(event, creator, co_hosts, auth_user),
         guests=with_guest_photos(

@@ -35,7 +35,7 @@ from community.rsvps.answers import (
     answers_required_for_status,
     build_rsvp_answers,
 )
-from community.rsvps.counts import _attending_headcount_db
+from community.rsvps.counts import attending_headcount_db
 from community.rsvps.payment import requires_payment_gate
 from community.rsvps.status_emails import email_member_rsvp_status, email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -78,7 +78,7 @@ def _resolve_rsvp_status(
     if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
         return requested_status, has_plus_one
 
-    headcount = _attending_headcount_db(event, exclude_user=user)
+    headcount = attending_headcount_db(event, exclude_user=user)
     new_spots = 1 + (1 if has_plus_one else 0)
 
     if headcount + new_spots <= event.max_attendees:
