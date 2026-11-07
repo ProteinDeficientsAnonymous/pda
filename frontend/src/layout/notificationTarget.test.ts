@@ -38,4 +38,12 @@ describe('notificationTarget', () => {
     const n = notification({ notificationType: NotificationType.SurveyResponse, eventId: null });
     expect(notificationTarget(n)).toBe('/admin/surveys');
   });
+
+  it('sends a restored member to their member page', () => {
+    const n = notification({
+      notificationType: NotificationType.MemberRestored,
+      relatedUserId: 'u1',
+    });
+    expect(notificationTarget(n)).toBe('/admin/members/u1');
+  });
 });
