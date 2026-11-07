@@ -34,6 +34,15 @@ vi.mock('@/api/content', () => ({
   useUpdateWhatsAppLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
+vi.mock('@/api/memberRestoredEmail', () => ({
+  useMemberRestoredEmail: () => ({
+    data: { body: 'welcome back ${FIRST_NAME}', updatedAt: '2026-01-01' },
+    isPending: false,
+    isError: false,
+  }),
+  useUpdateMemberRestoredEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 function makeUser(overrides?: Partial<User>): User {
   return makeSharedUser({
     id: 'u1',
@@ -96,6 +105,19 @@ describe('JoinRequestMessageEditors', () => {
     renderEditors(user);
     await userEvent.click(screen.getByRole('button', { name: /edit member promotion email/i }));
     expect(screen.getByLabelText('member promotion email body')).toBeInTheDocument();
+  });
+
+  it('opens the welcome back email editor seeded with its template', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = makeUser({
+      roles: [
+        { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
+      ],
+    });
+    renderEditors(user);
+    await userEvent.click(screen.getByRole('button', { name: /edit welcome back email/i }));
+    const textarea = screen.getByLabelText('welcome back email body') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('welcome back ${FIRST_NAME}');
   });
 
   it('opens the whatsapp link editor dialog when clicked', async () => {
