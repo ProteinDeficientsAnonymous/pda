@@ -23,7 +23,8 @@ from community.events.schemas import (
     EventStatsOut,
     TextRecipientsOut,
 )
-from community.join_requests.approval import maybe_promote_tentative, send_join_approval
+from community.join_requests.approval import send_join_approval
+from community.join_requests.check_in_promotion import CheckInOutcome, maybe_promote_non_member
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     attending_headcount,
@@ -112,10 +113,12 @@ def get_text_recipients(request, event_id: UUID):
     return Status(200, _build_text_recipients(event))
 
 
-def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> bool:
-    """Persist the attendance mark, promoting a tentative member if it was a check-in.
+def _apply_attendance_mark(
+    request, rsvp: EventRSVP, payload: AttendanceIn
+) -> CheckInOutcome | None:
+    """Persist the attendance mark, promoting or restoring a non-member if it was a check-in.
 
-    return(bool): whether the mark promoted a tentative applicant to full member.
+    return(CheckInOutcome | None): what the check-in did to the guest's membership, if anything.
     """
     attendance_field, checked_in_field = (
         ("plus_one_attendance", "plus_one_checked_in_at")
@@ -130,8 +133,8 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
     rsvp.save(update_fields=[attendance_field, checked_in_field, "updated_at"])
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
-        return False
-    return maybe_promote_tentative(rsvp.user, rsvp.event, actor)
+        return None
+    return maybe_promote_non_member(request, rsvp.user, rsvp.event)
 
 
 @router.post(
@@ -151,13 +154,13 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     if payload.for_plus_one and not rsvp.has_plus_one:
         raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
 
-    # The mark and any tentative promotion it triggers commit as a unit, so a
+    # The mark and any promotion or restore it triggers commit as a unit, so a
     # mid-promotion failure can't leave a member flagged without their request
     # stamped approved.
     with transaction.atomic():
-        promoted = _apply_attendance_mark(rsvp, payload, request.auth)
+        outcome = _apply_attendance_mark(request, rsvp, payload)
 
-    if promoted:
+    if outcome == CheckInOutcome.PROMOTED:
         send_join_approval(
             to=rsvp.user.email,
             display_name=rsvp.user.full_name,

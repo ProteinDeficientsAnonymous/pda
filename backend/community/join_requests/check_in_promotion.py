@@ -1,0 +1,60 @@
+import logging
+from datetime import timedelta
+from enum import StrEnum
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from django.utils import timezone
+from users.helpers import grant_membership
+from users.models import User
+
+from community.attendance.analytics import (
+    COMPLIANCE_MIN_COUNT,
+    QUALIFYING_WINDOW_DAYS,
+    qualifying_attendance_q,
+)
+from community.join_requests.approval import maybe_promote_tentative
+from community.models import EventRSVP, is_official_or_club
+
+
+class CheckInOutcome(StrEnum):
+    PROMOTED = "promoted"
+    RESTORED = "restored"
+
+
+def maybe_promote_non_member(request, user: User, event) -> CheckInOutcome | None:
+    """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
+    if not is_official_or_club(event.event_type):
+        return None
+    # Checked first so a stale TENTATIVE request can't promote a paused member on one check-in.
+    if user.attendance_paused_at is not None:
+        return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None
+    if maybe_promote_tentative(user, event, request.auth):
+        return CheckInOutcome.PROMOTED
+    return None
+
+
+def _restore_attendance_paused(request, user: User) -> bool:
+    now = timezone.now()
+    qualifying_count = EventRSVP.objects.filter(
+        qualifying_attendance_q(),
+        user=user,
+        event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS),
+    ).count()
+    if qualifying_count < COMPLIANCE_MIN_COUNT:
+        return False
+
+    user.attendance_paused_at = None
+    user.attendance_grace_notified_at = None
+    user.restored_at = now
+    user.is_member = True
+    # Saved before grant_membership: roles on non-members are rejected.
+    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
+    user.save(update_fields=fields)
+    grant_membership(user)
+    audit_log(
+        logging.WARNING,
+        "user_attendance_restored",
+        request,
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+    )
+    return True
