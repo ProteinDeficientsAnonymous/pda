@@ -34,6 +34,12 @@ def _attended(user, *, event_type=EventType.OFFICIAL, days_ago=30):
     make_rsvp(event, user, attendance=AttendanceStatus.ATTENDED)
 
 
+def _tentative_request(user) -> JoinRequest:
+    return JoinRequest.objects.create(
+        phone_number=user.phone_number, user=user, status=JoinRequestStatus.TENTATIVE
+    )
+
+
 def _check_in(api_client, host, user, *, event_type=EventType.OFFICIAL, for_plus_one=False):
     event = make_event(
         event_type=event_type, start_datetime=timezone.now() - timedelta(hours=1), created_by=host
@@ -98,24 +104,13 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_paused_at is not None
 
     def test_host_marking_themselves_never_promotes(self, api_client, paused):
-        paused.attendance_paused_at = None
-        paused.save(update_fields=["attendance_paused_at"])
-        JoinRequest.objects.create(
-            first_name="Paused",
-            phone_number=paused.phone_number,
-            user=paused,
-            status=JoinRequestStatus.TENTATIVE,
-        )
+        User.objects.filter(pk=paused.pk).update(attendance_paused_at=None)
+        _tentative_request(paused)
         _check_in(api_client, paused, paused)
         assert paused.is_member is False
 
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
-        jr = JoinRequest.objects.create(
-            first_name="Paused",
-            phone_number=paused.phone_number,
-            user=paused,
-            status=JoinRequestStatus.TENTATIVE,
-        )
+        jr = _tentative_request(paused)
         _check_in(api_client, host, paused)
 
         assert paused.is_member is False
