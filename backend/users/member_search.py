@@ -37,6 +37,13 @@ class MemberFilters(BaseModel):
         description="statuses to include; default active and still_onboarding (everyone who can "
         "sign in); add paused for everyone not archived",
     )
+    name: str | None = Field(
+        None,
+        min_length=1,
+        max_length=100,
+        description="every word appears in their first or last name, ignoring case, so "
+        "'sam' or 'sam lee' both find sam lee",
+    )
     joined_within_days: Days = Field(None, description="membership started in the last n days")
     never_logged_in: bool | None = Field(
         None, description=f"true: never signed in. false: signed in at least once. {_SIGN_IN}"
@@ -66,6 +73,8 @@ class MemberFilters(BaseModel):
 
 def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
     yield Q(status__in=f.status)
+    for word in (f.name or "").split():
+        yield Q(first_name__icontains=word) | Q(last_name__icontains=word)
     if f.joined_within_days is not None:
         yield Q(member_since__gte=now - timedelta(days=f.joined_within_days))
     if f.never_logged_in is not None:
