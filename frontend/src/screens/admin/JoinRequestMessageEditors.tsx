@@ -7,6 +7,7 @@ import {
   useWelcomeTemplate,
   useWhatsAppLink,
 } from '@/api/content';
+import { useMemberRestoredEmail } from '@/api/memberRestoredEmail';
 import { useRejectionEmail } from '@/api/rejectionEmail';
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
@@ -23,6 +24,7 @@ export function JoinRequestMessageEditors() {
   const [tentativeOpen, setTentativeOpen] = useState(false);
   const [memberPromotionOpen, setMemberPromotionOpen] = useState(false);
   const [promotionEmailOpen, setPromotionEmailOpen] = useState(false);
+  const [restoredEmailOpen, setRestoredEmailOpen] = useState(false);
   const [rejectionEmailOpen, setRejectionEmailOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
@@ -30,6 +32,7 @@ export function JoinRequestMessageEditors() {
   const tentativeQ = useTentativeApprovalMessage();
   const memberPromotionQ = useMemberPromotionMessage();
   const promotionEmailQ = useMemberPromotionEmail();
+  const restoredEmailQ = useMemberRestoredEmail();
   const rejectionEmailQ = useRejectionEmail();
   const whatsappQ = useWhatsAppLink();
 
@@ -63,6 +66,12 @@ export function JoinRequestMessageEditors() {
           label="edit member promotion email"
           onClick={() => {
             setPromotionEmailOpen(true);
+          }}
+        />
+        <EditorTrigger
+          label="edit welcome back email"
+          onClick={() => {
+            setRestoredEmailOpen(true);
           }}
         />
         <EditorTrigger
@@ -105,6 +114,14 @@ export function JoinRequestMessageEditors() {
           setPromotionEmailOpen(false);
         }}
         template={promotionEmailQ.data ?? null}
+      />
+      <MemberPromotionEmailEditorDialog
+        variant="restored"
+        open={restoredEmailOpen}
+        onClose={() => {
+          setRestoredEmailOpen(false);
+        }}
+        template={restoredEmailQ.data ?? null}
       />
       <RejectionEmailEditorDialog
         open={rejectionEmailOpen}
