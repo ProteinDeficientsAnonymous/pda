@@ -20,9 +20,9 @@ from ninja_jwt.tokens import RefreshToken
 from users._consents import ConsentType, stamp_consents
 from users._password_validation import validate_password
 from users.helpers import (
-    _check_and_set_email,
-    _require_first_name,
-    _resolve_name_fields,
+    check_and_set_email,
+    require_first_name,
+    resolve_name_fields,
 )
 from users.models import User
 from users.refresh_cookie import (
@@ -199,10 +199,10 @@ def apply_me_patch(user, payload: MePatchIn) -> list[str]:
     to the global handler.
     """
     changed: list[str] = []
-    if _resolve_name_fields(user, payload):
+    if resolve_name_fields(user, payload):
         changed.extend(["first_name", "last_name"])
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+        check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
     for attr in _ME_PATCH_STRIPPED_FIELDS:
         value = getattr(payload, attr)
@@ -325,12 +325,12 @@ def complete_onboarding(request, payload: OnboardingIn):
     # check_password always fails and this is correctly skipped.
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
-    _resolve_name_fields(user, payload)
+    resolve_name_fields(user, payload)
     # Bulk/phone-only accounts reach onboarding with no name; a name-less
     # payload must not let them complete with an empty first_name (Issue 733).
-    _require_first_name(user)
+    require_first_name(user)
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+        check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:
         raise_validation(Code.Email.REQUIRED, field="email", status_code=422)
     if payload.pronouns is not None:

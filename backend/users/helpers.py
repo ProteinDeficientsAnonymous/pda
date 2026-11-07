@@ -42,7 +42,7 @@ class NamePatchPayload(Protocol):
     last_name: str | None
 
 
-def _require_first_name(user: User) -> None:
+def require_first_name(user: User) -> None:
     """Raise REQUIRED if user.first_name is empty after a name patch (Issue 733)."""
     if not user.first_name.strip():
         raise_validation(Code.DisplayName.REQUIRED, field="first_name")
@@ -59,7 +59,7 @@ def _apply_split_names(user: User, payload: NamePatchPayload) -> None:
         user.last_name = payload.last_name.strip()
 
 
-def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
+def resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     """Apply first/last name from a patch payload to user (in memory).
 
     Returns True if any name field was set. Raises REQUIRED when the resulting
@@ -69,7 +69,7 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     if payload.first_name is None and payload.last_name is None:
         return False
     _apply_split_names(user, payload)
-    _require_first_name(user)
+    require_first_name(user)
     return True
 
 
@@ -96,7 +96,7 @@ def magic_login_url(token: str) -> str:
     return f"{settings.FRONTEND_BASE_URL}/magic-login/{token}"
 
 
-def _is_last_admin(user: User) -> bool:
+def is_last_admin(user: User) -> bool:
     try:
         admin_role = Role.objects.get(name="admin", is_default=True)
     except Role.DoesNotExist:
@@ -106,7 +106,7 @@ def _is_last_admin(user: User) -> bool:
     return admin_role.users.filter(archived_at__isnull=True).count() <= 1
 
 
-def _is_admin(user: User) -> bool:
+def is_admin(user: User) -> bool:
     """True if the user holds the built-in admin role; prefetches roles once so name lists don't query per row."""
     if "roles" not in getattr(user, "_prefetched_objects_cache", {}):
         prefetch_related_objects([user], "roles")
@@ -115,7 +115,7 @@ def _is_admin(user: User) -> bool:
 
 def _sees_full_name(target: User, viewer: User | None) -> bool:
     """Admins and the target themself always see the full name; None viewer is anonymous."""
-    return viewer is not None and (target.id == viewer.id or _is_admin(viewer))
+    return viewer is not None and (target.id == viewer.id or is_admin(viewer))
 
 
 def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
@@ -142,7 +142,7 @@ def visible_display_name(target: User, viewer: User | None) -> str:
     return target.phone_number if target.show_phone else "member"
 
 
-def _normalize_email(raw: str | None) -> str | None:
+def normalize_email(raw: str | None) -> str | None:
     """Lowercase + strip an email. Returns None for blank input.
 
     Centralized so server-side enforcement is consistent across endpoints.
@@ -154,7 +154,7 @@ def _normalize_email(raw: str | None) -> str | None:
     return cleaned or None
 
 
-def _check_and_set_email(
+def check_and_set_email(
     user: User,
     raw: str | None,
     *,
@@ -168,7 +168,7 @@ def _check_and_set_email(
     Pass ``exclude_pk`` for the self-update case so users can re-submit
     their own current email without a false collision.
     """
-    normalized = _normalize_email(raw)
+    normalized = normalize_email(raw)
     if normalized:
         qs = User.objects.filter(email=normalized)
         if exclude_pk is not None:
@@ -187,7 +187,7 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
     if not role_id:
         return
     admin_role = Role.objects.filter(name="admin", is_default=True).first()
-    if admin_role and str(role_id) == str(admin_role.pk) and not _is_admin(requesting_user):
+    if admin_role and str(role_id) == str(admin_role.pk) and not is_admin(requesting_user):
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
@@ -214,7 +214,7 @@ def create_user_with_role(  # noqa: PLR0913
     validated_phone = validate_phone(phone, ADMIN_ENTERED_PHONE_REGION)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
-    normalized_email = _normalize_email(email)
+    normalized_email = normalize_email(email)
     if normalized_email and User.objects.filter(email=normalized_email).exists():
         raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     _guard_admin_role_grant(role_id, requesting_user)
@@ -262,13 +262,13 @@ def validate_admin_role_change(user: User, requesting_user: User, new_roles: lis
     removing_admin = admin_role not in new_roles
     adding_admin = admin_role in new_roles and not is_current_admin
 
-    if adding_admin and not _is_admin(requesting_user):
+    if adding_admin and not is_admin(requesting_user):
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, status_code=403)
 
     if is_self and is_current_admin and removing_admin:
         raise_validation(Code.Role.CANNOT_REMOVE_OWN_ADMIN, status_code=400)
 
-    if _is_last_admin(user) and removing_admin:
+    if is_last_admin(user) and removing_admin:
         raise_validation(Code.Role.CANNOT_REMOVE_LAST_ADMIN, status_code=400)
 
 
@@ -281,7 +281,7 @@ def validate_member_role_required(new_roles: list[Role]) -> None:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
 
 
-def _strip_non_member_roles(user: User) -> list[str]:
+def strip_non_member_roles(user: User) -> list[str]:
     """Remove every role from user except the built-in member role.
 
     Called on the pause transition so a paused member holds no elevated role.

@@ -9,7 +9,7 @@ from ninja.responses import Status
 from users._archive import archive_user
 from users._management import require_manage_users
 from users._management import router as management_router
-from users.helpers import _is_last_admin
+from users.helpers import is_last_admin
 from users.models import User
 from users.schemas import ErrorOut
 
@@ -31,7 +31,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
         raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
-    if _is_last_admin(user):
+    if is_last_admin(user):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
@@ -68,7 +68,7 @@ def hard_delete_user(request, user_id: str):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
         raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
-    if _is_last_admin(user):
+    if is_last_admin(user):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.last_login is not None:
         raise_validation(Code.User.CANNOT_HARD_DELETE_LOGGED_IN, status_code=400)
