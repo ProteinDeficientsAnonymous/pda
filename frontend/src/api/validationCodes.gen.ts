@@ -279,6 +279,10 @@ export const Code = {
     BodyRequired: 'member_promotion_email.body_required',
     BodyTooLong: 'member_promotion_email.body_too_long',
   },
+  MemberRestoredEmail: {
+    BodyRequired: 'member_restored_email.body_required',
+    BodyTooLong: 'member_restored_email.body_too_long',
+  },
   RejectionEmail: {
     BodyRequired: 'rejection_email.body_required',
     BodyTooLong: 'rejection_email.body_too_long',
@@ -512,6 +516,8 @@ export type ValidationCode =
   | 'member_promotion_message.body_too_long'
   | 'member_promotion_email.body_required'
   | 'member_promotion_email.body_too_long'
+  | 'member_restored_email.body_required'
+  | 'member_restored_email.body_too_long'
   | 'rejection_email.body_required'
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
@@ -736,6 +742,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'member_promotion_message.body_too_long': ['max_length'],
   'member_promotion_email.body_required': [],
   'member_promotion_email.body_too_long': ['max_length'],
+  'member_restored_email.body_required': [],
+  'member_restored_email.body_too_long': ['max_length'],
   'rejection_email.body_required': [],
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],

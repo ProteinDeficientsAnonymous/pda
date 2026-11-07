@@ -287,6 +287,10 @@ class Code:
         BODY_REQUIRED = "member_promotion_email.body_required"
         BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
 
+    class MemberRestoredEmail:
+        BODY_REQUIRED = "member_restored_email.body_required"
+        BODY_TOO_LONG = "member_restored_email.body_too_long"  # params: { max_length: int }
+
     class RejectionEmail:
         BODY_REQUIRED = "rejection_email.body_required"
         BODY_TOO_LONG = "rejection_email.body_too_long"  # params: { max_length: int }

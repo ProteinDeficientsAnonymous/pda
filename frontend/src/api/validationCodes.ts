@@ -619,6 +619,15 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'member promotion email is too long';
     }
 
+    case Code.MemberRestoredEmail.BodyRequired:
+      return 'welcome back email body is required';
+    case Code.MemberRestoredEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `welcome back email must be at most ${String(max)} characters`
+        : 'welcome back email is too long';
+    }
+
     // Rejection email
     case Code.RejectionEmail.BodyRequired:
       return 'rejection email body is required';
