@@ -92,8 +92,8 @@ def make_attendance_paused_member(phone, email):
     return make_attendance_paused(phone_number=phone, email=email)
 
 
-SIGNED_IN_NON_MEMBER_FACTORIES = pytest.mark.parametrize(
-    "make_signed_in",
+LIMITED_USER_FACTORIES = pytest.mark.parametrize(
+    "make_limited",
     [make_tentative_member, make_attendance_paused_member],
     ids=["tentative", "attendance_paused"],
 )
