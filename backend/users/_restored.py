@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 
-from community.attendance.analytics import qualifying_attendance_q
+from community.attendance.analytics import AttendedEventOut, qualifying_attendance_q
 from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import EventRSVP
 from community.validation import Code, raise_validation
@@ -22,30 +22,13 @@ router = Router()
 RECENT_EVENT_COUNT = 2
 
 
-class RestoredEventOut(BaseModel):
-    event_id: str
-    title: str
-    start_datetime: datetime
-
-
 class RestoredMemberOut(BaseModel):
     id: str
     full_name: str
     phone_number: str
     restored_at: datetime
     has_joined_whatsapp: bool
-    recent_events: list[RestoredEventOut]
-
-
-def _recent_events(user: User) -> list[RestoredEventOut]:
-    return [
-        RestoredEventOut(
-            event_id=str(rsvp.event_id),
-            title=rsvp.event.title,
-            start_datetime=rsvp.event.start_datetime,
-        )
-        for rsvp in user.qualifying_rsvps[:RECENT_EVENT_COUNT]
-    ]
+    recent_events: list[AttendedEventOut]
 
 
 @router.get(
@@ -70,7 +53,7 @@ def list_restored_members(request):
     qualifying = (
         EventRSVP.objects.filter(qualifying_attendance_q())
         .select_related("event")
-        .only("user", "event__title", "event__start_datetime")
+        .only("user", "event__title", "event__start_datetime", "event__event_type")
         .order_by("-event__start_datetime", "event_id")
     )
     users = (
@@ -89,7 +72,9 @@ def list_restored_members(request):
                 phone_number=u.phone_number,
                 restored_at=u.restored_at,
                 has_joined_whatsapp=u.has_joined_whatsapp,
-                recent_events=_recent_events(u),
+                recent_events=[
+                    AttendedEventOut.from_rsvp(r) for r in u.qualifying_rsvps[:RECENT_EVENT_COUNT]
+                ],
             )
             for u in users
         ],
