@@ -63,15 +63,15 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         )
 
 
-def upcoming_hosted_events(user: User, event_filter: Q | None = None):
+def upcoming_hosted_events(user: User):
     return Event.objects.filter(
-        upcoming_events_q(), event_filter or Q(), pk__in=user.co_hosted_events.values("pk")
+        upcoming_events_q(), pk__in=user.co_hosted_events.values("pk")
     ).annotate(host_count=Count("co_hosts"))
 
 
-def step_down_as_cohost(user: User, event_filter: Q | None = None) -> None:
+def step_down_as_cohost(user: User) -> None:
     """Leave every upcoming event that has another host; sole-hosted events are left as-is."""
-    events = upcoming_hosted_events(user, event_filter).filter(host_count__gt=1)
+    events = upcoming_hosted_events(user).filter(host_count__gt=1)
     for event in events:
         leave_cohost(event, user)
         broadcast_cohost_change(event)

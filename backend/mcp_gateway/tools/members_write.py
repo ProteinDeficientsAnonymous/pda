@@ -27,13 +27,13 @@ async def _member(member_id: UUID) -> User:
         "this is the event rqmt pause for members under 2 official or club events in 12 months, "
         "not the guidelines violation pause, which can't be set here. while attendance-paused "
         "they keep tentative access and can still rsvp to official and club events. pausing "
-        "drops their rsvps to other upcoming events, takes them off as co-host where others "
-        "host, moves events they host alone back to draft (guests are told), and strips their "
-        "roles. lifting it restores membership and the member role only, silently; nothing "
-        "removed is put back. the first call changes nothing and returns the member, the events "
-        "affected (each with role rsvp or hosting and outcome kept, removed or drafted) and a "
-        "confirm_token: show that, get an explicit yes, then call again with the same arguments "
-        "and the token."
+        "drops their rsvps to other upcoming events, takes them off as co-host of any upcoming "
+        "event (official and club too) where others host, moves events they host alone back "
+        "to draft (guests are told), and strips their roles. lifting it restores membership "
+        "and the member role only, silently; nothing removed is put back. the first call "
+        "changes nothing and returns the member, the events affected (each with role rsvp or "
+        "hosting and outcome kept, removed or drafted) and a confirm_token: show that, get an "
+        "explicit yes, then call again with the same arguments and the token."
     ),
 )
 async def set_attendance_pause(
