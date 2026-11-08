@@ -10,13 +10,12 @@ from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate_phone
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
@@ -211,7 +210,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
         )
     matched = phone_user or email_user
 
-    if matched and matched.is_member:
+    if matched and (matched.is_member or matched.attendance_paused_at is not None):
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
     _raise_if_open_request(validated_phone)
 
@@ -340,7 +339,7 @@ def check_phone(request, payload: CheckPhoneIn):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
     if (
         User.objects.filter(phone_number=normalized, archived_at__isnull=True)
-        .filter(Q(is_member=True) | Q(join_requests__status=JoinRequestStatus.TENTATIVE))
+        .filter(can_sign_in_q())
         .exists()
     ):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))

@@ -15,6 +15,7 @@ from django.db import IntegrityError, transaction
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._users import make_attendance_paused
 
 PHONE = "+12025551401"
 
@@ -66,6 +67,13 @@ class TestDuplicateSubmission:
         response = _submit(api_client, why_join_id)
         assert response.status_code == 400
         assert_error_code(response, Code.JoinRequest.PHONE_ALREADY_TENTATIVE)
+
+    def test_attendance_paused_member_is_already_a_member(self, api_client, why_join_id):
+        make_attendance_paused(phone_number=PHONE)
+        response = _submit(api_client, why_join_id)
+        assert response.status_code == 409
+        assert_error_code(response, Code.JoinRequest.ALREADY_MEMBER)
+        assert not JoinRequest.objects.filter(phone_number=PHONE).exists()
 
     def test_rejected_request_allows_resubmission(self, api_client, why_join_id):
         JoinRequest.objects.create(
