@@ -292,7 +292,7 @@ def submit_join_request(request, payload: JoinRequestIn):
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=str(matched_user.pk)),
         )
-        return Status(201, join_request_out(join_request))
+        return Status(201, submitted_join_request_out(join_request))
 
     try:
         with transaction.atomic():
