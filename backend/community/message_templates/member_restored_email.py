@@ -6,6 +6,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
+from community.attendance.shared import require_permission
 from community.field_limits import FieldLimit
 from community.message_templates.member_promotion_email import (
     MemberPromotionEmailOut,
@@ -13,7 +14,7 @@ from community.message_templates.member_promotion_email import (
 )
 from community.models import MemberRestoredEmailTemplate
 from community.shared import ErrorOut
-from community.validation import Code, raise_validation, validate_template_body
+from community.validation import Code, validate_template_body
 
 router = Router()
 
@@ -33,8 +34,7 @@ def get_member_restored_email(request):
     auth=gated_jwt,
 )
 def update_member_restored_email(request, payload: MemberPromotionEmailPatchIn):
-    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="edit_member_restored_email")
+    require_permission(request, "edit_member_restored_email", PermissionKey.APPROVE_JOIN_REQUESTS)
 
     validate_template_body(
         payload.body,

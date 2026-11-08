@@ -1,4 +1,5 @@
 import pytest
+from audit.models import AuditLogEntry, AuditTargetType
 from community.models import MemberRestoredEmailTemplate
 from users.permissions import PermissionKey
 
@@ -32,10 +33,20 @@ class TestMemberRestoredEmailEndpoints:
     def test_get_unauthenticated_returns_401(self, api_client):
         assert api_client.get(URL).status_code == 401
 
-    def test_approver_updates_body(self, api_client, approver_headers):
-        response = _patch(api_client, "hi ${FIRST_NAME} ${WHATSAPP_LINK}", approver_headers)
+    def test_approver_updates_body(
+        self, api_client, approver_headers, django_capture_on_commit_callbacks
+    ):
+        with django_capture_on_commit_callbacks(execute=True):
+            response = _patch(api_client, "hi ${FIRST_NAME} ${WHATSAPP_LINK}", approver_headers)
         assert response.status_code == 200
         assert MemberRestoredEmailTemplate.get().body == "hi ${FIRST_NAME} ${WHATSAPP_LINK}"
+        assert AuditLogEntry.objects.filter(
+            action="member_restored_email_updated",
+            target_type=AuditTargetType.MEMBER_RESTORED_EMAIL,
+        ).exists()
+
+    def test_patch_unauthenticated_returns_401(self, api_client):
+        assert _patch(api_client, "x", {}).status_code == 401
 
     def test_without_permission_returns_403(self, api_client, auth_headers):
         response = _patch(api_client, "sneaky edit", auth_headers)
@@ -50,4 +61,7 @@ class TestMemberRestoredEmailEndpoints:
     def test_too_long_body_rejected(self, api_client, approver_headers):
         response = _patch(api_client, "x" * 5000, approver_headers)
         assert response.status_code == 422
-        assert_error_code(response, "member_restored_email.body_too_long", expected_field="body")
+        entry = assert_error_code(
+            response, "member_restored_email.body_too_long", expected_field="body"
+        )
+        assert entry["params"]["max_length"] == 4000
