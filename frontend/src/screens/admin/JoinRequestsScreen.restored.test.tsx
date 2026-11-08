@@ -24,11 +24,11 @@ it('shows restored members and their hint on the restored tab', async () => {
     data: [
       {
         id: 'u1',
-        full_name: 'Ada Lovelace',
-        phone_number: '+16505550001',
-        restored_at: '2026-03-04T12:00:00Z',
-        has_joined_whatsapp: false,
-        recent_events: [],
+        fullName: 'Ada Lovelace',
+        phoneNumber: '+16505550001',
+        restoredAt: new Date('2026-03-04T12:00:00Z'),
+        hasJoinedWhatsapp: false,
+        recentEvents: [],
       },
     ],
     isPending: false,
