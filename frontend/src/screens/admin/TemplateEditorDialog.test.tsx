@@ -25,7 +25,7 @@ function renderEditor(body: string, mutateAsync = vi.fn().mockResolvedValue({}))
       ]}
       ariaLabel="test email body"
       template={{ body }}
-      update={{ mutateAsync, isPending: false }}
+      useUpdate={() => ({ mutateAsync, isPending: false })}
       noun="email"
     />,
   );
