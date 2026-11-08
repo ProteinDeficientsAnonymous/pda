@@ -39,11 +39,13 @@ class TestPausedPublicRsvp:
         fake_email_sender.send.assert_not_called()
         assert not NonMemberRsvpToken.objects.filter(user=paused).exists()
 
-    def test_submit_rejected(self, api_client, official_event, paused, fake_email_sender):
+    def test_submit_gets_generic_rejection(
+        self, api_client, official_event, paused, fake_email_sender
+    ):
         response = post(api_client, official_event)
 
-        assert response.status_code == 403
-        assert first_code(response) == Code.Auth.ACCOUNT_PAUSED
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.filter(user=paused).exists()
         fake_email_sender.send.assert_not_called()
 
@@ -105,16 +107,12 @@ class TestPausedJoinRequest:
             "/api/community/join-request/", body, content_type="application/json"
         )
 
-    def test_phone_match_rejected(self, api_client, paused):
-        response = self._submit(api_client, email="other@example.com")
+    @pytest.mark.parametrize(
+        "overrides", [{"email": "other@example.com"}, {"phone_number": "+14155550999"}]
+    )
+    def test_match_gets_decoy_without_persisting(self, api_client, paused, overrides):
+        response = self._submit(api_client, **overrides)
 
-        assert response.status_code == 403
-        assert first_code(response) == Code.Auth.ACCOUNT_PAUSED
-        assert not JoinRequest.objects.exists()
-
-    def test_email_match_rejected(self, api_client, paused):
-        response = self._submit(api_client, phone_number="+14155550999")
-
-        assert response.status_code == 403
-        assert first_code(response) == Code.Auth.ACCOUNT_PAUSED
+        assert response.status_code == 201
+        assert response.json()["id"] == ""
         assert not JoinRequest.objects.exists()

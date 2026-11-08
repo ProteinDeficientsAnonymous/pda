@@ -90,6 +90,17 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
+def _reject_paused(request, user: User) -> NoReturn:
+    """Same generic rejection as an email collision, so the response can't reveal the pause."""
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_paused_user_blocked",
+        request,
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
+
+
 def _create_non_member(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
@@ -128,7 +139,7 @@ def _resolve_non_member(
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
 
     if phone_match and phone_match.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        _reject_paused(request, phone_match)
 
     if email_match and email_match.pk != (phone_match.pk if phone_match else None):
         _reject_email_collision(request, email)
@@ -238,7 +249,6 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     response={
         200: PublicRsvpOut,
         400: ErrorOut,
-        403: ErrorOut,
         404: ErrorOut,
         409: ErrorOut,
         422: ErrorOut,

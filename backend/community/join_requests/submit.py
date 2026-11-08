@@ -146,13 +146,6 @@ def _honeypot_decoy_response(first_name: str, full_name: str, phone_number: str)
     )
 
 
-def _reject_blocked_account(user: User) -> None:
-    if user.is_member:
-        raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
-    if user.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-
-
 def _resolve_submission_user(validated_phone: str, normalized_email: str):
     """Resolve an applicant to an existing User, or None for a brand-new one.
 
@@ -163,7 +156,6 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
     Raises:
       - ALREADY_MEMBER (409) when the match is an active member — they should
         sign in, not re-apply.
-      - ACCOUNT_PAUSED (403) when the match is guidelines-paused.
       - PHONE_ALREADY_PENDING (400) when a pending request already exists.
       - PHONE_ALREADY_TENTATIVE (400) when a tentative request already exists —
         they have an account and should sign in. A rejected request is the only
@@ -187,8 +179,8 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
         )
     matched = phone_user or email_user
 
-    if matched:
-        _reject_blocked_account(matched)
+    if matched and matched.is_member:
+        raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
     live_statuses = set(
         JoinRequest.objects.filter(
             phone_number=validated_phone,
@@ -213,14 +205,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 
 @router.post(
     "/join-request/",
-    response={
-        201: JoinRequestOut,
-        400: ErrorOut,
-        403: ErrorOut,
-        409: ErrorOut,
-        422: ErrorOut,
-        429: ErrorOut,
-    },
+    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut, 429: ErrorOut},
     auth=None,
     operation_id="submit_join_request",
 )
@@ -253,6 +238,15 @@ def submit_join_request(request, payload: JoinRequestIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
+    # Decoy, not a pause-specific error: an unauthenticated caller must not learn who is paused.
+    if matched_user and matched_user.is_paused:
+        audit_log(
+            logging.WARNING,
+            "join_request_paused_user_blocked",
+            request,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(matched_user.pk)),
+        )
+        return Status(201, _honeypot_decoy_response(first_name, full_name, validated_phone))
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
     _validate_answers(payload.answers, questions)
