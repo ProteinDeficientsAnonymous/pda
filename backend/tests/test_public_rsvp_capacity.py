@@ -3,7 +3,7 @@ import logging
 import pytest
 from community.models import EventRSVP, RSVPStatus
 from notifications.email_sender import SendResult
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event, post
 
@@ -70,7 +70,7 @@ class TestPublicRsvpCapacity:
             if c.kwargs["to"] == "b@e.com" and "off the waitlist" in c.kwargs["subject"]
         ]
         assert len(promoted_emails) == 1
-        assert NonMemberRsvpToken.objects.filter(user=waited).exists()
+        assert PublicRsvpToken.objects.filter(user=waited).exists()
 
 
 def _capture_audit(caplog):
@@ -120,7 +120,7 @@ class TestPublicRsvpRobustness:
         assert response.status_code == 200
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(event=official_event, user=user).exists()
-        assert NonMemberRsvpToken.objects.filter(user=user).exists()
+        assert PublicRsvpToken.objects.filter(user=user).exists()
         failures = [
             r for r in caplog.records if getattr(r, "action", None) == "public_rsvp_email_failed"
         ]

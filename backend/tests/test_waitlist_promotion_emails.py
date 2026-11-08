@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventRSVP, EventType, RSVPStatus
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import SIGNED_IN_NON_MEMBER_FACTORIES, make_non_member
 from tests._time import future_iso
@@ -102,4 +102,4 @@ class TestWaitlistPromotionEmailsNonMember:
 
         assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.ATTENDING
         assert _promoted_email_count(fake_email_sender, "signed-in@e.com") == 1
-        assert NonMemberRsvpToken.objects.filter(user=guest).exists() is gets_manage_link
+        assert PublicRsvpToken.objects.filter(user=guest).exists() is gets_manage_link

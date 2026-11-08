@@ -4,7 +4,7 @@ import pytest
 from community.models import EventRSVP
 from community.validation import Code
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event, post
 
@@ -80,5 +80,5 @@ class TestArchivedNonMemberGate:
         assert not EventRSVP.objects.filter(event=official_event, user=archived).exists()
         archived.refresh_from_db()
         assert archived.archived_at is not None
-        assert not NonMemberRsvpToken.objects.filter(user=archived).exists()
+        assert not PublicRsvpToken.objects.filter(user=archived).exists()
         fake_email_sender.send.assert_not_called()

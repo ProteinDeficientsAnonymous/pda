@@ -10,7 +10,7 @@ from community.models import (
 )
 from community.validation import Code
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -58,7 +58,7 @@ class TestTentativeApprove:
             **vettor_headers,
         )
         sample_join_request.refresh_from_db()
-        assert not NonMemberRsvpToken.objects.filter(user=sample_join_request.user).exists()
+        assert not PublicRsvpToken.objects.filter(user=sample_join_request.user).exists()
 
     def test_tentative_sends_no_email(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
