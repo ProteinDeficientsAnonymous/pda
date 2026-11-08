@@ -14,7 +14,7 @@ from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import PublicRsvpToken
 
-from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
+from tests._public_rsvp_helpers import first_code, make_official_event, make_public_rsvper
 from tests._time import future_iso, past_iso
 
 GET_URL = "/api/community/public/my-rsvps/"
@@ -26,7 +26,7 @@ def _post_url(event):
 
 @pytest.fixture
 def nonmember(db):
-    return make_non_member("+14155550001", "nm@example.com", name="non member")
+    return make_public_rsvper("+14155550001", "nm@example.com", name="non member")
 
 
 @pytest.fixture
@@ -285,7 +285,7 @@ class TestDeleteMyRsvps:
         official_event.max_attendees = 1
         official_event.save(update_fields=["max_attendees"])
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        waiter = make_non_member("+14155550002", "w@example.com", name="waiter")
+        waiter = make_public_rsvper("+14155550002", "w@example.com", name="waiter")
         EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
         token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
@@ -320,7 +320,7 @@ class TestDeleteMyRsvps:
         official_event.max_attendees = 1
         official_event.save(update_fields=["max_attendees"])
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        waiter = make_non_member("+14155550003", "w2@example.com", name="waiter two")
+        waiter = make_public_rsvper("+14155550003", "w2@example.com", name="waiter two")
         EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
         official_event.status = EventStatus.CANCELLED
         official_event.save(update_fields=["status"])
@@ -342,7 +342,7 @@ class TestDeleteMyRsvps:
         past_event.max_attendees = 1
         past_event.save(update_fields=["max_attendees"])
         EventRSVP.objects.create(event=past_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        waiter = make_non_member("+14155550004", "w3@example.com", name="waiter three")
+        waiter = make_public_rsvper("+14155550004", "w3@example.com", name="waiter three")
         EventRSVP.objects.create(event=past_event, user=waiter, status=RSVPStatus.WAITLISTED)
         token = PublicRsvpToken.issue_or_extend(nonmember)
 

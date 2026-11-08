@@ -3,7 +3,7 @@ from community.models import EventRSVP, RSVPStatus
 from community.validation import Code
 from users.models import PublicRsvpToken
 
-from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event, post
+from tests._public_rsvp_helpers import first_code, make_official_event, make_public_rsvper, post
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ class TestSubmitTokenExposure:
     def test_phone_match_withholds_the_token_and_emails_it_instead(
         self, api_client, official_event, fake_email_sender
     ):
-        existing = make_non_member("+14155550123", "old@example.com")
+        existing = make_public_rsvper("+14155550123", "old@example.com")
 
         body = post(api_client, official_event, email="attacker@example.com").json()
 
@@ -50,7 +50,7 @@ class TestSubmitTokenExposure:
     def test_email_only_match_is_rejected_not_adopted(
         self, api_client, official_event, fake_email_sender
     ):
-        victim = make_non_member("+14155550999", "victim@example.com", name="Victim Person")
+        victim = make_public_rsvper("+14155550999", "victim@example.com", name="Victim Person")
 
         response = post(
             api_client,

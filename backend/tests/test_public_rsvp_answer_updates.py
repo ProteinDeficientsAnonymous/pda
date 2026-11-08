@@ -3,12 +3,12 @@ from community.models import EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSV
 from community.validation import Code
 from users.models import PublicRsvpToken
 
-from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
+from tests._public_rsvp_helpers import first_code, make_official_event, make_public_rsvper
 
 
 @pytest.fixture
 def nonmember(db):
-    return make_non_member("+14155550001", "nm@example.com", name="non member")
+    return make_public_rsvper("+14155550001", "nm@example.com", name="non member")
 
 
 @pytest.fixture

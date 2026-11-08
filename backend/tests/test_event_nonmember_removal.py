@@ -7,8 +7,8 @@ from users.models import User
 from tests._asserts import assert_error_code
 from tests._public_rsvp_helpers import (
     LIMITED_USER_FACTORIES,
-    make_non_member,
     make_official_event,
+    make_public_rsvper,
 )
 
 
@@ -31,7 +31,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender, status
     ):
         event = make_official_event()
-        non_member = make_non_member("+14155559001", "removed@e.com")
+        non_member = make_public_rsvper("+14155559001", "removed@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=status)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
@@ -44,8 +44,8 @@ class TestNonMemberRemovalOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event()
-        make_non_member("+14155559002", "one@e.com")
-        make_non_member("+14155559003", "two@e.com")
+        make_public_rsvper("+14155559002", "one@e.com")
+        make_public_rsvper("+14155559003", "two@e.com")
         for phone, email in [("+14155559002", "one@e.com"), ("+14155559003", "two@e.com")]:
             EventRSVP.objects.create(
                 event=event, user=User.objects.get(email=email), status=RSVPStatus.ATTENDING
@@ -64,7 +64,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
     ):
         event = make_official_event()
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        non_member = make_non_member("+14155559004", "nm@e.com")
+        non_member = make_public_rsvper("+14155559004", "nm@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
@@ -77,7 +77,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event()
-        non_member = make_non_member("+14155559005", "emailme@e.com")
+        non_member = make_public_rsvper("+14155559005", "emailme@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
@@ -95,7 +95,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
 
         fake_email_sender.send.return_value = SendResult(success=False, error="boom")
         event = make_official_event()
-        non_member = make_non_member("+14155559006", "failmail@e.com")
+        non_member = make_public_rsvper("+14155559006", "failmail@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
@@ -107,7 +107,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event()
-        non_member = make_non_member("+14155559007", "stays@e.com")
+        non_member = make_public_rsvper("+14155559007", "stays@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
@@ -124,7 +124,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event(event_type=EventType.COMMUNITY)
-        non_member = make_non_member("+14155559008", "already@e.com")
+        non_member = make_public_rsvper("+14155559008", "already@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
@@ -142,7 +142,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
     ):
         """Cancelling also flips eligibility false but must not double-notify."""
         event = make_official_event()
-        non_member = make_non_member("+14155559009", "cancelled@e.com")
+        non_member = make_public_rsvper("+14155559009", "cancelled@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
@@ -168,7 +168,7 @@ class TestLimitedUserOnIneligibleEvent:
     ):
         event = make_official_event()
         signed_in = make_limited("+14155559020", "signed_in@e.com")
-        non_member = make_non_member("+14155559021", "public@e.com")
+        non_member = make_public_rsvper("+14155559021", "public@e.com")
         for user in (signed_in, non_member):
             EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
 
