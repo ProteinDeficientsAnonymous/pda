@@ -4,9 +4,12 @@ import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.core import mail
 from notifications.models import Notification, NotificationType
+from users.models import User
 from users.permissions import PermissionKey
 
 from tests._users import make_user
+
+PUBLIC_RESPONSE_KEYS = {"id", "first_name", "full_name", "status", "submitted_at"}
 
 
 @pytest.mark.django_db
@@ -28,8 +31,6 @@ class TestJoinRequestSubmission:
         assert response.status_code == 201
         data = response.json()
         assert data["full_name"] == "Leafy G"
-        assert data["phone_number"] == "+12025551234"
-        assert len(data["answers"]) >= 1
         # Consent timestamps recorded — sms proof for Twilio toll-free
         # verification (automated send deferred, see #501), guidelines proof of
         # agreement.
@@ -121,7 +122,39 @@ class TestJoinRequestSubmission:
             content_type="application/json",
         )
         assert response.status_code == 201
+        assert set(response.json()) == PUBLIC_RESPONSE_KEYS
+        assert response.json()["id"]
         assert not JoinRequest.objects.filter(phone_number="+12025557777").exists()
+
+    def test_submit_response_omits_matched_user_history(self, api_client, why_join_id):
+        prior = User.objects.create_user(
+            phone_number="+12025556666", password="pass", is_member=False
+        )
+        JoinRequest.objects.create(
+            first_name="Old",
+            phone_number="+12025556666",
+            status=JoinRequestStatus.REJECTED,
+        )
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "first_name": "Known",
+                "last_name": "Number",
+                "phone_number": "+12025556666",
+                "email": "known@example.com",
+                "answers": {why_join_id: "trying again"},
+                "sms_consent": True,
+                "guidelines_consent": True,
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert set(body) == PUBLIC_RESPONSE_KEYS
+        assert str(prior.id) not in response.content.decode()
+        jr = JoinRequest.objects.get(phone_number="+12025556666", status=JoinRequestStatus.PENDING)
+        assert jr.user_id == prior.id
+        assert body["id"] == str(jr.id)
 
     def test_submit_honeypot_blank_does_not_drop(self, api_client, why_join_id):
         response = api_client.post(
