@@ -1,3 +1,10 @@
+## [0.222.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.1...v0.222.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - release all host spots on attendance pause ([#2206](https://github.com/ProteinDeficientsAnonymous/pda/issues/2206)) ([79375c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/79375c6aaca905a45ae9af08eb7acc745363e8d5))
+
 ## [0.222.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.0...v0.222.1) (2026-11-07)
 
 
