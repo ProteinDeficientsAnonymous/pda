@@ -26,6 +26,7 @@ from community.events.schemas import (
 from community.join_requests.approval import send_join_approval
 from community.join_requests.check_in_promotion import (
     CheckInOutcome,
+    notify_member_restored,
     promote_or_restore_on_check_in,
     send_member_restored,
 )
@@ -172,6 +173,7 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         )
     elif outcome == CheckInOutcome.RESTORED:
         send_member_restored(rsvp.user)
+        notify_member_restored(rsvp.user)
 
     audit_log(
         logging.INFO,
