@@ -6,7 +6,7 @@ from users.models import PublicRsvpToken
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
 from tests._public_rsvp_helpers import payload as public_payload
 from tests._public_rsvp_helpers import url as public_url
 
@@ -171,7 +171,7 @@ class TestPublicSubmitPaymentGate:
 @pytest.mark.django_db
 class TestPublicManagePaymentGate:
     def _setup(self, event, phone="+14155550199"):
-        user = make_non_member(phone, "token@example.com", name="Token Holder")
+        user = make_public_rsvper(phone, "token@example.com", name="Token Holder")
         EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.MAYBE)
         return user, PublicRsvpToken.issue_or_extend(user).token
 
@@ -199,7 +199,7 @@ class TestPublicManagePaymentGate:
         assert rsvp.paid_confirmed_at is not None
 
     def test_switching_to_maybe_needs_no_confirmation(self, api_client, paid_public_event):
-        user = make_non_member("+14155550197", "t2@example.com", name="Token Two")
+        user = make_public_rsvper("+14155550197", "t2@example.com", name="Token Two")
         EventRSVP.objects.create(event=paid_public_event, user=user, status=RSVPStatus.ATTENDING)
         token = PublicRsvpToken.issue_or_extend(user).token
         response = api_client.post(

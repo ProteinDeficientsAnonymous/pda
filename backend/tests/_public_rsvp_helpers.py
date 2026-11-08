@@ -62,7 +62,7 @@ def make_official_event(**overrides):
     return Event.objects.create(**base)
 
 
-def make_non_member(phone, email, name="Existing Nonmember"):
+def make_public_rsvper(phone, email, name="Existing Rsvper"):
     first_name, _, last_name = name.partition(" ")
     user = User.objects.create_user(
         phone_number=phone,
@@ -77,7 +77,7 @@ def make_non_member(phone, email, name="Existing Nonmember"):
 
 
 def make_tentative_member(phone, email, name="Tentative Sprout"):
-    user = make_non_member(phone, email, name=name)
+    user = make_public_rsvper(phone, email, name=name)
     JoinRequest.objects.create(
         first_name=user.first_name,
         phone_number=phone,

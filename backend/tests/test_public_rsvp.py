@@ -28,8 +28,8 @@ from users.models import PublicRsvpToken, User
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
     first_code,
-    make_non_member,
     make_official_event,
+    make_public_rsvper,
     payload,
     post,
 )
@@ -104,7 +104,7 @@ class TestPublicRsvpHappyPath:
 @pytest.mark.django_db
 class TestPublicRsvpDedup:
     def test_returning_by_phone_reuses_row(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550123", "old@example.com")
+        existing = make_public_rsvper("+14155550123", "old@example.com")
 
         response = post(api_client, official_event, email="new@example.com")
 
@@ -117,7 +117,7 @@ class TestPublicRsvpDedup:
         assert PublicRsvpToken.objects.filter(user=existing).count() == 1
 
     def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550999", "sam@example.com")
+        existing = make_public_rsvper("+14155550999", "sam@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550123")
 
@@ -127,7 +127,7 @@ class TestPublicRsvpDedup:
         assert not EventRSVP.objects.filter(user=existing).exists()
 
     def test_both_match_same_row_no_change(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550123", "sam@example.com")
+        existing = make_public_rsvper("+14155550123", "sam@example.com")
 
         response = post(api_client, official_event)
 
@@ -140,8 +140,8 @@ class TestPublicRsvpDedup:
     def test_phone_and_email_match_different_rows_is_email_collision(
         self, api_client, official_event, fake_email_sender
     ):
-        phone_row = make_non_member("+14155550123", "phone@example.com", name="Phone Row")
-        email_row = make_non_member("+14155550888", "sam@example.com", name="Email Row")
+        phone_row = make_public_rsvper("+14155550123", "phone@example.com", name="Phone Row")
+        email_row = make_public_rsvper("+14155550888", "sam@example.com", name="Email Row")
 
         response = post(api_client, official_event)
 

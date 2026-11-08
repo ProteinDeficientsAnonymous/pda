@@ -22,7 +22,7 @@ from tests._mcp_members_helpers import (
     member_totals,
 )
 from tests._mcp_tool_helpers import signed_in
-from tests._public_rsvp_helpers import make_non_member
+from tests._public_rsvp_helpers import make_public_rsvper
 
 pytestmark = pytest.mark.django_db
 
@@ -66,7 +66,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
     paused = make_onboarding(is_paused=True)
     archived = make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
-    make_non_member("+12025550198", "n@e.com")
+    make_public_rsvper("+12025550198", "n@e.com")
     make_member(is_member=False)
     assert {row["id"]: row["status"] for row in find_members(admin)["members"]} == {
         **dict.fromkeys(ids_of(admin, set_up), "active"),

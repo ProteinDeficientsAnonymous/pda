@@ -2,7 +2,7 @@ import pytest
 from community.models import Event, EventRSVP, EventType, RSVPStatus
 from users.models import PublicRsvpToken, User
 
-from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_non_member
+from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_public_rsvper
 from tests._time import future_iso
 
 
@@ -41,7 +41,7 @@ class TestWaitlistPromotionEmailsNonMember:
     ):
         event = _one_spot_event(test_user)
         _rsvp(api_client, event, auth_headers)  # member takes the only spot
-        waited = make_non_member("+14155559911", "waited@e.com", name="Waited")
+        waited = make_public_rsvper("+14155559911", "waited@e.com", name="Waited")
         EventRSVP.objects.create(event=event, user=waited, status=RSVPStatus.WAITLISTED)
 
         api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
@@ -54,7 +54,7 @@ class TestWaitlistPromotionEmailsNonMember:
     ):
         event = _one_spot_event(test_user)
         _rsvp(api_client, event, auth_headers)
-        waited = make_non_member("+14155559912", "waited2@e.com", name="Waited Two")
+        waited = make_public_rsvper("+14155559912", "waited2@e.com", name="Waited Two")
         EventRSVP.objects.create(event=event, user=waited, status=RSVPStatus.WAITLISTED)
 
         _rsvp(api_client, event, auth_headers, status=RSVPStatus.CANT_GO)  # frees the spot

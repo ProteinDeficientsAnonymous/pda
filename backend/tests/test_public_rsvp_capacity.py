@@ -5,7 +5,7 @@ from community.models import EventRSVP, RSVPStatus
 from notifications.email_sender import SendResult
 from users.models import PublicRsvpToken, User
 
-from tests._public_rsvp_helpers import make_non_member, make_official_event, post
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
 
 def _capped_event(max_attendees=1):
@@ -44,9 +44,9 @@ class TestPublicRsvpCapacity:
 
     def test_spot_freed_promotes_and_emails_non_member(self, api_client, fake_email_sender):
         event = _capped_event(max_attendees=1)
-        attendee = make_non_member("+14155550101", "a@e.com")
+        attendee = make_public_rsvper("+14155550101", "a@e.com")
         EventRSVP.objects.create(event=event, user=attendee, status=RSVPStatus.ATTENDING)
-        waited = make_non_member("+14155550102", "b@e.com", name="Waited")
+        waited = make_public_rsvper("+14155550102", "b@e.com", name="Waited")
         EventRSVP.objects.create(event=event, user=waited, status=RSVPStatus.WAITLISTED)
 
         # Attendee changes to can't-go via the public endpoint → frees the spot.
