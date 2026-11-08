@@ -67,33 +67,32 @@ def attendance_paused_member(db):
     )
 
 
+SIGNED_IN_NON_MEMBER_FIXTURES = pytest.mark.parametrize(
+    "fixture", ["tentative_user", "attendance_paused_member"]
+)
+
+
 @pytest.mark.django_db
 class TestCheckPhoneTentative:
-    def test_tentative_applicant_can_reach_the_login_step(self, api_client, tentative_user):
+    @SIGNED_IN_NON_MEMBER_FIXTURES
+    def test_signed_in_non_member_can_reach_the_login_step(self, api_client, request, fixture):
+        user = request.getfixturevalue(fixture)
         response = api_client.post(
             "/api/community/check-phone/",
-            {"phone_number": tentative_user.phone_number},
+            {"phone_number": user.phone_number},
             content_type="application/json",
         )
         assert response.status_code == 200
         assert response.json()["status"] == "member"
 
-    def test_attendance_paused_member_can_reach_the_login_step(
-        self, api_client, attendance_paused_member
-    ):
+    @SIGNED_IN_NON_MEMBER_FIXTURES
+    def test_archived_signed_in_non_member_stays_unknown(self, api_client, request, fixture):
+        user = request.getfixturevalue(fixture)
+        user.archived_at = timezone.now()
+        user.save(update_fields=["archived_at"])
         response = api_client.post(
             "/api/community/check-phone/",
-            {"phone_number": attendance_paused_member.phone_number},
-            content_type="application/json",
-        )
-        assert response.json()["status"] == "member"
-
-    def test_archived_tentative_applicant_stays_unknown(self, api_client, tentative_user):
-        tentative_user.archived_at = timezone.now()
-        tentative_user.save(update_fields=["archived_at"])
-        response = api_client.post(
-            "/api/community/check-phone/",
-            {"phone_number": tentative_user.phone_number},
+            {"phone_number": user.phone_number},
             content_type="application/json",
         )
         assert response.json()["status"] == "unknown"
