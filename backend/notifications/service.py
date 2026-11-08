@@ -249,7 +249,7 @@ def create_event_unpublished_notifications(event: Event, recipient_ids: list[str
         event,
         recipient_ids,
         NotificationType.EVENT_UNPUBLISHED,
-        f"{event.title} was unpublished and your rsvp was removed",
+        f"{event.title} was unpublished",
     )
 
 

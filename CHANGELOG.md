@@ -1,3 +1,31 @@
+# [0.224.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.223.0...v0.224.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - add attendance pause preview api client ([#2189](https://github.com/ProteinDeficientsAnonymous/pda/issues/2189)) ([649e0c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/649e0c68567d62b07e10a4fa3f9fd94c15f3b111))
+
+# [0.223.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.6...v0.223.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - split pause toggle and add pause kind badges ([#2184](https://github.com/ProteinDeficientsAnonymous/pda/issues/2184)) ([a27a091](https://github.com/ProteinDeficientsAnonymous/pda/commit/a27a0915e5ce5a3f608162530a23f167ed55b768))
+
+## [0.222.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.5...v0.222.6) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep paid and checked-in rsvps when pause drafts an event ([#2209](https://github.com/ProteinDeficientsAnonymous/pda/issues/2209)) ([b2bc871](https://github.com/ProteinDeficientsAnonymous/pda/commit/b2bc8716bbadf7f3515c854cf866521dded9378f))
+
+## [0.222.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.4...v0.222.5) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep attendance-paused members on the members list ([#2198](https://github.com/ProteinDeficientsAnonymous/pda/issues/2198)) ([0d8f2d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/0d8f2d3de0c50a682061a971d5fc621fa6d0ede0))
+
 ## [0.222.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.3...v0.222.4) (2026-11-08)
 
 
