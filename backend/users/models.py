@@ -175,6 +175,7 @@ class User(AbstractUser):
     is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
+    unpaused_at = models.DateTimeField(null=True, blank=True)
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)

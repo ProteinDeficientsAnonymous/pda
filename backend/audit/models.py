@@ -20,6 +20,7 @@ class AuditTargetType(models.TextChoices):
     MCP_CONNECTION = "mcp_connection", "MCP connection"
     MEMBER_PROMOTION_EMAIL = "member_promotion_email", "Member promotion email"
     MEMBER_PROMOTION_MESSAGE = "member_promotion_message", "Member promotion message"
+    MEMBER_RESTORED_EMAIL = "member_restored_email", "Member restored email"
     REJECTION_EMAIL = "rejection_email", "Rejection email"
     ROLE = "role", "Role"
     SPEECH_TEMPLATE = "speech_template", "Speech template"

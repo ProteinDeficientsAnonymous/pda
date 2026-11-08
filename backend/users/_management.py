@@ -3,6 +3,7 @@
 import logging
 import re
 
+from community.attendance.analytics import AttendedEventOut
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
 from community.shared import validate_display_name
@@ -14,6 +15,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch
+from users._unpause import has_pause, mark_unpaused
 from users.helpers import (
     check_and_set_email,
     create_magic_token,
@@ -33,7 +35,6 @@ from users.schemas import (
     BulkUserCreateOut,
     BulkUserResult,
     ErrorOut,
-    MemberAttendedEventOut,
     UserCreateIn,
     UserCreateOut,
     UserOut,
@@ -271,7 +272,7 @@ def list_users(request, include_non_members: bool = False):
 
 @router.get(
     "/users/{user_id}/attended-events/",
-    response={200: list[MemberAttendedEventOut], 403: ErrorOut, 404: ErrorOut},
+    response={200: list[AttendedEventOut], 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def list_member_attended_events(request, user_id: str):
@@ -285,18 +286,7 @@ def list_member_attended_events(request, user_id: str):
         .select_related("event")
         .order_by("-event__start_datetime")
     )
-    return Status(
-        200,
-        [
-            MemberAttendedEventOut(
-                event_id=str(r.event.id),
-                title=r.event.title,
-                start_datetime=r.event.start_datetime,
-                event_type=r.event.event_type,
-            )
-            for r in rsvps
-        ],
-    )
+    return Status(200, [AttendedEventOut.from_rsvp(r) for r in rsvps])
 
 
 @router.patch(
@@ -313,12 +303,15 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     old_is_paused = user.is_paused
+    was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
+    if was_paused and not has_pause(user):
+        mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
 
@@ -385,6 +378,8 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
+    if payload.is_paused:
+        user.unpaused_at = None
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
 

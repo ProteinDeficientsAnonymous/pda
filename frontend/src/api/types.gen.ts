@@ -289,6 +289,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/restored/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Restored Members */
+        get: operations["users__restored_list_restored_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/search/": {
         parameters: {
             query?: never;
@@ -1830,6 +1847,24 @@ export interface paths {
         patch: operations["community_message_templates_member_promotion_message_update_member_promotion_message"];
         trace?: never;
     };
+    "/api/community/member-restored-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Restored Email */
+        get: operations["community_message_templates_member_restored_email_get_member_restored_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Member Restored Email */
+        patch: operations["community_message_templates_member_restored_email_update_member_restored_email"];
+        trace?: never;
+    };
     "/api/community/official-event-defaults/": {
         parameters: {
             query?: never;
@@ -2691,6 +2726,17 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "unknown" | "attended" | "didnt_go";
+        /** AttendedEventOut */
+        AttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -4521,17 +4567,6 @@ export interface components {
             /** Question Id */
             question_id: string;
         };
-        /** JoinRequestAttendedEventOut */
-        JoinRequestAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
-        };
         /** JoinRequestIn */
         JoinRequestIn: {
             /**
@@ -4598,7 +4633,7 @@ export interface components {
              * Attended Events
              * @default []
              */
-            attended_events: components["schemas"]["JoinRequestAttendedEventOut"][];
+            attended_events: components["schemas"]["AttendedEventOut"][];
             /**
              * Attended Official Count
              * @default 0
@@ -4829,17 +4864,6 @@ export interface components {
             /** User Id */
             user_id: string;
         };
-        /** MemberAttendedEventOut */
-        MemberAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
-        };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
             /**
@@ -4956,6 +4980,21 @@ export interface components {
         };
         /** MemberPromotionMessagePatchIn */
         MemberPromotionMessagePatchIn: {
+            /** Body */
+            body?: string | null;
+        };
+        /** MemberRestoredEmailOut */
+        MemberRestoredEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberRestoredEmailPatchIn */
+        MemberRestoredEmailPatchIn: {
             /** Body */
             body?: string | null;
         };
@@ -5373,6 +5412,31 @@ export interface components {
             /** Magic Link Token */
             magic_link_token: string;
         };
+        /** RestoredMemberOut */
+        RestoredMemberOut: {
+            /** Came In Person At */
+            came_in_person_at: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Has Joined Whatsapp */
+            has_joined_whatsapp: boolean;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["ReturnKind"];
+            /** Phone Number */
+            phone_number: string;
+            /** Recent Events */
+            recent_events: components["schemas"]["AttendedEventOut"][];
+            /** Restored At */
+            restored_at: string | null;
+            /** Unpaused At */
+            unpaused_at: string | null;
+        };
+        /**
+         * ReturnKind
+         * @enum {string}
+         */
+        ReturnKind: "restored" | "unpaused";
         /** RoleIn */
         RoleIn: {
             /** Name */
@@ -6033,6 +6097,8 @@ export interface components {
              * @default true
              */
             show_veganniversary: boolean;
+            /** Unpaused At */
+            unpaused_at?: string | null;
             veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
             /**
              * Veganniversary Shoutout Opt In
@@ -6939,6 +7005,35 @@ export interface operations {
             };
         };
     };
+    users__restored_list_restored_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoredMemberOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     users__management_search_users: {
         parameters: {
             query?: {
@@ -7127,7 +7222,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberAttendedEventOut"][];
+                    "application/json": components["schemas"]["AttendedEventOut"][];
                 };
             };
             /** @description Forbidden */
@@ -11618,6 +11713,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberPromotionMessageOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_message_templates_member_restored_email_get_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
+                };
+            };
+        };
+    };
+    community_message_templates_member_restored_email_update_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRestoredEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
                 };
             };
             /** @description Forbidden */

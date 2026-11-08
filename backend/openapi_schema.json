@@ -374,6 +374,41 @@
         "title": "AttendanceStatus",
         "type": "string"
       },
+      "AttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "AttendedEventOut",
+        "type": "object"
+      },
       "AttendedPersonOut": {
         "properties": {
           "checked_in_at": {
@@ -4477,41 +4512,6 @@
         "title": "JoinRequestAnswerOut",
         "type": "object"
       },
-      "JoinRequestAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "JoinRequestAttendedEventOut",
-        "type": "object"
-      },
       "JoinRequestIn": {
         "properties": {
           "answers": {
@@ -4631,7 +4631,7 @@
           "attended_events": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/JoinRequestAttendedEventOut"
+              "$ref": "#/components/schemas/AttendedEventOut"
             },
             "title": "Attended Events",
             "type": "array"
@@ -5273,41 +5273,6 @@
         "title": "MemberAttendanceRowOut",
         "type": "object"
       },
-      "MemberAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "MemberAttendedEventOut",
-        "type": "object"
-      },
       "MemberDirectoryOut": {
         "properties": {
           "email": {
@@ -5504,6 +5469,42 @@
           }
         },
         "title": "MemberPromotionMessagePatchIn",
+        "type": "object"
+      },
+      "MemberRestoredEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberRestoredEmailOut",
+        "type": "object"
+      },
+      "MemberRestoredEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberRestoredEmailPatchIn",
         "type": "object"
       },
       "MyEventFeedbackOut": {
@@ -6551,6 +6552,93 @@
         ],
         "title": "ResetPasswordOut",
         "type": "object"
+      },
+      "RestoredMemberOut": {
+        "properties": {
+          "came_in_person_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Came In Person At"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "has_joined_whatsapp": {
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReturnKind"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/AttendedEventOut"
+            },
+            "title": "Recent Events",
+            "type": "array"
+          },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "kind",
+          "restored_at",
+          "unpaused_at",
+          "came_in_person_at",
+          "has_joined_whatsapp",
+          "recent_events"
+        ],
+        "title": "RestoredMemberOut",
+        "type": "object"
+      },
+      "ReturnKind": {
+        "enum": [
+          "restored",
+          "unpaused"
+        ],
+        "title": "ReturnKind",
+        "type": "string"
       },
       "RoleIn": {
         "properties": {
@@ -8074,6 +8162,18 @@
             "title": "Show Veganniversary",
             "type": "boolean"
           },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
+          },
           "veganniversary": {
             "anyOf": [
               {
@@ -9483,6 +9583,47 @@
         ]
       }
     },
+    "/api/auth/users/restored/": {
+      "get": {
+        "operationId": "users__restored_list_restored_members",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RestoredMemberOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Restored Members",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/search/": {
       "get": {
         "operationId": "users__management_search_users",
@@ -9748,7 +9889,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                    "$ref": "#/components/schemas/AttendedEventOut"
                   },
                   "title": "Response",
                   "type": "array"
@@ -16269,6 +16410,88 @@
           }
         ],
         "summary": "Update Member Promotion Message",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-restored-email/": {
+      "get": {
+        "operationId": "community_message_templates_member_restored_email_get_member_restored_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Restored Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_message_templates_member_restored_email_update_member_restored_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRestoredEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Restored Email",
         "tags": [
           "community"
         ]
