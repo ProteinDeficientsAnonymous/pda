@@ -3,6 +3,7 @@
 import logging
 import re
 
+from community.attendance.analytics import AttendedEventOut
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
 from community.shared import validate_display_name
@@ -33,7 +34,6 @@ from users.schemas import (
     BulkUserCreateOut,
     BulkUserResult,
     ErrorOut,
-    MemberAttendedEventOut,
     UserCreateIn,
     UserCreateOut,
     UserOut,
@@ -269,7 +269,7 @@ def list_users(request, include_non_members: bool = False):
 
 @router.get(
     "/users/{user_id}/attended-events/",
-    response={200: list[MemberAttendedEventOut], 403: ErrorOut, 404: ErrorOut},
+    response={200: list[AttendedEventOut], 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def list_member_attended_events(request, user_id: str):
@@ -283,18 +283,7 @@ def list_member_attended_events(request, user_id: str):
         .select_related("event")
         .order_by("-event__start_datetime")
     )
-    return Status(
-        200,
-        [
-            MemberAttendedEventOut(
-                event_id=str(r.event.id),
-                title=r.event.title,
-                start_datetime=r.event.start_datetime,
-                event_type=r.event.event_type,
-            )
-            for r in rsvps
-        ],
-    )
+    return Status(200, [AttendedEventOut.from_rsvp(r) for r in rsvps])
 
 
 @router.patch(
