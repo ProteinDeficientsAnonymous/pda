@@ -1,8 +1,10 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-your pda account is active again. here's the link to rejoin the whatsapp community:
+your pda account is unpaused. welcome back!
 
-{{ whatsapp_url }}
+once you come to an official or club event in person, you can rejoin the whatsapp. see upcoming events here:
+
+{{ calendar_url }}
 
 — pda
 
