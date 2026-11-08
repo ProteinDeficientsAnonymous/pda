@@ -2,13 +2,17 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type RestoredMember, useRestoredMembers } from '@/api/restoredMembers';
+import type * as RestoredApi from '@/api/restoredMembers';
+import { type RestoredMember, ReturnKind, useRestoredMembers } from '@/api/restoredMembers';
 import { useUpdateUser } from '@/api/users';
 import { renderWithProviders } from '@/test/render';
 
 import { RestoredMembersList } from './RestoredMembersList';
 
-vi.mock('@/api/restoredMembers', () => ({ useRestoredMembers: vi.fn() }));
+vi.mock('@/api/restoredMembers', async (importOriginal) => ({
+  ...(await importOriginal<typeof RestoredApi>()),
+  useRestoredMembers: vi.fn(),
+}));
 vi.mock('@/api/users', () => ({ useUpdateUser: vi.fn() }));
 
 const day = (d: string) => new Date(`2026-${d}T12:00:00Z`);
@@ -16,7 +20,10 @@ const member: RestoredMember = {
   id: 'u1',
   fullName: 'Ada Lovelace',
   phoneNumber: '+16505550001',
+  kind: ReturnKind.RESTORED,
   restoredAt: day('03-04'),
+  unpausedAt: null,
+  cameInPersonAt: null,
   hasJoinedWhatsapp: false,
   recentEvents: [
     { eventId: 'e2', title: 'Potluck', startDatetime: day('03-01'), eventType: 'official' },
@@ -25,13 +32,17 @@ const member: RestoredMember = {
 };
 const mutateAsync = vi.fn();
 
-beforeEach(() => {
-  vi.clearAllMocks();
+function mockMembers(data: RestoredMember[]) {
   vi.mocked(useRestoredMembers).mockReturnValue({
-    data: [member],
+    data,
     isPending: false,
     isError: false,
   } as unknown as ReturnType<typeof useRestoredMembers>);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockMembers([member]);
   vi.mocked(useUpdateUser).mockReturnValue({
     mutateAsync,
     isPending: false,
@@ -56,6 +67,33 @@ describe('RestoredMembersList', () => {
 
     expect(useUpdateUser).toHaveBeenCalledWith('u1');
     expect(mutateAsync).toHaveBeenCalledWith({ hasJoinedWhatsapp: true });
+  });
+
+  it('shows an unpaused member as waiting until they come in person', () => {
+    mockMembers([
+      { ...member, kind: ReturnKind.UNPAUSED, restoredAt: null, unpausedAt: day('03-05') },
+    ]);
+    renderWithProviders(<RestoredMembersList query="" />);
+
+    expect(
+      screen.getByText(/unpaused mar 5, 2026 · waiting to come in person/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /joined whatsapp/i })).toBeInTheDocument();
+  });
+
+  it('shows when an unpaused member came in person', () => {
+    mockMembers([
+      {
+        ...member,
+        kind: ReturnKind.UNPAUSED,
+        unpausedAt: day('03-05'),
+        cameInPersonAt: day('03-08'),
+      },
+    ]);
+    renderWithProviders(<RestoredMembersList query="" />);
+
+    expect(screen.getByText(/came in person mar 8, 2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/waiting to come in person/)).not.toBeInTheDocument();
   });
 
   it('filters by search query', () => {

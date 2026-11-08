@@ -6,11 +6,22 @@ import type { components } from './types.gen';
 
 type WireRestoredMember = components['schemas']['RestoredMemberOut'];
 
+export const ReturnKind = {
+  RESTORED: 'restored',
+  UNPAUSED: 'unpaused',
+} as const satisfies Record<string, components['schemas']['ReturnKind']>;
+export type ReturnKind = (typeof ReturnKind)[keyof typeof ReturnKind];
+
+const toDate = (iso: string | null) => (iso ? new Date(iso) : null);
+
 export interface RestoredMember {
   id: string;
   fullName: string;
   phoneNumber: string;
-  restoredAt: Date;
+  kind: ReturnKind;
+  restoredAt: Date | null;
+  unpausedAt: Date | null;
+  cameInPersonAt: Date | null;
   hasJoinedWhatsapp: boolean;
   recentEvents: AttendedEvent[];
 }
@@ -25,7 +36,10 @@ export function useRestoredMembers() {
         id: w.id,
         fullName: w.full_name,
         phoneNumber: w.phone_number,
-        restoredAt: new Date(w.restored_at),
+        kind: w.kind,
+        restoredAt: toDate(w.restored_at),
+        unpausedAt: toDate(w.unpaused_at),
+        cameInPersonAt: toDate(w.came_in_person_at),
         hasJoinedWhatsapp: w.has_joined_whatsapp,
         recentEvents: w.recent_events.map(mapAttendedEvent),
       }));

@@ -5381,22 +5381,29 @@ export interface components {
         };
         /** RestoredMemberOut */
         RestoredMemberOut: {
+            /** Came In Person At */
+            came_in_person_at: string | null;
             /** Full Name */
             full_name: string;
             /** Has Joined Whatsapp */
             has_joined_whatsapp: boolean;
             /** Id */
             id: string;
+            kind: components["schemas"]["ReturnKind"];
             /** Phone Number */
             phone_number: string;
             /** Recent Events */
             recent_events: components["schemas"]["AttendedEventOut"][];
-            /**
-             * Restored At
-             * Format: date-time
-             */
-            restored_at: string;
+            /** Restored At */
+            restored_at: string | null;
+            /** Unpaused At */
+            unpaused_at: string | null;
         };
+        /**
+         * ReturnKind
+         * @enum {string}
+         */
+        ReturnKind: "restored" | "unpaused";
         /** RoleIn */
         RoleIn: {
             /** Name */

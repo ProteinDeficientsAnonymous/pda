@@ -287,7 +287,9 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
     return (
       <p className="text-muted mb-3 text-xs">
         sorted newest first — restored members stay here until it's been 7 days since they were
-        restored and they're marked as joined the whatsapp
+        restored and they're marked as joined the whatsapp. unpaused members need to come to an
+        official or club event in person first, then stay 7 days after that and until they're marked
+        as joined the whatsapp
       </p>
     );
   }
