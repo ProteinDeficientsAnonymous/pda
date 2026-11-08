@@ -30,8 +30,8 @@ def can_sign_in_q() -> Q:
 
 
 def limited_q() -> Q:
-    """Signed-in non-members: tentatively approved or attendance-paused; ignores ``is_paused``."""
-    return Q(is_member=False) & can_sign_in_q()
+    """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
+    return Q(is_member=False, is_paused=False) & can_sign_in_q()
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -114,9 +114,7 @@ class UserManager(BaseUserManager):
 
     def active_limited_users(self):
         """Limited users, filtered like ``active_members``."""
-        return self.limited_users().filter(
-            is_active=True, is_paused=False, archived_at__isnull=True
-        )
+        return self.limited_users().filter(is_active=True, archived_at__isnull=True)
 
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
