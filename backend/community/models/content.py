@@ -208,14 +208,11 @@ class MemberPromotionEmailTemplate(models.Model):
 
 
 class MemberRestoredEmailTemplate(models.Model):
-    """Singleton (pk=1): email sent when an attendance-paused member is restored by checking in.
-
-    ${FIRST_NAME} and ${WHATSAPP_LINK} are substituted server-side.
-    """
+    """Singleton (pk=1) restore email; ${FIRST_NAME} and ${WHATSAPP_LINK} are filled server-side."""
 
     body = models.TextField(
         default=(
-            "thanks for coming out — your full membership is back.\n\n"
+            "thanks for coming out — it's good to have you back.\n\n"
             "rejoin the whatsapp here: ${WHATSAPP_LINK}"
         ),
         max_length=4000,
