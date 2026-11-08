@@ -29,8 +29,11 @@ vi.mock('@/api/users', () => ({
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateWelcomeTemplate: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
   useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
@@ -184,7 +187,7 @@ describe('JoinRequestsScreen sort', () => {
           {
             eventId: 'evt-1',
             title: 'Community Hang',
-            startDatetime: '2026-02-01T18:00:00Z',
+            startDatetime: new Date('2026-02-01T18:00:00Z'),
             eventType: 'community',
           },
         ],
@@ -391,6 +394,30 @@ describe('JoinRequestsScreen tentative section', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
 
     expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+  });
+
+  it('shows both the tentative approval and the check-in event that auto-approved them', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.APPROVED,
+        tentativeAt: '2026-03-01T18:00:00Z',
+        tentativeByName: 'Sam Vettor',
+        approvedAt: '2026-03-08T19:00:00Z',
+        approvedByName: 'Hal Host',
+        approvedViaEventId: 'e1',
+        approvedViaEventTitle: 'Board Games',
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
+
+    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
+    expect(screen.getByText(/auto approved after joining/)).toHaveTextContent(
+      /auto approved after joining board games on mar 8/,
+    );
+    expect(screen.getByRole('link', { name: 'board games' })).toHaveAttribute('href', '/events/e1');
+    expect(screen.queryByText(/approved by hal host/)).not.toBeInTheDocument();
   });
 
   it('shows a manually approve button for tentative requests', async () => {

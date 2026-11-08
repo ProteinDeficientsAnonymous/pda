@@ -7,7 +7,7 @@ from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.events.schemas import (
     EventRsvpQuestionOut,
     EventRsvpQuestionSyncPayload,
@@ -26,7 +26,7 @@ def _load_editable_event(request, event_id: UUID) -> Event:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",

@@ -1,11 +1,15 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
 
 from notifications.email_sender import EmailSender, SendResult
+
+if TYPE_CHECKING:
+    from community.models import Event
 
 
 def format_eastern_datetime(dt: datetime) -> str:
@@ -14,6 +18,12 @@ def format_eastern_datetime(dt: datetime) -> str:
         .strftime("%A, %B %d at %I:%M %p")
         .replace(" 0", " ")
     )
+
+
+def format_event_when(event: "Event", tbd: str = "to be decided") -> str:
+    if event.datetime_tbd or event.start_datetime is None:
+        return tbd
+    return format_eastern_datetime(event.start_datetime)
 
 
 @dataclass(frozen=True)
@@ -241,6 +251,20 @@ def send_join_approval_email(
         html=html,
         text=text,
     )
+
+
+def send_member_restored_email(
+    *, sender: EmailSender, to: str, display_name: str, message_body: str, login_url: str
+) -> SendResult:
+    """Render and send the email for an attendance-paused member restored by checking in."""
+    context = {
+        "display_name": display_name or "",
+        "message_body": message_body,
+        "login_url": login_url,
+    }
+    html = render_to_string("emails/member_restored.html", context)
+    text = render_to_string("emails/member_restored.txt", context)
+    return sender.send(to=to, subject="welcome back to pda", html=html, text=text)
 
 
 def send_join_rejection_email(

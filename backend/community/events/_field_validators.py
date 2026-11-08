@@ -27,7 +27,7 @@ def _looks_like_phone(s: str) -> bool:
     return phonenumbers.is_valid_number(parsed)
 
 
-def _validate_zelle_info(v: str | None) -> str | None:
+def validate_zelle_info(v: str | None) -> str | None:
     """Zelle is a free-text field but should be either an email or a phone number."""
     if v is None or v == "":
         return v
@@ -37,14 +37,14 @@ def _validate_zelle_info(v: str | None) -> str | None:
     raise_validation(Code.Zelle.INVALID, field="zelle_info")
 
 
-def _validate_datetime_has_offset(v: datetime | None, info: ValidationInfo) -> datetime | None:
+def validate_datetime_has_offset(v: datetime | None, info: ValidationInfo) -> datetime | None:
     """Reject offset-less datetimes; comparing them to aware ones would 500."""
     if v is not None and v.utcoffset() is None:
         raise_validation(Code.Event.DATETIME_OFFSET_REQUIRED, field=info.field_name)
     return v
 
 
-def _validate_max_attendees(v: int | None) -> int | None:
+def check_max_attendees(v: int | None) -> int | None:
     """Accept null (unlimited) or an integer >= 1. Reject 0 and negatives."""
     if v is None:
         return v
@@ -56,7 +56,7 @@ def _validate_max_attendees(v: int | None) -> int | None:
     return v
 
 
-def _validate_event_slug(v: str) -> str:
+def validate_event_slug(v: str) -> str:
     slug = v.strip().lower()
     # A UUID-shaped slug would be routed as an event id and never match by slug.
     if not _EVENT_SLUG_RE.match(slug) or parse_event_ref(slug).event_id is not None:
@@ -72,7 +72,7 @@ def _strip_www(host: str) -> str:
     return host.removeprefix("www.")
 
 
-def _validate_partiful_url(url: str, field: str) -> str:
+def validate_partiful_url(url: str, field: str) -> str:
     if not url:
         return url
     try:
@@ -85,7 +85,7 @@ def _validate_partiful_url(url: str, field: str) -> str:
     return require_url_path(url, field=field)
 
 
-def _validate_generic_url(url: str, field: str) -> str:
+def validate_generic_url(url: str, field: str) -> str:
     # Accepts either a bare domain (fast.com) or a full URL and normalizes to
     # a full https:// URL on the way in. We don't require a path — "other_link"
     # is commonly used for landing pages and flyers.

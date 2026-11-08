@@ -56,6 +56,7 @@ class Code:
         )
         SLUG_INVALID = "event.slug_invalid"
         SLUG_TAKEN = "event.slug_taken"
+        INVALID_EVENT_FORMAT = "event.invalid_event_format"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
@@ -196,6 +197,7 @@ class Code:
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
         PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
         PHONE_ALREADY_TENTATIVE = "join_request.phone_already_tentative"
+        OPEN_REQUEST_EXISTS = "join_request.open_request_exists"
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
         ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
         ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }
@@ -286,11 +288,26 @@ class Code:
         BODY_REQUIRED = "member_promotion_email.body_required"
         BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
 
+    class MemberRestoredEmail:
+        BODY_REQUIRED = "member_restored_email.body_required"
+        BODY_TOO_LONG = "member_restored_email.body_too_long"  # params: { max_length: int }
+
     class RejectionEmail:
         BODY_REQUIRED = "rejection_email.body_required"
         BODY_TOO_LONG = "rejection_email.body_too_long"  # params: { max_length: int }
         REASON_TEXT_REQUIRED = "rejection_email.reason_text_required"
         REASON_TEXT_TOO_LONG = "rejection_email.reason_text_too_long"  # params: { max_length: int }
+
+    class SpeechTemplate:
+        INVALID_DOC = "speech_template.invalid_doc"
+        TOO_MANY_ROLES = "speech_template.too_many_roles"  # params: { max: int }
+        ROLE_TOO_LONG = "speech_template.role_too_long"  # params: { max: int }
+
+    class Speech:
+        FORMAT_REQUIRED = "speech.format_required"
+        INVALID_VALUES = "speech.invalid_values"
+        HOSTS_ONLY = "speech.hosts_only"
+        OFFICIAL_EVENT_REQUIRED = "speech.official_event_required"
 
     class Connect:
         REQUEST_NOT_FOUND = "connect.request_not_found"

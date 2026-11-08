@@ -14,6 +14,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/events/:id/edit` | Event edit (form handles auth; backend may 401) |
 | `/events/:id/manage-rsvps` | Host/co-host guest management (rsvp-enabled events, including after they end) |
 | `/events/:id/responses` | Host/co-host rsvp question responses + tallies |
+| `/events/:id/speech` | Co-hosts or `manage_events` holders on an official event: fill in the speech blanks + read it aloud (authed; backend 403s others, 404s non-official) |
 | `/events/add` | Create event |
 | `/surveys/:slug` | Public / members survey |
 | `/feedback#<token>` | Public event feedback (anonymous; token in hash) |
@@ -60,6 +61,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/flagged-events` | `manage_events` |
 | `/admin/whatsapp` | `manage_whatsapp` |
 | `/admin/join-form` | `edit_join_questions` |
+| `/admin/event-speech` | `edit_speech_template` (speech template + open roles) |
 | `/admin/surveys` | `manage_surveys` |
 | `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |

@@ -16,39 +16,44 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 
 from community.cohosts.invite_helpers import reject_non_member_cohosts
-from community.events._transitions import _handle_status_update, _set_event_participants
+from community.events._transitions import handle_status_update, set_event_participants
 from community.events._update import (
-    _apply_field_updates,
-    _guard_can_edit_event,
-    _promote_if_capacity_increased,
+    apply_field_updates,
+    guard_can_edit_event,
+    promote_if_capacity_increased,
 )
 from community.events.helpers import (
-    _build_guest_list,
-    _enforce_type_tag_permission,
-    _event_out,
-    _event_rsvp_payload,
-    _invited_payload,
-    _is_invalid_typed_visibility,
-    _set_event_tags,
     broadcast_capacity_change,
+    build_guest_list,
+    enforce_type_tag_permission,
+    event_out,
+    event_rsvp_payload,
+    invited_payload,
     is_cohost,
+    is_invalid_typed_visibility,
     reload_event_or_404,
+    set_event_tags,
+    validated_event_format,
+)
+from community.events.limited_access import (
+    event_viewer_for,
+    is_limited,
 )
 from community.events.listing import (
     EventListQuery,
-    _build_events_queryset,
-    _event_list_out,
-    _filter_invite_only,
-    _filter_scope,
-    _filter_window,
-    _list_count_annotations,
-)
-from community.events.nonmember_removal import (
-    email_removed_non_members,
-    guard_or_remove_ineligible_non_members,
+    build_events_queryset,
+    event_list_out,
+    filter_invite_only,
+    filter_scope,
+    filter_window,
+    list_count_annotations,
 )
 from community.events.official_defaults import apply_official_defaults
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.public_rsvper_removal import (
+    email_removed_public_rsvpers,
+    guard_or_remove_ineligible_public_rsvpers,
+)
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     EventIn,
     EventListOut,
@@ -56,10 +61,6 @@ from community.events.schemas import (
     EventPatchIn,
     RSVPGuestOut,
     validate_event_rsvp_question,
-)
-from community.events.tentative_member_access import (
-    event_viewer_for,
-    is_tentative_member,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -74,7 +75,7 @@ from community.rsvps.answers import can_see_guest_questionnaire_responses
 from community.rsvps.host_auto import auto_rsvp_host, auto_rsvp_hosts
 from community.rsvps.serialize import with_guest_photos
 from community.rsvps.status_emails import email_promoted_users
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -92,24 +93,24 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
         raise_validation(Code.Event.START_DATETIME_MUST_BE_FUTURE, field="start_datetime")
 
 
-@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
+@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=optional_jwt)
 def list_events(request, params: Query[EventListQuery]):
     """start/end bound a calendar window; include_imported=false drops partiful/legacy rows."""
-    auth_user = _authenticated_user(request.auth)
+    auth_user = authenticated_user(request.auth)
     is_authed = auth_user is not None
     status = params.status
 
     if (params.hosted or status in (EventStatus.CANCELLED, EventStatus.DRAFT)) and not is_authed:
         raise_validation(Code.Event.AUTH_REQUIRED, status_code=403)
 
-    events = _filter_invite_only(
-        _build_events_queryset(status, auth_user, is_authed), auth_user, status
+    events = filter_invite_only(
+        build_events_queryset(status, auth_user, is_authed), auth_user, status
     )
-    events = _filter_window(events, params.start, params.end, params.include_imported)
-    events = _filter_scope(events, auth_user, params.hosted, params.upcoming)
+    events = filter_window(events, params.start, params.end, params.include_imported)
+    events = filter_scope(events, auth_user, params.hosted, params.upcoming)
     return Status(
         200,
-        [_event_list_out(e, auth_user, is_authed) for e in events],
+        [event_list_out(e, auth_user, is_authed) for e in events],
     )
 
 
@@ -119,13 +120,13 @@ def _get_visible_event(request, event_id: str):
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "tags", "rsvp_questions", "poll")
-            .annotate(**_list_count_annotations())
+            .annotate(**list_count_annotations())
             .get(ref.as_q())
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
-    _enforce_event_read_visibility(event, viewer)
+    enforce_event_read_visibility(event, viewer)
     return event, viewer
 
 
@@ -139,18 +140,18 @@ class EventGuestsOut(BaseModel):
 def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
-    auth_user = _authenticated_user(requesting_user)
+    auth_user = authenticated_user(requesting_user)
     co_host_ids = {str(u.id) for u in co_hosts}
     viewer_is_cohost = is_cohost(auth_user, co_host_ids)
     payment_status_visible = viewer_is_cohost
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps, _status, _paid, can_see_guests = _event_rsvp_payload(
+    all_rsvps, _status, _paid, can_see_guests = event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, _count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
+    invited, _count = invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
     guests = with_guest_photos(
         (
-            _build_guest_list(
+            build_guest_list(
                 all_rsvps,
                 viewer_is_cohost,
                 auth_user,
@@ -174,18 +175,18 @@ def _event_guests_out(event: Event, requesting_user=None) -> EventGuestsOut:
 @router.get(
     "/events/{event_id}/",
     response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event(request, event_id: str):
     """Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest."""
     event, viewer = _get_visible_event(request, event_id)
-    return Status(200, _event_out(event, viewer))
+    return Status(200, event_out(event, viewer))
 
 
 @router.get(
     "/events/{event_id}/guests/",
     response={200: EventGuestsOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event_guests(request, event_id: str):
     """Full signed guest and invited photos, same visibility as event detail."""
@@ -203,15 +204,17 @@ def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
-    if is_tentative_member(request.auth):
+    if is_limited(request.auth):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="create_event")
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    _enforce_type_tag_permission(request, payload.event_type, "create_event")
+    enforce_type_tag_permission(request, payload.event_type, "create_event")
 
-    if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
+    if is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
+
+    event_format = validated_event_format(payload.event_format, payload.event_type)
 
     if payload.allow_plus_ones and is_official_or_club(payload.event_type):
         raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
@@ -251,13 +254,14 @@ def create_event(request, payload: EventIn):
         allow_plus_ones=payload.allow_plus_ones,
         max_attendees=payload.max_attendees,
         event_type=payload.event_type,
+        event_format=event_format,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
         status=payload.status,
         created_by=request.auth,
     )
-    _set_event_participants(request, event, payload.co_host_ids)
-    _set_event_tags(event, payload.tag_ids)
+    set_event_participants(request, event, payload.co_host_ids)
+    set_event_tags(event, payload.tag_ids)
     EventRsvpQuestion.objects.bulk_create(
         [
             EventRsvpQuestion(
@@ -290,7 +294,7 @@ def create_event(request, payload: EventIn):
             },
         ),
     )
-    return Status(201, _event_out(event, request.auth))
+    return Status(201, event_out(event, request.auth))
 
 
 def _announce_rsvp_changes(
@@ -319,7 +323,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    _guard_can_edit_event(request, event, event_id)
+    guard_can_edit_event(request, event, event_id)
 
     updates = payload.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
@@ -335,21 +339,21 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
 
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
-        _apply_field_updates(request, event, event_id, updates)
+        apply_field_updates(request, event, event_id, updates)
         apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:
-            removed_user_ids = guard_or_remove_ineligible_non_members(event, force)
+            removed_user_ids = guard_or_remove_ineligible_public_rsvpers(event, force)
 
         if new_status is not None:
-            early = _handle_status_update(request, event, new_status, notify_attendees)
+            early = handle_status_update(request, event, new_status, notify_attendees)
             if early is not None:
                 return early
 
-        promoted_user_ids = _promote_if_capacity_increased(event, updates, old_max_attendees)
+        promoted_user_ids = promote_if_capacity_increased(event, updates, old_max_attendees)
         hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
-    email_removed_non_members(request, event, removed_user_ids)
+    email_removed_public_rsvpers(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
-    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))
+    return Status(200, event_out(reload_event_or_404(event_id), request.auth))

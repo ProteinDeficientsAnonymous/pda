@@ -402,7 +402,7 @@ class TestCommentVisibility:
             f"/api/community/events/{event.id}/comments/",
             **stranger_headers,
         )
-        # _can_see_invite_only returns False → _enforce_event_read_visibility
+        # can_see_invite_only returns False → enforce_event_read_visibility
         # raises Code.Event.PERM_DENIED with status 403.
         assert response.status_code == 403
 

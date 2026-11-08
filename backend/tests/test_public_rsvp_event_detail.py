@@ -3,7 +3,7 @@ on any public-RSVP-eligible event for a valid token holder (issue #873)."""
 
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._time import future_iso
 
@@ -34,7 +34,7 @@ def other_event(db, test_user):
 
 
 @pytest.fixture
-def non_member(db):
+def public_rsvper(db):
     user = User.objects.create_user(
         phone_number="+12025550188",
         first_name="Non",
@@ -54,9 +54,11 @@ class TestGetEventWithToken:
         assert response.status_code == 200, response.content
         assert response.json()["whatsapp_link"] == ""
 
-    def test_valid_scoped_token_unlocks_links(self, api_client, official_event, non_member):
-        EventRSVP.objects.create(event=official_event, user=non_member, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(non_member)
+    def test_valid_scoped_token_unlocks_links(self, api_client, official_event, public_rsvper):
+        EventRSVP.objects.create(
+            event=official_event, user=public_rsvper, status=RSVPStatus.ATTENDING
+        )
+        token = PublicRsvpToken.issue(public_rsvper)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
@@ -64,35 +66,39 @@ class TestGetEventWithToken:
         assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc123"
 
     def test_token_from_other_event_unlocks_eligible_event(
-        self, api_client, official_event, other_event, non_member
+        self, api_client, official_event, other_event, public_rsvper
     ):
         # One token, reused across events: RSVP'd to other_event, no RSVP on
         # official_event, but the token still unlocks it (issue #873).
-        EventRSVP.objects.create(event=other_event, user=non_member, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(non_member)
+        EventRSVP.objects.create(event=other_event, user=public_rsvper, status=RSVPStatus.ATTENDING)
+        token = PublicRsvpToken.issue(public_rsvper)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
         assert response.status_code == 200, response.content
         assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc123"
 
-    def test_token_does_not_unlock_members_only_event(self, api_client, official_event, non_member):
+    def test_token_does_not_unlock_members_only_event(
+        self, api_client, official_event, public_rsvper
+    ):
         official_event.visibility = PageVisibility.MEMBERS_ONLY
         official_event.save(update_fields=["visibility"])
-        token = NonMemberRsvpToken.issue(non_member)
+        token = PublicRsvpToken.issue(public_rsvper)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
         # Members-only events never accept public RSVPs — a token can't unlock them.
         assert response.status_code == 404, response.content
 
-    def test_token_never_unlocks_invited_list(self, api_client, official_event, non_member):
+    def test_token_never_unlocks_invited_list(self, api_client, official_event, public_rsvper):
         invited = User.objects.create_user(
             phone_number="+12025550199", first_name="Invited", last_name="Member"
         )
         official_event.invited_users.add(invited)
-        EventRSVP.objects.create(event=official_event, user=non_member, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(non_member)
+        EventRSVP.objects.create(
+            event=official_event, user=public_rsvper, status=RSVPStatus.ATTENDING
+        )
+        token = PublicRsvpToken.issue(public_rsvper)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
@@ -100,14 +106,18 @@ class TestGetEventWithToken:
         assert body["invited_user_ids"] == []
         assert str(invited.id) not in body["invited_user_ids"]
 
-    def test_valid_token_reports_own_viewer_user_id(self, api_client, official_event, non_member):
-        EventRSVP.objects.create(event=official_event, user=non_member, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(non_member)
+    def test_valid_token_reports_own_viewer_user_id(
+        self, api_client, official_event, public_rsvper
+    ):
+        EventRSVP.objects.create(
+            event=official_event, user=public_rsvper, status=RSVPStatus.ATTENDING
+        )
+        token = PublicRsvpToken.issue(public_rsvper)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
         assert response.status_code == 200, response.content
-        assert response.json()["viewer_user_id"] == str(non_member.id)
+        assert response.json()["viewer_user_id"] == str(public_rsvper.id)
 
     def test_no_token_reports_no_viewer_user_id(self, api_client, official_event):
         response = api_client.get(f"/api/community/events/{official_event.id}/")

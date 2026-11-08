@@ -7,7 +7,7 @@ import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { canManageEvent, canPublicRsvp, eventPath } from '@/models/event';
+import { canManageEvent, canPublicRsvp, eventPath, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
@@ -93,7 +93,9 @@ export default function EventDetailScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
-  const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
+  const canManage = isAuthed && canManageEvent(event, user);
+  const canManageRsvps = canManage && event.rsvpEnabled;
+  const showSpeech = canManage && event.eventType === EventType.Official;
   // viewerUserId is set by the backend's viewer resolver only when the caller
   // resolved to a real identity (member, or a valid token on an eligible event);
   // an invalid/expired token gets the same locked shape as no token at all, so
@@ -107,12 +109,13 @@ export default function EventDetailScreen() {
           {event.title}
         </h1>
         <EventBadge event={event} />
-        {showKebab ? (
+        {canManageRsvps || showSpeech ? (
           <div className="ml-auto">
             <EventDetailKebabMenu
               event={event}
               eventHasEnded={event.isPast}
-              canManageRsvps={showKebab}
+              canManageRsvps={canManageRsvps}
+              showSpeech={showSpeech}
             />
           </div>
         ) : null}

@@ -12,6 +12,7 @@ from community.models.choices import (
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
+    EventFormat,
     EventStatus,
     EventType,
     InvitePermission,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 DEFAULT_EVENT_DURATION = timedelta(hours=2)
 
 
-def _is_past_q(now, prefix: str = "") -> Q:
+def is_past_q(now, prefix: str = "") -> Q:
     """Queryset mirror of Event.is_past, over the field path at `prefix` (e.g. "event__")."""
     end = f"{prefix}end_datetime"
     start = f"{prefix}start_datetime"
@@ -53,7 +54,7 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
         & Q(**{f"{prefix}status": EventStatus.ACTIVE})
         & Q(**{f"{prefix}visibility": PageVisibility.PUBLIC})
         & Q(**{f"{prefix}rsvp_enabled": True})
-        & ~_is_past_q(now, prefix)
+        & ~is_past_q(now, prefix)
     )
 
 
@@ -86,6 +87,12 @@ class Event(models.Model):
         max_length=20,
         choices=EventType.choices,
         default=EventType.COMMUNITY,
+    )
+    event_format = models.CharField(
+        max_length=20,
+        choices=EventFormat.choices,
+        blank=True,
+        default="",
     )
     visibility = models.CharField(
         max_length=20,
