@@ -80,7 +80,7 @@ class Command(BaseCommand):
             tentative_sent, tentative_failed = send_digest_to_all(
                 send_monthly_digest_email,
                 sender,
-                monthly_digest_recipients(User.objects.active_tentative_members(), today),
+                monthly_digest_recipients(User.objects.active_limited_users(), today),
                 {**payload, "veganniversaries": []},
                 on_sent=mark_sent,
             )

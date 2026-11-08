@@ -29,7 +29,8 @@ def can_sign_in_q() -> Q:
     return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
 
 
-def signed_in_non_member_q() -> Q:
+def limited_q() -> Q:
+    """Signed in but not a member: tentative applicants and attendance-paused users."""
     return Q(is_member=False) & can_sign_in_q()
 
 
@@ -107,13 +108,13 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
-    def signed_in_non_members(self):
-        """Users matching ``signed_in_non_member_q``."""
-        return self.get_queryset().filter(signed_in_non_member_q())
+    def limited_users(self):
+        """Users matching ``limited_q``."""
+        return self.get_queryset().filter(limited_q())
 
-    def active_tentative_members(self):
-        """Signed-in non-members, filtered like ``active_members``."""
-        return self.signed_in_non_members().filter(
+    def active_limited_users(self):
+        """Limited users, filtered like ``active_members``."""
+        return self.limited_users().filter(
             is_active=True, is_paused=False, archived_at__isnull=True
         )
 
