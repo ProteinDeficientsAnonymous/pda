@@ -295,6 +295,19 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
     )
 
 
+_ADMITTED_STATUSES = (JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE)
+
+
+def _superseded_by_pause(jr: JoinRequest, lookups: PhoneLookups) -> bool:
+    """A pause clears has_joined_whatsapp, so rows decided before it would otherwise reappear."""
+    user = lookups.users_by_phone.get(jr.phone_number)
+    if user is None or jr.status not in _ADMITTED_STATUSES:
+        return False
+    decided_at = jr.approved_at or jr.tentative_at or jr.submitted_at
+    stamps = (user.attendance_paused_at, user.restored_at)
+    return any(stamp is not None and stamp > decided_at for stamp in stamps)
+
+
 @router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=gated_jwt)
 def list_join_requests(request):
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
@@ -315,17 +328,15 @@ def list_join_requests(request):
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
     # Legacy users onboarded before onboarded_at existed have it as null;
     # treat them as past the grace window.
-    expired = Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True)
-    expired &= Q(needs_onboarding=False, has_joined_whatsapp=True)
-    # A pause clears has_joined_whatsapp; these members belong on the restored list instead.
-    paused_or_restored = Q(attendance_paused_at__isnull=False) | Q(restored_at__isnull=False)
-    dropped_phones = User.objects.filter(expired | paused_or_restored).values_list(
-        "phone_number", flat=True
-    )
+    expired_phones = User.objects.filter(
+        Q(onboarded_at__lt=cutoff) | Q(onboarded_at__isnull=True),
+        needs_onboarding=False,
+        has_joined_whatsapp=True,
+    ).values_list("phone_number", flat=True)
     join_requests = (
         JoinRequest.objects.exclude(
-            status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
-            phone_number__in=dropped_phones,
+            status__in=_ADMITTED_STATUSES,
+            phone_number__in=expired_phones,
         )
         .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
         .prefetch_related(
@@ -334,7 +345,8 @@ def list_join_requests(request):
     )
     join_requests = list(join_requests)
     lookups = _phone_lookups(join_requests)
-    return Status(200, [join_request_out(jr, lookups) for jr in join_requests])
+    rows = [jr for jr in join_requests if not _superseded_by_pause(jr, lookups)]
+    return Status(200, [join_request_out(jr, lookups) for jr in rows])
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
