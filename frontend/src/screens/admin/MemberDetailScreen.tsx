@@ -26,6 +26,7 @@ import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/we
 
 import { attendedCountLabel } from './attendedCountLabel';
 import { MemberConnectedApps } from './MemberConnectedApps';
+import { isAttendancePaused } from './memberPause';
 import { MemberPauseToggles } from './MemberPauseToggles';
 import { PauseBadges } from './PauseBadges';
 
@@ -160,6 +161,9 @@ function MemberRolesSection({ member }: { member: Member }) {
     }
   }
 
+  if (isAttendancePaused(member)) {
+    return <p className="text-muted mb-4 text-sm">roles are cleared while event rqmt paused</p>;
+  }
   if (isPending) {
     return <p className="text-muted mb-4 text-sm">loading roles…</p>;
   }
@@ -366,7 +370,7 @@ function MemberEditForm({
   const [email, setEmail] = useState(member.email);
   const [pause, setPause] = useState({
     isPaused: member.isPaused,
-    attendancePaused: member.attendancePausedAt !== null,
+    attendancePaused: isAttendancePaused(member),
   });
   const [error, setError] = useState<string | null>(null);
   const targetIsAdmin = member.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
@@ -385,7 +389,8 @@ function MemberEditForm({
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (pause.isPaused !== member.isPaused) patch.isPaused = pause.isPaused;
-    if (pause.attendancePaused !== (member.attendancePausedAt !== null))
+    const wasAttendancePaused = isAttendancePaused(member);
+    if (pause.attendancePaused !== wasAttendancePaused)
       patch.attendancePaused = pause.attendancePaused;
 
     if (Object.keys(patch).length === 0) {
