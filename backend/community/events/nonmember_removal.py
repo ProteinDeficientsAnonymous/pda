@@ -1,7 +1,7 @@
 from django.utils import timezone
 from notifications.email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
-from users.models import NonMemberRsvpToken, User, signed_in_non_member_q
+from users.models import NonMemberRsvpToken, User
 
 from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
 from community.models import Event, EventRSVP, RSVPStatus
@@ -41,7 +41,7 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
     # This email and its join pitch are for people without an account.
     removed = User.objects.filter(
         id__in=removed_user_ids, is_member=False, email__isnull=False
-    ).exclude(signed_in_non_member_q())
+    ).exclude(pk__in=User.objects.signed_in_non_members())
     for user in removed:
         if not user.email:
             continue

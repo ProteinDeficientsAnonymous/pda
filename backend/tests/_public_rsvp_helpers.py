@@ -16,10 +16,10 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
-from django.utils import timezone
 from users.models import User
 
 from tests._time import future_iso
+from tests._users import make_attendance_paused
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp/"
 
@@ -88,11 +88,8 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
     return user
 
 
-def make_attendance_paused_member(phone, email, name="Paused Sprout"):
-    user = make_non_member(phone, email, name=name)
-    user.attendance_paused_at = timezone.now()
-    user.save(update_fields=["attendance_paused_at"])
-    return user
+def make_attendance_paused_member(phone, email):
+    return make_attendance_paused(phone_number=phone, email=email)
 
 
 SIGNED_IN_NON_MEMBER_FACTORIES = pytest.mark.parametrize(
