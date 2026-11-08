@@ -4,8 +4,8 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import (
-    NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS,
-    NON_MEMBER_RSVP_TOKEN_TTL_DAYS,
+    PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS,
+    PUBLIC_RSVP_TOKEN_TTL_DAYS,
     PublicRsvpToken,
     User,
 )
@@ -37,7 +37,7 @@ class TestIssue:
         assert all(c.isalnum() or c in "-_" for c in token.token)
         assert token.revoked_at is None
 
-        expected = before + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+        expected = before + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS)
         # Expiry is ~90 days out; allow a small window for clock drift in the test.
         assert abs((token.expires_at - expected).total_seconds()) < 60
 
@@ -78,7 +78,7 @@ class TestIssueOrExtend:
         assert extended.token == first.token
         assert PublicRsvpToken.objects.filter(user=non_member).count() == 1
 
-        expected = before + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+        expected = before + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS)
         assert abs((extended.expires_at - expected).total_seconds()) < 60
         # The old URL still resolves after extension.
         assert PublicRsvpToken.resolve_user(first.token) == non_member
@@ -108,7 +108,7 @@ class TestIssueOrExtend:
     def test_issues_fresh_token_when_existing_exceeds_max_lifetime(self, non_member):
         old = PublicRsvpToken.issue(non_member)
         # created_at is auto_now_add, so age it past the absolute cap via update().
-        aged = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS + 1)
+        aged = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS + 1)
         PublicRsvpToken.objects.filter(pk=old.pk).update(created_at=aged)
 
         fresh = PublicRsvpToken.issue_or_extend(non_member)

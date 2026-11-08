@@ -3,7 +3,7 @@ from community.models import Event, EventRSVP, EventType, RSVPStatus
 from django.test import Client
 
 from tests._auth import auth_headers_for
-from tests._public_rsvp_helpers import SIGNED_IN_NON_MEMBER_FACTORIES, make_non_member
+from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_non_member
 from tests._time import future_iso
 from tests._users import make_user
 
@@ -180,16 +180,16 @@ class TestHostSetRsvpEmail:
 
         assert _subjects(fake_email_sender, "member@e.com") == []
 
-    @SIGNED_IN_NON_MEMBER_FACTORIES
+    @LIMITED_USER_FACTORIES
     @pytest.mark.parametrize(
         ("event_type", "gets_manage_link"),
         [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
     )
     def test_host_set_limited_user_gets_member_email_only_on_official(
-        self, test_user, fake_email_sender, make_signed_in, event_type, gets_manage_link
+        self, test_user, fake_email_sender, make_limited, event_type, gets_manage_link
     ):
         event = _event(test_user, event_type=event_type)
-        guest = make_signed_in("+14155550101", "signed-in@e.com")
+        guest = make_limited("+14155550101", "signed-in@e.com")
 
         _host_set(event, test_user, guest, RSVPStatus.ATTENDING)
 
