@@ -15,8 +15,8 @@ def ineligible_non_member_rsvps(event: Event):
         status=RSVPStatus.REMOVED
     )
     if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
-        # Signed-in non-members keep official/club access regardless of public RSVP eligibility.
-        rsvps = rsvps.exclude(user__in=User.objects.signed_in_non_members())
+        # Limited users keep official/club access regardless of public RSVP eligibility.
+        rsvps = rsvps.exclude(user__in=User.objects.limited_users())
     return rsvps
 
 
@@ -41,7 +41,7 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
     # This email and its join pitch are for people without an account.
     removed = User.objects.filter(
         id__in=removed_user_ids, is_member=False, email__isnull=False
-    ).exclude(pk__in=User.objects.signed_in_non_members())
+    ).exclude(pk__in=User.objects.limited_users())
     for user in removed:
         if not user.email:
             continue

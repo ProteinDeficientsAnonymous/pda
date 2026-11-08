@@ -28,7 +28,7 @@ from community.shared import logger
 
 def _member_email_ids(event: Event, user_ids: list[str]) -> set[str]:
     """Ids of users who get member emails; everyone else gets a manage link."""
-    # Signed-in non-members can only manage official/club rsvps in the app.
+    # Limited users can only manage official/club rsvps in the app.
     official = event.event_type in TENTATIVE_MEMBER_EVENT_TYPES
     users = User.objects.filter(can_sign_in_q() if official else Q(is_member=True), pk__in=user_ids)
     return {str(pk) for pk in users.values_list("pk", flat=True)}

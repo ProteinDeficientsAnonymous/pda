@@ -82,7 +82,7 @@ class TestWaitlistPromotionEmailsNonMember:
         ("event_type", "gets_manage_link"),
         [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
     )
-    def test_promoted_signed_in_non_member_gets_member_email_only_on_official(  # noqa: PLR0913
+    def test_promoted_limited_user_gets_member_email_only_on_official(  # noqa: PLR0913
         self,
         api_client,
         test_user,

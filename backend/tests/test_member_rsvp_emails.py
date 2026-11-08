@@ -185,7 +185,7 @@ class TestHostSetRsvpEmail:
         ("event_type", "gets_manage_link"),
         [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
     )
-    def test_host_set_signed_in_non_member_gets_member_email_only_on_official(
+    def test_host_set_limited_user_gets_member_email_only_on_official(
         self, test_user, fake_email_sender, make_signed_in, event_type, gets_manage_link
     ):
         event = _event(test_user, event_type=event_type)
