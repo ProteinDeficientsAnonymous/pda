@@ -8074,6 +8074,18 @@
             "title": "Show Veganniversary",
             "type": "boolean"
           },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
+          },
           "veganniversary": {
             "anyOf": [
               {

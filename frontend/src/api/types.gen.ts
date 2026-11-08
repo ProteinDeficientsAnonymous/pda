@@ -6033,6 +6033,8 @@ export interface components {
              * @default true
              */
             show_veganniversary: boolean;
+            /** Unpaused At */
+            unpaused_at?: string | null;
             veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
             /**
              * Veganniversary Shoutout Opt In

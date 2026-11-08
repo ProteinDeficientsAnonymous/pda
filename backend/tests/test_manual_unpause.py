@@ -40,11 +40,15 @@ class TestManualUnpause:
         [(GUIDELINES, {"is_paused": False}), (ATTENDANCE, {"attendance_paused": False})],
         ids=["guidelines", "attendance"],
     )
-    def test_lifting_the_last_pause_emails_without_the_link(
+    def test_lifting_the_last_pause_emails_and_stamps(
         self, patch_user, fake_email_sender, pause, payload
     ):
         WhatsAppLinkConfig.objects.update_or_create(pk=1, defaults={"link": "https://wa.example"})
-        patch_user(_member(**pause), payload)
+        user = _member(has_joined_whatsapp=True, **pause)
+        response = patch_user(user, payload)
+        assert response.json()["unpaused_at"] is not None
+        assert user.unpaused_at is not None
+        assert user.has_joined_whatsapp is False
         [sent] = _sends(fake_email_sender)
         assert "official or club event" in sent["text"]
         assert "/calendar" in sent["html"]
@@ -69,15 +73,33 @@ class TestManualUnpause:
             "guidelines_pause_remains",
         ],
     )
-    def test_no_email_while_a_pause_remains(self, patch_user, fake_email_sender, pause, payload):
-        patch_user(_member(**pause), payload)
+    def test_no_email_or_stamp_while_a_pause_remains(
+        self, patch_user, fake_email_sender, pause, payload
+    ):
+        user = _member(**pause)
+        patch_user(user, payload)
+        assert user.unpaused_at is None
         assert _sends(fake_email_sender) == []
+
+    @pytest.mark.parametrize(
+        "payload",
+        [{"is_paused": True}, {"attendance_paused": True}],
+        ids=["guidelines", "attendance"],
+    )
+    def test_a_new_pause_clears_the_stamp(self, patch_user, fake_email_sender, payload):
+        user = _member(unpaused_at=timezone.now())
+        patch_user(user, payload)
+        assert user.unpaused_at is None
 
     @pytest.mark.parametrize(
         "extra", [{"archived_at": timezone.now()}, {"email": ""}], ids=["archived", "no_email"]
     )
-    def test_ineligible_member_is_not_emailed(self, patch_user, fake_email_sender, extra):
-        patch_user(_member(**GUIDELINES, **extra), {"is_paused": False})
+    def test_ineligible_member_is_stamped_but_not_emailed(
+        self, patch_user, fake_email_sender, extra
+    ):
+        user = _member(**GUIDELINES, **extra)
+        patch_user(user, {"is_paused": False})
+        assert user.unpaused_at is not None
         fake_email_sender.send.assert_not_called()
 
     def test_send_error_does_not_fail_the_unpause(self, patch_user, fake_email_sender):
