@@ -454,6 +454,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "a request for this number is already pending — we'll be in touch soon";
     case Code.JoinRequest.PhoneAlreadyTentative:
       return 'you already have an account — try logging in instead';
+    case Code.JoinRequest.OpenRequestExists:
+      return 'this number already has an open request — review that one instead';
     case Code.JoinRequest.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
