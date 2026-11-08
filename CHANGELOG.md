@@ -1,3 +1,10 @@
+# [0.227.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.2...v0.227.0) (2026-11-08)
+
+
+### Features
+
+* **mcp:** look up a member's rsvps and find members by name ([#2113](https://github.com/ProteinDeficientsAnonymous/pda/issues/2113)) ([7b5115a](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b5115a819bed4cc25354ffdb1180ecc3522fce1))
+
 ## [0.226.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.1...v0.226.2) (2026-11-08)
 
 
