@@ -856,6 +856,11 @@
         "params": []
       },
       {
+        "name": "OPEN_REQUEST_EXISTS",
+        "value": "join_request.open_request_exists",
+        "params": []
+      },
+      {
         "name": "ANSWER_REQUIRED",
         "value": "join_request.answer_required",
         "params": [
