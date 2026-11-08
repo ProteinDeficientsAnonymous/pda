@@ -16,7 +16,8 @@ interface Props {
   placeholders: { name: string; hint?: string }[];
   ariaLabel: string;
   template: { body: string } | null;
-  update: { mutateAsync: (body: string) => Promise<unknown>; isPending: boolean };
+  // Called only while open, so closed dialogs never set up a mutation.
+  useUpdate: () => { mutateAsync: (body: string) => Promise<unknown>; isPending: boolean };
   noun?: string;
   rows?: number;
 }
@@ -44,10 +45,11 @@ function EditorForm({
   description,
   placeholders,
   ariaLabel,
-  update,
+  useUpdate,
   noun = 'message',
   rows = 10,
 }: FormProps) {
+  const update = useUpdate();
   const [body, setBody] = useState(initialBody);
   const [formError, setFormError] = useState<string | null>(null);
 
