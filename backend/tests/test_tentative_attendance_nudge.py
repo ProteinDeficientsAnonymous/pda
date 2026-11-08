@@ -17,6 +17,8 @@ from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests._users import make_attendance_paused
+
 NUDGE_SUBJECT = "you're almost in at pda"
 
 
@@ -155,12 +157,7 @@ class TestTentativeAttendanceNudge:
         assert _nudge_calls(fake_email_sender) == []
 
     def test_skips_attendance_paused_member(self, fake_email_sender):
-        User.objects.create(
-            phone_number="+12025550414",
-            email="+12025550414@example.test",
-            onboarded_at=timezone.now() - timedelta(days=8),
-            attendance_paused_at=timezone.now(),
-        )
+        make_attendance_paused(onboarded_at=timezone.now() - timedelta(days=8))
         call_command("send_weekly_digest")
         assert _nudge_calls(fake_email_sender) == []
 
