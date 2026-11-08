@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass, field
 
 from community.events.tentative_member_access import (
-    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_EVENT_TYPES,
+    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_RSVP_EVENT_TYPES,
 )
 from community.events.unpublish import clear_unpublished_side_effects
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite, EventRSVP, EventStatus
@@ -31,7 +31,7 @@ from users.models import HAS_EMAIL, User
 
 logger = logging.getLogger(__name__)
 
-KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
+KEPT_RSVP_EVENT_Q = Q(event_type__in=KEPT_RSVP_EVENT_TYPES)
 
 
 @dataclass
@@ -66,7 +66,9 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         .order_by("start_datetime")
     )
     for event in rsvped:
-        bucket = impact.kept_rsvps if event.event_type in KEPT_EVENT_TYPES else impact.removed_rsvps
+        bucket = (
+            impact.kept_rsvps if event.event_type in KEPT_RSVP_EVENT_TYPES else impact.removed_rsvps
+        )
         bucket.append(event)
     return impact
 
@@ -83,8 +85,8 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         # Drafting first deletes the user's own RSVP there, so releasing can't promote its waitlist.
         for event in impact.drafted_events:
             _move_to_draft(event, user)
-        release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
-        step_down_as_cohost(user)
+        release_upcoming_rsvps(request, user, ~KEPT_RSVP_EVENT_Q)
+        step_down_as_cohost(user, impact.removed_hosting)
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
         ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
