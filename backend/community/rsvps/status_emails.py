@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
+from django.db.models import Q
 from notifications.email_helpers import (
     MemberRsvpEmailDetails,
     RsvpEmailDetails,
@@ -12,8 +13,9 @@ from notifications.email_helpers import (
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import SendResult, get_email_sender
-from users.models import NonMemberRsvpToken, User
+from users.models import NonMemberRsvpToken, User, signed_in_non_member_q
 
+from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
 from community.models import Event, RSVPStatus
 from community.rsvps.public_shared import (
     collect_event_links,
@@ -24,9 +26,14 @@ from community.rsvps.public_shared import (
 from community.shared import logger
 
 
-def _gets_member_emails(user: User) -> bool:
-    """Members and signed-in non-members get member emails; public rsvpers get manage links."""
-    return user.is_member or User.objects.signed_in_non_members().filter(pk=user.pk).exists()
+def _member_email_ids(event: Event, user_ids: list[str]) -> set[str]:
+    """Ids of users who get member emails; everyone else gets a manage link."""
+    gets_member = Q(is_member=True)
+    # Signed-in non-members can only manage official/club rsvps in the app.
+    if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
+        gets_member |= signed_in_non_member_q()
+    users = User.objects.filter(gets_member, pk__in=user_ids)
+    return {str(pk) for pk in users.values_list("pk", flat=True)}
 
 
 def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
@@ -90,7 +97,7 @@ def email_host_set_rsvp_status(
     """Email a guest "you're in" when a host sets them to attending. Best-effort; never raises."""
     if status == previous_status or status != RSVPStatus.ATTENDING or not user.email:
         return
-    if _gets_member_emails(user):
+    if str(user.pk) in _member_email_ids(event, [str(user.pk)]):
         _send_member_email(request, event, user, "attending")
         return
     _email_non_member(
@@ -120,11 +127,12 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
         return
     promoted = User.objects.filter(id__in=promoted_user_ids).exclude(email__isnull=True)
     unpaid = unpaid_user_ids(event, promoted_user_ids)
+    member_email_ids = _member_email_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
         payment_pending = str(user.id) in unpaid
-        if _gets_member_emails(user):
+        if str(user.id) in member_email_ids:
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:
             _email_promoted_non_member(request, event, user, payment_pending)

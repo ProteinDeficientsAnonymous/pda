@@ -10,7 +10,7 @@ TENTATIVE_MEMBER_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
 def is_tentative_member(user) -> bool:
-    """Signed in but not a member — only tentative applicants can sign in without is_member."""
+    """Signed in but not a member: a tentative applicant or an attendance-paused ex-member."""
     return user is not None and not user.is_member
 
 

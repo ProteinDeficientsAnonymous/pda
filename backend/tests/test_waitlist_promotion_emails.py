@@ -1,18 +1,19 @@
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventType, RSVPStatus
 from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import SIGNED_IN_NON_MEMBER_FACTORIES, make_non_member
 from tests._time import future_iso
 
 
-def _one_spot_event(creator):
+def _one_spot_event(creator, **extra):
     return Event.objects.create(
         title="One Spot",
         start_datetime=future_iso(days=30),
         rsvp_enabled=True,
         max_attendees=1,
         created_by=creator,
+        **extra,
     )
 
 
@@ -77,17 +78,28 @@ class TestWaitlistPromotionEmailsNonMember:
         assert _promoted_email_count(fake_email_sender, "member@e.com") == 1
 
     @SIGNED_IN_NON_MEMBER_FACTORIES
-    def test_promoted_tentative_member_gets_member_email(
-        self, api_client, test_user, auth_headers, fake_email_sender, make_signed_in
+    @pytest.mark.parametrize(
+        ("event_type", "gets_manage_link"),
+        [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
+    )
+    def test_promoted_signed_in_non_member_gets_member_email_only_on_official(  # noqa: PLR0913
+        self,
+        api_client,
+        test_user,
+        auth_headers,
+        fake_email_sender,
+        make_signed_in,
+        event_type,
+        gets_manage_link,
     ):
-        """They can sign in, so they get the member email rather than a manage link."""
-        event = _one_spot_event(test_user)
+        """They can manage official/club rsvps in the app; elsewhere they need the manage link."""
+        event = _one_spot_event(test_user, event_type=event_type)
         _rsvp(api_client, event, auth_headers)
-        tentative = make_signed_in("+14155559914", "tentative@e.com")
-        EventRSVP.objects.create(event=event, user=tentative, status=RSVPStatus.WAITLISTED)
+        guest = make_signed_in("+14155559914", "signed-in@e.com")
+        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.WAITLISTED)
 
         api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
 
-        assert EventRSVP.objects.get(event=event, user=tentative).status == RSVPStatus.ATTENDING
-        assert _promoted_email_count(fake_email_sender, "tentative@e.com") == 1
-        assert not NonMemberRsvpToken.objects.filter(user=tentative).exists()
+        assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.ATTENDING
+        assert _promoted_email_count(fake_email_sender, "signed-in@e.com") == 1
+        assert NonMemberRsvpToken.objects.filter(user=guest).exists() is gets_manage_link
