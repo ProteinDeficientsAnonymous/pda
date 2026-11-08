@@ -337,12 +337,12 @@ export interface MemberPromotionEmail {
   updatedAt: string;
 }
 
-interface WireMemberPromotionEmail {
+export interface WireMemberPromotionEmail {
   body: string;
   updated_at: string;
 }
 
-function mapMemberPromotionEmail(data: WireMemberPromotionEmail): MemberPromotionEmail {
+export function mapMemberPromotionEmail(data: WireMemberPromotionEmail): MemberPromotionEmail {
   return { body: data.body, updatedAt: data.updated_at };
 }
 

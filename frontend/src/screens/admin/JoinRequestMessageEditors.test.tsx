@@ -92,6 +92,7 @@ describe('JoinRequestMessageEditors', () => {
     expect(
       screen.getByRole('button', { name: /edit member promotion email/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit welcome back email/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
   });
 

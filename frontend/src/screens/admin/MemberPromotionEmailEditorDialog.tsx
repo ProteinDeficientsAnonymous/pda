@@ -21,7 +21,7 @@ const COPY = {
     title: 'edit welcome back email',
     label: 'welcome back email body',
     description:
-      'sent automatically when an attendance-paused member checks in to their 2nd official or club event in 12 months and gets full membership back.',
+      'sent automatically when a check-in brings an attendance-paused member back to full membership.',
   },
 } as const;
 
