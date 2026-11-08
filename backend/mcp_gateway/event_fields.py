@@ -1,8 +1,8 @@
 from typing import Any
 
-from community._event_schemas import EventIn, EventPatchIn
-from community._event_tags import list_event_tags
-from community.models import EventType, PageVisibility, is_official_or_club
+from community.events.schemas import EventIn, EventPatchIn
+from community.events.tags import list_event_tags
+from community.models import EventFormat, EventType, PageVisibility, is_official_or_club
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field, create_model
 from users.models import User
@@ -30,7 +30,10 @@ class EventFields(BaseModel):
     rsvp_enabled: bool = Field(False, description="let members rsvp on the site")
     event_type: EventType = Field(EventType.COMMUNITY, description="official/club need permission")
     visibility: PageVisibility = Field(PageVisibility.PUBLIC, description="official/club: public")
-    tags: list[str] = Field(default_factory=list, description="existing tag names, e.g. walk")
+    event_format: EventFormat | None = Field(
+        None, description="official events only: walk or restaurant"
+    )
+    tags: list[str] = Field(default_factory=list, description="existing tag names, e.g. side quest")
     whatsapp_link: str = Field("", description="whatsapp group or community invite link")
     partiful_link: str = Field("", description="partiful event link")
     other_link: str = Field("", description="any other link for the event")
@@ -46,7 +49,7 @@ async def _tags(names: list[str], user: User) -> dict[str, str]:
     return {tag["name"]: tag["id"] for tag in picked}
 
 
-def _no_default(schema: dict[str, Any]) -> None:
+def no_default(schema: dict[str, Any]) -> None:
     schema.pop("default", None)
 
 
@@ -56,7 +59,7 @@ EventChanges = create_model(
     **{
         name: (
             field.rebuild_annotation(),
-            Field(None, description=field.description, json_schema_extra=_no_default),
+            Field(None, description=field.description, json_schema_extra=no_default),
         )
         for name, field in EventFields.model_fields.items()
     },
@@ -103,15 +106,58 @@ def event_diff(event: dict[str, Any], changes: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def update_notes(event: dict[str, Any], changes: dict[str, Any]) -> list[str]:
-    notes = []
+def _plus_ones_note(event: dict[str, Any], changes: dict[str, Any]) -> str | None:
     new_type = changes.get("event_type", event["event_type"])
     plus_ones = changes.get("allow_plus_ones", event["allow_plus_ones"])
-    if is_official_or_club(new_type) and plus_ones:
-        if new_type != event["event_type"] or not event["allow_plus_ones"]:
-            notes.append("plus-ones will be turned off: official and club events don't allow them")
+    if not (is_official_or_club(new_type) and plus_ones):
+        return None
+    if new_type != event["event_type"] or not event["allow_plus_ones"]:
+        return "plus-ones will be turned off: official and club events don't allow them"
+    return None
+
+
+def _capacity_note(event: dict[str, Any], changes: dict[str, Any]) -> str | None:
     old_max, new_max = event["max_attendees"], changes.get("max_attendees")
-    raised = new_max is not None and (old_max is None or new_max > old_max)
-    if raised and event["waitlisted_count"]:
-        notes.append("raising capacity moves waitlisted members to going and emails them")
-    return notes
+    if new_max is None:
+        return None
+    if (old_max is None or new_max > old_max) and event["waitlisted_count"]:
+        return "raising capacity moves waitlisted members to going and emails them"
+    going = event["attending_count"]
+    if new_max < going:
+        return (
+            f"{going} spots are already taken, more than the new capacity of {new_max}: "
+            "nobody is removed, but new rsvps go to the waitlist"
+        )
+    return None
+
+
+def _location_note(event: dict[str, Any], changes: dict[str, Any]) -> str | None:
+    moved = changes.get("location", event["location"]) != event["location"]
+    repinned = "latitude" in changes or "longitude" in changes
+    if moved and not repinned and event["latitude"] is not None:
+        return (
+            "the map pin stays at the old coordinates: call find_location and send the new "
+            "latitude and longitude too"
+        )
+    return None
+
+
+def _non_member_note(count: int, removing: bool) -> str | None:
+    if not count:
+        return None
+    note = f"removes {count} non-member rsvp{'s' if count > 1 else ''} and emails them"
+    if removing:
+        return note
+    return f"{note}: ask the user, then preview again with remove_non_member_rsvps true"
+
+
+def update_notes(
+    event: dict[str, Any], changes: dict[str, Any], non_members: int = 0, removing: bool = False
+) -> list[str]:
+    notes = [
+        _plus_ones_note(event, changes),
+        _capacity_note(event, changes),
+        _location_note(event, changes),
+        _non_member_note(non_members, removing),
+    ]
+    return [note for note in notes if note]

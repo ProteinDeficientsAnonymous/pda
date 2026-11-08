@@ -1,8 +1,8 @@
 """Tests for payment-aware waitlist promotion notifications and emails."""
 
 import pytest
-from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
+from community.rsvps.waitlist import promote_from_waitlist
 from django.utils import timezone
 from notifications.models import Notification
 

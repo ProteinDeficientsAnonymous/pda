@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, PageVisibility
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from notifications.service import (
     create_event_invite_notifications,
@@ -15,43 +14,39 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
-def _make_user(phone: str, name: str = "") -> User:
-    return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550102", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def another_user(db) -> User:
-    return _make_user("+12025550103", "Carol")
+    return make_user(first_name="Carol")
 
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
+    event = Event.objects.create(
         title="Test Event",
         start_datetime=future_iso(days=30),
         end_datetime=future_iso(days=30, hours=2),
         created_by=inviter,
+        rsvp_enabled=True,
     )
+    event.co_hosts.add(inviter)
+    return event
 
 
 # ─── Service Tests ────────────────────────────────────────────────────────────
@@ -99,12 +94,13 @@ class TestEventInviteIntegration:
             "title": "Party",
             "start_datetime": future_iso(days=60),
             "end_datetime": future_iso(days=60, hours=2),
+            "rsvp_enabled": True,
         }
         create_response = api_client.post(
             "/api/community/events/",
             payload,
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert create_response.status_code == 201
         event_id = create_response.json()["id"]
@@ -113,7 +109,7 @@ class TestEventInviteIntegration:
             f"/api/community/events/{event_id}/invitations/",
             {"user_ids": [str(invitee.pk)]},
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert invite_response.status_code == 200
         assert Notification.objects.filter(recipient=invitee).count() == 1
@@ -130,7 +126,7 @@ class TestEventInviteIntegration:
             f"/api/community/events/{sample_event.id}/invitations/",
             {"user_ids": [str(invitee.pk), str(another_user.pk)]},
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert response.status_code == 200
         assert Notification.objects.filter(recipient=another_user).count() == 1
@@ -157,7 +153,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -175,7 +171,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(inviter),
+            **auth_headers_for(inviter),
         )
         assert response.status_code == 200
         assert str(invitee.pk) in response.json()["invited_user_ids"]
@@ -195,7 +191,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -215,7 +211,7 @@ class TestCanSeeInvited:
         response = api_client.get(
             f"/api/community/events/{event.id}/",
             content_type="application/json",
-            **_auth_headers(another_user),
+            **auth_headers_for(another_user),
         )
         assert response.status_code == 403
 
@@ -225,14 +221,8 @@ class TestCanSeeInvited:
 
 @pytest.mark.django_db
 class TestCreateJoinRequestNotifications:
-    def _make_user_with_permission(self, phone: str, permission: str) -> User:
-        user = _make_user(phone)
-        role = Role.objects.create(name=f"role_{phone}", permissions=[permission])
-        user.roles.add(role)
-        return user
-
     def test_notifies_user_with_approve_permission(self, db):
-        user = self._make_user_with_permission("+12025550201", PermissionKey.APPROVE_JOIN_REQUESTS)
+        user = make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
         create_join_request_notifications("Sprout")
         notif = Notification.objects.get(recipient=user)
         assert notif.notification_type == NotificationType.JOIN_REQUEST
@@ -241,19 +231,19 @@ class TestCreateJoinRequestNotifications:
         assert "Sprout" in notif.message
 
     def test_notifies_admin_role_user(self, db):
-        user = _make_user("+12025550202")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         user.roles.add(admin_role)
         create_join_request_notifications("Sprout")
         assert Notification.objects.filter(recipient=user).count() == 1
 
     def test_no_notification_for_unpermissioned_user(self, db):
-        user = _make_user("+12025550203")
+        user = make_user()
         create_join_request_notifications("Sprout")
         assert Notification.objects.filter(recipient=user).count() == 0
 
     def test_no_duplicate_for_user_with_admin_and_explicit_permission(self, db):
-        user = _make_user("+12025550204")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         extra_role = Role.objects.create(
             name="also_approver",
@@ -264,7 +254,7 @@ class TestCreateJoinRequestNotifications:
         assert Notification.objects.filter(recipient=user).count() == 1
 
     def test_message_contains_display_name(self, db):
-        self._make_user_with_permission("+12025550205", PermissionKey.APPROVE_JOIN_REQUESTS)
+        make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
         create_join_request_notifications("Luna Green")
         notif = Notification.objects.first()
         assert notif is not None
@@ -296,7 +286,7 @@ class TestPgNotifyIntegration:
         assert str(invitee.pk) in called_ids
 
     def test_join_request_callsnotify_users(self, db):
-        user = _make_user("+12025550301")
+        user = make_user()
         admin_role = Role.objects.get(name="admin", is_default=True)
         user.roles.add(admin_role)
         with patch("notifications.service.notify_users") as mock_notify:

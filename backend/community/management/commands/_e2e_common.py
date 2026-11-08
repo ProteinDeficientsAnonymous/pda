@@ -10,11 +10,15 @@ from community.models import Event, EventStatus, EventType, PageVisibility
 E2E_PASSWORD = "e2e-test-pass-123"
 
 
-def _random_phone() -> str:
-    return "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+def random_phone() -> str:
+    # the 555 pool is only 10k numbers, so a blind pick can collide with an existing user
+    while True:
+        phone = "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+        if not User.objects.filter(phone_number=phone).exists():
+            return phone
 
 
-def _random_event(scenario: str, **overrides) -> Event:
+def random_event(scenario: str, **overrides) -> Event:
     base = {
         "title": f"E2E {scenario} {secrets.token_hex(4)}",
         "start_datetime": timezone.now() + timedelta(days=30),
@@ -28,7 +32,7 @@ def _random_event(scenario: str, **overrides) -> Event:
     return Event.objects.create(**base)
 
 
-def _member_user(phone: str) -> User:
+def member_user(phone: str) -> User:
     user = User.objects.create_user(
         phone_number=phone,
         first_name="E2E",
@@ -41,7 +45,7 @@ def _member_user(phone: str) -> User:
     return user
 
 
-def _non_member_user(phone: str) -> User:
+def non_member_user(phone: str) -> User:
     # create_user with no password calls set_password(None) → unusable password.
     return User.objects.create_user(
         phone_number=phone,
@@ -52,6 +56,6 @@ def _non_member_user(phone: str) -> User:
     )
 
 
-def _access_token(user: User) -> str:
+def issue_access_token(user: User) -> str:
     refresh = RefreshToken.for_user(user)
     return str(refresh.access_token)  # type: ignore[attr-defined]

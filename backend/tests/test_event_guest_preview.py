@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 
 import pytest
-from community._event_rsvp_serialize import GUEST_PREVIEW_LIMIT, preview_photo_user_ids
 from community.models import RSVPStatus
+from community.rsvps.serialize import GUEST_PREVIEW_LIMIT, preview_photo_user_ids
 
 
 def _rsvp(user_id: str, status: str, is_member: bool) -> SimpleNamespace:

@@ -44,6 +44,19 @@ describe('mapEvent', () => {
     expect(result.guests[1]!.paidConfirmed).toBe(false);
   });
 
+  it('maps payment_verified on guests', () => {
+    const result = mapEvent(
+      wireEvent({
+        guests: [
+          { user_id: 'u1', name: 'Verified', status: 'attending', payment_verified: true },
+          { user_id: 'u2', name: 'Unverified', status: 'attending', paid_confirmed: true },
+        ],
+      }),
+    );
+    expect(result.guests[0]!.paymentVerified).toBe(true);
+    expect(result.guests[1]!.paymentVerified).toBe(false);
+  });
+
   it('should map rsvp_questions and my_questionnaire_responses', () => {
     const result = mapEvent(
       wireEvent({
@@ -123,7 +136,6 @@ describe('mapEvent', () => {
   it('defaults array fields to empty arrays', () => {
     const result = mapEvent(wireEvent());
     expect(result.guests).toEqual([]);
-    expect(result.linkedSurveys).toEqual([]);
     expect(result.coHostIds).toEqual([]);
     expect(result.invitedUserIds).toEqual([]);
     expect(result.invitedUserNames).toEqual([]);
@@ -166,6 +178,12 @@ describe('mapEvent', () => {
     expect(result.eventType).toBe('official');
     expect(result.visibility).toBe('members_only');
     expect(result.isPast).toBe(true);
+  });
+
+  it('maps event_format, null when absent', () => {
+    expect(mapEvent(wireEvent({ event_format: 'restaurant' })).eventFormat).toBe('restaurant');
+    expect(mapEvent(wireEvent()).eventFormat).toBeNull();
+    expect(mapEvent(wireEvent({ event_format: 'bogus' })).eventFormat).toBeNull();
   });
 
   it('maps nested guests array', () => {

@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent as makeBaseEvent, makeGuest, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { MyRsvpSection } from './MyRsvpSection';
 
@@ -48,17 +47,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 }
 
 function renderSection(event: Event, token?: string, locked?: boolean) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <MyRsvpSection
-          event={event}
-          {...(token ? { token } : {})}
-          {...(locked ? { locked } : {})}
-        />
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <MyRsvpSection event={event} {...(token ? { token } : {})} {...(locked ? { locked } : {})} />,
   );
 }
 
@@ -67,7 +57,7 @@ beforeEach(() => {
   setRsvpMutate.mockResolvedValue(undefined);
   removeRsvpMutate.mockReset();
   removeRsvpMutate.mockResolvedValue(undefined);
-  useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'tok' });
+  setAuthed(ME);
 });
 
 describe('MyRsvpSection — before RSVPing', () => {
@@ -354,7 +344,7 @@ describe('MyRsvpSection — rsvp submit error', () => {
 
 describe('MyRsvpSection — token-holding viewer (Issue 854)', () => {
   it('explains that +1s are for members instead of offering a toggle the backend ignores', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Attending,
@@ -378,7 +368,7 @@ describe('MyRsvpSection — comments in public manage vs member flows', () => {
   });
 
   it('renders the comment field in edit mode when token is present, and forwards it on save', async () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Attending,
@@ -401,7 +391,7 @@ describe('MyRsvpSection — comments in public manage vs member flows', () => {
   });
 
   it('hides the comment field in edit mode when token is absent (member edit)', () => {
-    useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'abc' });
+    setAuthed(ME, 'abc');
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Attending,
@@ -413,7 +403,7 @@ describe('MyRsvpSection — comments in public manage vs member flows', () => {
   });
 
   it('shows the comment field in create mode when token is absent (member create)', () => {
-    useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'abc' });
+    setAuthed(ME, 'abc');
     renderSection(
       makeEvent({
         myRsvp: null,

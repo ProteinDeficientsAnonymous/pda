@@ -1,34 +1,24 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { Toggle } from '@/components/ui/Toggle';
-import { OFFICIAL_EVENT_CASHAPP_TAG } from '@/config/organization';
-import { EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
+import { EventFormat, EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
 
 interface Props {
   values: EventFormValues;
   onChange: (patch: Partial<EventFormValues>) => void;
   canTagOfficial: boolean;
   canTagClub: boolean;
-  showWalkToggle?: boolean;
 }
 
 // Single-valued event_type makes the toggles mutually exclusive; official/club force public and lock +1s off.
-export function EventFormType({
-  values,
-  onChange,
-  canTagOfficial,
-  canTagClub,
-  showWalkToggle = false,
-}: Props) {
+export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: Props) {
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    const prefillCashapp = type === EventType.Official && !values.cashappLink.trim();
     onChange({
       eventType: type,
       ...(isOfficialOrClub(type)
         ? { visibility: EventVisibility.Public, allowPlusOnes: false }
         : {}),
-      ...(prefillCashapp ? { cashappLink: OFFICIAL_EVENT_CASHAPP_TAG } : {}),
     });
   };
 
@@ -43,12 +33,12 @@ export function EventFormType({
           }}
         />
       ) : null}
-      {canTagOfficial && showWalkToggle && values.eventType === EventType.Official ? (
+      {canTagOfficial && values.eventType === EventType.Official ? (
         <Toggle
           label="it's a walk"
-          checked={values.isWalk}
+          checked={values.eventFormat === EventFormat.Walk}
           onChange={(checked) => {
-            onChange({ isWalk: checked });
+            onChange({ eventFormat: checked ? EventFormat.Walk : EventFormat.Restaurant });
           }}
         />
       ) : null}

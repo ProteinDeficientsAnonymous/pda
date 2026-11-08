@@ -4,9 +4,9 @@ from io import BytesIO
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from community._validation import ValidationException
+from community.validation import ValidationException
 from config.audit import mark_request_via_mcp
-from config.validation_handlers import _serialize_validation_exception
+from config.validation_handlers import serialize_validation_exception
 from django.core.handlers.asgi import ASGIRequest
 from django.http import HttpRequest
 from mcp.server.mcpserver.exceptions import ToolError
@@ -44,8 +44,13 @@ def _jsonable(value: Any) -> Any:
     return to_jsonable_python(value)
 
 
-def _tool_error(status: int, detail: Any) -> ToolError:
+def tool_error(status: int, detail: Any) -> ToolError:
     return ToolError(json.dumps({"status": status, "detail": detail}))
+
+
+def validation_tool_error(exc: ValidationException) -> ToolError:
+    """A website validation error as a ToolError shaped like call_view's."""
+    return tool_error(exc.status_code, [serialize_validation_exception(exc)])
 
 
 async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: Any) -> Any:
@@ -55,10 +60,10 @@ async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: 
     try:
         result = await sync_to_async(view)(request, *args, **kwargs)
     except ValidationException as exc:
-        raise _tool_error(exc.status_code, [_serialize_validation_exception(exc)]) from exc
+        raise validation_tool_error(exc) from exc
     if isinstance(result, Status) and result.status_code >= 400:
         body = _jsonable(result.value)
-        raise _tool_error(
+        raise tool_error(
             result.status_code, body.get("detail", body) if isinstance(body, dict) else body
         )
     return _jsonable(result)

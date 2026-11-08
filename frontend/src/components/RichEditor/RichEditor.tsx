@@ -1,5 +1,11 @@
-import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
-import { useEffect } from 'react';
+import {
+  type Editor,
+  EditorContent,
+  type Extensions,
+  type JSONContent,
+  useEditor,
+} from '@tiptap/react';
+import { type ReactNode, useEffect } from 'react';
 
 import { cn } from '@/utils/cn';
 
@@ -13,6 +19,8 @@ interface Props {
   placeholder?: string | undefined;
   className?: string | undefined;
   disabled?: boolean;
+  extraExtensions?: Extensions;
+  toolbarExtra?: (editor: Editor) => ReactNode;
 }
 
 function parseValue(value: string): JSONContent | null {
@@ -24,9 +32,17 @@ function parseValue(value: string): JSONContent | null {
   }
 }
 
-export function RichEditor({ value, onChange, placeholder, className, disabled }: Props) {
+export function RichEditor({
+  value,
+  onChange,
+  placeholder,
+  className,
+  disabled,
+  extraExtensions,
+  toolbarExtra,
+}: Props) {
   const editor = useEditor({
-    extensions: pdaExtensions(),
+    extensions: [...pdaExtensions(), ...(extraExtensions ?? [])],
     content: parseValue(value),
     editable: !disabled,
     editorProps: {
@@ -63,7 +79,7 @@ export function RichEditor({ value, onChange, placeholder, className, disabled }
 
   return (
     <div className={cn('border-border-strong bg-surface rounded-md border', className)}>
-      <RichEditorToolbar editor={editor} />
+      <RichEditorToolbar editor={editor} extra={toolbarExtra?.(editor)} />
       <EditorContent editor={editor} />
     </div>
   );

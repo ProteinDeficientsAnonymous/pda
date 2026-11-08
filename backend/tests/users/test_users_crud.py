@@ -1,7 +1,7 @@
 """Tests for user create, bulk create, and search."""
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 from tests._asserts import assert_error_code
 from users.models import User
 from users.roles import Role

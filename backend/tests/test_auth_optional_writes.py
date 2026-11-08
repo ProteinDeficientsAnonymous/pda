@@ -6,7 +6,8 @@ import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from users.models import User
 
-from tests.test_auth_gate import _BLOCK_CODES, _block_user, _headers
+from tests._auth import auth_headers_for
+from tests._auth_gate_helpers import BLOCK_CODES, block_user
 
 _FEEDBACK_BODY = {
     "title": "Bug from a gated account",
@@ -59,8 +60,8 @@ class TestOptionalJwtAnonymousWrites:
             first_name="Hard",
             last_name="Feedback",
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
 
         resp = api_client.post(
             "/api/community/feedback/",
@@ -69,7 +70,7 @@ class TestOptionalJwtAnonymousWrites:
             **headers,
         )
         assert resp.status_code == 403
-        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert resp.json()["detail"][0]["code"] == BLOCK_CODES[block]
 
     @pytest.mark.parametrize(
         "block", ["needs_onboarding", "needs_guidelines_consent", "needs_password_reset"]
@@ -88,8 +89,8 @@ class TestOptionalJwtAnonymousWrites:
             first_name="Pending",
             last_name="Feedback",
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
         captured = _mock_feedback_github(monkeypatch, settings)
 
         resp = api_client.post(
@@ -114,8 +115,8 @@ class TestOptionalJwtAnonymousWrites:
             first_name="Hard",
             last_name="Survey",
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
 
         resp = api_client.post(
             f"/api/community/surveys/view/{survey.slug}/respond/",
@@ -124,7 +125,7 @@ class TestOptionalJwtAnonymousWrites:
             **headers,
         )
         assert resp.status_code == 403
-        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert resp.json()["detail"][0]["code"] == BLOCK_CODES[block]
         assert not SurveyResponse.objects.filter(survey=survey).exists()
 
     @pytest.mark.parametrize(
@@ -146,8 +147,8 @@ class TestOptionalJwtAnonymousWrites:
             first_name="Pending",
             last_name="Survey",
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
 
         resp = api_client.post(
             f"/api/community/surveys/view/{survey.slug}/respond/",

@@ -1,21 +1,20 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
 import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import { renderWithProviders } from '@/test/render';
 
 import JoinScreen from './JoinScreen';
 
 vi.mock('@/api/join', () => ({
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
-  AlreadyInvitedError: class AlreadyInvitedError extends Error {
+  AlreadyHasAccountError: class AlreadyHasAccountError extends Error {
     constructor() {
-      super('already_invited');
-      this.name = 'AlreadyInvitedError';
+      super('already_has_account');
+      this.name = 'AlreadyHasAccountError';
     }
   },
 }));
@@ -24,12 +23,7 @@ const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
 const mockUseSubmitJoinRequest = vi.mocked(useSubmitJoinRequest);
 
 function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/join']}>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(component, { route: '/join' });
 }
 
 beforeEach(() => {

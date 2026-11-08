@@ -1,16 +1,17 @@
 import pytest
-from community._validation import Code, ValidationException
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code, ValidationException
 from users.api import (
-    _create_user_with_role,
-    _validate_admin_role_change,
-    _validate_member_role_required,
+    create_user_with_role,
+    validate_admin_role_change,
+    validate_member_role_required,
 )
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -30,30 +31,18 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(admin_user)
 
 
 @pytest.fixture
 def manage_users_user(db):
     """A non-superuser with only manage_users permission."""
-    user = User.objects.create_user(
-        phone_number="+12025550002",
-        password="managerpass123",
-        first_name="Manager",
-        last_name="",
-    )
-    role = Role.objects.create(
-        name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES)
 
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(manage_users_user)
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +289,7 @@ class TestUserManagementAPI:
 
 
 # ---------------------------------------------------------------------------
-# Unit tests for _create_user_with_role helper
+# Unit tests for create_user_with_role helper
 # ---------------------------------------------------------------------------
 
 
@@ -311,7 +300,7 @@ class TestCreateUserWithRole:
 
     def test_creates_user_with_default_member_role(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
-        user, magic_token = _create_user_with_role(
+        user, magic_token = create_user_with_role(
             "+12025559999", "Test", "User", "t@e.com", None, requesting_user=self._requester()
         )
         assert user.phone_number == "+12025559999"
@@ -320,7 +309,7 @@ class TestCreateUserWithRole:
 
     def test_creates_user_with_specific_role(self):
         role = Role.objects.create(name="custom_role")
-        user, _ = _create_user_with_role(
+        user, _ = create_user_with_role(
             "+12025558888",
             "Custom",
             "User",
@@ -333,21 +322,21 @@ class TestCreateUserWithRole:
     def test_raises_on_duplicate_phone(self):
         User.objects.create_user(phone_number="+12025557777", password="pass123")
         with pytest.raises(ValidationException) as exc_info:
-            _create_user_with_role(
+            create_user_with_role(
                 "+12025557777", "Dup", "", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.ALREADY_EXISTS
 
     def test_raises_on_invalid_phone(self):
         with pytest.raises(ValidationException) as exc_info:
-            _create_user_with_role(
+            create_user_with_role(
                 "not-a-phone", "Bad", "Phone", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.INVALID
 
     def test_raises_on_bad_role_and_deletes_user(self):
         with pytest.raises(ValidationException) as exc_info:
-            _create_user_with_role(
+            create_user_with_role(
                 "+12025556666",
                 "Bad Role",
                 "User",
@@ -362,7 +351,7 @@ class TestCreateUserWithRole:
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
         non_admin = self._requester()
         with pytest.raises(ValidationException) as exc_info:
-            _create_user_with_role(
+            create_user_with_role(
                 "+12025554444",
                 "Sneaky",
                 "Admin",
@@ -378,7 +367,7 @@ class TestCreateUserWithRole:
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
         requester = self._requester()
         requester.roles.add(admin_role)
-        user, _ = _create_user_with_role(
+        user, _ = create_user_with_role(
             "+12025553333",
             "New",
             "Admin",
@@ -390,7 +379,7 @@ class TestCreateUserWithRole:
 
 
 # ---------------------------------------------------------------------------
-# Unit tests for _validate_admin_role_change
+# Unit tests for validate_admin_role_change
 # ---------------------------------------------------------------------------
 
 
@@ -406,7 +395,7 @@ class TestValidateAdminRoleChange:
         user = User.objects.create_user(phone_number="+12025550101", password="p", email="a@e.com")
         other = User.objects.create_user(phone_number="+12025550199", password="p")
         # No admin role exists — should be a no-op (not raise)
-        _validate_admin_role_change(user, other, [])
+        validate_admin_role_change(user, other, [])
 
     def test_returns_error_when_removing_own_admin(self):
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
@@ -414,7 +403,7 @@ class TestValidateAdminRoleChange:
         user = User.objects.create_user(phone_number="+12025550102", password="p", email="b@e.com")
         user.roles.add(admin_role)
         with pytest.raises(ValidationException) as exc_info:
-            _validate_admin_role_change(user, user, [member_role])
+            validate_admin_role_change(user, user, [member_role])
         assert exc_info.value.code == Code.Role.CANNOT_REMOVE_OWN_ADMIN
 
     def test_returns_none_when_keeping_own_admin(self):
@@ -422,7 +411,7 @@ class TestValidateAdminRoleChange:
         user = User.objects.create_user(phone_number="+12025550103", password="p", email="c@e.com")
         user.roles.add(admin_role)
         # Keeping admin — no-op
-        _validate_admin_role_change(user, user, [admin_role])
+        validate_admin_role_change(user, user, [admin_role])
 
     def test_returns_error_when_removing_last_admin(self):
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
@@ -433,7 +422,7 @@ class TestValidateAdminRoleChange:
         # an admin, so ``user`` remains the sole/last admin.
         requester = User.objects.create_user(phone_number="+12025550144", password="p")
         with pytest.raises(ValidationException) as exc_info:
-            _validate_admin_role_change(user, requester, [member_role])
+            validate_admin_role_change(user, requester, [member_role])
         assert exc_info.value.code == Code.Role.CANNOT_REMOVE_LAST_ADMIN
 
     def test_returns_error_when_non_admin_grants_admin(self):
@@ -441,7 +430,7 @@ class TestValidateAdminRoleChange:
         target = User.objects.create_user(phone_number="+12025550105", password="p")
         non_admin = User.objects.create_user(phone_number="+12025550106", password="p")
         with pytest.raises(ValidationException) as exc_info:
-            _validate_admin_role_change(target, non_admin, [admin_role])
+            validate_admin_role_change(target, non_admin, [admin_role])
         assert exc_info.value.code == Code.Role.CANNOT_GRANT_ADMIN
         assert exc_info.value.status_code == 403
 
@@ -449,11 +438,11 @@ class TestValidateAdminRoleChange:
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
         target = User.objects.create_user(phone_number="+12025550107", password="p")
         # Admin requester granting admin to target — no-op (no raise)
-        _validate_admin_role_change(target, self._admin_requester(), [admin_role])
+        validate_admin_role_change(target, self._admin_requester(), [admin_role])
 
 
 # ---------------------------------------------------------------------------
-# Unit tests for _validate_member_role_required
+# Unit tests for validate_member_role_required
 # ---------------------------------------------------------------------------
 
 
@@ -463,17 +452,17 @@ class TestValidateMemberRoleRequired:
         member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
         custom = Role.objects.create(name="greeter")
         # Member present — no-op
-        _validate_member_role_required([member_role, custom])
+        validate_member_role_required([member_role, custom])
 
     def test_returns_error_when_member_role_missing(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         custom = Role.objects.create(name="greeter")
         with pytest.raises(ValidationException) as exc_info:
-            _validate_member_role_required([custom])
+            validate_member_role_required([custom])
         assert exc_info.value.code == Code.Role.MEMBER_ROLE_REQUIRED
 
     def test_returns_error_when_new_roles_empty(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         with pytest.raises(ValidationException) as exc_info:
-            _validate_member_role_required([])
+            validate_member_role_required([])
         assert exc_info.value.code == Code.Role.MEMBER_ROLE_REQUIRED

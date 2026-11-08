@@ -3,14 +3,14 @@
 import uuid
 
 import pytest
-from community import _join_requests
-from community._validation import Code
+from community.join_requests import manage
 from community.models import JoinRequest, JoinRequestStatus
+from community.validation import Code
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
@@ -51,9 +51,7 @@ class TestJoinRequestManagement:
             first_name="Admin",
             last_name="User",
         )
-        admin_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
-        }
+        admin_headers = auth_headers_for(admin)
         response = api_client.get("/api/community/join-requests/", **admin_headers)
         assert response.status_code == 200
 
@@ -170,7 +168,7 @@ class TestJoinRequestManagement:
             called = True
             return original(*args, **kwargs)
 
-        monkeypatch.setattr(_join_requests.JoinRequest.objects, "select_for_update", spy)
+        monkeypatch.setattr(manage.JoinRequest.objects, "select_for_update", spy)
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": "approved"},

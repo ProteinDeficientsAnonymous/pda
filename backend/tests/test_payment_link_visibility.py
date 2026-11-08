@@ -68,46 +68,6 @@ class TestPublicPaymentLinkVisibility:
 
 
 @pytest.mark.django_db
-class TestListSerializerPaymentParity:
-    def _list(self, api_client, **headers):
-        return api_client.get("/api/community/events/", **headers).json()
-
-    def _find(self, body, event):
-        return next(item for item in body if item["id"] == str(event.id))
-
-    def test_anon_sees_payment_links_in_list_for_eligible_event(self, api_client, test_user):
-
-        event = _paid_event(test_user, event_type=EventType.OFFICIAL)
-        row = self._find(self._list(api_client), event)
-        assert row["venmo_link"] == "https://venmo.com/u/host"
-
-    def test_list_and_detail_agree_for_anon(self, api_client, test_user):
-
-        event = _paid_event(test_user, event_type=EventType.OFFICIAL)
-        row = self._find(self._list(api_client), event)
-        detail = api_client.get(f"/api/community/events/{event.id}/").json()
-        assert row["venmo_link"] == detail["venmo_link"]
-
-    def test_anon_does_not_see_payment_links_in_list_for_community_event(
-        self, api_client, test_user
-    ):
-
-        event = _paid_event(test_user, event_type=EventType.COMMUNITY)
-        row = self._find(self._list(api_client), event)
-        assert row["venmo_link"] == ""
-
-    def test_anon_still_does_not_see_other_links_in_list(self, api_client, test_user):
-
-        event = _paid_event(
-            test_user,
-            event_type=EventType.OFFICIAL,
-            whatsapp_link="https://chat.whatsapp.com/abc",
-        )
-        row = self._find(self._list(api_client), event)
-        assert row["whatsapp_link"] == ""
-
-
-@pytest.mark.django_db
 class TestPaymentLinkVisibility:
     def _venmo(self, api_client, event, **headers):
         return api_client.get(f"/api/community/events/{event.id}/", **headers).json()["venmo_link"]

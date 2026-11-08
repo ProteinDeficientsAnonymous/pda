@@ -2,6 +2,7 @@ import pytest
 from community.management.commands._seed_staging_feedback import (
     FEEDBACK_EVENT_SPECS,
     FEEDBACK_SURVEY_SLUG,
+    build_answers,
 )
 from community.models import (
     AttendanceStatus,
@@ -41,7 +42,7 @@ def test_seed_staging_reuses_existing_official_feedback_survey():
         title="real feedback", slug="real-feedback", feedback_event_type=EventType.OFFICIAL
     )
     SurveyQuestion.objects.create(
-        survey=survey, label="rate it", field_type=SurveyQuestionType.RATING
+        survey=survey, label="rate it", field_type=SurveyQuestionType.STARS
     )
     call_command("seed_staging")
     assert not Survey.objects.filter(slug=FEEDBACK_SURVEY_SLUG).exists()
@@ -56,3 +57,12 @@ def test_seed_staging_reset_leaves_no_orphaned_feedback():
     call_command("seed_staging", "--reset")
     assert not SurveyResponse.objects.filter(event__isnull=True).exists()
     assert SurveyResponse.objects.count() == sum(s.responders for s in FEEDBACK_EVENT_SPECS)
+
+
+@pytest.mark.unit
+def test_checkbox_answers_are_seeded_as_lists():
+    question = SurveyQuestion(
+        label="interests", field_type=SurveyQuestionType.CHECKBOX, options=["a, b", "c"]
+    )
+    answers = build_answers([question], 0)
+    assert answers[str(question.id)]["answer"] == ["a, b"]

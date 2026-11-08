@@ -1,12 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
-import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { Code } from '@/api/validationCodes';
+import { apiError } from '@/test/apiError';
+import { setAuthed } from '@/test/auth';
+import { creator, makeEvent, nonHost } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import EventCheckInReportScreen from './EventCheckInReportScreen';
 
@@ -32,20 +34,13 @@ const BASE_EVENT = makeEvent({
   guests: [],
 });
 
-const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
-const nonMember = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
-
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/events/ev1/report']}>
-        <Routes>
-          <Route path="/events/:id/report" element={<EventCheckInReportScreen />} />
-          <Route path="/events/:id" element={<div>event detail</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/events/:id/report" element={<EventCheckInReportScreen />} />
+      <Route path="/events/:id" element={<div>event detail</div>} />
+    </Routes>,
+    { route: '/events/ev1/report' },
   );
 }
 
@@ -58,8 +53,24 @@ beforeEach(() => {
 });
 
 describe('EventCheckInReportScreen', () => {
+  it('shows the forbidden notice on a 403', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: apiError(403, Code.Event.PermDenied),
+    } as unknown as ReturnType<typeof useEvent>);
+    renderScreen();
+
+    expect(screen.getByText("you don't have permission to see this event")).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'back to event' })).toHaveAttribute(
+      'href',
+      '/events/ev1',
+    );
+  });
+
   it('renders the report heading for the event creator', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /check-in report/i })).toBeInTheDocument();
@@ -67,7 +78,7 @@ describe('EventCheckInReportScreen', () => {
   });
 
   it('back link returns to the event, not the attendance page', async () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    setAuthed(creator);
     renderScreen();
 
     await userEvent.click(screen.getByRole('link', { name: /back to event/i }));
@@ -76,7 +87,7 @@ describe('EventCheckInReportScreen', () => {
   });
 
   it('blocks non-host members with a forbidden notice', () => {
-    useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
+    setAuthed(nonHost);
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();

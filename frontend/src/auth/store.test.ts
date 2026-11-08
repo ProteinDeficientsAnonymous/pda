@@ -4,6 +4,7 @@ import * as authApi from '@/api/auth';
 import { eventKeys } from '@/api/events';
 import { queryClient } from '@/api/queryClient';
 import { getStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 
 import { useAuthStore } from './store';
@@ -26,11 +27,7 @@ vi.mock('@/api/auth', () => ({
 
 // Also mock the client so setAuthBridge (called at store module load) doesn't
 // set up real axios interceptors in the test environment.
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockUser = makeUser({
   id: 'user-1',
@@ -147,7 +144,7 @@ describe('useAuthStore', () => {
 
   describe('magicLogin', () => {
     it('preserves the existing session when magic login fails', async () => {
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
       const err = Object.assign(new Error('403'), {
         isAxiosError: true,
         response: { status: 403 },
@@ -243,7 +240,7 @@ describe('useAuthStore', () => {
   describe('logout', () => {
     it('sets status to unauthed and clears user and accessToken', async () => {
       // Start in an authed state.
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
       vi.mocked(authApi.logout).mockResolvedValueOnce(undefined);
 
       await useAuthStore.getState().logout();
@@ -257,7 +254,7 @@ describe('useAuthStore', () => {
 
   describe('deleteAccount', () => {
     it('clears the session and cached queries once the server confirms', async () => {
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
       vi.mocked(authApi.deleteAccount).mockResolvedValueOnce(undefined);
       const clearSpy = vi.spyOn(queryClient, 'clear');
 
@@ -272,7 +269,7 @@ describe('useAuthStore', () => {
     });
 
     it('keeps the session when the server rejects the request', async () => {
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
       vi.mocked(authApi.deleteAccount).mockRejectedValueOnce(new Error('wrong password'));
       const clearSpy = vi.spyOn(queryClient, 'clear');
 
@@ -288,7 +285,7 @@ describe('useAuthStore', () => {
 
   describe('uploadProfilePhoto', () => {
     it('stores the server-stamped photoUpdatedAt so the cache-buster changes', async () => {
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
       const serverStamp = '2026-06-25T12:00:00+00:00';
       vi.mocked(authApi.uploadProfilePhoto).mockResolvedValueOnce({
         ...mockUser,
@@ -304,7 +301,7 @@ describe('useAuthStore', () => {
 
   describe('forceLogout', () => {
     it('synchronously sets status to unauthed and clears user and accessToken', () => {
-      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      setAuthed(mockUser, 'tok-abc');
 
       useAuthStore.getState().forceLogout();
 

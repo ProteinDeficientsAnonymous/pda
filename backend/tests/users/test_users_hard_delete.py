@@ -1,8 +1,8 @@
 import logging
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventComment
+from community.validation import Code
 from django.utils import timezone
 from tests._asserts import assert_error_code
 from users.models import MagicLoginToken, User

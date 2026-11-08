@@ -1,6 +1,5 @@
-import asyncio
-
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
 from django.utils import timezone
 from mcp_gateway.models import OAuthGrant, OAuthToken
@@ -37,13 +36,13 @@ def _revoke_url(grant) -> str:
     return f"/api/connect/apps/{grant.id}/"
 
 
-@pytest.mark.django_db(transaction=True, serialized_rollback=True)
+@pytest.mark.django_db
 def test_revoke_own_app_kills_tokens(api_client, auth_headers, test_user):
     grant = make_grant(test_user)
     access = make_tokens(grant)
-    assert asyncio.run(PdaOAuthProvider().load_access_token(access)) is not None
+    assert async_to_sync(PdaOAuthProvider().load_access_token)(access) is not None
     assert api_client.delete(_revoke_url(grant), **auth_headers).status_code == 204
-    assert asyncio.run(PdaOAuthProvider().load_access_token(access)) is None
+    assert async_to_sync(PdaOAuthProvider().load_access_token)(access) is None
     grant.refresh_from_db()
     assert grant.revoked_at is not None
     assert not OAuthToken.objects.filter(grant=grant, revoked_at__isnull=True).exists()

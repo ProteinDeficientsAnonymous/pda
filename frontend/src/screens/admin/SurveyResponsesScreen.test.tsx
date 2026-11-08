@@ -1,12 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toastError = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({ toast: { error: toastError, success: vi.fn() } }));
 
+import { QuestionType } from '@/api/questionTypes';
 import {
   downloadSurveyResponsesCsv,
   useAdminSurvey,
@@ -14,6 +14,8 @@ import {
   useSurveyQuestionSummaries,
   useSurveyResponses,
 } from '@/api/surveyAdmin';
+import { formatPollOption } from '@/components/questions/pollOption';
+import { renderWithProviders } from '@/test/render';
 
 import SurveyResponsesScreen from './SurveyResponsesScreen';
 
@@ -22,7 +24,6 @@ vi.mock('@/api/surveyAdmin', () => ({
   useSurveyResponses: vi.fn(),
   useSurveyPollTallies: vi.fn(),
   useSurveyQuestionSummaries: vi.fn(),
-  useFinalizeSurveyPoll: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useDeleteSurveyResponse: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   downloadSurveyResponsesCsv: vi.fn(),
 }));
@@ -50,7 +51,7 @@ interface SummaryRow {
 
 const QUESTIONS: Question[] = [
   { id: 'q-colour', label: 'Colour', fieldType: 'radio', options: ['red', 'blue'] },
-  { id: 'q-vibes', label: 'Vibes', fieldType: 'rating', options: [] },
+  { id: 'q-vibes', label: 'Vibes', fieldType: QuestionType.Stars, options: [] },
   { id: 'q-notes', label: 'Notes', fieldType: 'text', options: [] },
 ];
 
@@ -64,7 +65,7 @@ const SUMMARY_ROWS: SummaryRow[] = [
   },
   {
     questionId: 'q-vibes',
-    fieldType: 'rating',
+    fieldType: QuestionType.Stars,
     counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
     answered: 2,
     mean: 3.5,
@@ -79,6 +80,7 @@ function setup({
   questions = QUESTIONS,
   summaries = SUMMARY_ROWS,
   summaryState = {},
+  tallies = [],
   responseCount = 1,
   feedbackEventType = '',
   responses,
@@ -86,6 +88,7 @@ function setup({
   questions?: typeof QUESTIONS;
   summaries?: typeof SUMMARY_ROWS;
   summaryState?: Record<string, unknown>;
+  tallies?: unknown[];
   responseCount?: number;
   feedbackEventType?: string;
   responses?: unknown[];
@@ -96,7 +99,6 @@ function setup({
       title: 'feedback',
       slug: 'feedback',
       questions,
-      pollResult: null,
       feedbackEventType,
     }),
   );
@@ -112,18 +114,14 @@ function setup({
         })),
     ),
   );
-  mockTallies.mockReturnValue(mockQuery([]));
+  mockTallies.mockReturnValue(mockQuery(tallies));
   mockSummaries.mockReturnValue(mockQuery(summaries, summaryState));
 
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/admin/surveys/srv-1/responses']}>
-        <Routes>
-          <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+    </Routes>,
+    { route: '/admin/surveys/srv-1/responses' },
   );
 }
 
@@ -142,6 +140,12 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(colour).getByText('4 answered')).toBeInTheDocument();
   });
 
+  it('should let long unbroken options wrap instead of widening the page', () => {
+    setup();
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByRole('cell', { name: 'red' })).toHaveClass('wrap-anywhere');
+  });
+
   it('should render the rating distribution with its mean', () => {
     setup();
     const section = screen.getByText('question summaries').closest('section')!;
@@ -149,6 +153,29 @@ describe('SurveyResponsesScreen summaries', () => {
     expect(within(vibes).getByText('2 answered · average 3.50')).toBeInTheDocument();
     const five = within(vibes).getByText('5').closest('tr')!;
     expect(within(five).getByText('1')).toBeInTheDocument();
+  });
+
+  it('should name scale rows by their end labels', () => {
+    setup({
+      questions: [
+        { id: 'q-pace', label: 'Pace', fieldType: QuestionType.Scale, options: ['Slow', 'Fast'] },
+      ],
+      summaries: [{ ...SUMMARY_ROWS[1]!, questionId: 'q-pace', fieldType: QuestionType.Scale }],
+    });
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByText('1 — slow')).toBeInTheDocument();
+    expect(within(section).getByText('3')).toBeInTheDocument();
+    expect(within(section).getByText('5 — fast')).toBeInTheDocument();
+  });
+
+  it('should name scale rows by their point labels', () => {
+    const options = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'];
+    setup({
+      questions: [{ id: 'q-pace', label: 'Pace', fieldType: QuestionType.Scale, options }],
+      summaries: [{ ...SUMMARY_ROWS[1]!, questionId: 'q-pace', fieldType: QuestionType.Scale }],
+    });
+    const section = screen.getByText('question summaries').closest('section')!;
+    expect(within(section).getByText('3 — sometimes')).toBeInTheDocument();
   });
 
   it('should share checkbox options across respondents, not across selections', () => {
@@ -212,21 +239,16 @@ describe('SurveyResponsesScreen summaries', () => {
         id: 'srv-1',
         title: 'feedback',
         questions: [QUESTIONS[2]],
-        pollResult: null,
       }),
     );
     mockResponses.mockReturnValue(mockQuery([]));
     mockTallies.mockReturnValue(mockQuery([]));
     mockSummaries.mockReturnValue(mockQuery([]));
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={['/admin/surveys/srv-1/responses']}>
-          <Routes>
-            <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+      </Routes>,
+      { route: '/admin/surveys/srv-1/responses' },
     );
     expect(screen.queryByText('question summaries')).not.toBeInTheDocument();
   });
@@ -259,6 +281,53 @@ describe('SurveyResponsesScreen summaries', () => {
       .slice(1)
       .map((tr) => tr.firstElementChild?.textContent);
     expect(options).toEqual(['red', 'blue', 'green']);
+  });
+});
+
+describe('SurveyResponsesScreen datetime poll', () => {
+  const POLL_A = '2026-11-07T16:00:00.000Z';
+  const POLL_B = '2026-11-08T19:00:00.000Z';
+  const pollSetup = () => {
+    setup({
+      questions: [
+        QUESTIONS[0]!,
+        {
+          id: 'q-when',
+          label: 'When',
+          fieldType: QuestionType.DatetimePoll,
+          options: [POLL_B, POLL_A],
+        },
+        QUESTIONS[1]!,
+      ],
+      tallies: [
+        {
+          questionId: 'q-when',
+          tallies: {
+            [POLL_A]: { yes: 2, maybe: 0, no: 1 },
+            [POLL_B]: { yes: 0, maybe: 1, no: 2 },
+          },
+          voters: {},
+          totalResponses: 3,
+        },
+      ],
+    });
+  };
+
+  it('should place the poll among the summaries in survey order', () => {
+    pollSetup();
+    const labels = ['colour', 'when', 'vibes'].map((l) => screen.getByText(l));
+    expect(labels[0]!.compareDocumentPosition(labels[1]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(labels[1]!.compareDocumentPosition(labels[2]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('should list options in survey order with a no column', () => {
+    pollSetup();
+    const rows = within(screen.getByText('when').closest('div')!).getAllByRole('row');
+    expect(rows.map((tr) => tr.textContent)).toEqual([
+      'optionyesmaybeno',
+      `${formatPollOption(POLL_B)}012`,
+      `${formatPollOption(POLL_A)}201`,
+    ]);
   });
 });
 

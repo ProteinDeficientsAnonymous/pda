@@ -1,11 +1,13 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
     CONDITION_SOURCE_TYPES,
+    MATCHABLE_RSVP_STATUSES,
     RSVP_CHOICE_TYPES,
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     CoHostInviteStatus,
     EventFlagStatus,
+    EventFormat,
     EventStatus,
     EventType,
     FeedbackType,
@@ -32,6 +34,7 @@ from community.models.content import (
     HomePage,
     MemberPromotionEmailTemplate,
     MemberPromotionMessageTemplate,
+    MemberRestoredEmailTemplate,
     RejectionEmailTemplate,
     TentativeApprovalMessageTemplate,
     WelcomeMessageTemplate,
@@ -56,8 +59,8 @@ from community.models.event_slug import (
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
 from community.models.poll import EventPoll, PollOption, PollVote
+from community.models.speech import EventSpeech, SpeechTemplate
 from community.models.survey import (
-    DatetimePollResult,
     Survey,
     SurveyQuestion,
     SurveyResponse,
@@ -81,11 +84,13 @@ __all__ = [
     "InvitePermission",
     "JoinFormQuestionType",
     "JoinRequestStatus",
+    "EventFormat",
     "PageVisibility",
     "PollAvailability",
     "QuestionType",
     "RejectionReason",
     "RSVP_CHOICE_TYPES",
+    "MATCHABLE_RSVP_STATUSES",
     "RSVP_QUESTION_TYPE_CHOICES",
     "RsvpQuestionType",
     "EventRsvpQuestion",
@@ -101,6 +106,7 @@ __all__ = [
     "HomePage",
     "MemberPromotionEmailTemplate",
     "MemberPromotionMessageTemplate",
+    "MemberRestoredEmailTemplate",
     "RejectionEmailTemplate",
     "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
@@ -125,7 +131,8 @@ __all__ = [
     "EventPoll",
     "PollOption",
     "PollVote",
-    "DatetimePollResult",
+    "EventSpeech",
+    "SpeechTemplate",
     "Survey",
     "SurveyQuestion",
     "SurveyResponse",

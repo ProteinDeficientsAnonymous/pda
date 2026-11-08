@@ -1,71 +1,57 @@
 """Tests for waitlist promotion behaviour when RSVP capacity frees up."""
 
 import pytest
-from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
+from community.rsvps.waitlist import promote_from_waitlist
 from notifications.models import Notification, NotificationType
-from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 
-def _make_user(phone, name):
-    return User.objects.create_user(
-        phone_number=phone,
-        password="Testpass123!",
-        first_name=name,
-        last_name="",
-    )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
 @pytest.fixture
 def user1(db):
-    return _make_user("+14155559001", "User One")
+    return make_user(first_name="User One")
 
 
 @pytest.fixture
 def user2(db):
-    return _make_user("+14155559002", "User Two")
+    return make_user(first_name="User Two")
 
 
 @pytest.fixture
 def user3(db):
-    return _make_user("+14155559003", "User Three")
+    return make_user(first_name="User Three")
 
 
 @pytest.fixture
 def user4(db):
-    return _make_user("+14155559004", "User Four")
+    return make_user(first_name="User Four")
 
 
 @pytest.fixture
 def headers1(user1):
-    return _jwt_headers(user1)
+    return auth_headers_for(user1)
 
 
 @pytest.fixture
 def headers2(user2):
-    return _jwt_headers(user2)
+    return auth_headers_for(user2)
 
 
 @pytest.fixture
 def headers3(user3):
-    return _jwt_headers(user3)
+    return auth_headers_for(user3)
 
 
 @pytest.fixture
 def headers4(user4):
-    return _jwt_headers(user4)
+    return auth_headers_for(user4)
 
 
 @pytest.fixture
@@ -290,7 +276,7 @@ class TestPromoteOnCapacityIncrease:
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 3},
@@ -310,7 +296,7 @@ class TestPromoteOnCapacityIncrease:
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 1},

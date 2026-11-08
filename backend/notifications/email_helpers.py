@@ -1,0 +1,468 @@
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils import timezone
+
+from notifications.email_sender import EmailSender, SendResult
+
+if TYPE_CHECKING:
+    from community.models import Event
+
+
+def format_eastern_datetime(dt: datetime) -> str:
+    return (
+        timezone.localtime(dt, settings.COMMUNITY_TZ)
+        .strftime("%A, %B %d at %I:%M %p")
+        .replace(" 0", " ")
+    )
+
+
+def format_event_when(event: "Event", tbd: str = "to be decided") -> str:
+    if event.datetime_tbd or event.start_datetime is None:
+        return tbd
+    return format_eastern_datetime(event.start_datetime)
+
+
+@dataclass(frozen=True)
+class RsvpEmailDetails:
+    """Event + recipient details shared by the non-member RSVP emails."""
+
+    to: str
+    display_name: str
+    event_title: str
+    event_when: str
+    event_location: str
+    event_links: list[str]
+    manage_url: str
+    join_url: str
+
+    def template_context(self) -> dict:
+        return {
+            "display_name": self.display_name or "",
+            "event_title": self.event_title,
+            "event_when": self.event_when,
+            "event_location": self.event_location,
+            "event_links": self.event_links,
+            "manage_url": self.manage_url,
+            "join_url": self.join_url,
+        }
+
+
+def send_rsvp_confirmation_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+    waitlisted: bool,
+) -> SendResult:
+    """Render and send the non-member RSVP confirmation email."""
+    context = {**details.template_context(), "waitlisted": waitlisted}
+    html = render_to_string("emails/rsvp_confirmation.html", context)
+    text = render_to_string("emails/rsvp_confirmation.txt", context)
+    title = details.event_title.lower()
+    subject = f"you're on the waitlist for {title}" if waitlisted else f"you're in for {title}"
+    return sender.send(to=details.to, subject=subject, html=html, text=text)
+
+
+def send_rsvp_updated_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the non-member "your rsvp was updated" email."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_updated.html", context)
+    text = render_to_string("emails/rsvp_updated.txt", context)
+    return sender.send(
+        to=details.to,
+        subject="your rsvp was updated",
+        html=html,
+        text=text,
+    )
+
+
+def send_rsvp_waitlist_promoted_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+    payment_pending: bool = False,
+) -> SendResult:
+    """Render and send the non-member "you're off the waitlist" email."""
+    context = {**details.template_context(), "payment_pending": payment_pending}
+    html = render_to_string("emails/rsvp_waitlist_promoted.html", context)
+    text = render_to_string("emails/rsvp_waitlist_promoted.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you're off the waitlist for {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+def send_rsvp_removed_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the non-member "you were removed from this event" email."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_removed.html", context)
+    text = render_to_string("emails/rsvp_removed.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you've been removed from {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class MemberRsvpEmailDetails:
+    """Event + recipient details for the member RSVP status emails."""
+
+    to: str
+    display_name: str
+    event_title: str
+    event_when: str
+    event_location: str
+    event_links: list[str]
+    event_url: str
+
+
+_MEMBER_RSVP_SUBJECTS: dict[str, str] = {
+    "attending": "you're in for {title}",
+    "promoted": "you're off the waitlist for {title}",
+}
+
+
+def send_member_rsvp_status_email(
+    *,
+    sender: EmailSender,
+    details: MemberRsvpEmailDetails,
+    kind: str,
+    payment_pending: bool = False,
+) -> SendResult:
+    """Render and send a member's RSVP status email.
+
+    param kind(str): attending | promoted
+    """
+    context = {**asdict(details), "kind": kind, "payment_pending": payment_pending}
+    html = render_to_string("emails/member_rsvp_status.html", context)
+    text = render_to_string("emails/member_rsvp_status.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=_MEMBER_RSVP_SUBJECTS[kind].format(title=details.event_title.lower()),
+        html=html,
+        text=text,
+    )
+
+
+def send_rsvp_manage_link_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    manage_url: str,
+) -> SendResult:
+    """Render and send the standalone "here's your manage-rsvp link" email.
+
+    Not tied to a single event — used by the resend-link recovery flow so a
+    non-member who lost their emailed link can get a fresh one.
+    """
+    context = {
+        "display_name": display_name or "",
+        "manage_url": manage_url,
+    }
+    html = render_to_string("emails/rsvp_manage_link.html", context)
+    text = render_to_string("emails/rsvp_manage_link.txt", context)
+    return sender.send(
+        to=to,
+        subject="your pda rsvp link",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class LoginLinkEmail:
+    """An emails/ template (extending magic_login) and its subject line."""
+
+    template: str
+    subject: str
+
+
+MAGIC_LOGIN_EMAIL = LoginLinkEmail("magic_login", "your pda login link")
+
+
+def send_magic_login_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    magic_link_url: str,
+    email: LoginLinkEmail = MAGIC_LOGIN_EMAIL,
+) -> SendResult:
+    """Render and send a magic-login email.
+
+    Recipient validation (RFC-validity + header-injection guard) happens at the
+    `EmailSender.send()` boundary, so every email type is protected uniformly.
+    """
+    context = {
+        "display_name": display_name or "",
+        "magic_link_url": magic_link_url,
+    }
+    html = render_to_string(f"emails/{email.template}.html", context)
+    text = render_to_string(f"emails/{email.template}.txt", context)
+    return sender.send(
+        to=to,
+        subject=email.subject,
+        html=html,
+        text=text,
+    )
+
+
+def send_join_approval_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    message_body: str,
+    login_url: str,
+) -> SendResult:
+    """Render and send the "you're a full member now" join-approval email.
+
+    ``message_body`` is the UI-editable confirmation text (member promotion
+    email template) with its placeholders substituted by the caller. The
+    recipient already has an account by this point, so this links to the
+    normal login page rather than carrying a one-time token.
+    """
+    context = {
+        "display_name": display_name or "",
+        "message_body": message_body,
+        "login_url": login_url,
+    }
+    html = render_to_string("emails/join_approval.html", context)
+    text = render_to_string("emails/join_approval.txt", context)
+    return sender.send(
+        to=to,
+        subject="you're fully approved — welcome to pda",
+        html=html,
+        text=text,
+    )
+
+
+def send_member_restored_email(
+    *, sender: EmailSender, to: str, display_name: str, message_body: str, login_url: str
+) -> SendResult:
+    """Render and send the email for an attendance-paused member restored by checking in."""
+    context = {
+        "display_name": display_name or "",
+        "message_body": message_body,
+        "login_url": login_url,
+    }
+    html = render_to_string("emails/member_restored.html", context)
+    text = render_to_string("emails/member_restored.txt", context)
+    return sender.send(to=to, subject="welcome back to pda", html=html, text=text)
+
+
+def send_join_rejection_email(
+    *, sender: EmailSender, to: str, display_name: str, message_body: str
+) -> SendResult:
+    """Render and send the join-request rejection email."""
+    context = {"display_name": display_name or "", "message_body": message_body}
+    html = render_to_string("emails/join_rejection.html", context)
+    text = render_to_string("emails/join_rejection.txt", context)
+    return sender.send(
+        to=to,
+        subject="an update on your pda join request",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class EventInviteEmailDetails:
+    """Recipient + event details for the member event-invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_when: str
+    event_url: str
+
+    def template_context(self) -> dict:
+        return {
+            "display_name": self.display_name or "",
+            "inviter_name": self.inviter_name,
+            "event_title": self.event_title,
+            "event_when": self.event_when,
+            "event_url": self.event_url,
+        }
+
+
+def send_event_invite_email(
+    *,
+    sender: EmailSender,
+    details: EventInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you're invited to an event" email."""
+    context = details.template_context()
+    html = render_to_string("emails/event_invite.html", context)
+    text = render_to_string("emails/event_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you're invited to {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class CohostInviteEmailDetails:
+    """Recipient + event details for the co-host invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_url: str
+
+
+def send_cohost_invite_email(
+    *,
+    sender: EmailSender,
+    details: CohostInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you've been invited to co-host" email."""
+    context = {
+        "display_name": details.display_name or "",
+        "inviter_name": details.inviter_name,
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+    }
+    html = render_to_string("emails/cohost_invite.html", context)
+    text = render_to_string("emails/cohost_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you've been invited to co-host {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class CheckinReminderEmailDetails:
+    """Recipient + event details for the host check-in nudge email."""
+
+    to: str
+    display_name: str
+    event_title: str
+    event_url: str
+
+
+def send_checkin_reminder_email(
+    *,
+    sender: EmailSender,
+    details: CheckinReminderEmailDetails,
+) -> SendResult:
+    """Render and send the "event just started, go check people in" host nudge email."""
+    context = {
+        "display_name": details.display_name or "",
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+    }
+    html = render_to_string("emails/attendance_checkin_reminder.html", context)
+    text = render_to_string("emails/attendance_checkin_reminder.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"{details.event_title.lower()} just started — check people in",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class EventBlastEmailDetails:
+    """Recipient + event details for a host email-blast message."""
+
+    to: str
+    event_title: str
+    event_url: str
+    subject: str
+    message: str
+
+
+def send_event_blast_email(
+    *,
+    sender: EmailSender,
+    details: EventBlastEmailDetails,
+) -> SendResult:
+    """Render and send one event email-blast message to a single recipient."""
+    context = {
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+        "message": details.message,
+    }
+    html = render_to_string("emails/event_blast.html", context)
+    text = render_to_string("emails/event_blast.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=details.subject,
+        html=html,
+        text=text,
+    )
+
+
+def send_whatsapp_join_reminder_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    whatsapp_url: str,
+    settings_url: str,
+) -> SendResult:
+    """Render and send the "you haven't joined the group chat yet" nudge.
+
+    ``settings_url`` points at the email preferences where they can opt out,
+    so the email always offers a way to stop receiving it.
+    """
+    context = {
+        "display_name": display_name or "",
+        "whatsapp_url": whatsapp_url,
+        "settings_url": settings_url,
+    }
+    html = render_to_string("emails/whatsapp_join_reminder.html", context)
+    text = render_to_string("emails/whatsapp_join_reminder.txt", context)
+    return sender.send(
+        to=to,
+        subject="don't forget to join the pda whatsapp",
+        html=html,
+        text=text,
+    )
+
+
+def send_tentative_attendance_nudge_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    calendar_url: str,
+    settings_url: str,
+) -> SendResult:
+    """Render and send the "come to an event in person to get full access" nudge."""
+    context = {
+        "display_name": display_name or "",
+        "calendar_url": calendar_url,
+        "settings_url": settings_url,
+    }
+    html = render_to_string("emails/tentative_attendance_nudge.html", context)
+    text = render_to_string("emails/tentative_attendance_nudge.txt", context)
+    return sender.send(
+        to=to,
+        subject="you're almost in at pda",
+        html=html,
+        text=text,
+    )

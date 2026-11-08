@@ -1,7 +1,6 @@
 """Regression tests for payment-gate bypasses caught in code review."""
 
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventPoll,
@@ -11,11 +10,12 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
+from community.validation import Code
 from django.utils import timezone
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 

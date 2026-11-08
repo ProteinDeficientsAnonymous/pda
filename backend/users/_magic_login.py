@@ -2,7 +2,7 @@
 
 import logging
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
@@ -13,8 +13,8 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
-from users._refresh_cookie import set_refresh_cookie
 from users.models import MagicLoginToken, User
+from users.refresh_cookie import set_refresh_cookie
 from users.schemas import ErrorOut, TokenOut
 
 router = Router()
