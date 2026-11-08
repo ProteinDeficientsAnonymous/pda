@@ -1,5 +1,7 @@
 import type { Member } from '@/api/users';
 
+import { isAttendancePaused } from './memberPause';
+
 export function PauseBadges({
   member,
 }: {
@@ -8,7 +10,7 @@ export function PauseBadges({
   return (
     <>
       {member.isPaused ? <PauseBadge label="paused · guidelines" /> : null}
-      {member.attendancePausedAt ? <PauseBadge label="paused · event rqmt" /> : null}
+      {isAttendancePaused(member) ? <PauseBadge label="paused · event rqmt" /> : null}
     </>
   );
 }
