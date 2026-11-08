@@ -2,15 +2,22 @@ import { screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { useEventSource } from '@/hooks/useEventSource';
 import { renderWithProviders } from '@/test/render';
 
 import { EventCommentsCard } from './EventCommentsCard';
 
 vi.mock('@/api/client');
 
+vi.mock('@/hooks/useEventSource', () => ({ useEventSource: vi.fn() }));
+
+const authState = vi.hoisted(() => ({ status: 'authed' }));
+
 vi.mock('@/auth/store', () => {
   const state = {
-    status: 'authed',
+    get status() {
+      return authState.status;
+    },
     user: { id: 'u-me', profilePhotoUrl: null },
   };
   const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
@@ -27,12 +34,17 @@ vi.mock('@/auth/store', () => {
 
 const eventId = '11111111-1111-1111-1111-111111111111';
 
-function renderCard() {
-  return renderWithProviders(<EventCommentsCard eventId={eventId} />);
+function renderCard(token?: string) {
+  return renderWithProviders(<EventCommentsCard eventId={eventId} token={token} />);
+}
+
+function lastStreamOptions() {
+  return vi.mocked(useEventSource).mock.lastCall![0];
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  authState.status = 'authed';
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -112,6 +124,45 @@ describe('EventCommentsCard', () => {
     renderCard();
     await waitFor(() => {
       expect(screen.getByText('visible comment')).toBeInTheDocument();
+    });
+  });
+
+  describe('live updates', () => {
+    beforeEach(() => {
+      vi.mocked(apiClient.get).mockResolvedValue({
+        data: { items: [], can_post: true, cannot_post_reason: null },
+      });
+    });
+
+    it('skips the scoped stream for members', async () => {
+      renderCard('rsvp-tok');
+      await screen.findByRole('button', { name: /post/i });
+      expect(lastStreamOptions().eventScope).toBeNull();
+    });
+
+    it('opens an event-scoped stream for a logged-out rsvp viewer', async () => {
+      authState.status = 'unauthed';
+      renderCard('rsvp-tok');
+      await screen.findByRole('button', { name: /post/i });
+      expect(lastStreamOptions().eventScope).toEqual({ eventId, token: 'rsvp-tok' });
+    });
+
+    it('refetches comments only on pings for this event', async () => {
+      authState.status = 'unauthed';
+      renderCard('rsvp-tok');
+      await screen.findByRole('button', { name: /post/i });
+      const onUpdate = lastStreamOptions().events.event_updated!;
+      const getCalls = () => vi.mocked(apiClient.get).mock.calls.length;
+      const before = getCalls();
+
+      onUpdate(new MessageEvent('event_updated', { data: 'not json' }));
+      onUpdate(new MessageEvent('event_updated', { data: JSON.stringify({ event_id: 'other' }) }));
+      onUpdate(new MessageEvent('event_updated', { data: JSON.stringify({ event_id: 7 }) }));
+      onUpdate(new MessageEvent('event_updated', { data: 'null' }));
+      expect(getCalls()).toBe(before);
+
+      onUpdate(new MessageEvent('event_updated', { data: JSON.stringify({ event_id: eventId }) }));
+      await waitFor(() => expect(getCalls()).toBe(before + 1));
     });
   });
 });
