@@ -26,7 +26,7 @@ HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 def signed_in_non_member_q() -> Q:
     """Non-members who can sign in: a TENTATIVE join request, or attendance-paused."""
     tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-    return Q(is_member=False) & (Q(Exists(tentative)) | Q(attendance_paused_at__isnull=False))
+    return Q(is_member=False) & (Exists(tentative) | Q(attendance_paused_at__isnull=False))
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -104,7 +104,7 @@ class UserManager(BaseUserManager):
         )
 
     def signed_in_non_members(self):
-        """Non-members who can sign in: tentative applicants and attendance-paused ex-members."""
+        """Users matching ``signed_in_non_member_q``."""
         return self.get_queryset().filter(signed_in_non_member_q())
 
     def active_tentative_members(self):
