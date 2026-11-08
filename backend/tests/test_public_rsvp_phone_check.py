@@ -7,7 +7,7 @@ full rsvp form (Issue 881).
 
 import pytest
 from community.models import EventRSVP, RSVPStatus
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event
 from tests._time import future_iso
@@ -79,7 +79,7 @@ class TestPublicRsvpPhoneCheck:
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "guest@example.com"
-        token = NonMemberRsvpToken.objects.get(user=guest)
+        token = PublicRsvpToken.objects.get(user=guest)
         assert token.token in sent["text"]
 
     def test_non_member_repeated_probe_does_not_resend_within_cooldown(
@@ -88,7 +88,7 @@ class TestPublicRsvpPhoneCheck:
         guest = make_non_member("+14155550199", "guest@example.com")
 
         post(api_client, official_event, phone_number="+14155550199")
-        token_after_first = NonMemberRsvpToken.objects.get(user=guest)
+        token_after_first = PublicRsvpToken.objects.get(user=guest)
         original_expires_at = token_after_first.expires_at
 
         post(api_client, official_event, phone_number="+14155550199")

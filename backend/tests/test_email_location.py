@@ -6,7 +6,7 @@ from community.models import EventRSVP, RSVPStatus
 from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event, post
 
@@ -59,7 +59,7 @@ class TestRsvpEmailsIncludeLocation:
     def test_updated(self, api_client, located_event, fake_email_sender):
         nonmember = make_non_member("+14155550031", "nm@example.com", name="non member")
         EventRSVP.objects.create(event=located_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         resp = api_client.post(
             f"/api/community/public/my-rsvps/{located_event.id}/?token={token.token}",

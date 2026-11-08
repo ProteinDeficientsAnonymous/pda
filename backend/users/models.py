@@ -390,10 +390,6 @@ class PublicRsvpToken(models.Model):
         return row.user
 
 
-# Temporary alias so tests can move to the new name in follow-up PRs.
-NonMemberRsvpToken = PublicRsvpToken
-
-
 @receiver(m2m_changed, sender=User.roles.through)
 def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwargs):
     """Reject any role assignment where the user is not a member.

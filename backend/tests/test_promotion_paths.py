@@ -5,7 +5,7 @@ from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from community.validation import ValidationException
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, payload, url
@@ -33,7 +33,7 @@ class TestPromotePublicNonMember:
             email="public@example.com",
             is_member=False,
         )
-        NonMemberRsvpToken.issue(user)
+        PublicRsvpToken.issue(user)
         jr = JoinRequest.objects.create(
             first_name="Public",
             last_name="Rsvper",

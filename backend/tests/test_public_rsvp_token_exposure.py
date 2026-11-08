@@ -1,7 +1,7 @@
 import pytest
 from community.models import EventRSVP, RSVPStatus
 from community.validation import Code
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event, post
 
@@ -30,7 +30,7 @@ class TestSubmitTokenExposure:
 
         returned = body["rsvp_token"]
         assert returned
-        user = NonMemberRsvpToken.resolve_user(returned)
+        user = PublicRsvpToken.resolve_user(returned)
         assert user.phone_number == "+14155550123"
 
     def test_phone_match_withholds_the_token_and_emails_it_instead(
@@ -41,7 +41,7 @@ class TestSubmitTokenExposure:
         body = post(api_client, official_event, email="attacker@example.com").json()
 
         assert body["rsvp_token"] == ""
-        token = NonMemberRsvpToken.objects.get(user=existing)
+        token = PublicRsvpToken.objects.get(user=existing)
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "old@example.com"

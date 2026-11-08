@@ -11,7 +11,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 
 def _non_member(phone, email=""):
@@ -187,7 +187,7 @@ class TestApprovalPromotesNonMember:
     def test_revokes_outstanding_rsvp_tokens(self, api_client, vettor_headers):
 
         existing = _non_member("+12025551421", email="tokens@example.com")
-        token = NonMemberRsvpToken.issue(existing)
+        token = PublicRsvpToken.issue(existing)
         jr = JoinRequest.objects.create(
             first_name="Token",
             last_name="Holder",

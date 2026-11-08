@@ -1,7 +1,7 @@
 import pytest
 from community.models import EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 from community.validation import Code
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
 
@@ -43,7 +43,7 @@ class TestPublicRsvpAnswerUpdates:
                 str(question.id): {"label": question.label, "answer": "taking transit"}
             },
         )
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         response = _post(api_client, official_event, token, {"status": RSVPStatus.MAYBE})
 
@@ -65,7 +65,7 @@ class TestPublicRsvpAnswerUpdates:
             field_type=RsvpQuestionType.TEXTAREA,
             required=True,
         )
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         response = _post(api_client, official_event, token, {"status": RSVPStatus.ATTENDING})
 
@@ -91,7 +91,7 @@ class TestPublicRsvpAnswerUpdates:
                 str(current.id): {"label": "old current label", "answer": "unchanged"},
             },
         )
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         response = _post(
             api_client,

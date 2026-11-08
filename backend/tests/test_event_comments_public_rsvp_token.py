@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._time import future_iso
 
@@ -34,7 +34,7 @@ def non_member_rsvpd(db, event):
 
 @pytest.fixture
 def non_member_token(non_member_rsvpd):
-    return NonMemberRsvpToken.issue(non_member_rsvpd).token
+    return PublicRsvpToken.issue(non_member_rsvpd).token
 
 
 @pytest.mark.django_db
@@ -68,7 +68,7 @@ class TestNonMemberTokenComments:
         user.set_unusable_password()
         user.save(update_fields=["password"])
         EventRSVP.objects.create(event=other_event, user=user, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(user).token
+        token = PublicRsvpToken.issue(user).token
 
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
