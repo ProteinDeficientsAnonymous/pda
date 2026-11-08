@@ -1,3 +1,10 @@
+## [0.227.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.0...v0.227.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* repair stale imports in mcp member rsvps test ([#2249](https://github.com/ProteinDeficientsAnonymous/pda/issues/2249)) ([74c4c08](https://github.com/ProteinDeficientsAnonymous/pda/commit/74c4c08d0ed3505b0b2f263346456681f0c2fc8f))
+
 # [0.227.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.2...v0.227.0) (2026-11-08)
 
 
