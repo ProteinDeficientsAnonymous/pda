@@ -25,8 +25,8 @@ def _approve(api_client, vettor_headers, jr_id):
 
 
 @pytest.mark.django_db
-class TestPromotePublicNonMember:
-    def _public_non_member_request(self):
+class TestPromotePublicRsvper:
+    def _public_rsvper_request(self):
         user = User.objects.create_user(
             phone_number="+12025551900",
             first_name="Rsvper",
@@ -47,7 +47,7 @@ class TestPromotePublicNonMember:
     def test_mints_the_token_that_replaces_their_revoked_rsvp_tokens(
         self, api_client, vettor_headers
     ):
-        user, jr = self._public_non_member_request()
+        user, jr = self._public_rsvper_request()
         before = user.magic_tokens.count()
         resp = _approve(api_client, vettor_headers, jr.id)
         assert resp.status_code == 200
@@ -55,7 +55,7 @@ class TestPromotePublicNonMember:
         assert user.magic_tokens.count() == before + 1
 
     def test_sends_them_through_onboarding(self, api_client, vettor_headers):
-        user, jr = self._public_non_member_request()
+        user, jr = self._public_rsvper_request()
         _approve(api_client, vettor_headers, jr.id)
         user.refresh_from_db()
         assert user.is_member is True

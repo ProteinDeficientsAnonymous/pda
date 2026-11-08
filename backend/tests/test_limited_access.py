@@ -67,14 +67,14 @@ def attendance_paused_member(db):
     )
 
 
-SIGNED_IN_NON_MEMBER_FIXTURES = pytest.mark.parametrize(
+LIMITED_USER_FIXTURES = pytest.mark.parametrize(
     "fixture", ["tentative_user", "attendance_paused_member"]
 )
 
 
 @pytest.mark.django_db
 class TestCheckPhoneTentative:
-    @SIGNED_IN_NON_MEMBER_FIXTURES
+    @LIMITED_USER_FIXTURES
     def test_limited_user_can_reach_the_login_step(self, api_client, request, fixture):
         user = request.getfixturevalue(fixture)
         response = api_client.post(
@@ -85,7 +85,7 @@ class TestCheckPhoneTentative:
         assert response.status_code == 200
         assert response.json()["status"] == "member"
 
-    @SIGNED_IN_NON_MEMBER_FIXTURES
+    @LIMITED_USER_FIXTURES
     def test_archived_limited_user_stays_unknown(self, api_client, request, fixture):
         user = request.getfixturevalue(fixture)
         user.archived_at = timezone.now()
