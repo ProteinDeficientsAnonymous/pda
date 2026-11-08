@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from users.models import User
 from users.permissions import PermissionKey
 
-from community.attendance.analytics import attended_events
+from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
@@ -55,13 +55,6 @@ class JoinRequestRsvpOut(BaseModel):
     start_datetime: datetime | None = None
 
 
-class JoinRequestAttendedEventOut(BaseModel):
-    event_id: str
-    title: str
-    start_datetime: datetime | None = None
-    event_type: str
-
-
 class JoinRequestOut(BaseModel):
     id: str
     first_name: str = ""
@@ -98,7 +91,7 @@ class JoinRequestOut(BaseModel):
     upcoming_club_count: int = 0
     rsvp_events: list[JoinRequestRsvpOut] = []
     # all-event-types attended history for vetting
-    attended_events: list[JoinRequestAttendedEventOut] = []
+    attended_events: list[AttendedEventOut] = []
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -197,21 +190,6 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
-def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
-    """All-event-types attendance history for vetting."""
-    if user is None:
-        return []
-    return [
-        JoinRequestAttendedEventOut(
-            event_id=e.event_id,
-            title=e.title,
-            start_datetime=e.start_datetime,
-            event_type=e.event_type,
-        )
-        for e in attended_events(_user_event_rsvps(user))
-    ]
-
-
 class PhoneLookups(NamedTuple):
     users_by_phone: dict[str, User]
     rejected_counts: Counter[str]
@@ -291,7 +269,7 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         rsvp_events=_rsvp_events(user),
         # Only attribute per-event attendance history to a confidently-linked
         # account. A bare phone match could be a different guest (Issue 1107).
-        attended_events=_join_request_attended_events(jr.user),
+        attended_events=attended_events(_user_event_rsvps(jr.user)) if jr.user else [],
     )
 
 
