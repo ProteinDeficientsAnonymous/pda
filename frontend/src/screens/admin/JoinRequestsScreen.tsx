@@ -18,10 +18,10 @@ import { formatPhone } from '@/utils/formatPhone';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
-import { JoinRequestResults } from './JoinRequestResults';
 import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 import { RejectJoinRequestDialog } from './RejectJoinRequestDialog';
 import { RestoredMembersList } from './RestoredMembersList';
+import { SearchResultsList } from './SearchResultsList';
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 const Filter = {
@@ -200,7 +200,7 @@ export default function JoinRequestsScreen() {
       {filter === Filter.RESTORED ? (
         <RestoredMembersList query={query} />
       ) : (
-        <JoinRequestResults
+        <SearchResultsList
           query={query}
           items={visible.map((r) => (
             <li key={r.id}>

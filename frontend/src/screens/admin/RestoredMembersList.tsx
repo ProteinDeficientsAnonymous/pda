@@ -4,8 +4,8 @@ import { type RestoredMember, useRestoredMembers } from '@/api/restoredMembers';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AttendedEventsNote } from './AttendedEventsNote';
-import { JoinRequestResults } from './JoinRequestResults';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
+import { SearchResultsList } from './SearchResultsList';
 
 function matchesQuery(member: RestoredMember, q: string): boolean {
   return member.fullName.toLowerCase().includes(q) || member.phoneNumber.includes(q);
@@ -43,7 +43,7 @@ export function RestoredMembersList({ query }: { query: string }) {
   const visible = data.filter((m) => matchesQuery(m, q));
 
   return (
-    <JoinRequestResults
+    <SearchResultsList
       query={query}
       items={visible.map((m) => (
         <li key={m.id}>

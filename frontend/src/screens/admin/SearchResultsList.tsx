@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export function JoinRequestResults({ query, items }: { query: string; items: ReactNode[] }) {
+export function SearchResultsList({ query, items }: { query: string; items: ReactNode[] }) {
   if (items.length === 0) {
     return (
       <p className="text-muted text-sm">
