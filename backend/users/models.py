@@ -30,7 +30,7 @@ def can_sign_in_q() -> Q:
 
 
 def limited_q() -> Q:
-    """Signed in but not a member: tentative applicants and attendance-paused users."""
+    """Signed-in non-members: tentatively approved or attendance-paused; ignores ``is_paused``."""
     return Q(is_member=False) & can_sign_in_q()
 
 
