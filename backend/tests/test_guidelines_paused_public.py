@@ -121,8 +121,8 @@ class TestPausedJoinRequest:
 
         assert response.status_code == 201
         body = response.json()
+        assert set(body) == {"id", "first_name", "full_name", "status", "submitted_at"}
         assert body["id"]
-        assert body["user_id"] == str(paused.pk)
         assert not JoinRequest.objects.exists()
 
     def test_invalid_answers_still_422(self, api_client, paused):
