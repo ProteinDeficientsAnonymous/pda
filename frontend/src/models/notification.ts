@@ -19,6 +19,8 @@ export const NotificationType = {
   PaymentRevoked: 'payment_revoked',
   EventFeedback: 'event_feedback',
   SurveyResponse: 'survey_response',
+  EventUnpublished: 'event_unpublished',
+  MemberRestored: 'member_restored',
   AccountDeleted: 'account_deleted',
 } as const;
 

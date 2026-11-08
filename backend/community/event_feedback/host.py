@@ -10,11 +10,11 @@ from community.event_feedback._host_schemas import (
     HostFeedbackResponseOut,
     MyEventFeedbackOut,
 )
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.models import Event, EventFeedbackRequest, SurveyQuestionType, SurveyResponse
 from community.models.event_feedback import feedback_survey_for
 from community.shared import ErrorOut
-from community.surveys.helpers import _survey_question_out
+from community.surveys.helpers import survey_question_out
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -37,12 +37,12 @@ def get_event_feedback(request, event_id: UUID):
     event = Event.objects.filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="event_feedback")
 
     survey = feedback_survey_for(event.event_type)
     asked = survey.questions.exclude(field_type=SurveyQuestionType.SECTION) if survey else []
-    questions = [_survey_question_out(q) for q in asked]
+    questions = [survey_question_out(q) for q in asked]
     # Day-only ordering with an id tiebreak so row order can't reveal submit order within a day.
     responses = sorted(
         (_response_out(r) for r in SurveyResponse.objects.filter(event=event)),

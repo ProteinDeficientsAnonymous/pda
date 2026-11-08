@@ -4,11 +4,12 @@ from datetime import timedelta
 
 import phonenumbers
 from community.models.choices import JoinRequestStatus
+from community.models.join_form import JoinRequest
 from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, prefetch_related_objects
+from django.db.models import Exists, OuterRef, Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -20,6 +21,17 @@ ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+
+
+def can_sign_in_q() -> Q:
+    """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
+    tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
+    return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
+
+
+def limited_q() -> Q:
+    """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
+    return Q(is_member=False, is_paused=False) & can_sign_in_q()
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -68,6 +80,12 @@ class UserManager(BaseUserManager):
         """
         return self.get_queryset().filter(is_member=True)
 
+    def members_or_attendance_paused(self):
+        """Members plus attendance-paused ex-members, who admins still manage as members."""
+        return self.get_queryset().filter(
+            models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
+        )
+
     def active_members(self):
         """Members who should appear on member-facing surfaces.
 
@@ -90,19 +108,13 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
-    def active_tentative_members(self):
-        """Signed-in tentative applicants, filtered like ``active_members``."""
-        return (
-            self.get_queryset()
-            .filter(
-                is_member=False,
-                join_requests__status=JoinRequestStatus.TENTATIVE,
-                is_active=True,
-                is_paused=False,
-                archived_at__isnull=True,
-            )
-            .distinct()
-        )
+    def limited_users(self):
+        """Users matching ``limited_q``."""
+        return self.get_queryset().filter(limited_q())
+
+    def active_limited_users(self):
+        """Limited users, filtered like ``active_members``."""
+        return self.limited_users().filter(is_active=True, archived_at__isnull=True)
 
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
@@ -167,6 +179,10 @@ class User(AbstractUser):
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
     is_paused = models.BooleanField(default=False)
+    attendance_paused_at = models.DateTimeField(null=True, blank=True)
+    restored_at = models.DateTimeField(null=True, blank=True)
+    unpaused_at = models.DateTimeField(null=True, blank=True)
+    attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     login_link_requested = models.BooleanField(default=False)
@@ -274,14 +290,14 @@ class MagicLoginToken(models.Model):
         )
 
 
-# Number of days a non-member RSVP-management link stays valid from issuance.
-NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
+# Number of days a public rsvper's RSVP-management link stays valid from issuance.
+PUBLIC_RSVP_TOKEN_TTL_DAYS = 90
 # Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
-NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
+PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
-class NonMemberRsvpToken(models.Model):
-    """Scoped magic link for a non-member to manage their own RSVPs at /my-rsvps.
+class PublicRsvpToken(models.Model):
+    """Scoped magic link for a public rsvper to manage their own RSVPs at /my-rsvps.
 
     This token NEVER logs the user in — it is entirely separate from
     MagicLoginToken (different table, different validation path, narrower scope).
@@ -326,7 +342,7 @@ class NonMemberRsvpToken(models.Model):
             self.save(update_fields=["revoked_at"])
 
     @classmethod
-    def issue(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue(cls, user: "User") -> "PublicRsvpToken":
         """Create a fresh token for a non-member, valid for 90 days.
 
         Rejects members — a converted/existing member must use the member flow,
@@ -337,11 +353,11 @@ class NonMemberRsvpToken(models.Model):
         return cls.objects.create(
             user=user,
             token=secrets.token_urlsafe(32),
-            expires_at=timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS),
+            expires_at=timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS),
         )
 
     @classmethod
-    def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue_or_extend(cls, user: "User") -> "PublicRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
@@ -350,9 +366,9 @@ class NonMemberRsvpToken(models.Model):
         if user.is_member:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
-        max_age_cutoff = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS)
+        max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
         if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
-            existing.expires_at = timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+            existing.expires_at = timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS)
             existing.save(update_fields=["expires_at"])
             return existing
         return cls.issue(user)
@@ -361,14 +377,15 @@ class NonMemberRsvpToken(models.Model):
     def resolve_user(cls, token: str) -> "User | None":
         """Resolve a token string to its User, or None if the token is unusable.
 
-        Returns None when the token is unknown, expired (expires_at < now), or
-        revoked (revoked_at set). Endpoints in stages 3/4 reuse this and map a
-        None result to their own 404. Never logs the user in.
+        Returns None when the token is unknown, expired (expires_at < now),
+        revoked (revoked_at set), or its user is guidelines-paused. Endpoints in
+        stages 3/4 reuse this and map a None result to their own 404. Never logs
+        the user in.
         """
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid:
+        if row is None or not row.is_valid or row.user.is_paused:
             return None
         return row.user
 

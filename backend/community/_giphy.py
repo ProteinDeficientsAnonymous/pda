@@ -10,7 +10,7 @@ from ninja import Query, Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community.events.schemas import _MAX_EVENT_PHOTO_SIZE
+from community.events.schemas import MAX_EVENT_PHOTO_SIZE
 from community.shared import ErrorOut
 
 logger = logging.getLogger("pda")
@@ -40,28 +40,28 @@ class GiphySearchOut(BaseModel):
 
 
 def _prefer_webp(webp_url: str, webp_size: int, gif_size: int) -> bool:
-    if not webp_url or webp_size <= 0 or webp_size > _MAX_EVENT_PHOTO_SIZE:
+    if not webp_url or webp_size <= 0 or webp_size > MAX_EVENT_PHOTO_SIZE:
         return False
     return not gif_size or webp_size <= gif_size
 
 
-def _full_gif_url(images: dict) -> str:
+def full_gif_url(images: dict) -> str:
     gif = images.get("downsized_large") or images.get("original") or {}
     original = images.get("original") or {}
     gif_url, gif_size = gif.get("url") or "", int(gif.get("size") or 0)
     webp_url, webp_size = original.get("webp") or "", int(original.get("webp_size") or 0)
     if _prefer_webp(webp_url, webp_size, gif_size):
         return webp_url
-    if gif_url and (not gif_size or gif_size <= _MAX_EVENT_PHOTO_SIZE):
+    if gif_url and (not gif_size or gif_size <= MAX_EVENT_PHOTO_SIZE):
         return gif_url
     return ""
 
 
-def _parse_gif(gif: dict) -> GiphyResult | None:
+def parse_gif(gif: dict) -> GiphyResult | None:
     try:
         images = gif.get("images", {})
         preview = images.get("fixed_width") or images.get("fixed_width_small") or {}
-        full_url = _full_gif_url(images)
+        full_url = full_gif_url(images)
     except (TypeError, ValueError):
         return None
     if not preview.get("url") or not full_url:
@@ -149,7 +149,7 @@ def giphy_search(request: HttpRequest, params: Query[GiphyQuery]):
     results = [
         r
         for r in (
-            *(_parse_gif(g) for g in gifs),
+            *(parse_gif(g) for g in gifs),
             *(_parse_photo(p) for p in photos),
         )
         if r is not None

@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/api/client';
 import { queryWrapper } from '@/test/render';
 
-import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './join';
+import {
+  AlreadyHasAccountError,
+  PendingJoinRequestError,
+  useJoinRequests,
+  useSubmitJoinRequest,
+} from './join';
 
 vi.mock('@/api/client');
 
@@ -64,6 +69,8 @@ describe('useJoinRequests', () => {
         tentativeByName: null,
         approvedAt: null,
         approvedByName: null,
+        approvedViaEventId: null,
+        approvedViaEventTitle: null,
         rejectedAt: null,
         rejectedByName: null,
         rejectionReason: null,
@@ -142,7 +149,7 @@ describe('useJoinRequests', () => {
       {
         eventId: 'evt-2',
         title: 'Community Hang',
-        startDatetime: '2026-02-01T18:00:00Z',
+        startDatetime: new Date('2026-02-01T18:00:00Z'),
         eventType: 'community',
       },
     ]);
@@ -222,7 +229,7 @@ const validPayload = {
 };
 
 describe('useSubmitJoinRequest', () => {
-  it('throws AlreadyInvitedError on a phone_already_invited 409', async () => {
+  it('throws AlreadyHasAccountError on a phone_already_invited 409', async () => {
     const conflict = makeAxiosError(409, {
       detail: [{ code: 'join_request.phone_already_invited', field: null }],
     });
@@ -233,11 +240,21 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
 
-    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyInvitedError));
-    expect((result.current.error as AlreadyInvitedError).name).toBe('AlreadyInvitedError');
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyHasAccountError));
+    expect((result.current.error as AlreadyHasAccountError).name).toBe('AlreadyHasAccountError');
+  });
+
+  it.each([
+    ['join_request.phone_already_pending', PendingJoinRequestError],
+    ['join_request.phone_already_tentative', AlreadyHasAccountError],
+  ])('maps %s to its error', async (code, ErrorClass) => {
+    mockedPost.mockRejectedValueOnce(makeAxiosError(400, { detail: [{ code, field: null }] }));
+    const { result } = renderHook(() => useSubmitJoinRequest(), { wrapper: queryWrapper() });
+
+    await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(ErrorClass);
   });
 
   it('does not redirect on an email.already_exists 409 — stays on the form', async () => {
@@ -251,9 +268,9 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.not.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 
   it('surfaces validation detail string when server responds with 400', async () => {
@@ -280,6 +297,6 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toThrow('Network Error');
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 });

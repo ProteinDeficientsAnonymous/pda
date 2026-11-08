@@ -11,9 +11,10 @@ from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import (
-    _can_edit_event,
-    _cancellations,
-    _event_out,
+    can_edit_event,
+    cancellations,
+    event_out,
+    load_editable_event,
     load_event_with_stats_prefetch,
 )
 from community.events.schemas import (
@@ -22,17 +23,23 @@ from community.events.schemas import (
     EventStatsOut,
     TextRecipientsOut,
 )
-from community.join_requests.approval import _maybe_promote_tentative, send_join_approval
+from community.join_requests.approval import send_join_approval
+from community.join_requests.check_in_promotion import (
+    CheckInOutcome,
+    notify_member_restored,
+    promote_or_restore_on_check_in,
+    send_member_restored,
+)
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
-    _attended_count,
-    _attending_headcount,
-    _cant_go_count,
-    _didnt_go_count,
-    _maybe_count,
-    _no_response_count,
-    _not_marked_count,
-    _waitlisted_count,
+    attending_headcount,
+    count_attended,
+    count_cant_go,
+    count_didnt_go,
+    count_maybe,
+    count_no_response,
+    count_not_marked,
+    count_waitlisted,
 )
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -58,20 +65,20 @@ def get_event_stats(request, event_id: UUID):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_event_stats")
     return Status(
         200,
         EventStatsOut(
-            going_count=_attending_headcount(event),
-            maybe_count=_maybe_count(event),
-            cant_go_count=_cant_go_count(event),
-            no_response_count=_no_response_count(event),
-            waitlisted_count=_waitlisted_count(event),
-            attended_count=_attended_count(event),
-            didnt_go_count=_didnt_go_count(event),
-            not_marked_count=_not_marked_count(event),
-            cancellations=_cancellations(event, request.auth),
+            going_count=attending_headcount(event),
+            maybe_count=count_maybe(event),
+            cant_go_count=count_cant_go(event),
+            no_response_count=count_no_response(event),
+            waitlisted_count=count_waitlisted(event),
+            attended_count=count_attended(event),
+            didnt_go_count=count_didnt_go(event),
+            not_marked_count=count_not_marked(event),
+            cancellations=cancellations(event, request.auth),
         ),
     )
 
@@ -106,15 +113,17 @@ def get_text_recipients(request, event_id: UUID):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_text_recipients")
     return Status(200, _build_text_recipients(event))
 
 
-def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> bool:
-    """Persist the attendance mark, promoting a tentative member if it was a check-in.
+def _apply_attendance_mark(
+    request, rsvp: EventRSVP, payload: AttendanceIn
+) -> CheckInOutcome | None:
+    """Persist the attendance mark, promoting or restoring a non-member if it was a check-in.
 
-    return(bool): whether the mark promoted a tentative applicant to full member.
+    return(CheckInOutcome | None): what the check-in did to the guest's membership, if anything.
     """
     attendance_field, checked_in_field = (
         ("plus_one_attendance", "plus_one_checked_in_at")
@@ -129,8 +138,8 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
     rsvp.save(update_fields=[attendance_field, checked_in_field, "updated_at"])
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
-        return False
-    return _maybe_promote_tentative(rsvp.user, rsvp.event, actor)
+        return None
+    return promote_or_restore_on_check_in(request, rsvp.user, rsvp.event)
 
 
 @router.post(
@@ -140,37 +149,31 @@ def _apply_attendance_mark(rsvp: EventRSVP, payload: AttendanceIn, actor) -> boo
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="60/m")
 def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn):
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .filter(id=event_id)
-        .first()
-    )
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
-        raise_validation(Code.Perm.DENIED, status_code=403, action="set_attendance")
+    event = load_editable_event(request.auth, event_id, "set_attendance")
     if not _check_in_open(event):
         raise_validation(Code.Event.ATTENDANCE_OPENS_LATER, status_code=400)
 
-    rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
+    rsvp = event.rsvps.select_related("user").filter(user_id=user_id).first()
     if rsvp is None:
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
     if payload.for_plus_one and not rsvp.has_plus_one:
         raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
 
-    # The mark and any tentative promotion it triggers commit as a unit, so a
+    # The mark and any promotion or restore it triggers commit as a unit, so a
     # mid-promotion failure can't leave a member flagged without their request
     # stamped approved.
     with transaction.atomic():
-        promoted = _apply_attendance_mark(rsvp, payload, request.auth)
+        outcome = _apply_attendance_mark(request, rsvp, payload)
 
-    if promoted:
+    if outcome == CheckInOutcome.PROMOTED:
         send_join_approval(
             to=rsvp.user.email,
             display_name=rsvp.user.full_name,
             first_name=rsvp.user.first_name,
         )
+    elif outcome == CheckInOutcome.RESTORED:
+        send_member_restored(rsvp.user)
+        notify_member_restored(rsvp.user)
 
     audit_log(
         logging.INFO,
@@ -190,4 +193,4 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))

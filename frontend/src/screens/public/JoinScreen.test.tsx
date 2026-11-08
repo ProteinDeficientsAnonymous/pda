@@ -4,21 +4,22 @@ import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import {
+  AlreadyHasAccountError,
+  PendingJoinRequestError,
+  useJoinQuestions,
+  useSubmitJoinRequest,
+} from '@/api/join';
+import type * as JoinApi from '@/api/join';
 import { renderWithProviders } from '@/test/render';
 
 import JoinScreen from './JoinScreen';
 import JoinSuccessScreen from './JoinSuccessScreen';
 
-vi.mock('@/api/join', () => ({
+vi.mock('@/api/join', async (importOriginal) => ({
+  ...(await importOriginal<typeof JoinApi>()),
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
-  AlreadyInvitedError: class AlreadyInvitedError extends Error {
-    constructor() {
-      super('already_invited');
-      this.name = 'AlreadyInvitedError';
-    }
-  },
 }));
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
@@ -243,6 +244,39 @@ describe('JoinScreen', () => {
     });
     expect(screen.getByText(/vetting member will review/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to home/i })).toBeInTheDocument();
+  });
+});
+
+describe('existing join request', () => {
+  async function submitRejectedWith(err: Error) {
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync: vi.fn().mockRejectedValueOnce(err),
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+    const user = userEvent.setup();
+    renderWithRoutes();
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
+    fillPhone();
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+  }
+
+  it('replaces the form when a request is already pending', async () => {
+    await submitRejectedWith(new PendingJoinRequestError());
+
+    expect(
+      await screen.findByRole('heading', { name: /you already requested to join/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /submit request/i })).not.toBeInTheDocument();
+  });
+
+  it('sends an already-approved applicant to login', async () => {
+    await submitRejectedWith(new AlreadyHasAccountError());
+
+    expect(await screen.findByText('login page')).toBeInTheDocument();
   });
 });
 

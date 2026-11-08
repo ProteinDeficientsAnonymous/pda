@@ -38,12 +38,15 @@ def another_user(db) -> User:
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
+    event = Event.objects.create(
         title="Test Event",
         start_datetime=future_iso(days=30),
         end_datetime=future_iso(days=30, hours=2),
         created_by=inviter,
+        rsvp_enabled=True,
     )
+    event.co_hosts.add(inviter)
+    return event
 
 
 # ─── Service Tests ────────────────────────────────────────────────────────────
@@ -91,6 +94,7 @@ class TestEventInviteIntegration:
             "title": "Party",
             "start_datetime": future_iso(days=60),
             "end_datetime": future_iso(days=60, hours=2),
+            "rsvp_enabled": True,
         }
         create_response = api_client.post(
             "/api/community/events/",
