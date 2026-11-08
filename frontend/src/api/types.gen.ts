@@ -1830,24 +1830,6 @@ export interface paths {
         patch: operations["community_message_templates_member_promotion_message_update_member_promotion_message"];
         trace?: never;
     };
-    "/api/community/member-restored-email/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Member Restored Email */
-        get: operations["community_message_templates_member_restored_email_get_member_restored_email"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Member Restored Email */
-        patch: operations["community_message_templates_member_restored_email_update_member_restored_email"];
-        trace?: never;
-    };
     "/api/community/official-event-defaults/": {
         parameters: {
             query?: never;
@@ -11636,68 +11618,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberPromotionMessageOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Unprocessable Content */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community_message_templates_member_restored_email_get_member_restored_email: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
-                };
-            };
-        };
-    };
-    community_message_templates_member_restored_email_update_member_restored_email: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberPromotionEmailPatchIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
                 };
             };
             /** @description Forbidden */

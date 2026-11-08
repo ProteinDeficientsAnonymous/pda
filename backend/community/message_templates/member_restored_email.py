@@ -1,40 +1,59 @@
 import logging
+from datetime import datetime
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
+from pydantic import BaseModel
 from users.permissions import PermissionKey
 
-from community.attendance.shared import require_permission
 from community.field_limits import FieldLimit
-from community.message_templates.member_promotion_email import (
-    MemberPromotionEmailOut,
-    MemberPromotionEmailPatchIn,
-)
 from community.models import MemberRestoredEmailTemplate
 from community.shared import ErrorOut
-from community.validation import Code, validate_template_body
+from community.validation import Code, raise_validation, validate_template_body
 
 router = Router()
 
 
-def _out(obj: MemberRestoredEmailTemplate) -> MemberPromotionEmailOut:
-    return MemberPromotionEmailOut(body=obj.body, updated_at=obj.updated_at)
+class MemberRestoredEmailOut(BaseModel):
+    body: str
+    updated_at: datetime
 
 
-@router.get("/member-restored-email/", response={200: MemberPromotionEmailOut}, auth=gated_jwt)
+class MemberRestoredEmailPatchIn(BaseModel):
+    body: str | None = None
+
+
+def _out(obj: MemberRestoredEmailTemplate) -> MemberRestoredEmailOut:
+    return MemberRestoredEmailOut(body=obj.body, updated_at=obj.updated_at)
+
+
+@router.get("/member-restored-email/", response={200: MemberRestoredEmailOut}, auth=gated_jwt)
 def get_member_restored_email(request):
     return Status(200, _out(MemberRestoredEmailTemplate.get()))
 
 
 @router.patch(
     "/member-restored-email/",
-    response={200: MemberPromotionEmailOut, 403: ErrorOut, 422: ErrorOut},
+    response={200: MemberRestoredEmailOut, 403: ErrorOut, 422: ErrorOut},
     auth=gated_jwt,
 )
-def update_member_restored_email(request, payload: MemberPromotionEmailPatchIn):
-    require_permission(request, "edit_member_restored_email", PermissionKey.APPROVE_JOIN_REQUESTS)
+def update_member_restored_email(request, payload: MemberRestoredEmailPatchIn):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_member_restored_email",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="edit_member_restored_email")
 
     validate_template_body(
         payload.body,
