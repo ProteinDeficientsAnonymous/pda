@@ -7,9 +7,9 @@ full rsvp form (Issue 881).
 
 import pytest
 from community.models import EventRSVP, RSVPStatus
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
 from tests._time import future_iso
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp-phone-check/"
@@ -49,7 +49,7 @@ class TestPublicRsvpPhoneCheck:
         assert "rsvp_token" not in body
 
     def test_non_member_without_rsvp_returns_non_member(self, api_client, official_event):
-        make_non_member("+14155550199", "guest@example.com")
+        make_public_rsvper("+14155550199", "guest@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550199")
 
@@ -59,7 +59,7 @@ class TestPublicRsvpPhoneCheck:
     def test_non_member_already_rsvpd_returns_non_member_no_token(
         self, api_client, official_event, fake_email_sender
     ):
-        guest = make_non_member("+14155550199", "guest@example.com")
+        guest = make_public_rsvper("+14155550199", "guest@example.com")
         EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
 
         response = post(api_client, official_event, phone_number="+14155550199")
@@ -72,23 +72,23 @@ class TestPublicRsvpPhoneCheck:
     def test_non_member_with_email_always_gets_manage_link(
         self, api_client, official_event, fake_email_sender
     ):
-        guest = make_non_member("+14155550199", "guest@example.com")
+        guest = make_public_rsvper("+14155550199", "guest@example.com")
 
         post(api_client, official_event, phone_number="+14155550199")
 
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "guest@example.com"
-        token = NonMemberRsvpToken.objects.get(user=guest)
+        token = PublicRsvpToken.objects.get(user=guest)
         assert token.token in sent["text"]
 
     def test_non_member_repeated_probe_does_not_resend_within_cooldown(
         self, api_client, official_event, fake_email_sender
     ):
-        guest = make_non_member("+14155550199", "guest@example.com")
+        guest = make_public_rsvper("+14155550199", "guest@example.com")
 
         post(api_client, official_event, phone_number="+14155550199")
-        token_after_first = NonMemberRsvpToken.objects.get(user=guest)
+        token_after_first = PublicRsvpToken.objects.get(user=guest)
         original_expires_at = token_after_first.expires_at
 
         post(api_client, official_event, phone_number="+14155550199")
@@ -100,7 +100,7 @@ class TestPublicRsvpPhoneCheck:
     def test_non_member_without_email_sends_no_email(
         self, api_client, official_event, fake_email_sender
     ):
-        make_non_member("+14155550199", "")
+        make_public_rsvper("+14155550199", "")
 
         response = post(api_client, official_event, phone_number="+14155550199")
 
@@ -126,9 +126,9 @@ class TestPublicRsvpPhoneCheck:
     def test_non_member_response_hides_attendance(self, api_client, fake_email_sender):
         this_event = make_official_event()
         other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
-        rsvpd_here = make_non_member("+14155550111", "here@example.com")
-        rsvpd_elsewhere = make_non_member("+14155550222", "elsewhere@example.com")
-        never_rsvpd = make_non_member("+14155550333", "never@example.com")
+        rsvpd_here = make_public_rsvper("+14155550111", "here@example.com")
+        rsvpd_elsewhere = make_public_rsvper("+14155550222", "elsewhere@example.com")
+        never_rsvpd = make_public_rsvper("+14155550333", "never@example.com")
         EventRSVP.objects.create(event=this_event, user=rsvpd_here, status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(
             event=other_event, user=rsvpd_elsewhere, status=RSVPStatus.ATTENDING

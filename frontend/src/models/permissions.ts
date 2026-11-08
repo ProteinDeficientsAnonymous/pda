@@ -8,6 +8,7 @@ export const Permission = {
   EditFaq: 'edit_faq',
   EditHomepage: 'edit_homepage',
   EditJoinQuestions: 'edit_join_questions',
+  EditSpeechTemplate: 'edit_speech_template',
   ManageSurveys: 'manage_surveys',
   TagOfficialEvent: 'tag_official_event',
   TagClubEvent: 'tag_club_event',

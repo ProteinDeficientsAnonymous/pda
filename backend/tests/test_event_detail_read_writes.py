@@ -5,11 +5,11 @@ from community.models import CoHostInviteStatus, EventCoHostInvite, EventType
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._auth import auth_headers_for
 from tests._events import make_event
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
 from tests._users import make_user
 
 
@@ -33,8 +33,8 @@ def test_past_event_detail_expires_invites_once(api_client, test_user):
 
 @pytest.mark.django_db
 def test_token_viewer_reuses_loaded_event(api_client):
-    nonmember = make_non_member("+14155550001", "nm@example.com", name="non member")
-    token = NonMemberRsvpToken.issue_or_extend(nonmember).token
+    public_rsvper = make_public_rsvper("+14155550001", "nm@example.com", name="public rsvper")
+    token = PublicRsvpToken.issue_or_extend(public_rsvper).token
     event = make_official_event(event_type=EventType.OFFICIAL)
 
     with CaptureQueriesContext(connection) as ctx:

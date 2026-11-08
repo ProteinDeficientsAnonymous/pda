@@ -15,7 +15,7 @@ from notifications.email_sender import EmailStream, SendResult
 from users.models import User
 
 from tests._digest_helpers import make_event, make_tentative
-from tests._users import make_user
+from tests._users import make_attendance_paused, make_user
 
 
 def _freeze_digest(monkeypatch, when: datetime) -> None:
@@ -244,6 +244,13 @@ class TestWeeklyDigestTentativeMembers:
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()
+
+    def test_sends_to_attendance_paused_member(self, fake_email_sender):
+        paused = make_attendance_paused(phone_number="+12025550273")
+        make_event("potluck", 2)
+        call_command("send_weekly_digest")
+        fake_email_sender.send.assert_called_once()
+        assert fake_email_sender.send.call_args.kwargs["to"] == paused.email
 
 
 @pytest.mark.django_db

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import { canManageEvent } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { EventForbiddenNotice } from './EventForbiddenNotice';
 import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
 
 export default function EventManageRsvpsScreen() {
@@ -17,19 +18,22 @@ export default function EventManageRsvpsScreen() {
   if (isError) {
     if (getApiStatus(error) === 403) {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
-      return <ForbiddenNotice eventId={id} message={message} />;
+      return <EventForbiddenNotice eventId={id} message={message} />;
     }
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
   if (!canManageEvent(event, user)) {
     return (
-      <ForbiddenNotice eventId={event.id} message="only the host or a co-host can manage rsvps" />
+      <EventForbiddenNotice
+        eventId={event.id}
+        message="only the host or a co-host can manage rsvps"
+      />
     );
   }
   if (!event.rsvpEnabled) {
     return (
-      <ForbiddenNotice
+      <EventForbiddenNotice
         eventId={event.id}
         message="rsvps are off for this event — nothing to manage"
       />
@@ -66,21 +70,5 @@ function BackLink({ eventId }: { eventId: string }) {
     >
       ← back to event
     </Link>
-  );
-}
-
-function ForbiddenNotice({ eventId, message }: { eventId: string | undefined; message: string }) {
-  return (
-    <ContentContainer>
-      <section className="border-border bg-surface mt-8 rounded-lg border p-6">
-        <h2 className="mb-2 text-base font-medium">{message}</h2>
-        <Link
-          to={eventId ? `/events/${eventId}` : '/calendar'}
-          className="border-border-strong text-foreground-secondary hover:bg-background mt-4 inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
-        >
-          back to event
-        </Link>
-      </section>
-    </ContentContainer>
   );
 }

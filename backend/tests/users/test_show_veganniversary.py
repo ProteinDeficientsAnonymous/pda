@@ -1,6 +1,6 @@
 import pytest
 from tests._auth import auth_headers_for
-from users._auth import _apply_me_patch, _save_me_patch
+from users._auth import apply_me_patch, save_me_patch
 from users.models import User
 from users.schemas import MePatchIn
 
@@ -110,10 +110,10 @@ class TestMeVeganniversaryPrivacy:
         test_user.save()
         opt_out = User.objects.get(pk=test_user.pk)
         seen = User.objects.get(pk=test_user.pk)
-        opt_out_changed = _apply_me_patch(opt_out, MePatchIn(veganniversary_shoutout_opt_in=False))
-        seen_changed = _apply_me_patch(seen, MePatchIn(has_seen_veganniversary=True))
-        _save_me_patch(opt_out, opt_out_changed)
-        _save_me_patch(seen, seen_changed)
+        opt_out_changed = apply_me_patch(opt_out, MePatchIn(veganniversary_shoutout_opt_in=False))
+        seen_changed = apply_me_patch(seen, MePatchIn(has_seen_veganniversary=True))
+        save_me_patch(opt_out, opt_out_changed)
+        save_me_patch(seen, seen_changed)
         test_user.refresh_from_db()
         assert test_user.veganniversary_shoutout_opt_in is False
         assert test_user.has_seen_veganniversary is True

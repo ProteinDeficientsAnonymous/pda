@@ -309,11 +309,11 @@ class TestUnpublishActive:
             lambda fn, using=None, robust=False: callbacks.append(fn),
         )
         monkeypatch.setattr(
-            "community.events._transitions.broadcast_event_created",
+            "community.events.unpublish.broadcast_event_created",
             lambda event: pinged.append(event.pk),
         )
         monkeypatch.setattr(
-            "community.events._transitions.notify_users",
+            "community.events.unpublish.notify_users",
             lambda ids: bell.append([str(uid) for uid in ids]),
         )
         response = api_client.patch(

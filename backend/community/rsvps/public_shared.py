@@ -4,7 +4,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from notifications.email_helpers import (
     RsvpEmailDetails,
-    format_eastern_datetime,
+    format_event_when,
 )
 from pydantic import BaseModel
 from users.models import User
@@ -27,7 +27,7 @@ class PublicRsvpOut(BaseModel):
     rsvp_token: str
 
 
-def _load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
+def load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
     """Fetch a public-RSVP event: 404 if it can't be seen at all, else 400 with the
     specific reason if it's visible but closed — mirrors _validate_rsvp_access."""
     qs = Event.objects.prefetch_related("co_hosts")
@@ -45,30 +45,24 @@ def _load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
     return event
 
 
-def _format_event_when(event: Event) -> str:
-    if event.datetime_tbd or event.start_datetime is None:
-        return "to be decided"
-    return format_eastern_datetime(event.start_datetime)
-
-
-def _event_links(event: Event) -> list[str]:
+def collect_event_links(event: Event) -> list[str]:
     return [link for link in (event.whatsapp_link, event.partiful_link, event.other_link) if link]
 
 
-def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails:
+def email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails:
     return RsvpEmailDetails(
         to=user.email,
         display_name=user.first_name,
         event_title=event.title,
-        event_when=_format_event_when(event),
+        event_when=format_event_when(event),
         event_location=event.location,
-        event_links=_event_links(event),
+        event_links=collect_event_links(event),
         manage_url=f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token_str}",
         join_url=f"{settings.FRONTEND_BASE_URL}/join",
     )
 
 
-def _log_email_failure(request, event: Event, user: User, exc: Exception) -> None:
+def log_email_failure(request, event: Event, user: User, exc: Exception) -> None:
     logger.warning("public rsvp email failed", exc_info=True)
     audit_log(
         logging.WARNING,
@@ -82,7 +76,7 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
     )
 
 
-def _unpaid_user_ids(event: Event, user_ids: list[str]) -> set:
+def unpaid_user_ids(event: Event, user_ids: list[str]) -> set:
     """Of user_ids, those whose rsvp lacks a standing payment confirmation.
 
     Empty when the event needs no payment. A confirmed rsvp can land on the

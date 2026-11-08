@@ -56,6 +56,7 @@ export const Code = {
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
     SlugInvalid: 'event.slug_invalid',
     SlugTaken: 'event.slug_taken',
+    InvalidEventFormat: 'event.invalid_event_format',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -190,6 +191,7 @@ export const Code = {
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
     PhoneAlreadyPending: 'join_request.phone_already_pending',
     PhoneAlreadyTentative: 'join_request.phone_already_tentative',
+    OpenRequestExists: 'join_request.open_request_exists',
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
@@ -278,11 +280,26 @@ export const Code = {
     BodyRequired: 'member_promotion_email.body_required',
     BodyTooLong: 'member_promotion_email.body_too_long',
   },
+  MemberRestoredEmail: {
+    BodyRequired: 'member_restored_email.body_required',
+    BodyTooLong: 'member_restored_email.body_too_long',
+  },
   RejectionEmail: {
     BodyRequired: 'rejection_email.body_required',
     BodyTooLong: 'rejection_email.body_too_long',
     ReasonTextRequired: 'rejection_email.reason_text_required',
     ReasonTextTooLong: 'rejection_email.reason_text_too_long',
+  },
+  SpeechTemplate: {
+    InvalidDoc: 'speech_template.invalid_doc',
+    TooManyRoles: 'speech_template.too_many_roles',
+    RoleTooLong: 'speech_template.role_too_long',
+  },
+  Speech: {
+    FormatRequired: 'speech.format_required',
+    InvalidValues: 'speech.invalid_values',
+    HostsOnly: 'speech.hosts_only',
+    OfficialEventRequired: 'speech.official_event_required',
   },
   Connect: {
     RequestNotFound: 'connect.request_not_found',
@@ -342,6 +359,7 @@ export type ValidationCode =
   | 'event.check_in_report_invalid_column'
   | 'event.slug_invalid'
   | 'event.slug_taken'
+  | 'event.invalid_event_format'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -446,6 +464,7 @@ export type ValidationCode =
   | 'join_request.phone_already_invited'
   | 'join_request.phone_already_pending'
   | 'join_request.phone_already_tentative'
+  | 'join_request.open_request_exists'
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
@@ -499,10 +518,19 @@ export type ValidationCode =
   | 'member_promotion_message.body_too_long'
   | 'member_promotion_email.body_required'
   | 'member_promotion_email.body_too_long'
+  | 'member_restored_email.body_required'
+  | 'member_restored_email.body_too_long'
   | 'rejection_email.body_required'
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
   | 'rejection_email.reason_text_too_long'
+  | 'speech_template.invalid_doc'
+  | 'speech_template.too_many_roles'
+  | 'speech_template.role_too_long'
+  | 'speech.format_required'
+  | 'speech.invalid_values'
+  | 'speech.hosts_only'
+  | 'speech.official_event_required'
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
@@ -558,6 +586,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.check_in_report_invalid_column': ['column'],
   'event.slug_invalid': [],
   'event.slug_taken': [],
+  'event.invalid_event_format': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
@@ -662,6 +691,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.phone_already_invited': [],
   'join_request.phone_already_pending': [],
   'join_request.phone_already_tentative': [],
+  'join_request.open_request_exists': [],
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
@@ -715,10 +745,19 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'member_promotion_message.body_too_long': ['max_length'],
   'member_promotion_email.body_required': [],
   'member_promotion_email.body_too_long': ['max_length'],
+  'member_restored_email.body_required': [],
+  'member_restored_email.body_too_long': ['max_length'],
   'rejection_email.body_required': [],
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],
   'rejection_email.reason_text_too_long': ['max_length'],
+  'speech_template.invalid_doc': [],
+  'speech_template.too_many_roles': ['max'],
+  'speech_template.role_too_long': ['max'],
+  'speech.format_required': [],
+  'speech.invalid_values': [],
+  'speech.hosts_only': [],
+  'speech.official_event_required': [],
   'connect.request_not_found': [],
   'connect.request_expired': [],
   'connect.request_already_used': [],
