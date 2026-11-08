@@ -238,8 +238,13 @@ def send_join_approval_email(
     recipient already has an account by this point, so this links to the
     normal login page rather than carrying a one-time token.
     """
-    heading = "you're fully approved — welcome to pda!"
-    html, text = _render_membership_email(display_name, message_body, login_url, heading)
+    context = {
+        "display_name": display_name or "",
+        "message_body": message_body,
+        "login_url": login_url,
+    }
+    html = render_to_string("emails/join_approval.html", context)
+    text = render_to_string("emails/join_approval.txt", context)
     return sender.send(
         to=to,
         subject="you're fully approved — welcome to pda",
@@ -252,23 +257,14 @@ def send_member_restored_email(
     *, sender: EmailSender, to: str, display_name: str, message_body: str, login_url: str
 ) -> SendResult:
     """Render and send the email for an attendance-paused member restored by checking in."""
-    heading = "welcome back — your membership is restored!"
-    html, text = _render_membership_email(display_name, message_body, login_url, heading)
-    return sender.send(to=to, subject="welcome back to pda", html=html, text=text)
-
-
-def _render_membership_email(
-    display_name: str, message_body: str, login_url: str, heading: str
-) -> tuple[str, str]:
     context = {
         "display_name": display_name or "",
         "message_body": message_body,
         "login_url": login_url,
-        "heading": heading,
     }
-    html = render_to_string("emails/join_approval.html", context)
-    text = render_to_string("emails/join_approval.txt", context)
-    return html, text
+    html = render_to_string("emails/member_restored.html", context)
+    text = render_to_string("emails/member_restored.txt", context)
+    return sender.send(to=to, subject="welcome back to pda", html=html, text=text)
 
 
 def send_join_rejection_email(
