@@ -30,6 +30,7 @@ export interface Member {
   isMember: boolean;
   isSuperuser: boolean;
   isPaused: boolean;
+  attendancePausedAt: Date | null;
   hasJoinedWhatsapp: boolean;
   needsOnboarding: boolean;
   loginLinkRequested: boolean;
@@ -63,6 +64,7 @@ interface WireMember {
   is_member?: boolean;
   is_superuser?: boolean;
   is_paused?: boolean;
+  attendance_paused_at?: string | null;
   has_joined_whatsapp?: boolean;
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
@@ -96,6 +98,7 @@ function fromWire(w: WireMember): Member {
     isMember: w.is_member ?? true,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
+    attendancePausedAt: w.attendance_paused_at ? new Date(w.attendance_paused_at) : null,
     hasJoinedWhatsapp: w.has_joined_whatsapp ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
@@ -190,6 +193,7 @@ export interface UpdateUserInput {
   lastName?: string;
   email?: string;
   isPaused?: boolean;
+  attendancePaused?: boolean;
   hasJoinedWhatsapp?: boolean;
 }
 
@@ -203,6 +207,7 @@ export function useUpdateUser(userId: string) {
       if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
       if (input.isPaused !== undefined) body.is_paused = input.isPaused;
+      if (input.attendancePaused !== undefined) body.attendance_paused = input.attendancePaused;
       if (input.hasJoinedWhatsapp !== undefined) body.has_joined_whatsapp = input.hasJoinedWhatsapp;
       const { data } = await apiClient.patch<WireMember>(`/api/auth/users/${userId}/`, body);
       return fromWire(data);
