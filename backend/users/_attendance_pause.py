@@ -38,7 +38,6 @@ KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
 class PauseImpact:
     kept_rsvps: list[Event] = field(default_factory=list)
     removed_rsvps: list[Event] = field(default_factory=list)
-    kept_hosting: list[Event] = field(default_factory=list)
     removed_hosting: list[Event] = field(default_factory=list)
     drafted_events: list[Event] = field(default_factory=list)
 
@@ -51,9 +50,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     """
     impact = PauseImpact()
     for event in upcoming_hosted_events(user).order_by("start_datetime"):
-        if event.event_type in KEPT_EVENT_TYPES:
-            impact.kept_hosting.append(event)
-        elif event.host_count > 1:
+        if event.host_count > 1:
             impact.removed_hosting.append(event)
         else:
             impact.drafted_events.append(event)
@@ -75,7 +72,7 @@ def attendance_pause_impact(user: User) -> PauseImpact:
 
 
 def apply_attendance_pause(request, user: User) -> PauseImpact:
-    """Attendance-pause the user and release what they hold on upcoming events of other types.
+    """Attendance-pause the user, drop their other-type RSVPs and release every host spot.
 
     param(request): the triggering request, for audit and promoted-member email logging
     param(user): the member to pause
@@ -87,12 +84,10 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         for event in impact.drafted_events:
             _move_to_draft(event, user)
         release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
-        step_down_as_cohost(user, ~KEPT_EVENT_Q)
+        step_down_as_cohost(user)
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
-        ).exclude(event__event_type__in=KEPT_EVENT_TYPES).update(
-            status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()
-        )
+        ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
         removed_role_ids = _strip_membership(user)
         user.attendance_paused_at = timezone.now()
         user.is_member = False
