@@ -448,7 +448,12 @@ function MemberEditForm({
           setEmail(e.target.value);
         }}
       />
-      <MemberPauseToggles value={pause} onChange={setPause} targetIsAdmin={targetIsAdmin} />
+      <MemberPauseToggles
+        memberId={member.id}
+        value={pause}
+        onChange={setPause}
+        targetIsAdmin={targetIsAdmin}
+      />
 
       {error ? (
         <p role="alert" className="text-sm text-red-600">

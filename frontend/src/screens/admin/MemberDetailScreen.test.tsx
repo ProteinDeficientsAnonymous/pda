@@ -36,6 +36,10 @@ vi.mock('@/api/roles', () => ({
   useRoles: vi.fn(),
 }));
 
+vi.mock('@/api/attendancePausePreview', () => ({
+  fetchAttendancePausePreview: vi.fn().mockResolvedValue([]),
+}));
+
 const member: Member = {
   id: 'member-1',
   fullName: 'ada lovelace',
