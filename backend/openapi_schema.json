@@ -5506,6 +5506,42 @@
         "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
+      "MemberRestoredEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberRestoredEmailOut",
+        "type": "object"
+      },
+      "MemberRestoredEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberRestoredEmailPatchIn",
+        "type": "object"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -16283,7 +16319,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
                 }
               }
             },
@@ -16307,7 +16343,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MemberPromotionEmailPatchIn"
+                "$ref": "#/components/schemas/MemberRestoredEmailPatchIn"
               }
             }
           },
@@ -16318,7 +16354,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
                 }
               }
             },

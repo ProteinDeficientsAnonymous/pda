@@ -177,11 +177,13 @@ class TestRestoreNotification:
         assert notification.recipient == vettor_user
         assert notification.related_user == paused
 
-    def test_approver_who_checked_them_in_is_not_notified(self, api_client, paused, vettor_user):
+    def test_approver_who_checked_them_in_is_notified_too(self, api_client, paused, vettor_user):
         _attended(paused)
         _check_in(api_client, vettor_user, paused)
         assert paused.attendance_paused_at is None
-        assert not Notification.objects.filter(recipient=vettor_user).exists()
+        assert Notification.objects.filter(
+            recipient=vettor_user, notification_type=NotificationType.MEMBER_RESTORED
+        ).exists()
 
     def test_no_notification_without_a_restore(self, api_client, host, paused, vettor_user):
         _check_in(api_client, host, paused)

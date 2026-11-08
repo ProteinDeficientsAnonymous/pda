@@ -4977,6 +4977,21 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /** MemberRestoredEmailOut */
+        MemberRestoredEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberRestoredEmailPatchIn */
+        MemberRestoredEmailPatchIn: {
+            /** Body */
+            body?: string | null;
+        };
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
@@ -11673,7 +11688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
                 };
             };
         };
@@ -11687,7 +11702,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MemberPromotionEmailPatchIn"];
+                "application/json": components["schemas"]["MemberRestoredEmailPatchIn"];
             };
         };
         responses: {
@@ -11697,7 +11712,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberPromotionEmailOut"];
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
                 };
             };
             /** @description Forbidden */
