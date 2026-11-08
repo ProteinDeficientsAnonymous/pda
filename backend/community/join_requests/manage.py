@@ -24,6 +24,7 @@ from community.join_requests.approval import (
     provision_tentative_user,
     send_join_approval,
 )
+from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import (
     AttendanceStatus,
     EventRSVP,
@@ -37,10 +38,6 @@ from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()
-
-# Approved/tentative members stay in the join requests list until they've been
-# onboarded this many days AND are marked as having joined the whatsapp.
-APPROVED_GRACE_DAYS = 7
 
 
 class JoinRequestAnswerOut(BaseModel):
@@ -325,7 +322,7 @@ def list_join_requests(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
-    cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
+    cutoff = timezone.now() - timedelta(days=WHATSAPP_GRACE_DAYS)
     # Legacy users onboarded before onboarded_at existed have it as null;
     # treat them as past the grace window.
     expired_phones = User.objects.filter(
