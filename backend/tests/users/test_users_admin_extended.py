@@ -207,6 +207,19 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    @pytest.mark.parametrize("archived", [False, True])
+    def test_admin_list_includes_attendance_paused_unless_archived(
+        self, api_client, manage_users_headers, other_user, archived
+    ):
+        other_user.is_member = False
+        other_user.attendance_paused_at = timezone.now()
+        other_user.archived_at = timezone.now() if archived else None
+        other_user.save(update_fields=["is_member", "attendance_paused_at", "archived_at"])
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert (str(other_user.pk) in ids) is not archived
+
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user
     ):
