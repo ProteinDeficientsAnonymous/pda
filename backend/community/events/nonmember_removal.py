@@ -3,7 +3,7 @@ from notifications.email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
 from users.models import NonMemberRsvpToken, User
 
-from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
+from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
 from community.models import Event, EventRSVP, RSVPStatus
 from community.rsvps.public_shared import email_details, log_email_failure
 from community.validation import Code, raise_validation
@@ -14,7 +14,7 @@ def ineligible_non_member_rsvps(event: Event):
     rsvps = EventRSVP.objects.filter(event=event, user__is_member=False).exclude(
         status=RSVPStatus.REMOVED
     )
-    if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
+    if event.event_type in LIMITED_ACCESS_EVENT_TYPES:
         # Limited users keep official/club access regardless of public RSVP eligibility.
         rsvps = rsvps.exclude(user__in=User.objects.limited_users())
     return rsvps

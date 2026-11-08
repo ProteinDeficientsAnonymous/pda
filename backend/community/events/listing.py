@@ -10,12 +10,12 @@ from community.events.helpers import (
     tags_out,
     viewer_rsvp_rows,
 )
-from community.events.schemas import EventListOut
-from community.events.tentative_member_access import (
+from community.events.limited_access import (
     event_viewer_for,
     is_limited,
-    tentative_member_event_q,
+    limited_access_event_q,
 )
+from community.events.schemas import EventListOut
 from community.models import (
     DEFAULT_EVENT_DURATION,
     Event,
@@ -79,7 +79,7 @@ def _status_q(status: str, auth_user, is_authed) -> Q:
     if not is_authed:
         q &= Q(visibility=PageVisibility.PUBLIC)
     elif is_limited(auth_user):
-        q &= tentative_member_event_q()
+        q &= limited_access_event_q()
     return q
 
 

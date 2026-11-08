@@ -35,6 +35,10 @@ from community.events.helpers import (
     set_event_tags,
     validated_event_format,
 )
+from community.events.limited_access import (
+    event_viewer_for,
+    is_limited,
+)
 from community.events.listing import (
     EventListQuery,
     build_events_queryset,
@@ -57,10 +61,6 @@ from community.events.schemas import (
     EventPatchIn,
     RSVPGuestOut,
     validate_event_rsvp_question,
-)
-from community.events.tentative_member_access import (
-    event_viewer_for,
-    is_limited,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
