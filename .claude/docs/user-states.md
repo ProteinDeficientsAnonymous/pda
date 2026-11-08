@@ -110,4 +110,5 @@ See [user-capabilities.md](user-capabilities.md).
 
 ## Open questions
 
-- A tentative user who is then rejected keeps their account and password. Login only blocks archived and guidelines-paused users, so if they'd already finished onboarding they can still sign in as limited.
+- A tentative user who is then rejected keeps their account and password. Login only blocks archived and guidelines-paused users, so if they'd already finished onboarding they can still sign in as limited ([#2245](https://github.com/ProteinDeficientsAnonymous/pda/issues/2245)).
+- An archived member who tries to sign in is told the account is no longer active, with no prompt to request to join again ([#2244](https://github.com/ProteinDeficientsAnonymous/pda/issues/2244)).

@@ -70,6 +70,6 @@ Source of truth: `backend/users/permissions.py` (`PermissionKey`), mirrored in `
 
 ## Open questions
 
-- The calendar feed doesn't apply the limited-user filter. A limited user can mint a feed token, and the feed then includes every active event (except invite-only events they aren't on) with full location and links (`community/events/calendar.py`).
-- `/events/{id}/ics/` checks visibility but skips `event_viewer_for`, so a limited user gets location and links for a members-only community event by id — the event page itself hides them.
-- `/users/search/` isn't gated like the directory and profiles, so limited users can search members by name and see phone numbers members chose to show (`users/_management.py` `search_users`).
+- The calendar feed doesn't apply the limited-user filter. A limited user can mint a feed token, and the feed then includes every active event (except invite-only events they aren't on) with full location and links (`community/events/calendar.py`) ([#2246](https://github.com/ProteinDeficientsAnonymous/pda/issues/2246)).
+- `/events/{id}/ics/` checks visibility but skips `event_viewer_for`, so a limited user gets location and links for a members-only community event by id — the event page itself hides them ([#2247](https://github.com/ProteinDeficientsAnonymous/pda/issues/2247)).
+- `/users/search/` isn't gated like the directory and profiles, so limited users can search members by name and see phone numbers members chose to show (`users/_management.py` `search_users`) ([#2248](https://github.com/ProteinDeficientsAnonymous/pda/issues/2248)).
