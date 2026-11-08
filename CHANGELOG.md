@@ -1,3 +1,10 @@
+## [0.222.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.3...v0.222.4) (2026-11-08)
+
+
+### Bug Fixes
+
+* **notifications:** sync read state across tabs and devices ([#2192](https://github.com/ProteinDeficientsAnonymous/pda/issues/2192)) ([568a6dd](https://github.com/ProteinDeficientsAnonymous/pda/commit/568a6ddfd868b3059b42c9b671878c771d1cab0d))
+
 ## [0.222.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.2...v0.222.3) (2026-11-08)
 
 
