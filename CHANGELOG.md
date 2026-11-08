@@ -1,3 +1,10 @@
+## [0.226.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.0...v0.226.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* repair main after the attendance pause merge train ([#2242](https://github.com/ProteinDeficientsAnonymous/pda/issues/2242)) ([fc18221](https://github.com/ProteinDeficientsAnonymous/pda/commit/fc18221a2feb999a6eb345a383fc07324b068ee1))
+
 # [0.226.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.225.0...v0.226.0) (2026-11-08)
 
 
