@@ -247,13 +247,6 @@ class UserOut(BaseModel):
         )
 
 
-class MemberAttendedEventOut(BaseModel):
-    event_id: str
-    title: str
-    start_datetime: datetime | None = None
-    event_type: str
-
-
 class MemberProfileOut(BaseModel):
     id: str
     first_name: str = ""
