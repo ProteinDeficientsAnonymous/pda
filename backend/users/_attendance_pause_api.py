@@ -30,7 +30,6 @@ class PauseOutcome(StrEnum):
 _BUCKETS = {
     "kept_rsvps": (PauseRole.RSVP, PauseOutcome.KEPT),
     "removed_rsvps": (PauseRole.RSVP, PauseOutcome.REMOVED),
-    "kept_hosting": (PauseRole.HOSTING, PauseOutcome.KEPT),
     "removed_hosting": (PauseRole.HOSTING, PauseOutcome.REMOVED),
     "drafted_events": (PauseRole.HOSTING, PauseOutcome.DRAFTED),
 }
