@@ -1,3 +1,16 @@
+# [0.225.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.224.0...v0.225.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* enforce one open join request per phone ([#2227](https://github.com/ProteinDeficientsAnonymous/pda/issues/2227)) ([56f4dff](https://github.com/ProteinDeficientsAnonymous/pda/commit/56f4dffba2e56b88cfd077cc27e15a55bd071e3e))
+* show existing open join request instead of the join form ([#2230](https://github.com/ProteinDeficientsAnonymous/pda/issues/2230)) ([41e6206](https://github.com/ProteinDeficientsAnonymous/pda/commit/41e6206cc242de890148981c3ed162ae8b7d4358))
+
+
+### Features
+
+* 1518 - confirm event rqmt pause with affected events preview ([#2191](https://github.com/ProteinDeficientsAnonymous/pda/issues/2191)) ([bc14b10](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc14b1044b3da6083f6dc94c99634b188e7c5ca6))
+
 # [0.224.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.223.0...v0.224.0) (2026-11-08)
 
 
