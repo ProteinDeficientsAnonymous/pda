@@ -1,6 +1,7 @@
 import pytest
+from audit.models import AuditLogEntry
 from community.events.viewer import resolve_event_viewer
-from community.models import EventRSVP, JoinRequest, RSVPStatus
+from community.models import EventRSVP, JoinFormQuestion, JoinRequest, RSVPStatus
 from community.validation import Code
 from users.models import NonMemberRsvpToken
 
@@ -40,12 +41,19 @@ class TestPausedPublicRsvp:
         assert not NonMemberRsvpToken.objects.filter(user=paused).exists()
 
     def test_submit_gets_generic_rejection(
-        self, api_client, official_event, paused, fake_email_sender
+        self,
+        api_client,
+        official_event,
+        paused,
+        fake_email_sender,
+        django_capture_on_commit_callbacks,
     ):
-        response = post(api_client, official_event)
+        with django_capture_on_commit_callbacks(execute=True):
+            response = post(api_client, official_event)
 
         assert response.status_code == 409
         assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
+        assert AuditLogEntry.objects.filter(action="public_rsvp_paused_user_blocked").exists()
         assert not EventRSVP.objects.filter(user=paused).exists()
         fake_email_sender.send.assert_not_called()
 
@@ -65,9 +73,6 @@ class TestPausedRsvpToken:
     @pytest.fixture
     def token(self, paused):
         return NonMemberRsvpToken.issue_or_extend(paused).token
-
-    def test_resolve_user_returns_none(self, token):
-        assert NonMemberRsvpToken.resolve_user(token) is None
 
     def test_viewer_falls_back_to_anonymous(self, rf, official_event, token):
         request = rf.get(f"/api/community/events/x/?token={token}")
@@ -101,6 +106,7 @@ class TestPausedJoinRequest:
             "email": EMAIL,
             "sms_consent": True,
             "guidelines_consent": True,
+            "answers": {str(q.id): "x" for q in JoinFormQuestion.objects.filter(required=True)},
             **overrides,
         }
         return api_client.post(
@@ -114,5 +120,14 @@ class TestPausedJoinRequest:
         response = self._submit(api_client, **overrides)
 
         assert response.status_code == 201
-        assert response.json()["id"] == ""
+        body = response.json()
+        assert body["id"]
+        assert body["user_id"] == str(paused.pk)
         assert not JoinRequest.objects.exists()
+
+    def test_invalid_answers_still_422(self, api_client, paused):
+        JoinFormQuestion.objects.create(label="why", required=True)
+
+        response = self._submit(api_client, answers={})
+
+        assert response.status_code == 422

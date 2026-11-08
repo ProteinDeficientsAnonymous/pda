@@ -238,7 +238,25 @@ def submit_join_request(request, payload: JoinRequestIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
-    # Decoy, not a pause-specific error: an unauthenticated caller must not learn who is paused.
+
+    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
+    _validate_answers(payload.answers, questions)
+
+    custom_answers = _build_custom_answers(payload.answers, questions)
+
+    now = timezone.now()
+    join_request = JoinRequest(
+        first_name=first_name,
+        last_name=last_name,
+        phone_number=validated_phone,
+        email=normalized_email,
+        user=matched_user,
+        custom_answers=custom_answers,
+        sms_consent_at=now,
+        guidelines_consent_at=now,
+        submitted_at=now,
+    )
+    # Unsaved decoy shaped like a real submission, so no response reveals who is paused.
     if matched_user and matched_user.is_paused:
         audit_log(
             logging.WARNING,
@@ -246,12 +264,7 @@ def submit_join_request(request, payload: JoinRequestIn):
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=str(matched_user.pk)),
         )
-        return Status(201, _honeypot_decoy_response(first_name, full_name, validated_phone))
-
-    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    _validate_answers(payload.answers, questions)
-
-    custom_answers = _build_custom_answers(payload.answers, questions)
+        return Status(201, join_request_out(join_request))
 
     with transaction.atomic():
         # Backfill the non-member's missing email so the now-known contact
@@ -262,17 +275,7 @@ def submit_join_request(request, payload: JoinRequestIn):
         if matched_user and normalized_email and not matched_user.email and not email_claimed:
             matched_user.email = normalized_email
             matched_user.save(update_fields=["email"])
-
-        join_request = JoinRequest.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=validated_phone,
-            email=normalized_email,
-            user=matched_user,
-            custom_answers=custom_answers,
-            sms_consent_at=timezone.now(),
-            guidelines_consent_at=timezone.now(),
-        )
+        join_request.save()
 
     logger.info("Join request submitted by %s", full_name)
     audit_log(
