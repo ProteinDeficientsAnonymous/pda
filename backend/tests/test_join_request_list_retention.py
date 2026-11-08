@@ -163,3 +163,49 @@ class TestJoinRequestListRetention:
         assert str(pending.id) in ids
         assert str(rejected.id) in ids
         assert str(approved.id) not in ids
+
+    @pytest.mark.parametrize("status", [JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE])
+    @pytest.mark.parametrize("stamp", ["attendance_paused_at", "restored_at"])
+    def test_list_drops_paused_or_restored_members_rows(
+        self, api_client, vettor_headers, sample_join_request, status, stamp
+    ):
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": status},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        user.has_joined_whatsapp = False
+        setattr(user, stamp, timezone.now())
+        user.save(update_fields=["has_joined_whatsapp", stamp])
+
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        ids = [r["id"] for r in response.json()]
+        assert str(sample_join_request.id) not in ids
+
+    def test_list_keeps_rows_decided_after_the_pause(self, api_client, vettor_headers, db):
+        paused_at = timezone.now() - timedelta(days=3)
+        User.objects.create_user(
+            phone_number="+12025550104", first_name="Paused", attendance_paused_at=paused_at
+        )
+        old = JoinRequest.objects.create(
+            first_name="Paused",
+            phone_number="+12025550104",
+            status=JoinRequestStatus.APPROVED,
+            approved_at=paused_at - timedelta(days=30),
+        )
+        new = JoinRequest.objects.create(
+            first_name="Paused",
+            phone_number="+12025550104",
+            status=JoinRequestStatus.TENTATIVE,
+            tentative_at=paused_at + timedelta(days=1),
+        )
+
+        ids = [
+            r["id"]
+            for r in api_client.get("/api/community/join-requests/", **vettor_headers).json()
+        ]
+
+        assert str(old.id) not in ids
+        assert str(new.id) in ids

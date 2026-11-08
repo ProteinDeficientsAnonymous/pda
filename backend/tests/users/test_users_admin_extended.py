@@ -80,7 +80,7 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.has_joined_whatsapp is True
 
-    def test_pause_strips_non_member_roles(
+    def test_pause_strips_elevated_roles(
         self, api_client, manage_users_headers, other_user, caplog
     ):
         member_role = Role.objects.get(name="member", is_default=True)
@@ -163,21 +163,25 @@ class TestUpdateUser:
         )
         assert response.status_code == 403
 
-    def test_cannot_pause_own_account(self, api_client, manage_users_headers, manage_users_user):
+    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_own_account(
+        self, api_client, manage_users_headers, manage_users_user, payload
+    ):
         response = api_client.patch(
             f"/api/auth/users/{manage_users_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 400
 
-    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user):
+    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user, payload):
         admin_role = Role.objects.get(name="admin", is_default=True)
         other_user.roles.add(admin_role)
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
@@ -185,6 +189,7 @@ class TestUpdateUser:
         assert_error_code(response, Code.User.CANNOT_PAUSE_ADMIN)
         other_user.refresh_from_db()
         assert other_user.is_paused is False
+        assert other_user.attendance_paused_at is None
 
     def test_admin_list_includes_paused_users(self, api_client, manage_users_headers, other_user):
         other_user.is_paused = True
@@ -201,6 +206,19 @@ class TestUpdateUser:
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
+
+    @pytest.mark.parametrize("archived", [False, True])
+    def test_admin_list_includes_attendance_paused_unless_archived(
+        self, api_client, manage_users_headers, other_user, archived
+    ):
+        other_user.is_member = False
+        other_user.attendance_paused_at = timezone.now()
+        other_user.archived_at = timezone.now() if archived else None
+        other_user.save(update_fields=["is_member", "attendance_paused_at", "archived_at"])
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert (str(other_user.pk) in ids) is not archived
 
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user

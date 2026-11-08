@@ -1,3 +1,271 @@
+# [0.227.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.2...v0.227.0) (2026-11-08)
+
+
+### Features
+
+* **mcp:** look up a member's rsvps and find members by name ([#2113](https://github.com/ProteinDeficientsAnonymous/pda/issues/2113)) ([7b5115a](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b5115a819bed4cc25354ffdb1180ecc3522fce1))
+
+## [0.226.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.1...v0.226.2) (2026-11-08)
+
+
+### Performance Improvements
+
+* 1925 - reorder join form questions in one update ([#1939](https://github.com/ProteinDeficientsAnonymous/pda/issues/1939)) ([a528315](https://github.com/ProteinDeficientsAnonymous/pda/commit/a528315b0c5794eb90c7e39e1481e53703e483f0))
+
+## [0.226.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.0...v0.226.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* repair main after the attendance pause merge train ([#2242](https://github.com/ProteinDeficientsAnonymous/pda/issues/2242)) ([fc18221](https://github.com/ProteinDeficientsAnonymous/pda/commit/fc18221a2feb999a6eb345a383fc07324b068ee1))
+
+# [0.226.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.225.0...v0.226.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1517 - keep paused and restored members off the approved tab ([#2183](https://github.com/ProteinDeficientsAnonymous/pda/issues/2183)) ([370cc05](https://github.com/ProteinDeficientsAnonymous/pda/commit/370cc05b1bec52fc1bf1286433342dc08985b51f))
+* block guidelines-paused users on public rsvp and join paths ([#2231](https://github.com/ProteinDeficientsAnonymous/pda/issues/2231)) ([a73c363](https://github.com/ProteinDeficientsAnonymous/pda/commit/a73c3630050b2a07acc55f9f4b48ee4cb1279d05))
+* **events:** 1686 - treat attendance-paused members as signed in for RSVPs ([#2193](https://github.com/ProteinDeficientsAnonymous/pda/issues/2193)) ([139b318](https://github.com/ProteinDeficientsAnonymous/pda/commit/139b3189b8861dc0e6391c833c5f5acd9e85b336))
+* **join-requests:** 1686 - report attendance-paused members in check_phone ([#2197](https://github.com/ProteinDeficientsAnonymous/pda/issues/2197)) ([e2bdcbb](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2bdcbb08487697e4c631c02c3a657a33afdd150))
+* **join:** return minimal public response from join-request submit ([#2241](https://github.com/ProteinDeficientsAnonymous/pda/issues/2241)) ([f18ac44](https://github.com/ProteinDeficientsAnonymous/pda/commit/f18ac4420f64fee5003b4ddb7a11a0688498941b))
+* **users:** 1686 - count attendance-paused members as signed-in non-members ([#2187](https://github.com/ProteinDeficientsAnonymous/pda/issues/2187)) ([be58d48](https://github.com/ProteinDeficientsAnonymous/pda/commit/be58d480c74d237ed6860326f9a782cbfd8b8439))
+
+
+### Features
+
+* 1516 - edit the welcome back email from join requests ([#2203](https://github.com/ProteinDeficientsAnonymous/pda/issues/2203)) ([8afedc3](https://github.com/ProteinDeficientsAnonymous/pda/commit/8afedc30434cced63eef4658d2ead32f19b4610f))
+* 1516 - edit the welcome back email template ([#2201](https://github.com/ProteinDeficientsAnonymous/pda/issues/2201)) ([f8b6238](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8b62380d0436c28b369baaa9a87a68c3fb7452c))
+* 1516 - email restored members with the whatsapp link ([#2199](https://github.com/ProteinDeficientsAnonymous/pda/issues/2199)) ([b66237b](https://github.com/ProteinDeficientsAnonymous/pda/commit/b66237b8e55effb16cad86d29f40152cb1494c20))
+* 1516 - notify approvers when a paused member is restored ([#2202](https://github.com/ProteinDeficientsAnonymous/pda/issues/2202)) ([a6513ed](https://github.com/ProteinDeficientsAnonymous/pda/commit/a6513ed0f75eb6f74f894af3b83dba53a812f07b))
+* 1516 - read the welcome back email template ([#2200](https://github.com/ProteinDeficientsAnonymous/pda/issues/2200)) ([7280e6f](https://github.com/ProteinDeficientsAnonymous/pda/commit/7280e6fe4a5f27258ea563c587dbec8d4cddf382))
+* 1516 - restore attendance-paused members on 2nd check-in ([#2194](https://github.com/ProteinDeficientsAnonymous/pda/issues/2194)) ([8f552c8](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f552c811393db0858f015b010cab5023dbceeef))
+* 1517 - list manually unpaused members on the restored endpoint ([#2233](https://github.com/ProteinDeficientsAnonymous/pda/issues/2233)) ([852d695](https://github.com/ProteinDeficientsAnonymous/pda/commit/852d6955395b3985e7c9b6d68eb9cb1558c37dbd))
+* 1517 - restored members endpoint ([#2188](https://github.com/ProteinDeficientsAnonymous/pda/issues/2188)) ([abf2e4e](https://github.com/ProteinDeficientsAnonymous/pda/commit/abf2e4ebb994d91722e94cc79268d455a4fb0bab))
+* 1517 - restored tab on the join requests page ([#2196](https://github.com/ProteinDeficientsAnonymous/pda/issues/2196)) ([328613e](https://github.com/ProteinDeficientsAnonymous/pda/commit/328613e4c60d6626ec96a4460cc085676b3fbf23))
+* 1517 - show unpaused members on the restored tab ([#2234](https://github.com/ProteinDeficientsAnonymous/pda/issues/2234)) ([3780b4c](https://github.com/ProteinDeficientsAnonymous/pda/commit/3780b4c892b574fabd7157e10d86e4d981acd7d7))
+* 2128 - email members when an admin unpauses them ([#2195](https://github.com/ProteinDeficientsAnonymous/pda/issues/2195)) ([01b8484](https://github.com/ProteinDeficientsAnonymous/pda/commit/01b8484d66e293f6ee62041841202c9cd22cc978))
+* 2128 - stamp unpaused_at when an admin unpauses a member ([#2232](https://github.com/ProteinDeficientsAnonymous/pda/issues/2232)) ([47f7fb6](https://github.com/ProteinDeficientsAnonymous/pda/commit/47f7fb6ca425f99494b700af09a473ceedb52c64))
+
+# [0.225.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.224.0...v0.225.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* enforce one open join request per phone ([#2227](https://github.com/ProteinDeficientsAnonymous/pda/issues/2227)) ([56f4dff](https://github.com/ProteinDeficientsAnonymous/pda/commit/56f4dffba2e56b88cfd077cc27e15a55bd071e3e))
+* show existing open join request instead of the join form ([#2230](https://github.com/ProteinDeficientsAnonymous/pda/issues/2230)) ([41e6206](https://github.com/ProteinDeficientsAnonymous/pda/commit/41e6206cc242de890148981c3ed162ae8b7d4358))
+
+
+### Features
+
+* 1518 - confirm event rqmt pause with affected events preview ([#2191](https://github.com/ProteinDeficientsAnonymous/pda/issues/2191)) ([bc14b10](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc14b1044b3da6083f6dc94c99634b188e7c5ca6))
+
+# [0.224.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.223.0...v0.224.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - add attendance pause preview api client ([#2189](https://github.com/ProteinDeficientsAnonymous/pda/issues/2189)) ([649e0c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/649e0c68567d62b07e10a4fa3f9fd94c15f3b111))
+
+# [0.223.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.6...v0.223.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - split pause toggle and add pause kind badges ([#2184](https://github.com/ProteinDeficientsAnonymous/pda/issues/2184)) ([a27a091](https://github.com/ProteinDeficientsAnonymous/pda/commit/a27a0915e5ce5a3f608162530a23f167ed55b768))
+
+## [0.222.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.5...v0.222.6) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep paid and checked-in rsvps when pause drafts an event ([#2209](https://github.com/ProteinDeficientsAnonymous/pda/issues/2209)) ([b2bc871](https://github.com/ProteinDeficientsAnonymous/pda/commit/b2bc8716bbadf7f3515c854cf866521dded9378f))
+
+## [0.222.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.4...v0.222.5) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep attendance-paused members on the members list ([#2198](https://github.com/ProteinDeficientsAnonymous/pda/issues/2198)) ([0d8f2d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/0d8f2d3de0c50a682061a971d5fc621fa6d0ede0))
+
+## [0.222.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.3...v0.222.4) (2026-11-08)
+
+
+### Bug Fixes
+
+* **notifications:** sync read state across tabs and devices ([#2192](https://github.com/ProteinDeficientsAnonymous/pda/issues/2192)) ([568a6dd](https://github.com/ProteinDeficientsAnonymous/pda/commit/568a6ddfd868b3059b42c9b671878c771d1cab0d))
+
+## [0.222.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.2...v0.222.3) (2026-11-08)
+
+
+### Bug Fixes
+
+* emit calendar ICS times in community timezone ([#2186](https://github.com/ProteinDeficientsAnonymous/pda/issues/2186)) ([9f951f0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f951f0578f082c28e4a3f3744ddac0f3222efb9))
+
+## [0.222.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.1...v0.222.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - release all host spots on attendance pause ([#2206](https://github.com/ProteinDeficientsAnonymous/pda/issues/2206)) ([79375c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/79375c6aaca905a45ae9af08eb7acc745363e8d5))
+
+## [0.222.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.0...v0.222.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **events:** keep guest list status tabs from collapsing on long lists ([#2185](https://github.com/ProteinDeficientsAnonymous/pda/issues/2185)) ([888d494](https://github.com/ProteinDeficientsAnonymous/pda/commit/888d4945ea795ec6c02a9fadc43b223258f681ef))
+
+# [0.222.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.1...v0.222.0) (2026-11-07)
+
+
+### Features
+
+* add zoom controls to event speech reading view ([#2177](https://github.com/ProteinDeficientsAnonymous/pda/issues/2177)) ([8ece930](https://github.com/ProteinDeficientsAnonymous/pda/commit/8ece9302b659d8d99b0e68b286a0fb8455eb0824))
+
+## [0.221.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.0...v0.221.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* finish half-applied archive helper rename ([#2168](https://github.com/ProteinDeficientsAnonymous/pda/issues/2168)) ([dcba8f4](https://github.com/ProteinDeficientsAnonymous/pda/commit/dcba8f4d863908b7c525bb77735f407110aca67d))
+
+# [0.221.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.220.0...v0.221.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add the event unpublished notice ([#2156](https://github.com/ProteinDeficientsAnonymous/pda/issues/2156)) ([51d85f3](https://github.com/ProteinDeficientsAnonymous/pda/commit/51d85f3a389cc287409878be7fc3de721134bc5e))
+* 1515 - attendance pause and unpause via user PATCH ([#2158](https://github.com/ProteinDeficientsAnonymous/pda/issues/2158)) ([f3bcd33](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3bcd3334c7ef41ed7995f8b8adfc968b80f53fb))
+* 1515 - attendance pause preview endpoint ([#2159](https://github.com/ProteinDeficientsAnonymous/pda/issues/2159)) ([64de912](https://github.com/ProteinDeficientsAnonymous/pda/commit/64de912d04e029065fc0e52cd48822b4f215cb82))
+* 1515 - draft sole-hosted events on attendance pause ([#2157](https://github.com/ProteinDeficientsAnonymous/pda/issues/2157)) ([1e7cbc1](https://github.com/ProteinDeficientsAnonymous/pda/commit/1e7cbc13b910c3cc649de35204a5d7d313af2701))
+* **mcp:** 1515 - attendance pause members over mcp ([#2160](https://github.com/ProteinDeficientsAnonymous/pda/issues/2160)) ([5e4fc0f](https://github.com/ProteinDeficientsAnonymous/pda/commit/5e4fc0fac96d9645caf9ae9f3d522a575c126bae))
+
+# [0.220.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.219.0...v0.220.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - apply the attendance pause ([#2155](https://github.com/ProteinDeficientsAnonymous/pda/issues/2155)) ([93a4382](https://github.com/ProteinDeficientsAnonymous/pda/commit/93a438285b7a439f79b5d78333bc2b80d7665a0d))
+
+# [0.219.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.1...v0.219.0) (2026-11-06)
+
+
+### Features
+
+* 1515 - add attendance pause fields ([#2153](https://github.com/ProteinDeficientsAnonymous/pda/issues/2153)) ([d8c7ede](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8c7ede42da06184f153852adfeb6b528892ee86))
+* 1515 - sort upcoming events by attendance pause impact ([#2154](https://github.com/ProteinDeficientsAnonymous/pda/issues/2154)) ([84944cd](https://github.com/ProteinDeficientsAnonymous/pda/commit/84944cdb672626b236265a3f8e6a4077364bbfd7))
+
+## [0.218.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.218.0...v0.218.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** enforce the website's invite rule in the invitations api ([#2162](https://github.com/ProteinDeficientsAnonymous/pda/issues/2162)) ([8e7a901](https://github.com/ProteinDeficientsAnonymous/pda/commit/8e7a901dc2e31cea58b90fa52aa232bd097ab93e))
+
+# [0.218.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.217.0...v0.218.0) (2026-11-06)
+
+
+### Features
+
+* **mcp:** invite members to events through mcp ([#2161](https://github.com/ProteinDeficientsAnonymous/pda/issues/2161)) ([ef5858e](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef5858e892e7e9ac715226e05478f5a6039cc8be))
+
+# [0.217.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.216.0...v0.217.0) (2026-11-06)
+
+
+### Features
+
+* show which event auto-approved a join request ([#2141](https://github.com/ProteinDeficientsAnonymous/pda/issues/2141)) ([2751198](https://github.com/ProteinDeficientsAnonymous/pda/commit/27511986e3f1d9b5e7832a02d1d4ce0b0c0a57c5))
+
+# [0.216.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.215.0...v0.216.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **feedback:** reword reminder email subject ([#2152](https://github.com/ProteinDeficientsAnonymous/pda/issues/2152)) ([fd17a7d](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd17a7d1ef31e111fd0c420a7d9a66674ef6a386))
+
+
+### Features
+
+* backfill the approving event for past check-in promotions ([#2140](https://github.com/ProteinDeficientsAnonymous/pda/issues/2140)) ([43ef0c0](https://github.com/ProteinDeficientsAnonymous/pda/commit/43ef0c0dc6ae9b53913c5bf58a1f0cccd33192b0))
+
+# [0.215.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.1...v0.215.0) (2026-11-06)
+
+
+### Features
+
+* record the event whose check-in auto-approved a join request ([#2139](https://github.com/ProteinDeficientsAnonymous/pda/issues/2139)) ([7e3053c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e3053c38e9c33a4019fd8c3fa45d6e2b37aa652))
+
+## [0.214.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.214.0...v0.214.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **events:** save a walk/restaurant format when editing official events ([#2150](https://github.com/ProteinDeficientsAnonymous/pda/issues/2150)) ([1639145](https://github.com/ProteinDeficientsAnonymous/pda/commit/1639145bb5e96d45fbf8da4a9b69b7f74543bd7c))
+* **speech:** add walker prompts to the speech form ([#2151](https://github.com/ProteinDeficientsAnonymous/pda/issues/2151)) ([e6cc8e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6cc8e2f8224c140ea1d1ef9bdef650ca137e6ac))
+
+# [0.214.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.213.0...v0.214.0) (2026-11-06)
+
+
+### Features
+
+* **speech:** move the event speech link into the event settings menu ([#2147](https://github.com/ProteinDeficientsAnonymous/pda/issues/2147)) ([7c66e65](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c66e65c11d656d82501cc52db3f9720898bc178))
+
+# [0.213.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.212.0...v0.213.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **speech:** list facilitators by first name only ([#2148](https://github.com/ProteinDeficientsAnonymous/pda/issues/2148)) ([4cb455b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4cb455b45181dbb8ee6dad5d1b0d4bdc0e0847e2))
+
+
+### Features
+
+* **speech:** let event managers open and edit an event's speech ([#2146](https://github.com/ProteinDeficientsAnonymous/pda/issues/2146)) ([11a3ba4](https://github.com/ProteinDeficientsAnonymous/pda/commit/11a3ba48cc57ad2735f1068f5462abd415512efb))
+
+# [0.212.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.211.0...v0.212.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **speech:** show coded save errors on the speech template screen ([#2145](https://github.com/ProteinDeficientsAnonymous/pda/issues/2145)) ([ae1ee65](https://github.com/ProteinDeficientsAnonymous/pda/commit/ae1ee6529dcd882ef7d574ad5627b9a495d1ea89))
+* **speech:** show host-only and non-official speech errors as event notices ([#2144](https://github.com/ProteinDeficientsAnonymous/pda/issues/2144)) ([1995aae](https://github.com/ProteinDeficientsAnonymous/pda/commit/1995aaea5783491f7c4de78e3fa51b2d3803a791))
+
+
+### Features
+
+* **editor:** add a speech blank node to the rich editor ([#2096](https://github.com/ProteinDeficientsAnonymous/pda/issues/2096)) ([301fb29](https://github.com/ProteinDeficientsAnonymous/pda/commit/301fb299bd8456da71d5276a66cc241e7830aee8))
+* **events:** accept event format on event create and edit ([#2079](https://github.com/ProteinDeficientsAnonymous/pda/issues/2079)) ([3026e26](https://github.com/ProteinDeficientsAnonymous/pda/commit/3026e26ae8034212e0072e57a921ee78ba704f12))
+* **events:** map event format on the frontend event model ([#2080](https://github.com/ProteinDeficientsAnonymous/pda/issues/2080)) ([26041a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/26041a14300293484142b43fe6d27ae020b77142))
+* **events:** pick walk or restaurant on official events ([#2081](https://github.com/ProteinDeficientsAnonymous/pda/issues/2081)) ([0eb0515](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eb0515c37e282c236428c60bb6659ee668bf4e4))
+* **mcp:** set event format through event tools ([#2082](https://github.com/ProteinDeficientsAnonymous/pda/issues/2082)) ([913b8a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/913b8a9bf063f75055341c8c5616359cee6de608))
+* **speech:** add default shared and walk speech docs ([#2093](https://github.com/ProteinDeficientsAnonymous/pda/issues/2093)) ([eac3734](https://github.com/ProteinDeficientsAnonymous/pda/commit/eac373458a52de59a0f1dd2f520a17ed45d00687))
+* **speech:** add speech template api hooks and open roles editor ([#2097](https://github.com/ProteinDeficientsAnonymous/pda/issues/2097)) ([e4b8aef](https://github.com/ProteinDeficientsAnonymous/pda/commit/e4b8aefe7e53762f17aa1cd1c0e116fb6fa70866))
+* **speech:** add speech template model, permission and read endpoint ([#2083](https://github.com/ProteinDeficientsAnonymous/pda/issues/2083)) ([7c31600](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c31600a94a21d3d03031a807e479e7ff53bda37))
+* **speech:** add the default restaurant speech doc ([#2094](https://github.com/ProteinDeficientsAnonymous/pda/issues/2094)) ([7209dfe](https://github.com/ProteinDeficientsAnonymous/pda/commit/7209dfee3f84da1390ff542c71bc7e1078e9438d))
+* **speech:** define speech blanks and render them as labels ([#2085](https://github.com/ProteinDeficientsAnonymous/pda/issues/2085)) ([9fb6324](https://github.com/ProteinDeficientsAnonymous/pda/commit/9fb6324788e99b7bbfb8c69fbb3f6b7658b8556d))
+* **speech:** edit a saved speech and pick the format when the event has none ([#2102](https://github.com/ProteinDeficientsAnonymous/pda/issues/2102)) ([cf72da1](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf72da15415c1f79038b7a4348c9abfd649806c2))
+* **speech:** edit speech template sections from the admin hub ([#2098](https://github.com/ProteinDeficientsAnonymous/pda/issues/2098)) ([bdeb52e](https://github.com/ProteinDeficientsAnonymous/pda/commit/bdeb52ecbcee8de26846356f8a420906df59250d))
+* **speech:** let editors update the speech template ([#2084](https://github.com/ProteinDeficientsAnonymous/pda/issues/2084)) ([0a0ac88](https://github.com/ProteinDeficientsAnonymous/pda/commit/0a0ac883f596cbbddb0fede06111177a374dcbe1))
+* **speech:** link co-hosts to the event speech page ([#2103](https://github.com/ProteinDeficientsAnonymous/pda/issues/2103)) ([93fc904](https://github.com/ProteinDeficientsAnonymous/pda/commit/93fc904becdef3bfe1ba6812c9aff9b7ab58e379))
+* **speech:** prefill upcoming events and the restaurant name ([#2090](https://github.com/ProteinDeficientsAnonymous/pda/issues/2090)) ([f7bed4e](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7bed4e20bdcc1c5c53e7870d0b1af6fa7229e01))
+* **speech:** read a saved event speech aloud ([#2099](https://github.com/ProteinDeficientsAnonymous/pda/issues/2099)) ([6c2c3cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/6c2c3cb129d11f79d5ece8a84d69847feac2ed4b))
+* **speech:** read an event speech prefill as a co-host ([#2089](https://github.com/ProteinDeficientsAnonymous/pda/issues/2089)) ([b4a1817](https://github.com/ProteinDeficientsAnonymous/pda/commit/b4a1817d815dc8e295557225debf24b9259e0be0))
+* **speech:** render a speech from the template with single blanks filled ([#2087](https://github.com/ProteinDeficientsAnonymous/pda/issues/2087)) ([585a3e1](https://github.com/ProteinDeficientsAnonymous/pda/commit/585a3e1077efa4f11a7e760af57a4db0f86be4df))
+* **speech:** render list blanks as bullets or comma lists ([#2088](https://github.com/ProteinDeficientsAnonymous/pda/issues/2088)) ([01dc0c7](https://github.com/ProteinDeficientsAnonymous/pda/commit/01dc0c7a523a5a055a6d5792b8be905c8fa44d8c))
+* **speech:** save an event speech as a co-host ([#2091](https://github.com/ProteinDeficientsAnonymous/pda/issues/2091)) ([1f41d12](https://github.com/ProteinDeficientsAnonymous/pda/commit/1f41d12e6a460b3037c2c1becd55f1d0e2d1f66b))
+* **speech:** save the speech blanks and switch to the reading view ([#2101](https://github.com/ProteinDeficientsAnonymous/pda/issues/2101)) ([1dff982](https://github.com/ProteinDeficientsAnonymous/pda/commit/1dff982614574e58bc0e4f6de5deb254c762e165))
+* **speech:** seed the default speech template ([#2095](https://github.com/ProteinDeficientsAnonymous/pda/issues/2095)) ([9e0a393](https://github.com/ProteinDeficientsAnonymous/pda/commit/9e0a393381a52afa1e5287767830554e4292af2d))
+* **speech:** set the event format when saving a speech and keep prefill for unsaved blanks ([#2092](https://github.com/ProteinDeficientsAnonymous/pda/issues/2092)) ([0fbc175](https://github.com/ProteinDeficientsAnonymous/pda/commit/0fbc17557910d0feaf2b76b1ce1edd679ee1bea1))
+* **speech:** show the prefilled speech blanks for the event's format ([#2100](https://github.com/ProteinDeficientsAnonymous/pda/issues/2100)) ([4b801f1](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b801f1c46e145dac5ba666ea1d3000a7488dfbd))
+
+# [0.211.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.210.0...v0.211.0) (2026-11-06)
+
+
+### Features
+
+* **events:** add read-only event format to events ([#2078](https://github.com/ProteinDeficientsAnonymous/pda/issues/2078)) ([128d10b](https://github.com/ProteinDeficientsAnonymous/pda/commit/128d10b166c12cff6220b159bc783371cadc3520))
+
 # [0.210.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.209.4...v0.210.0) (2026-11-06)
 
 

@@ -108,7 +108,7 @@ class Command(BaseCommand):
         tentative_sent, tentative_failed = send_digest_to_all(
             send_weekly_digest_email,
             sender,
-            recipients(User.objects.active_tentative_members()),
+            recipients(User.objects.active_limited_users()),
             payload,
         )
         sent_count += tentative_sent

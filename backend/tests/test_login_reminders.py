@@ -81,6 +81,13 @@ class TestWeeklyLoginReminder:
         call_command("send_weekly_digest")
         assert [c.kwargs["to"] for c in _reminder_calls(fake_email_sender)] == [user.email]
 
+    def test_reminds_attendance_paused_member_who_never_logged_in(self, fake_email_sender):
+        user = _make_pending_member(
+            "+12025550323", is_member=False, attendance_paused_at=timezone.now()
+        )
+        call_command("send_weekly_digest")
+        assert [c.kwargs["to"] for c in _reminder_calls(fake_email_sender)] == [user.email]
+
     def test_sends_even_when_digest_has_nothing_to_send(self, fake_email_sender):
         _make_pending_member("+12025550303")
         call_command("send_weekly_digest")

@@ -9,12 +9,13 @@ import type { CtaAttrs } from './CtaExtension';
 
 interface Props {
   editor: Editor;
+  extra?: ReactNode;
 }
 
 type HeadingLevel = 1 | 2 | 3;
 type Alignment = 'left' | 'center' | 'right';
 
-export function RichEditorToolbar({ editor }: Props) {
+export function RichEditorToolbar({ editor, extra }: Props) {
   const [ctaOpen, setCtaOpen] = useState(false);
   const ctaActive = editor.isActive('cta');
   const ctaInitial: CtaAttrs | null = ctaActive ? (editor.getAttributes('cta') as CtaAttrs) : null;
@@ -76,6 +77,7 @@ export function RichEditorToolbar({ editor }: Props) {
       >
         <span className="text-xs">button</span>
       </ToolButton>
+      {extra}
       <CtaDialog
         open={ctaOpen}
         initial={ctaInitial}
@@ -198,7 +200,7 @@ function AlignMenu({ editor }: { editor: Editor }) {
   );
 }
 
-function Menu({
+export function Menu({
   label,
   trigger,
   active,
@@ -271,7 +273,7 @@ function Menu({
   );
 }
 
-function MenuItem({
+export function MenuItem({
   active,
   onClick,
   children,

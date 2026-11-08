@@ -18,7 +18,7 @@ from community.models import (
     EventStatus,
     Survey,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from community.shared import local_midnight
 
 if TYPE_CHECKING:
@@ -51,8 +51,8 @@ def _active_feedback_event_types() -> list[str]:
 def due_feedback_events(now: datetime) -> QuerySet[Event]:
     cutoff = feedback_cutoff(now)
     return Event.objects.filter(
-        _is_past_q(cutoff),
-        ~_is_past_q(cutoff - FEEDBACK_LOOKBACK),
+        is_past_q(cutoff),
+        ~is_past_q(cutoff - FEEDBACK_LOOKBACK),
         status=EventStatus.ACTIVE,
         event_type__in=_active_feedback_event_types(),
     )

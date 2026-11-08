@@ -8,8 +8,8 @@ from community.attendance.analytics import (
     is_pause_candidate,
     user_rsvps_for_attendance,
 )
-from community.management.commands._e2e_common import _random_phone
-from community.management.commands.e2e_seed import _month_end
+from community.management.commands._e2e_common import random_phone
+from community.management.commands.e2e_seed import month_end
 from community.models import (
     AttendanceStatus,
     Document,
@@ -22,7 +22,7 @@ from community.models import (
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from ninja_jwt.tokens import RefreshToken
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 from users.permissions import PermissionKey
 
 
@@ -52,14 +52,14 @@ def test_e2e_seed_public_returning(capsys):
     out = json.loads(capsys.readouterr().out)
     user = User.objects.get(phone_number=out["user_phone"])
     assert EventRSVP.objects.filter(event_id=out["event_id"], user=user).exists()
-    assert NonMemberRsvpToken.resolve_user(out["rsvp_token"]) == user
+    assert PublicRsvpToken.resolve_user(out["rsvp_token"]) == user
 
 
 @pytest.mark.django_db
 def test_e2e_seed_comments(capsys):
     call_command("e2e_seed", "comments")
     out = json.loads(capsys.readouterr().out)
-    assert NonMemberRsvpToken.resolve_user(out["rsvp_token"]) is not None
+    assert PublicRsvpToken.resolve_user(out["rsvp_token"]) is not None
     assert EventRSVP.objects.filter(event_id=out["event_id"]).exists()
 
 
@@ -67,7 +67,7 @@ def test_e2e_seed_comments(capsys):
 def test_e2e_seed_my_rsvps(capsys):
     call_command("e2e_seed", "my-rsvps")
     out = json.loads(capsys.readouterr().out)
-    assert NonMemberRsvpToken.resolve_user(out["rsvp_token"]) is not None
+    assert PublicRsvpToken.resolve_user(out["rsvp_token"]) is not None
 
 
 @pytest.mark.django_db
@@ -165,8 +165,8 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
 def test_month_end_in_january_uses_prior_december():
 
     now = datetime(2026, 1, 4, 12, 0, tzinfo=UTC)
-    assert _month_end(now) == datetime(2026, 1, 31, 22, 0, tzinfo=UTC)
-    assert _month_end(now, months_ago=1) == datetime(2025, 12, 31, 22, 0, tzinfo=UTC)
+    assert month_end(now) == datetime(2026, 1, 31, 22, 0, tzinfo=UTC)
+    assert month_end(now, months_ago=1) == datetime(2025, 12, 31, 22, 0, tzinfo=UTC)
 
 
 @pytest.mark.django_db
@@ -234,7 +234,7 @@ def test_e2e_seed_waitlist_screens_is_rerunnable(capsys):
     assert wren.check_password(out["password"])
     rsvp = EventRSVP.objects.get(event=event, user=wren)
     assert rsvp.status == RSVPStatus.WAITLISTED
-    guest = NonMemberRsvpToken.resolve_user(out["guest_token"])
+    guest = PublicRsvpToken.resolve_user(out["guest_token"])
     assert guest is not None
     assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.WAITLISTED
 
@@ -275,4 +275,4 @@ def test_random_phone_skips_numbers_already_taken(monkeypatch):
     monkeypatch.setattr(
         "community.management.commands._e2e_common.secrets.randbelow", lambda _n: next(picks)
     )
-    assert _random_phone() == "+12025550002"
+    assert random_phone() == "+12025550002"

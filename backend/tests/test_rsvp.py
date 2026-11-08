@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 import pytest
-from community.events.helpers import _cancellations
+from community.events.helpers import cancellations
 from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
 from community.validation import Code
 from users.models import User
@@ -257,7 +257,7 @@ class TestRSVP:
         )
         assert response.status_code == 200
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=rsvp_event.pk)
-        row = _cancellations(event)[0]
+        row = cancellations(event)[0]
         assert row.pre_cancel_status is None
         assert row.declined_outright is True
 

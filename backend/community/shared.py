@@ -3,7 +3,7 @@ import re
 from datetime import date, datetime, time
 from urllib.parse import urlparse
 
-from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code
+from config.auth import HARD_ACCOUNT_BLOCKS, account_block_code
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
@@ -45,7 +45,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         if code is None:
             return user
         if request.method in _SAFE_METHODS or (
-            code not in _HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
+            code not in HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
         ):
             request.user = AnonymousUser()
             return AnonymousUser()
@@ -73,7 +73,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         return result
 
 
-_optional_jwt = OptionalJWTAuth()
+optional_jwt = OptionalJWTAuth()
 
 
 class ErrorOut(BaseModel):
@@ -186,13 +186,13 @@ def flatten_to_single_line(value: str) -> str:
     return " ".join(value.splitlines()).strip()
 
 
-def _authenticated_user(requesting_user) -> "UserModel | None":
+def authenticated_user(requesting_user) -> "UserModel | None":
     """Return the user if authenticated, None if anonymous."""
     if requesting_user is None or isinstance(requesting_user, AnonymousUser):
         return None
     return requesting_user
 
 
-def _gated(value, default, visible: bool):
+def gated(value, default, visible: bool):
     """Return value if visible, default otherwise."""
     return value if visible else default

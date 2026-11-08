@@ -16,7 +16,7 @@ from community.models import (
 )
 from django.utils import timezone
 from mcp.server.mcpserver.exceptions import ToolError
-from mcp_gateway.tools.members_read import _page
+from mcp_gateway.tools.members_read import members_page
 from users.member_search import MemberFilters, MemberSort
 from users.models import User
 
@@ -206,7 +206,7 @@ def test_one_page_is_two_queries_with_attendance(admin, django_assert_num_querie
         _attended(days)
     filters = MemberFilters(inactive_for_days=30, never_attended=False)
     with django_assert_num_queries(2):
-        page = _page(filters, 1, 0, True, MemberSort.LONGEST_INACTIVE)
+        page = members_page(filters, 1, 0, True, MemberSort.LONGEST_INACTIVE)
     assert page["total"] == 2
     assert page["members"][0]["qualifying_count_12mo"] == 0
 

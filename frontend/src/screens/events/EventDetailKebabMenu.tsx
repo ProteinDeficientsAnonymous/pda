@@ -14,19 +14,21 @@ interface Props {
   event: Event;
   eventHasEnded: boolean;
   canManageRsvps: boolean;
+  showSpeech: boolean;
 }
 
-export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: Props) {
+export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps, showSpeech }: Props) {
   const eventId = event.id;
   const [open, setOpen] = useState(false);
   const [emailBlastOpen, setEmailBlastOpen] = useState(false);
   const [groupTextOpen, setGroupTextOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
-  const showCheckInReport = eventHasEnded;
-  const showFeedback = eventHasEnded && event.eventType !== EventType.Community;
+  const showCheckInReport = canManageRsvps && eventHasEnded;
+  const showFeedback = canManageRsvps && eventHasEnded && event.eventType !== EventType.Community;
   const showQuestionResponses = canManageRsvps && hasQuestionHistory(event);
-  const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
+  const showEmailBlast =
+    canManageRsvps && event.status !== EventStatus.Draft && event.guests.length > 0;
   const showEdit = canEditEvent(event, user);
 
   useEffect(() => {
@@ -76,6 +78,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               edit
             </MenuLink>
           ) : null}
+          {showSpeech ? (
+            <MenuLink
+              to={`/events/${eventId}/speech`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              event speech
+            </MenuLink>
+          ) : null}
           {canManageRsvps ? (
             <MenuLink
               to={`/events/${eventId}/manage-rsvps`}
@@ -96,14 +108,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               question responses
             </MenuLink>
           ) : null}
-          <MenuLink
-            to={`/events/${eventId}/check-in`}
-            onSelect={() => {
-              setOpen(false);
-            }}
-          >
-            check-in
-          </MenuLink>
+          {canManageRsvps ? (
+            <MenuLink
+              to={`/events/${eventId}/check-in`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              check-in
+            </MenuLink>
+          ) : null}
           {showCheckInReport ? (
             <MenuLink
               to={`/events/${eventId}/report`}
@@ -134,14 +148,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
               email blast
             </MenuButton>
           ) : null}
-          <MenuButton
-            onSelect={() => {
-              setOpen(false);
-              setGroupTextOpen(true);
-            }}
-          >
-            group text
-          </MenuButton>
+          {canManageRsvps ? (
+            <MenuButton
+              onSelect={() => {
+                setOpen(false);
+                setGroupTextOpen(true);
+              }}
+            >
+              group text
+            </MenuButton>
+          ) : null}
         </div>
       ) : null}
       <EmailBlastDialog

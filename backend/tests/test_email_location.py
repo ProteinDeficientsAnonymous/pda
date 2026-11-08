@@ -6,9 +6,9 @@ from community.models import EventRSVP, RSVPStatus
 from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
-from tests._public_rsvp_helpers import make_non_member, make_official_event, post
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
 LOCATION = "18 Willow House, Apt 4"
 LATITUDE = "40.712776"
@@ -57,9 +57,9 @@ class TestRsvpEmailsIncludeLocation:
         _assert_where_line(sent)
 
     def test_updated(self, api_client, located_event, fake_email_sender):
-        nonmember = make_non_member("+14155550031", "nm@example.com", name="non member")
+        nonmember = make_public_rsvper("+14155550031", "nm@example.com", name="non member")
         EventRSVP.objects.create(event=located_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         resp = api_client.post(
             f"/api/community/public/my-rsvps/{located_event.id}/?token={token.token}",
@@ -81,7 +81,7 @@ class TestRsvpEmailsIncludeLocation:
             content_type="application/json",
             **auth_headers,
         )
-        waited = make_non_member("+14155550032", "waited@example.com", name="Waited")
+        waited = make_public_rsvper("+14155550032", "waited@example.com", name="Waited")
         EventRSVP.objects.create(event=located_event, user=waited, status=RSVPStatus.WAITLISTED)
 
         api_client.delete(rsvp_url, **auth_headers)

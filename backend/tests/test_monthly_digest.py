@@ -10,7 +10,7 @@ from notifications.digest_emails import send_monthly_digest_email
 from notifications.email_sender import EmailStream, SendResult
 
 from tests._digest_helpers import make_event, make_tentative
-from tests._users import make_user
+from tests._users import make_attendance_paused, make_user
 
 # The monthly cron runs at 12:00 UTC: early morning of the same day in eastern, any time of year.
 FIRST_OF_JUNE = datetime(2026, 6, 1, 12, 0, 0)
@@ -191,6 +191,14 @@ class TestMonthlyDigestTentativeMembers:
         call_command("send_monthly_digest")
         fake_email_sender.send.assert_called_once()
         assert fake_email_sender.send.call_args.kwargs["to"] == tentative.email
+
+    def test_sends_to_attendance_paused_member(self, fake_email_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        paused = make_attendance_paused(phone_number="+12025550326")
+        make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        fake_email_sender.send.assert_called_once()
+        assert fake_email_sender.send.call_args.kwargs["to"] == paused.email
 
     def test_omits_veganniversaries_for_tentative_member(self, fake_email_sender, monkeypatch):
         """Shoutouts link to member profiles, which a tentative member can't open."""

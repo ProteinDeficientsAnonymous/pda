@@ -8,8 +8,10 @@ import { makeEvent } from '@/test/fixtures';
 import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
+  emptyEventFormValues,
   eventToFormValues,
   toPartialWireBody,
+  toWireBody,
   useCreateEvent,
   useInviteToEvent,
   useUpdateEvent,
@@ -114,6 +116,57 @@ describe('toPartialWireBody', () => {
   it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
     expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
     expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
+  });
+});
+
+describe('event format', () => {
+  it('defaults a new event to walk', () => {
+    expect(emptyEventFormValues().eventFormat).toBe('walk');
+  });
+
+  it('defaults an official event without a format to walk so saving stores it', () => {
+    const form = eventToFormValues(makeEvent({ eventType: EventType.Official, eventFormat: null }));
+    expect(form.eventFormat).toBe('walk');
+    expect(toWireBody(form).event_format).toBe('walk');
+  });
+
+  it('saves a format when a formatless event is switched to official', () => {
+    const form = eventToFormValues(
+      makeEvent({ eventType: EventType.Community, eventFormat: null }),
+    );
+    expect(toWireBody({ ...form, eventType: EventType.Official }).event_format).toBe('walk');
+  });
+
+  it('reads the saved format', () => {
+    const form = eventToFormValues(
+      makeEvent({ eventType: EventType.Official, eventFormat: 'restaurant' }),
+    );
+    expect(form.eventFormat).toBe('restaurant');
+  });
+
+  it('full body sends event_format only for official events', () => {
+    const official = toWireBody({
+      ...emptyEventFormValues(),
+      eventType: 'official',
+      eventFormat: 'restaurant',
+    });
+    expect(official.event_format).toBe('restaurant');
+    const community = toWireBody({ ...emptyEventFormValues(), eventFormat: 'walk' });
+    expect(community.event_format).toBeNull();
+  });
+
+  it('partial body sends null format (unchanged) when the type is not official', () => {
+    expect(toPartialWireBody({ eventType: 'club', eventFormat: 'walk' })).toEqual({
+      event_type: 'club',
+      event_format: null,
+    });
+    expect(toPartialWireBody({ eventType: 'official', eventFormat: 'walk' })).toEqual({
+      event_type: 'official',
+      event_format: 'walk',
+    });
+    expect(toPartialWireBody({ eventFormat: 'restaurant' })).toEqual({
+      event_format: 'restaurant',
+    });
   });
 });
 
