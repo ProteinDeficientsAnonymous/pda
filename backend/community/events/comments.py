@@ -27,7 +27,7 @@ from community.events._comment_schemas import (
     ReactorOut,
 )
 from community.events.helpers import event_co_host_ids
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
     Event,
@@ -36,7 +36,7 @@ from community.models import (
     EventRSVP,
     ReactionEmoji,
 )
-from community.shared import ErrorOut, _optional_jwt
+from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -185,7 +185,7 @@ def _require_rsvp_for_post(event: Event, user) -> None:
 @router.get(
     "/events/{event_id}/comments/",
     response={200: EventCommentListOut, 404: ErrorOut, 403: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def list_comments(request, event_id: UUID):
     try:
@@ -197,14 +197,14 @@ def list_comments(request, event_id: UUID):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     viewer = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, viewer)
+    enforce_event_read_visibility(event, viewer)
     return Status(200, _build_list_out(event, viewer))
 
 
 @router.post(
     "/events/{event_id}/comments/",
     response={201: EventCommentOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def post_comment(request, event_id: UUID, payload: CommentBodyIn):
@@ -217,7 +217,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
@@ -235,7 +235,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn):
@@ -248,7 +248,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     try:
         parent = EventComment.objects.get(id=comment_id, event=event)
@@ -270,7 +270,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
 @router.delete(
     "/events/{event_id}/comments/{comment_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def delete_comment(request, event_id: UUID, comment_id: UUID):
@@ -283,7 +283,7 @@ def delete_comment(request, event_id: UUID, comment_id: UUID):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     try:
         comment = EventComment.objects.get(id=comment_id, event=event)
     except EventComment.DoesNotExist:
@@ -310,7 +310,7 @@ _VALID_EMOJIS = {e.value for e in ReactionEmoji}
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: ReactionToggleIn):
@@ -323,7 +323,7 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     if payload.emoji not in _VALID_EMOJIS:
         raise_validation(Code.Comment.INVALID_EMOJI, status_code=422)

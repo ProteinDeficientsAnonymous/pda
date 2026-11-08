@@ -17,7 +17,7 @@ from community.events._report_schemas import (
     ReportPlusOne,
 )
 from community.events.helpers import (
-    _can_edit_event,
+    can_edit_event,
     event_co_host_ids,
     is_cohost,
     load_event_with_stats_prefetch,
@@ -33,7 +33,7 @@ def _load_and_authorize(request, event_id: UUID) -> Event:
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="check_in_report")
     if not event.is_past:
         raise_validation(Code.Event.CHECK_IN_REPORT_NOT_YET_AVAILABLE, status_code=400)

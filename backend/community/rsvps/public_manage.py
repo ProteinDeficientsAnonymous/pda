@@ -10,26 +10,26 @@ from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_rsvp_status_changed
 from pydantic import BaseModel, Field
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut, RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
 from community.rsvps.member import (
-    _apply_rsvp_in_transaction,
-    _post_rsvp_comment,
-    _RsvpApply,
-    _validate_rsvp_status,
+    RsvpApply,
+    apply_rsvp_in_transaction,
     payment_audit_details,
+    post_rsvp_comment,
+    validate_rsvp_status,
 )
 from community.rsvps.public_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
-    _email_details,
-    _load_public_rsvp_event,
-    _log_email_failure,
+    email_details,
+    load_public_rsvp_event,
+    log_email_failure,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -69,14 +69,14 @@ class PublicRsvpManageIn(BaseModel):
 
 def _resolve_token_user(token: str) -> User:
     """Resolve a manage-rsvp token to its non-member user, or 404."""
-    user = NonMemberRsvpToken.resolve_user(token)
+    user = PublicRsvpToken.resolve_user(token)
     if user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return user
 
 
 def _eligible_event_rsvps(user):
-    """The user's RSVPs on events still public-RSVP-eligible, matching _load_public_rsvp_event."""
+    """The user's RSVPs on events still public-RSVP-eligible, matching load_public_rsvp_event."""
     # Ineligible events must drop out, else their member-only details leak to the token holder.
     return (
         user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
@@ -95,7 +95,7 @@ def _send_manage_rsvp_email(
     """
     if not user.email:
         return None
-    details = _email_details(event, user, token_str)
+    details = email_details(event, user, token_str)
     try:
         if created:
             result = send_rsvp_confirmation_email(
@@ -124,7 +124,7 @@ def list_my_rsvps(request, token: str = ""):
     for rsvp in _eligible_event_rsvps(user):
         items.append(
             PublicRsvpManageItemOut(
-                event=_event_out(rsvp.event, user),
+                event=event_out(rsvp.event, user),
                 status=rsvp.status,
                 has_plus_one=rsvp.has_plus_one,
             )
@@ -150,20 +150,20 @@ def list_my_rsvps(request, token: str = ""):
 @rate_limit(key_func=client_ip, rate="30/h")
 def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = ""):
     user = _resolve_token_user(token)
-    event = _load_public_rsvp_event(event_id)
-    _validate_rsvp_status(payload.status)
+    event = load_public_rsvp_event(event_id)
+    validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, previous_status = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, previous_status = apply_rsvp_in_transaction(
             event.id,
             user,
-            _RsvpApply(
+            RsvpApply(
                 status=payload.status,
                 paid_confirmed=payload.paid_confirmed,
                 answers=payload.questionnaire_responses,
             ),
         )
-        rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
+        rsvp_token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,
@@ -179,12 +179,12 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
             },
         ),
     )
-    sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
+    sent_decline_note = post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(
         event, user, rsvp_token.token, created=previous_status is None, final_status=final_status
     )
     if email_error is not None:
-        _log_email_failure(request, event, user, email_error)
+        log_email_failure(request, event, user, email_error)
     email_promoted_users(request, event, promoted_user_ids)
     if not sent_decline_note:
         notify_rsvp_status_changed(event, user, final_status)
@@ -199,7 +199,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     return Status(
         200,
         PublicRsvpOut(
-            event=_event_out(fresh_event, user),
+            event=event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
             rsvp_token=rsvp_token.token,
         ),
@@ -216,7 +216,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
     user = _resolve_token_user(token)
     promoted_user_ids: list[str] = []
     with transaction.atomic():
-        event = _load_public_rsvp_event(event_id, for_update=True)
+        event = load_public_rsvp_event(event_id, for_update=True)
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)

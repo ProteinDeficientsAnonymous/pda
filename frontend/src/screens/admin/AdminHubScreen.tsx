@@ -55,6 +55,12 @@ const TILES: Tile[] = [
     perm: Permission.EditJoinQuestions,
   },
   {
+    to: '/admin/event-speech',
+    label: 'event speech',
+    description: 'edit the speech template and open roles',
+    perm: Permission.EditSpeechTemplate,
+  },
+  {
     to: '/docs',
     label: 'docs',
     description: 'manage the shared document library',

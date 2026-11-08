@@ -11,6 +11,7 @@ class PermissionKey(models.TextChoices):
     EDIT_FAQ = "edit_faq", "Edit FAQ"
     EDIT_HOMEPAGE = "edit_homepage", "Edit homepage"
     EDIT_JOIN_QUESTIONS = "edit_join_questions", "Edit join form questions"
+    EDIT_SPEECH_TEMPLATE = "edit_speech_template", "Edit event speech template"
     MANAGE_SURVEYS = "manage_surveys", "Manage surveys"
     TAG_OFFICIAL_EVENT = "tag_official_event", "Tag official event"
     TAG_CLUB_EVENT = "tag_club_event", "Tag club event"

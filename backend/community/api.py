@@ -28,8 +28,8 @@ from community.events.geocode import router as geocode_router
 
 # Re-export symbols imported directly in tests
 from community.events.helpers import (  # noqa: F401
-    _build_guest_list,
-    _find_my_rsvp,
+    build_guest_list,
+    find_my_rsvp,
     is_cohost,
 )
 from community.events.host_actions import router as event_host_actions_router
@@ -50,6 +50,7 @@ from community.message_templates.member_promotion_email import (
 from community.message_templates.member_promotion_message import (
     router as member_promotion_message_router,
 )
+from community.message_templates.member_restored_email import router as member_restored_email_router
 from community.message_templates.rejection_email import router as rejection_email_router
 from community.message_templates.tentative_approval import (
     router as tentative_approval_message_router,
@@ -65,6 +66,8 @@ from community.rsvps.public_resend import router as public_rsvp_resend_router
 from community.rsvps.public_submit import router as public_rsvp_submit_router
 from community.rsvps.questions import router as event_rsvp_questions_router
 from community.rsvps.waitlist_order import router as event_waitlist_order_router
+from community.speech.event_speech import router as event_speech_router
+from community.speech.template import router as speech_template_router
 from community.surveys.crud import router as surveys_router
 from community.surveys.public import router as surveys_public_router
 from community.surveys.reports import router as survey_reports_router
@@ -112,8 +115,11 @@ router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
 router.add_router("", member_promotion_message_router)
 router.add_router("", member_promotion_email_router)
+router.add_router("", member_restored_email_router)
 router.add_router("", rejection_email_router)
 router.add_router("", whatsapp_link_router)
+router.add_router("", speech_template_router)
+router.add_router("", event_speech_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)
 router.add_router("", event_comments_router)

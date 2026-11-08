@@ -14,11 +14,12 @@ from notifications.service import broadcast_event_update
 from users.helpers import visible_display_name
 from users.permissions import PermissionKey
 
-from community.cohosts.helpers import _pending_cohost_invites_out
+from community.cohosts.helpers import pending_cohost_invites_out
 from community.cohosts.invite_helpers import get_my_pending_invite
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
     Event,
+    EventFormat,
     EventRSVP,
     EventTag,
     EventType,
@@ -31,14 +32,14 @@ from community.rsvps.answers import (
     find_my_questionnaire_responses,
 )
 from community.rsvps.counts import (
-    _attending_headcount,
-    _guest_rsvp_count,
-    _waitlisted_count,
+    attending_headcount,
+    count_guest_rsvps,
+    count_waitlisted,
 )
 from community.rsvps.payment import can_see_payment_details
 from community.rsvps.serialize import event_rsvp_question_out, with_guest_photos
 from community.rsvps.waitlist import waitlist_sort_key
-from community.shared import _authenticated_user, _gated
+from community.shared import authenticated_user, gated
 from community.validation import Code, raise_validation
 
 if TYPE_CHECKING:
@@ -55,7 +56,7 @@ def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
 
 
 def reload_event_or_404(event_id: UUID) -> Event:
-    """Reload an event after a write with what _event_out needs prefetched."""
+    """Reload an event after a write with what event_out needs prefetched."""
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
@@ -105,7 +106,7 @@ def _guest_list_sort_key(rsvp: EventRSVP) -> tuple:
     return (status_rank, ())
 
 
-def _build_guest_list(
+def build_guest_list(
     rsvps,
     can_see_phones: bool,
     viewer=None,
@@ -137,7 +138,7 @@ def _build_guest_list(
     ]
 
 
-def _find_my_rsvp(rsvps, user):
+def find_my_rsvp(rsvps, user):
     """Find requesting user's own RSVP row."""
     if user is None:
         return None
@@ -147,9 +148,9 @@ def _find_my_rsvp(rsvps, user):
     return None
 
 
-def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
+def my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
-    my_rsvp = _find_my_rsvp(rsvps, user)
+    my_rsvp = find_my_rsvp(rsvps, user)
     if my_rsvp is None:
         return None, False
     return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
@@ -162,7 +163,7 @@ def _declined_outright(r: EventRSVP) -> bool:
     return r.cancelled_at - r.created_at < timedelta(seconds=5)
 
 
-def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
+def cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Currently-CANT_GO RSVPs with lead time in local calendar days, plus raw-24h and after-start flags."""
     if event.start_datetime is None:
         return []
@@ -190,7 +191,7 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     return rows
 
 
-def _has_attendees(event: Event) -> bool:
+def has_attendees(event: Event) -> bool:
     """Return True if the event has any invited users or attending RSVPs."""
     if event.invited_users.exists():
         return True
@@ -229,7 +230,7 @@ def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str
     return my_rsvp_status is not None and my_rsvp_status != RSVPStatus.REMOVED
 
 
-def _can_see_invite_only(
+def can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
     """Invite-only visibility from already-loaded id sets (calendar feed)."""
@@ -250,12 +251,12 @@ def _get_creator_name(creator, viewer=None) -> str | None:
     return visible_display_name(creator, viewer)
 
 
-def _tags_out(event: Event) -> list[TagOut]:
+def tags_out(event: Event) -> list[TagOut]:
     """Serialize an event's tags (uses the prefetched `tags` relation)."""
     return [TagOut(id=str(t.id), name=t.name, slug=t.slug) for t in event.tags.all()]
 
 
-def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
+def set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
     """Replace an event's tags with the curated tags matching `tag_ids`.
 
     Unknown ids are silently dropped — the tag set is admin-curated, so a stale
@@ -274,7 +275,7 @@ def _annotated_or(event: Event, attr: str, fallback):
     return fallback()
 
 
-def _viewer_rsvp_rows(event: Event, auth_user) -> list:
+def viewer_rsvp_rows(event: Event, auth_user) -> list:
     cached = getattr(event, "_viewer_rsvps", None)
     if cached is not None:
         return cached
@@ -285,10 +286,10 @@ def _viewer_rsvp_rows(event: Event, auth_user) -> list:
     return list(event.rsvps.filter(user=auth_user))
 
 
-def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
+def event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, responses_visible: bool):
     """Load every RSVP only when the viewer can see guests or questionnaire responses."""
-    viewer_rsvps = _viewer_rsvp_rows(event, auth_user)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(viewer_rsvps, auth_user)
+    viewer_rsvps = viewer_rsvp_rows(event, auth_user)
+    my_rsvp_status, my_paid_confirmed = my_rsvp_fields(viewer_rsvps, auth_user)
     can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     if not (can_see_guests or responses_visible):
         return viewer_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
@@ -299,7 +300,7 @@ def _event_rsvp_payload(event: Event, auth_user, viewer_is_cohost: bool, respons
     return all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests
 
 
-def _invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
+def invited_payload(event: Event, auth_user, creator, co_host_ids: set[str], rsvps):
     if not _can_see_invited(auth_user, creator, co_host_ids):
         return [], 0
     responded_user_ids = {rsvp.user_id for rsvp in rsvps}
@@ -328,10 +329,10 @@ def _host_fields(event: Event, creator, co_hosts, auth_user) -> dict:
     }
 
 
-def _event_out(event: Event, requesting_user=None) -> EventOut:
+def event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
-    auth_user = _authenticated_user(requesting_user)
+    auth_user = authenticated_user(requesting_user)
     is_authed = auth_user is not None
     show_payment_details = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
@@ -341,12 +342,12 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     )
     payment_status_visible = can_manage
     responses_visible = can_see_guest_questionnaire_responses(auth_user, creator, co_host_ids)
-    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = _event_rsvp_payload(
+    all_rsvps, my_rsvp_status, my_paid_confirmed, can_see_guests = event_rsvp_payload(
         event, auth_user, viewer_is_cohost, responses_visible
     )
-    invited, invited_count = _invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
+    invited, invited_count = invited_payload(event, auth_user, creator, co_host_ids, all_rsvps)
 
-    pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
+    pending_invites_out = pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     return EventOut(
@@ -356,30 +357,28 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         description=event.description,
         start_datetime=event.start_datetime,
         end_datetime=event.end_datetime,
-        location=_gated(event.location, "", is_authed),
-        latitude=_gated(_float_or_none(event.latitude), None, is_authed),
-        longitude=_gated(_float_or_none(event.longitude), None, is_authed),
-        whatsapp_link=_gated(event.whatsapp_link, "", is_authed),
-        partiful_link=_gated(event.partiful_link, "", is_authed),
-        other_link=_gated(event.other_link, "", is_authed),
+        location=gated(event.location, "", is_authed),
+        latitude=gated(_float_or_none(event.latitude), None, is_authed),
+        longitude=gated(_float_or_none(event.longitude), None, is_authed),
+        whatsapp_link=gated(event.whatsapp_link, "", is_authed),
+        partiful_link=gated(event.partiful_link, "", is_authed),
+        other_link=gated(event.other_link, "", is_authed),
         price=event.price,
-        venmo_link=_gated(event.venmo_link, "", show_payment_details),
-        cashapp_link=_gated(event.cashapp_link, "", show_payment_details),
-        zelle_info=_gated(event.zelle_info, "", show_payment_details),
+        venmo_link=gated(event.venmo_link, "", show_payment_details),
+        cashapp_link=gated(event.cashapp_link, "", show_payment_details),
+        zelle_info=gated(event.zelle_info, "", show_payment_details),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
-        attending_count=_annotated_or(
-            event, "attending_count", lambda: _attending_headcount(event)
-        ),
-        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: _waitlisted_count(event)),
-        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: _guest_rsvp_count(event)),
+        attending_count=_annotated_or(event, "attending_count", lambda: attending_headcount(event)),
+        waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: count_waitlisted(event)),
+        guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: count_guest_rsvps(event)),
         invited_count=invited_count,
         **_host_fields(event, creator, co_hosts, auth_user),
         guests=with_guest_photos(
             (
-                _build_guest_list(
+                build_guest_list(
                     all_rsvps,
                     viewer_is_cohost,
                     auth_user,
@@ -397,6 +396,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
+        event_format=event.event_format or None,
         visibility=event.visibility,
         photo_url=media_path(event.photo),
         photo_updated_at=_iso_or_none(event.photo_updated_at),
@@ -411,14 +411,14 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         is_legacy=event.is_legacy,
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
-        tags=_tags_out(event),
+        tags=tags_out(event),
         rsvp_questions=[
             event_rsvp_question_out(question) for question in event.rsvp_questions.all()
         ],
     )
 
 
-def _can_edit_event(user, event: Event) -> bool:
+def can_edit_event(user, event: Event) -> bool:
     """Check if user can edit/delete this event (host or manager)."""
     if "co_hosts" in getattr(event, "_prefetched_objects_cache", {}):
         is_host = any(c.pk == user.pk for c in event.co_hosts.all())
@@ -433,7 +433,7 @@ def load_editable_event(user, event_id: UUID, action: str) -> Event:
     event = Event.objects.prefetch_related("co_hosts").filter(id=event_id).first()
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(user, event):
+    if not can_edit_event(user, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action=action)
     return event
 
@@ -446,12 +446,21 @@ _TYPE_TAG_PERMISSIONS = {
 }
 
 
-def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+def is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return is_official_or_club(event_type) and visibility != PageVisibility.PUBLIC
 
 
-def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+def validated_event_format(event_format: str | None, event_type: str) -> str:
+    """Return the format to store ("" when unset); raise if invalid or the event isn't official."""
+    if event_format and (
+        event_format not in EventFormat.values or event_type != EventType.OFFICIAL
+    ):
+        raise_validation(Code.Event.INVALID_EVENT_FORMAT, field="event_format")
+    return event_format or ""
+
+
+def enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
     """Raise 403 if the event type requires a tag permission the user lacks."""
     required = _TYPE_TAG_PERMISSIONS.get(event_type)
     if required is None or request.auth.has_permission(required):

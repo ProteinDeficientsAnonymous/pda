@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.models import Event, EventRSVP, RSVPStatus
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -70,7 +70,7 @@ def test_can_edit_event_uses_prefetched_co_hosts(django_assert_num_queries):
     event = _prefetched(_started_event(host, 0)[0])
     viewer = User.objects.get(pk=host.pk)
     with django_assert_num_queries(0):
-        assert _can_edit_event(viewer, event)
+        assert can_edit_event(viewer, event)
 
 
 @pytest.mark.django_db
@@ -79,4 +79,4 @@ def test_can_edit_event_uses_prefetched_co_hosts(django_assert_num_queries):
 )
 def test_can_edit_event_prefetched_non_host(permissions, allowed):
     event = _prefetched(_started_event(make_user(), 0)[0])
-    assert _can_edit_event(make_user(*permissions), event) is allowed
+    assert can_edit_event(make_user(*permissions), event) is allowed

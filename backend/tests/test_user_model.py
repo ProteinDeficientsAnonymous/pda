@@ -1,7 +1,7 @@
 import pytest
 from community.validation import ValidationException
 from django.db import IntegrityError
-from users.helpers import _check_and_set_email, _normalize_email
+from users.helpers import check_and_set_email, normalize_email
 from users.models import User
 
 
@@ -94,12 +94,12 @@ class TestUserEmailField:
 class TestCheckAndSetEmail:
     def test_assigns_normalized(self):
         u = User(phone_number="+12025550101", first_name="a")
-        _check_and_set_email(u, "Foo@Example.COM")
+        check_and_set_email(u, "Foo@Example.COM")
         assert u.email == "foo@example.com"
 
     def test_blank_assigns_none(self):
         u = User(phone_number="+12025550101", first_name="a")
-        _check_and_set_email(u, "  ")
+        check_and_set_email(u, "  ")
         assert u.email is None
 
     def test_raises_on_collision(self):
@@ -108,25 +108,25 @@ class TestCheckAndSetEmail:
         )
         target = User(phone_number="+12025550101", first_name="a")
         with pytest.raises(ValidationException):
-            _check_and_set_email(target, "Taken@Example.com")
+            check_and_set_email(target, "Taken@Example.com")
 
     def test_exclude_pk_allows_self_update(self):
         existing = User.objects.create_user(
             phone_number="+12025550101", first_name="a", email="me@example.com"
         )
         # Should not raise — same user re-submitting their own email
-        _check_and_set_email(existing, "Me@Example.com", exclude_pk=existing.pk)
+        check_and_set_email(existing, "Me@Example.com", exclude_pk=existing.pk)
         assert existing.email == "me@example.com"
 
 
 class TestNormalizeEmail:
     def test_lowercases(self):
-        assert _normalize_email("Foo@Example.COM") == "foo@example.com"
+        assert normalize_email("Foo@Example.COM") == "foo@example.com"
 
     def test_strips_whitespace(self):
-        assert _normalize_email("  foo@example.com  ") == "foo@example.com"
+        assert normalize_email("  foo@example.com  ") == "foo@example.com"
 
     def test_blank_returns_none(self):
-        assert _normalize_email("") is None
-        assert _normalize_email("   ") is None
-        assert _normalize_email(None) is None
+        assert normalize_email("") is None
+        assert normalize_email("   ") is None
+        assert normalize_email(None) is None
