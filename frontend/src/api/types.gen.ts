@@ -4712,6 +4712,22 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** JoinRequestSubmittedOut */
+        JoinRequestSubmittedOut: {
+            /** First Name */
+            first_name: string;
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
         /** LoginIn */
         LoginIn: {
             /** Password */
@@ -11286,7 +11302,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JoinRequestOut"];
+                    "application/json": components["schemas"]["JoinRequestSubmittedOut"];
                 };
             };
             /** @description Bad Request */

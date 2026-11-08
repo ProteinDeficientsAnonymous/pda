@@ -4854,6 +4854,40 @@
         "title": "JoinRequestStatusIn",
         "type": "object"
       },
+      "JoinRequestSubmittedOut": {
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "full_name",
+          "status",
+          "submitted_at"
+        ],
+        "title": "JoinRequestSubmittedOut",
+        "type": "object"
+      },
       "LoginIn": {
         "properties": {
           "password": {
@@ -15791,7 +15825,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JoinRequestOut"
+                  "$ref": "#/components/schemas/JoinRequestSubmittedOut"
                 }
               }
             },
