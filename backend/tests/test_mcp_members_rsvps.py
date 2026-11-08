@@ -4,12 +4,12 @@ from uuid import uuid4
 import pytest
 from community.models import AttendanceStatus, EventStatus, EventType, RSVPStatus
 from django.utils import timezone
-from mcp_gateway.tools.members_rsvps import _page
+from mcp_gateway.tools.members_rsvps import member_rsvps_page
 
 from tests._events import make_event, make_rsvp
 from tests._mcp_members_helpers import make_member
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
-from tests._public_rsvp_helpers import make_non_member
+from tests._public_rsvp_helpers import make_public_rsvper
 
 pytestmark = pytest.mark.django_db
 
@@ -24,7 +24,7 @@ def test_hidden_and_forbidden_without_manage_users(test_user):
 
 
 def test_unknown_or_non_member_id_is_an_error(manage_users_user):
-    outsider = make_non_member("+12025559001", "n@e.com")
+    outsider = make_public_rsvper("+12025559001", "n@e.com")
     for member in (uuid4(), outsider.id):
         assert tool_error(manage_users_user, "member_rsvps", member=str(member)) == (
             "no member with that id"
@@ -80,4 +80,4 @@ def test_one_page_is_three_queries(django_assert_num_queries):
     for days_ago in (1, 2, 3):
         make_rsvp(_event(days_ago), member)
     with django_assert_num_queries(3):
-        assert len(_page(member.id, None, limit=2, offset=0)["rsvps"]) == 2
+        assert len(member_rsvps_page(member.id, None, limit=2, offset=0)["rsvps"]) == 2
