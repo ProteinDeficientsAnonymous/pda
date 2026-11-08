@@ -6517,6 +6517,48 @@
         "title": "ResetPasswordOut",
         "type": "object"
       },
+      "RestoredMemberOut": {
+        "properties": {
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "has_joined_whatsapp": {
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/AttendedEventOut"
+            },
+            "title": "Recent Events",
+            "type": "array"
+          },
+          "restored_at": {
+            "format": "date-time",
+            "title": "Restored At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "restored_at",
+          "has_joined_whatsapp",
+          "recent_events"
+        ],
+        "title": "RestoredMemberOut",
+        "type": "object"
+      },
       "RoleIn": {
         "properties": {
           "name": {
@@ -9443,6 +9485,47 @@
           }
         ],
         "summary": "List Member Directory",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/restored/": {
+      "get": {
+        "operationId": "users__restored_list_restored_members",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RestoredMemberOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Restored Members",
         "tags": [
           "auth"
         ]
