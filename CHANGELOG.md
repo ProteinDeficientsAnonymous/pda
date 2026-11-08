@@ -1,3 +1,38 @@
+## [0.222.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.3...v0.222.4) (2026-11-08)
+
+
+### Bug Fixes
+
+* **notifications:** sync read state across tabs and devices ([#2192](https://github.com/ProteinDeficientsAnonymous/pda/issues/2192)) ([568a6dd](https://github.com/ProteinDeficientsAnonymous/pda/commit/568a6ddfd868b3059b42c9b671878c771d1cab0d))
+
+## [0.222.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.2...v0.222.3) (2026-11-08)
+
+
+### Bug Fixes
+
+* emit calendar ICS times in community timezone ([#2186](https://github.com/ProteinDeficientsAnonymous/pda/issues/2186)) ([9f951f0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f951f0578f082c28e4a3f3744ddac0f3222efb9))
+
+## [0.222.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.1...v0.222.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - release all host spots on attendance pause ([#2206](https://github.com/ProteinDeficientsAnonymous/pda/issues/2206)) ([79375c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/79375c6aaca905a45ae9af08eb7acc745363e8d5))
+
+## [0.222.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.0...v0.222.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **events:** keep guest list status tabs from collapsing on long lists ([#2185](https://github.com/ProteinDeficientsAnonymous/pda/issues/2185)) ([888d494](https://github.com/ProteinDeficientsAnonymous/pda/commit/888d4945ea795ec6c02a9fadc43b223258f681ef))
+
+# [0.222.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.1...v0.222.0) (2026-11-07)
+
+
+### Features
+
+* add zoom controls to event speech reading view ([#2177](https://github.com/ProteinDeficientsAnonymous/pda/issues/2177)) ([8ece930](https://github.com/ProteinDeficientsAnonymous/pda/commit/8ece9302b659d8d99b0e68b286a0fb8455eb0824))
+
 ## [0.221.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.221.0...v0.221.1) (2026-11-06)
 
 

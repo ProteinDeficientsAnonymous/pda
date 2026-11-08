@@ -81,6 +81,7 @@ export function useUnreadCount(sseConnected: boolean) {
     enabled: isAuthed,
     refetchInterval: sseConnected ? 300_000 : 30_000,
     refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -92,6 +93,7 @@ export function useNotifications(enabled: boolean) {
     queryKey: notificationKeys.bell,
     queryFn: () => fetchNotifications({ limit: BELL_NOTIFICATION_LIMIT }),
     enabled: isAuthed && enabled,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -109,6 +111,7 @@ export function useNotificationHistory() {
         ? undefined
         : allPages.length * NOTIFICATIONS_PAGE_SIZE,
     enabled: isAuthed,
+    refetchOnWindowFocus: true,
   });
 }
 

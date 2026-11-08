@@ -2,12 +2,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import {
-  type JoinRequestAttendedEvent,
-  JoinRequestStatus,
-  type JoinRequestSummary,
-  type RsvpBreakdown,
-} from '@/api/join';
+import type { AttendedEvent } from '@/api/attendedEvents';
+import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
 import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
@@ -207,7 +203,7 @@ function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
   );
 }
 
-function AttendedEventsNote({ events }: { events: JoinRequestAttendedEvent[] }) {
+function AttendedEventsNote({ events }: { events: AttendedEvent[] }) {
   if (events.length === 0) return null;
   return (
     <div className="mt-1">
@@ -217,9 +213,7 @@ function AttendedEventsNote({ events }: { events: JoinRequestAttendedEvent[] }) 
           <li key={e.eventId}>
             {e.title.toLowerCase()}
             {' — '}
-            {e.startDatetime
-              ? format(new Date(e.startDatetime), 'MMM d, yyyy').toLowerCase()
-              : 'date tbd'}
+            {e.startDatetime ? format(e.startDatetime, 'MMM d, yyyy').toLowerCase() : 'date tbd'}
             {' · '}
             {e.eventType}
           </li>

@@ -2691,6 +2691,17 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "unknown" | "attended" | "didnt_go";
+        /** AttendedEventOut */
+        AttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -4521,17 +4532,6 @@ export interface components {
             /** Question Id */
             question_id: string;
         };
-        /** JoinRequestAttendedEventOut */
-        JoinRequestAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
-        };
         /** JoinRequestIn */
         JoinRequestIn: {
             /**
@@ -4598,7 +4598,7 @@ export interface components {
              * Attended Events
              * @default []
              */
-            attended_events: components["schemas"]["JoinRequestAttendedEventOut"][];
+            attended_events: components["schemas"]["AttendedEventOut"][];
             /**
              * Attended Official Count
              * @default 0
@@ -4828,17 +4828,6 @@ export interface components {
             qualifying_count_12mo: number;
             /** User Id */
             user_id: string;
-        };
-        /** MemberAttendedEventOut */
-        MemberAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
@@ -7127,7 +7116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberAttendedEventOut"][];
+                    "application/json": components["schemas"]["AttendedEventOut"][];
                 };
             };
             /** @description Forbidden */
