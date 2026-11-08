@@ -109,7 +109,15 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         user.attendance_paused_at = timezone.now()
         user.is_member = False
         user.has_joined_whatsapp = False
-        user.save(update_fields=["attendance_paused_at", "is_member", "has_joined_whatsapp"])
+        user.unpaused_at = None
+        user.save(
+            update_fields=[
+                "attendance_paused_at",
+                "is_member",
+                "has_joined_whatsapp",
+                "unpaused_at",
+            ]
+        )
         _audit_pause(request, user, impact, removed_role_ids)
     return impact
 
