@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0130_backfill_joinrequest_approved_via_event"),
+        ("community", "0131_joinrequest_unique_open_per_phone"),
     ]
 
     operations = [
