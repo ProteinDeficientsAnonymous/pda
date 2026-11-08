@@ -3,36 +3,26 @@ import { format } from 'date-fns';
 import { type RestoredMember, useRestoredMembers } from '@/api/restoredMembers';
 import { formatPhone } from '@/utils/formatPhone';
 
+import { AttendedEventsNote } from './AttendedEventsNote';
 import { JoinRequestResults } from './JoinRequestResults';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 
-function formatDay(iso: string): string {
-  return format(new Date(iso), 'MMM d, yyyy').toLowerCase();
-}
-
 function matchesQuery(member: RestoredMember, q: string): boolean {
-  return member.full_name.toLowerCase().includes(q) || member.phone_number.includes(q);
+  return member.fullName.toLowerCase().includes(q) || member.phoneNumber.includes(q);
 }
 
 function RestoredMemberCard({ member }: { member: RestoredMember }) {
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
       <h2 className="text-base font-medium">
-        {member.full_name || formatPhone(member.phone_number)}
+        {member.fullName || formatPhone(member.phoneNumber)}
       </h2>
       <p className="text-muted text-xs">
-        {formatPhone(member.phone_number)} · restored {formatDay(member.restored_at)}
+        {formatPhone(member.phoneNumber)} · restored{' '}
+        {format(member.restoredAt, 'MMM d, yyyy').toLowerCase()}
       </p>
-      {member.recent_events.length > 0 ? (
-        <ul className="text-muted mt-2 text-xs">
-          {member.recent_events.map((e) => (
-            <li key={e.event_id}>
-              {e.title} · {formatDay(e.start_datetime)}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <JoinRequestWhatsappToggle userId={member.id} checked={member.has_joined_whatsapp} />
+      <AttendedEventsNote events={member.recentEvents} label="latest qualifying events" />
+      <JoinRequestWhatsappToggle userId={member.id} checked={member.hasJoinedWhatsapp} />
     </article>
   );
 }

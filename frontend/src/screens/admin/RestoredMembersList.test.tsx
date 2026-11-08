@@ -11,52 +11,45 @@ import { RestoredMembersList } from './RestoredMembersList';
 vi.mock('@/api/restoredMembers', () => ({ useRestoredMembers: vi.fn() }));
 vi.mock('@/api/users', () => ({ useUpdateUser: vi.fn() }));
 
+const day = (d: string) => new Date(`2026-${d}T12:00:00Z`);
 const member: RestoredMember = {
   id: 'u1',
-  full_name: 'Ada Lovelace',
-  phone_number: '+16505550001',
-  restored_at: '2026-03-04T12:00:00Z',
-  has_joined_whatsapp: false,
-  recent_events: [
-    { event_id: 'e2', title: 'Potluck', start_datetime: '2026-03-01T12:00:00Z' },
-    { event_id: 'e1', title: 'Book Club', start_datetime: '2026-02-10T12:00:00Z' },
+  fullName: 'Ada Lovelace',
+  phoneNumber: '+16505550001',
+  restoredAt: day('03-04'),
+  hasJoinedWhatsapp: false,
+  recentEvents: [
+    { eventId: 'e2', title: 'Potluck', startDatetime: day('03-01'), eventType: 'official' },
+    { eventId: 'e1', title: 'Book Club', startDatetime: day('02-10'), eventType: 'club' },
   ],
 };
-
-function mockMembers(data: RestoredMember[]) {
-  vi.mocked(useRestoredMembers).mockReturnValue({
-    data,
-    isPending: false,
-    isError: false,
-  } as unknown as ReturnType<typeof useRestoredMembers>);
-}
+const mutateAsync = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(useRestoredMembers).mockReturnValue({
+    data: [member],
+    isPending: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useRestoredMembers>);
+  vi.mocked(useUpdateUser).mockReturnValue({
+    mutateAsync,
+    isPending: false,
+  } as unknown as ReturnType<typeof useUpdateUser>);
 });
 
 describe('RestoredMembersList', () => {
   it('shows the restored date and last events', () => {
-    mockMembers([member]);
-    vi.mocked(useUpdateUser).mockReturnValue({
-      mutateAsync: vi.fn(),
-      isPending: false,
-    } as unknown as ReturnType<typeof useUpdateUser>);
     renderWithProviders(<RestoredMembersList query="" />);
 
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
     expect(screen.getByText(/restored mar 4, 2026/)).toBeInTheDocument();
-    expect(screen.getByText('Potluck · mar 1, 2026')).toBeInTheDocument();
-    expect(screen.getByText('Book Club · feb 10, 2026')).toBeInTheDocument();
+    expect(screen.getByText('latest qualifying events')).toBeInTheDocument();
+    expect(screen.getByText('potluck — mar 1, 2026 · official')).toBeInTheDocument();
+    expect(screen.getByText('book club — feb 10, 2026 · club')).toBeInTheDocument();
   });
 
   it('flips joined whatsapp for the restored member', async () => {
-    mockMembers([member]);
-    const mutateAsync = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useUpdateUser).mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    } as unknown as ReturnType<typeof useUpdateUser>);
     renderWithProviders(<RestoredMembersList query="" />);
 
     await userEvent.click(screen.getByRole('switch', { name: /joined whatsapp/i }));
@@ -66,7 +59,6 @@ describe('RestoredMembersList', () => {
   });
 
   it('filters by search query', () => {
-    mockMembers([member]);
     renderWithProviders(<RestoredMembersList query="grace" />);
 
     expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument();

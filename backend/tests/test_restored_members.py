@@ -81,5 +81,6 @@ class TestRestoredMembers:
 
         [row] = api_client.get(URL, **vettor_headers).json()
 
-        assert [e["title"] for e in row["recent_events"]] == ["latest", "middle"]
+        recent = [(e["title"], e["event_type"]) for e in row["recent_events"]]
+        assert recent == [("latest", EventType.OFFICIAL), ("middle", EventType.CLUB)]
         assert row["recent_events"][0]["start_datetime"] is not None
