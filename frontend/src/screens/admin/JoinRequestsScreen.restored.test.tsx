@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
+import type * as RestoredApi from '@/api/restoredMembers';
 import { useRestoredMembers } from '@/api/restoredMembers';
 import { renderWithProviders } from '@/test/render';
 
@@ -15,7 +16,10 @@ vi.mock('@/api/join', async (importOriginal) => ({
   useUnrejectJoinRequest: vi.fn(() => ({ isPending: false })),
   useResendMagicLink: vi.fn(() => ({ isPending: false })),
 }));
-vi.mock('@/api/restoredMembers', () => ({ useRestoredMembers: vi.fn() }));
+vi.mock('@/api/restoredMembers', async (importOriginal) => ({
+  ...(await importOriginal<typeof RestoredApi>()),
+  useRestoredMembers: vi.fn(),
+}));
 vi.mock('@/api/users', () => ({ useUpdateUser: vi.fn(() => ({ isPending: false })) }));
 vi.mock('./JoinRequestMessageEditors', () => ({ JoinRequestMessageEditors: () => null }));
 
@@ -26,6 +30,7 @@ it('shows restored members and their hint on the restored tab', async () => {
         id: 'u1',
         fullName: 'Ada Lovelace',
         phoneNumber: '+16505550001',
+        kind: 'restored',
         restoredAt: new Date('2026-03-04T12:00:00Z'),
         hasJoinedWhatsapp: false,
         recentEvents: [],
