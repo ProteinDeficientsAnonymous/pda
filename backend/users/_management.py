@@ -15,6 +15,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch
+from users._unpause import has_pause, mark_unpaused
 from users.helpers import (
     check_and_set_email,
     create_magic_token,
@@ -302,12 +303,15 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     old_is_paused = user.is_paused
+    was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
+    if was_paused and not has_pause(user):
+        mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
 
