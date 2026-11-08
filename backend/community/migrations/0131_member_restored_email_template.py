@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 (
                     "body",
                     models.TextField(
-                        default="thanks for coming out — your full membership is back.\n\nrejoin the whatsapp here: ${WHATSAPP_LINK}",
+                        default="thanks for coming out — it's good to have you back.\n\nrejoin the whatsapp here: ${WHATSAPP_LINK}",
                         max_length=4000,
                     ),
                 ),
