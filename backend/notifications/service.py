@@ -149,11 +149,9 @@ def create_join_request_notifications(full_name: str) -> None:
     notify_users(str(user.pk) for user in recipients)
 
 
-def create_member_restored_notifications(user: User, actor: User) -> None:
+def create_member_restored_notifications(user: User) -> None:
     name = (user.full_name or user.phone_number).lower()
-    recipients = list(
-        User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS).exclude(pk=actor.pk)
-    )
+    recipients = list(User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
     Notification.objects.bulk_create(
         [
             Notification(
