@@ -619,6 +619,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'member promotion email is too long';
     }
 
+    // Member restored email
     case Code.MemberRestoredEmail.BodyRequired:
       return 'welcome back email body is required';
     case Code.MemberRestoredEmail.BodyTooLong: {
