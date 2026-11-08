@@ -41,6 +41,13 @@ const baseUser = makeUser({
   weekStart: 'monday',
 });
 
+const attendancePaused = makeMember({
+  id: 'm3',
+  fullName: 'Paused Member',
+  isMember: false,
+  attendancePausedAt: new Date('2026-03-01'),
+});
+
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
   return makeUserWithPermissions(permissions, baseUser);
 }
@@ -211,6 +218,7 @@ describe('MembersScreen', () => {
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
         makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        attendancePaused,
       ],
     });
 
@@ -220,6 +228,7 @@ describe('MembersScreen', () => {
 
     expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
     expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
+    expect(screen.queryByText('Paused Member')).not.toBeInTheDocument();
     // The non-members tab has no add-member controls.
     expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
   });
@@ -306,6 +315,19 @@ describe('MembersScreen', () => {
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(1);
     expect(links[0]?.textContent).toContain('Ada Member');
+  });
+
+  it('labels pause kinds and links attendance-paused members as members', () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', fullName: 'Ada Member', isPaused: true }), attendancePaused],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('paused · guidelines')).toBeInTheDocument();
+    expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
+    expect(screen.queryByText('non-member')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 
   it('shows total count when no filters are active', () => {
