@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion } from '@/api/join';
 import {
-  AlreadyInvitedError,
+  AlreadyHasAccountError,
   PendingJoinRequestError,
   useJoinQuestions,
   useSubmitJoinRequest,
@@ -142,7 +142,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       });
       void navigate('/join/success', { replace: true });
     } catch (err) {
-      if (err instanceof AlreadyInvitedError) {
+      if (err instanceof AlreadyHasAccountError) {
         void navigate('/login?invited=true', {
           replace: true,
           state: { phone: phoneNumber.trim() },

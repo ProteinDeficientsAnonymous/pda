@@ -5,7 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  AlreadyInvitedError,
+  AlreadyHasAccountError,
   PendingJoinRequestError,
   useJoinQuestions,
   useSubmitJoinRequest,
@@ -274,7 +274,7 @@ describe('existing join request', () => {
   });
 
   it('sends an already-approved applicant to login', async () => {
-    await submitRejectedWith(new AlreadyInvitedError());
+    await submitRejectedWith(new AlreadyHasAccountError());
 
     expect(await screen.findByText('login page')).toBeInTheDocument();
   });

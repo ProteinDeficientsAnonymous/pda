@@ -56,10 +56,10 @@ export interface SubmitJoinRequestPayload {
   website: string;
 }
 
-export class AlreadyInvitedError extends Error {
+export class AlreadyHasAccountError extends Error {
   constructor() {
-    super('already_invited');
-    this.name = 'AlreadyInvitedError';
+    super('already_has_account');
+    this.name = 'AlreadyHasAccountError';
   }
 }
 
@@ -92,7 +92,7 @@ export function useSubmitJoinRequest() {
           hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited) ||
           hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)
         ) {
-          throw new AlreadyInvitedError();
+          throw new AlreadyHasAccountError();
         }
         if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyPending)) {
           throw new PendingJoinRequestError();
