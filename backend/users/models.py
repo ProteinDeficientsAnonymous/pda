@@ -30,8 +30,8 @@ def can_sign_in_q() -> Q:
 
 
 def limited_q() -> Q:
-    """Signed in but not a member: tentative applicants and attendance-paused users."""
-    return Q(is_member=False) & can_sign_in_q()
+    """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
+    return Q(is_member=False, is_paused=False) & can_sign_in_q()
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -114,9 +114,7 @@ class UserManager(BaseUserManager):
 
     def active_limited_users(self):
         """Limited users, filtered like ``active_members``."""
-        return self.limited_users().filter(
-            is_active=True, is_paused=False, archived_at__isnull=True
-        )
+        return self.limited_users().filter(is_active=True, archived_at__isnull=True)
 
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
@@ -183,6 +181,7 @@ class User(AbstractUser):
     is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
+    unpaused_at = models.DateTimeField(null=True, blank=True)
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -378,14 +377,15 @@ class PublicRsvpToken(models.Model):
     def resolve_user(cls, token: str) -> "User | None":
         """Resolve a token string to its User, or None if the token is unusable.
 
-        Returns None when the token is unknown, expired (expires_at < now), or
-        revoked (revoked_at set). Endpoints in stages 3/4 reuse this and map a
-        None result to their own 404. Never logs the user in.
+        Returns None when the token is unknown, expired (expires_at < now),
+        revoked (revoked_at set), or its user is guidelines-paused. Endpoints in
+        stages 3/4 reuse this and map a None result to their own 404. Never logs
+        the user in.
         """
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid:
+        if row is None or not row.is_valid or row.user.is_paused:
             return None
         return row.user
 
