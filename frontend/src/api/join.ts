@@ -56,10 +56,17 @@ export interface SubmitJoinRequestPayload {
   website: string;
 }
 
-export class AlreadyInvitedError extends Error {
+export class AlreadyHasAccountError extends Error {
   constructor() {
-    super('already_invited');
-    this.name = 'AlreadyInvitedError';
+    super('already_has_account');
+    this.name = 'AlreadyHasAccountError';
+  }
+}
+
+export class PendingJoinRequestError extends Error {
+  constructor() {
+    super('pending_join_request');
+    this.name = 'PendingJoinRequestError';
   }
 }
 
@@ -81,8 +88,14 @@ export function useSubmitJoinRequest() {
         // A phone collision means this person already has an account — send
         // them to login. An email collision (or any other error) stays on the
         // form so they can correct it.
-        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited)) {
-          throw new AlreadyInvitedError();
+        if (
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited) ||
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)
+        ) {
+          throw new AlreadyHasAccountError();
+        }
+        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyPending)) {
+          throw new PendingJoinRequestError();
         }
         throw err;
       }
