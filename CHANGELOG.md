@@ -1,3 +1,10 @@
+# [0.223.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.6...v0.223.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - split pause toggle and add pause kind badges ([#2184](https://github.com/ProteinDeficientsAnonymous/pda/issues/2184)) ([a27a091](https://github.com/ProteinDeficientsAnonymous/pda/commit/a27a0915e5ce5a3f608162530a23f167ed55b768))
+
 ## [0.222.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.5...v0.222.6) (2026-11-08)
 
 
