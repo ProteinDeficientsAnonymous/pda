@@ -13,7 +13,7 @@ from community.surveys.conditions import visible_question_ids
 from community.validation import Code, raise_validation
 
 
-def _validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
+def validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
     assert_single_choice_member(
         answer,
         q.options,
@@ -23,7 +23,7 @@ def _validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
     )
 
 
-def _validate_checkbox_answer(answer: str | list[str], q: SurveyQuestion) -> None:
+def validate_checkbox_answer(answer: str | list[str], q: SurveyQuestion) -> None:
     assert_checkbox_members(
         answer,
         q.options,
@@ -33,7 +33,7 @@ def _validate_checkbox_answer(answer: str | list[str], q: SurveyQuestion) -> Non
     )
 
 
-def _validate_number_answer(answer: str, q: SurveyQuestion) -> None:
+def validate_number_answer(answer: str, q: SurveyQuestion) -> None:
     try:
         float(answer)
     except ValueError:
@@ -44,7 +44,7 @@ def _validate_number_answer(answer: str, q: SurveyQuestion) -> None:
         )
 
 
-def _validate_boolean_answer(answer: str, q: SurveyQuestion) -> None:
+def validate_boolean_answer(answer: str, q: SurveyQuestion) -> None:
     if answer not in ("yes", "no"):
         raise_validation(
             Code.Survey.ANSWER_MUST_BE_BOOLEAN,
@@ -70,7 +70,7 @@ def _validate_rating_answer(answer: str, q: SurveyQuestion) -> None:
         )
 
 
-def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) -> None:
+def validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) -> None:
     """Validate a datetime poll answer (option -> "yes"|"maybe"|"no")."""
     valid_options = set(q.options or [])
     for option, availability in answer.items():
@@ -90,22 +90,22 @@ def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) ->
 
 
 _TEXT_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], None]] = {
-    SurveyQuestionType.RADIO: _validate_choice_answer,
-    SurveyQuestionType.SELECT: _validate_choice_answer,
-    SurveyQuestionType.NUMBER: _validate_number_answer,
-    SurveyQuestionType.BOOLEAN: _validate_boolean_answer,
+    SurveyQuestionType.RADIO: validate_choice_answer,
+    SurveyQuestionType.SELECT: validate_choice_answer,
+    SurveyQuestionType.NUMBER: validate_number_answer,
+    SurveyQuestionType.BOOLEAN: validate_boolean_answer,
     SurveyQuestionType.STARS: _validate_rating_answer,
     SurveyQuestionType.SCALE: _validate_rating_answer,
 }
 
 _DICT_VALIDATORS: dict[str, Callable[[dict[str, str], SurveyQuestion], None]] = {
-    SurveyQuestionType.DATETIME_POLL: _validate_datetime_poll_answer,
+    SurveyQuestionType.DATETIME_POLL: validate_datetime_poll_answer,
 }
 
 
-def _validate_one_answer(answer: str | list[str] | dict[str, str], q: SurveyQuestion) -> None:
+def validate_one_answer(answer: str | list[str] | dict[str, str], q: SurveyQuestion) -> None:
     if q.field_type == SurveyQuestionType.CHECKBOX and isinstance(answer, str | list):
-        _validate_checkbox_answer(answer, q)
+        validate_checkbox_answer(answer, q)
         return
     if q.field_type in _DICT_VALIDATORS:
         if not isinstance(answer, dict):
@@ -134,7 +134,7 @@ def _answerable_ids(
     return {q_id for q_id in visible if questions[q_id].field_type != SurveyQuestionType.SECTION}
 
 
-def _validate_survey_answers(
+def validate_survey_answers(
     answers: dict[str, str | list[str] | dict[str, str]],
     questions: dict[str, SurveyQuestion],
 ) -> None:
@@ -152,10 +152,10 @@ def _validate_survey_answers(
                     label=q.label,
                 )
             continue
-        _validate_one_answer(answer, q)
+        validate_one_answer(answer, q)
 
 
-def _build_survey_answers(
+def build_survey_answers(
     answers: dict[str, str | list[str] | dict[str, str]],
     questions: dict[str, SurveyQuestion],
 ) -> dict:

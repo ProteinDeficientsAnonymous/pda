@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from community.content._prosemirror_html import prosemirror_to_html
 from community.content.html_sanitize import sanitize_content_html
+from community.content.prosemirror_html import prosemirror_to_html
 
 
 @dataclass(frozen=True, slots=True)

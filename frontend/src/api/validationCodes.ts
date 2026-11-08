@@ -64,6 +64,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'official events must be public';
     case Code.Event.OfficialNoPlusOnes:
       return "official and club events can't allow +1s";
+    case Code.Event.InvalidEventFormat:
+      return 'only official events can be a walk or restaurant';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -452,6 +454,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "a request for this number is already pending — we'll be in touch soon";
     case Code.JoinRequest.PhoneAlreadyTentative:
       return 'you already have an account — try logging in instead';
+    case Code.JoinRequest.OpenRequestExists:
+      return 'this number already has an open request — review that one instead';
     case Code.JoinRequest.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -617,6 +621,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'member promotion email is too long';
     }
 
+    // Member restored email
+    case Code.MemberRestoredEmail.BodyRequired:
+      return 'welcome back email body is required';
+    case Code.MemberRestoredEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `welcome back email must be at most ${String(max)} characters`
+        : 'welcome back email is too long';
+    }
+
     // Rejection email
     case Code.RejectionEmail.BodyRequired:
       return 'rejection email body is required';
@@ -634,6 +648,30 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         ? `reason text must be at most ${String(max)} characters`
         : 'reason text is too long';
     }
+
+    // Speech template
+    case Code.SpeechTemplate.InvalidDoc:
+      return 'that speech section is not valid';
+    case Code.SpeechTemplate.TooManyRoles: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null ? `at most ${String(max)} open roles` : 'too many open roles';
+    }
+    case Code.SpeechTemplate.RoleTooLong: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null
+        ? `each role must be at most ${String(max)} characters`
+        : 'a role is too long';
+    }
+
+    // Event speech
+    case Code.Speech.FormatRequired:
+      return 'pick walk or restaurant first';
+    case Code.Speech.InvalidValues:
+      return 'one of the speech blanks is not valid';
+    case Code.Speech.HostsOnly:
+      return "only this event's hosts and event managers can see or edit its speech";
+    case Code.Speech.OfficialEventRequired:
+      return 'speeches are only for official events';
 
     case Code.Connect.RequestNotFound:
       return 'this connection request was not found';
