@@ -36,7 +36,6 @@ class TestAttendancePausePreview:
         impact = PauseImpact(
             kept_rsvps=[make_event(title="kept rsvp")],
             removed_rsvps=[make_event(title="removed rsvp")],
-            kept_hosting=[make_event(title="kept hosting")],
             removed_hosting=[make_event(title="removed hosting")],
             drafted_events=[make_event(title="drafted")],
         )
@@ -48,7 +47,6 @@ class TestAttendancePausePreview:
         assert pairs == {
             "kept rsvp": ("rsvp", "kept"),
             "removed rsvp": ("rsvp", "removed"),
-            "kept hosting": ("hosting", "kept"),
             "removed hosting": ("hosting", "removed"),
             "drafted": ("hosting", "drafted"),
         }
