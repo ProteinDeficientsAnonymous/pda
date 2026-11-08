@@ -35,7 +35,7 @@ class JoinFormQuestionIn(BaseModel):
 
 
 class JoinFormQuestionOrderIn(BaseModel):
-    question_ids: list[str]
+    question_ids: list[UUID]
 
 
 def _question_out(q: JoinFormQuestion) -> JoinFormQuestionOut:
@@ -114,8 +114,11 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
-    for idx, qid in enumerate(payload.question_ids):
-        JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
+    order = {qid: idx for idx, qid in enumerate(payload.question_ids)}
+    JoinFormQuestion.objects.bulk_update(
+        [JoinFormQuestion(id=qid, display_order=idx) for qid, idx in order.items()],
+        ["display_order"],
+    )
     audit_log(logging.INFO, "join_form_questions_reordered", request)
     questions = JoinFormQuestion.objects.all()
     return Status(200, [_question_out(q) for q in questions])

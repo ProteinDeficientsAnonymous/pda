@@ -189,14 +189,17 @@ class TestJoinRequestListRetention:
         User.objects.create_user(
             phone_number="+12025550104", first_name="Paused", attendance_paused_at=paused_at
         )
-        old, new = (
-            JoinRequest.objects.create(
-                first_name="Paused",
-                phone_number="+12025550104",
-                status=JoinRequestStatus.TENTATIVE,
-                tentative_at=paused_at + timedelta(days=offset),
-            )
-            for offset in (-30, 1)
+        old = JoinRequest.objects.create(
+            first_name="Paused",
+            phone_number="+12025550104",
+            status=JoinRequestStatus.APPROVED,
+            approved_at=paused_at - timedelta(days=30),
+        )
+        new = JoinRequest.objects.create(
+            first_name="Paused",
+            phone_number="+12025550104",
+            status=JoinRequestStatus.TENTATIVE,
+            tentative_at=paused_at + timedelta(days=1),
         )
 
         ids = [
