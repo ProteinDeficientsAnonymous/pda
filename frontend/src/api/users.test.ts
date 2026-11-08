@@ -46,6 +46,7 @@ describe('useUsers', () => {
           show_email: false,
           is_superuser: false,
           is_paused: false,
+          attendance_paused_at: '2026-03-01T12:00:00Z',
           needs_onboarding: false,
           login_link_requested: false,
           attended_count: 4,
@@ -76,6 +77,7 @@ describe('useUsers', () => {
     expect(member?.showPhone).toBe(true);
     expect(member?.showEmail).toBe(false);
     expect(member?.attendedCount).toBe(4);
+    expect(member?.attendancePausedAt).toEqual(new Date('2026-03-01T12:00:00Z'));
     expect(member?.roles[0]).toEqual({
       id: 'r1',
       name: 'member',
@@ -108,6 +110,7 @@ describe('useUsers', () => {
       params: { include_non_members: true },
     });
     expect(result.current.data?.[0]?.isMember).toBe(false);
+    expect(result.current.data?.[0]?.attendancePausedAt).toBeNull();
   });
 
   it('propagates errors from the API', async () => {
@@ -225,6 +228,7 @@ describe('useUpdateUser', () => {
       firstName: 'Ada',
       lastName: 'Lovelace',
       isPaused: false,
+      attendancePaused: true,
       hasJoinedWhatsapp: true,
     });
 
@@ -232,6 +236,7 @@ describe('useUpdateUser', () => {
       first_name: 'Ada',
       last_name: 'Lovelace',
       is_paused: false,
+      attendance_paused: true,
       has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
