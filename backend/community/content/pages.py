@@ -14,7 +14,7 @@ from users.permissions import PermissionKey
 from community.content._render import render_content_payload
 from community.field_limits import FieldLimit
 from community.models import EditablePage, PageVisibility
-from community.shared import ErrorOut, _optional_jwt
+from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -45,7 +45,7 @@ def _page_out(page: EditablePage) -> EditablePageOut:
     )
 
 
-@router.get("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=_optional_jwt)
+@router.get("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=optional_jwt)
 def get_page(request, slug: str):
     default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)

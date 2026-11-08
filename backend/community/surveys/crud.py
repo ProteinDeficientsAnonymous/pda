@@ -24,11 +24,11 @@ from community.surveys.conditions import (
     validate_show_if,
 )
 from community.surveys.helpers import (
-    _survey_out,
-    _survey_question_out,
-    _validate_anonymous_change,
-    _validate_feedback_type,
-    _validate_survey_window,
+    survey_out,
+    survey_question_out,
+    validate_anonymous_change,
+    validate_feedback_type,
+    validate_survey_window,
 )
 from community.surveys.schemas import (
     SurveyIn,
@@ -110,8 +110,8 @@ def create_survey(request, payload: SurveyIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     if Survey.objects.filter(slug=payload.slug).exists():
         raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
-    _validate_survey_window(payload.opens_at, payload.closes_at)
-    data = _validate_feedback_type(None, payload.model_dump())
+    validate_survey_window(payload.opens_at, payload.closes_at)
+    data = validate_feedback_type(None, payload.model_dump())
     survey = Survey.objects.create(
         title=payload.title,
         description=payload.description,
@@ -137,7 +137,7 @@ def create_survey(request, payload: SurveyIn):
             details={"title": survey.title, "slug": survey.slug},
         ),
     )
-    return Status(201, _survey_out(survey, include_questions=True))
+    return Status(201, survey_out(survey, include_questions=True))
 
 
 @router.get(
@@ -166,7 +166,7 @@ def get_survey_admin(request, survey_id: UUID):
         survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    return Status(200, _survey_out(survey, include_questions=True))
+    return Status(200, survey_out(survey, include_questions=True))
 
 
 @router.patch(
@@ -195,14 +195,14 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
-    updates = _validate_feedback_type(survey, payload.model_dump(exclude_unset=True))
+    updates = validate_feedback_type(survey, payload.model_dump(exclude_unset=True))
     if "slug" in updates and updates["slug"] != survey.slug:
         if Survey.objects.filter(slug=updates["slug"]).exists():
             raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
-    _validate_survey_window(
+    validate_survey_window(
         updates.get("opens_at", survey.opens_at), updates.get("closes_at", survey.closes_at)
     )
-    _validate_anonymous_change(survey, updates)
+    validate_anonymous_change(survey, updates)
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
@@ -216,7 +216,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
             details={"fields_changed": list(updates.keys())},
         ),
     )
-    return Status(200, _survey_out(survey, include_questions=True))
+    return Status(200, survey_out(survey, include_questions=True))
 
 
 @router.delete(
@@ -311,7 +311,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
             details={"survey_id": str(survey_id), "label": q.label},
         ),
     )
-    return Status(201, _survey_question_out(q))
+    return Status(201, survey_question_out(q))
 
 
 @router.put(
@@ -354,7 +354,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
     )
     questions = SurveyQuestion.objects.filter(survey_id=survey_id)
-    return Status(200, [_survey_question_out(q) for q in questions])
+    return Status(200, [survey_question_out(q) for q in questions])
 
 
 # Order must precede /{question_id}/ below: Django matches by registration order and would 405.
@@ -404,7 +404,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
             details={"survey_id": str(survey_id), "label": q.label},
         ),
     )
-    return Status(200, _survey_question_out(q))
+    return Status(200, survey_question_out(q))
 
 
 @router.delete(

@@ -3,7 +3,10 @@
 import uuid
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
+from community.validation import Code
+
+from tests._asserts import assert_error_code
 
 
 @pytest.mark.django_db
@@ -26,6 +29,22 @@ class TestUnrejectJoinRequest:
         assert sample_join_request.status == JoinRequestStatus.PENDING
         assert sample_join_request.rejected_by == vettor_user
         assert sample_join_request.rejected_at is not None
+
+    def test_unreject_blocked_while_phone_has_open_request(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        sample_join_request.status = JoinRequestStatus.REJECTED
+        sample_join_request.save(update_fields=["status"])
+        JoinRequest.objects.create(phone_number=sample_join_request.phone_number)
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.JoinRequest.OPEN_REQUEST_EXISTS)
+        sample_join_request.refresh_from_db()
+        assert sample_join_request.status == JoinRequestStatus.REJECTED
 
     def test_unreject_pending_fails(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
