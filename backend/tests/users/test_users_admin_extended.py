@@ -80,7 +80,7 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.has_joined_whatsapp is True
 
-    def test_pause_strips_non_member_roles(
+    def test_pause_strips_elevated_roles(
         self, api_client, manage_users_headers, other_user, caplog
     ):
         member_role = Role.objects.get(name="member", is_default=True)

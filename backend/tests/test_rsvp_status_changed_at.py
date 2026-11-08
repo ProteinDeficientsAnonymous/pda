@@ -114,7 +114,7 @@ class TestStatusChangedAt:
         rsvp.save()
         _assert_untouched(rsvp)
 
-    def test_set_by_nonmember_bulk_removal(self, event):
+    def test_set_by_public_rsvper_bulk_removal(self, event):
         guest = User.objects.create_user(phone_number="+12025558400", password="x", is_member=False)
         row = _backdate(make_rsvp(event, guest))
 
