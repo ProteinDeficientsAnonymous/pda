@@ -10,7 +10,7 @@ from community.rsvps.public_resend import NEUTRAL_RESPONSE
 from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._public_rsvp_helpers import make_non_member
 
@@ -44,17 +44,17 @@ class TestResendManageLink:
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == EMAIL
-        token = NonMemberRsvpToken.objects.get(user=user)
+        token = PublicRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
         assert "/my-rsvps?token=" in sent["text"]
 
     def test_extends_existing_token_keeping_same_string(self, api_client, fake_email_sender):
         user = make_non_member(PHONE, EMAIL)
-        original = NonMemberRsvpToken.issue_or_extend(user)
+        original = PublicRsvpToken.issue_or_extend(user)
 
         post(api_client)
 
-        assert NonMemberRsvpToken.objects.filter(user=user).count() == 1
+        assert PublicRsvpToken.objects.filter(user=user).count() == 1
         sent = fake_email_sender.send.call_args.kwargs
         assert original.token in sent["text"]
 
@@ -81,7 +81,7 @@ class TestResendManageLink:
 
         assert response.status_code == 200
         fake_email_sender.send.assert_not_called()
-        assert not NonMemberRsvpToken.objects.filter(user=member).exists()
+        assert not PublicRsvpToken.objects.filter(user=member).exists()
 
     def test_matching_non_member_without_email_gets_nothing(self, api_client, fake_email_sender):
         # No email on file → nothing to send to, still neutral.
@@ -132,7 +132,7 @@ class TestResendHoneypot:
 
         assert response.status_code == 200
         fake_email_sender.send.assert_not_called()
-        assert not NonMemberRsvpToken.objects.exists()
+        assert not PublicRsvpToken.objects.exists()
 
 
 @pytest.mark.django_db
