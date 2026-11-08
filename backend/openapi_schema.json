@@ -374,6 +374,41 @@
         "title": "AttendanceStatus",
         "type": "string"
       },
+      "AttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "AttendedEventOut",
+        "type": "object"
+      },
       "AttendedPersonOut": {
         "properties": {
           "checked_in_at": {
@@ -4477,41 +4512,6 @@
         "title": "JoinRequestAnswerOut",
         "type": "object"
       },
-      "JoinRequestAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "JoinRequestAttendedEventOut",
-        "type": "object"
-      },
       "JoinRequestIn": {
         "properties": {
           "answers": {
@@ -4631,7 +4631,7 @@
           "attended_events": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/JoinRequestAttendedEventOut"
+              "$ref": "#/components/schemas/AttendedEventOut"
             },
             "title": "Attended Events",
             "type": "array"
@@ -5271,41 +5271,6 @@
           "is_paused"
         ],
         "title": "MemberAttendanceRowOut",
-        "type": "object"
-      },
-      "MemberAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "MemberAttendedEventOut",
         "type": "object"
       },
       "MemberDirectoryOut": {
@@ -9748,7 +9713,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                    "$ref": "#/components/schemas/AttendedEventOut"
                   },
                   "title": "Response",
                   "type": "array"
