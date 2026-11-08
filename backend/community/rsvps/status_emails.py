@@ -13,7 +13,7 @@ from notifications.email_helpers import (
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import SendResult, get_email_sender
-from users.models import NonMemberRsvpToken, User, signed_in_non_member_q
+from users.models import NonMemberRsvpToken, User, can_sign_in_q
 
 from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
 from community.models import Event, RSVPStatus
@@ -28,11 +28,9 @@ from community.shared import logger
 
 def _member_email_ids(event: Event, user_ids: list[str]) -> set[str]:
     """Ids of users who get member emails; everyone else gets a manage link."""
-    gets_member = Q(is_member=True)
     # Signed-in non-members can only manage official/club rsvps in the app.
-    if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
-        gets_member |= signed_in_non_member_q()
-    users = User.objects.filter(gets_member, pk__in=user_ids)
+    official = event.event_type in TENTATIVE_MEMBER_EVENT_TYPES
+    users = User.objects.filter(can_sign_in_q() if official else Q(is_member=True), pk__in=user_ids)
     return {str(pk) for pk in users.values_list("pk", flat=True)}
 
 
