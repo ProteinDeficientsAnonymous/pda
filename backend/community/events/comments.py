@@ -54,7 +54,7 @@ def _co_host_pks(event: Event) -> set[str]:
     return {str(u.pk) for u in event.co_hosts.all()}
 
 
-def _can_post_comments(
+def can_post_comments(
     event: Event,
     user,
     co_host_pks: set[str] | None = None,
@@ -153,7 +153,7 @@ def _comment_out(
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     co_host_pks = _co_host_pks(event)
-    can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
+    can_post = can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
         # A signed-out visitor can still rsvp themselves onto a public event, so
@@ -178,7 +178,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
 
 
 def _require_rsvp_for_post(event: Event, user) -> None:
-    if not _can_post_comments(event, user):
+    if not can_post_comments(event, user):
         raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
 
 

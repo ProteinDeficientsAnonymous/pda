@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 import psycopg
 import pytest
 from asgiref.sync import async_to_sync
-from community.models import Event, EventType, PageVisibility
+from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
+from ninja_jwt.tokens import AccessToken, RefreshToken
 from notifications import sse
 from notifications.models import SseTicket
 from notifications.sse import (
@@ -23,6 +23,7 @@ from notifications.sse import (
     sse_generator,
     try_acquire_anonymous_slot,
 )
+from users.models import PublicRsvpToken, User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
@@ -149,10 +150,6 @@ class TestNotifyReadStateChanged:
 
 @pytest.mark.django_db
 class TestSseTicketMint:
-    def test_mint_requires_auth(self, api_client):
-        response = api_client.post("/api/notifications/sse-ticket/")
-        assert response.status_code == 401
-
     def test_mint_returns_ticket(self, test_user, api_client):
         response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         assert response.status_code == 200
@@ -166,6 +163,26 @@ class TestSseTicketMint:
         assert ticket.user_id == test_user.pk
         assert ticket.used is False
 
+    def test_mint_without_auth_or_event_returns_401(self, api_client):
+        response = api_client.post("/api/notifications/sse-ticket/")
+        assert response.status_code == 401
+
+    def test_expired_bearer_returns_401_not_anonymous_ticket(self, test_user, api_client):
+        access = AccessToken.for_user(test_user)
+        access.set_exp(lifetime=-timedelta(minutes=1))
+        response = api_client.post(
+            "/api/notifications/sse-ticket/", HTTP_AUTHORIZATION=f"Bearer {access}"
+        )
+        assert response.status_code == 401
+        assert not SseTicket.objects.exists()
+
+    def test_paused_user_returns_403(self, test_user, api_client):
+        test_user.is_paused = True
+        test_user.save(update_fields=["is_paused"])
+        response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
+        assert response.status_code == 403
+        assert not SseTicket.objects.exists()
+
 
 @pytest.fixture
 def public_event(db, test_user):
@@ -177,6 +194,70 @@ def public_event(db, test_user):
         rsvp_enabled=True,
         created_by=test_user,
     )
+
+
+@pytest.fixture
+def non_member(db):
+    user = User.objects.create_user(
+        phone_number="+12025550188",
+        first_name="Non",
+        last_name="Member",
+        is_member=False,
+    )
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+    return user
+
+
+@pytest.fixture
+def rsvp_token(non_member):
+    return PublicRsvpToken.issue(non_member).token
+
+
+def _mint_anonymous(api_client, event, token):
+    return api_client.post(
+        f"/api/notifications/sse-ticket/?event_id={event.id}&token={token}",
+    )
+
+
+@pytest.mark.django_db
+class TestAnonymousSseTicketMint:
+    def test_rsvpd_non_member_gets_event_scoped_ticket(
+        self, api_client, public_event, non_member, rsvp_token
+    ):
+        EventRSVP.objects.create(event=public_event, user=non_member, status=RSVPStatus.ATTENDING)
+        response = _mint_anonymous(api_client, public_event, rsvp_token)
+        assert response.status_code == 200, response.content
+        ticket = SseTicket.objects.get(token=response.json()["ticket"])
+        assert ticket.user_id is None
+        assert ticket.event_id == public_event.id
+
+    def test_token_without_rsvp_on_event_returns_404(self, api_client, public_event, rsvp_token):
+        response = _mint_anonymous(api_client, public_event, rsvp_token)
+        assert response.status_code == 404
+        assert not SseTicket.objects.exists()
+
+    def test_invalid_token_returns_404(self, api_client, public_event):
+        response = _mint_anonymous(api_client, public_event, "garbage")
+        assert response.status_code == 404
+
+    def test_members_only_event_returns_404(self, api_client, public_event, non_member, rsvp_token):
+        EventRSVP.objects.create(event=public_event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_event.visibility = PageVisibility.MEMBERS_ONLY
+        public_event.save(update_fields=["visibility"])
+        response = _mint_anonymous(api_client, public_event, rsvp_token)
+        assert response.status_code == 404
+        assert not SseTicket.objects.exists()
+
+    def test_member_bearer_ignores_event_scope(self, test_user, api_client, public_event):
+        response = api_client.post(
+            f"/api/notifications/sse-ticket/?event_id={public_event.id}",
+            **auth_headers_for(test_user),
+        )
+        assert response.status_code == 200
+        ticket = SseTicket.objects.get(token=response.json()["ticket"])
+        assert ticket.user_id == test_user.pk
+        assert ticket.event_id is None
 
 
 @pytest.mark.django_db

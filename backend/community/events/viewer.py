@@ -16,7 +16,7 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     returning non-member reuses one token across events (issue #873). The token
     only unlocks fields gated purely on "is there a user object" (see
     event_out/_build_list_out); it never satisfies member/creator/co-host
-    checks, and posting still requires an actual RSVP (see _can_post_comments).
+    checks, and posting still requires an actual RSVP (see can_post_comments).
     """
     auth_user = authenticated_user(getattr(request, "auth", None))
     if auth_user is not None:

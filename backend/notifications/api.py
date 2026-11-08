@@ -1,9 +1,14 @@
 from uuid import UUID
 
+from community.events.comments import can_post_comments
+from community.events.read_visibility import enforce_event_read_visibility
+from community.events.viewer import resolve_event_viewer
+from community.models import Event
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
-from config.auth import gated_jwt
-from config.ratelimit import rate_limit
+from config.auth import gated_jwt, gated_jwt_or_anonymous
+from config.ratelimit import auth_or_ip_key, rate_limit
+from django.contrib.auth.models import AnonymousUser
 from ninja import Query, Router
 from ninja.responses import Status
 
@@ -43,15 +48,37 @@ def list_notifications(
     return Status(200, [_notification_out(n) for n in notifications])
 
 
-@router.post("/sse-ticket/", response={200: SseTicketOut, 429: ErrorOut}, auth=gated_jwt)
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
-def create_sse_ticket(request):
+def _event_for_anonymous_stream(request, event_id: UUID) -> Event:
+    """The event an anonymous ticket may follow: one whose comments this rsvp token can read."""
+    event = Event.objects.filter(id=event_id).first()
+    viewer = resolve_event_viewer(request, event_id)
+    if event is None or viewer is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    enforce_event_read_visibility(event, viewer)
+    if not can_post_comments(event, viewer):
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    return event
+
+
+@router.post(
+    "/sse-ticket/",
+    response={200: SseTicketOut, 401: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=gated_jwt_or_anonymous,
+)
+@rate_limit(key_func=auth_or_ip_key, rate="30/m")
+def create_sse_ticket(request, event_id: UUID | None = None):
     """Mint a short-lived single-use ticket for opening the SSE stream.
 
     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-    can't send an auth header).
+    can't send an auth header). Without a JWT, pass ?event_id= and the rsvp
+    ?token= to get a ticket that only receives that event's comment pings.
     """
-    ticket = SseTicket.mint_for_user(request.auth)
+    if not isinstance(request.auth, AnonymousUser):
+        ticket = SseTicket.mint_for_user(request.auth)
+    elif event_id is None:
+        return Status(401, ErrorOut(detail="Unauthorized"))
+    else:
+        ticket = SseTicket.mint_for_event(_event_for_anonymous_stream(request, event_id))
     return Status(200, SseTicketOut(ticket=ticket.token))
 
 
