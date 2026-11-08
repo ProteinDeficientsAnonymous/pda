@@ -22,22 +22,22 @@ def _patch_official_off(api_client, event, headers, **extra):
 
 
 @pytest.mark.django_db
-class TestNonMemberRemovalOnIneligibleEvent:
+class TestPublicRsvperRemovalOnIneligibleEvent:
     @pytest.mark.parametrize(
         "status",
         [RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED, RSVPStatus.MAYBE, RSVPStatus.CANT_GO],
     )
-    def test_force_removes_non_member_of_any_status(
+    def test_force_removes_public_rsvper_of_any_status(
         self, api_client, manage_events_headers, fake_email_sender, status
     ):
         event = make_official_event()
-        non_member = make_public_rsvper("+14155559001", "removed@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=status)
+        public_rsvper = make_public_rsvper("+14155559001", "removed@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=status)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
 
         assert response.status_code == 200
-        rsvp = EventRSVP.objects.get(event=event, user=non_member)
+        rsvp = EventRSVP.objects.get(event=event, user=public_rsvper)
         assert rsvp.status == RSVPStatus.REMOVED
 
     def test_without_force_rejected_with_count_and_no_changes(
@@ -64,21 +64,21 @@ class TestNonMemberRemovalOnIneligibleEvent:
     ):
         event = make_official_event()
         EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
-        non_member = make_public_rsvper("+14155559004", "nm@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559004", "nm@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
 
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=event, user=test_user).status == RSVPStatus.ATTENDING
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.REMOVED
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.REMOVED
 
     def test_removal_sends_best_effort_email(
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event()
-        non_member = make_public_rsvper("+14155559005", "emailme@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559005", "emailme@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
 
@@ -95,20 +95,20 @@ class TestNonMemberRemovalOnIneligibleEvent:
 
         fake_email_sender.send.return_value = SendResult(success=False, error="boom")
         event = make_official_event()
-        non_member = make_public_rsvper("+14155559006", "failmail@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559006", "failmail@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.REMOVED
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.REMOVED
 
     def test_edit_that_stays_eligible_never_triggers_check(
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event()
-        non_member = make_public_rsvper("+14155559007", "stays@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559007", "stays@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
             f"/api/community/events/{event.id}/",
@@ -118,14 +118,14 @@ class TestNonMemberRemovalOnIneligibleEvent:
         )
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.ATTENDING
 
     def test_edit_on_already_ineligible_event_never_triggers_check(
         self, api_client, manage_events_headers, fake_email_sender
     ):
         event = make_official_event(event_type=EventType.COMMUNITY)
-        non_member = make_public_rsvper("+14155559008", "already@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559008", "already@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
             f"/api/community/events/{event.id}/",
@@ -135,15 +135,15 @@ class TestNonMemberRemovalOnIneligibleEvent:
         )
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.ATTENDING
 
     def test_cancelling_event_does_not_trigger_removal(
         self, api_client, manage_events_headers, fake_email_sender
     ):
         """Cancelling also flips eligibility false but must not double-notify."""
         event = make_official_event()
-        non_member = make_public_rsvper("+14155559009", "cancelled@e.com")
-        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        public_rsvper = make_public_rsvper("+14155559009", "cancelled@e.com")
+        EventRSVP.objects.create(event=event, user=public_rsvper, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
             f"/api/community/events/{event.id}/",
@@ -153,7 +153,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
         )
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.ATTENDING
 
 
 def _emails_to(fake_email_sender, to):
@@ -167,9 +167,9 @@ class TestLimitedUserOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender, make_limited
     ):
         event = make_official_event()
-        signed_in = make_limited("+14155559020", "signed_in@e.com")
-        non_member = make_public_rsvper("+14155559021", "public@e.com")
-        for user in (signed_in, non_member):
+        limited = make_limited("+14155559020", "signed_in@e.com")
+        public_rsvper = make_public_rsvper("+14155559021", "public@e.com")
+        for user in (limited, public_rsvper):
             EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
@@ -180,16 +180,16 @@ class TestLimitedUserOnIneligibleEvent:
         )
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=signed_in).status == RSVPStatus.ATTENDING
-        assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.REMOVED
+        assert EventRSVP.objects.get(event=event, user=limited).status == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=public_rsvper).status == RSVPStatus.REMOVED
         assert _emails_to(fake_email_sender, "signed_in@e.com") == []
 
     def test_limited_user_not_counted_toward_removal_conflict(
         self, api_client, manage_events_headers, fake_email_sender, make_limited
     ):
         event = make_official_event()
-        signed_in = make_limited("+14155559022", "signed_in2@e.com")
-        EventRSVP.objects.create(event=event, user=signed_in, status=RSVPStatus.ATTENDING)
+        limited = make_limited("+14155559022", "signed_in2@e.com")
+        EventRSVP.objects.create(event=event, user=limited, status=RSVPStatus.ATTENDING)
 
         response = api_client.patch(
             f"/api/community/events/{event.id}/",
@@ -204,13 +204,13 @@ class TestLimitedUserOnIneligibleEvent:
         self, api_client, manage_events_headers, fake_email_sender, make_limited
     ):
         event = make_official_event()
-        signed_in = make_limited("+14155559023", "signed_in3@e.com")
-        EventRSVP.objects.create(event=event, user=signed_in, status=RSVPStatus.ATTENDING)
+        limited = make_limited("+14155559023", "signed_in3@e.com")
+        EventRSVP.objects.create(event=event, user=limited, status=RSVPStatus.ATTENDING)
 
         response = _patch_official_off(api_client, event, manage_events_headers, force=True)
 
         assert response.status_code == 200
-        assert EventRSVP.objects.get(event=event, user=signed_in).status == RSVPStatus.REMOVED
+        assert EventRSVP.objects.get(event=event, user=limited).status == RSVPStatus.REMOVED
         assert _emails_to(fake_email_sender, "signed_in3@e.com") == []
 
     def test_guidelines_paused_limited_user_removed_without_email(
