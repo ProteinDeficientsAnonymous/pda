@@ -17,32 +17,48 @@ describe('withOfficialTemplate', () => {
     expect(out.description).toBe('walk copy');
   });
 
-  it('fills the non-walk template when walk is off', () => {
+  it('fills the non-walk template when the format is restaurant', () => {
     const out = withOfficialTemplate(
-      values({ eventType: EventType.Official, isWalk: false }),
+      values({ eventType: EventType.Official, eventFormat: 'restaurant' }),
       templates,
     );
     expect(out.description).toBe('non-walk copy');
   });
 
-  it('swaps to the non-walk template when walk is turned off on an untouched description', () => {
+  it('swaps to the non-walk template when the format switches to restaurant on an untouched description', () => {
     const out = withOfficialTemplate(
-      values({ eventType: EventType.Official, isWalk: false, description: 'walk copy' }),
+      values({
+        eventType: EventType.Official,
+        eventFormat: 'restaurant',
+        description: 'walk copy',
+      }),
       templates,
     );
     expect(out.description).toBe('non-walk copy');
   });
 
-  it('swaps back to the walk template when walk is turned on again', () => {
+  it('swaps back to the walk template when the format switches back to walk', () => {
     const out = withOfficialTemplate(
-      values({ eventType: EventType.Official, isWalk: true, description: 'non-walk copy' }),
+      values({ eventType: EventType.Official, eventFormat: 'walk', description: 'non-walk copy' }),
       templates,
     );
     expect(out.description).toBe('walk copy');
   });
 
+  it('fills the non-walk template when the format is unset', () => {
+    const out = withOfficialTemplate(
+      values({ eventType: EventType.Official, eventFormat: null }),
+      templates,
+    );
+    expect(out.description).toBe('non-walk copy');
+  });
+
   it('never overwrites a description the planner edited', () => {
-    const v = values({ eventType: EventType.Official, isWalk: false, description: 'my own words' });
+    const v = values({
+      eventType: EventType.Official,
+      eventFormat: 'restaurant',
+      description: 'my own words',
+    });
     expect(withOfficialTemplate(v, templates)).toBe(v);
   });
 

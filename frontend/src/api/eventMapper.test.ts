@@ -180,6 +180,12 @@ describe('mapEvent', () => {
     expect(result.isPast).toBe(true);
   });
 
+  it('maps event_format, null when absent', () => {
+    expect(mapEvent(wireEvent({ event_format: 'restaurant' })).eventFormat).toBe('restaurant');
+    expect(mapEvent(wireEvent()).eventFormat).toBeNull();
+    expect(mapEvent(wireEvent({ event_format: 'bogus' })).eventFormat).toBeNull();
+  });
+
   it('maps nested guests array', () => {
     const result = mapEvent(
       wireEvent({

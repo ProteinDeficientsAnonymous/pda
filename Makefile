@@ -76,7 +76,7 @@ help:
 	@echo "  make createsuperuser  Create Django admin user"
 	@echo "  make seed             Seed database with sample data"
 	@echo "  make complexity       Run Python cognitive complexity check"
-	@echo "  make check-private-modules  Fail if a _module is imported from outside its package"
+	@echo "  make check-private-modules  Fail on cross-package _module or cross-module _symbol imports"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"

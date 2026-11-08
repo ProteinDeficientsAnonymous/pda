@@ -9,9 +9,9 @@ from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import (
-    _can_edit_event,
-    _event_out,
     broadcast_capacity_change,
+    can_edit_event,
+    event_out,
     load_event_with_stats_prefetch,
 )
 from community.events.schemas import EventOut, WaitlistOrderIn
@@ -40,7 +40,7 @@ def reorder_waitlist(request, event_id: UUID, payload: WaitlistOrderIn):
     )
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="reorder_waitlist")
 
     with transaction.atomic():
@@ -61,7 +61,7 @@ def reorder_waitlist(request, event_id: UUID, payload: WaitlistOrderIn):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     email_promoted_users(request, event, promoted_user_ids)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 def _reorder_waitlist_in_transaction(event_id, user_ids: list[UUID]) -> list[str]:

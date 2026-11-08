@@ -6,7 +6,7 @@ from community.events.description_templates import get_event_description_templat
 from community.events.listing import hosted_events_q
 from community.events.tags import list_event_tags as list_event_tags_view
 from community.models import Event
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from django.db.models import BooleanField, Case, F, When
 from django.utils import timezone
 from pydantic import Field
@@ -33,10 +33,10 @@ def _summary(event: Event) -> dict[str, Any]:
     return {**to_jsonable_python(row), "url": _event_url(row), "tags": tags}
 
 
-def _my_events(user: User, include_past: bool, limit: int, offset: int) -> list[dict[str, Any]]:
+def my_events(user: User, include_past: bool, limit: int, offset: int) -> list[dict[str, Any]]:
     """Upcoming first, undated (tbd) last, then past newest first; id breaks ties for paging."""
     past = Case(
-        When(_is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
+        When(is_past_q(timezone.now()), then=True), default=False, output_field=BooleanField()
     )
     rows = (
         Event.objects.filter(hosted_events_q(user, upcoming=not include_past))
@@ -71,7 +71,7 @@ async def list_my_events(
     limit: Annotated[int, Field(ge=1, le=50, description="events per page")] = 20,
     offset: Annotated[int, Field(ge=0, description="next_offset from the previous page")] = 0,
 ) -> dict[str, Any]:
-    rows = await sync_to_async(_my_events)(await current_user(), include_past, limit, offset)
+    rows = await sync_to_async(my_events)(await current_user(), include_past, limit, offset)
     return {
         "events": rows[:limit],
         "next_offset": offset + limit if len(rows) > limit else None,
@@ -96,7 +96,7 @@ async def list_event_tags() -> list[dict[str, Any]]:
 @pda_tool(
     description=(
         "get the official event description templates and their slots. official events start from "
-        "official_walk when the event has the 'walk' tag, otherwise official_non_walk. replace each "
+        "official_walk when event_format is walk, otherwise official_non_walk. replace each "
         "[ALL CAPS] slot with the planner's details (ask for any you don't know) and keep the rest of "
         "the official copy word for word."
     )

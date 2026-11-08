@@ -3,11 +3,12 @@ endpoint and join-request attendance history."""
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from typing import NamedTuple
+from typing import NamedTuple, Self
 from uuid import UUID
 
 from django.db.models import Count, Max, Q, QuerySet
 from django.utils import timezone
+from pydantic import BaseModel
 
 from community.models import AttendanceStatus, EventRSVP, EventType
 from community.rsvps.counts import (
@@ -94,22 +95,27 @@ def is_pause_candidate(stats: MemberAttendanceStats) -> bool:
     return stats.qualifying_count_12mo == 0
 
 
-class AttendedEvent(NamedTuple):
+class AttendedEventOut(BaseModel):
     event_id: str
     title: str
-    start_datetime: datetime | None
+    start_datetime: datetime | None = None
     event_type: str
 
+    @classmethod
+    def from_rsvp(cls, rsvp: EventRSVP) -> Self:
+        event = rsvp.event
+        return cls(
+            event_id=str(event.id),
+            title=event.title,
+            start_datetime=event.start_datetime,
+            event_type=event.event_type,
+        )
 
-def attended_events(rsvps: Iterable[EventRSVP]) -> list[AttendedEvent]:
+
+def attended_events(rsvps: Iterable[EventRSVP]) -> list[AttendedEventOut]:
     """All event types, host-marked attended — engagement signal for vetting, oldest first."""
     events = [
-        AttendedEvent(
-            event_id=str(rsvp.event.id),
-            title=rsvp.event.title,
-            start_datetime=rsvp.event.start_datetime,
-            event_type=rsvp.event.event_type,
-        )
+        AttendedEventOut.from_rsvp(rsvp)
         for rsvp in rsvps
         if _is_reportable(rsvp) and is_attended(rsvp)
     ]
