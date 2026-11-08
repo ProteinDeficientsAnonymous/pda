@@ -100,6 +100,15 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phone_number"],
+                condition=models.Q(
+                    status__in=[JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE]
+                ),
+                name="unique_open_join_request_per_phone",
+            ),
+        ]
 
     @property
     def full_name(self) -> str:
