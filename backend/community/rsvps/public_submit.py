@@ -127,6 +127,9 @@ def _resolve_non_member(
     if phone_match and phone_match.archived_at:
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
 
+    if phone_match and phone_match.is_paused:
+        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+
     if email_match and email_match.pk != (phone_match.pk if phone_match else None):
         _reject_email_collision(request, email)
 
@@ -224,7 +227,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
-    if user.email:
+    # Paused still answers NON_MEMBER so the response can't reveal the pause; only the email is withheld.
+    if user.email and not user.is_paused:
         _send_recognized_login_link(request, user)
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
@@ -234,6 +238,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     response={
         200: PublicRsvpOut,
         400: ErrorOut,
+        403: ErrorOut,
         404: ErrorOut,
         409: ErrorOut,
         422: ErrorOut,
