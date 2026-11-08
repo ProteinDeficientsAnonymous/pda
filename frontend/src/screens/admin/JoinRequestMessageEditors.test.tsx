@@ -24,6 +24,7 @@ vi.mock('@/api/content', () => ({
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
   useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({
