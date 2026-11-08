@@ -248,7 +248,7 @@ export function canTentativeMemberRsvp(event: Event): boolean {
   return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
 }
 
-// Mirrors backend is_tentative_member: only tentative applicants sign in without membership.
+// Mirrors backend is_limited: tentative applicants and attendance-paused users sign in without membership.
 export function isTentativeMember(user: Pick<User, 'isMember'> | null | undefined): boolean {
   return user?.isMember === false;
 }

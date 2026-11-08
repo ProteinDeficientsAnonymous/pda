@@ -6,7 +6,7 @@ from users.models import User
 
 
 @pytest.mark.django_db
-class TestSignedInNonMembers:
+class TestLimitedUsers:
     def test_is_tentative_applicants_and_attendance_paused_members(self):
         paused = make_attendance_paused()
         tentative = make_tentative("+12025550290")
@@ -18,10 +18,10 @@ class TestSignedInNonMembers:
         )
         make_user(is_member=True)
         make_user(is_member=False)
-        pks = list(User.objects.signed_in_non_members().values_list("pk", flat=True))
+        pks = list(User.objects.limited_users().values_list("pk", flat=True))
         assert sorted(pks) == sorted([paused.pk, tentative.pk])
 
-    def test_active_tentative_members_includes_attendance_paused_but_not_guidelines_paused(self):
+    def test_active_limited_users_includes_attendance_paused_but_not_guidelines_paused(self):
         paused = make_attendance_paused()
         make_attendance_paused(is_paused=True)
-        assert list(User.objects.active_tentative_members()) == [paused]
+        assert list(User.objects.active_limited_users()) == [paused]

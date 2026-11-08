@@ -162,8 +162,8 @@ def _emails_to(fake_email_sender, to):
 
 @pytest.mark.django_db
 @SIGNED_IN_NON_MEMBER_FACTORIES
-class TestSignedInNonMemberOnIneligibleEvent:
-    def test_signed_in_non_member_kept_when_event_stays_official(
+class TestLimitedUserOnIneligibleEvent:
+    def test_limited_user_kept_when_event_stays_official(
         self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
@@ -184,7 +184,7 @@ class TestSignedInNonMemberOnIneligibleEvent:
         assert EventRSVP.objects.get(event=event, user=non_member).status == RSVPStatus.REMOVED
         assert _emails_to(fake_email_sender, "signed_in@e.com") == []
 
-    def test_signed_in_non_member_not_counted_toward_removal_conflict(
+    def test_limited_user_not_counted_toward_removal_conflict(
         self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
@@ -200,7 +200,7 @@ class TestSignedInNonMemberOnIneligibleEvent:
 
         assert response.status_code == 200
 
-    def test_signed_in_non_member_removed_from_community_event_without_email(
+    def test_limited_user_removed_from_community_event_without_email(
         self, api_client, manage_events_headers, fake_email_sender, make_signed_in
     ):
         event = make_official_event()
