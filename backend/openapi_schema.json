@@ -5490,6 +5490,23 @@
         "title": "MemberRestoredEmailOut",
         "type": "object"
       },
+      "MemberRestoredEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberRestoredEmailPatchIn",
+        "type": "object"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -16420,6 +16437,61 @@
           }
         ],
         "summary": "Get Member Restored Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_message_templates_member_restored_email_update_member_restored_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRestoredEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Restored Email",
         "tags": [
           "community"
         ]

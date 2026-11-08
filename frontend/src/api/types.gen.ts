@@ -1861,7 +1861,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Member Restored Email */
+        patch: operations["community_message_templates_member_restored_email_update_member_restored_email"];
         trace?: never;
     };
     "/api/community/official-event-defaults/": {
@@ -4991,6 +4992,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** MemberRestoredEmailPatchIn */
+        MemberRestoredEmailPatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
@@ -11745,6 +11751,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberRestoredEmailOut"];
+                };
+            };
+        };
+    };
+    community_message_templates_member_restored_email_update_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRestoredEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
