@@ -39,7 +39,7 @@ def _neutral() -> Status:
     return Status(200, ResendManageLinkOut(detail=NEUTRAL_RESPONSE))
 
 
-def _find_non_member(phone: str) -> User | None:
+def _find_public_rsvper(phone: str) -> User | None:
     """Find the non-member User matching this phone. None if no match, a member, or paused."""
     match = User.objects.filter(phone_number=phone).first()
     if match and (match.is_member or match.is_paused):
@@ -101,7 +101,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
     except ValidationException:
         return _neutral()
 
-    user = _find_non_member(validated_phone)
+    user = _find_public_rsvper(validated_phone)
     if user is not None and user.email:
         _send_manage_link(request, user)
         audit_log(

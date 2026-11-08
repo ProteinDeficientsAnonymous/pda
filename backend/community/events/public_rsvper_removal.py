@@ -9,7 +9,7 @@ from community.rsvps.public_shared import email_details, log_email_failure
 from community.validation import Code, raise_validation
 
 
-def ineligible_non_member_rsvps(event: Event):
+def ineligible_public_rsvper_rsvps(event: Event):
     """Non-member RSVPs (any status) on `event` not already REMOVED."""
     rsvps = EventRSVP.objects.filter(event=event, user__is_member=False).exclude(
         status=RSVPStatus.REMOVED
@@ -20,9 +20,9 @@ def ineligible_non_member_rsvps(event: Event):
     return rsvps
 
 
-def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[str]:
+def guard_or_remove_ineligible_public_rsvpers(event: Event, force: bool) -> list[str]:
     """Remove non-member RSVPs when forced, else raise 409 with the count."""
-    rsvps = list(ineligible_non_member_rsvps(event))
+    rsvps = list(ineligible_public_rsvper_rsvps(event))
     if not rsvps:
         return []
     if not force:
@@ -34,8 +34,8 @@ def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[st
     return user_ids
 
 
-def email_removed_non_members(request, event: Event, removed_user_ids: list[str]) -> None:
-    """Email any removed non-members. Best-effort per user, mirrors email_promoted_users."""
+def email_removed_public_rsvpers(request, event: Event, removed_user_ids: list[str]) -> None:
+    """Email any removed public rsvpers. Best-effort per user, mirrors email_promoted_users."""
     if not removed_user_ids:
         return
     # This email and its join pitch are for people without an account.

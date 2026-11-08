@@ -77,7 +77,7 @@ def email_member_rsvp_status(request, event: Event, user: User, status: str) -> 
     _send_member_email(request, event, user, "attending")
 
 
-def _email_non_member(
+def _email_public_rsvper(
     request, event: Event, user: User, send: Callable[[RsvpEmailDetails], SendResult]
 ) -> None:
     try:
@@ -98,7 +98,7 @@ def email_host_set_rsvp_status(
     if str(user.pk) in _member_email_ids(event, [str(user.pk)]):
         _send_member_email(request, event, user, "attending")
         return
-    _email_non_member(
+    _email_public_rsvper(
         request,
         event,
         user,
@@ -108,8 +108,8 @@ def email_host_set_rsvp_status(
     )
 
 
-def _email_promoted_non_member(request, event: Event, user: User, payment_pending: bool) -> None:
-    _email_non_member(
+def _email_promoted_public_rsvper(request, event: Event, user: User, payment_pending: bool) -> None:
+    _email_public_rsvper(
         request,
         event,
         user,
@@ -133,4 +133,4 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
         if str(user.id) in member_email_ids:
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:
-            _email_promoted_non_member(request, event, user, payment_pending)
+            _email_promoted_public_rsvper(request, event, user, payment_pending)
