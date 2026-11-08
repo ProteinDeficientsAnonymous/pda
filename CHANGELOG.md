@@ -1,3 +1,10 @@
+## [0.226.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.1...v0.226.2) (2026-11-08)
+
+
+### Performance Improvements
+
+* 1925 - reorder join form questions in one update ([#1939](https://github.com/ProteinDeficientsAnonymous/pda/issues/1939)) ([a528315](https://github.com/ProteinDeficientsAnonymous/pda/commit/a528315b0c5794eb90c7e39e1481e53703e483f0))
+
 ## [0.226.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.226.0...v0.226.1) (2026-11-08)
 
 
