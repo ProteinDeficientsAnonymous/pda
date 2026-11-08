@@ -206,6 +206,52 @@ describe('EventSpeechScreen', () => {
     expect(within(container as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
   });
 
+  it('zooms the reading view in and out within bounds and remembers the size', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: SAVED_WALK });
+    const user = userEvent.setup();
+    const { unmount } = renderScreen();
+
+    const text = await screen.findByText('welcome, ann and bo');
+    const zoomed = text.closest('.prose')!.parentElement!;
+    const zoomIn = screen.getByRole('button', { name: 'zoom in' });
+    const zoomOut = screen.getByRole('button', { name: 'zoom out' });
+    expect(zoomed.style.zoom).toBe('1');
+    expect(zoomOut).toBeDisabled();
+
+    await user.click(zoomIn);
+    expect(zoomed.style.zoom).toBe('1.25');
+    expect(zoomOut).toBeEnabled();
+
+    for (let i = 0; i < 5; i++) await user.click(zoomIn);
+    expect(zoomed.style.zoom).toBe('2');
+    expect(zoomIn).toBeDisabled();
+
+    await user.click(zoomOut);
+    expect(zoomed.style.zoom).toBe('1.75');
+    unmount();
+
+    renderScreen();
+    const reloaded = await screen.findByText('welcome, ann and bo');
+    expect(reloaded.closest('.prose')!.parentElement!.style.zoom).toBe('1.75');
+  });
+
+  it('ignores an invalid stored zoom', async () => {
+    localStorage.setItem('pda-speech-zoom', 'huge');
+    vi.mocked(apiClient.get).mockResolvedValue({ data: SAVED_WALK });
+    renderScreen();
+
+    const text = await screen.findByText('welcome, ann and bo');
+    expect(text.closest('.prose')!.parentElement!.style.zoom).toBe('1');
+  });
+
+  it('hides the zoom buttons while editing', async () => {
+    renderScreen();
+
+    expect(await screen.findByLabelText('facilitators')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'zoom in' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'zoom out' })).not.toBeInTheDocument();
+  });
+
   it('explains a hosts-only error', async () => {
     vi.mocked(apiClient.get).mockRejectedValue(httpError(403, Code.Speech.HostsOnly));
     renderScreen();

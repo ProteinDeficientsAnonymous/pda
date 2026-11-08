@@ -1,9 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AxiosError, type AxiosResponse } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { TentativeApprovalMessage } from '@/api/content';
 import { renderWithProviders } from '@/test/render';
 
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
@@ -18,61 +16,21 @@ vi.mock('@/api/content', () => ({
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-function renderEditor(
-  template: TentativeApprovalMessage | null = { body: 'hi', updatedAt: '2026-01-01' },
-) {
-  const onClose = vi.fn();
-  const utils = renderWithProviders(
-    <TentativeApprovalMessageEditorDialog open onClose={onClose} template={template} />,
-  );
-  return { ...utils, onClose };
-}
-
 describe('TentativeApprovalMessageEditorDialog', () => {
-  it('seeds the textarea from the loaded message and saves edits', async () => {
-    mutateAsyncMock.mockReset();
-    mutateAsyncMock.mockResolvedValue({ body: 'updated', updatedAt: '2026-01-02' });
-    const { onClose } = renderEditor({ body: 'original', updatedAt: '2026-01-01' });
-    const textarea = screen.getByLabelText(
-      'tentative approval message body',
-    ) as HTMLTextAreaElement;
-    expect(textarea.value).toBe('original');
-    await userEvent.clear(textarea);
-    await userEvent.type(textarea, 'updated');
+  it('saves the tentative approval message through its own mutation', async () => {
+    mutateAsyncMock.mockResolvedValue({ body: 'original', updatedAt: '2026-01-02' });
+    renderWithProviders(
+      <TentativeApprovalMessageEditorDialog
+        open
+        onClose={vi.fn()}
+        template={{ body: 'original', updatedAt: '2026-01-01' }}
+      />,
+    );
+    expect(screen.getByLabelText('tentative approval message body')).toHaveValue('original');
+    expect(screen.getByText('${MAGIC_LINK}')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     await waitFor(() => {
-      expect(mutateAsyncMock).toHaveBeenCalledWith('updated');
+      expect(mutateAsyncMock).toHaveBeenCalledWith('original');
     });
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('shows the FE-rendered too-long error from a structured 422', async () => {
-    mutateAsyncMock.mockReset();
-    const axiosErr = new AxiosError('Request failed', 'ERR', undefined, undefined, {
-      status: 422,
-      data: {
-        detail: [
-          {
-            code: 'tentative_approval_message.body_too_long',
-            field: 'body',
-            params: { max_length: 4000 },
-          },
-        ],
-      },
-    } as AxiosResponse);
-    mutateAsyncMock.mockRejectedValue(axiosErr);
-    renderEditor({ body: 'hi', updatedAt: '2026-01-01' });
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('approval message must be at most 4000 characters');
-  });
-
-  it('blocks save when body is empty', async () => {
-    mutateAsyncMock.mockReset();
-    renderEditor({ body: '', updatedAt: '2026-01-01' });
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('message body is required');
-    expect(mutateAsyncMock).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import icalendar
 from config.auth import gated_jwt
+from django.conf import settings
 from django.db.models import Prefetch, Q
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
@@ -139,9 +140,7 @@ def calendar_feed(request, token: str = ""):
     if user is None:
         return HttpResponse("Invalid token.", status=403, content_type="text/plain")
 
-    cal = icalendar.Calendar()
-    cal.add("prodid", "-//PDA//PDA Calendar//EN")
-    cal.add("version", "2.0")
+    cal = _new_calendar()
     cal.add("x-wr-calname", "PDA Events")
 
     for event in _feed_events(user):
@@ -153,6 +152,7 @@ def calendar_feed(request, token: str = ""):
         # The feed is authenticated via the per-user calendar token, so the
         # subscriber is a known member and gets full member-only data.
         cal.add_component(_build_vevent(event, request, is_authed=True))
+    cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
@@ -185,10 +185,9 @@ def single_event_ics(request, event_id: str):
     except ValidationException as exc:
         return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
-    cal = icalendar.Calendar()
-    cal.add("prodid", "-//PDA//PDA Calendar//EN")
-    cal.add("version", "2.0")
+    cal = _new_calendar()
     cal.add_component(_build_vevent(event, request, is_authed=is_authed))
+    cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = f'inline; filename="{_ics_filename(event)}"'
@@ -204,16 +203,24 @@ def _ics_filename(event) -> str:
     return f"event-{event.id}.ics"
 
 
+def _new_calendar() -> icalendar.Calendar:
+    cal = icalendar.Calendar()
+    cal.add("prodid", "-//PDA//PDA Calendar//EN")
+    cal.add("version", "2.0")
+    cal.add("x-wr-timezone", settings.COMMUNITY_TZ.key)
+    return cal
+
+
 def _build_vevent(event, request: HttpRequest, is_authed: bool):
     vevent = icalendar.Event()
     vevent.add("uid", f"{event.id}@pda")
     vevent.add("dtstamp", timezone.now())
     if event.start_datetime:
-        vevent.add("dtstart", event.start_datetime)
-        vevent.add(
-            "dtend",
-            event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION,
-        )
+        # UTC times make iOS Calendar duplicate events in GMT (#1993).
+        start = event.start_datetime.astimezone(settings.COMMUNITY_TZ)
+        end = event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION
+        vevent.add("dtstart", start)
+        vevent.add("dtend", end.astimezone(settings.COMMUNITY_TZ))
     vevent.add("summary", event.title)
     target_url = request.build_absolute_uri(f"/events/{event.slug or event.id}")
     desc = _event_ics_description(event, target_url, is_authed)
