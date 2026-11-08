@@ -5506,6 +5506,25 @@
         "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
+      "MemberRestoredEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberRestoredEmailOut",
+        "type": "object"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -16269,6 +16288,33 @@
           }
         ],
         "summary": "Update Member Promotion Message",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-restored-email/": {
+      "get": {
+        "operationId": "community_message_templates_member_restored_email_get_member_restored_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Restored Email",
         "tags": [
           "community"
         ]
