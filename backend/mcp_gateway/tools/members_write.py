@@ -31,9 +31,9 @@ async def _member(member_id: UUID) -> User:
         "event (official and club too) where others host, moves events they host alone back "
         "to draft (guests are told), and strips their roles. lifting it restores membership "
         "and the member role only, silently; nothing removed is put back. the first call "
-        "changes nothing and returns the member, the events affected (each with role rsvp or "
-        "hosting and outcome kept, removed or drafted) and a confirm_token: show that, get an "
-        "explicit yes, then call again with the same arguments and the token."
+        "changes nothing and returns the member, the events affected (each with a role and "
+        "outcome: rsvp kept or removed, hosting removed or drafted) and a confirm_token: show "
+        "that, get an explicit yes, then call again with the same arguments and the token."
     ),
 )
 async def set_attendance_pause(

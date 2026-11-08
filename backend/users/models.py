@@ -175,6 +175,7 @@ class User(AbstractUser):
     is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
+    unpaused_at = models.DateTimeField(null=True, blank=True)
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -370,14 +371,15 @@ class NonMemberRsvpToken(models.Model):
     def resolve_user(cls, token: str) -> "User | None":
         """Resolve a token string to its User, or None if the token is unusable.
 
-        Returns None when the token is unknown, expired (expires_at < now), or
-        revoked (revoked_at set). Endpoints in stages 3/4 reuse this and map a
-        None result to their own 404. Never logs the user in.
+        Returns None when the token is unknown, expired (expires_at < now),
+        revoked (revoked_at set), or its user is guidelines-paused. Endpoints in
+        stages 3/4 reuse this and map a None result to their own 404. Never logs
+        the user in.
         """
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid:
+        if row is None or not row.is_valid or row.user.is_paused:
             return None
         return row.user
 

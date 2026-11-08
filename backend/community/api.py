@@ -50,6 +50,7 @@ from community.message_templates.member_promotion_email import (
 from community.message_templates.member_promotion_message import (
     router as member_promotion_message_router,
 )
+from community.message_templates.member_restored_email import router as member_restored_email_router
 from community.message_templates.rejection_email import router as rejection_email_router
 from community.message_templates.tentative_approval import (
     router as tentative_approval_message_router,
@@ -114,6 +115,7 @@ router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
 router.add_router("", member_promotion_message_router)
 router.add_router("", member_promotion_email_router)
+router.add_router("", member_restored_email_router)
 router.add_router("", rejection_email_router)
 router.add_router("", whatsapp_link_router)
 router.add_router("", speech_template_router)

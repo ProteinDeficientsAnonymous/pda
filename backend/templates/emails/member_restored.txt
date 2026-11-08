@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+welcome back — your membership is restored!
+
+{% autoescape off %}{{ message_body }}{% endautoescape %}
+
+log in here: {{ login_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
