@@ -1,4 +1,4 @@
-from community.events.tentative_member_access import is_limited
+from community.events.limited_access import is_limited
 from community.validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.media_proxy import media_path

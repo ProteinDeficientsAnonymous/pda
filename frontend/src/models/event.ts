@@ -241,7 +241,7 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
-// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
+// Mirrors backend LIMITED_ACCESS_EVENT_TYPES.
 const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
 
 export function canTentativeMemberRsvp(event: Event): boolean {
