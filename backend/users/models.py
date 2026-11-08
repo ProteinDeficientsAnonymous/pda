@@ -23,10 +23,14 @@ PUBLIC_FORM_PHONE_REGION = None
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
-def signed_in_non_member_q() -> Q:
-    """Non-members who can sign in: a TENTATIVE join request, or attendance-paused."""
+def can_sign_in_q() -> Q:
+    """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
     tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-    return Q(is_member=False) & (Exists(tentative) | Q(attendance_paused_at__isnull=False))
+    return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
+
+
+def signed_in_non_member_q() -> Q:
+    return Q(is_member=False) & can_sign_in_q()
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
