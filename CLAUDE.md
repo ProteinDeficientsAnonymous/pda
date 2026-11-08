@@ -60,6 +60,8 @@ Full API: see `/api/openapi.json` when the server is running. Run `make frontend
 
 Routes: see `.claude/docs/routes.md`
 
+User states and transitions (public rsvper → member → paused/archived): see `.claude/docs/user-states.md`; what each type can do: `.claude/docs/user-capabilities.md`
+
 ## Environment
 
 - **Dev database**: Prefer Docker-free per-worktree SQLite via `make dev-sqlite` / `make run-sqlite` (gitignored `dev.db` at the worktree root). Use per-worktree Postgres via `make dev-pg` / `make run-pg` **only when local verification depends on actual Postgres features** that SQLite cannot exercise — e.g. SSE live notifications (`/api/notifications/stream/` uses `pg_notify`; returns 503 on SQLite). One shared Docker Postgres container; each worktree gets its own database (name in gitignored `.dev-pg-db-name`). `make dev` / `make run` still use the shared `DATABASE_URL` from `.env` (typically `pda` on localhost:5432).
