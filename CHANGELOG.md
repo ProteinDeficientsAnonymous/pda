@@ -1,3 +1,10 @@
+## [0.222.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.2...v0.222.3) (2026-11-08)
+
+
+### Bug Fixes
+
+* emit calendar ICS times in community timezone ([#2186](https://github.com/ProteinDeficientsAnonymous/pda/issues/2186)) ([9f951f0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f951f0578f082c28e4a3f3744ddac0f3222efb9))
+
 ## [0.222.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.1...v0.222.2) (2026-11-08)
 
 
