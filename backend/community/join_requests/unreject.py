@@ -7,7 +7,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
-from community.join_requests.manage import JoinRequestOut, _join_request_out
+from community.join_requests.manage import JoinRequestOut, join_request_out
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -45,6 +45,11 @@ def unreject_join_request(request, id: UUID):
 
     if join_request.status != JoinRequestStatus.REJECTED:
         raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
+    if JoinRequest.objects.filter(
+        phone_number=join_request.phone_number,
+        status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+    ).exists():
+        raise_validation(Code.JoinRequest.OPEN_REQUEST_EXISTS, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
     join_request.rejection_reason = ""
@@ -62,4 +67,4 @@ def unreject_join_request(request, id: UUID):
         ),
     )
 
-    return Status(200, _join_request_out(join_request))
+    return Status(200, join_request_out(join_request))

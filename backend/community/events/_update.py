@@ -4,14 +4,15 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.utils import timezone
 
-from community.cohosts.helpers import _update_co_hosts
+from community.cohosts.helpers import update_co_hosts
 from community.events.helpers import (
-    _can_edit_event,
-    _enforce_type_tag_permission,
-    _is_invalid_typed_visibility,
-    _set_event_tags,
+    can_edit_event,
+    enforce_type_tag_permission,
+    is_invalid_typed_visibility,
+    set_event_tags,
+    validated_event_format,
 )
-from community.models import Event, EventSlugAlias, is_official_or_club
+from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
 from community.rsvps.waitlist import promote_from_waitlist
 from community.validation import Code, raise_validation
@@ -32,10 +33,10 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
     """Validate PATCH payload fields. Raises ValidationException on failure."""
     if "event_type" in updates:
-        _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
+        enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_typed_visibility(effective_type, effective_visibility):
+    if is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
     # While a poll is active, the poll is the source of truth for when. Block
     # direct edits to start/end so the event time can't drift from the poll.
@@ -61,7 +62,7 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     _validate_event_datetimes(effective_start, effective_end, effective_tbd, check_past=check_past)
 
 
-def _promote_if_capacity_increased(
+def promote_if_capacity_increased(
     event: Event, updates: dict, old_max_attendees: int | None
 ) -> list[str]:
     """Promote waitlisted users if `max_attendees` grew. Must run inside the locked transaction."""
@@ -85,8 +86,18 @@ def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
         updates["allow_plus_ones"] = False
 
 
-def _guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
-    if _can_edit_event(request.auth, event):
+def _resolve_event_format(event: Event, updates: dict) -> None:
+    """Treat a null format as unchanged, and clear the format when the event stops being official."""
+    effective_type = updates.get("event_type", event.event_type)
+    validated_event_format(updates.get("event_format"), effective_type)
+    if updates.get("event_format", "") is None:
+        del updates["event_format"]
+    if effective_type != EventType.OFFICIAL and event.event_format:
+        updates["event_format"] = ""
+
+
+def guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
+    if can_edit_event(request.auth, event):
         return
     audit_log(
         logging.WARNING,
@@ -118,7 +129,7 @@ def _apply_slug_update(event: Event, updates: dict) -> None:
     rename_event_slug(event, new_slug)
 
 
-def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
+def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
     """Apply non-status field edits to an event. Raises ValidationException on failure."""
     if not updates:
         return
@@ -127,6 +138,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)
     _lock_typed_plus_ones(event, updates)
+    _resolve_event_format(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())
@@ -138,9 +150,9 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
-        _update_co_hosts(event, co_host_ids, request.auth)
+        update_co_hosts(event, co_host_ids, request.auth)
     if tag_ids is not None:
-        _set_event_tags(event, tag_ids)
+        set_event_tags(event, tag_ids)
     event.save()
     audit_log(
         logging.INFO,

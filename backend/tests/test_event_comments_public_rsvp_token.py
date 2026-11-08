@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._time import future_iso
 
@@ -18,7 +18,7 @@ def event(db, test_user):
 
 
 @pytest.fixture
-def non_member_rsvpd(db, event):
+def public_rsvper(db, event):
     user = User.objects.create_user(
         phone_number="+12025550177",
         first_name="Non",
@@ -33,27 +33,29 @@ def non_member_rsvpd(db, event):
 
 
 @pytest.fixture
-def non_member_token(non_member_rsvpd):
-    return NonMemberRsvpToken.issue(non_member_rsvpd).token
+def public_rsvper_token(public_rsvper):
+    return PublicRsvpToken.issue(public_rsvper).token
 
 
 @pytest.mark.django_db
-class TestNonMemberTokenComments:
-    def test_list_comments_with_token_reports_can_post(self, api_client, event, non_member_token):
+class TestPublicRsvpTokenComments:
+    def test_list_comments_with_token_reports_can_post(
+        self, api_client, event, public_rsvper_token
+    ):
         response = api_client.get(
-            f"/api/community/events/{event.id}/comments/", {"token": non_member_token}
+            f"/api/community/events/{event.id}/comments/", {"token": public_rsvper_token}
         )
         assert response.status_code == 200, response.content
         body = response.json()
         assert body["can_post"] is True
         assert body["cannot_post_reason"] is None
 
-    def test_post_comment_with_token_succeeds(self, api_client, event, non_member_token):
+    def test_post_comment_with_token_succeeds(self, api_client, event, public_rsvper_token):
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             {"body": "hi from a non-member"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         assert response.status_code == 201, response.content
         assert response.json()["body"] == "hi from a non-member"
@@ -68,7 +70,7 @@ class TestNonMemberTokenComments:
         user.set_unusable_password()
         user.save(update_fields=["password"])
         EventRSVP.objects.create(event=other_event, user=user, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue(user).token
+        token = PublicRsvpToken.issue(user).token
 
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
@@ -78,48 +80,48 @@ class TestNonMemberTokenComments:
         )
         assert response.status_code == 403, response.content
 
-    def test_post_reply_with_token_succeeds(self, api_client, event, non_member_token):
+    def test_post_reply_with_token_succeeds(self, api_client, event, public_rsvper_token):
         post_resp = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             {"body": "top level"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         comment_id = post_resp.json()["id"]
         reply_resp = api_client.post(
             f"/api/community/events/{event.id}/comments/{comment_id}/replies/",
             {"body": "a reply"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         assert reply_resp.status_code == 201, reply_resp.content
 
-    def test_delete_own_comment_with_token_succeeds(self, api_client, event, non_member_token):
+    def test_delete_own_comment_with_token_succeeds(self, api_client, event, public_rsvper_token):
         post_resp = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             {"body": "delete me"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         comment_id = post_resp.json()["id"]
         delete_resp = api_client.delete(
             f"/api/community/events/{event.id}/comments/{comment_id}/",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         assert delete_resp.status_code == 204, delete_resp.content
 
-    def test_react_with_token_succeeds(self, api_client, event, non_member_token):
+    def test_react_with_token_succeeds(self, api_client, event, public_rsvper_token):
         post_resp = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             {"body": "react to me"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         comment_id = post_resp.json()["id"]
         react_resp = api_client.post(
             f"/api/community/events/{event.id}/comments/{comment_id}/reactions/",
             {"emoji": "🌱"},
             content_type="application/json",
-            QUERY_STRING=f"token={non_member_token}",
+            QUERY_STRING=f"token={public_rsvper_token}",
         )
         assert react_resp.status_code == 200, react_resp.content

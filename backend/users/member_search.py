@@ -37,6 +37,13 @@ class MemberFilters(BaseModel):
         description="statuses to include; default active and still_onboarding (everyone who can "
         "sign in); add paused for everyone not archived",
     )
+    name: str | None = Field(
+        None,
+        min_length=1,
+        max_length=100,
+        description="every word appears in their first or last name, ignoring case, so "
+        "'sam' or 'sam lee' both find sam lee",
+    )
     joined_within_days: Days = Field(None, description="membership started in the last n days")
     never_logged_in: bool | None = Field(
         None, description=f"true: never signed in. false: signed in at least once. {_SIGN_IN}"
@@ -66,6 +73,8 @@ class MemberFilters(BaseModel):
 
 def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
     yield Q(status__in=f.status)
+    for word in (f.name or "").split():
+        yield Q(first_name__icontains=word) | Q(last_name__icontains=word)
     if f.joined_within_days is not None:
         yield Q(member_since__gte=now - timedelta(days=f.joined_within_days))
     if f.never_logged_in is not None:
@@ -84,7 +93,7 @@ def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
         yield Q(whatsapp_reminder_opt_out=f.whatsapp_reminder_opt_out)
 
 
-def _qualifying_rsvps() -> QuerySet[EventRSVP]:
+def qualifying_rsvps() -> QuerySet[EventRSVP]:
     # Correlated subqueries, not joined aggregates, so a member is still one row for count/paging.
     return EventRSVP.objects.filter(qualifying_attendance_q(), user=OuterRef("pk"))
 
@@ -95,7 +104,7 @@ def with_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
     param(qs): users to annotate
     return(QuerySet[User]): qs with a last_qualifying_at datetime
     """
-    latest = _qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
+    latest = qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
     return qs.annotate(last_qualifying_at=Subquery(latest[:1]))
 
 
@@ -107,7 +116,7 @@ def with_qualifying_count(qs: QuerySet[User], now: datetime) -> QuerySet[User]:
     return(QuerySet[User]): qs with a qualifying_count_12mo int
     """
     counted = (
-        _qualifying_rsvps()
+        qualifying_rsvps()
         .filter(event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS))
         .order_by()
         .values("user")

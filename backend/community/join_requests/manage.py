@@ -16,14 +16,15 @@ from pydantic import BaseModel, Field
 from users.models import User
 from users.permissions import PermissionKey
 
-from community.attendance.analytics import attended_events
+from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
-    _provision_approved_user,
-    _provision_tentative_user,
+    provision_approved_user,
+    provision_tentative_user,
     send_join_approval,
 )
+from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import (
     AttendanceStatus,
     EventRSVP,
@@ -38,10 +39,6 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
-# Approved/tentative members stay in the join requests list until they've been
-# onboarded this many days AND are marked as having joined the whatsapp.
-APPROVED_GRACE_DAYS = 7
-
 
 class JoinRequestAnswerOut(BaseModel):
     question_id: str
@@ -53,13 +50,6 @@ class JoinRequestRsvpOut(BaseModel):
     event_id: str
     title: str
     start_datetime: datetime | None = None
-
-
-class JoinRequestAttendedEventOut(BaseModel):
-    event_id: str
-    title: str
-    start_datetime: datetime | None = None
-    event_type: str
 
 
 class JoinRequestOut(BaseModel):
@@ -81,6 +71,8 @@ class JoinRequestOut(BaseModel):
     tentative_by_name: str | None = None
     approved_at: datetime | None = None
     approved_by_name: str | None = None
+    approved_via_event_id: str | None = None
+    approved_via_event_title: str | None = None
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     rejection_reason: str = ""
@@ -96,7 +88,7 @@ class JoinRequestOut(BaseModel):
     upcoming_club_count: int = 0
     rsvp_events: list[JoinRequestRsvpOut] = []
     # all-event-types attended history for vetting
-    attended_events: list[JoinRequestAttendedEventOut] = []
+    attended_events: list[AttendedEventOut] = []
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -195,21 +187,6 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
-def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
-    """All-event-types attendance history for vetting."""
-    if user is None:
-        return []
-    return [
-        JoinRequestAttendedEventOut(
-            event_id=e.event_id,
-            title=e.title,
-            start_datetime=e.start_datetime,
-            event_type=e.event_type,
-        )
-        for e in attended_events(_user_event_rsvps(user))
-    ]
-
-
 class PhoneLookups(NamedTuple):
     users_by_phone: dict[str, User]
     rejected_counts: Counter[str]
@@ -243,7 +220,14 @@ def _phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
     )
 
 
-def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
+def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
+    event = jr.approved_via_event
+    if event is None:
+        return {"approved_via_event_id": None, "approved_via_event_title": None}
+    return {"approved_via_event_id": str(event.id), "approved_via_event_title": event.title}
+
+
+def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
@@ -268,6 +252,7 @@ def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> J
         tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
         approved_at=jr.approved_at,
         approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
+        **_approving_event_fields(jr),
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         rejection_reason=jr.rejection_reason,
@@ -281,8 +266,21 @@ def _join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> J
         rsvp_events=_rsvp_events(user),
         # Only attribute per-event attendance history to a confidently-linked
         # account. A bare phone match could be a different guest (Issue 1107).
-        attended_events=_join_request_attended_events(jr.user),
+        attended_events=attended_events(_user_event_rsvps(jr.user)) if jr.user else [],
     )
+
+
+_ADMITTED_STATUSES = (JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE)
+
+
+def _superseded_by_pause(jr: JoinRequest, lookups: PhoneLookups) -> bool:
+    """A pause clears has_joined_whatsapp, so rows decided before it would otherwise reappear."""
+    user = lookups.users_by_phone.get(jr.phone_number)
+    if user is None or jr.status not in _ADMITTED_STATUSES:
+        return False
+    decided_at = jr.approved_at or jr.tentative_at or jr.submitted_at
+    stamps = (user.attendance_paused_at, user.restored_at)
+    return any(stamp is not None and stamp > decided_at for stamp in stamps)
 
 
 @router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=gated_jwt)
@@ -302,7 +300,7 @@ def list_join_requests(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
-    cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
+    cutoff = timezone.now() - timedelta(days=WHATSAPP_GRACE_DAYS)
     # Legacy users onboarded before onboarded_at existed have it as null;
     # treat them as past the grace window.
     expired_phones = User.objects.filter(
@@ -312,17 +310,18 @@ def list_join_requests(request):
     ).values_list("phone_number", flat=True)
     join_requests = (
         JoinRequest.objects.exclude(
-            status__in=[JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE],
+            status__in=_ADMITTED_STATUSES,
             phone_number__in=expired_phones,
         )
-        .select_related("user", "tentative_by", "approved_by", "rejected_by")
+        .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
     )
     join_requests = list(join_requests)
     lookups = _phone_lookups(join_requests)
-    return Status(200, [_join_request_out(jr, lookups) for jr in join_requests])
+    rows = [jr for jr in join_requests if not _superseded_by_pause(jr, lookups)]
+    return Status(200, [join_request_out(jr, lookups) for jr in rows])
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
@@ -370,10 +369,10 @@ def _apply_status_transition(
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
-            _, magic_token = _provision_tentative_user(join_request, actor)
+            _, magic_token = provision_tentative_user(join_request, actor)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = _provision_approved_user(
+            magic_token, user_created = provision_approved_user(
                 join_request, actor, was_tentative=was_tentative
             )
             return join_request, magic_token, user_created, was_tentative

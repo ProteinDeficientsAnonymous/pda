@@ -325,6 +325,22 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
+      "AttendancePausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "AttendancePausePreviewOut",
+        "type": "object"
+      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -357,6 +373,41 @@
         ],
         "title": "AttendanceStatus",
         "type": "string"
+      },
+      "AttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "AttendedEventOut",
+        "type": "object"
       },
       "AttendedPersonOut": {
         "properties": {
@@ -2097,6 +2148,18 @@
             ],
             "title": "End Datetime"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "event_type": {
             "default": "community",
             "maxLength": 20,
@@ -2572,6 +2635,17 @@
             ],
             "title": "End Datetime"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "event_type": {
             "default": "community",
             "title": "Event Type",
@@ -2923,6 +2997,18 @@
               }
             ],
             "title": "End Datetime"
+          },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
           },
           "event_type": {
             "anyOf": [
@@ -3570,6 +3656,109 @@
           "questions"
         ],
         "title": "EventRsvpQuestionSyncPayload",
+        "type": "object"
+      },
+      "EventSpeechIn": {
+        "properties": {
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "values"
+        ],
+        "title": "EventSpeechIn",
+        "type": "object"
+      },
+      "EventSpeechOut": {
+        "properties": {
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "html": {
+            "title": "Html",
+            "type": "string"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_title",
+          "event_format",
+          "saved",
+          "values",
+          "html",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "EventSpeechOut",
         "type": "object"
       },
       "EventStatsOut": {
@@ -4238,6 +4427,7 @@
         "properties": {
           "question_ids": {
             "items": {
+              "format": "uuid",
               "type": "string"
             },
             "title": "Question Ids",
@@ -4321,41 +4511,6 @@
           "answer"
         ],
         "title": "JoinRequestAnswerOut",
-        "type": "object"
-      },
-      "JoinRequestAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "JoinRequestAttendedEventOut",
         "type": "object"
       },
       "JoinRequestIn": {
@@ -4447,6 +4602,28 @@
             ],
             "title": "Approved By Name"
           },
+          "approved_via_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Id"
+          },
+          "approved_via_event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Title"
+          },
           "attended_club_count": {
             "default": 0,
             "title": "Attended Club Count",
@@ -4455,7 +4632,7 @@
           "attended_events": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/JoinRequestAttendedEventOut"
+              "$ref": "#/components/schemas/AttendedEventOut"
             },
             "title": "Attended Events",
             "type": "array"
@@ -4676,6 +4853,40 @@
           "status"
         ],
         "title": "JoinRequestStatusIn",
+        "type": "object"
+      },
+      "JoinRequestSubmittedOut": {
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "full_name",
+          "status",
+          "submitted_at"
+        ],
+        "title": "JoinRequestSubmittedOut",
         "type": "object"
       },
       "LoginIn": {
@@ -5097,41 +5308,6 @@
         "title": "MemberAttendanceRowOut",
         "type": "object"
       },
-      "MemberAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "MemberAttendedEventOut",
-        "type": "object"
-      },
       "MemberDirectoryOut": {
         "properties": {
           "email": {
@@ -5330,6 +5506,42 @@
         "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
+      "MemberRestoredEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberRestoredEmailOut",
+        "type": "object"
+      },
+      "MemberRestoredEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberRestoredEmailPatchIn",
+        "type": "object"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -5509,6 +5721,62 @@
         ],
         "title": "OnboardingIn",
         "type": "object"
+      },
+      "PauseImpactEventOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PauseOutcome"
+          },
+          "role": {
+            "$ref": "#/components/schemas/PauseRole"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_datetime",
+          "role",
+          "outcome"
+        ],
+        "title": "PauseImpactEventOut",
+        "type": "object"
+      },
+      "PauseOutcome": {
+        "enum": [
+          "kept",
+          "removed",
+          "drafted"
+        ],
+        "title": "PauseOutcome",
+        "type": "string"
+      },
+      "PauseRole": {
+        "enum": [
+          "rsvp",
+          "hosting"
+        ],
+        "title": "PauseRole",
+        "type": "string"
       },
       "PendingCoHostInviteOut": {
         "properties": {
@@ -6320,6 +6588,93 @@
         "title": "ResetPasswordOut",
         "type": "object"
       },
+      "RestoredMemberOut": {
+        "properties": {
+          "came_in_person_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Came In Person At"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "has_joined_whatsapp": {
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReturnKind"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/AttendedEventOut"
+            },
+            "title": "Recent Events",
+            "type": "array"
+          },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "kind",
+          "restored_at",
+          "unpaused_at",
+          "came_in_person_at",
+          "has_joined_whatsapp",
+          "recent_events"
+        ],
+        "title": "RestoredMemberOut",
+        "type": "object"
+      },
+      "ReturnKind": {
+        "enum": [
+          "restored",
+          "unpaused"
+        ],
+        "title": "ReturnKind",
+        "type": "string"
+      },
       "RoleIn": {
         "properties": {
           "name": {
@@ -6468,6 +6823,99 @@
           "value"
         ],
         "title": "ShowIfOut",
+        "type": "object"
+      },
+      "SpeechTemplateOut": {
+        "properties": {
+          "open_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open Roles",
+            "type": "array"
+          },
+          "restaurant_pm": {
+            "title": "Restaurant Pm",
+            "type": "string"
+          },
+          "shared_pm": {
+            "title": "Shared Pm",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "walk_pm": {
+            "title": "Walk Pm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shared_pm",
+          "walk_pm",
+          "restaurant_pm",
+          "open_roles",
+          "updated_at"
+        ],
+        "title": "SpeechTemplateOut",
+        "type": "object"
+      },
+      "SpeechTemplatePatchIn": {
+        "properties": {
+          "open_roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Roles"
+          },
+          "restaurant_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restaurant Pm"
+          },
+          "shared_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared Pm"
+          },
+          "walk_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Walk Pm"
+          }
+        },
+        "title": "SpeechTemplatePatchIn",
         "type": "object"
       },
       "SseTicketOut": {
@@ -7519,6 +7967,18 @@
             "title": "Attendance Nudge Opt Out",
             "type": "boolean"
           },
+          "attendance_paused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused At"
+          },
           "attended_count": {
             "default": 0,
             "title": "Attended Count",
@@ -7698,6 +8158,18 @@
             "title": "Pronouns",
             "type": "string"
           },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
           "roles": {
             "items": {
               "$ref": "#/components/schemas/RoleOut"
@@ -7724,6 +8196,18 @@
             "default": true,
             "title": "Show Veganniversary",
             "type": "boolean"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
           },
           "veganniversary": {
             "anyOf": [
@@ -7767,6 +8251,17 @@
       },
       "UserPatchIn": {
         "properties": {
+          "attendance_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused"
+          },
           "email": {
             "anyOf": [
               {
@@ -9123,6 +9618,47 @@
         ]
       }
     },
+    "/api/auth/users/restored/": {
+      "get": {
+        "operationId": "users__restored_list_restored_members",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RestoredMemberOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Restored Members",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/search/": {
       "get": {
         "operationId": "users__management_search_users",
@@ -9310,6 +9846,64 @@
         ]
       }
     },
+    "/api/auth/users/{user_id}/attendance-pause-preview/": {
+      "get": {
+        "operationId": "users__attendance_pause_api_attendance_pause_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Pause Preview",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/{user_id}/attended-events/": {
       "get": {
         "operationId": "users__management_list_member_attended_events",
@@ -9330,7 +9924,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                    "$ref": "#/components/schemas/AttendedEventOut"
                   },
                   "title": "Response",
                   "type": "array"
@@ -14382,6 +14976,140 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/speech/": {
+      "get": {
+        "operationId": "community_speech_event_speech_get_event_speech",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSpeechOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Speech",
+        "tags": [
+          "community"
+        ]
+      },
+      "put": {
+        "operationId": "community_speech_event_speech_put_event_speech",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSpeechIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSpeechOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Put Event Speech",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/stats/": {
       "get": {
         "operationId": "community_events_host_actions_get_event_stats",
@@ -15239,7 +15967,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JoinRequestOut"
+                  "$ref": "#/components/schemas/JoinRequestSubmittedOut"
                 }
               }
             },
@@ -15717,6 +16445,88 @@
           }
         ],
         "summary": "Update Member Promotion Message",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-restored-email/": {
+      "get": {
+        "operationId": "community_message_templates_member_restored_email_get_member_restored_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Restored Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_message_templates_member_restored_email_update_member_restored_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRestoredEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Restored Email",
         "tags": [
           "community"
         ]
@@ -16387,6 +17197,78 @@
           }
         },
         "summary": "Request Login Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/speech-template/": {
+      "get": {
+        "operationId": "community_speech_template_get_speech_template",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Speech Template",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_speech_template_update_speech_template",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechTemplatePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Speech Template",
         "tags": [
           "community"
         ]

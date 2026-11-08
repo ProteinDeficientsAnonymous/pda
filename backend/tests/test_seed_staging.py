@@ -41,7 +41,7 @@ from community.models import (
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -231,7 +231,7 @@ def test_seed_staging_non_member_lifecycle_matches_specs():
         assert bool(user.email) is spec.has_email
         states["with_email" if spec.has_email else "no_email"] += 1
         states[spec.token_state] += 1
-        token = NonMemberRsvpToken.objects.filter(user=user).first()
+        token = PublicRsvpToken.objects.filter(user=user).first()
         if spec.token_state == TOKEN_NONE:
             assert token is None
         elif spec.token_state == TOKEN_EXPIRED:

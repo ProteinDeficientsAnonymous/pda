@@ -262,6 +262,11 @@
         "name": "SLUG_TAKEN",
         "value": "event.slug_taken",
         "params": []
+      },
+      {
+        "name": "INVALID_EVENT_FORMAT",
+        "value": "event.invalid_event_format",
+        "params": []
       }
     ],
     "Poll": [
@@ -851,6 +856,11 @@
         "params": []
       },
       {
+        "name": "OPEN_REQUEST_EXISTS",
+        "value": "join_request.open_request_exists",
+        "params": []
+      },
+      {
         "name": "ANSWER_REQUIRED",
         "value": "join_request.answer_required",
         "params": [
@@ -1183,6 +1193,20 @@
         ]
       }
     ],
+    "MemberRestoredEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "member_restored_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "member_restored_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
     "RejectionEmail": [
       {
         "name": "BODY_REQUIRED",
@@ -1207,6 +1231,49 @@
         "params": [
           "max_length"
         ]
+      }
+    ],
+    "SpeechTemplate": [
+      {
+        "name": "INVALID_DOC",
+        "value": "speech_template.invalid_doc",
+        "params": []
+      },
+      {
+        "name": "TOO_MANY_ROLES",
+        "value": "speech_template.too_many_roles",
+        "params": [
+          "max"
+        ]
+      },
+      {
+        "name": "ROLE_TOO_LONG",
+        "value": "speech_template.role_too_long",
+        "params": [
+          "max"
+        ]
+      }
+    ],
+    "Speech": [
+      {
+        "name": "FORMAT_REQUIRED",
+        "value": "speech.format_required",
+        "params": []
+      },
+      {
+        "name": "INVALID_VALUES",
+        "value": "speech.invalid_values",
+        "params": []
+      },
+      {
+        "name": "HOSTS_ONLY",
+        "value": "speech.hosts_only",
+        "params": []
+      },
+      {
+        "name": "OFFICIAL_EVENT_REQUIRED",
+        "value": "speech.official_event_required",
+        "params": []
       }
     ],
     "Connect": [

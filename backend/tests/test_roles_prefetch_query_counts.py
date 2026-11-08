@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventComment, EventRSVP, PageVisibility, RSVPStatus
-from community.shared import _optional_jwt
+from community.shared import optional_jwt
 from config.auth import gated_jwt
 from django.db import connection
 from django.test import RequestFactory
@@ -31,7 +31,7 @@ def _roles_queries(ctx: CaptureQueriesContext) -> int:
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("auth", [gated_jwt, _optional_jwt], ids=["gated", "optional"])
+@pytest.mark.parametrize("auth", [gated_jwt, optional_jwt], ids=["gated", "optional"])
 def test_has_permission_loads_roles_once(auth, test_user, django_assert_num_queries):
     token = str(RefreshToken.for_user(test_user).access_token)
     user = auth.authenticate(RequestFactory().get("/api/community/events/"), token)

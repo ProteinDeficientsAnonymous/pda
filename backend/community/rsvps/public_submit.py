@@ -12,25 +12,25 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
 
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
 from community.rsvps.member import (
-    _apply_rsvp_in_transaction,
-    _post_rsvp_comment,
-    _RsvpApply,
-    _validate_rsvp_status,
+    RsvpApply,
+    apply_rsvp_in_transaction,
     payment_audit_details,
+    post_rsvp_comment,
+    validate_rsvp_status,
 )
 from community.rsvps.public_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
-    _email_details,
-    _load_public_rsvp_event,
-    _log_email_failure,
+    email_details,
+    load_public_rsvp_event,
+    log_email_failure,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.shared import ErrorOut, validate_display_name
@@ -73,7 +73,7 @@ class PublicRsvpPhoneCheckOut(BaseModel):
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
     """Mimic a real submission's shape (no rows created, no email) so bots register success."""
     return PublicRsvpOut(
-        event=_event_out(event, None),
+        event=event_out(event, None),
         rsvp=PublicRsvpStateOut(status=status, has_plus_one=has_plus_one),
         rsvp_token="",
     )
@@ -90,10 +90,26 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _create_non_member(
+def _reject_if_paused_non_member(request, phone: str) -> None:
+    """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
+    user = User.objects.filter(
+        phone_number=phone, is_paused=True, is_member=False, archived_at__isnull=True
+    ).first()
+    if user is None:
+        return
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_paused_user_blocked",
+        request,
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
+
+
+def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Get-or-create the non-member User keyed on the unique phone number."""
+    """Get-or-create the public rsvper User keyed on the unique phone number."""
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
@@ -108,10 +124,10 @@ def _create_non_member(
     return user, created
 
 
-def _resolve_non_member(
+def _resolve_public_rsvper(
     *, request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Resolve (or create) the non-member User backing this RSVP.
+    """Resolve (or create) the public rsvper User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
     grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
@@ -132,7 +148,7 @@ def _resolve_non_member(
 
     if phone_match:
         return phone_match, False
-    return _create_non_member(request, first_name, last_name, email, phone)
+    return _create_public_rsvper(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -144,13 +160,13 @@ def _send_confirmation_email(
     try:
         result = send_rsvp_confirmation_email(
             sender=get_email_sender(),
-            details=_email_details(event, user, token_str),
+            details=email_details(event, user, token_str),
             waitlisted=waitlisted,
         )
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
     except Exception as exc:
-        _log_email_failure(request, event, user, exc)
+        log_email_failure(request, event, user, exc)
 
 
 _RECOGNIZED_EMAIL_COOLDOWN_SECONDS = 300
@@ -183,7 +199,7 @@ def _send_recognized_login_link(request, user: User) -> None:
         # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
         result = send_rsvp_manage_link_email(
@@ -213,7 +229,7 @@ def _send_recognized_login_link(request, user: User) -> None:
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     """Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended."""
-    _load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
+    load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
@@ -224,7 +240,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
-    if user.email:
+    # Paused still answers NON_MEMBER so the response can't reveal the pause; only the email is withheld.
+    if user.email and not user.is_paused:
         _send_recognized_login_link(request, user)
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
@@ -243,7 +260,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
 )
 @rate_limit(key_func=client_ip, rate="5/h")
 def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
-    event = _load_public_rsvp_event(event_id)
+    event = load_public_rsvp_event(event_id)
 
     # Honeypot trip — decoy 200 before validation, so bots get no feedback.
     if payload.website.strip():
@@ -263,26 +280,27 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         validate_display_name(last_name, field="last_name")
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
-    _validate_rsvp_status(payload.status)
+    validate_rsvp_status(payload.status)
+    _reject_if_paused_non_member(request, validated_phone)
 
     with transaction.atomic():
-        user, created = _resolve_non_member(
+        user, created = _resolve_public_rsvper(
             request=request,
             first_name=first_name,
             last_name=last_name,
             email=normalized_email,
             phone=validated_phone,
         )
-        final_status, promoted_user_ids, _previous_status = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, _previous_status = apply_rsvp_in_transaction(
             event.id,
             user,
-            _RsvpApply(
+            RsvpApply(
                 status=payload.status,
                 paid_confirmed=payload.paid_confirmed,
                 answers=payload.questionnaire_responses,
             ),
         )
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,
@@ -299,7 +317,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         ),
     )
 
-    _post_rsvp_comment(event.id, user, final_status, payload.comment)
+    post_rsvp_comment(event.id, user, final_status, payload.comment)
 
     waitlisted = final_status == RSVPStatus.WAITLISTED
     _send_confirmation_email(request, event, user, token.token, waitlisted)
@@ -317,7 +335,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     return Status(
         200,
         PublicRsvpOut(
-            event=_event_out(fresh_event, user),
+            event=event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
             rsvp_token=returned_token,
         ),

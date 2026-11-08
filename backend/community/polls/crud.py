@@ -18,7 +18,7 @@ from users.helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community.events.helpers import broadcast_capacity_change
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
     Event,
@@ -37,7 +37,7 @@ from community.polls._schemas import (
     EventPollVoteIn,
     VoterOut,
 )
-from community.shared import ErrorOut, _authenticated_user, _optional_jwt
+from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -50,7 +50,7 @@ MAX_POLL_OPTIONS = 10
 
 
 @contextmanager
-def _duplicate_option_time_guard():
+def duplicate_option_time_guard():
     """Map the unique (poll, datetime) constraint violation to a domain error.
 
     Both create and update of a poll option can collide on the unique
@@ -68,7 +68,7 @@ def _any_in_past(dts: list[datetime]) -> bool:
     return any(dt < cutoff for dt in dts)
 
 
-def _validate_poll_options(
+def validate_poll_options(
     dts: list[datetime], *, require_at_least_one: bool, require_at_least_two: bool = False
 ) -> None:
     """Raise ValidationException if the poll options are invalid."""
@@ -76,12 +76,12 @@ def _validate_poll_options(
         raise_validation(Code.Poll.OPTIONS_REQUIRED, status_code=400)
     if require_at_least_two and len(dts) < 2:
         raise_validation(Code.Poll.MIN_TWO_OPTIONS, status_code=400)
-    _check_option_cap(len(dts))
+    check_option_cap(len(dts))
     if _any_in_past(dts):
         raise_validation(Code.Poll.OPTIONS_MUST_BE_FUTURE, status_code=400)
 
 
-def _check_option_cap(option_count: int) -> None:
+def check_option_cap(option_count: int) -> None:
     if option_count > MAX_POLL_OPTIONS:
         raise_validation(Code.Poll.TOO_MANY_OPTIONS, status_code=400, max=MAX_POLL_OPTIONS)
 
@@ -97,7 +97,7 @@ def _get_visible_event(event_id: UUID) -> Event:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
 
-def _can_manage_poll(user, event: Event) -> bool:
+def can_manage_poll(user, event: Event) -> bool:
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     if user.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -145,8 +145,8 @@ def _build_my_votes(options, auth_user) -> dict[str, str]:
     return my_votes
 
 
-def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
-    auth_user = _authenticated_user(requesting_user)
+def poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
+    auth_user = authenticated_user(requesting_user)
     is_authed = auth_user is not None
     if "options" not in getattr(poll, "_prefetched_objects_cache", {}):
         prefetch_related_objects([poll], "options__votes__user")
@@ -177,7 +177,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_manage_poll(request.auth, event):
+    if not can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -194,10 +194,10 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if hasattr(event, "poll"):
         raise_validation(Code.Poll.EVENT_ALREADY_HAS_POLL, status_code=400)
-    _validate_poll_options(payload.options, require_at_least_one=True, require_at_least_two=True)
+    validate_poll_options(payload.options, require_at_least_one=True, require_at_least_two=True)
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
-        with _duplicate_option_time_guard():
+        with duplicate_option_time_guard():
             PollOption.objects.bulk_create(
                 PollOption(poll=poll, datetime=dt, display_order=i)
                 for i, dt in enumerate(payload.options)
@@ -220,17 +220,17 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             details={"event_id": str(event_id), "option_count": len(payload.options)},
         ),
     )
-    return Status(201, _poll_out(poll, request.auth))
+    return Status(201, poll_out(poll, request.auth))
 
 
 @router.get(
     "/events/{event_id}/poll/",
     response={200: EventPollOut, 403: ErrorOut, 404: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def get_event_poll(request, event_id: UUID):
     viewer = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(_get_visible_event(event_id), viewer)
+    enforce_event_read_visibility(_get_visible_event(event_id), viewer)
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -239,7 +239,7 @@ def get_event_poll(request, event_id: UUID):
         )
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
-    return Status(200, _poll_out(poll, viewer))
+    return Status(200, poll_out(poll, viewer))
 
 
 @router.post(
@@ -249,7 +249,7 @@ def get_event_poll(request, event_id: UUID):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
-    _enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
+    enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
     try:
         poll = EventPoll.objects.select_related("event").get(event_id=event_id, is_active=True)
     except EventPoll.DoesNotExist:
@@ -296,7 +296,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
         .prefetch_related("options__votes__user")
         .get(pk=poll.pk)
     )
-    return Status(200, _poll_out(poll_fresh, request.auth))
+    return Status(200, poll_out(poll_fresh, request.auth))
 
 
 @router.post(
@@ -310,7 +310,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_manage_poll(request.auth, event):
+    if not can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -357,7 +357,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         .prefetch_related("options__votes__user")
         .get(pk=poll.pk)
     )
-    return Status(200, _poll_out(poll_fresh, request.auth))
+    return Status(200, poll_out(poll_fresh, request.auth))
 
 
 @router.delete(
@@ -371,7 +371,7 @@ def delete_event_poll(request, event_id: UUID):
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if not _can_manage_poll(request.auth, event):
+    if not can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",

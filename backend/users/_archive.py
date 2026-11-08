@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from community.events.helpers import broadcast_capacity_change
 from community.models import (
     CoHostInviteStatus,
@@ -7,7 +9,7 @@ from community.models import (
     EventStatus,
     RSVPStatus,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from community.rsvps.status_emails import email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
 from django.db import transaction
@@ -15,15 +17,15 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
-from users.helpers import _strip_non_member_roles
+from users.helpers import strip_elevated_roles
 from users.models import User
 
-_HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
+HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
 
 
 def upcoming_events_q(prefix: str = "") -> Q:
-    return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~_is_past_q(timezone.now(), prefix)
+    return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~is_past_q(timezone.now(), prefix)
 
 
 def archive_user(request, user: User) -> list[str]:
@@ -37,17 +39,18 @@ def archive_user(request, user: User) -> list[str]:
         user.archived_at = timezone.now()
         user.calendar_token = ""
         user.save(update_fields=["archived_at", "calendar_token"])
-        removed_role_ids = _strip_non_member_roles(user)
-        _release_upcoming_rsvps(request, user)
-        _step_down_as_cohost(user)
+        removed_role_ids = strip_elevated_roles(user)
+        release_upcoming_rsvps(request, user)
+        step_down_as_cohost(user)
     return removed_role_ids
 
 
-def _release_upcoming_rsvps(request, user: User) -> None:
+def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
     event_ids = EventRSVP.objects.filter(
-        upcoming_events_q("event__"), user=user, status__in=_HELD_RSVP_STATUSES
+        upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
-    for event in Event.objects.select_for_update().filter(id__in=list(event_ids)):
+    events = Event.objects.select_for_update().filter(event_filter or Q(), id__in=list(event_ids))
+    for event in events:
         rsvp = EventRSVP.objects.get(event=event, user=user)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.status = RSVPStatus.CANT_GO
@@ -62,16 +65,23 @@ def _release_upcoming_rsvps(request, user: User) -> None:
         )
 
 
-def _step_down_as_cohost(user: User) -> None:
-    """Leave every upcoming event that has another host; sole-hosted events are left as-is."""
-    events = (
-        Event.objects.filter(upcoming_events_q(), pk__in=user.co_hosted_events.values("pk"))
-        .annotate(host_count=Count("co_hosts"))
-        .filter(host_count__gt=1)
-    )
+def upcoming_hosted_events(user: User):
+    return Event.objects.filter(
+        upcoming_events_q(), pk__in=user.co_hosted_events.values("pk")
+    ).annotate(host_count=Count("co_hosts"))
+
+
+def step_down_as_cohost(user: User, events: Iterable[Event] | None = None) -> None:
+    """Leave the given events, by default every upcoming one that has another host."""
+    if events is None:
+        events = upcoming_hosted_events(user).filter(host_count__gt=1)
     for event in events:
-        event.co_hosts.remove(user)
-        EventCoHostInvite.objects.filter(
-            event=event, user=user, status=CoHostInviteStatus.ACCEPTED
-        ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
+        leave_cohost(event, user)
         broadcast_cohost_change(event)
+
+
+def leave_cohost(event: Event, user: User) -> None:
+    event.co_hosts.remove(user)
+    EventCoHostInvite.objects.filter(
+        event=event, user=user, status=CoHostInviteStatus.ACCEPTED
+    ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())

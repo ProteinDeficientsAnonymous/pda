@@ -10,10 +10,10 @@ from ninja.files import UploadedFile
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
-from community.events.helpers import _event_out
+from community.events.helpers import event_out
 from community.events.schemas import (
-    _ALLOWED_IMAGE_TYPES,
-    _MAX_EVENT_PHOTO_SIZE,
+    ALLOWED_EVENT_PHOTO_TYPES,
+    MAX_EVENT_PHOTO_SIZE,
     EventOut,
 )
 from community.image_compress import EVENT_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
@@ -31,19 +31,19 @@ router = Router()
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
-    if photo.content_type not in _ALLOWED_IMAGE_TYPES:
+    if photo.content_type not in ALLOWED_EVENT_PHOTO_TYPES:
         raise_validation(
             Code.Photo.TYPE_NOT_ALLOWED,
             field="photo",
             status_code=400,
-            allowed=sorted(_ALLOWED_IMAGE_TYPES),
+            allowed=sorted(ALLOWED_EVENT_PHOTO_TYPES),
         )
-    if photo.size and photo.size > _MAX_EVENT_PHOTO_SIZE:
+    if photo.size and photo.size > MAX_EVENT_PHOTO_SIZE:
         raise_validation(
             Code.Photo.TOO_LARGE,
             field="photo",
             status_code=400,
-            max_mb=_MAX_EVENT_PHOTO_SIZE // (1024 * 1024),
+            max_mb=MAX_EVENT_PHOTO_SIZE // (1024 * 1024),
         )
     try:
         event = Event.objects.get(id=event_id)
@@ -77,4 +77,4 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         request,
         target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
