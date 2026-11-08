@@ -10,7 +10,7 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.db import transaction
+from django.db import DatabaseError, connection, transaction
 from django.http import JsonResponse, StreamingHttpResponse
 
 from notifications.models import SseTicket
@@ -20,6 +20,21 @@ logger = logging.getLogger("pda")
 _PG_CHANNEL = "notifications"
 _EVENT_UPDATES_CHANNEL = "event_updates"
 _HEARTBEAT_INTERVAL = 30  # seconds
+_READ_PAYLOAD_PREFIX = "read:"
+
+
+def notify_read_state_changed(user_id: str) -> None:
+    """Tell the user's other tabs/devices their read state changed so they refetch."""
+    if connection.vendor != "postgresql":
+        return
+    # Best-effort: the mark-read write already succeeded.
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT pg_notify('{_PG_CHANNEL}', %s)", [f"{_READ_PAYLOAD_PREFIX}{user_id}"]
+            )
+    except DatabaseError:
+        logger.warning("read-state ping failed", exc_info=True)
 
 
 @sync_to_async
@@ -59,6 +74,8 @@ def format_notify_for_user(channel: str, payload: str, user_id: str) -> str | No
     if channel == _PG_CHANNEL:
         if payload == user_id:
             return f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
+        if payload == f"{_READ_PAYLOAD_PREFIX}{user_id}":
+            return "event: notifications_read\ndata: {}\n\n"
         return None
     if channel == _EVENT_UPDATES_CHANNEL:
         # Payload format: "<user_id-or-*>:<event_id>". "*" broadcasts to every

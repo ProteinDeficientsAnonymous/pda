@@ -38,4 +38,9 @@ describe('notificationTarget', () => {
     const n = notification({ notificationType: NotificationType.SurveyResponse, eventId: null });
     expect(notificationTarget(n)).toBe('/admin/surveys');
   });
+
+  it('sends a restored member notification to join requests, which approvers can open', () => {
+    const n = notification({ notificationType: NotificationType.MemberRestored });
+    expect(notificationTarget(n)).toBe('/join-requests');
+  });
 });
