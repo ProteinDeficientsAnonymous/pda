@@ -30,7 +30,9 @@ def _row(rsvp: EventRSVP) -> dict[str, Any]:
     )
 
 
-def _page(member_id: UUID, since_days: int | None, limit: int, offset: int) -> dict[str, Any]:
+def member_rsvps_page(
+    member_id: UUID, since_days: int | None, limit: int, offset: int
+) -> dict[str, Any]:
     member = User.objects.members().filter(pk=member_id).only("first_name", "last_name").first()
     if member is None:
         raise ToolError("no member with that id")
@@ -83,4 +85,4 @@ async def member_rsvps(
         int, Field(ge=0, le=100_000, description="next_offset from the previous page")
     ] = 0,
 ) -> dict[str, Any]:
-    return await sync_to_async(_page)(member, since_days, limit, offset)
+    return await sync_to_async(member_rsvps_page)(member, since_days, limit, offset)
