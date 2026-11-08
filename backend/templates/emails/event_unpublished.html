@@ -4,7 +4,7 @@
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
     <p style="margin: 0 0 16px;"><strong>{{ event_title|lower }}</strong>{% if event_when %} on {{ event_when|lower }}{% endif %} has been unpublished because its host can't run it anymore.</p>
-    <p style="margin: 0;">your rsvp was removed. sorry for the change of plans.</p>
+    <p style="margin: 0;">sorry for the change of plans.</p>
   </div>
   <p style="text-align: center; margin: 16px 0 0; font-size: 12px; color: #888;">— pda</p>
   {% include "emails/_no_reply_footer.html" %}

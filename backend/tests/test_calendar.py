@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import re
 
 import pytest
 from community.models import (
@@ -9,6 +10,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from django.conf import settings
 from django.utils import timezone
 from users.models import CalendarFeedScope, User
 
@@ -91,8 +93,24 @@ class TestCalendarFeed:
         resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
         content = resp.content.decode()
         assert "DTEND" in content
-        expected_end = (start + dt.timedelta(hours=2)).strftime("%Y%m%dT%H%M%S")
-        assert expected_end in content
+        expected_end = (start + dt.timedelta(hours=2)).astimezone(settings.COMMUNITY_TZ)
+        assert f"DTEND;TZID=America/New_York:{expected_end:%Y%m%dT%H%M%S}" in content
+
+    def test_feed_uses_community_timezone(self, api_client, auth_headers, test_user):
+        resp = api_client.post("/api/community/calendar/token/", **auth_headers)
+        token = resp.json()["token"]
+        start = (timezone.now() + dt.timedelta(days=1)).replace(
+            hour=23, minute=0, second=0, microsecond=0
+        )
+        Event.objects.create(title="Evening Dinner", start_datetime=start, created_by=test_user)
+
+        content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
+        local = start.astimezone(settings.COMMUNITY_TZ)
+        assert f"DTSTART;TZID=America/New_York:{local:%Y%m%dT%H%M%S}" in content
+        assert "X-WR-TIMEZONE:America/New_York" in content
+        assert "BEGIN:VTIMEZONE" in content
+        assert "TZID:America/New_York" in content
+        assert not re.search(r"DTSTART:\d{8}T\d{6}Z", content)
 
     def test_feed_includes_links_in_description(self, api_client, auth_headers, test_user):
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)
