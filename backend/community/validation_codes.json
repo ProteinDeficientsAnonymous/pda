@@ -27,6 +27,11 @@
         "params": []
       },
       {
+        "name": "DATETIME_OFFSET_REQUIRED",
+        "value": "event.datetime_offset_required",
+        "params": []
+      },
+      {
         "name": "OFFICIAL_MUST_BE_PUBLIC",
         "value": "event.official_must_be_public",
         "params": []
@@ -203,11 +208,6 @@
         "params": []
       },
       {
-        "name": "RSVP_QUESTION_OPTION_NO_COMMA",
-        "value": "event.rsvp_question_option_no_comma",
-        "params": []
-      },
-      {
         "name": "RSVP_ANSWER_REQUIRED",
         "value": "event.rsvp_answer_required",
         "params": [
@@ -217,6 +217,13 @@
       {
         "name": "RSVP_ANSWER_INVALID_OPTION",
         "value": "event.rsvp_answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_INVALID_FORMAT",
+        "value": "event.rsvp_answer_invalid_format",
         "params": [
           "label"
         ]
@@ -254,6 +261,11 @@
       {
         "name": "SLUG_TAKEN",
         "value": "event.slug_taken",
+        "params": []
+      },
+      {
+        "name": "INVALID_EVENT_FORMAT",
+        "value": "event.invalid_event_format",
         "params": []
       }
     ],
@@ -705,21 +717,6 @@
         "params": []
       },
       {
-        "name": "NO_DATETIME_POLL_QUESTION",
-        "value": "survey.no_datetime_poll_question",
-        "params": []
-      },
-      {
-        "name": "WINNING_DATETIME_NOT_IN_OPTIONS",
-        "value": "survey.winning_datetime_not_in_options",
-        "params": []
-      },
-      {
-        "name": "POLL_ALREADY_FINALIZED",
-        "value": "survey.poll_already_finalized",
-        "params": []
-      },
-      {
         "name": "ANSWER_REQUIRED",
         "value": "survey.answer_required",
         "params": [
@@ -856,6 +853,11 @@
       {
         "name": "PHONE_ALREADY_TENTATIVE",
         "value": "join_request.phone_already_tentative",
+        "params": []
+      },
+      {
+        "name": "OPEN_REQUEST_EXISTS",
+        "value": "join_request.open_request_exists",
         "params": []
       },
       {
@@ -1128,6 +1130,11 @@
         "name": "EVENT_IS_PAST",
         "value": "cohost_invite.event_is_past",
         "params": []
+      },
+      {
+        "name": "NOT_MEMBER",
+        "value": "cohost_invite.not_member",
+        "params": []
       }
     ],
     "WelcomeTemplate": [
@@ -1186,6 +1193,20 @@
         ]
       }
     ],
+    "MemberRestoredEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "member_restored_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "member_restored_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
     "RejectionEmail": [
       {
         "name": "BODY_REQUIRED",
@@ -1210,6 +1231,49 @@
         "params": [
           "max_length"
         ]
+      }
+    ],
+    "SpeechTemplate": [
+      {
+        "name": "INVALID_DOC",
+        "value": "speech_template.invalid_doc",
+        "params": []
+      },
+      {
+        "name": "TOO_MANY_ROLES",
+        "value": "speech_template.too_many_roles",
+        "params": [
+          "max"
+        ]
+      },
+      {
+        "name": "ROLE_TOO_LONG",
+        "value": "speech_template.role_too_long",
+        "params": [
+          "max"
+        ]
+      }
+    ],
+    "Speech": [
+      {
+        "name": "FORMAT_REQUIRED",
+        "value": "speech.format_required",
+        "params": []
+      },
+      {
+        "name": "INVALID_VALUES",
+        "value": "speech.invalid_values",
+        "params": []
+      },
+      {
+        "name": "HOSTS_ONLY",
+        "value": "speech.hosts_only",
+        "params": []
+      },
+      {
+        "name": "OFFICIAL_EVENT_REQUIRED",
+        "value": "speech.official_event_required",
+        "params": []
       }
     ],
     "Connect": [

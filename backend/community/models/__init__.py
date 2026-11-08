@@ -7,6 +7,7 @@ from community.models.choices import (
     AttendanceStatus,
     CoHostInviteStatus,
     EventFlagStatus,
+    EventFormat,
     EventStatus,
     EventType,
     FeedbackType,
@@ -33,6 +34,7 @@ from community.models.content import (
     HomePage,
     MemberPromotionEmailTemplate,
     MemberPromotionMessageTemplate,
+    MemberRestoredEmailTemplate,
     RejectionEmailTemplate,
     TentativeApprovalMessageTemplate,
     WelcomeMessageTemplate,
@@ -57,8 +59,8 @@ from community.models.event_slug import (
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
 from community.models.poll import EventPoll, PollOption, PollVote
+from community.models.speech import EventSpeech, SpeechTemplate
 from community.models.survey import (
-    DatetimePollResult,
     Survey,
     SurveyQuestion,
     SurveyResponse,
@@ -82,6 +84,7 @@ __all__ = [
     "InvitePermission",
     "JoinFormQuestionType",
     "JoinRequestStatus",
+    "EventFormat",
     "PageVisibility",
     "PollAvailability",
     "QuestionType",
@@ -103,6 +106,7 @@ __all__ = [
     "HomePage",
     "MemberPromotionEmailTemplate",
     "MemberPromotionMessageTemplate",
+    "MemberRestoredEmailTemplate",
     "RejectionEmailTemplate",
     "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
@@ -127,7 +131,8 @@ __all__ = [
     "EventPoll",
     "PollOption",
     "PollVote",
-    "DatetimePollResult",
+    "EventSpeech",
+    "SpeechTemplate",
     "Survey",
     "SurveyQuestion",
     "SurveyResponse",

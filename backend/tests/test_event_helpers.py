@@ -1,9 +1,9 @@
-"""Unit tests for event helper functions (is_cohost, _build_guest_list, _find_my_rsvp)."""
+"""Unit tests for event helper functions (is_cohost, build_guest_list, find_my_rsvp)."""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from community.api import _build_guest_list, _find_my_rsvp, is_cohost
+from community.api import build_guest_list, find_my_rsvp, is_cohost
 from community.models import AttendanceStatus, RSVPStatus
 
 
@@ -47,38 +47,36 @@ class TestBuildGuestList:
         )
 
     def test_empty_rsvps(self):
-        assert _build_guest_list([], can_see_phones=True) == []
+        assert build_guest_list([], can_see_phones=True) == []
 
     def test_hides_phones_when_not_allowed(self):
         rsvp = self._make_rsvp("u1", "Alice", RSVPStatus.ATTENDING, "+1555000")
-        result = _build_guest_list([rsvp], can_see_phones=False)
+        result = build_guest_list([rsvp], can_see_phones=False)
         assert result[0].phone is None
 
     def test_shows_phones_when_allowed(self):
         rsvp = self._make_rsvp("u1", "Alice", RSVPStatus.ATTENDING, "+1555000")
-        result = _build_guest_list([rsvp], can_see_phones=True)
+        result = build_guest_list([rsvp], can_see_phones=True)
         assert result[0].phone == "+1555000"
 
     def test_uses_phone_as_name_fallback(self):
         rsvp = self._make_rsvp("u1", None, RSVPStatus.ATTENDING, "+1555000")
-        result = _build_guest_list([rsvp], can_see_phones=False)
+        result = build_guest_list([rsvp], can_see_phones=False)
         assert result[0].name == "+1555000"
 
     def test_nameless_private_phone_falls_back_to_member(self):
         rsvp = self._make_rsvp("u1", None, RSVPStatus.ATTENDING, "+1555000", show_phone=False)
-        result = _build_guest_list([rsvp], can_see_phones=False)
+        result = build_guest_list([rsvp], can_see_phones=False)
         assert result[0].name == "member"
 
     def test_includes_questionnaire_responses_only_when_requested(self):
         rsvp = self._make_rsvp("u1", "Alice", RSVPStatus.ATTENDING, "+1555000")
         rsvp.questionnaire_responses = {"qid": {"label": "q", "answer": "yes"}}
-        hidden = _build_guest_list(
+        hidden = build_guest_list(
             [rsvp], can_see_phones=False, include_questionnaire_responses=False
         )
         assert hidden[0].questionnaire_responses == {}
-        shown = _build_guest_list(
-            [rsvp], can_see_phones=False, include_questionnaire_responses=True
-        )
+        shown = build_guest_list([rsvp], can_see_phones=False, include_questionnaire_responses=True)
         assert shown[0].questionnaire_responses == {"qid": {"label": "q", "answer": "yes"}}
 
 
@@ -87,17 +85,16 @@ class TestFindMyRsvp:
         return SimpleNamespace(user_id=user_id, status=status)
 
     def test_returns_none_when_no_user(self):
-        assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], None) is None
+        assert find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], None) is None
 
     def test_returns_none_when_user_not_in_rsvps(self):
         user = SimpleNamespace(pk="u2")
-        assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], user) is None
+        assert find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], user) is None
 
     def test_returns_row_when_user_found(self):
         user = SimpleNamespace(pk="u1")
         assert (
-            _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user).status
-            == RSVPStatus.MAYBE
+            find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user).status == RSVPStatus.MAYBE
         )
 
     def test_returns_first_match(self):
@@ -106,4 +103,4 @@ class TestFindMyRsvp:
             self._make_rsvp("u1", RSVPStatus.ATTENDING),
             self._make_rsvp("u1", RSVPStatus.MAYBE),
         ]
-        assert _find_my_rsvp(rsvps, user).status == RSVPStatus.ATTENDING
+        assert find_my_rsvp(rsvps, user).status == RSVPStatus.ATTENDING

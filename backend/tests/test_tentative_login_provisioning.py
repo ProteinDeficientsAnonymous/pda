@@ -1,7 +1,7 @@
 """Tentative approval provisions a login the same way full approval does.
 
 The applicant gets a magic token and lands in onboarding; what differs is the
-access they end up with (see test_tentative_member_access.py), not the path in.
+access they end up with (see test_limited_access.py), not the path in.
 """
 
 import pytest

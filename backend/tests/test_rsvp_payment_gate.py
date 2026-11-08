@@ -1,12 +1,12 @@
 import pytest
-from community._validation import Code
 from community.models import EventRSVP, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
 from tests._public_rsvp_helpers import payload as public_payload
 from tests._public_rsvp_helpers import url as public_url
 
@@ -191,9 +191,9 @@ class TestPublicSubmitPaymentGate:
 @pytest.mark.django_db
 class TestPublicManagePaymentGate:
     def _setup(self, event, phone="+14155550199"):
-        user = make_non_member(phone, "token@example.com", name="Token Holder")
+        user = make_public_rsvper(phone, "token@example.com", name="Token Holder")
         EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.MAYBE)
-        return user, NonMemberRsvpToken.issue_or_extend(user).token
+        return user, PublicRsvpToken.issue_or_extend(user).token
 
     def test_maybe_to_attending_without_confirmation_is_rejected(
         self, api_client, paid_public_event
@@ -219,9 +219,9 @@ class TestPublicManagePaymentGate:
         assert rsvp.paid_confirmed_at is not None
 
     def test_switching_to_maybe_needs_no_confirmation(self, api_client, paid_public_event):
-        user = make_non_member("+14155550197", "t2@example.com", name="Token Two")
+        user = make_public_rsvper("+14155550197", "t2@example.com", name="Token Two")
         EventRSVP.objects.create(event=paid_public_event, user=user, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(user).token
+        token = PublicRsvpToken.issue_or_extend(user).token
         response = api_client.post(
             f"/api/community/public/my-rsvps/{paid_public_event.id}/?token={token}",
             {"status": RSVPStatus.MAYBE},

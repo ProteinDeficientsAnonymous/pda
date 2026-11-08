@@ -3,6 +3,9 @@ import type { components } from '@/api/types.gen';
 import { hasPermission, Permission } from './permissions';
 import type { User } from './user';
 
+/** checkbox answers are a list of ticked options; older ones are comma-joined strings */
+export type QuestionnaireAnswer = string | string[];
+
 export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export const EventType = {
@@ -12,6 +15,13 @@ export const EventType = {
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
+
+export const EventFormat = {
+  Walk: 'walk',
+  Restaurant: 'restaurant',
+} as const;
+
+export type EventFormat = (typeof EventFormat)[keyof typeof EventFormat];
 
 export function isOfficialOrClub(type: string): boolean {
   return type === EventType.Official || type === EventType.Club;
@@ -85,12 +95,6 @@ export interface EventTag {
   slug: string;
 }
 
-export interface EventLinkedSurvey {
-  id: string;
-  title: string;
-  slug: string;
-}
-
 export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 
 export interface EventRsvpQuestion {
@@ -114,7 +118,7 @@ export interface EventGuest {
   paidConfirmed: boolean;
   paymentVerified: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  questionnaireResponses: Record<string, { label: string; answer: string }>;
+  questionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
 }
 
 export interface EventCancellation {
@@ -177,7 +181,6 @@ export interface Event {
 
   datetimeTbd: boolean;
   hasPoll: boolean;
-  datetimePollSlug: string | null;
 
   createdById: string | null;
   createdByName: string | null;
@@ -190,10 +193,9 @@ export interface Event {
   myRsvp: string | null;
   myPaidConfirmed: boolean;
   /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
-  myQuestionnaireResponses: Record<string, { label: string; answer: string }>;
+  myQuestionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
-  linkedSurveys: EventLinkedSurvey[];
   invitedUserIds: string[];
   invitedUserNames: string[];
   invitedUserPhotoUrls: string[];
@@ -203,6 +205,7 @@ export interface Event {
   myPendingCohostInviteId: string | null;
 
   eventType: string;
+  eventFormat: EventFormat | null;
   visibility: string;
   photoUrl: string;
   photoUpdatedAt: string | null;
@@ -238,15 +241,15 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
-// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
-const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
+// Mirrors backend LIMITED_ACCESS_EVENT_TYPES.
+const LIMITED_ACCESS_EVENT_TYPES: readonly string[] = [EventType.Official, EventType.Club];
 
-export function canTentativeMemberRsvp(event: Event): boolean {
-  return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
+export function canLimitedRsvp(event: Event): boolean {
+  return LIMITED_ACCESS_EVENT_TYPES.includes(event.eventType);
 }
 
-// Mirrors backend is_tentative_member: only tentative applicants sign in without membership.
-export function isTentativeMember(user: Pick<User, 'isMember'> | null | undefined): boolean {
+// Mirrors backend is_limited: tentative applicants and attendance-paused users sign in without membership.
+export function isLimited(user: Pick<User, 'isMember'> | null | undefined): boolean {
   return user?.isMember === false;
 }
 

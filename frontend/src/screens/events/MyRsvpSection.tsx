@@ -67,7 +67,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
-  // Token holders are non-members, and the public rsvp endpoints never save a +1 for them.
+  // Token holders are public rsvpers, and the public rsvp endpoints never save a +1 for them.
   const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
   async function confirmRsvp(args: {
@@ -258,9 +258,9 @@ function RsvpControls({
   );
 }
 
-function plusOneUnavailableReason(allowPlusOnes: boolean, isNonMember: boolean): string | null {
+function plusOneUnavailableReason(allowPlusOnes: boolean, isPublicRsvper: boolean): string | null {
   if (!allowPlusOnes) return "this event doesn't allow +1s";
-  if (isNonMember) return '+1s are for members only';
+  if (isPublicRsvper) return '+1s are for members only';
   return null;
 }
 

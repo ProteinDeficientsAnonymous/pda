@@ -1,9 +1,9 @@
 import pytest
-from community._event_description_templates import (
+from community.events.description_templates import (
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
-from community._field_limits import FieldLimit
+from community.field_limits import FieldLimit
 
 URL = "/api/community/event-description-templates/"
 

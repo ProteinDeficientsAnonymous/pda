@@ -2,13 +2,10 @@
 
 import pytest
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.roles import Role
 
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+from tests._auth import auth_headers_for
 
 
 def _accept(api_client, user, consent_types):
@@ -16,7 +13,7 @@ def _accept(api_client, user, consent_types):
         "/api/auth/accept-consents/",
         data={"consent_types": consent_types},
         content_type="application/json",
-        **_headers(user),
+        **auth_headers_for(user),
     )
 
 
@@ -42,7 +39,7 @@ class TestAcceptConsents:
         )
         user.guidelines_consent_at = None
         user.save(update_fields=["guidelines_consent_at"])
-        headers = _headers(user)
+        headers = auth_headers_for(user)
 
         # Blocked before consent.
         assert api_client.get("/api/notifications/", **headers).status_code == 403
@@ -154,5 +151,5 @@ class TestAcceptConsents:
         admin.guidelines_consent_at = None
         admin.save(update_fields=["guidelines_consent_at"])
 
-        assert api_client.get("/api/notifications/", **_headers(admin)).status_code == 403
+        assert api_client.get("/api/notifications/", **auth_headers_for(admin)).status_code == 403
         assert _accept(api_client, admin, ["guidelines"]).status_code == 200

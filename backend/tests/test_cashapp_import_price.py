@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import pytest
-from community._cashapp_import_price import (
+from community.cashapp.price import (
     PeopleRange,
     PriceKind,
     PriceSpec,

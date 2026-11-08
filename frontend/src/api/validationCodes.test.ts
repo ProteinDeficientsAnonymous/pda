@@ -12,6 +12,18 @@ describe('messageForCode', () => {
     ).toBe('pick a start time, or mark the time as tbd');
   });
 
+  it('asks for a timezone when an event datetime has no offset', () => {
+    expect(
+      messageForCode({ code: Code.Event.DatetimeOffsetRequired, field: 'start_datetime' }),
+    ).toBe('date and time must include a timezone');
+  });
+
+  it('says only official events can have an event format', () => {
+    expect(messageForCode({ code: Code.Event.InvalidEventFormat, field: 'event_format' })).toBe(
+      'only official events can be a walk or restaurant',
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
@@ -32,6 +44,12 @@ describe('messageForCode', () => {
   it('says a bulk payment verify only covers attending or waitlisted guests', () => {
     expect(messageForCode({ code: Code.Event.PaymentVerifyNotGuests, field: null })).toMatch(
       /attending or waitlisted/,
+    );
+  });
+
+  it('says only members can be co-hosts', () => {
+    expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
+      'only members can be co-hosts',
     );
   });
 
@@ -84,6 +102,79 @@ describe('messageForCode', () => {
       params: { max_mb: 5 },
     });
     expect(out).toContain('5 mb');
+  });
+
+  it('names the question for an invalid rsvp answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.Event.RsvpAnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'dietary needs' },
+      }),
+    ).toBe('invalid answer format for "dietary needs"');
+    expect(messageForCode({ code: Code.Event.RsvpAnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
+  });
+
+  it('explains speech template errors', () => {
+    expect(messageForCode({ code: Code.SpeechTemplate.InvalidDoc, field: 'walk_pm' })).toBe(
+      'that speech section is not valid',
+    );
+    expect(
+      messageForCode({
+        code: Code.SpeechTemplate.TooManyRoles,
+        field: 'open_roles',
+        params: { max: 20 },
+      }),
+    ).toBe('at most 20 open roles');
+    expect(messageForCode({ code: Code.SpeechTemplate.TooManyRoles, field: 'open_roles' })).toBe(
+      'too many open roles',
+    );
+    expect(
+      messageForCode({
+        code: Code.SpeechTemplate.RoleTooLong,
+        field: 'open_roles',
+        params: { max: 200 },
+      }),
+    ).toBe('each role must be at most 200 characters');
+    expect(messageForCode({ code: Code.SpeechTemplate.RoleTooLong, field: 'open_roles' })).toBe(
+      'a role is too long',
+    );
+  });
+
+  it('says a speech blank is not valid', () => {
+    expect(messageForCode({ code: Code.Speech.InvalidValues, field: 'values' })).toBe(
+      'one of the speech blanks is not valid',
+    );
+  });
+
+  it('asks for the event format before saving a speech', () => {
+    expect(messageForCode({ code: Code.Speech.FormatRequired, field: 'event_format' })).toBe(
+      'pick walk or restaurant first',
+    );
+  });
+
+  it('explains welcome back email errors', () => {
+    expect(messageForCode({ code: Code.MemberRestoredEmail.BodyRequired, field: 'body' })).toBe(
+      'welcome back email body is required',
+    );
+    expect(
+      messageForCode({
+        code: Code.MemberRestoredEmail.BodyTooLong,
+        field: 'body',
+        params: { max_length: 5000 },
+      }),
+    ).toBe('welcome back email must be at most 5000 characters');
+    expect(messageForCode({ code: Code.MemberRestoredEmail.BodyTooLong, field: 'body' })).toBe(
+      'welcome back email is too long',
+    );
+  });
+
+  it('points to the existing open join request', () => {
+    expect(
+      messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
+    ).toBe('this number already has an open request — review that one instead');
   });
 
   it('returns a safe fallback for unknown codes', () => {

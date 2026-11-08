@@ -3,8 +3,8 @@
 import logging
 import time
 
-from community._image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
-from community._validation import Code, raise_validation
+from community.image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
@@ -18,18 +18,18 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import ConsentType, stamp_consents
-from users._helpers import (
-    _check_and_set_email,
-    _require_first_name,
-    _resolve_name_fields,
-)
 from users._password_validation import validate_password
-from users._refresh_cookie import (
+from users.helpers import (
+    check_and_set_email,
+    require_first_name,
+    resolve_name_fields,
+)
+from users.models import User
+from users.refresh_cookie import (
     clear_refresh_cookie,
     read_refresh_cookie,
     set_refresh_cookie,
 )
-from users.models import User
 from users.schemas import (
     AcceptConsentsIn,
     AccessOut,
@@ -136,7 +136,7 @@ def logout(request, response: HttpResponse):
 
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=gated_jwt)
 def me(request):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     if user.is_paused:
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
@@ -183,7 +183,7 @@ _ME_PATCH_COLUMN_GROUPS = {
 }
 
 
-def _save_me_patch(user, changed: list[str]) -> None:
+def save_me_patch(user, changed: list[str]) -> None:
     """Write only the patched columns so a second in-flight save cannot restore them."""
     fields: list[str] = []
     for name in changed:
@@ -192,17 +192,17 @@ def _save_me_patch(user, changed: list[str]) -> None:
         user.save(update_fields=fields)
 
 
-def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
+def apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
     Raises ValidationException on invalid input — caller lets it propagate
     to the global handler.
     """
     changed: list[str] = []
-    if _resolve_name_fields(user, payload):
+    if resolve_name_fields(user, payload):
         changed.extend(["first_name", "last_name"])
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+        check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
     for attr in _ME_PATCH_STRIPPED_FIELDS:
         value = getattr(payload, attr)
@@ -227,9 +227,25 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
 
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=gated_jwt)
 def update_me(request, payload: MePatchIn):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    changed = _apply_me_patch(user, payload)
-    _save_me_patch(user, changed)
+    user = request.auth
+    changed = apply_me_patch(user, payload)
+    # Setting either contact toggle means they've made the privacy choice the consent gate asks for.
+    stamped: list[str] = []
+    if payload.show_phone is not None or payload.show_email is not None:
+        stamped = stamp_consents(user, [ConsentType.CONTACT_PRIVACY])
+        changed.extend(stamped)
+    save_me_patch(user, changed)
+    if stamped:
+        audit_log(
+            logging.INFO,
+            "consents_accepted",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(user.pk),
+                details={"consent_types": [str(ConsentType.CONTACT_PRIVACY)]},
+            ),
+        )
     user = User.objects.prefetch_related("roles").get(pk=user.pk)
     if changed:
         audit_log(
@@ -260,7 +276,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
             status_code=400,
             max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
         )
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     try:
         body, ext = stored_photo(photo.read(), photo.name or "", AVATAR_MAX_EDGE)
     except UnsafeImageError:
@@ -277,7 +293,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
 
 @router.delete("/me/photo/", response={200: UserOut}, auth=gated_jwt)
 def delete_photo(request):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     if user.profile_photo:
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
@@ -303,18 +319,18 @@ def complete_onboarding(request, payload: OnboardingIn):
         raise_validation(
             Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
         )
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     # Reject reusing the current password. Only meaningful when the user still
     # has a usable one — a forced-reset user has an unusable password, so
     # check_password always fails and this is correctly skipped.
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
-    _resolve_name_fields(user, payload)
+    resolve_name_fields(user, payload)
     # Bulk/phone-only accounts reach onboarding with no name; a name-less
     # payload must not let them complete with an empty first_name (Issue 733).
-    _require_first_name(user)
+    require_first_name(user)
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+        check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:
         raise_validation(Code.Email.REQUIRED, field="email", status_code=422)
     if payload.pronouns is not None:
@@ -340,7 +356,7 @@ def complete_onboarding(request, payload: OnboardingIn):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def accept_consents(request, payload: AcceptConsentsIn):
     """Record the consents the caller is accepting, clearing the relevant gates."""
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user = request.auth
     changed = stamp_consents(user, payload.consent_types)
     if changed:
         user.save(update_fields=changed)
@@ -359,7 +375,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
 
 @router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=gated_jwt)
 def change_password(request, payload: ChangePasswordIn):
-    user = User.objects.get(pk=request.auth.pk)
+    user = request.auth
     if not user.check_password(payload.current_password):
         audit_log(
             logging.WARNING,

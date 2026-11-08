@@ -2,27 +2,14 @@ import json
 
 import pytest
 from community.models import Event, EventStatus
-from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 CREATE_EVENT_URL = "/api/community/events/"
-
-
-def _make_user(phone: str, name: str = "Member", email: str | None = "") -> User:
-    return User.objects.create_user(
-        phone_number=phone,
-        password="testpass123",
-        first_name=name,
-        email=email,
-    )
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 def _create_event_via_api(api_client, creator: User, co_host_ids: list[str]) -> dict:
@@ -37,7 +24,7 @@ def _create_event_via_api(api_client, creator: User, co_host_ids: list[str]) -> 
         CREATE_EVENT_URL,
         data=json.dumps(payload),
         content_type="application/json",
-        **_auth_headers(creator),
+        **auth_headers_for(creator),
     )
     assert response.status_code == 201, response.content
     return response.json()
@@ -45,13 +32,13 @@ def _create_event_via_api(api_client, creator: User, co_host_ids: list[str]) -> 
 
 @pytest.fixture
 def creator(db) -> User:
-    return _make_user("+12025550111", "Creator", email="creator@example.com")
+    return make_user(first_name="Creator", email="creator@example.com")
 
 
 @pytest.mark.django_db
 class TestCohostInviteEmail:
     def test_sends_email_when_invitee_has_email(self, api_client, creator, fake_email_sender):
-        invitee = _make_user("+12025550112", "Invitee", email="invitee@example.com")
+        invitee = make_user(first_name="Invitee", email="invitee@example.com")
 
         _create_event_via_api(api_client, creator, co_host_ids=[str(invitee.pk)])
 
@@ -66,7 +53,7 @@ class TestCohostInviteEmail:
     def test_no_email_attempted_when_invitee_has_no_email(
         self, api_client, creator, fake_email_sender
     ):
-        invitee = _make_user("+12025550113", "Invitee", email="")
+        invitee = make_user(first_name="Invitee", email="")
 
         response_data = _create_event_via_api(api_client, creator, co_host_ids=[str(invitee.pk)])
 
@@ -77,7 +64,7 @@ class TestCohostInviteEmail:
     def test_does_not_crash_when_send_fails(self, api_client, creator, fake_email_sender):
 
         fake_email_sender.send.side_effect = Exception("smtp exploded")
-        invitee = _make_user("+12025550114", "Invitee", email="invitee2@example.com")
+        invitee = make_user(first_name="Invitee", email="invitee2@example.com")
 
         response = api_client.post(
             CREATE_EVENT_URL,
@@ -91,7 +78,7 @@ class TestCohostInviteEmail:
                 }
             ),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
 
         assert response.status_code == 201, response.content
@@ -105,13 +92,13 @@ class TestCohostInviteEmail:
     def test_email_via_patch_adds_new_cohost(self, api_client, creator, fake_email_sender):
         data = _create_event_via_api(api_client, creator, co_host_ids=[])
         event_id = data["id"]
-        invitee = _make_user("+12025550115", "Invitee", email="patched@example.com")
+        invitee = make_user(first_name="Invitee", email="patched@example.com")
 
         response = api_client.patch(
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
             content_type="application/json",
-            **_auth_headers(creator),
+            **auth_headers_for(creator),
         )
 
         assert response.status_code == 200, response.content
@@ -119,7 +106,7 @@ class TestCohostInviteEmail:
         assert fake_email_sender.send.call_args.kwargs["to"] == "patched@example.com"
 
     def test_event_url_points_to_event_detail_page(self, api_client, creator, fake_email_sender):
-        invitee = _make_user("+12025550116", "Invitee", email="invitee3@example.com")
+        invitee = make_user(first_name="Invitee", email="invitee3@example.com")
         data = _create_event_via_api(api_client, creator, co_host_ids=[str(invitee.pk)])
         event = Event.objects.get(id=data["id"])
 

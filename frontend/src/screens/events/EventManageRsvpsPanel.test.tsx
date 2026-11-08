@@ -1,5 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EventGuest } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
 
@@ -58,12 +58,7 @@ vi.mock('@/api/userSearch', () => ({
 }));
 
 function renderPanel(event = makeEvent({})) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <EventManageRsvpsPanel event={event} />
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<EventManageRsvpsPanel event={event} />);
 }
 
 beforeEach(() => {

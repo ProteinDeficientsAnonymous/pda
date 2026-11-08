@@ -325,6 +325,22 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
+      "AttendancePausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "AttendancePausePreviewOut",
+        "type": "object"
+      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -357,6 +373,41 @@
         ],
         "title": "AttendanceStatus",
         "type": "string"
+      },
+      "AttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "AttendedEventOut",
+        "type": "object"
       },
       "AttendedPersonOut": {
         "properties": {
@@ -2097,6 +2148,18 @@
             ],
             "title": "End Datetime"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "event_type": {
             "default": "community",
             "maxLength": 20,
@@ -2253,11 +2316,6 @@
             "title": "Attending Count",
             "type": "integer"
           },
-          "cashapp_link": {
-            "default": "",
-            "title": "Cashapp Link",
-            "type": "string"
-          },
           "co_host_ids": {
             "default": [],
             "items": {
@@ -2265,49 +2323,6 @@
             },
             "title": "Co Host Ids",
             "type": "array"
-          },
-          "co_host_names": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Co Host Names",
-            "type": "array"
-          },
-          "co_host_photo_urls": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Co Host Photo Urls",
-            "type": "array"
-          },
-          "created_by_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By Id"
-          },
-          "created_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By Name"
-          },
-          "created_by_photo_url": {
-            "default": "",
-            "title": "Created By Photo Url",
-            "type": "string"
           },
           "datetime_tbd": {
             "default": false,
@@ -2344,11 +2359,6 @@
             "title": "Id",
             "type": "string"
           },
-          "invited_count": {
-            "default": 0,
-            "title": "Invited Count",
-            "type": "integer"
-          },
           "is_legacy": {
             "default": false,
             "title": "Is Legacy",
@@ -2364,31 +2374,9 @@
             "title": "Is Past",
             "type": "boolean"
           },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude"
-          },
           "location": {
             "title": "Location",
             "type": "string"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude"
           },
           "max_attendees": {
             "anyOf": [
@@ -2416,32 +2404,6 @@
               }
             ],
             "title": "My Rsvp"
-          },
-          "other_link": {
-            "default": "",
-            "title": "Other Link",
-            "type": "string"
-          },
-          "partiful_link": {
-            "default": "",
-            "title": "Partiful Link",
-            "type": "string"
-          },
-          "photo_updated_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Photo Updated At"
-          },
-          "photo_url": {
-            "default": "",
-            "title": "Photo Url",
-            "type": "string"
           },
           "price": {
             "default": "",
@@ -2482,11 +2444,6 @@
             "title": "Title",
             "type": "string"
           },
-          "venmo_link": {
-            "default": "",
-            "title": "Venmo Link",
-            "type": "string"
-          },
           "visibility": {
             "default": "public",
             "title": "Visibility",
@@ -2496,16 +2453,6 @@
             "default": 0,
             "title": "Waitlisted Count",
             "type": "integer"
-          },
-          "whatsapp_link": {
-            "default": "",
-            "title": "Whatsapp Link",
-            "type": "string"
-          },
-          "zelle_info": {
-            "default": "",
-            "title": "Zelle Info",
-            "type": "string"
           }
         },
         "required": [
@@ -2667,17 +2614,6 @@
             "title": "Created By Photo Url",
             "type": "string"
           },
-          "datetime_poll_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Datetime Poll Slug"
-          },
           "datetime_tbd": {
             "default": false,
             "title": "Datetime Tbd",
@@ -2698,6 +2634,17 @@
               }
             ],
             "title": "End Datetime"
+          },
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
           },
           "event_type": {
             "default": "community",
@@ -2785,14 +2732,6 @@
               }
             ],
             "title": "Latitude"
-          },
-          "linked_surveys": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/EventSurveyOut"
-            },
-            "title": "Linked Surveys",
-            "type": "array"
           },
           "location": {
             "title": "Location",
@@ -3058,6 +2997,18 @@
               }
             ],
             "title": "End Datetime"
+          },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
           },
           "event_type": {
             "anyOf": [
@@ -3707,6 +3658,109 @@
         "title": "EventRsvpQuestionSyncPayload",
         "type": "object"
       },
+      "EventSpeechIn": {
+        "properties": {
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "values"
+        ],
+        "title": "EventSpeechIn",
+        "type": "object"
+      },
+      "EventSpeechOut": {
+        "properties": {
+          "event_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
+          "event_title": {
+            "title": "Event Title",
+            "type": "string"
+          },
+          "html": {
+            "title": "Html",
+            "type": "string"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_title",
+          "event_format",
+          "saved",
+          "values",
+          "html",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "EventSpeechOut",
+        "type": "object"
+      },
       "EventStatsOut": {
         "properties": {
           "attended_count": {
@@ -3759,29 +3813,6 @@
           }
         },
         "title": "EventStatsOut",
-        "type": "object"
-      },
-      "EventSurveyOut": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug"
-        ],
-        "title": "EventSurveyOut",
         "type": "object"
       },
       "FeedbackIn": {
@@ -3869,20 +3900,6 @@
         ],
         "title": "FeedbackType",
         "type": "string"
-      },
-      "FinalizePollIn": {
-        "properties": {
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "winning_datetime"
-        ],
-        "title": "FinalizePollIn",
-        "type": "object"
       },
       "FolderIn": {
         "properties": {
@@ -4410,6 +4427,7 @@
         "properties": {
           "question_ids": {
             "items": {
+              "format": "uuid",
               "type": "string"
             },
             "title": "Question Ids",
@@ -4493,41 +4511,6 @@
           "answer"
         ],
         "title": "JoinRequestAnswerOut",
-        "type": "object"
-      },
-      "JoinRequestAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "JoinRequestAttendedEventOut",
         "type": "object"
       },
       "JoinRequestIn": {
@@ -4619,6 +4602,28 @@
             ],
             "title": "Approved By Name"
           },
+          "approved_via_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Id"
+          },
+          "approved_via_event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Via Event Title"
+          },
           "attended_club_count": {
             "default": 0,
             "title": "Attended Club Count",
@@ -4627,7 +4632,7 @@
           "attended_events": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/JoinRequestAttendedEventOut"
+              "$ref": "#/components/schemas/AttendedEventOut"
             },
             "title": "Attended Events",
             "type": "array"
@@ -4848,6 +4853,40 @@
           "status"
         ],
         "title": "JoinRequestStatusIn",
+        "type": "object"
+      },
+      "JoinRequestSubmittedOut": {
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "full_name",
+          "status",
+          "submitted_at"
+        ],
+        "title": "JoinRequestSubmittedOut",
         "type": "object"
       },
       "LoginIn": {
@@ -5269,41 +5308,6 @@
         "title": "MemberAttendanceRowOut",
         "type": "object"
       },
-      "MemberAttendedEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "event_type": {
-            "title": "Event Type",
-            "type": "string"
-          },
-          "start_datetime": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Datetime"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "event_type"
-        ],
-        "title": "MemberAttendedEventOut",
-        "type": "object"
-      },
       "MemberDirectoryOut": {
         "properties": {
           "email": {
@@ -5502,6 +5506,42 @@
         "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
+      "MemberRestoredEmailOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberRestoredEmailOut",
+        "type": "object"
+      },
+      "MemberRestoredEmailPatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberRestoredEmailPatchIn",
+        "type": "object"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -5682,6 +5722,62 @@
         "title": "OnboardingIn",
         "type": "object"
       },
+      "PauseImpactEventOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PauseOutcome"
+          },
+          "role": {
+            "$ref": "#/components/schemas/PauseRole"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_datetime",
+          "role",
+          "outcome"
+        ],
+        "title": "PauseImpactEventOut",
+        "type": "object"
+      },
+      "PauseOutcome": {
+        "enum": [
+          "kept",
+          "removed",
+          "drafted"
+        ],
+        "title": "PauseOutcome",
+        "type": "string"
+      },
+      "PauseRole": {
+        "enum": [
+          "rsvp",
+          "hosting"
+        ],
+        "title": "PauseRole",
+        "type": "string"
+      },
       "PendingCoHostInviteOut": {
         "properties": {
           "id": {
@@ -5728,42 +5824,6 @@
           "datetime"
         ],
         "title": "PollOptionIn",
-        "type": "object"
-      },
-      "PollResultOut": {
-        "properties": {
-          "finalized_at": {
-            "format": "date-time",
-            "title": "Finalized At",
-            "type": "string"
-          },
-          "finalized_by_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finalized By Id"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "winning_datetime": {
-            "format": "date-time",
-            "title": "Winning Datetime",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "winning_datetime",
-          "finalized_at"
-        ],
-        "title": "PollResultOut",
         "type": "object"
       },
       "PollResultsOut": {
@@ -5853,10 +5913,21 @@
           },
           "questionnaire_responses": {
             "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "description": "Question UUID to answer; checkbox answers are a list of ticked options.",
             "title": "Questionnaire Responses",
             "type": "object"
           },
@@ -5909,8 +5980,19 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "maxLength": 2000,
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "maxLength": 2000,
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
                 },
                 "type": "object"
               },
@@ -6122,7 +6204,8 @@
           "checkbox",
           "number",
           "boolean",
-          "rating",
+          "stars",
+          "scale",
           "datetime_poll",
           "section"
         ],
@@ -6262,10 +6345,21 @@
           },
           "questionnaire_responses": {
             "additionalProperties": {
-              "maxLength": 2000,
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
-            "description": "Question UUID to answer; checkbox values are comma-separated.",
+            "description": "Question UUID to answer; checkbox answers are a list of ticked options.",
             "title": "Questionnaire Responses",
             "type": "object"
           },
@@ -6494,6 +6588,93 @@
         "title": "ResetPasswordOut",
         "type": "object"
       },
+      "RestoredMemberOut": {
+        "properties": {
+          "came_in_person_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Came In Person At"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "has_joined_whatsapp": {
+            "title": "Has Joined Whatsapp",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReturnKind"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/AttendedEventOut"
+            },
+            "title": "Recent Events",
+            "type": "array"
+          },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "kind",
+          "restored_at",
+          "unpaused_at",
+          "came_in_person_at",
+          "has_joined_whatsapp",
+          "recent_events"
+        ],
+        "title": "RestoredMemberOut",
+        "type": "object"
+      },
+      "ReturnKind": {
+        "enum": [
+          "restored",
+          "unpaused"
+        ],
+        "title": "ReturnKind",
+        "type": "string"
+      },
       "RoleIn": {
         "properties": {
           "name": {
@@ -6644,6 +6825,99 @@
         "title": "ShowIfOut",
         "type": "object"
       },
+      "SpeechTemplateOut": {
+        "properties": {
+          "open_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open Roles",
+            "type": "array"
+          },
+          "restaurant_pm": {
+            "title": "Restaurant Pm",
+            "type": "string"
+          },
+          "shared_pm": {
+            "title": "Shared Pm",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "walk_pm": {
+            "title": "Walk Pm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shared_pm",
+          "walk_pm",
+          "restaurant_pm",
+          "open_roles",
+          "updated_at"
+        ],
+        "title": "SpeechTemplateOut",
+        "type": "object"
+      },
+      "SpeechTemplatePatchIn": {
+        "properties": {
+          "open_roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Roles"
+          },
+          "restaurant_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restaurant Pm"
+          },
+          "shared_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared Pm"
+          },
+          "walk_pm": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Walk Pm"
+          }
+        },
+        "title": "SpeechTemplatePatchIn",
+        "type": "object"
+      },
       "SseTicketOut": {
         "properties": {
           "ticket": {
@@ -6664,6 +6938,12 @@
               "anyOf": [
                 {
                   "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "additionalProperties": {
@@ -6728,17 +7008,6 @@
             "default": true,
             "title": "Is Active",
             "type": "boolean"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -6819,17 +7088,6 @@
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -6940,17 +7198,6 @@
             "title": "Is Active",
             "type": "boolean"
           },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
-          },
           "max_responses": {
             "anyOf": [
               {
@@ -7001,16 +7248,6 @@
               }
             ],
             "title": "Opens At"
-          },
-          "poll_result": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PollResultOut"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "questions": {
             "default": [],
@@ -7125,17 +7362,6 @@
               }
             ],
             "title": "Is Active"
-          },
-          "linked_event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linked Event Id"
           },
           "max_responses": {
             "anyOf": [
@@ -7741,6 +7967,18 @@
             "title": "Attendance Nudge Opt Out",
             "type": "boolean"
           },
+          "attendance_paused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused At"
+          },
           "attended_count": {
             "default": 0,
             "title": "Attended Count",
@@ -7920,6 +8158,18 @@
             "title": "Pronouns",
             "type": "string"
           },
+          "restored_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
           "roles": {
             "items": {
               "$ref": "#/components/schemas/RoleOut"
@@ -7946,6 +8196,18 @@
             "default": true,
             "title": "Show Veganniversary",
             "type": "boolean"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
           },
           "veganniversary": {
             "anyOf": [
@@ -7989,6 +8251,17 @@
       },
       "UserPatchIn": {
         "properties": {
+          "attendance_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Paused"
+          },
           "email": {
             "anyOf": [
               {
@@ -9345,6 +9618,47 @@
         ]
       }
     },
+    "/api/auth/users/restored/": {
+      "get": {
+        "operationId": "users__restored_list_restored_members",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RestoredMemberOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Restored Members",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/search/": {
       "get": {
         "operationId": "users__management_search_users",
@@ -9532,6 +9846,64 @@
         ]
       }
     },
+    "/api/auth/users/{user_id}/attendance-pause-preview/": {
+      "get": {
+        "operationId": "users__attendance_pause_api_attendance_pause_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Pause Preview",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/{user_id}/attended-events/": {
       "get": {
         "operationId": "users__management_list_member_attended_events",
@@ -9552,7 +9924,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MemberAttendedEventOut"
+                    "$ref": "#/components/schemas/AttendedEventOut"
                   },
                   "title": "Response",
                   "type": "array"
@@ -9847,7 +10219,7 @@
     },
     "/api/community/calendar/feed/": {
       "get": {
-        "operationId": "community__calendar_calendar_feed",
+        "operationId": "community_events_calendar_calendar_feed",
         "parameters": [
           {
             "in": "query",
@@ -9873,7 +10245,7 @@
     },
     "/api/community/calendar/token/": {
       "get": {
-        "operationId": "community__calendar_get_calendar_token",
+        "operationId": "community_events_calendar_get_calendar_token",
         "parameters": [],
         "responses": {
           "200": {
@@ -9898,7 +10270,7 @@
         ]
       },
       "post": {
-        "operationId": "community__calendar_generate_calendar_token",
+        "operationId": "community_events_calendar_generate_calendar_token",
         "parameters": [],
         "responses": {
           "200": {
@@ -9925,7 +10297,7 @@
     },
     "/api/community/check-phone/": {
       "post": {
-        "operationId": "community__join_request_submit_check_phone",
+        "operationId": "community_join_requests_submit_check_phone",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9967,7 +10339,7 @@
     },
     "/api/community/dev/test-events/": {
       "post": {
-        "operationId": "community__dev_tools_create_dev_test_event",
+        "operationId": "community_dev_tools_api_create_dev_test_event",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10014,7 +10386,7 @@
     },
     "/api/community/docs/": {
       "post": {
-        "operationId": "community__docs_documents_create_document",
+        "operationId": "community_content_documents_create_document",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10071,7 +10443,7 @@
     },
     "/api/community/docs/folders/": {
       "get": {
-        "operationId": "community__docs_list_folders",
+        "operationId": "community_content_docs_list_folders",
         "parameters": [],
         "responses": {
           "200": {
@@ -10110,7 +10482,7 @@
         ]
       },
       "post": {
-        "operationId": "community__docs_create_folder",
+        "operationId": "community_content_docs_create_folder",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10167,7 +10539,7 @@
     },
     "/api/community/docs/folders/reorder/": {
       "put": {
-        "operationId": "community__docs_reorder_folders",
+        "operationId": "community_content_docs_reorder_folders",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10216,7 +10588,7 @@
     },
     "/api/community/docs/folders/{folder_id}/": {
       "delete": {
-        "operationId": "community__docs_delete_folder",
+        "operationId": "community_content_docs_delete_folder",
         "parameters": [
           {
             "in": "path",
@@ -10273,7 +10645,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__docs_update_folder",
+        "operationId": "community_content_docs_update_folder",
         "parameters": [
           {
             "in": "path",
@@ -10340,7 +10712,7 @@
     },
     "/api/community/docs/reorder/": {
       "put": {
-        "operationId": "community__docs_documents_reorder_documents",
+        "operationId": "community_content_documents_reorder_documents",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10389,7 +10761,7 @@
     },
     "/api/community/docs/{doc_id}/": {
       "delete": {
-        "operationId": "community__docs_documents_delete_document",
+        "operationId": "community_content_documents_delete_document",
         "parameters": [
           {
             "in": "path",
@@ -10446,7 +10818,7 @@
         ]
       },
       "get": {
-        "operationId": "community__docs_documents_get_document",
+        "operationId": "community_content_documents_get_document",
         "parameters": [
           {
             "in": "path",
@@ -10501,7 +10873,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__docs_documents_update_document",
+        "operationId": "community_content_documents_update_document",
         "parameters": [
           {
             "in": "path",
@@ -10605,7 +10977,7 @@
     },
     "/api/community/event-description-templates/": {
       "get": {
-        "operationId": "community__event_description_templates_get_event_description_templates",
+        "operationId": "community_events_description_templates_get_event_description_templates",
         "parameters": [],
         "responses": {
           "200": {
@@ -10632,7 +11004,7 @@
     },
     "/api/community/event-feedback/": {
       "get": {
-        "operationId": "community__event_feedback_public_get_event_feedback",
+        "operationId": "community_event_feedback_public_get_event_feedback",
         "parameters": [
           {
             "in": "header",
@@ -10685,7 +11057,7 @@
     },
     "/api/community/event-feedback/respond/": {
       "post": {
-        "operationId": "community__event_feedback_public_submit_event_feedback",
+        "operationId": "community_event_feedback_public_submit_event_feedback",
         "parameters": [
           {
             "in": "header",
@@ -10768,7 +11140,7 @@
     },
     "/api/community/event-flags/": {
       "get": {
-        "operationId": "community__event_flags_list_event_flags",
+        "operationId": "community_events_flags_list_event_flags",
         "parameters": [
           {
             "in": "query",
@@ -10826,7 +11198,7 @@
     },
     "/api/community/event-flags/{flag_id}/": {
       "patch": {
-        "operationId": "community__event_flags_review_event_flag",
+        "operationId": "community_events_flags_review_event_flag",
         "parameters": [
           {
             "in": "path",
@@ -10904,7 +11276,7 @@
     },
     "/api/community/event-tags/": {
       "get": {
-        "operationId": "community__event_tags_list_event_tags",
+        "operationId": "community_events_tags_list_event_tags",
         "parameters": [],
         "responses": {
           "200": {
@@ -10928,7 +11300,7 @@
         ]
       },
       "post": {
-        "operationId": "community__event_tags_create_event_tag",
+        "operationId": "community_events_tags_create_event_tag",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10995,7 +11367,7 @@
     },
     "/api/community/event-tags/{tag_id}/": {
       "delete": {
-        "operationId": "community__event_tags_delete_event_tag",
+        "operationId": "community_events_tags_delete_event_tag",
         "parameters": [
           {
             "in": "path",
@@ -11047,7 +11419,7 @@
     "/api/community/events/": {
       "get": {
         "description": "start/end bound a calendar window; include_imported=false drops partiful/legacy rows.",
-        "operationId": "community__events_list_events",
+        "operationId": "community_events_crud_list_events",
         "parameters": [
           {
             "in": "query",
@@ -11165,7 +11537,7 @@
         ]
       },
       "post": {
-        "operationId": "community__events_create_event",
+        "operationId": "community_events_crud_create_event",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -11233,7 +11605,7 @@
     "/api/community/events/attendance-analytics/members/": {
       "get": {
         "description": "Per-member qualifying-attendance analytics for the admin members tab.\n\nPause candidates (no qualifying attendance in the last 12 months, or\never) sort first so admins triage them without scrolling.",
-        "operationId": "community__attendance_report_member_attendance_analytics",
+        "operationId": "community_attendance_report_member_attendance_analytics",
         "parameters": [],
         "responses": {
           "200": {
@@ -11270,7 +11642,7 @@
     },
     "/api/community/events/attendance-import/commit/": {
       "post": {
-        "operationId": "community__attendance_import_commit_attendance_import",
+        "operationId": "community_attendance_csv_import_commit_attendance_import",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -11347,7 +11719,7 @@
     },
     "/api/community/events/attendance-import/events/": {
       "get": {
-        "operationId": "community__attendance_import_list_attendance_import_event_options",
+        "operationId": "community_attendance_csv_import_list_attendance_import_event_options",
         "parameters": [
           {
             "in": "query",
@@ -11399,7 +11771,7 @@
     },
     "/api/community/events/attendance-import/preview/": {
       "post": {
-        "operationId": "community__attendance_import_preview_attendance_import",
+        "operationId": "community_attendance_csv_import_preview_attendance_import",
         "parameters": [
           {
             "in": "query",
@@ -11494,7 +11866,7 @@
     },
     "/api/community/events/attendance-mark/": {
       "post": {
-        "operationId": "community__attendance_mark_mark_attendance",
+        "operationId": "community_attendance_mark_mark_attendance",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -11572,7 +11944,7 @@
     "/api/community/events/attendance-report/": {
       "get": {
         "description": "Per-event attendance summary, newest first, for events with any mark.",
-        "operationId": "community__attendance_report_attendance_report",
+        "operationId": "community_attendance_report_attendance_report",
         "parameters": [],
         "responses": {
           "200": {
@@ -11610,7 +11982,7 @@
     "/api/community/events/{event_id}/": {
       "get": {
         "description": "Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest.",
-        "operationId": "community__events_get_event",
+        "operationId": "community_events_crud_get_event",
         "parameters": [
           {
             "in": "path",
@@ -11665,7 +12037,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__events_update_event",
+        "operationId": "community_events_crud_update_event",
         "parameters": [
           {
             "in": "path",
@@ -11754,7 +12126,7 @@
     "/api/community/events/{event_id}/cohost-invites/": {
       "post": {
         "description": "Invite co-hosts with set-union semantics \u2014 nobody already on the event\nis touched. PATCH co_host_ids treats its list as a replacement set, so a\ncaller that didn't resend pending invitees silently rescinded them.",
-        "operationId": "community__event_cohost_invites_add_cohosts",
+        "operationId": "community_cohosts_invites_add_cohosts",
         "parameters": [
           {
             "in": "path",
@@ -11833,7 +12205,7 @@
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/": {
       "delete": {
         "description": "Rescind a pending invite. Removing an accepted co-host is a co_hosts\noperation \u2014 see the user-keyed DELETE .../cohosts/{user_id}/.",
-        "operationId": "community__event_cohost_invites_rescind_cohost_invite",
+        "operationId": "community_cohosts_invites_rescind_cohost_invite",
         "parameters": [
           {
             "in": "path",
@@ -11911,7 +12283,7 @@
     },
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/accept/": {
       "post": {
-        "operationId": "community__event_cohost_invites_accept_cohost_invite",
+        "operationId": "community_cohosts_invites_accept_cohost_invite",
         "parameters": [
           {
             "in": "path",
@@ -11989,7 +12361,7 @@
     },
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/decline/": {
       "post": {
-        "operationId": "community__event_cohost_invites_decline_cohost_invite",
+        "operationId": "community_cohosts_invites_decline_cohost_invite",
         "parameters": [
           {
             "in": "path",
@@ -12068,7 +12440,7 @@
     "/api/community/events/{event_id}/cohosts/{user_id}/": {
       "delete": {
         "description": "Remove a host from co_hosts \u2014 a kick by another host, or stepping down.\n\nKeyed on the user, not an invite: the creator has no invite row, so an\ninvite-keyed route can't address them. created_by is left intact.",
-        "operationId": "community__event_cohost_invites_remove_cohost",
+        "operationId": "community_cohosts_invites_remove_cohost",
         "parameters": [
           {
             "in": "path",
@@ -12146,7 +12518,7 @@
     },
     "/api/community/events/{event_id}/comments/": {
       "get": {
-        "operationId": "community__event_comments_list_comments",
+        "operationId": "community_events_comments_list_comments",
         "parameters": [
           {
             "in": "path",
@@ -12202,7 +12574,7 @@
         ]
       },
       "post": {
-        "operationId": "community__event_comments_post_comment",
+        "operationId": "community_events_comments_post_comment",
         "parameters": [
           {
             "in": "path",
@@ -12290,7 +12662,7 @@
     },
     "/api/community/events/{event_id}/comments/{comment_id}/": {
       "delete": {
-        "operationId": "community__event_comments_delete_comment",
+        "operationId": "community_events_comments_delete_comment",
         "parameters": [
           {
             "in": "path",
@@ -12361,7 +12733,7 @@
     },
     "/api/community/events/{event_id}/comments/{comment_id}/reactions/": {
       "post": {
-        "operationId": "community__event_comments_toggle_reaction",
+        "operationId": "community_events_comments_toggle_reaction",
         "parameters": [
           {
             "in": "path",
@@ -12459,7 +12831,7 @@
     },
     "/api/community/events/{event_id}/comments/{comment_id}/replies/": {
       "post": {
-        "operationId": "community__event_comments_post_reply",
+        "operationId": "community_events_comments_post_reply",
         "parameters": [
           {
             "in": "path",
@@ -12558,7 +12930,7 @@
     "/api/community/events/{event_id}/email-blast/": {
       "post": {
         "description": "Email everyone who RSVP'd to this event in the chosen audience. Host/co-host only.",
-        "operationId": "community__event_blasts_send_email_blast",
+        "operationId": "community_events_blasts_send_email_blast",
         "parameters": [
           {
             "in": "path",
@@ -12646,7 +13018,7 @@
     },
     "/api/community/events/{event_id}/feedback/": {
       "get": {
-        "operationId": "community__event_feedback_host_get_event_feedback",
+        "operationId": "community_event_feedback_host_get_event_feedback",
         "parameters": [
           {
             "in": "path",
@@ -12704,7 +13076,7 @@
     },
     "/api/community/events/{event_id}/flag/": {
       "post": {
-        "operationId": "community__event_flags_flag_event",
+        "operationId": "community_events_flags_flag_event",
         "parameters": [
           {
             "in": "path",
@@ -12803,7 +13175,7 @@
     "/api/community/events/{event_id}/guests/": {
       "get": {
         "description": "Full signed guest and invited photos, same visibility as event detail.",
-        "operationId": "community__events_get_event_guests",
+        "operationId": "community_events_crud_get_event_guests",
         "parameters": [
           {
             "in": "path",
@@ -12860,7 +13232,7 @@
     },
     "/api/community/events/{event_id}/ics/": {
       "get": {
-        "operationId": "community__calendar_single_event_ics",
+        "operationId": "community_events_calendar_single_event_ics",
         "parameters": [
           {
             "in": "path",
@@ -12890,7 +13262,7 @@
     },
     "/api/community/events/{event_id}/invitations/": {
       "post": {
-        "operationId": "community__event_invitations_invite_to_event",
+        "operationId": "community_events_invitations_invite_to_event",
         "parameters": [
           {
             "in": "path",
@@ -12968,7 +13340,7 @@
     },
     "/api/community/events/{event_id}/my-feedback/": {
       "get": {
-        "operationId": "community__event_feedback_host_get_my_event_feedback",
+        "operationId": "community_event_feedback_host_get_my_event_feedback",
         "parameters": [
           {
             "in": "path",
@@ -13006,7 +13378,7 @@
     },
     "/api/community/events/{event_id}/photo/": {
       "post": {
-        "operationId": "community__event_actions_upload_event_photo",
+        "operationId": "community_events_photos_upload_event_photo",
         "parameters": [
           {
             "in": "path",
@@ -13105,7 +13477,7 @@
     },
     "/api/community/events/{event_id}/poll/": {
       "delete": {
-        "operationId": "community__polls_delete_event_poll",
+        "operationId": "community_polls_crud_delete_event_poll",
         "parameters": [
           {
             "in": "path",
@@ -13164,7 +13536,7 @@
         ]
       },
       "get": {
-        "operationId": "community__polls_get_event_poll",
+        "operationId": "community_polls_crud_get_event_poll",
         "parameters": [
           {
             "in": "path",
@@ -13220,7 +13592,7 @@
         ]
       },
       "post": {
-        "operationId": "community__polls_create_event_poll",
+        "operationId": "community_polls_crud_create_event_poll",
         "parameters": [
           {
             "in": "path",
@@ -13308,7 +13680,7 @@
     },
     "/api/community/events/{event_id}/poll/finalize/": {
       "post": {
-        "operationId": "community__polls_finalize_event_poll",
+        "operationId": "community_polls_crud_finalize_event_poll",
         "parameters": [
           {
             "in": "path",
@@ -13396,7 +13768,7 @@
     },
     "/api/community/events/{event_id}/poll/options/": {
       "post": {
-        "operationId": "community__poll_options_add_poll_option",
+        "operationId": "community_polls_options_add_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -13484,7 +13856,7 @@
     },
     "/api/community/events/{event_id}/poll/options/{option_id}/": {
       "delete": {
-        "operationId": "community__poll_options_delete_poll_option",
+        "operationId": "community_polls_options_delete_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -13570,7 +13942,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__poll_options_update_poll_option",
+        "operationId": "community_polls_options_update_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -13668,7 +14040,7 @@
     },
     "/api/community/events/{event_id}/poll/vote/": {
       "post": {
-        "operationId": "community__polls_vote_on_event_poll",
+        "operationId": "community_polls_crud_vote_on_event_poll",
         "parameters": [
           {
             "in": "path",
@@ -13756,7 +14128,7 @@
     },
     "/api/community/events/{event_id}/report.csv": {
       "get": {
-        "operationId": "community__event_report_get_check_in_report_csv",
+        "operationId": "community_events_report_get_check_in_report_csv",
         "parameters": [
           {
             "in": "path",
@@ -13834,7 +14206,7 @@
     },
     "/api/community/events/{event_id}/report/": {
       "get": {
-        "operationId": "community__event_report_get_check_in_report",
+        "operationId": "community_events_report_get_check_in_report",
         "parameters": [
           {
             "in": "path",
@@ -13902,7 +14274,7 @@
     },
     "/api/community/events/{event_id}/rsvp-questions/": {
       "put": {
-        "operationId": "community__event_rsvp_questions_replace_event_rsvp_questions",
+        "operationId": "community_rsvps_questions_replace_event_rsvp_questions",
         "parameters": [
           {
             "in": "path",
@@ -14004,7 +14376,7 @@
     },
     "/api/community/events/{event_id}/rsvp/": {
       "delete": {
-        "operationId": "community__event_rsvps_delete_rsvp",
+        "operationId": "community_rsvps_member_delete_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -14073,7 +14445,7 @@
         ]
       },
       "post": {
-        "operationId": "community__event_rsvps_upsert_rsvp",
+        "operationId": "community_rsvps_member_upsert_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -14162,7 +14534,7 @@
     "/api/community/events/{event_id}/rsvps/payments/verify/": {
       "post": {
         "description": "Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.",
-        "operationId": "community__event_host_rsvps_verify_guest_payments",
+        "operationId": "community_rsvps_host_verify_guest_payments",
         "parameters": [
           {
             "in": "path",
@@ -14250,7 +14622,7 @@
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
       "post": {
-        "operationId": "community__event_host_actions_set_attendance",
+        "operationId": "community_events_host_actions_set_attendance",
         "parameters": [
           {
             "in": "path",
@@ -14349,7 +14721,7 @@
     "/api/community/events/{event_id}/rsvps/{user_id}/payment/": {
       "patch": {
         "description": "Let a host verify or un-verify a guest's payment without touching their rsvp status.",
-        "operationId": "community__event_host_rsvps_set_guest_payment",
+        "operationId": "community_rsvps_host_set_guest_payment",
         "parameters": [
           {
             "in": "path",
@@ -14438,7 +14810,7 @@
     "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/": {
       "delete": {
         "description": "Let an event host/co-host/manager remove another user's rsvp entirely.",
-        "operationId": "community__event_host_rsvps_remove_guest_rsvp",
+        "operationId": "community_rsvps_host_remove_guest_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -14508,7 +14880,7 @@
       },
       "post": {
         "description": "Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872).",
-        "operationId": "community__event_host_rsvps_set_guest_rsvp",
+        "operationId": "community_rsvps_host_set_guest_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -14604,9 +14976,143 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/speech/": {
+      "get": {
+        "operationId": "community_speech_event_speech_get_event_speech",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSpeechOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Event Speech",
+        "tags": [
+          "community"
+        ]
+      },
+      "put": {
+        "operationId": "community_speech_event_speech_put_event_speech",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSpeechIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSpeechOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Put Event Speech",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/stats/": {
       "get": {
-        "operationId": "community__event_host_actions_get_event_stats",
+        "operationId": "community_events_host_actions_get_event_stats",
         "parameters": [
           {
             "in": "path",
@@ -14664,7 +15170,7 @@
     },
     "/api/community/events/{event_id}/text-recipients/": {
       "get": {
-        "operationId": "community__event_host_actions_get_text_recipients",
+        "operationId": "community_events_host_actions_get_text_recipients",
         "parameters": [
           {
             "in": "path",
@@ -14723,7 +15229,7 @@
     "/api/community/events/{event_id}/waitlist/order/": {
       "put": {
         "description": "Let an event host/co-host/manager set the waitlist order (Issue 1553).",
-        "operationId": "community__event_waitlist_order_reorder_waitlist",
+        "operationId": "community_rsvps_waitlist_order_reorder_waitlist",
         "parameters": [
           {
             "in": "path",
@@ -14811,7 +15317,7 @@
     },
     "/api/community/faq/": {
       "get": {
-        "operationId": "community__guidelines_get_faq",
+        "operationId": "community_content_guidelines_get_faq",
         "parameters": [],
         "responses": {
           "200": {
@@ -14831,7 +15337,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__guidelines_update_faq",
+        "operationId": "community_content_guidelines_update_faq",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -14936,7 +15442,7 @@
     "/api/community/geocode/": {
       "get": {
         "description": "Proxy geocoding requests to Photon, biased toward NYC.",
-        "operationId": "community__geocode_geocode",
+        "operationId": "community_events_geocode_geocode",
         "parameters": [
           {
             "in": "query",
@@ -15069,7 +15575,7 @@
     },
     "/api/community/guidelines/": {
       "get": {
-        "operationId": "community__guidelines_get_guidelines",
+        "operationId": "community_content_guidelines_get_guidelines",
         "parameters": [],
         "responses": {
           "200": {
@@ -15089,7 +15595,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__guidelines_update_guidelines",
+        "operationId": "community_content_guidelines_update_guidelines",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15136,7 +15642,7 @@
     },
     "/api/community/home/": {
       "get": {
-        "operationId": "community__home_get_home",
+        "operationId": "community_content_home_get_home",
         "parameters": [],
         "responses": {
           "200": {
@@ -15156,7 +15662,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__home_update_home",
+        "operationId": "community_content_home_update_home",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15203,7 +15709,7 @@
     },
     "/api/community/join-form/": {
       "get": {
-        "operationId": "community__join_form_get_join_form",
+        "operationId": "community_join_requests_form_get_join_form",
         "parameters": [],
         "responses": {
           "200": {
@@ -15229,7 +15735,7 @@
     },
     "/api/community/join-form/questions/": {
       "post": {
-        "operationId": "community__join_form_create_join_form_question",
+        "operationId": "community_join_requests_form_create_join_form_question",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15276,7 +15782,7 @@
     },
     "/api/community/join-form/questions/order/": {
       "put": {
-        "operationId": "community__join_form_reorder_join_form_questions",
+        "operationId": "community_join_requests_form_reorder_join_form_questions",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15327,7 +15833,7 @@
     },
     "/api/community/join-form/questions/{question_id}/": {
       "delete": {
-        "operationId": "community__join_form_delete_join_form_question",
+        "operationId": "community_join_requests_form_delete_join_form_question",
         "parameters": [
           {
             "in": "path",
@@ -15376,7 +15882,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__join_form_update_join_form_question",
+        "operationId": "community_join_requests_form_update_join_form_question",
         "parameters": [
           {
             "in": "path",
@@ -15461,7 +15967,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JoinRequestOut"
+                  "$ref": "#/components/schemas/JoinRequestSubmittedOut"
                 }
               }
             },
@@ -15516,7 +16022,7 @@
     },
     "/api/community/join-requests/": {
       "get": {
-        "operationId": "community__join_requests_list_join_requests",
+        "operationId": "community_join_requests_manage_list_join_requests",
         "parameters": [],
         "responses": {
           "200": {
@@ -15557,7 +16063,7 @@
     },
     "/api/community/join-requests/{id}/": {
       "patch": {
-        "operationId": "community__join_requests_update_join_request_status",
+        "operationId": "community_join_requests_manage_update_join_request_status",
         "parameters": [
           {
             "in": "path",
@@ -15646,7 +16152,7 @@
     "/api/community/join-requests/{id}/resend-magic-link/": {
       "post": {
         "description": "Mint a fresh magic-login link for an approved join request whose user\nhas not yet onboarded. Invalidates any prior unused magic tokens for the\nuser so the welcome message in the wild can't be claimed twice. Refuses\non already-logged-in users (use the members screen's password reset\nflow for that).",
-        "operationId": "community__join_request_resend_resend_magic_link",
+        "operationId": "community_join_requests_resend_resend_magic_link",
         "parameters": [
           {
             "in": "path",
@@ -15714,7 +16220,7 @@
     },
     "/api/community/join-requests/{id}/unreject/": {
       "patch": {
-        "operationId": "community__join_request_unreject_unreject_join_request",
+        "operationId": "community_join_requests_unreject_unreject_join_request",
         "parameters": [
           {
             "in": "path",
@@ -15782,7 +16288,7 @@
     },
     "/api/community/member-promotion-email/": {
       "get": {
-        "operationId": "community__member_promotion_email_get_member_promotion_email",
+        "operationId": "community_message_templates_member_promotion_email_get_member_promotion_email",
         "parameters": [],
         "responses": {
           "200": {
@@ -15807,7 +16313,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__member_promotion_email_update_member_promotion_email",
+        "operationId": "community_message_templates_member_promotion_email_update_member_promotion_email",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15864,7 +16370,7 @@
     },
     "/api/community/member-promotion-message/": {
       "get": {
-        "operationId": "community__member_promotion_message_get_member_promotion_message",
+        "operationId": "community_message_templates_member_promotion_message_get_member_promotion_message",
         "parameters": [],
         "responses": {
           "200": {
@@ -15889,7 +16395,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__member_promotion_message_update_member_promotion_message",
+        "operationId": "community_message_templates_member_promotion_message_update_member_promotion_message",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -15944,9 +16450,91 @@
         ]
       }
     },
+    "/api/community/member-restored-email/": {
+      "get": {
+        "operationId": "community_message_templates_member_restored_email_get_member_restored_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Restored Email",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_message_templates_member_restored_email_update_member_restored_email",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRestoredEmailPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRestoredEmailOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Restored Email",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/official-event-defaults/": {
       "get": {
-        "operationId": "community__official_event_defaults_get_official_event_defaults",
+        "operationId": "community_events_official_defaults_get_official_event_defaults",
         "parameters": [],
         "responses": {
           "200": {
@@ -15973,7 +16561,7 @@
     },
     "/api/community/pages/{slug}/": {
       "get": {
-        "operationId": "community__pages_get_page",
+        "operationId": "community_content_pages_get_page",
         "parameters": [
           {
             "in": "path",
@@ -16018,7 +16606,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__pages_update_page",
+        "operationId": "community_content_pages_update_page",
         "parameters": [
           {
             "in": "path",
@@ -16086,7 +16674,7 @@
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
       "post": {
         "description": "Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.",
-        "operationId": "community__public_rsvp_submit_check_public_rsvp_phone",
+        "operationId": "community_rsvps_public_submit_check_public_rsvp_phone",
         "parameters": [
           {
             "in": "path",
@@ -16148,7 +16736,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp/": {
       "post": {
-        "operationId": "community__public_rsvp_submit_submit_public_rsvp",
+        "operationId": "community_rsvps_public_submit_submit_public_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -16240,7 +16828,7 @@
     },
     "/api/community/public/my-rsvps/": {
       "get": {
-        "operationId": "community__public_rsvp_manage_list_my_rsvps",
+        "operationId": "community_rsvps_public_manage_list_my_rsvps",
         "parameters": [
           {
             "in": "query",
@@ -16294,7 +16882,7 @@
     "/api/community/public/my-rsvps/resend/": {
       "post": {
         "description": "Public recovery path: re-send a non-member's manage-rsvp link by phone.\n\nHoneypot trips, bad phones, unknown contacts, and member contacts all\nresolve to the same neutral 200 body; only a matching non-member with an\nemail on file is actually sent a link. The response body never reveals\nwhether an account exists \u2014 the one residual signal is that the match path\nsends synchronously, so it's marginally slower; the 3/h IP rate limit keeps\nthat timing side channel impractical to exploit.",
-        "operationId": "community__public_rsvp_resend_resend_manage_link",
+        "operationId": "community_rsvps_public_resend_resend_manage_link",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -16336,7 +16924,7 @@
     },
     "/api/community/public/my-rsvps/{event_id}/": {
       "delete": {
-        "operationId": "community__public_rsvp_manage_delete_my_rsvp",
+        "operationId": "community_rsvps_public_manage_delete_my_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -16399,7 +16987,7 @@
         ]
       },
       "post": {
-        "operationId": "community__public_rsvp_manage_update_my_rsvp",
+        "operationId": "community_rsvps_public_manage_update_my_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -16491,7 +17079,7 @@
     },
     "/api/community/rejection-email/": {
       "get": {
-        "operationId": "community__rejection_email_get_rejection_email",
+        "operationId": "community_message_templates_rejection_email_get_rejection_email",
         "parameters": [],
         "responses": {
           "200": {
@@ -16516,7 +17104,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__rejection_email_update_rejection_email",
+        "operationId": "community_message_templates_rejection_email_update_rejection_email",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -16614,9 +17202,81 @@
         ]
       }
     },
+    "/api/community/speech-template/": {
+      "get": {
+        "operationId": "community_speech_template_get_speech_template",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Speech Template",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_speech_template_update_speech_template",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechTemplatePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechTemplateOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Speech Template",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/surveys/": {
       "post": {
-        "operationId": "community__surveys_create_survey",
+        "operationId": "community_surveys_crud_create_survey",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -16673,7 +17333,7 @@
     },
     "/api/community/surveys/admin/": {
       "get": {
-        "operationId": "community__surveys_list_surveys_admin",
+        "operationId": "community_surveys_crud_list_surveys_admin",
         "parameters": [],
         "responses": {
           "200": {
@@ -16714,7 +17374,7 @@
     },
     "/api/community/surveys/view/{slug}/": {
       "get": {
-        "operationId": "community__surveys_public_get_survey_public",
+        "operationId": "community_surveys_public_get_survey_public",
         "parameters": [
           {
             "in": "path",
@@ -16771,7 +17431,7 @@
     },
     "/api/community/surveys/view/{slug}/respond/": {
       "post": {
-        "operationId": "community__surveys_public_submit_survey_response",
+        "operationId": "community_surveys_public_submit_survey_response",
         "parameters": [
           {
             "in": "path",
@@ -16790,6 +17450,23 @@
               "default": "",
               "title": "Response Token",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "response_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Response Id"
             }
           }
         ],
@@ -16868,7 +17545,7 @@
     },
     "/api/community/surveys/{survey_id}/": {
       "delete": {
-        "operationId": "community__surveys_delete_survey",
+        "operationId": "community_surveys_crud_delete_survey",
         "parameters": [
           {
             "in": "path",
@@ -16917,7 +17594,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__surveys_update_survey",
+        "operationId": "community_surveys_crud_update_survey",
         "parameters": [
           {
             "in": "path",
@@ -16995,7 +17672,7 @@
     },
     "/api/community/surveys/{survey_id}/admin/": {
       "get": {
-        "operationId": "community__surveys_get_survey_admin",
+        "operationId": "community_surveys_crud_get_survey_admin",
         "parameters": [
           {
             "in": "path",
@@ -17051,87 +17728,9 @@
         ]
       }
     },
-    "/api/community/surveys/{survey_id}/finalize/": {
-      "post": {
-        "operationId": "community__surveys_public_finalize_poll",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "survey_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Survey Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FinalizePollIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SurveyOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Finalize Poll",
-        "tags": [
-          "community"
-        ]
-      }
-    },
     "/api/community/surveys/{survey_id}/questions/": {
       "post": {
-        "operationId": "community__surveys_create_survey_question",
+        "operationId": "community_surveys_crud_create_survey_question",
         "parameters": [
           {
             "in": "path",
@@ -17209,7 +17808,7 @@
     },
     "/api/community/surveys/{survey_id}/questions/order/": {
       "put": {
-        "operationId": "community__surveys_reorder_survey_questions",
+        "operationId": "community_surveys_crud_reorder_survey_questions",
         "parameters": [
           {
             "in": "path",
@@ -17291,7 +17890,7 @@
     },
     "/api/community/surveys/{survey_id}/questions/{question_id}/": {
       "delete": {
-        "operationId": "community__surveys_delete_survey_question",
+        "operationId": "community_surveys_crud_delete_survey_question",
         "parameters": [
           {
             "in": "path",
@@ -17350,7 +17949,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__surveys_update_survey_question",
+        "operationId": "community_surveys_crud_update_survey_question",
         "parameters": [
           {
             "in": "path",
@@ -17438,7 +18037,7 @@
     },
     "/api/community/surveys/{survey_id}/responses.csv": {
       "get": {
-        "operationId": "community__survey_reports_get_survey_responses_csv",
+        "operationId": "community_surveys_reports_get_survey_responses_csv",
         "parameters": [
           {
             "in": "path",
@@ -17486,7 +18085,7 @@
     },
     "/api/community/surveys/{survey_id}/responses/": {
       "get": {
-        "operationId": "community__surveys_responses_list_survey_responses",
+        "operationId": "community_surveys_responses_list_survey_responses",
         "parameters": [
           {
             "in": "path",
@@ -17565,7 +18164,7 @@
     },
     "/api/community/surveys/{survey_id}/responses/{response_id}/": {
       "delete": {
-        "operationId": "community__surveys_responses_delete_survey_response",
+        "operationId": "community_surveys_responses_delete_survey_response",
         "parameters": [
           {
             "in": "path",
@@ -17626,7 +18225,7 @@
     },
     "/api/community/surveys/{survey_id}/summary/": {
       "get": {
-        "operationId": "community__survey_reports_get_survey_summary",
+        "operationId": "community_surveys_reports_get_survey_summary",
         "parameters": [
           {
             "in": "path",
@@ -17705,7 +18304,7 @@
     },
     "/api/community/surveys/{survey_id}/tallies/": {
       "get": {
-        "operationId": "community__surveys_public_get_survey_tallies",
+        "operationId": "community_surveys_public_get_survey_tallies",
         "parameters": [
           {
             "in": "path",
@@ -17767,7 +18366,7 @@
     },
     "/api/community/tentative-approval-message/": {
       "get": {
-        "operationId": "community__tentative_approval_message_get_tentative_approval_message",
+        "operationId": "community_message_templates_tentative_approval_get_tentative_approval_message",
         "parameters": [],
         "responses": {
           "200": {
@@ -17792,7 +18391,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__tentative_approval_message_update_tentative_approval_message",
+        "operationId": "community_message_templates_tentative_approval_update_tentative_approval_message",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -17871,7 +18470,7 @@
     },
     "/api/community/welcome-template/": {
       "get": {
-        "operationId": "community__welcome_template_get_welcome_template",
+        "operationId": "community_message_templates_welcome_get_welcome_template",
         "parameters": [],
         "responses": {
           "200": {
@@ -17896,7 +18495,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__welcome_template_update_welcome_template",
+        "operationId": "community_message_templates_welcome_update_welcome_template",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -17953,7 +18552,7 @@
     },
     "/api/community/whatsapp-link/": {
       "get": {
-        "operationId": "community__whatsapp_link_get_whatsapp_link",
+        "operationId": "community_message_templates_whatsapp_link_get_whatsapp_link",
         "parameters": [],
         "responses": {
           "200": {
@@ -17978,7 +18577,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__whatsapp_link_update_whatsapp_link",
+        "operationId": "community_message_templates_whatsapp_link_update_whatsapp_link",
         "parameters": [],
         "requestBody": {
           "content": {

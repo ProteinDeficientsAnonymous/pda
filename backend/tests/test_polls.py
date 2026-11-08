@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
-from ninja_jwt.tokens import RefreshToken
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -37,8 +37,7 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_user)
 
 
 @pytest.fixture
@@ -333,7 +332,7 @@ class TestFinalizePoll:
     ):
         option = poll_with_options.options.first()
         payload = {"winning_option_id": str(option.id)}
-        with patch("community._polls.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.polls.crud.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"/api/community/events/{poll_event.id}/poll/finalize/",
                 data=json.dumps(payload),

@@ -20,10 +20,9 @@ from tests._mcp_payments_helpers import (
     review,
     verified_ids,
 )
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_surveys_read import _tool_names
+from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
@@ -53,12 +52,12 @@ def review_id(importer, event, guests, csv_text):
 
 def _verify(user, event, review_id, assignments, **extra) -> dict:
     arguments = {"event": str(event.pk), "review_id": review_id, "assignments": assignments}
-    return _run(user, "verify_cashapp_payments", **arguments, **extra)
+    return run_tool(user, "verify_cashapp_payments", **arguments, **extra)
 
 
 def _refused(user, event, review_id, assignments, **extra) -> str:
     arguments = {"event": str(event.pk), "review_id": review_id, "assignments": assignments}
-    return _error(user, "verify_cashapp_payments", **arguments, **extra)
+    return tool_error(user, "verify_cashapp_payments", **arguments, **extra)
 
 
 def _pay(payment_id, *users) -> dict:
@@ -70,13 +69,13 @@ def _names(people) -> list[str]:
 
 
 def test_verify_tool_needs_import_payments(test_user, importer, event, review_id, guests):
-    assert "verify_cashapp_payments" not in _tool_names(test_user)
-    assert "verify_cashapp_payments" in _tool_names(importer)
+    assert "verify_cashapp_payments" not in tool_names(test_user)
+    assert "verify_cashapp_payments" in tool_names(importer)
     assert "permission" in _refused(test_user, event, review_id, [_pay("tx1", guests["alex"])])
 
 
 def test_import_permission_alone_cannot_verify(event, review_id, guests):
-    import_only = make_user("+12025557201", PermissionKey.IMPORT_PAYMENTS)
+    import_only = make_user(PermissionKey.IMPORT_PAYMENTS)
     key = review_cache_key(import_only.pk, str(event.pk), review_id)
     caches["ratelimit"].set(key, make_csv_text(), 60)
     error = json.loads(_refused(import_only, event, review_id, [_pay("tx1", guests["alex"])]))
@@ -85,7 +84,7 @@ def test_import_permission_alone_cannot_verify(event, review_id, guests):
 
 
 def test_another_members_draft_is_refused(importer, review_id, guests):
-    draft = make_draft(make_user("+12025557203", first="Other", last="Host"))
+    draft = make_draft(make_user(first_name="Other", last_name="Host"))
     error = _refused(importer, draft, review_id, [_pay("tx1", guests["alex"])])
     assert json.loads(error)["status"] == 403
 
@@ -98,7 +97,7 @@ def test_missing_or_expired_review_is_refused(importer, event, guests, review_id
 
 
 def test_another_users_review_id_is_refused(event, guests, review_id):
-    co_host = make_user("+12025557204", PermissionKey.IMPORT_PAYMENTS, first="Co", last="Host")
+    co_host = make_user(PermissionKey.IMPORT_PAYMENTS, first_name="Co", last_name="Host")
     event.co_hosts.add(co_host)
     assert "review expired" in _refused(co_host, event, review_id, [_pay("tx1", guests["alex"])])
 
@@ -151,7 +150,7 @@ def test_token_is_bound_to_the_exact_selection(importer, event, guests, csv_text
     other_csv = make_csv_text(csv_line(tx="tx9", date=payment_date(), name="Someone Else"))
     other_id = review(importer, event, other_csv)["review_id"]
     assert "fresh preview" in _refused(importer, event, other_id, alex, confirm_token=token)
-    co_host = make_user("+12025557204", PermissionKey.IMPORT_PAYMENTS, first="Co", last="Host")
+    co_host = make_user(PermissionKey.IMPORT_PAYMENTS, first_name="Co", last_name="Host")
     event.co_hosts.add(co_host)
     assert review(co_host, event, csv_text)["review_id"] == review_id
     assert "fresh preview" in _refused(co_host, event, review_id, alex, confirm_token=token)

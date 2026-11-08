@@ -3,9 +3,9 @@
 import json
 
 import pytest
-from community._delta_html import delta_to_html
-from community._html_sanitize import sanitize_content_html
-from community._prosemirror_html import prosemirror_to_html
+from community.content.delta_html import delta_to_html
+from community.content.html_sanitize import sanitize_content_html
+from community.content.prosemirror_html import prosemirror_to_html
 
 
 class TestSchemeStripping:
@@ -203,6 +203,10 @@ class TestStyleAndClassConstraints:
     def test_arbitrary_class_dropped(self):
         result = sanitize_content_html('<a class="evil" href="https://x.test">x</a>')
         assert "evil" not in result
+
+    def test_span_keeps_only_speech_blank_class(self):
+        html = '<span class="speech-blank evil" style="color: red" onclick="x()">hi</span>'
+        assert sanitize_content_html(html) == '<span class="speech-blank">hi</span>'
 
 
 class TestRelInjection:

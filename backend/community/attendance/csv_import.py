@@ -1,0 +1,197 @@
+import logging
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from config.ratelimit import rate_limit
+from django.utils import timezone
+from ninja import File, Router
+from ninja.files import UploadedFile
+from ninja.responses import Status
+from users.models import User
+from users.permissions import PermissionKey
+
+from community.attendance._import_matching import match_rows, parse_partiful_csv
+from community.attendance._import_schemas import (
+    AttendanceImportCommitIn,
+    AttendanceImportCommitOut,
+    AttendanceImportPreviewOut,
+    EventOptionOut,
+)
+from community.attendance.shared import require_permission, upsert_attendance_rsvps
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+)
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
+
+router = Router()
+
+_MAX_CSV_SIZE = 2 * 1024 * 1024
+_ALLOWED_CSV_TYPES = {"text/csv", "application/vnd.ms-excel", "text/plain"}
+
+
+@router.get(
+    "/events/attendance-import/events/",
+    response={200: list[EventOptionOut], 403: ErrorOut},
+    auth=gated_jwt,
+)
+def list_attendance_import_event_options(request, q: str = ""):
+    require_permission(
+        request,
+        "list_attendance_import_event_options",
+        PermissionKey.MANAGE_EVENTS,
+        PermissionKey.MANAGE_USERS,
+    )
+    events = Event.objects.exclude(status=EventStatus.DELETED).order_by("-start_datetime")
+    if q.strip():
+        events = events.filter(title__icontains=q.strip())
+    return Status(
+        200,
+        [
+            EventOptionOut(id=str(e.id), title=e.title, start_datetime=e.start_datetime)
+            for e in events[:25]
+        ],
+    )
+
+
+@router.post(
+    "/events/attendance-import/preview/",
+    response={200: AttendanceImportPreviewOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
+def preview_attendance_import(
+    request,
+    csv_file: UploadedFile = File(...),  # ty: ignore[call-non-callable]
+    event_id: str | None = None,
+):
+    require_permission(request, "preview_attendance_import", PermissionKey.MANAGE_EVENTS)
+    if csv_file.content_type not in _ALLOWED_CSV_TYPES:
+        raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
+    if csv_file.size and csv_file.size > _MAX_CSV_SIZE:
+        raise_validation(Code.AttendanceImport.CSV_MALFORMED, status_code=400)
+
+    existing_rsvp_user_ids: set[str] = set()
+    if event_id:
+        existing_rsvp_user_ids = {
+            str(uid)
+            for uid in Event.objects.filter(id=event_id)
+            .exclude(rsvps__user_id=None)
+            .values_list("rsvps__user_id", flat=True)
+        }
+
+    rows = parse_partiful_csv(csv_file.read())
+    checked_in_rows = [r for r in rows if r.get("checked in", "").lower() == "yes"]
+    matched, needs_review = match_rows(checked_in_rows, existing_rsvp_user_ids)
+    return Status(200, AttendanceImportPreviewOut(matched=matched, needs_review=needs_review))
+
+
+def _require_all_rows_resolved(payload: AttendanceImportCommitIn) -> None:
+    for row in payload.rows:
+        if not row.user_id and not row.skip:
+            raise_validation(
+                Code.AttendanceImport.AMBIGUOUS_USER_PICK, status_code=400, row_index=row.row_index
+            )
+
+
+_IMPORTABLE_EVENT_TYPES = {EventType.OFFICIAL, EventType.CLUB}
+
+
+def _resolve_event(payload: AttendanceImportCommitIn, request) -> Event:
+    if payload.event_id:
+        try:
+            return Event.objects.get(id=payload.event_id)
+        except Event.DoesNotExist:
+            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+
+    if not payload.event_title or not payload.event_date:
+        raise_validation(Code.AttendanceImport.EVENT_OR_TITLE_REQUIRED, status_code=400)
+
+    event_type = payload.event_type or EventType.COMMUNITY
+    if event_type not in (*_IMPORTABLE_EVENT_TYPES, EventType.COMMUNITY):
+        raise_validation(Code.AttendanceImport.INVALID_EVENT_TYPE, status_code=400)
+
+    start = timezone.make_aware(
+        timezone.datetime.combine(payload.event_date, timezone.datetime.min.time())
+    )
+    return Event.objects.create(
+        title=payload.event_title,
+        start_datetime=start,
+        event_type=event_type,
+        visibility=PageVisibility.PUBLIC,
+        status=EventStatus.ACTIVE,
+        rsvp_enabled=True,
+        is_partiful_import=True,
+        created_by=request.auth,
+    )
+
+
+def _resolve_status_and_attendance(row) -> tuple[str, str]:
+    """Going+not-checked-in must map to attending+didnt_go — the didn't-go shape rsvps.counts.no_show_q expects."""
+    if row.checked_in:
+        return RSVPStatus.ATTENDING, AttendanceStatus.ATTENDED
+    if row.partiful_status.lower() == "going":
+        return RSVPStatus.ATTENDING, AttendanceStatus.DIDNT_GO
+    return RSVPStatus.MAYBE, AttendanceStatus.UNKNOWN
+
+
+@router.post(
+    "/events/attendance-import/commit/",
+    response={
+        200: AttendanceImportCommitOut,
+        400: ErrorOut,
+        403: ErrorOut,
+        404: ErrorOut,
+        429: ErrorOut,
+    },
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
+def commit_attendance_import(request, payload: AttendanceImportCommitIn):
+    require_permission(request, "commit_attendance_import", PermissionKey.MANAGE_EVENTS)
+    _require_all_rows_resolved(payload)
+
+    event = _resolve_event(payload, request)
+    user_ids = {r.user_id for r in payload.rows if r.user_id and not r.skip}
+    users_by_id = {str(u.id): u for u in User.objects.filter(id__in=user_ids)}
+
+    resolved = [
+        (row, users_by_id[row.user_id])
+        for row in payload.rows
+        if not row.skip and row.user_id and row.user_id in users_by_id
+    ]
+    marks = {user.pk: _resolve_status_and_attendance(row) for row, user in resolved}
+    existing = upsert_attendance_rsvps(event, marks)
+    created_count = len(marks) - len(existing)
+    updated_count = len(resolved) - created_count
+    skipped_count = len(payload.rows) - len(resolved)
+
+    audit_log(
+        logging.INFO,
+        "attendance_import_committed",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "skipped_count": skipped_count,
+            },
+        ),
+    )
+    return Status(
+        200,
+        AttendanceImportCommitOut(
+            event_id=str(event.id),
+            event_title=event.title,
+            created_count=created_count,
+            updated_count=updated_count,
+            skipped_count=skipped_count,
+        ),
+    )

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from community.models import AttendanceMilestone
-from notifications._attendance_reminder_email import send_attendance_reminder_email
+from notifications.attendance_reminder_email import send_attendance_reminder_email
 from notifications.email_sender import SendResult
 
 

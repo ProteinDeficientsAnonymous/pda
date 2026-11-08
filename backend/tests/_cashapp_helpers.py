@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TypedDict, Unpack
 
-from community._cashapp_import_csv import CashAppRow
-from community._cashapp_import_types import EventPaymentContext, GuestRecord
+from community.cashapp._csv_parser import CashAppRow
+from community.cashapp.import_types import EventPaymentContext, GuestRecord
 from community.models import RSVPStatus
 
 HEADER = (

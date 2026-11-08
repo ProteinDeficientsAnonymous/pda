@@ -1,3 +1,4 @@
+import importlib
 import logging
 import os
 import signal
@@ -180,6 +181,18 @@ class TestGunicornConf:
         assert gunicorn_conf.max_requests == 2000
         assert gunicorn_conf.max_requests_jitter == 200
         assert gunicorn_conf.graceful_timeout == 35
+
+    def test_runs_two_workers_by_default(self, monkeypatch):
+        monkeypatch.delenv("WEB_CONCURRENCY", raising=False)
+
+        assert importlib.reload(gunicorn_conf).workers == 2
+
+    def test_worker_count_reads_web_concurrency(self, monkeypatch):
+        monkeypatch.setenv("WEB_CONCURRENCY", "3")
+
+        assert importlib.reload(gunicorn_conf).workers == 3
+        monkeypatch.undo()
+        importlib.reload(gunicorn_conf)
 
     def test_worker_max_age_defaults_to_30_minutes(self, monkeypatch):
         monkeypatch.delenv("PDA_WORKER_MAX_AGE", raising=False)

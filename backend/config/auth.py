@@ -17,7 +17,7 @@ A pending user (needs password reset / onboarding) must still reach the few
 endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
-from community._validation import Code, ValidationException
+from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
 from users.models import User
@@ -39,7 +39,7 @@ _PENDING_ALLOWLIST = frozenset(
 )
 
 # Archive and pause still 403 on the pending allowlist; password and consent do not.
-_HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
+HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
 
 
 def account_block_code(user: User) -> str | None:
@@ -72,9 +72,7 @@ class GatedJWTAuth(JWTAuth):
             return user
 
         code = account_block_code(user)
-        if code is None or (
-            request.path in _PENDING_ALLOWLIST and code not in _HARD_ACCOUNT_BLOCKS
-        ):
+        if code is None or (request.path in _PENDING_ALLOWLIST and code not in HARD_ACCOUNT_BLOCKS):
             return user
         raise ValidationException(code, status_code=403)
 

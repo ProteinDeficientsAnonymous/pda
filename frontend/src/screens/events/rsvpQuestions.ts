@@ -3,11 +3,16 @@ import {
   questionTypeWantsOptions,
   RSVP_QUESTION_TYPE_OPTIONS,
 } from '@/components/questions/questionTypeOptions';
-import { type Event, type EventRsvpQuestion, RsvpServerStatus } from '@/models/event';
+import {
+  type Event,
+  type EventRsvpQuestion,
+  type QuestionnaireAnswer,
+  RsvpServerStatus,
+} from '@/models/event';
 
 export type { RsvpQuestionType };
 export type RsvpQuestionDraft = EventRsvpQuestion;
-export type RsvpAnswerValue = string;
+export type RsvpAnswerValue = QuestionnaireAnswer;
 
 export { RSVP_QUESTION_TYPE_OPTIONS };
 export { newRsvpQuestionId as newQuestionId };
@@ -22,6 +27,7 @@ export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = Objec
 ) as Record<RsvpQuestionType, string>;
 
 export function isAnswerFilled(value: RsvpAnswerValue | undefined): boolean {
+  if (Array.isArray(value)) return value.some((v) => v.trim());
   return Boolean(value?.trim());
 }
 

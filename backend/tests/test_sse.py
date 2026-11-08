@@ -2,45 +2,67 @@
 
 import asyncio
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 import psycopg
 import pytest
 from django.conf import settings
-from django.core.cache import caches
+from django.db import DatabaseError
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
 from notifications.models import SseTicket
-from notifications.sse import _format_notify_for_user
+from notifications.sse import format_notify_for_user
+
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
 class TestFormatNotifyForUser:
     def test_event_update_matches_target_user(self):
-        frame = _format_notify_for_user("event_updates", "user-1:event-1", "user-1")
+        frame = format_notify_for_user("event_updates", "user-1:event-1", "user-1")
         assert frame is not None
         assert "event: event_updated" in frame
 
     def test_event_update_skips_other_user(self):
-        assert _format_notify_for_user("event_updates", "user-1:event-1", "user-2") is None
+        assert format_notify_for_user("event_updates", "user-1:event-1", "user-2") is None
 
     def test_event_update_wildcard_matches_any_user(self):
-        frame = _format_notify_for_user("event_updates", "*:event-1", "user-2")
+        frame = format_notify_for_user("event_updates", "*:event-1", "user-2")
         assert frame is not None
         assert "event: event_updated" in frame
 
+    def test_read_ping_matches_target_user(self):
+        frame = format_notify_for_user("notifications", "read:user-1", "user-1")
+        assert frame is not None
+        assert "event: notifications_read" in frame
 
-def _auth_headers(user) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+    def test_read_ping_skips_other_user(self):
+        assert format_notify_for_user("notifications", "read:user-1", "user-2") is None
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
+class TestNotifyReadStateChanged:
+    def test_publishes_read_payload_on_postgres(self, monkeypatch):
+        cursor = MagicMock()
+        conn = MagicMock(vendor="postgresql")
+        conn.cursor.return_value.__enter__.return_value = cursor
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+        cursor.execute.assert_called_once_with(
+            "SELECT pg_notify('notifications', %s)", ["read:user-1"]
+        )
 
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
+    def test_swallows_database_errors(self, monkeypatch):
+        conn = MagicMock(vendor="postgresql")
+        conn.cursor.side_effect = DatabaseError("boom")
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+
+    def test_noop_off_postgres(self, monkeypatch):
+        conn = MagicMock(vendor="sqlite")
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+        conn.cursor.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -50,13 +72,13 @@ class TestSseTicketMint:
         assert response.status_code == 401
 
     def test_mint_returns_ticket(self, test_user, api_client):
-        response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
+        response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         assert response.status_code == 200
         assert response.json()["ticket"]
 
     def test_minted_ticket_is_bound_to_user(self, test_user, api_client):
 
-        response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
+        response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         token = response.json()["ticket"]
         ticket = SseTicket.objects.get(token=token)
         assert ticket.user_id == test_user.pk

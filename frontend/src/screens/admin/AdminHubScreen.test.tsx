@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import { makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeUser, makeUserWithPermissions } from '@/test/fixtures';
 
 import AdminHubScreen from './AdminHubScreen';
 
@@ -28,7 +28,7 @@ describe('AdminHubScreen', () => {
         },
       ],
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     renderHub();
 
@@ -37,10 +37,21 @@ describe('AdminHubScreen', () => {
 
   it('hides the docs tile for a user without the permission', () => {
     const user = makeUser({ roles: [] });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     renderHub();
 
     expect(screen.queryByText('docs')).not.toBeInTheDocument();
+  });
+
+  it('shows the event speech tile only with the edit_speech_template permission', () => {
+    setAuthed(makeUserWithPermissions([Permission.EditSpeechTemplate]));
+    const { unmount } = renderHub();
+    expect(screen.getByText('event speech')).toBeInTheDocument();
+    unmount();
+
+    setAuthed(makeUser({ roles: [] }));
+    renderHub();
+    expect(screen.queryByText('event speech')).not.toBeInTheDocument();
   });
 });

@@ -1,11 +1,11 @@
-from community._tentative_member_access import is_tentative_member
-from community._validation import Code, raise_validation
+from community.events.limited_access import is_limited
+from community.validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from ninja import Router
 from ninja.responses import Status
 
-from users._helpers import visible_name
+from users.helpers import visible_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import (
@@ -21,7 +21,7 @@ router = Router()
 
 def _require_member(request) -> None:
     """The roster is behind full membership — a tentative applicant hasn't been vetted."""
-    if is_tentative_member(request.auth):
+    if is_limited(request.auth):
         raise_validation(Code.Perm.DENIED, status_code=403, action="view_member_directory")
 
 

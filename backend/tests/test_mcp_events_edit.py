@@ -1,11 +1,11 @@
-import asyncio
 import json
 from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from asgiref.sync import async_to_sync
 from audit.models import AuditLogEntry
-from community._event_description_templates import OFFICIAL_WALK_TEMPLATE
+from community.events.description_templates import OFFICIAL_WALK_TEMPLATE
 from community.models import Event, EventRSVP, EventStatus, EventTag, EventType, RSVPStatus
 from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
@@ -13,11 +13,10 @@ from mcp_gateway.confirm import MAX_AGE_SECONDS
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
 
-from tests._public_rsvp_helpers import make_non_member
-from tests.test_mcp_events_write import _error, _run
-from tests.test_mcp_server import _signed_in
+from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
+from tests._public_rsvp_helpers import make_public_rsvper
 
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = pytest.mark.django_db
 PRICE = {"price": "$20"}
 
 
@@ -35,11 +34,11 @@ def make_event(test_user):
 
 
 def _publish(user, event, **arguments) -> dict:
-    return _run(user, "publish_event", event=str(event.pk), **arguments)
+    return run_tool(user, "publish_event", event=str(event.pk), **arguments)
 
 
 def _publish_refused(user, event, **arguments) -> str:
-    return _error(user, "publish_event", event=str(event.pk), **arguments)
+    return tool_error(user, "publish_event", event=str(event.pk), **arguments)
 
 
 def test_publish_refuses_official_draft_with_unfilled_slots(test_user, make_event):
@@ -104,11 +103,11 @@ def test_publish_refuses_non_draft(test_user, make_event):
 
 
 def _update(user, event, changes=PRICE, **arguments) -> dict:
-    return _run(user, "update_event", event=str(event.pk), changes=changes, **arguments)
+    return run_tool(user, "update_event", event=str(event.pk), changes=changes, **arguments)
 
 
 def _update_refused(user, event, changes=PRICE, **arguments) -> str:
-    return _error(user, "update_event", event=str(event.pk), changes=changes, **arguments)
+    return tool_error(user, "update_event", event=str(event.pk), changes=changes, **arguments)
 
 
 def test_draft_edit_applies_directly(test_user, make_event):
@@ -140,7 +139,7 @@ def test_non_host_refused_before_preview(make_event, vettor_user):
 
 def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
     event = make_event(event_type=EventType.OFFICIAL, rsvp_enabled=True)
-    guest = make_non_member("+12025550177", "n@e.com")
+    guest = make_public_rsvper("+12025550177", "n@e.com")
     EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
     off, force = {"rsvp_enabled": False}, {"remove_non_member_rsvps": True}
     token = _update(test_user, event, off)["confirm_token"]
@@ -170,6 +169,18 @@ def test_publish_and_update_tokens_are_not_interchangeable(test_user, make_event
     Event.objects.filter(pk=event.pk).update(status=EventStatus.ACTIVE)
     assert "fresh preview" in _update_refused(test_user, event, confirm_token=publish_token)
     assert Event.objects.get(pk=event.pk).price == ""
+
+
+def test_draft_edit_sets_event_format(test_user, make_event):
+    event = make_event(EventStatus.DRAFT, event_type=EventType.OFFICIAL)
+    assert _update(test_user, event, {"event_format": "restaurant"})["event_format"] == "restaurant"
+    assert Event.objects.get(pk=event.pk).event_format == "restaurant"
+
+
+def test_explicit_null_event_format_leaves_it_unchanged(test_user, make_event):
+    event = make_event(EventStatus.DRAFT, event_type=EventType.OFFICIAL, event_format="walk")
+    _update(test_user, event, {**PRICE, "event_format": None})
+    assert Event.objects.get(pk=event.pk).event_format == "walk"
 
 
 @pytest.mark.parametrize(
@@ -221,7 +232,7 @@ def test_preview_notes_location_moved_without_new_pin(test_user, make_event):
 def test_preview_notes_non_member_removal(test_user, make_event):
     event = make_event(event_type=EventType.OFFICIAL, rsvp_enabled=True)
     for i, status in enumerate([RSVPStatus.ATTENDING, RSVPStatus.MAYBE]):
-        guest = make_non_member(f"+1202555017{i}", f"n{i}@e.com")
+        guest = make_public_rsvper(f"+1202555017{i}", f"n{i}@e.com")
         EventRSVP.objects.create(event=event, user=guest, status=status)
     to_community = {"event_type": "community"}
     asking = _update(test_user, event, to_community)["notes"]
@@ -246,8 +257,8 @@ def test_fields_outside_event_fields_are_ignored(test_user, make_event, vettor_u
 
 
 def test_changes_schema_has_no_null_defaults(test_user):
-    reset = _signed_in(test_user)
-    tools = {tool.name: tool for tool in asyncio.run(pda_mcp.list_tools())}
+    reset = signed_in(test_user)
+    tools = {tool.name: tool for tool in async_to_sync(pda_mcp.list_tools)()}
     auth_context_var.reset(reset)
     schema = tools["update_event"].input_schema["$defs"]["EventChanges"]["properties"]
     assert not [name for name, field in schema.items() if "default" in field]

@@ -9,13 +9,13 @@ from users.roles import Role
 
 from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
 
-from ._e2e_common import _member_user, _non_member_user, _random_event, _random_phone
+from ._e2e_common import member_user, non_member_user, random_event, random_phone
 
 _CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
 
 
 def _browser_user(permissions: list[str] | None = None) -> User:
-    user = _member_user(_random_phone())
+    user = member_user(random_phone())
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
     user.contact_privacy_consent_at = _CONSENT_AT
@@ -29,7 +29,7 @@ def _browser_user(permissions: list[str] | None = None) -> User:
 
 
 def _named_member(first_name: str) -> User:
-    user = _member_user(_random_phone())
+    user = member_user(random_phone())
     user.first_name = first_name
     user.save(update_fields=["first_name"])
     return user
@@ -41,11 +41,11 @@ def _attended(event: Event, user: User) -> None:
     )
 
 
-def _seed_attendance_report() -> dict:
+def seed_attendance_report() -> dict:
     # Creator with no role, so the report is reached via the host path, not MANAGE_EVENTS.
     host = _browser_user()
     start = timezone.now() - timedelta(days=2)
-    event = _random_event(
+    event = random_event(
         "attendance-report",
         start_datetime=start,
         end_datetime=start + timedelta(hours=2),
@@ -55,7 +55,7 @@ def _seed_attendance_report() -> dict:
     suffix = secrets.token_hex(4)
     attended = _named_member(f"Attended{suffix}")
     no_show = _named_member(f"Noshow{suffix}")
-    canceled = _non_member_user(_random_phone())
+    canceled = non_member_user(random_phone())
     canceled.first_name = f"Canceled{suffix}"
     canceled.save(update_fields=["first_name"])
 
@@ -80,18 +80,18 @@ def _seed_attendance_report() -> dict:
     }
 
 
-def _seed_attendance_analytics() -> dict:
+def seed_attendance_analytics() -> dict:
     admin = _browser_user([PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS])
 
     recent = [
-        _random_event(
+        random_event(
             "analytics-recent",
             event_type=EventType.OFFICIAL,
             start_datetime=timezone.now() - timedelta(days=days),
         )
         for days in (10, 40)
     ]
-    stale = _random_event(
+    stale = random_event(
         "analytics-stale",
         event_type=EventType.CLUB,
         start_datetime=timezone.now() - timedelta(days=400),

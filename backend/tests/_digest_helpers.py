@@ -5,17 +5,6 @@ from django.utils import timezone
 from users.models import User
 
 
-def make_member(phone_number: str, **extra) -> User:
-    extra.setdefault("email", f"{phone_number}@example.test")
-    extra.setdefault("first_name", "Test")
-    extra.setdefault("is_member", True)
-    return User.objects.create_user(
-        phone_number=phone_number,
-        password="testpass123",
-        **extra,
-    )
-
-
 def make_tentative(phone_number: str, **extra) -> User:
     user = User.objects.create(
         phone_number=phone_number,
@@ -34,7 +23,7 @@ def make_tentative(phone_number: str, **extra) -> User:
     return user
 
 
-def make_event(title: str, days_out: float, **extra) -> Event:
+def make_event(title: str = "Vegan Potluck", days_out: float = 5, **extra) -> Event:
     extra.setdefault("event_type", EventType.OFFICIAL)
     return Event.objects.create(
         title=title,

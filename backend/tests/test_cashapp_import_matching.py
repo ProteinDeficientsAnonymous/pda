@@ -1,7 +1,7 @@
-from community._cashapp_import_filter import filter_payments
-from community._cashapp_import_matching import match_payments
-from community._cashapp_import_price import parse_event_price
-from community._cashapp_import_types import MatchConfidence, MatchSource
+from community.cashapp._filter import filter_payments
+from community.cashapp._matching import match_payments
+from community.cashapp.import_types import MatchConfidence, MatchSource
+from community.cashapp.price import parse_event_price
 from community.models import RSVPStatus
 
 from tests._cashapp_helpers import event_ctx, guest, row
@@ -225,7 +225,7 @@ def test_matching_shares_the_bulk_verify_statuses_without_its_side_effects():
     import ast
     import inspect
 
-    import community._cashapp_import_matching as matching
+    import community.cashapp._matching as matching
     from community.models import MATCHABLE_RSVP_STATUSES
 
     imported = {
@@ -233,5 +233,5 @@ def test_matching_shares_the_bulk_verify_statuses_without_its_side_effects():
         for node in ast.walk(ast.parse(inspect.getsource(matching)))
         if isinstance(node, ast.ImportFrom)
     }
-    assert "community._payment_verification" not in imported
+    assert "community.rsvps._payment_verification" not in imported
     assert matching.MATCHABLE_RSVP_STATUSES is MATCHABLE_RSVP_STATUSES

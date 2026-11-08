@@ -12,6 +12,7 @@ from community.models.choices import (
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
+    EventFormat,
     EventStatus,
     EventType,
     InvitePermission,
@@ -26,14 +27,13 @@ if TYPE_CHECKING:
     from community.models.cohost_invite import EventCoHostInvite
     from community.models.comment import EventComment
     from community.models.poll import EventPoll
-    from community.models.survey import Survey
 
 
 # How long an event with no end_datetime is treated as running; mirrors frontend DEFAULT_EVENT_DURATION_MS.
 DEFAULT_EVENT_DURATION = timedelta(hours=2)
 
 
-def _is_past_q(now, prefix: str = "") -> Q:
+def is_past_q(now, prefix: str = "") -> Q:
     """Queryset mirror of Event.is_past, over the field path at `prefix` (e.g. "event__")."""
     end = f"{prefix}end_datetime"
     start = f"{prefix}start_datetime"
@@ -54,7 +54,7 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
         & Q(**{f"{prefix}status": EventStatus.ACTIVE})
         & Q(**{f"{prefix}visibility": PageVisibility.PUBLIC})
         & Q(**{f"{prefix}rsvp_enabled": True})
-        & ~_is_past_q(now, prefix)
+        & ~is_past_q(now, prefix)
     )
 
 
@@ -88,6 +88,12 @@ class Event(models.Model):
         choices=EventType.choices,
         default=EventType.COMMUNITY,
     )
+    event_format = models.CharField(
+        max_length=20,
+        choices=EventFormat.choices,
+        blank=True,
+        default="",
+    )
     visibility = models.CharField(
         max_length=20,
         choices=PageVisibility.choices,
@@ -105,11 +111,11 @@ class Event(models.Model):
     )
     deleted_at = models.DateTimeField(null=True, blank=True)
     checkin_nudge_sent_at = models.DateTimeField(null=True, blank=True)
+    cohost_reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
         rsvps: "Manager[EventRSVP]"
-        surveys: "Manager[Survey]"
         poll: "EventPoll"
         comments: "Manager[EventComment]"
         cohost_invites: "Manager[EventCoHostInvite]"
@@ -266,8 +272,8 @@ class EventRSVP(models.Model):
         ]
 
     @classmethod
-    def from_db(cls, db, field_names, values):
-        instance = super().from_db(db, field_names, values)
+    def from_db(cls, db, field_names, values, *, fetch_mode=None):
+        instance = super().from_db(db, field_names, values, fetch_mode=fetch_mode)
         if "status" in field_names:
             instance._loaded_status = instance.status
         return instance

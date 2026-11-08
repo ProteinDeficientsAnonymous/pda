@@ -1,12 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFaq } from '@/api/content';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import FaqScreen from './FaqScreen';
 
@@ -35,18 +33,9 @@ const baseUser = makeUser({
   weekStart: 'monday',
 });
 
-function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('FaqScreen', () => {
@@ -57,7 +46,7 @@ describe('FaqScreen', () => {
       data: undefined,
     } as ReturnType<typeof useFaq>);
 
-    renderWith(<FaqScreen />);
+    renderWithProviders(<FaqScreen />);
 
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
@@ -67,14 +56,14 @@ describe('FaqScreen', () => {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'member', isDefault: true, permissions: [] }],
     };
-    useAuthStore.setState({ status: 'authed', user: memberUser, accessToken: 'token' });
+    setAuthed(memberUser, 'token');
     mockUseFaq.mockReturnValue({
       isPending: false,
       isError: false,
       data: baseFaqData,
     } as ReturnType<typeof useFaq>);
 
-    renderWith(<FaqScreen />);
+    renderWithProviders(<FaqScreen />);
 
     expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
   });
@@ -84,14 +73,14 @@ describe('FaqScreen', () => {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'faq-editor', isDefault: true, permissions: ['edit_faq'] }],
     };
-    useAuthStore.setState({ status: 'authed', user: editorUser, accessToken: 'token' });
+    setAuthed(editorUser, 'token');
     mockUseFaq.mockReturnValue({
       isPending: false,
       isError: false,
       data: baseFaqData,
     } as ReturnType<typeof useFaq>);
 
-    renderWith(<FaqScreen />);
+    renderWithProviders(<FaqScreen />);
 
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
   });

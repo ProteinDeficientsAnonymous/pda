@@ -60,7 +60,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     guestRsvpCount: 1,
     datetimeTbd: false,
     hasPoll: false,
-    datetimePollSlug: null,
     createdById: 'creator',
     createdByName: 'Creator',
     createdByPhotoUrl: '',
@@ -81,7 +80,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     myQuestionnaireResponses: {},
     rsvpQuestions: [],
     viewerUserId: null,
-    linkedSurveys: [],
     invitedUserIds: [],
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
@@ -89,6 +87,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     pendingCohostInvites: [],
     myPendingCohostInviteId: null,
     eventType: EventType.Community,
+    eventFormat: null,
     visibility: EventVisibility.Public,
     photoUrl: '',
     photoUpdatedAt: null,
@@ -154,6 +153,19 @@ export function makeUser(overrides: Partial<User> = {}): User {
   };
 }
 
+export function makeUserWithPermissions(
+  permissions: string[],
+  overrides: Partial<User> = {},
+): User {
+  return makeUser({
+    ...overrides,
+    roles: [{ id: 'role-test', name: 'test', isDefault: false, permissions }],
+  });
+}
+
+export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
+export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
+
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {
     id: 'member-1',
@@ -169,6 +181,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     isMember: true,
     isSuperuser: false,
     isPaused: false,
+    attendancePausedAt: null,
     hasJoinedWhatsapp: false,
     needsOnboarding: false,
     loginLinkRequested: false,
@@ -196,6 +209,8 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
     tentativeByName: null,
     approvedAt: null,
     approvedByName: null,
+    approvedViaEventId: null,
+    approvedViaEventTitle: null,
     rejectedAt: null,
     rejectedByName: null,
     rejectionReason: null,

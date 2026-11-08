@@ -1,17 +1,14 @@
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import {
-  type JoinRequestAttendedEvent,
-  JoinRequestStatus,
-  type JoinRequestSummary,
-  type RsvpBreakdown,
-} from '@/api/join';
+import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
 import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
+import { AttendedEventsNote } from './AttendedEventsNote';
 import { TentativeActions } from './JoinRequestTentativeSection';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 import { SendMessageDialog } from './SendMessageDialog';
@@ -206,28 +203,6 @@ function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
   );
 }
 
-function AttendedEventsNote({ events }: { events: JoinRequestAttendedEvent[] }) {
-  if (events.length === 0) return null;
-  return (
-    <div className="mt-1">
-      <p className="text-muted text-xs font-medium">events attended</p>
-      <ul className="text-muted mt-0.5 flex flex-col gap-0.5 text-xs">
-        {events.map((e) => (
-          <li key={e.eventId}>
-            {e.title.toLowerCase()}
-            {' — '}
-            {e.startDatetime
-              ? format(new Date(e.startDatetime), 'MMM d, yyyy').toLowerCase()
-              : 'date tbd'}
-            {' · '}
-            {e.eventType}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
   if (!request.tentativeAt) return null;
   const who = request.tentativeByName ?? 'an admin';
@@ -241,6 +216,20 @@ function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
 
 function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
   if (request.status === JoinRequestStatus.APPROVED && request.approvedAt) {
+    if (request.approvedViaEventId) {
+      return (
+        <>
+          <p className="text-muted mt-3 text-xs">
+            auto approved after joining{' '}
+            <Link to={`/events/${request.approvedViaEventId}`} className="hover:underline">
+              {(request.approvedViaEventTitle ?? 'an event').toLowerCase()}
+            </Link>{' '}
+            on {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+          </p>
+          <LoginStatus onboardedAt={request.onboardedAt} />
+        </>
+      );
+    }
     const who = request.approvedByName ?? 'an admin';
     return (
       <>

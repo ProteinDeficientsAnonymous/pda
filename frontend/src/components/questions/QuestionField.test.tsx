@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { QuestionType } from '@/api/questionTypes';
 import type { SurveyQuestion } from '@/api/surveys';
 
 import { QuestionField } from './QuestionField';
@@ -16,25 +17,61 @@ const base: SurveyQuestion = {
 };
 
 describe('QuestionField', () => {
-  it('renders bare stars when a rating has no labels', () => {
-    render(
-      <QuestionField question={{ ...base, fieldType: 'rating' }} value="" onChange={vi.fn()} />,
-    );
-    expect(screen.getByRole('radio', { name: '3 stars' })).toHaveTextContent('★');
-    expect(screen.getByRole('radiogroup')).not.toHaveClass('flex-col');
-  });
-
-  it('stacks stars vertically with labels beside them when any label is set', () => {
+  it('renders five stars in a row and reports the picked one', () => {
+    const onChange = vi.fn();
     render(
       <QuestionField
-        question={{ ...base, fieldType: 'rating', options: ['meh', '', '', '', 'loved it'] }}
+        question={{ ...base, fieldType: QuestionType.Stars }}
+        value="2"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getAllByRole('radio')).toHaveLength(5);
+    expect(screen.getByRole('radio', { name: '2 stars' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: '4 stars' }));
+    expect(onChange).toHaveBeenCalledWith('4');
+  });
+
+  it('renders a 1–5 scale with its end labels and reports the picked point', () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: QuestionType.Scale, options: ['bad', 'great'] }}
+        value="3"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: '3' })).toBeChecked();
+    expect(screen.getByText('bad')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: '5 — great' }));
+    expect(onChange).toHaveBeenCalledWith('5');
+  });
+
+  it('labels every point of a 1–5 scale when given five labels', () => {
+    const options = ['never', 'rarely', '', 'often', 'always'];
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: QuestionType.Scale, options }}
         value=""
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole('radiogroup')).toHaveClass('flex-col');
-    expect(screen.getByRole('radio', { name: 'loved it' })).toHaveTextContent('loved it');
-    expect(screen.getByRole('radio', { name: '2 stars' })).toHaveTextContent(/^★$/);
+    expect(screen.getByRole('radio', { name: '2 — rarely' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '3' })).toBeInTheDocument();
+    expect(screen.getByText('often')).toBeInTheDocument();
+  });
+
+  it('lets a datetime poll answer no for a time', () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionField
+        question={{ ...base, fieldType: 'datetime_poll', options: ['2026-11-07T16:00:00Z'] }}
+        value={{}}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: 'no' }));
+    expect(onChange).toHaveBeenCalledWith({ '2026-11-07T16:00:00Z': 'no' });
   });
 
   it('renders a single-line text field for text type', () => {
@@ -47,6 +84,18 @@ describe('QuestionField', () => {
       <QuestionField question={{ ...base, fieldType: 'textarea' }} value="" onChange={vi.fn()} />,
     );
     expect(screen.getByRole('textbox', { name: 'notes · required' }).tagName).toBe('TEXTAREA');
+  });
+
+  it.each(['text', 'textarea'] as const)('shows a live char count for %s answers', (fieldType) => {
+    render(<QuestionField question={{ ...base, fieldType }} value="hello" onChange={vi.fn()} />);
+    const field = screen.getByRole('textbox', { name: 'notes · required' });
+    expect(field).toHaveAttribute('maxLength', '2000');
+    expect(field).toHaveAccessibleDescription('5/2000');
+  });
+
+  it('hides the char count when read-only', () => {
+    render(<QuestionField question={base} value="hello" onChange={vi.fn()} readOnly />);
+    expect(screen.queryByText('5/2000')).not.toBeInTheDocument();
   });
 
   it('marks required questions as required', () => {

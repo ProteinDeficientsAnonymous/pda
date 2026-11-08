@@ -1,12 +1,12 @@
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from community._field_limits import FieldLimit
+from community.field_limits import FieldLimit
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-from mcp_gateway.event_fields import _no_default
+from mcp_gateway.event_fields import no_default
 from mcp_gateway.fields import local_time
 from mcp_gateway.survey_fields import ShowIf, SurveyQuestionFields, SurveySettings
 
@@ -18,7 +18,7 @@ def partial_model(model: type[BaseModel], name: str) -> Any:
     fields = {
         key: (
             field.rebuild_annotation(),
-            Field(None, description=field.description, json_schema_extra=_no_default),
+            Field(None, description=field.description, json_schema_extra=no_default),
         )
         for key, field in model.model_fields.items()
     }

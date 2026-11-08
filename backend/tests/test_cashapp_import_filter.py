@@ -2,9 +2,9 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from community._cashapp_import_filter import filter_payments
-from community._cashapp_import_price import PeopleRange, parse_event_price
-from community._cashapp_import_types import FilterReason
+from community.cashapp._filter import filter_payments
+from community.cashapp.import_types import FilterReason
+from community.cashapp.price import PeopleRange, parse_event_price
 
 from tests._cashapp_helpers import CREATED, ENDS, IN_WINDOW, event_ctx, row
 

@@ -136,7 +136,6 @@ describe('mapEvent', () => {
   it('defaults array fields to empty arrays', () => {
     const result = mapEvent(wireEvent());
     expect(result.guests).toEqual([]);
-    expect(result.linkedSurveys).toEqual([]);
     expect(result.coHostIds).toEqual([]);
     expect(result.invitedUserIds).toEqual([]);
     expect(result.invitedUserNames).toEqual([]);
@@ -179,6 +178,12 @@ describe('mapEvent', () => {
     expect(result.eventType).toBe('official');
     expect(result.visibility).toBe('members_only');
     expect(result.isPast).toBe(true);
+  });
+
+  it('maps event_format, null when absent', () => {
+    expect(mapEvent(wireEvent({ event_format: 'restaurant' })).eventFormat).toBe('restaurant');
+    expect(mapEvent(wireEvent()).eventFormat).toBeNull();
+    expect(mapEvent(wireEvent({ event_format: 'bogus' })).eventFormat).toBeNull();
   });
 
   it('maps nested guests array', () => {

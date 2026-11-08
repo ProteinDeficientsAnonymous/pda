@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
@@ -12,6 +10,7 @@ import { useAuthStore } from '@/auth/store';
 import { type Event, EventType } from '@/models/event';
 import { Permission } from '@/models/permissions';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -51,15 +50,9 @@ function renderForm(existing?: Event) {
     }),
     status: 'authed',
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const qc = makeQueryClient();
   qc.setQueryData(officialEventDefaultsKeys.all, defaults);
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <EventForm existing={existing} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  renderWithProviders(<EventForm existing={existing} />, { qc });
 }
 
 describe('EventForm official defaults', () => {

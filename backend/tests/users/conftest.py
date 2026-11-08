@@ -1,30 +1,5 @@
 import pytest
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
-
-
-@pytest.fixture
-def manage_users_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550201",
-        password="managerpass123",
-        first_name="User",
-        last_name="Manager",
-    )
-    role = Role.objects.create(
-        name="user_manager",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
-    )
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture

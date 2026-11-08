@@ -6,6 +6,7 @@ test_public_rsvp_capacity.py (capacity/waitlist/robustness) to stay under the
 per-file line limit. The common request builders and factories live here.
 """
 
+import pytest
 from community.models import (
     Event,
     EventStatus,
@@ -17,7 +18,8 @@ from community.models import (
 )
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
+from tests._users import make_attendance_paused
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp/"
 
@@ -60,7 +62,7 @@ def make_official_event(**overrides):
     return Event.objects.create(**base)
 
 
-def make_non_member(phone, email, name="Existing Nonmember"):
+def make_public_rsvper(phone, email, name="Existing Rsvper"):
     first_name, _, last_name = name.partition(" ")
     user = User.objects.create_user(
         phone_number=phone,
@@ -75,7 +77,7 @@ def make_non_member(phone, email, name="Existing Nonmember"):
 
 
 def make_tentative_member(phone, email, name="Tentative Sprout"):
-    user = make_non_member(phone, email, name=name)
+    user = make_public_rsvper(phone, email, name=name)
     JoinRequest.objects.create(
         first_name=user.first_name,
         phone_number=phone,
@@ -84,3 +86,14 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
         status=JoinRequestStatus.TENTATIVE,
     )
     return user
+
+
+def make_attendance_paused_member(phone, email):
+    return make_attendance_paused(phone_number=phone, email=email)
+
+
+LIMITED_USER_FACTORIES = pytest.mark.parametrize(
+    "make_limited",
+    [make_tentative_member, make_attendance_paused_member],
+    ids=["tentative", "attendance_paused"],
+)
