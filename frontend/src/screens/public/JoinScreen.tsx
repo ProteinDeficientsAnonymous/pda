@@ -5,10 +5,9 @@ import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion } from '@/api/join';
-import type { OpenJoinRequestStatus } from '@/api/join';
 import {
   AlreadyInvitedError,
-  OpenJoinRequestError,
+  PendingJoinRequestError,
   useJoinQuestions,
   useSubmitJoinRequest,
 } from '@/api/join';
@@ -21,7 +20,7 @@ import { TextField } from '@/components/ui/TextField';
 import { personName, ValidationMessage } from '@/utils/validators';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
-import { OpenJoinRequestPanel } from './OpenJoinRequestPanel';
+import { PendingJoinRequestPanel } from './PendingJoinRequestPanel';
 
 const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
@@ -94,7 +93,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [guidelinesConsent, setGuidelinesConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const [openRequest, setOpenRequest] = useState<OpenJoinRequestStatus | null>(null);
+  const [alreadyPending, setAlreadyPending] = useState(false);
   // Honeypot: real users never touch this. Bots auto-fill every input — when
   // the value reaches the server, the request is silently dropped.
   const [website, setWebsite] = useState('');
@@ -144,18 +143,21 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       void navigate('/join/success', { replace: true });
     } catch (err) {
       if (err instanceof AlreadyInvitedError) {
-        void navigate('/login?invited=true', { replace: true });
+        void navigate('/login?invited=true', {
+          replace: true,
+          state: { phone: phoneNumber.trim() },
+        });
         return;
       }
-      if (err instanceof OpenJoinRequestError) {
-        setOpenRequest(err.status);
+      if (err instanceof PendingJoinRequestError) {
+        setAlreadyPending(true);
         return;
       }
       setServerError(extractError(err));
     }
   }
 
-  if (openRequest) return <OpenJoinRequestPanel status={openRequest} />;
+  if (alreadyPending) return <PendingJoinRequestPanel />;
 
   return (
     <ContentContainer>

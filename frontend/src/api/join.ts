@@ -63,14 +63,10 @@ export class AlreadyInvitedError extends Error {
   }
 }
 
-export type OpenJoinRequestStatus =
-  | typeof JoinRequestStatus.PENDING
-  | typeof JoinRequestStatus.TENTATIVE;
-
-export class OpenJoinRequestError extends Error {
-  constructor(readonly status: OpenJoinRequestStatus) {
-    super('open_join_request');
-    this.name = 'OpenJoinRequestError';
+export class PendingJoinRequestError extends Error {
+  constructor() {
+    super('pending_join_request');
+    this.name = 'PendingJoinRequestError';
   }
 }
 
@@ -92,14 +88,14 @@ export function useSubmitJoinRequest() {
         // A phone collision means this person already has an account — send
         // them to login. An email collision (or any other error) stays on the
         // form so they can correct it.
-        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited)) {
+        if (
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited) ||
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)
+        ) {
           throw new AlreadyInvitedError();
         }
         if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyPending)) {
-          throw new OpenJoinRequestError(JoinRequestStatus.PENDING);
-        }
-        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)) {
-          throw new OpenJoinRequestError(JoinRequestStatus.TENTATIVE);
+          throw new PendingJoinRequestError();
         }
         throw err;
       }

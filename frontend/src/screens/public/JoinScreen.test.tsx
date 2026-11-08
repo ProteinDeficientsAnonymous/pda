@@ -5,8 +5,8 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  JoinRequestStatus,
-  OpenJoinRequestError,
+  AlreadyInvitedError,
+  PendingJoinRequestError,
   useJoinQuestions,
   useSubmitJoinRequest,
 } from '@/api/join';
@@ -247,19 +247,14 @@ describe('JoinScreen', () => {
   });
 });
 
-describe('open join request', () => {
-  it.each([
-    [JoinRequestStatus.PENDING, /you already have a request in/i, /back to home/i],
-    [JoinRequestStatus.TENTATIVE, /you've already been welcomed in/i, /log in/i],
-  ] as const)('%s: replaces the form with the existing request', async (status, heading, link) => {
-    const mutateAsync = vi.fn().mockRejectedValueOnce(new OpenJoinRequestError(status));
+describe('existing join request', () => {
+  async function submitRejectedWith(err: Error) {
     mockUseSubmitJoinRequest.mockReturnValue({
       ...defaultSubmitResult,
-      mutateAsync,
+      mutateAsync: vi.fn().mockRejectedValueOnce(err),
     } as unknown as ReturnType<typeof useSubmitJoinRequest>);
-
     const user = userEvent.setup();
-    renderWith(<JoinScreen />);
+    renderWithRoutes();
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
     fillPhone();
@@ -267,10 +262,21 @@ describe('open join request', () => {
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
+  }
 
-    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: link })).toBeInTheDocument();
+  it('replaces the form when a request is already pending', async () => {
+    await submitRejectedWith(new PendingJoinRequestError());
+
+    expect(
+      await screen.findByRole('heading', { name: /you already requested to join/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /submit request/i })).not.toBeInTheDocument();
+  });
+
+  it('sends an already-approved applicant to login', async () => {
+    await submitRejectedWith(new AlreadyInvitedError());
+
+    expect(await screen.findByText('login page')).toBeInTheDocument();
   });
 });
 
