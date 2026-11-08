@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/api/client';
 import { queryWrapper } from '@/test/render';
 
-import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './join';
+import {
+  AlreadyInvitedError,
+  JoinRequestStatus,
+  OpenJoinRequestError,
+  useJoinRequests,
+  useSubmitJoinRequest,
+} from './join';
 
 vi.mock('@/api/client');
 
@@ -240,6 +246,18 @@ describe('useSubmitJoinRequest', () => {
 
     await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyInvitedError));
     expect((result.current.error as AlreadyInvitedError).name).toBe('AlreadyInvitedError');
+  });
+
+  it.each([
+    ['join_request.phone_already_pending', JoinRequestStatus.PENDING],
+    ['join_request.phone_already_tentative', JoinRequestStatus.TENTATIVE],
+  ])('throws OpenJoinRequestError on %s', async (code, status) => {
+    mockedPost.mockRejectedValueOnce(makeAxiosError(400, { detail: [{ code, field: null }] }));
+    const { result } = renderHook(() => useSubmitJoinRequest(), { wrapper: queryWrapper() });
+
+    const err: unknown = await result.current.mutateAsync(validPayload).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(OpenJoinRequestError);
+    expect((err as OpenJoinRequestError).status).toBe(status);
   });
 
   it('does not redirect on an email.already_exists 409 — stays on the form', async () => {

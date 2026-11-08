@@ -4,21 +4,22 @@ import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import {
+  JoinRequestStatus,
+  OpenJoinRequestError,
+  useJoinQuestions,
+  useSubmitJoinRequest,
+} from '@/api/join';
+import type * as JoinApi from '@/api/join';
 import { renderWithProviders } from '@/test/render';
 
 import JoinScreen from './JoinScreen';
 import JoinSuccessScreen from './JoinSuccessScreen';
 
-vi.mock('@/api/join', () => ({
+vi.mock('@/api/join', async (importOriginal) => ({
+  ...(await importOriginal<typeof JoinApi>()),
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
-  AlreadyInvitedError: class AlreadyInvitedError extends Error {
-    constructor() {
-      super('already_invited');
-      this.name = 'AlreadyInvitedError';
-    }
-  },
 }));
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
@@ -243,6 +244,33 @@ describe('JoinScreen', () => {
     });
     expect(screen.getByText(/vetting member will review/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to home/i })).toBeInTheDocument();
+  });
+});
+
+describe('open join request', () => {
+  it.each([
+    [JoinRequestStatus.PENDING, /you already have a request in/i, /back to home/i],
+    [JoinRequestStatus.TENTATIVE, /you've already been welcomed in/i, /log in/i],
+  ] as const)('%s: replaces the form with the existing request', async (status, heading, link) => {
+    const mutateAsync = vi.fn().mockRejectedValueOnce(new OpenJoinRequestError(status));
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    const user = userEvent.setup();
+    renderWith(<JoinScreen />);
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
+    fillPhone();
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: link })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /submit request/i })).not.toBeInTheDocument();
   });
 });
 

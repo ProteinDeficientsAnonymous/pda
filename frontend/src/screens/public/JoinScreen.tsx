@@ -5,7 +5,13 @@ import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion } from '@/api/join';
-import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import type { OpenJoinRequestStatus } from '@/api/join';
+import {
+  AlreadyInvitedError,
+  OpenJoinRequestError,
+  useJoinQuestions,
+  useSubmitJoinRequest,
+} from '@/api/join';
 import { useAuthStore } from '@/auth/store';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +21,7 @@ import { TextField } from '@/components/ui/TextField';
 import { personName, ValidationMessage } from '@/utils/validators';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
+import { OpenJoinRequestPanel } from './OpenJoinRequestPanel';
 
 const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
@@ -87,6 +94,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [guidelinesConsent, setGuidelinesConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+  const [openRequest, setOpenRequest] = useState<OpenJoinRequestStatus | null>(null);
   // Honeypot: real users never touch this. Bots auto-fill every input — when
   // the value reaches the server, the request is silently dropped.
   const [website, setWebsite] = useState('');
@@ -139,9 +147,15 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         void navigate('/login?invited=true', { replace: true });
         return;
       }
+      if (err instanceof OpenJoinRequestError) {
+        setOpenRequest(err.status);
+        return;
+      }
       setServerError(extractError(err));
     }
   }
+
+  if (openRequest) return <OpenJoinRequestPanel status={openRequest} />;
 
   return (
     <ContentContainer>

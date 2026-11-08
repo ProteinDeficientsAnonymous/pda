@@ -63,6 +63,17 @@ export class AlreadyInvitedError extends Error {
   }
 }
 
+export type OpenJoinRequestStatus =
+  | typeof JoinRequestStatus.PENDING
+  | typeof JoinRequestStatus.TENTATIVE;
+
+export class OpenJoinRequestError extends Error {
+  constructor(readonly status: OpenJoinRequestStatus) {
+    super('open_join_request');
+    this.name = 'OpenJoinRequestError';
+  }
+}
+
 export function useSubmitJoinRequest() {
   return useMutation({
     mutationFn: async (payload: SubmitJoinRequestPayload) => {
@@ -83,6 +94,12 @@ export function useSubmitJoinRequest() {
         // form so they can correct it.
         if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited)) {
           throw new AlreadyInvitedError();
+        }
+        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyPending)) {
+          throw new OpenJoinRequestError(JoinRequestStatus.PENDING);
+        }
+        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)) {
+          throw new OpenJoinRequestError(JoinRequestStatus.TENTATIVE);
         }
         throw err;
       }
