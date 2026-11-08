@@ -84,7 +84,7 @@ def _conditions(f: MemberFilters, now: datetime) -> Iterator[Q]:
         yield Q(whatsapp_reminder_opt_out=f.whatsapp_reminder_opt_out)
 
 
-def _qualifying_rsvps() -> QuerySet[EventRSVP]:
+def qualifying_rsvps() -> QuerySet[EventRSVP]:
     # Correlated subqueries, not joined aggregates, so a member is still one row for count/paging.
     return EventRSVP.objects.filter(qualifying_attendance_q(), user=OuterRef("pk"))
 
@@ -95,7 +95,7 @@ def with_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
     param(qs): users to annotate
     return(QuerySet[User]): qs with a last_qualifying_at datetime
     """
-    latest = _qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
+    latest = qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
     return qs.annotate(last_qualifying_at=Subquery(latest[:1]))
 
 
@@ -107,7 +107,7 @@ def with_qualifying_count(qs: QuerySet[User], now: datetime) -> QuerySet[User]:
     return(QuerySet[User]): qs with a qualifying_count_12mo int
     """
     counted = (
-        _qualifying_rsvps()
+        qualifying_rsvps()
         .filter(event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS))
         .order_by()
         .values("user")
