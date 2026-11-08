@@ -5,7 +5,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
-from notifications.email_sender import get_email_sender, send_best_effort
+from notifications.email_sender import SendResult, get_email_sender, send_best_effort
 from users.helpers import grant_membership
 from users.models import User
 
@@ -63,20 +63,22 @@ def _restore_attendance_paused(request, user: User) -> bool:
 
 
 def send_member_restored(user: User) -> None:
-    """Best-effort restore email. A send failure must not roll back the restore."""
-    if not user.email:
+    """Best-effort restore email. A failure, lookups included, must not roll back the restore."""
+    to = user.email
+    if not to:
         return
-    body = render_template_placeholders(
-        MemberRestoredEmailTemplate.get().body,
-        {"FIRST_NAME": user.first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
-    )
-    send_best_effort(
-        lambda: send_member_restored_email(
+
+    def send() -> SendResult:
+        body = render_template_placeholders(
+            MemberRestoredEmailTemplate.get().body,
+            {"FIRST_NAME": user.first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
+        )
+        return send_member_restored_email(
             sender=get_email_sender(),
-            to=user.email or "",
+            to=to,
             display_name=user.full_name,
             message_body=body,
             login_url=f"{settings.FRONTEND_BASE_URL}/login",
-        ),
-        "member_restored_email",
-    )
+        )
+
+    send_best_effort(send, "member_restored_email")

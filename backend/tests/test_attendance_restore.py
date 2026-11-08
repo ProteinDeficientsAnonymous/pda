@@ -25,7 +25,9 @@ def host(db):
 
 @pytest.fixture
 def paused(db):
-    user = User.objects.create_user(phone_number="+12025557101", first_name="Paused")
+    user = User.objects.create_user(
+        phone_number="+12025557101", first_name="Paused", email="paused@example.com"
+    )
     user.roles.clear()
     user.attendance_paused_at = timezone.now() - timedelta(days=10)
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
@@ -126,8 +128,6 @@ class TestRestoreOnCheckIn:
 @pytest.mark.django_db
 class TestRestoreEmail:
     def _restore(self, api_client, host, paused):
-        paused.email = "paused@example.com"
-        paused.save(update_fields=["email"])
         _attended(paused)
         _check_in(api_client, host, paused)
 
@@ -152,6 +152,11 @@ class TestRestoreEmail:
 
     def test_failed_email_keeps_the_restore(self, api_client, host, paused, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("smtp down")
+        self._restore(api_client, host, paused)
+        assert paused.attendance_paused_at is None
+
+    def test_failed_template_lookup_keeps_the_restore(self, api_client, host, paused, monkeypatch):
+        monkeypatch.setattr(MemberRestoredEmailTemplate, "get", classmethod(lambda cls: 1 / 0))
         self._restore(api_client, host, paused)
         assert paused.attendance_paused_at is None
 
