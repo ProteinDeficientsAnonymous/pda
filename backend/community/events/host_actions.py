@@ -24,7 +24,10 @@ from community.events.schemas import (
     TextRecipientsOut,
 )
 from community.join_requests.approval import send_join_approval
-from community.join_requests.check_in_promotion import CheckInOutcome, maybe_promote_non_member
+from community.join_requests.check_in_promotion import (
+    CheckInOutcome,
+    promote_or_restore_on_check_in,
+)
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     attending_headcount,
@@ -134,7 +137,7 @@ def _apply_attendance_mark(
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
         return None
-    return maybe_promote_non_member(request, rsvp.user, rsvp.event)
+    return promote_or_restore_on_check_in(request, rsvp.user, rsvp.event)
 
 
 @router.post(
