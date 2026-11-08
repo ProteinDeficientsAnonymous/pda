@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from community.attendance.analytics import qualifying_attendance_q
+from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import EventRSVP
 from community.validation import Code, raise_validation
 from config.audit import AuditTarget, audit_log
@@ -19,8 +20,6 @@ from users.schemas import ErrorOut
 router = Router()
 
 RECENT_EVENT_COUNT = 2
-# Matches APPROVED_GRACE_DAYS on the join requests list; importing it here is circular.
-RESTORED_GRACE_DAYS = 7
 
 
 class RestoredEventOut(BaseModel):
@@ -67,17 +66,18 @@ def list_restored_members(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_restored_members")
 
-    cutoff = timezone.now() - timedelta(days=RESTORED_GRACE_DAYS)
+    cutoff = timezone.now() - timedelta(days=WHATSAPP_GRACE_DAYS)
     qualifying = (
         EventRSVP.objects.filter(qualifying_attendance_q())
         .select_related("event")
-        .order_by("-event__start_datetime")
+        .only("user", "event__title", "event__start_datetime")
+        .order_by("-event__start_datetime", "event_id")
     )
     users = (
         User.objects.active_members()
         .filter(restored_at__isnull=False)
         .exclude(Q(restored_at__lt=cutoff) & Q(has_joined_whatsapp=True))
-        .order_by("-restored_at")
+        .order_by("-restored_at", "id")
         .prefetch_related(Prefetch("event_rsvps", queryset=qualifying, to_attr="qualifying_rsvps"))
     )
     return Status(

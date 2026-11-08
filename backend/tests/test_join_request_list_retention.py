@@ -183,3 +183,26 @@ class TestJoinRequestListRetention:
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         ids = [r["id"] for r in response.json()]
         assert str(sample_join_request.id) not in ids
+
+    def test_list_keeps_rows_decided_after_the_pause(self, api_client, vettor_headers, db):
+        paused_at = timezone.now() - timedelta(days=3)
+        User.objects.create_user(
+            phone_number="+12025550104", first_name="Paused", attendance_paused_at=paused_at
+        )
+        old, new = (
+            JoinRequest.objects.create(
+                first_name="Paused",
+                phone_number="+12025550104",
+                status=JoinRequestStatus.TENTATIVE,
+                tentative_at=paused_at + timedelta(days=offset),
+            )
+            for offset in (-30, 1)
+        )
+
+        ids = [
+            r["id"]
+            for r in api_client.get("/api/community/join-requests/", **vettor_headers).json()
+        ]
+
+        assert str(old.id) not in ids
+        assert str(new.id) in ids
