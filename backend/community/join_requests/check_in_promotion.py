@@ -87,9 +87,9 @@ def send_member_restored(user: User) -> None:
     send_best_effort(send, "member_restored_email")
 
 
-def notify_member_restored(user: User) -> None:
+def notify_member_restored(user: User, actor: User) -> None:
     """Best-effort approver notification. A failure must not roll back the restore."""
     try:
-        create_member_restored_notifications(user)
+        create_member_restored_notifications(user, actor)
     except Exception:  # noqa: BLE001 — the restore has committed
         logger.warning("member_restored_notifications_failed", exc_info=True)

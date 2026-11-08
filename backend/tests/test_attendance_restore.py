@@ -177,13 +177,24 @@ class TestRestoreNotification:
         assert notification.recipient == vettor_user
         assert notification.related_user == paused
 
+    def test_approver_who_checked_them_in_is_not_notified(self, api_client, paused, vettor_user):
+        _attended(paused)
+        _check_in(api_client, vettor_user, paused)
+        assert paused.attendance_paused_at is None
+        assert not Notification.objects.filter(recipient=vettor_user).exists()
+
+    def test_no_notification_without_a_restore(self, api_client, host, paused, vettor_user):
+        _check_in(api_client, host, paused)
+        assert not Notification.objects.filter(recipient=vettor_user).exists()
+
     def test_failed_notification_keeps_the_restore(
-        self, api_client, host, paused, vettor_user, monkeypatch
+        self, api_client, host, paused, monkeypatch, caplog
     ):
-        def boom(_user):
+        def boom(*_):
             raise RuntimeError("db hiccup")
 
         monkeypatch.setattr(check_in_promotion, "create_member_restored_notifications", boom)
         _attended(paused)
         _check_in(api_client, host, paused)
         assert paused.attendance_paused_at is None
+        assert "member_restored_notifications_failed" in caplog.text

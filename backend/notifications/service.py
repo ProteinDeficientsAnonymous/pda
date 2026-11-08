@@ -149,16 +149,18 @@ def create_join_request_notifications(full_name: str) -> None:
     notify_users(str(user.pk) for user in recipients)
 
 
-def create_member_restored_notifications(user: User) -> None:
-    name = (user.full_name or "a member").lower()
-    recipients = list(User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
+def create_member_restored_notifications(user: User, actor: User) -> None:
+    name = (user.full_name or user.phone_number).lower()
+    recipients = list(
+        User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS).exclude(pk=actor.pk)
+    )
     Notification.objects.bulk_create(
         [
             Notification(
                 recipient=recipient,
                 notification_type=NotificationType.MEMBER_RESTORED,
                 related_user=user,
-                message=f"{name} checked in to their 2nd event and is a member again",
+                message=f"{name} checked in and is a member again",
             )
             for recipient in recipients
         ]
