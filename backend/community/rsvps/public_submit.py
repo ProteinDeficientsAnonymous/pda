@@ -90,6 +90,22 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
+def _reject_if_paused_non_member(request, phone: str) -> None:
+    """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
+    user = User.objects.filter(
+        phone_number=phone, is_paused=True, is_member=False, archived_at__isnull=True
+    ).first()
+    if user is None:
+        return
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_paused_user_blocked",
+        request,
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
+
+
 def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
@@ -224,7 +240,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
-    if user.email:
+    # Paused still answers NON_MEMBER so the response can't reveal the pause; only the email is withheld.
+    if user.email and not user.is_paused:
         _send_recognized_login_link(request, user)
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
@@ -264,6 +281,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
+    _reject_if_paused_non_member(request, validated_phone)
 
     with transaction.atomic():
         user, created = _resolve_public_rsvper(
