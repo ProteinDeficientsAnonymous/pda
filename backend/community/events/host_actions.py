@@ -173,7 +173,7 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         )
     elif outcome == CheckInOutcome.RESTORED:
         send_member_restored(rsvp.user)
-        notify_member_restored(rsvp.user)
+        notify_member_restored(rsvp.user, request.auth)
 
     audit_log(
         logging.INFO,
