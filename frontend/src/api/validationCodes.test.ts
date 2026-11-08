@@ -171,6 +171,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('points to the existing open join request', () => {
+    expect(
+      messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
+    ).toBe('this number already has an open request — review that one instead');
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
