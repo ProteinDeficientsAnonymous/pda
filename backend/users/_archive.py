@@ -15,7 +15,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
-from users.helpers import strip_non_member_roles
+from users.helpers import strip_elevated_roles
 from users.models import User
 
 HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
@@ -37,7 +37,7 @@ def archive_user(request, user: User) -> list[str]:
         user.archived_at = timezone.now()
         user.calendar_token = ""
         user.save(update_fields=["archived_at", "calendar_token"])
-        removed_role_ids = strip_non_member_roles(user)
+        removed_role_ids = strip_elevated_roles(user)
         release_upcoming_rsvps(request, user)
         step_down_as_cohost(user)
     return removed_role_ids
