@@ -297,8 +297,8 @@ NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
 NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
-class NonMemberRsvpToken(models.Model):
-    """Scoped magic link for a non-member to manage their own RSVPs at /my-rsvps.
+class PublicRsvpToken(models.Model):
+    """Scoped magic link for a public rsvper to manage their own RSVPs at /my-rsvps.
 
     This token NEVER logs the user in — it is entirely separate from
     MagicLoginToken (different table, different validation path, narrower scope).
@@ -343,7 +343,7 @@ class NonMemberRsvpToken(models.Model):
             self.save(update_fields=["revoked_at"])
 
     @classmethod
-    def issue(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue(cls, user: "User") -> "PublicRsvpToken":
         """Create a fresh token for a non-member, valid for 90 days.
 
         Rejects members — a converted/existing member must use the member flow,
@@ -358,7 +358,7 @@ class NonMemberRsvpToken(models.Model):
         )
 
     @classmethod
-    def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue_or_extend(cls, user: "User") -> "PublicRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
@@ -388,6 +388,10 @@ class NonMemberRsvpToken(models.Model):
         if row is None or not row.is_valid:
             return None
         return row.user
+
+
+# Temporary alias so tests can move to the new name in follow-up PRs.
+NonMemberRsvpToken = PublicRsvpToken
 
 
 @receiver(m2m_changed, sender=User.roles.through)

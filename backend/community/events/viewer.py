@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from django.http import HttpRequest
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from community.models import Event
 from community.shared import authenticated_user
@@ -25,7 +25,7 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     token = request.GET.get("token", "")
     if not token:
         return None
-    user = NonMemberRsvpToken.resolve_user(token)
+    user = PublicRsvpToken.resolve_user(token)
     if user is None:
         return None
     # Re-derive eligibility per request so an event that drops out of public-RSVP

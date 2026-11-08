@@ -17,7 +17,7 @@ from users.models import (
     ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
-    NonMemberRsvpToken,
+    PublicRsvpToken,
     User,
     validate_phone,
 )
@@ -300,6 +300,6 @@ def grant_membership(user: User) -> None:
     if member_role:
         user.roles.add(member_role)
 
-    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+    PublicRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
         revoked_at=timezone.now()
     )

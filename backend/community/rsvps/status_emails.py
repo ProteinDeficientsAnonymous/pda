@@ -13,7 +13,7 @@ from notifications.email_helpers import (
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import SendResult, get_email_sender
-from users.models import NonMemberRsvpToken, User, can_sign_in_q
+from users.models import PublicRsvpToken, User, can_sign_in_q
 
 from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
 from community.models import Event, RSVPStatus
@@ -81,7 +81,7 @@ def _email_public_rsvper(
     request, event: Event, user: User, send: Callable[[RsvpEmailDetails], SendResult]
 ) -> None:
     try:
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
         result = send(email_details(event, user, token.token))
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
