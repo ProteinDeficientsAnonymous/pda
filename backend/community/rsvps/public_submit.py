@@ -12,7 +12,7 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
@@ -199,7 +199,7 @@ def _send_recognized_login_link(request, user: User) -> None:
         # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
         result = send_rsvp_manage_link_email(
@@ -300,7 +300,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
                 answers=payload.questionnaire_responses,
             ),
         )
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,

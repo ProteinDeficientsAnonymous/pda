@@ -10,7 +10,7 @@ from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_rsvp_status_changed
 from pydantic import BaseModel, Field
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut, RsvpAnswer
@@ -69,7 +69,7 @@ class PublicRsvpManageIn(BaseModel):
 
 def _resolve_token_user(token: str) -> User:
     """Resolve a manage-rsvp token to its non-member user, or 404."""
-    user = NonMemberRsvpToken.resolve_user(token)
+    user = PublicRsvpToken.resolve_user(token)
     if user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return user
@@ -163,7 +163,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
                 answers=payload.questionnaire_responses,
             ),
         )
-        rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
+        rsvp_token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,

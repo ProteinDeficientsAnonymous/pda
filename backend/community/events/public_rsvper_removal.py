@@ -1,7 +1,7 @@
 from django.utils import timezone
 from notifications.email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
 from community.models import Event, EventRSVP, RSVPStatus
@@ -46,7 +46,7 @@ def email_removed_public_rsvpers(request, event: Event, removed_user_ids: list[s
         if not user.email:
             continue
         try:
-            token = NonMemberRsvpToken.issue_or_extend(user)
+            token = PublicRsvpToken.issue_or_extend(user)
             result = send_rsvp_removed_email(
                 sender=get_email_sender(),
                 details=email_details(event, user, token.token),

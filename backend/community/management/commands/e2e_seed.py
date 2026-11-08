@@ -9,7 +9,7 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 from users.roles import Role
 
 from community.event_feedback.send import feedback_url
@@ -72,7 +72,7 @@ def _seed_public_returning() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {
         "event_id": str(event.id),
         "event_title": event.title,
@@ -100,7 +100,7 @@ def _seed_comments() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
@@ -109,7 +109,7 @@ def _seed_my_rsvps() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
@@ -251,7 +251,7 @@ def _seed_member_screens() -> dict:
     )
     EventRSVP.objects.create(event=event, user=seed, status=RSVPStatus.ATTENDING)
     EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
-    guest_token = NonMemberRsvpToken.issue_or_extend(guest)
+    guest_token = PublicRsvpToken.issue_or_extend(guest)
     hike = Event.objects.create(
         title="hike",
         slug="hike",
@@ -406,7 +406,7 @@ def _seed_waitlist_screens() -> dict:
     return {
         "password": E2E_PASSWORD,
         "wren_phone": wren.phone_number,
-        "guest_token": NonMemberRsvpToken.issue_or_extend(guest).token,
+        "guest_token": PublicRsvpToken.issue_or_extend(guest).token,
     }
 
 

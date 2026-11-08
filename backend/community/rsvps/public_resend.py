@@ -8,7 +8,7 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
 
 from community.field_limits import FieldLimit
 from community.shared import ErrorOut
@@ -49,7 +49,7 @@ def _find_public_rsvper(phone: str) -> User | None:
 
 def _send_manage_link(request, user: User) -> None:
     """Best-effort resend of the non-member's manage link. Failures are logged."""
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
         result = send_rsvp_manage_link_email(
