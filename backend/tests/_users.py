@@ -1,5 +1,6 @@
 from itertools import count
 
+from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -18,6 +19,10 @@ def make_user(*permissions: PermissionKey, **fields) -> User:
     if permissions:
         grant(user, *permissions)
     return user
+
+
+def make_attendance_paused(**fields) -> User:
+    return make_user(is_member=False, attendance_paused_at=timezone.now(), **fields)
 
 
 def grant(user: User, *permissions: PermissionKey) -> Role:

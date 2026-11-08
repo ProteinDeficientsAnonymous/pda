@@ -41,7 +41,7 @@ def _due_for_reminder(qs: QuerySet, now: datetime) -> QuerySet:
 def _users_to_remind(now: datetime) -> list[User]:
     return [
         user
-        for qs in (User.objects.active_members(), User.objects.active_tentative_members())
+        for qs in (User.objects.active_members(), User.objects.active_limited_users())
         for user in _due_for_reminder(qs, now)
     ]
 

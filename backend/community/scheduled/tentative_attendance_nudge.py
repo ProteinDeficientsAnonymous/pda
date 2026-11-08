@@ -39,8 +39,8 @@ def _candidates(now: datetime) -> QuerySet:
         event__status=EventStatus.ACTIVE,
     ).exclude(is_past_q(now, "event__"))
     return (
-        User.objects.active_tentative_members()
-        .filter(HAS_EMAIL, attendance_nudge_opt_out=False)
+        User.objects.active_limited_users()
+        .filter(HAS_EMAIL, attendance_nudge_opt_out=False, attendance_paused_at__isnull=True)
         .exclude(NOT_SET_UP)
         .exclude(Exists(upcoming_rsvp))
         .annotate(

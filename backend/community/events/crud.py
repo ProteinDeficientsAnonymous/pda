@@ -60,7 +60,7 @@ from community.events.schemas import (
 )
 from community.events.tentative_member_access import (
     event_viewer_for,
-    is_tentative_member,
+    is_limited,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -204,7 +204,7 @@ def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
-    if is_tentative_member(request.auth):
+    if is_limited(request.auth):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="create_event")
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)

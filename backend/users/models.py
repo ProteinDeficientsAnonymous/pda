@@ -4,11 +4,12 @@ from datetime import timedelta
 
 import phonenumbers
 from community.models.choices import JoinRequestStatus
+from community.models.join_form import JoinRequest
 from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, prefetch_related_objects
+from django.db.models import Exists, OuterRef, Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -20,6 +21,17 @@ ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+
+
+def can_sign_in_q() -> Q:
+    """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
+    tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
+    return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
+
+
+def limited_q() -> Q:
+    """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
+    return Q(is_member=False, is_paused=False) & can_sign_in_q()
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -96,19 +108,13 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
-    def active_tentative_members(self):
-        """Signed-in tentative applicants, filtered like ``active_members``."""
-        return (
-            self.get_queryset()
-            .filter(
-                is_member=False,
-                join_requests__status=JoinRequestStatus.TENTATIVE,
-                is_active=True,
-                is_paused=False,
-                archived_at__isnull=True,
-            )
-            .distinct()
-        )
+    def limited_users(self):
+        """Users matching ``limited_q``."""
+        return self.get_queryset().filter(limited_q())
+
+    def active_limited_users(self):
+        """Limited users, filtered like ``active_members``."""
+        return self.limited_users().filter(is_active=True, archived_at__isnull=True)
 
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
