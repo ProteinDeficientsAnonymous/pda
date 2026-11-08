@@ -2,10 +2,17 @@ import logging
 from dataclasses import dataclass, field
 
 from community.events.tentative_member_access import (
-    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_EVENT_TYPES,
+    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_RSVP_EVENT_TYPES,
 )
 from community.events.unpublish import clear_unpublished_side_effects
-from community.models import CoHostInviteStatus, Event, EventCoHostInvite, EventRSVP, EventStatus
+from community.models import (
+    AttendanceStatus,
+    CoHostInviteStatus,
+    Event,
+    EventCoHostInvite,
+    EventRSVP,
+    EventStatus,
+)
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.db import transaction
 from django.db.models import Q
@@ -31,14 +38,20 @@ from users.models import HAS_EMAIL, User
 
 logger = logging.getLogger(__name__)
 
-KEPT_EVENT_Q = Q(event_type__in=KEPT_EVENT_TYPES)
+KEPT_RSVP_EVENT_Q = Q(event_type__in=KEPT_RSVP_EVENT_TYPES)
+# Payment and attendance records outlive a draft, so these RSVPs survive it.
+_PAID_OR_MARKED_RSVP_Q = (
+    Q(paid_confirmed_at__isnull=False)
+    | Q(payment_verified_at__isnull=False)
+    | Q(checked_in_at__isnull=False)
+    | ~Q(attendance=AttendanceStatus.UNKNOWN)
+)
 
 
 @dataclass
 class PauseImpact:
     kept_rsvps: list[Event] = field(default_factory=list)
     removed_rsvps: list[Event] = field(default_factory=list)
-    kept_hosting: list[Event] = field(default_factory=list)
     removed_hosting: list[Event] = field(default_factory=list)
     drafted_events: list[Event] = field(default_factory=list)
 
@@ -51,14 +64,12 @@ def attendance_pause_impact(user: User) -> PauseImpact:
     """
     impact = PauseImpact()
     for event in upcoming_hosted_events(user).order_by("start_datetime"):
-        if event.event_type in KEPT_EVENT_TYPES:
-            impact.kept_hosting.append(event)
-        elif event.host_count > 1:
+        if event.host_count > 1:
             impact.removed_hosting.append(event)
         else:
             impact.drafted_events.append(event)
 
-    # A drafted event loses all its RSVPs, so the user's own isn't listed as removed too.
+    # Drafting settles every RSVP on the event, so the user's own isn't listed as removed too.
     rsvped = (
         Event.objects.filter(
             upcoming_events_q(),
@@ -69,13 +80,15 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         .order_by("start_datetime")
     )
     for event in rsvped:
-        bucket = impact.kept_rsvps if event.event_type in KEPT_EVENT_TYPES else impact.removed_rsvps
+        bucket = (
+            impact.kept_rsvps if event.event_type in KEPT_RSVP_EVENT_TYPES else impact.removed_rsvps
+        )
         bucket.append(event)
     return impact
 
 
 def apply_attendance_pause(request, user: User) -> PauseImpact:
-    """Attendance-pause the user and release what they hold on upcoming events of other types.
+    """Attendance-pause the user, drop their other-type RSVPs and release every host spot.
 
     param(request): the triggering request, for audit and promoted-member email logging
     param(user): the member to pause
@@ -83,21 +96,28 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     """
     with transaction.atomic():
         impact = attendance_pause_impact(user)
-        # Drafting first deletes the user's own RSVP there, so releasing can't promote its waitlist.
+        drafted_ids = [e.pk for e in impact.drafted_events]
         for event in impact.drafted_events:
             _move_to_draft(event, user)
-        release_upcoming_rsvps(request, user, ~KEPT_EVENT_Q)
-        step_down_as_cohost(user, ~KEPT_EVENT_Q)
+        # A kept RSVP on a draft stays as-is; releasing it would promote that draft's waitlist.
+        release_upcoming_rsvps(request, user, ~KEPT_RSVP_EVENT_Q & ~Q(pk__in=drafted_ids))
+        step_down_as_cohost(user, impact.removed_hosting)
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
-        ).exclude(event__event_type__in=KEPT_EVENT_TYPES).update(
-            status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()
-        )
+        ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
         removed_role_ids = _strip_membership(user)
         user.attendance_paused_at = timezone.now()
         user.is_member = False
         user.has_joined_whatsapp = False
-        user.save(update_fields=["attendance_paused_at", "is_member", "has_joined_whatsapp"])
+        user.unpaused_at = None
+        user.save(
+            update_fields=[
+                "attendance_paused_at",
+                "is_member",
+                "has_joined_whatsapp",
+                "unpaused_at",
+            ]
+        )
         _audit_pause(request, user, impact, removed_role_ids)
     return impact
 
@@ -113,7 +133,7 @@ def _move_to_draft(event: Event, user: User) -> None:
         .exclude(user=user)
         .values_list("user_id", flat=True)
     ]
-    rsvps.delete()
+    rsvps.exclude(_PAID_OR_MARKED_RSVP_Q).delete()
     clear_unpublished_side_effects(event)
     transaction.on_commit(lambda: _notify_unpublished(event, guest_ids))
 

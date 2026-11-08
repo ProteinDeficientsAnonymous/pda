@@ -191,6 +191,7 @@ export const Code = {
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
     PhoneAlreadyPending: 'join_request.phone_already_pending',
     PhoneAlreadyTentative: 'join_request.phone_already_tentative',
+    OpenRequestExists: 'join_request.open_request_exists',
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
@@ -278,6 +279,10 @@ export const Code = {
   MemberPromotionEmail: {
     BodyRequired: 'member_promotion_email.body_required',
     BodyTooLong: 'member_promotion_email.body_too_long',
+  },
+  MemberRestoredEmail: {
+    BodyRequired: 'member_restored_email.body_required',
+    BodyTooLong: 'member_restored_email.body_too_long',
   },
   RejectionEmail: {
     BodyRequired: 'rejection_email.body_required',
@@ -459,6 +464,7 @@ export type ValidationCode =
   | 'join_request.phone_already_invited'
   | 'join_request.phone_already_pending'
   | 'join_request.phone_already_tentative'
+  | 'join_request.open_request_exists'
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
@@ -512,6 +518,8 @@ export type ValidationCode =
   | 'member_promotion_message.body_too_long'
   | 'member_promotion_email.body_required'
   | 'member_promotion_email.body_too_long'
+  | 'member_restored_email.body_required'
+  | 'member_restored_email.body_too_long'
   | 'rejection_email.body_required'
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
@@ -683,6 +691,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.phone_already_invited': [],
   'join_request.phone_already_pending': [],
   'join_request.phone_already_tentative': [],
+  'join_request.open_request_exists': [],
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
@@ -736,6 +745,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'member_promotion_message.body_too_long': ['max_length'],
   'member_promotion_email.body_required': [],
   'member_promotion_email.body_too_long': ['max_length'],
+  'member_restored_email.body_required': [],
+  'member_restored_email.body_too_long': ['max_length'],
   'rejection_email.body_required': [],
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],
