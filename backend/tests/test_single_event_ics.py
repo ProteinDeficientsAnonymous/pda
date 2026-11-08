@@ -1,7 +1,9 @@
+import re
 import uuid
 
 import pytest
 from community.models import Event, EventStatus, EventType, PageVisibility
+from django.conf import settings
 from django.utils import timezone
 from users.models import User
 
@@ -24,6 +26,17 @@ class TestSingleEventIcs:
         assert "BEGIN:VCALENDAR" in content
         assert "Picnic in the Park" in content
         assert "Prospect Park" not in content
+
+    def test_uses_community_timezone(self, api_client, test_user):
+        start = timezone.now().replace(microsecond=0)
+        event = Event.objects.create(title="Dinner", start_datetime=start, created_by=test_user)
+
+        content = api_client.get(f"/api/community/events/{event.id}/ics/").content.decode()
+        local = start.astimezone(settings.COMMUNITY_TZ)
+        assert f"DTSTART;TZID=America/New_York:{local:%Y%m%dT%H%M%S}" in content
+        assert "X-WR-TIMEZONE:America/New_York" in content
+        assert "BEGIN:VTIMEZONE" in content
+        assert not re.search(r"DTSTART:\d{8}T\d{6}Z", content)
 
     def test_returns_404_for_nonexistent_event(self, api_client):
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
