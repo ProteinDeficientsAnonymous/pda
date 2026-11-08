@@ -75,7 +75,7 @@ SIGNED_IN_NON_MEMBER_FIXTURES = pytest.mark.parametrize(
 @pytest.mark.django_db
 class TestCheckPhoneTentative:
     @SIGNED_IN_NON_MEMBER_FIXTURES
-    def test_signed_in_non_member_can_reach_the_login_step(self, api_client, request, fixture):
+    def test_limited_user_can_reach_the_login_step(self, api_client, request, fixture):
         user = request.getfixturevalue(fixture)
         response = api_client.post(
             "/api/community/check-phone/",
@@ -86,7 +86,7 @@ class TestCheckPhoneTentative:
         assert response.json()["status"] == "member"
 
     @SIGNED_IN_NON_MEMBER_FIXTURES
-    def test_archived_signed_in_non_member_stays_unknown(self, api_client, request, fixture):
+    def test_archived_limited_user_stays_unknown(self, api_client, request, fixture):
         user = request.getfixturevalue(fixture)
         user.archived_at = timezone.now()
         user.save(update_fields=["archived_at"])
