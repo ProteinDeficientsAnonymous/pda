@@ -856,6 +856,11 @@
         "params": []
       },
       {
+        "name": "OPEN_REQUEST_EXISTS",
+        "value": "join_request.open_request_exists",
+        "params": []
+      },
+      {
         "name": "ANSWER_REQUIRED",
         "value": "join_request.answer_required",
         "params": [
@@ -1183,6 +1188,20 @@
       {
         "name": "BODY_TOO_LONG",
         "value": "member_promotion_email.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
+    "MemberRestoredEmail": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "member_restored_email.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "member_restored_email.body_too_long",
         "params": [
           "max_length"
         ]

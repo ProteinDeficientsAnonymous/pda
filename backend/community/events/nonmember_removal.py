@@ -40,7 +40,7 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
         return
     # This email and its join pitch are for people without an account.
     removed = User.objects.filter(
-        id__in=removed_user_ids, is_member=False, email__isnull=False
+        id__in=removed_user_ids, is_member=False, is_paused=False, email__isnull=False
     ).exclude(pk__in=User.objects.limited_users())
     for user in removed:
         if not user.email:

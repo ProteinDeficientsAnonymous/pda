@@ -33,6 +33,7 @@ class NotificationType(models.TextChoices):
     EVENT_FEEDBACK = "event_feedback", "Event Feedback"
     SURVEY_RESPONSE = "survey_response", "Survey Response"
     EVENT_UNPUBLISHED = "event_unpublished", "Event Unpublished"
+    MEMBER_RESTORED = "member_restored", "Member Restored"
 
 
 class Notification(models.Model):
