@@ -33,12 +33,11 @@ class CheckInOutcome(StrEnum):
     RESTORED = "restored"
 
 
-def maybe_promote_non_member(request, user: User, event) -> CheckInOutcome | None:
+def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
     """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
-    # A host marking their own attendance can't vouch for themselves.
+    # Nobody vouches for their own check-in.
     if user.pk == request.auth.pk or not is_official_or_club(event.event_type):
         return None
-    # Checked first so a stale TENTATIVE request can't promote a paused member on one check-in.
     if user.attendance_paused_at is not None:
         return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None
     if maybe_promote_tentative(user, event, request.auth):

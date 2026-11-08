@@ -77,7 +77,6 @@ class TestRestoreOnCheckIn:
         _attended(paused, event_type=EventType.CLUB)
         with django_capture_on_commit_callbacks(execute=True):
             _check_in(api_client, host, paused)
-
         assert paused.attendance_paused_at is None
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
@@ -121,7 +120,6 @@ class TestRestoreOnCheckIn:
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
         jr = _tentative_request(paused)
         _check_in(api_client, host, paused)
-
         assert paused.is_member is False
         jr.refresh_from_db()
         assert jr.status == JoinRequestStatus.TENTATIVE
