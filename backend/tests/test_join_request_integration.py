@@ -14,7 +14,7 @@ from django.utils import timezone
 from users.models import PublicRsvpToken, User
 
 
-def _non_member(phone, email=""):
+def _public_rsvper(phone, email=""):
 
     return User.objects.create_user(
         phone_number=phone,
@@ -91,10 +91,10 @@ class TestSubmissionMemberMatch:
 
 
 @pytest.mark.django_db
-class TestSubmissionNonMemberAttach:
+class TestSubmissionPublicRsvperAttach:
     def test_phone_match_attaches_to_existing_user(self, api_client, why_join_id):
 
-        existing = _non_member("+12025551410", email="rsvper@example.com")
+        existing = _public_rsvper("+12025551410", email="rsvper@example.com")
         resp = _submit(api_client, why_join_id, "+12025551410", "rsvper@example.com")
         assert resp.status_code == 201
         jr = JoinRequest.objects.get(phone_number="+12025551410")
@@ -102,20 +102,20 @@ class TestSubmissionNonMemberAttach:
 
     def test_email_match_attaches_to_existing_user(self, api_client, why_join_id):
 
-        existing = _non_member("+12025551411", email="byemail@example.com")
+        existing = _public_rsvper("+12025551411", email="byemail@example.com")
         resp = _submit(api_client, why_join_id, "+12025551412", "byemail@example.com")
         assert resp.status_code == 201
         jr = JoinRequest.objects.get(phone_number="+12025551412")
         assert jr.user_id == existing.id
 
     def test_attach_backfills_missing_email(self, api_client, why_join_id):
-        existing = _non_member("+12025551413")  # no email saved
+        existing = _public_rsvper("+12025551413")  # no email saved
         _submit(api_client, why_join_id, "+12025551413", "now-known@example.com")
         existing.refresh_from_db()
         assert existing.email == "now-known@example.com"
 
     def test_attach_does_not_overwrite_existing_email(self, api_client, why_join_id):
-        existing = _non_member("+12025551414", email="original@example.com")
+        existing = _public_rsvper("+12025551414", email="original@example.com")
         _submit(api_client, why_join_id, "+12025551414", "different@example.com")
         existing.refresh_from_db()
         assert existing.email == "original@example.com"
@@ -131,8 +131,8 @@ class TestSubmissionNonMemberAttach:
         # Phone matches an emailless non-member; the submitted email already
         # belongs to a different non-member. We attach by phone but must NOT
         # backfill the email (would break the unique-email constraint → 500).
-        phone_match = _non_member("+12025551416")  # no email
-        _non_member("+12025551417", email="claimed@example.com")
+        phone_match = _public_rsvper("+12025551416")  # no email
+        _public_rsvper("+12025551417", email="claimed@example.com")
         resp = _submit(api_client, why_join_id, "+12025551416", "claimed@example.com")
         assert resp.status_code == 201
         phone_match.refresh_from_db()
@@ -141,8 +141,8 @@ class TestSubmissionNonMemberAttach:
     def test_phone_match_with_email_held_by_archived_skips_backfill(self, api_client, why_join_id):
         # The unique-email constraint ignores archived_at, so an archived row's
         # email still collides. Backfilling it would 500 — must be skipped.
-        phone_match = _non_member("+12025551418")  # no email
-        archived = _non_member("+12025551419", email="archived@example.com")
+        phone_match = _public_rsvper("+12025551418")  # no email
+        archived = _public_rsvper("+12025551419", email="archived@example.com")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
         resp = _submit(api_client, why_join_id, "+12025551418", "archived@example.com")
@@ -152,7 +152,7 @@ class TestSubmissionNonMemberAttach:
 
 
 @pytest.mark.django_db
-class TestApprovalPromotesNonMember:
+class TestApprovalPromotesPublicRsvper:
     def _approve(self, api_client, vettor_headers, jr_id):
 
         return api_client.patch(
@@ -164,7 +164,7 @@ class TestApprovalPromotesNonMember:
 
     def test_promotes_in_place_without_new_user(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551420", email="promote@example.com")
+        existing = _public_rsvper("+12025551420", email="promote@example.com")
         jr = JoinRequest.objects.create(
             first_name="Promote",
             last_name="Me",
@@ -186,7 +186,7 @@ class TestApprovalPromotesNonMember:
 
     def test_revokes_outstanding_rsvp_tokens(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551421", email="tokens@example.com")
+        existing = _public_rsvper("+12025551421", email="tokens@example.com")
         token = PublicRsvpToken.issue(existing)
         jr = JoinRequest.objects.create(
             first_name="Token",
@@ -202,7 +202,7 @@ class TestApprovalPromotesNonMember:
 
     def test_prior_rsvps_carry_to_promoted_member(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551422", email="rsvps@example.com")
+        existing = _public_rsvper("+12025551422", email="rsvps@example.com")
         event = _official_event()
         rsvp = EventRSVP.objects.create(event=event, user=existing, status=RSVPStatus.ATTENDING)
         jr = JoinRequest.objects.create(
@@ -219,7 +219,7 @@ class TestApprovalPromotesNonMember:
 
     def test_deleted_user_falls_back_to_create_new(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551423", email="ghost@example.com")
+        existing = _public_rsvper("+12025551423", email="ghost@example.com")
         jr = JoinRequest.objects.create(
             first_name="Ghost",
             phone_number="+12025551423",
@@ -253,7 +253,7 @@ class TestRsvpBreakdown:
 
     def test_buckets_split_by_attendance_and_type(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551430", email="counter@example.com")
+        existing = _public_rsvper("+12025551430", email="counter@example.com")
         # attended = host-marked ATTENDED, regardless of time.
         self._rsvp(
             _event(EventType.OFFICIAL, past=True),
@@ -282,7 +282,7 @@ class TestRsvpBreakdown:
 
     def test_community_and_non_attending_excluded(self, api_client, vettor_headers):
 
-        existing = _non_member("+12025551433", email="excl@example.com")
+        existing = _public_rsvper("+12025551433", email="excl@example.com")
         # community type isn't a bucket; MAYBE isn't ATTENDING; a past unmarked
         # official rsvp is neither attended nor upcoming.
         self._rsvp(_community_event(), existing)
@@ -318,7 +318,7 @@ class TestRsvpBreakdown:
         # Linked by email, so the user's phone differs from the request's. user_id
         # and the rsvp counts must both resolve to the linked user (consistency).
 
-        existing = _non_member("+12025551432", email="emailmatch@example.com")
+        existing = _public_rsvper("+12025551432", email="emailmatch@example.com")
         self._rsvp(_event(EventType.OFFICIAL), existing)
         jr = JoinRequest.objects.create(
             first_name="Email",
