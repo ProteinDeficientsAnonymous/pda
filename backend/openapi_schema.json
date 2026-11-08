@@ -16274,33 +16274,6 @@
         ]
       }
     },
-    "/api/community/member-restored-email/": {
-      "get": {
-        "operationId": "community_message_templates_member_restored_email_get_member_restored_email",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MemberPromotionEmailOut"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Get Member Restored Email",
-        "tags": [
-          "community"
-        ]
-      }
-    },
     "/api/community/official-event-defaults/": {
       "get": {
         "operationId": "community_events_official_defaults_get_official_event_defaults",
