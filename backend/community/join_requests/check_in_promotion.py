@@ -1,5 +1,4 @@
 import logging
-from datetime import timedelta
 from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -10,11 +9,7 @@ from notifications.email_sender import get_email_sender, send_best_effort
 from users.helpers import grant_membership
 from users.models import User
 
-from community.attendance.analytics import (
-    COMPLIANCE_MIN_COUNT,
-    QUALIFYING_WINDOW_DAYS,
-    qualifying_attendance_q,
-)
+from community.attendance.analytics import compute_member_stats, is_compliant
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import (
     EventRSVP,
@@ -43,18 +38,16 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
 
 
 def _restore_attendance_paused(request, user: User) -> bool:
-    now = timezone.now()
-    qualifying_count = EventRSVP.objects.filter(
-        qualifying_attendance_q(),
-        user=user,
-        event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS),
-    ).count()
-    if qualifying_count < COMPLIANCE_MIN_COUNT:
+    # Row lock: concurrent check-ins then see each other's marks and only one restores.
+    if User.objects.select_for_update().get(pk=user.pk).attendance_paused_at is None:
+        return False
+    rsvps = EventRSVP.objects.filter(user=user).select_related("event")
+    if not is_compliant(compute_member_stats(rsvps)):
         return False
 
     user.attendance_paused_at = None
     user.attendance_grace_notified_at = None
-    user.restored_at = now
+    user.restored_at = timezone.now()
     user.is_member = True
     # Saved before grant_membership: roles on non-members are rejected.
     fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
