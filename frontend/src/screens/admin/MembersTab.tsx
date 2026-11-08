@@ -12,6 +12,7 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MarkAttendedDialog } from './MarkAttendedDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
+import { isManagedMember } from './memberPause';
 import {
   filterAndSort,
   formatCountText,
@@ -28,11 +29,11 @@ export type MembersMode = 'members' | 'non-members';
 
 export function MembersTab({ mode }: { mode: MembersMode }) {
   const isNonMembers = mode === 'non-members';
-  // The list endpoint returns members-only by default and all users when
-  // opted in; the non-members tab keeps only the non-members from that set.
+  // The list endpoint returns members plus attendance-paused users by default and all
+  // users when opted in; the non-members tab keeps only the unmanaged non-members.
   const { data: fetched = [], isPending, isError } = useUsers(isNonMembers);
   const data = useMemo(
-    () => (isNonMembers ? fetched.filter((m) => !m.isMember) : fetched),
+    () => (isNonMembers ? fetched.filter((m) => !isManagedMember(m)) : fetched),
     [fetched, isNonMembers],
   );
   const { data: allRoles = [] } = useRoles();
