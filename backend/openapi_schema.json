@@ -6519,6 +6519,18 @@
       },
       "RestoredMemberOut": {
         "properties": {
+          "came_in_person_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Came In Person At"
+          },
           "full_name": {
             "title": "Full Name",
             "type": "string"
@@ -6530,6 +6542,9 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReturnKind"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -6543,21 +6558,51 @@
             "type": "array"
           },
           "restored_at": {
-            "format": "date-time",
-            "title": "Restored At",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restored At"
+          },
+          "unpaused_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpaused At"
           }
         },
         "required": [
           "id",
           "full_name",
           "phone_number",
+          "kind",
           "restored_at",
+          "unpaused_at",
+          "came_in_person_at",
           "has_joined_whatsapp",
           "recent_events"
         ],
         "title": "RestoredMemberOut",
         "type": "object"
+      },
+      "ReturnKind": {
+        "enum": [
+          "restored",
+          "unpaused"
+        ],
+        "title": "ReturnKind",
+        "type": "string"
       },
       "RoleIn": {
         "properties": {
