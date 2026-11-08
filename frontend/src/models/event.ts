@@ -241,15 +241,15 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
-// Mirrors backend TENTATIVE_MEMBER_EVENT_TYPES.
-const TENTATIVE_MEMBER_RSVP_TYPES: readonly string[] = [EventType.Official, EventType.Club];
+// Mirrors backend LIMITED_ACCESS_EVENT_TYPES.
+const LIMITED_ACCESS_EVENT_TYPES: readonly string[] = [EventType.Official, EventType.Club];
 
-export function canTentativeMemberRsvp(event: Event): boolean {
-  return TENTATIVE_MEMBER_RSVP_TYPES.includes(event.eventType);
+export function canLimitedRsvp(event: Event): boolean {
+  return LIMITED_ACCESS_EVENT_TYPES.includes(event.eventType);
 }
 
 // Mirrors backend is_limited: tentative applicants and attendance-paused users sign in without membership.
-export function isTentativeMember(user: Pick<User, 'isMember'> | null | undefined): boolean {
+export function isLimited(user: Pick<User, 'isMember'> | null | undefined): boolean {
   return user?.isMember === false;
 }
 

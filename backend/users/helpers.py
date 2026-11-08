@@ -17,7 +17,7 @@ from users.models import (
     ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
-    NonMemberRsvpToken,
+    PublicRsvpToken,
     User,
     validate_phone,
 )
@@ -281,7 +281,7 @@ def validate_member_role_required(new_roles: list[Role]) -> None:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
 
 
-def strip_non_member_roles(user: User) -> list[str]:
+def strip_elevated_roles(user: User) -> list[str]:
     """Remove every role from user except the built-in member role.
 
     Called on the pause transition so a paused member holds no elevated role.
@@ -300,6 +300,6 @@ def grant_membership(user: User) -> None:
     if member_role:
         user.roles.add(member_role)
 
-    NonMemberRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+    PublicRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
         revoked_at=timezone.now()
     )

@@ -1,28 +1,28 @@
 from django.utils import timezone
 from notifications.email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
-from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
+from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
 from community.models import Event, EventRSVP, RSVPStatus
 from community.rsvps.public_shared import email_details, log_email_failure
 from community.validation import Code, raise_validation
 
 
-def ineligible_non_member_rsvps(event: Event):
+def ineligible_public_rsvper_rsvps(event: Event):
     """Non-member RSVPs (any status) on `event` not already REMOVED."""
     rsvps = EventRSVP.objects.filter(event=event, user__is_member=False).exclude(
         status=RSVPStatus.REMOVED
     )
-    if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
+    if event.event_type in LIMITED_ACCESS_EVENT_TYPES:
         # Limited users keep official/club access regardless of public RSVP eligibility.
         rsvps = rsvps.exclude(user__in=User.objects.limited_users())
     return rsvps
 
 
-def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[str]:
+def guard_or_remove_ineligible_public_rsvpers(event: Event, force: bool) -> list[str]:
     """Remove non-member RSVPs when forced, else raise 409 with the count."""
-    rsvps = list(ineligible_non_member_rsvps(event))
+    rsvps = list(ineligible_public_rsvper_rsvps(event))
     if not rsvps:
         return []
     if not force:
@@ -34,8 +34,8 @@ def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[st
     return user_ids
 
 
-def email_removed_non_members(request, event: Event, removed_user_ids: list[str]) -> None:
-    """Email any removed non-members. Best-effort per user, mirrors email_promoted_users."""
+def email_removed_public_rsvpers(request, event: Event, removed_user_ids: list[str]) -> None:
+    """Email any removed public rsvpers. Best-effort per user, mirrors email_promoted_users."""
     if not removed_user_ids:
         return
     # This email and its join pitch are for people without an account.
@@ -46,7 +46,7 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
         if not user.email:
             continue
         try:
-            token = NonMemberRsvpToken.issue_or_extend(user)
+            token = PublicRsvpToken.issue_or_extend(user)
             result = send_rsvp_removed_email(
                 sender=get_email_sender(),
                 details=email_details(event, user, token.token),

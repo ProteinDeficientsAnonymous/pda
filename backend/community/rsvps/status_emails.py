@@ -13,9 +13,9 @@ from notifications.email_helpers import (
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import SendResult, get_email_sender
-from users.models import NonMemberRsvpToken, User, can_sign_in_q
+from users.models import PublicRsvpToken, User, can_sign_in_q
 
-from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
+from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
 from community.models import Event, RSVPStatus
 from community.rsvps.public_shared import (
     collect_event_links,
@@ -29,7 +29,7 @@ from community.shared import logger
 def _member_email_ids(event: Event, user_ids: list[str]) -> set[str]:
     """Ids of users who get member emails; everyone else gets a manage link."""
     # Limited users can only manage official/club rsvps in the app.
-    official = event.event_type in TENTATIVE_MEMBER_EVENT_TYPES
+    official = event.event_type in LIMITED_ACCESS_EVENT_TYPES
     users = User.objects.filter(can_sign_in_q() if official else Q(is_member=True), pk__in=user_ids)
     return {str(pk) for pk in users.values_list("pk", flat=True)}
 
@@ -77,11 +77,11 @@ def email_member_rsvp_status(request, event: Event, user: User, status: str) -> 
     _send_member_email(request, event, user, "attending")
 
 
-def _email_non_member(
+def _email_public_rsvper(
     request, event: Event, user: User, send: Callable[[RsvpEmailDetails], SendResult]
 ) -> None:
     try:
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
         result = send(email_details(event, user, token.token))
         if not result.success:
             raise RuntimeError(result.error or "send returned failure")
@@ -98,7 +98,7 @@ def email_host_set_rsvp_status(
     if str(user.pk) in _member_email_ids(event, [str(user.pk)]):
         _send_member_email(request, event, user, "attending")
         return
-    _email_non_member(
+    _email_public_rsvper(
         request,
         event,
         user,
@@ -108,8 +108,8 @@ def email_host_set_rsvp_status(
     )
 
 
-def _email_promoted_non_member(request, event: Event, user: User, payment_pending: bool) -> None:
-    _email_non_member(
+def _email_promoted_public_rsvper(request, event: Event, user: User, payment_pending: bool) -> None:
+    _email_public_rsvper(
         request,
         event,
         user,
@@ -133,4 +133,4 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
         if str(user.id) in member_email_ids:
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:
-            _email_promoted_non_member(request, event, user, payment_pending)
+            _email_promoted_public_rsvper(request, event, user, payment_pending)

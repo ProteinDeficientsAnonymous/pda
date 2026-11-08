@@ -12,7 +12,7 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
@@ -106,10 +106,10 @@ def _reject_if_paused_non_member(request, phone: str) -> None:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _create_non_member(
+def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Get-or-create the non-member User keyed on the unique phone number."""
+    """Get-or-create the public rsvper User keyed on the unique phone number."""
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
@@ -124,10 +124,10 @@ def _create_non_member(
     return user, created
 
 
-def _resolve_non_member(
+def _resolve_public_rsvper(
     *, request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Resolve (or create) the non-member User backing this RSVP.
+    """Resolve (or create) the public rsvper User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
     grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
@@ -148,7 +148,7 @@ def _resolve_non_member(
 
     if phone_match:
         return phone_match, False
-    return _create_non_member(request, first_name, last_name, email, phone)
+    return _create_public_rsvper(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -199,7 +199,7 @@ def _send_recognized_login_link(request, user: User) -> None:
         # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
         result = send_rsvp_manage_link_email(
@@ -284,7 +284,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     _reject_if_paused_non_member(request, validated_phone)
 
     with transaction.atomic():
-        user, created = _resolve_non_member(
+        user, created = _resolve_public_rsvper(
             request=request,
             first_name=first_name,
             last_name=last_name,
@@ -300,7 +300,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
                 answers=payload.questionnaire_responses,
             ),
         )
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,

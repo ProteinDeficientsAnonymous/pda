@@ -22,8 +22,8 @@ from community.cashapp.review import (
     review_cashapp_csv,
 )
 from community.events.helpers import can_edit_event
+from community.events.limited_access import event_viewer_for
 from community.events.read_visibility import enforce_event_read_visibility
-from community.events.tentative_member_access import event_viewer_for
 from community.models import Event, parse_event_ref
 from community.validation import Code, ValidationException, raise_validation
 from django.conf import settings

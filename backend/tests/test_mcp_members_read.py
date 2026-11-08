@@ -17,7 +17,7 @@ from tests._mcp_members_helpers import (
     member_totals,
 )
 from tests._mcp_tool_helpers import signed_in
-from tests._public_rsvp_helpers import make_non_member, make_tentative_member
+from tests._public_rsvp_helpers import make_public_rsvper, make_tentative_member
 
 pytestmark = pytest.mark.django_db
 
@@ -76,7 +76,7 @@ def test_self_deleted_member_counts_as_archived(
 
 
 def test_non_members_are_not_counted(manage_users_user):
-    make_non_member("+12025550198", "n@e.com")
+    make_public_rsvper("+12025550198", "n@e.com")
     make_tentative_member("+12025550197", "t@e.com")
     make_member(is_member=False, needs_onboarding=True)
     make_member(is_member=False, is_paused=True)

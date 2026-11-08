@@ -290,14 +290,14 @@ class MagicLoginToken(models.Model):
         )
 
 
-# Number of days a non-member RSVP-management link stays valid from issuance.
-NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
+# Number of days a public rsvper's RSVP-management link stays valid from issuance.
+PUBLIC_RSVP_TOKEN_TTL_DAYS = 90
 # Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
-NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
+PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
-class NonMemberRsvpToken(models.Model):
-    """Scoped magic link for a non-member to manage their own RSVPs at /my-rsvps.
+class PublicRsvpToken(models.Model):
+    """Scoped magic link for a public rsvper to manage their own RSVPs at /my-rsvps.
 
     This token NEVER logs the user in — it is entirely separate from
     MagicLoginToken (different table, different validation path, narrower scope).
@@ -342,7 +342,7 @@ class NonMemberRsvpToken(models.Model):
             self.save(update_fields=["revoked_at"])
 
     @classmethod
-    def issue(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue(cls, user: "User") -> "PublicRsvpToken":
         """Create a fresh token for a non-member, valid for 90 days.
 
         Rejects members — a converted/existing member must use the member flow,
@@ -353,11 +353,11 @@ class NonMemberRsvpToken(models.Model):
         return cls.objects.create(
             user=user,
             token=secrets.token_urlsafe(32),
-            expires_at=timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS),
+            expires_at=timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS),
         )
 
     @classmethod
-    def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue_or_extend(cls, user: "User") -> "PublicRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
@@ -366,9 +366,9 @@ class NonMemberRsvpToken(models.Model):
         if user.is_member:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
-        max_age_cutoff = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS)
+        max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
         if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
-            existing.expires_at = timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+            existing.expires_at = timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS)
             existing.save(update_fields=["expires_at"])
             return existing
         return cls.issue(user)

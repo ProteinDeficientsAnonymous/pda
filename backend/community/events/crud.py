@@ -35,6 +35,10 @@ from community.events.helpers import (
     set_event_tags,
     validated_event_format,
 )
+from community.events.limited_access import (
+    event_viewer_for,
+    is_limited,
+)
 from community.events.listing import (
     EventListQuery,
     build_events_queryset,
@@ -44,11 +48,11 @@ from community.events.listing import (
     filter_window,
     list_count_annotations,
 )
-from community.events.nonmember_removal import (
-    email_removed_non_members,
-    guard_or_remove_ineligible_non_members,
-)
 from community.events.official_defaults import apply_official_defaults
+from community.events.public_rsvper_removal import (
+    email_removed_public_rsvpers,
+    guard_or_remove_ineligible_public_rsvpers,
+)
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     EventIn,
@@ -57,10 +61,6 @@ from community.events.schemas import (
     EventPatchIn,
     RSVPGuestOut,
     validate_event_rsvp_question,
-)
-from community.events.tentative_member_access import (
-    event_viewer_for,
-    is_limited,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -343,7 +343,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:
-            removed_user_ids = guard_or_remove_ineligible_non_members(event, force)
+            removed_user_ids = guard_or_remove_ineligible_public_rsvpers(event, force)
 
         if new_status is not None:
             early = handle_status_update(request, event, new_status, notify_attendees)
@@ -353,7 +353,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         promoted_user_ids = promote_if_capacity_increased(event, updates, old_max_attendees)
         hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
-    email_removed_non_members(request, event, removed_user_ids)
+    email_removed_public_rsvpers(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
     return Status(200, event_out(reload_event_or_404(event_id), request.auth))

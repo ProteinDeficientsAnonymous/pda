@@ -8,7 +8,7 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
 
 from community.field_limits import FieldLimit
 from community.shared import ErrorOut
@@ -39,7 +39,7 @@ def _neutral() -> Status:
     return Status(200, ResendManageLinkOut(detail=NEUTRAL_RESPONSE))
 
 
-def _find_non_member(phone: str) -> User | None:
+def _find_public_rsvper(phone: str) -> User | None:
     """Find the non-member User matching this phone. None if no match, a member, or paused."""
     match = User.objects.filter(phone_number=phone).first()
     if match and (match.is_member or match.is_paused):
@@ -49,7 +49,7 @@ def _find_non_member(phone: str) -> User | None:
 
 def _send_manage_link(request, user: User) -> None:
     """Best-effort resend of the non-member's manage link. Failures are logged."""
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
         result = send_rsvp_manage_link_email(
@@ -101,7 +101,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
     except ValidationException:
         return _neutral()
 
-    user = _find_non_member(validated_phone)
+    user = _find_public_rsvper(validated_phone)
     if user is not None and user.email:
         _send_manage_link(request, user)
         audit_log(

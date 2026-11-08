@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -310,13 +310,13 @@ class Command(BaseCommand):
             if existing is not None and existing.is_expired:
                 return
             user.rsvp_tokens.all().delete()
-            NonMemberRsvpToken.objects.create(
+            PublicRsvpToken.objects.create(
                 user=user,
                 token=secrets.token_urlsafe(32),
                 expires_at=timezone.now() - timedelta(days=1),
             )
             return
-        NonMemberRsvpToken.issue_or_extend(user)
+        PublicRsvpToken.issue_or_extend(user)
 
     def _seed_non_members(self, events: list[Event], rsvp_questions: dict) -> list[User]:
         events_by_title = {e.title: e for e in events}
@@ -341,7 +341,7 @@ class Command(BaseCommand):
         self._print_official_events(result["events"])
         self.stdout.write("non-member users (phone -> manage link):")
         for user in result["non_members"]:
-            token = NonMemberRsvpToken.objects.filter(user=user).order_by("-created_at").first()
+            token = PublicRsvpToken.objects.filter(user=user).order_by("-created_at").first()
             if token is None or not token.is_valid:
                 state = "expired token" if token is not None else "no token"
                 self.stdout.write(f"  {user.phone_number} -> ({state})")

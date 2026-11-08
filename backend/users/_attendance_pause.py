@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass, field
 
-from community.events.tentative_member_access import (
-    TENTATIVE_MEMBER_EVENT_TYPES as KEPT_RSVP_EVENT_TYPES,
+from community.events.limited_access import (
+    LIMITED_ACCESS_EVENT_TYPES as KEPT_RSVP_EVENT_TYPES,
 )
 from community.events.unpublish import clear_unpublished_side_effects
 from community.models import (

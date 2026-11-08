@@ -49,10 +49,10 @@ def _reactivate_archived_user(existing_user, join_request):
     return create_magic_token(existing_user)
 
 
-def _promote_public_non_member(user, join_request) -> str:
-    """Promote a publicly-RSVP'd non-member in place; returns their replacement login token.
+def _promote_public_rsvper(user, join_request) -> str:
+    """Promote a public rsvper in place; returns their replacement login token.
 
-    param(user): the non-member User to promote, linked to join_request.
+    param(user): the public rsvper User to promote, linked to join_request.
     return(str): magic token replacing the rsvp tokens this revokes.
     """
     user.is_member = True
@@ -125,7 +125,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     Reuses a non-member already linked or matched by phone; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but keep ``is_member=False`` and no member role, which is what
-    limits them to official/club events (see ``community/events/tentative_member_access``).
+    limits them to official/club events (see ``community/events/limited_access``).
     Returns ``(user, magic_token)``.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
@@ -197,7 +197,7 @@ def provision_approved_user(
         if was_tentative:
             promote_tentative_member(join_request.user, join_request)
             return None, False
-        return _promote_public_non_member(join_request.user, join_request), False
+        return _promote_public_rsvper(join_request.user, join_request), False
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:

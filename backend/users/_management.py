@@ -22,7 +22,7 @@ from users.helpers import (
     create_user_with_role,
     is_admin,
     resolve_name_fields,
-    strip_non_member_roles,
+    strip_elevated_roles,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
@@ -326,7 +326,7 @@ def _audit_user_update(
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": strip_non_member_roles(user)} if payload.is_paused else None
+        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
         audit_log(
             logging.WARNING,
             action,
