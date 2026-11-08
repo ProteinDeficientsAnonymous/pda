@@ -8,6 +8,7 @@ and the rate-limit cache reset come from conftest.
 """
 
 import pytest
+from community.join_requests.manage import join_request_out
 from community.models import JoinRequest
 from django.utils import timezone
 from users.models import User
@@ -137,6 +138,5 @@ class TestJoinRequestConflicts:
             content_type="application/json",
         )
         assert response.status_code == 201
-        body = response.json()
-        assert body["previously_archived"] is True
-        assert JoinRequest.objects.filter(phone_number="+12025551297").exists()
+        jr = JoinRequest.objects.get(phone_number="+12025551297")
+        assert join_request_out(jr).previously_archived is True
