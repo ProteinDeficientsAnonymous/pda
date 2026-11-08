@@ -1,3 +1,31 @@
+# [0.226.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.225.0...v0.226.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1517 - keep paused and restored members off the approved tab ([#2183](https://github.com/ProteinDeficientsAnonymous/pda/issues/2183)) ([370cc05](https://github.com/ProteinDeficientsAnonymous/pda/commit/370cc05b1bec52fc1bf1286433342dc08985b51f))
+* block guidelines-paused users on public rsvp and join paths ([#2231](https://github.com/ProteinDeficientsAnonymous/pda/issues/2231)) ([a73c363](https://github.com/ProteinDeficientsAnonymous/pda/commit/a73c3630050b2a07acc55f9f4b48ee4cb1279d05))
+* **events:** 1686 - treat attendance-paused members as signed in for RSVPs ([#2193](https://github.com/ProteinDeficientsAnonymous/pda/issues/2193)) ([139b318](https://github.com/ProteinDeficientsAnonymous/pda/commit/139b3189b8861dc0e6391c833c5f5acd9e85b336))
+* **join-requests:** 1686 - report attendance-paused members in check_phone ([#2197](https://github.com/ProteinDeficientsAnonymous/pda/issues/2197)) ([e2bdcbb](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2bdcbb08487697e4c631c02c3a657a33afdd150))
+* **join:** return minimal public response from join-request submit ([#2241](https://github.com/ProteinDeficientsAnonymous/pda/issues/2241)) ([f18ac44](https://github.com/ProteinDeficientsAnonymous/pda/commit/f18ac4420f64fee5003b4ddb7a11a0688498941b))
+* **users:** 1686 - count attendance-paused members as signed-in non-members ([#2187](https://github.com/ProteinDeficientsAnonymous/pda/issues/2187)) ([be58d48](https://github.com/ProteinDeficientsAnonymous/pda/commit/be58d480c74d237ed6860326f9a782cbfd8b8439))
+
+
+### Features
+
+* 1516 - edit the welcome back email from join requests ([#2203](https://github.com/ProteinDeficientsAnonymous/pda/issues/2203)) ([8afedc3](https://github.com/ProteinDeficientsAnonymous/pda/commit/8afedc30434cced63eef4658d2ead32f19b4610f))
+* 1516 - edit the welcome back email template ([#2201](https://github.com/ProteinDeficientsAnonymous/pda/issues/2201)) ([f8b6238](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8b62380d0436c28b369baaa9a87a68c3fb7452c))
+* 1516 - email restored members with the whatsapp link ([#2199](https://github.com/ProteinDeficientsAnonymous/pda/issues/2199)) ([b66237b](https://github.com/ProteinDeficientsAnonymous/pda/commit/b66237b8e55effb16cad86d29f40152cb1494c20))
+* 1516 - notify approvers when a paused member is restored ([#2202](https://github.com/ProteinDeficientsAnonymous/pda/issues/2202)) ([a6513ed](https://github.com/ProteinDeficientsAnonymous/pda/commit/a6513ed0f75eb6f74f894af3b83dba53a812f07b))
+* 1516 - read the welcome back email template ([#2200](https://github.com/ProteinDeficientsAnonymous/pda/issues/2200)) ([7280e6f](https://github.com/ProteinDeficientsAnonymous/pda/commit/7280e6fe4a5f27258ea563c587dbec8d4cddf382))
+* 1516 - restore attendance-paused members on 2nd check-in ([#2194](https://github.com/ProteinDeficientsAnonymous/pda/issues/2194)) ([8f552c8](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f552c811393db0858f015b010cab5023dbceeef))
+* 1517 - list manually unpaused members on the restored endpoint ([#2233](https://github.com/ProteinDeficientsAnonymous/pda/issues/2233)) ([852d695](https://github.com/ProteinDeficientsAnonymous/pda/commit/852d6955395b3985e7c9b6d68eb9cb1558c37dbd))
+* 1517 - restored members endpoint ([#2188](https://github.com/ProteinDeficientsAnonymous/pda/issues/2188)) ([abf2e4e](https://github.com/ProteinDeficientsAnonymous/pda/commit/abf2e4ebb994d91722e94cc79268d455a4fb0bab))
+* 1517 - restored tab on the join requests page ([#2196](https://github.com/ProteinDeficientsAnonymous/pda/issues/2196)) ([328613e](https://github.com/ProteinDeficientsAnonymous/pda/commit/328613e4c60d6626ec96a4460cc085676b3fbf23))
+* 1517 - show unpaused members on the restored tab ([#2234](https://github.com/ProteinDeficientsAnonymous/pda/issues/2234)) ([3780b4c](https://github.com/ProteinDeficientsAnonymous/pda/commit/3780b4c892b574fabd7157e10d86e4d981acd7d7))
+* 2128 - email members when an admin unpauses them ([#2195](https://github.com/ProteinDeficientsAnonymous/pda/issues/2195)) ([01b8484](https://github.com/ProteinDeficientsAnonymous/pda/commit/01b8484d66e293f6ee62041841202c9cd22cc978))
+* 2128 - stamp unpaused_at when an admin unpauses a member ([#2232](https://github.com/ProteinDeficientsAnonymous/pda/issues/2232)) ([47f7fb6](https://github.com/ProteinDeficientsAnonymous/pda/commit/47f7fb6ca425f99494b700af09a473ceedb52c64))
+
 # [0.225.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.224.0...v0.225.0) (2026-11-08)
 
 
