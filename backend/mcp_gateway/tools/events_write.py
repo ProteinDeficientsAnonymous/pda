@@ -6,7 +6,7 @@ from community.events.crud import get_event as get_event_view
 from community.events.crud import update_event as update_event_view
 from community.events.geocode import GeocodeQuery, geocode
 from community.events.helpers import can_edit_event
-from community.events.nonmember_removal import ineligible_non_member_rsvps
+from community.events.public_rsvper_removal import ineligible_public_rsvper_rsvps
 from community.events.schemas import EventPatchIn
 from community.models import Event, EventStatus, EventType
 from community.validation import Code, raise_validation
@@ -106,7 +106,7 @@ def _non_members_removed(request: Any, event_id: str, payload: EventPatchIn) -> 
     for name, value in payload.model_dump(exclude_unset=True).items():
         if name in _ELIGIBILITY_FIELDS:
             setattr(event, name, value)
-    return 0 if event.is_public_rsvp_eligible else ineligible_non_member_rsvps(event).count()
+    return 0 if event.is_public_rsvp_eligible else ineligible_public_rsvper_rsvps(event).count()
 
 
 _BOUND = (

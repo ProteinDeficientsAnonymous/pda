@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.events.nonmember_removal import guard_or_remove_ineligible_non_members
+from community.events.public_rsvper_removal import guard_or_remove_ineligible_public_rsvpers
 from community.models import EventRSVP, RSVPStatus
 from django.utils import timezone
 from users.models import User
@@ -118,7 +118,7 @@ class TestStatusChangedAt:
         guest = User.objects.create_user(phone_number="+12025558400", password="x", is_member=False)
         row = _backdate(make_rsvp(event, guest))
 
-        assert len(guard_or_remove_ineligible_non_members(event, force=True)) == 1
+        assert len(guard_or_remove_ineligible_public_rsvpers(event, force=True)) == 1
 
         _assert_stamped(row)
         assert row.status == RSVPStatus.REMOVED

@@ -90,10 +90,10 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _create_non_member(
+def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Get-or-create the non-member User keyed on the unique phone number."""
+    """Get-or-create the public rsvper User keyed on the unique phone number."""
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
@@ -108,10 +108,10 @@ def _create_non_member(
     return user, created
 
 
-def _resolve_non_member(
+def _resolve_public_rsvper(
     *, request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Resolve (or create) the non-member User backing this RSVP.
+    """Resolve (or create) the public rsvper User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
     grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
@@ -132,7 +132,7 @@ def _resolve_non_member(
 
     if phone_match:
         return phone_match, False
-    return _create_non_member(request, first_name, last_name, email, phone)
+    return _create_public_rsvper(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -266,7 +266,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        user, created = _resolve_non_member(
+        user, created = _resolve_public_rsvper(
             request=request,
             first_name=first_name,
             last_name=last_name,
