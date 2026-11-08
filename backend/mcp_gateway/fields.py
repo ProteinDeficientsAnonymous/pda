@@ -2,8 +2,8 @@ import json
 from datetime import datetime
 from typing import Annotated, Any
 
-from community._validation import ValidationException
-from config.validation_handlers import _serialize_pydantic_error, _serialize_validation_exception
+from community.validation import ValidationException
+from config.validation_handlers import serialize_pydantic_error, serialize_validation_exception
 from django.conf import settings
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import AfterValidator, BaseModel, ValidationError
@@ -32,12 +32,12 @@ def build[T: BaseModel](schema: type[T], data: dict[str, Any]) -> T:
     try:
         return schema(**data)
     except ValidationException as exc:
-        detail = [_serialize_validation_exception(exc)]
+        detail = [serialize_validation_exception(exc)]
         raise ToolError(json.dumps({"status": exc.status_code, "detail": detail})) from exc
     except ValidationError as exc:
         # The serializer drops loc[0] as ninja's handler param name; keep the real field.
         detail = [
-            _serialize_pydantic_error({**err, "loc": ("payload", *err["loc"])})
+            serialize_pydantic_error({**err, "loc": ("payload", *err["loc"])})
             for err in exc.errors()
         ]
         raise ToolError(json.dumps({"status": 422, "detail": detail})) from exc

@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from community._event_comments import _can_post_comments
-from community._event_viewer import resolve_event_viewer
-from community._events import _enforce_event_read_visibility
-from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community.events.comments import can_post_comments
+from community.events.read_visibility import enforce_event_read_visibility
+from community.events.viewer import resolve_event_viewer
 from community.models import Event
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
 from config.auth import gated_jwt, gated_jwt_or_anonymous
 from config.ratelimit import auth_or_ip_key, rate_limit
 from django.contrib.auth.models import AnonymousUser
@@ -14,6 +14,7 @@ from ninja.responses import Status
 
 from notifications.models import Notification, SseTicket
 from notifications.schemas import NotificationOut, SseTicketOut, UnreadCountOut
+from notifications.sse import notify_read_state_changed
 
 router = Router()
 
@@ -53,8 +54,8 @@ def _event_for_anonymous_stream(request, event_id: UUID) -> Event:
     viewer = resolve_event_viewer(request, event_id)
     if event is None or viewer is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    _enforce_event_read_visibility(event, viewer)
-    if not _can_post_comments(event, viewer):
+    enforce_event_read_visibility(event, viewer)
+    if not can_post_comments(event, viewer):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return event
 
@@ -89,7 +90,8 @@ def unread_count(request):
 
 @router.post("/read-all/", response={200: dict}, auth=gated_jwt)
 def mark_all_read(request):
-    Notification.objects.filter(recipient=request.auth, is_read=False).update(is_read=True)
+    if Notification.objects.filter(recipient=request.auth, is_read=False).update(is_read=True):
+        notify_read_state_changed(str(request.auth.pk))
     return Status(200, {"detail": "ok"})
 
 
@@ -100,4 +102,5 @@ def mark_read(request, notification_id: UUID):
     )
     if not updated:
         raise_validation(Code.Notification.NOT_FOUND, status_code=404)
+    notify_read_state_changed(str(request.auth.pk))
     return Status(200, {"detail": "ok"})

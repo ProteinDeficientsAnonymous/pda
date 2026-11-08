@@ -1,0 +1,136 @@
+import logging
+from collections.abc import Callable
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from django.conf import settings
+from django.db.models import Q
+from notifications.email_helpers import (
+    MemberRsvpEmailDetails,
+    RsvpEmailDetails,
+    format_event_when,
+    send_member_rsvp_status_email,
+    send_rsvp_confirmation_email,
+    send_rsvp_waitlist_promoted_email,
+)
+from notifications.email_sender import SendResult, get_email_sender
+from users.models import PublicRsvpToken, User, can_sign_in_q
+
+from community.events.limited_access import LIMITED_ACCESS_EVENT_TYPES
+from community.models import Event, RSVPStatus
+from community.rsvps.public_shared import (
+    collect_event_links,
+    email_details,
+    log_email_failure,
+    unpaid_user_ids,
+)
+from community.shared import logger
+
+
+def _member_email_ids(event: Event, user_ids: list[str]) -> set[str]:
+    """Ids of users who get member emails; everyone else gets a manage link."""
+    # Limited users can only manage official/club rsvps in the app.
+    official = event.event_type in LIMITED_ACCESS_EVENT_TYPES
+    users = User.objects.filter(can_sign_in_q() if official else Q(is_member=True), pk__in=user_ids)
+    return {str(pk) for pk in users.values_list("pk", flat=True)}
+
+
+def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
+    return MemberRsvpEmailDetails(
+        to=user.email or "",
+        display_name=user.first_name,
+        event_title=event.title,
+        event_when=format_event_when(event),
+        event_location=event.location,
+        event_links=collect_event_links(event),
+        event_url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}",
+    )
+
+
+def _send_member_email(request, event: Event, user: User, kind: str, payment_pending=False):
+    try:
+        result = send_member_rsvp_status_email(
+            sender=get_email_sender(),
+            details=_member_email_details(event, user),
+            kind=kind,
+            payment_pending=payment_pending,
+        )
+        if not result.success:
+            raise RuntimeError(result.error or "send returned failure")
+    except Exception as exc:
+        logger.warning("member rsvp email failed", exc_info=True)
+        audit_log(
+            logging.WARNING,
+            "member_rsvp_email_failed",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.EVENT,
+                id=str(event.id),
+                details={"user_id": str(user.pk), "kind": kind, "error": str(exc)},
+            ),
+        )
+
+
+def email_member_rsvp_status(request, event: Event, user: User, status: str) -> None:
+    """Email a member "you're in" when they become attending. Best-effort; never raises."""
+    if status != RSVPStatus.ATTENDING or not user.email:
+        return
+    _send_member_email(request, event, user, "attending")
+
+
+def _email_public_rsvper(
+    request, event: Event, user: User, send: Callable[[RsvpEmailDetails], SendResult]
+) -> None:
+    try:
+        token = PublicRsvpToken.issue_or_extend(user)
+        result = send(email_details(event, user, token.token))
+        if not result.success:
+            raise RuntimeError(result.error or "send returned failure")
+    except Exception as exc:
+        log_email_failure(request, event, user, exc)
+
+
+def email_host_set_rsvp_status(
+    request, event: Event, user: User, previous_status: str | None, status: str
+) -> None:
+    """Email a guest "you're in" when a host sets them to attending. Best-effort; never raises."""
+    if status == previous_status or status != RSVPStatus.ATTENDING or not user.email:
+        return
+    if str(user.pk) in _member_email_ids(event, [str(user.pk)]):
+        _send_member_email(request, event, user, "attending")
+        return
+    _email_public_rsvper(
+        request,
+        event,
+        user,
+        lambda details: send_rsvp_confirmation_email(
+            sender=get_email_sender(), details=details, waitlisted=False
+        ),
+    )
+
+
+def _email_promoted_public_rsvper(request, event: Event, user: User, payment_pending: bool) -> None:
+    _email_public_rsvper(
+        request,
+        event,
+        user,
+        lambda details: send_rsvp_waitlist_promoted_email(
+            sender=get_email_sender(), details=details, payment_pending=payment_pending
+        ),
+    )
+
+
+def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) -> None:
+    """Email everyone promoted off the waitlist. Best-effort per user."""
+    if not promoted_user_ids:
+        return
+    promoted = User.objects.filter(id__in=promoted_user_ids).exclude(email__isnull=True)
+    unpaid = unpaid_user_ids(event, promoted_user_ids)
+    member_email_ids = _member_email_ids(event, promoted_user_ids)
+    for user in promoted:
+        if not user.email:
+            continue
+        payment_pending = str(user.id) in unpaid
+        if str(user.id) in member_email_ids:
+            _send_member_email(request, event, user, "promoted", payment_pending)
+        else:
+            _email_promoted_public_rsvper(request, event, user, payment_pending)

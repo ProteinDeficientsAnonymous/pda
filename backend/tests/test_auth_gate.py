@@ -15,14 +15,12 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
+from tests._auth import auth_headers_for
+from tests._auth_gate_helpers import BLOCK_CODES, block_user
 
 
 @pytest.mark.django_db
@@ -35,7 +33,7 @@ class TestGatedJWTAuth:
         user.save(update_fields=["needs_password_reset"])
 
         # A normal protected endpoint (not on the allowlist) → 403.
-        resp = api_client.get("/api/notifications/", **_headers(user))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(user))
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.password_reset_required"
 
@@ -47,7 +45,7 @@ class TestGatedJWTAuth:
         user.save(update_fields=["needs_password_reset"])
 
         # /me/ is allowlisted so the frontend can read the flag and route.
-        resp = api_client.get("/api/auth/me/", **_headers(user))
+        resp = api_client.get("/api/auth/me/", **auth_headers_for(user))
         assert resp.status_code == 200
         assert resp.json()["needs_password_reset"] is True
 
@@ -68,7 +66,7 @@ class TestGatedJWTAuth:
             "/api/auth/complete-onboarding/",
             data={"new_password": "FreshPass123!"},
             content_type="application/json",
-            **_headers(user),
+            **auth_headers_for(user),
         )
         assert resp.status_code == 200, resp.content
         user.refresh_from_db()
@@ -82,7 +80,7 @@ class TestGatedJWTAuth:
             last_name="",
             needs_onboarding=True,
         )
-        resp = api_client.get("/api/notifications/", **_headers(user))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(user))
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.onboarding_required"
 
@@ -91,7 +89,7 @@ class TestGatedJWTAuth:
         user = User.objects.create_user(
             phone_number="+12025550305", password="pass", first_name="Paused", last_name=""
         )
-        headers = _headers(user)  # token minted while active
+        headers = auth_headers_for(user)  # token minted while active
         user.is_paused = True
         user.save(update_fields=["is_paused"])
 
@@ -103,7 +101,7 @@ class TestGatedJWTAuth:
         user = User.objects.create_user(
             phone_number="+12025550306", password="pass", first_name="Archived", last_name=""
         )
-        headers = _headers(user)
+        headers = auth_headers_for(user)
         user.archived_at = timezone.now()
         user.save(update_fields=["archived_at"])
 
@@ -115,7 +113,7 @@ class TestGatedJWTAuth:
         user = User.objects.create_user(
             phone_number="+12025550307", password="pass", first_name="Normal", last_name=""
         )
-        resp = api_client.get("/api/notifications/", **_headers(user))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(user))
         assert resp.status_code == 200
 
     def test_needs_guidelines_consent_blocks_protected_endpoint(self, api_client):
@@ -126,7 +124,7 @@ class TestGatedJWTAuth:
         user.guidelines_consent_at = None
         user.save(update_fields=["guidelines_consent_at"])
 
-        resp = api_client.get("/api/notifications/", **_headers(user))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(user))
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.guidelines_consent_required"
 
@@ -138,7 +136,7 @@ class TestGatedJWTAuth:
         user.save(update_fields=["guidelines_consent_at"])
 
         # /me/ is allowlisted so the frontend can read the flag and route.
-        resp = api_client.get("/api/auth/me/", **_headers(user))
+        resp = api_client.get("/api/auth/me/", **auth_headers_for(user))
         assert resp.status_code == 200
         assert resp.json()["needs_guidelines_consent"] is True
 
@@ -154,7 +152,7 @@ class TestGatedJWTAuth:
             "/api/auth/accept-consents/",
             data={"consent_types": ["guidelines"]},
             content_type="application/json",
-            **_headers(user),
+            **auth_headers_for(user),
         )
         assert resp.status_code == 200, resp.content
 
@@ -167,7 +165,7 @@ class TestGatedJWTAuth:
         user.guidelines_consent_at = None
         user.save(update_fields=["needs_password_reset", "guidelines_consent_at"])
 
-        resp = api_client.get("/api/notifications/", **_headers(user))
+        resp = api_client.get("/api/notifications/", **auth_headers_for(user))
         assert resp.status_code == 403
         assert resp.json()["detail"][0]["code"] == "auth.password_reset_required"
 
@@ -179,12 +177,12 @@ class TestGatedJWTAuth:
             first_name="Hard",
             last_name="Block",
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
 
         resp = api_client.get("/api/auth/me/", **headers)
         assert resp.status_code == 403
-        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert resp.json()["detail"][0]["code"] == BLOCK_CODES[block]
 
     @pytest.mark.parametrize("block", ["archived", "paused"])
     def test_hard_block_rejects_complete_onboarding_while_onboarding_pending(
@@ -198,8 +196,8 @@ class TestGatedJWTAuth:
             email="hard-archive@example.com" if block == "archived" else "hard-pause@example.com",
             needs_onboarding=True,
         )
-        headers = _headers(user)
-        _block_user(user, block)
+        headers = auth_headers_for(user)
+        block_user(user, block)
 
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
@@ -208,16 +206,8 @@ class TestGatedJWTAuth:
             **headers,
         )
         assert resp.status_code == 403, resp.content
-        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert resp.json()["detail"][0]["code"] == BLOCK_CODES[block]
 
-
-_BLOCK_CODES = {
-    "paused": "auth.account_paused",
-    "archived": "auth.account_archived",
-    "needs_password_reset": "auth.password_reset_required",
-    "needs_onboarding": "auth.onboarding_required",
-    "needs_guidelines_consent": "auth.guidelines_consent_required",
-}
 
 _BLOCK_PHONES = {
     "paused": "+12025550321",
@@ -226,27 +216,6 @@ _BLOCK_PHONES = {
     "needs_onboarding": "+12025550326",
     "needs_guidelines_consent": "+12025550327",
 }
-
-
-def _block_user(user, block: str) -> None:
-    if block == "paused":
-        user.is_paused = True
-        user.save(update_fields=["is_paused"])
-        return
-    if block == "archived":
-        user.archived_at = timezone.now()
-        user.save(update_fields=["archived_at"])
-        return
-    if block == "needs_onboarding":
-        user.needs_onboarding = True
-        user.save(update_fields=["needs_onboarding"])
-        return
-    if block == "needs_guidelines_consent":
-        user.guidelines_consent_at = None
-        user.save(update_fields=["guidelines_consent_at"])
-        return
-    user.needs_password_reset = True
-    user.save(update_fields=["needs_password_reset"])
 
 
 def _public_event(creator):
@@ -279,8 +248,8 @@ class TestOptionalJWTAccountState:
     def test_event_detail_blocked_token_matches_logged_out(self, api_client, test_user, block):
         event = _public_event(test_user)
         viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
-        headers = _headers(viewer)
-        _block_user(viewer, block)
+        headers = auth_headers_for(viewer)
+        block_user(viewer, block)
 
         url = f"/api/community/events/{event.id}/"
         anon = api_client.get(url)
@@ -305,8 +274,8 @@ class TestOptionalJWTAccountState:
     def test_comment_post_blocked_token_forbidden(self, api_client, test_user, block):
         event = _public_event(test_user)
         viewer = _rsvp_viewer(_BLOCK_PHONES[block], event)
-        headers = _headers(viewer)
-        _block_user(viewer, block)
+        headers = auth_headers_for(viewer)
+        block_user(viewer, block)
 
         resp = api_client.post(
             f"/api/community/events/{event.id}/comments/",
@@ -315,7 +284,7 @@ class TestOptionalJWTAccountState:
             **headers,
         )
         assert resp.status_code == 403
-        assert resp.json()["detail"][0]["code"] == _BLOCK_CODES[block]
+        assert resp.json()["detail"][0]["code"] == BLOCK_CODES[block]
         assert not EventComment.objects.filter(event=event).exists()
 
     def test_archived_manage_events_delete_comment_forbidden(self, api_client, test_user):
@@ -328,8 +297,8 @@ class TestOptionalJWTAccountState:
             name="optional_jwt_event_manager", permissions=[PermissionKey.MANAGE_EVENTS]
         )
         manager.roles.add(role)
-        headers = _headers(manager)
-        _block_user(manager, "archived")
+        headers = auth_headers_for(manager)
+        block_user(manager, "archived")
 
         resp = api_client.delete(
             f"/api/community/events/{event.id}/comments/{comment.id}/",
@@ -344,7 +313,7 @@ class TestOptionalJWTAccountState:
         event = _public_event(test_user)
         viewer = _rsvp_viewer("+12025550325", event)
 
-        resp = api_client.get(f"/api/community/events/{event.id}/", **_headers(viewer))
+        resp = api_client.get(f"/api/community/events/{event.id}/", **auth_headers_for(viewer))
         assert resp.status_code == 200
         body = resp.json()
         assert body["whatsapp_link"] == "https://chat.whatsapp.com/abc"

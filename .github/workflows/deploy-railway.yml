@@ -56,7 +56,7 @@ jobs:
           RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_PRODUCTION }}
           RAILWAY_CRON_SERVICE_NAMES: ${{ vars.RAILWAY_CRON_SERVICE_NAMES_PRODUCTION }}
         run: |
-          set -eu
+          set -euo pipefail
           test -n "${RAILWAY_TOKEN}"
           test -n "${RAILWAY_PROJECT_ID}"
           test -n "${RAILWAY_ENVIRONMENT}"
@@ -71,14 +71,42 @@ jobs:
           "${docker_run[@]}" railway --version
           echo "railway deploy message: ${RAILWAY_DEPLOY_MESSAGE}"
 
+          wait_for_deployment() {
+            local service="$1" deployment_id="$2" status
+            local poll_seconds=10 max_polls=90
+            for _ in $(seq 1 "${max_polls}"); do
+              status="$("${docker_run[@]}" railway deployment list --json --limit 20 \
+                --environment "${RAILWAY_ENVIRONMENT}" \
+                --service "${service}" \
+                | jq -r --arg id "${deployment_id}" '.[] | select(.id == $id) | .status')" || status=""
+              echo "deployment ${deployment_id} status: ${status:-unknown}"
+              case "${status}" in
+                SUCCESS|SLEEPING) return 0 ;;
+                FAILED|CRASHED|REMOVED|SKIPPED) return 1 ;;
+              esac
+              sleep "${poll_seconds}"
+            done
+            echo "timed out after $((poll_seconds * max_polls))s waiting for deployment ${deployment_id}"
+            return 1
+          }
+
           deploy_service() {
-            local service="$1"
+            local service="$1" up_log deployment_id
+            up_log="$(mktemp)"
             echo "railway up (verbose) for service '${service}' — 404 here often means wrong project id, environment id/name, or service slug for this token"
-            "${docker_run[@]}" railway up --ci --verbose \
+            if "${docker_run[@]}" railway up --ci --verbose \
               --message "${RAILWAY_DEPLOY_MESSAGE}" \
               --project "${RAILWAY_PROJECT_ID}" \
               --environment "${RAILWAY_ENVIRONMENT}" \
-              --service "${service}"
+              --service "${service}" 2>&1 | tee "${up_log}"; then
+              return 0
+            fi
+            # the cli exits 1 when it can't stream build logs (e.g. reused cron images) even though the deploy went through
+            grep -q "Failed to stream build logs" "${up_log}" || return 1
+            deployment_id="$(grep -oE 'id=[0-9a-f-]{36}' "${up_log}" | head -1 | cut -d= -f2)"
+            test -n "${deployment_id}" || return 1
+            echo "build log stream failed; polling deployment ${deployment_id} instead"
+            wait_for_deployment "${service}" "${deployment_id}"
           }
 
           deploy_service "${RAILWAY_SERVICE_NAME}"

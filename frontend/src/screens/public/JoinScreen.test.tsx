@@ -1,24 +1,25 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import {
+  AlreadyHasAccountError,
+  PendingJoinRequestError,
+  useJoinQuestions,
+  useSubmitJoinRequest,
+} from '@/api/join';
+import type * as JoinApi from '@/api/join';
+import { renderWithProviders } from '@/test/render';
 
 import JoinScreen from './JoinScreen';
 import JoinSuccessScreen from './JoinSuccessScreen';
 
-vi.mock('@/api/join', () => ({
+vi.mock('@/api/join', async (importOriginal) => ({
+  ...(await importOriginal<typeof JoinApi>()),
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
-  AlreadyInvitedError: class AlreadyInvitedError extends Error {
-    constructor() {
-      super('already_invited');
-      this.name = 'AlreadyInvitedError';
-    }
-  },
 }));
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
@@ -43,26 +44,17 @@ function fillPhone(value = '(555) 123-4567') {
 }
 
 function renderWith(component: ReactElement, initialRoute = '/join') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[initialRoute]}>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(component, { route: initialRoute });
 }
 
 function renderWithRoutes(initialRoute = '/join') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[initialRoute]}>
-        <Routes>
-          <Route path="/join" element={<JoinScreen />} />
-          <Route path="/join/success" element={<JoinSuccessScreen />} />
-          <Route path="/login" element={<div>login page</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <Routes>
+      <Route path="/join" element={<JoinScreen />} />
+      <Route path="/join/success" element={<JoinSuccessScreen />} />
+      <Route path="/login" element={<div>login page</div>} />
+    </Routes>,
+    { route: initialRoute },
   );
 }
 
@@ -252,6 +244,39 @@ describe('JoinScreen', () => {
     });
     expect(screen.getByText(/vetting member will review/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to home/i })).toBeInTheDocument();
+  });
+});
+
+describe('existing join request', () => {
+  async function submitRejectedWith(err: Error) {
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync: vi.fn().mockRejectedValueOnce(err),
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+    const user = userEvent.setup();
+    renderWithRoutes();
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
+    fillPhone();
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+  }
+
+  it('replaces the form when a request is already pending', async () => {
+    await submitRejectedWith(new PendingJoinRequestError());
+
+    expect(
+      await screen.findByRole('heading', { name: /you already requested to join/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /submit request/i })).not.toBeInTheDocument();
+  });
+
+  it('sends an already-approved applicant to login', async () => {
+    await submitRejectedWith(new AlreadyHasAccountError());
+
+    expect(await screen.findByText('login page')).toBeInTheDocument();
   });
 });
 

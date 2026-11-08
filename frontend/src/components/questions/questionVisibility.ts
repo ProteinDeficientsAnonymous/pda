@@ -6,6 +6,8 @@ import {
   type SurveyQuestion,
 } from '@/api/surveys';
 
+import { checkboxValues } from './checkboxAnswer';
+
 /** question types whose answers a condition can be written against */
 export const CONDITION_SOURCE_TYPES: readonly QuestionType[] = [
   QuestionType.Radio,
@@ -44,17 +46,18 @@ export function eligibleSourceQuestions(
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
-function conditionMet(answer: string, condition: ShowIfCondition, multi: boolean): boolean {
+function conditionMet(
+  answer: AnswerValue | undefined,
+  condition: ShowIfCondition,
+  multi: boolean,
+): boolean {
   if (multi) {
-    const ticked = answer
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean)
-      .includes(condition.value);
+    const ticked = checkboxValues(answer).includes(condition.value);
     return condition.operator === ShowIfOperator.NotEquals ? !ticked : ticked;
   }
-  if (condition.operator === ShowIfOperator.NotEquals) return answer !== condition.value;
-  return answer === condition.value;
+  const single = typeof answer === 'string' ? answer : '';
+  if (condition.operator === ShowIfOperator.NotEquals) return single !== condition.value;
+  return single === condition.value;
 }
 
 /** mirrors the server evaluator: a condition on a hidden question is never met, so hiding cascades */
@@ -73,7 +76,7 @@ export function visibleQuestionIds(
     if (!visible.has(q.showIf.questionId)) continue;
     const answer = answers[q.showIf.questionId];
     const multi = types.get(q.showIf.questionId) === QuestionType.Checkbox;
-    if (conditionMet(typeof answer === 'string' ? answer : '', q.showIf, multi)) {
+    if (conditionMet(answer, q.showIf, multi)) {
       visible.add(q.id);
     }
   }

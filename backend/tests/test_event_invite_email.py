@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from notifications._email_helpers import EventInviteEmailDetails, send_event_invite_email
+from notifications.email_helpers import EventInviteEmailDetails, send_event_invite_email
 from notifications.email_sender import SendResult
 
 

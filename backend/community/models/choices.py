@@ -15,6 +15,11 @@ class EventType(models.TextChoices):
     CLUB = "club", "Club"
 
 
+class EventFormat(models.TextChoices):
+    WALK = "walk", "Walk"
+    RESTAURANT = "restaurant", "Restaurant"
+
+
 def is_official_or_club(event_type: str) -> bool:
     return event_type in (EventType.OFFICIAL, EventType.CLUB)
 
@@ -70,7 +75,8 @@ class QuestionType(models.TextChoices):
     CHECKBOX = "checkbox", "Checkbox"
     NUMBER = "number", "Number"
     BOOLEAN = "boolean", "Yes / No"
-    RATING = "rating", "Rating"
+    STARS = "stars", "Stars"
+    SCALE = "scale", "Scale"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
     SECTION = "section", "Section"
 
@@ -123,6 +129,10 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+# Guests a payment import can match and verify.
+MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
 
 
 class AttendanceStatus(models.TextChoices):

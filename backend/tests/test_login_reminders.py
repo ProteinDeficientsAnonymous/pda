@@ -5,9 +5,9 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
-from community import _login_reminder as login_reminder
 from community.management.commands import send_weekly_digest as digest_command
 from community.models import Event, EventType, JoinRequest, JoinRequestStatus, LoginReminder
+from community.scheduled import login_reminder
 from django.core.management import call_command
 from django.db.models import F
 from django.utils import timezone
@@ -78,6 +78,13 @@ class TestWeeklyLoginReminder:
 
     def test_reminds_tentative_member_who_never_logged_in(self, fake_email_sender):
         user = _make_pending_tentative("+12025550302")
+        call_command("send_weekly_digest")
+        assert [c.kwargs["to"] for c in _reminder_calls(fake_email_sender)] == [user.email]
+
+    def test_reminds_attendance_paused_member_who_never_logged_in(self, fake_email_sender):
+        user = _make_pending_member(
+            "+12025550323", is_member=False, attendance_paused_at=timezone.now()
+        )
         call_command("send_weekly_digest")
         assert [c.kwargs["to"] for c in _reminder_calls(fake_email_sender)] == [user.email]
 

@@ -1,35 +1,26 @@
 """Tests for join-form question admin endpoints (CRUD + reorder)."""
 
 import json
+from uuid import uuid4
 
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType, QuestionType
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def form_admin_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550555",
-        password="adminpass123",
-        first_name="Form",
-        last_name="Admin",
-    )
-    role = Role.objects.create(
-        name="form_admin",
-        permissions=[PermissionKey.EDIT_JOIN_QUESTIONS],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.EDIT_JOIN_QUESTIONS)
 
 
 @pytest.fixture
 def form_admin_headers(form_admin_user):
-    refresh = RefreshToken.for_user(form_admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(form_admin_user)
 
 
 def _make_questions(count: int) -> list[JoinFormQuestion]:
@@ -77,6 +68,63 @@ class TestReorderJoinFormQuestions:
         # Re-read from db; check display_order matches new position.
         for idx, qid in enumerate(new_order):
             assert JoinFormQuestion.objects.get(id=qid).display_order == idx
+
+    def test_reorder_ignores_unknown_ids(self, api_client, form_admin_headers):
+        qs = _make_questions(2)
+        new_order = [str(uuid4()), str(qs[1].id), str(qs[0].id)]
+        response = api_client.put(
+            "/api/community/join-form/questions/order/",
+            data=json.dumps({"question_ids": new_order}),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 200
+        assert JoinFormQuestion.objects.get(id=qs[1].id).display_order == 1
+        assert JoinFormQuestion.objects.get(id=qs[0].id).display_order == 2
+
+    def test_reorder_rejects_malformed_id(self, api_client, form_admin_headers):
+        qs = _make_questions(2)
+        response = api_client.put(
+            "/api/community/join-form/questions/order/",
+            data=json.dumps({"question_ids": ["not-a-uuid", str(qs[0].id)]}),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 422
+        assert JoinFormQuestion.objects.get(id=qs[0].id).display_order == 0
+
+    def test_reorder_duplicate_id_takes_last_position(self, api_client, form_admin_headers):
+        qs = _make_questions(2)
+        first = qs[0].id
+        new_order = [str(first), str(qs[1].id), first.hex.upper()]
+        response = api_client.put(
+            "/api/community/join-form/questions/order/",
+            data=json.dumps({"question_ids": new_order}),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 200
+        assert JoinFormQuestion.objects.get(id=first).display_order == 2
+        assert JoinFormQuestion.objects.get(id=qs[1].id).display_order == 1
+
+    def test_reorder_query_count_is_constant(self, api_client, form_admin_headers):
+        def reorder_queries() -> int:
+            ids = [str(q.id) for q in JoinFormQuestion.objects.order_by("-display_order")]
+            with CaptureQueriesContext(connection) as ctx:
+                response = api_client.put(
+                    "/api/community/join-form/questions/order/",
+                    data=json.dumps({"question_ids": ids}),
+                    content_type="application/json",
+                    **form_admin_headers,
+                )
+            assert response.status_code == 200
+            return len(ctx.captured_queries)
+
+        _make_questions(2)
+        small = reorder_queries()
+        _make_questions(6)
+        large = reorder_queries()
+        assert large == small
 
     def test_reorder_requires_permission(self, api_client, auth_headers):
         qs = _make_questions(2)

@@ -115,7 +115,6 @@ class TestApplicationEventLogging:
     @pytest.mark.django_db
     def test_email_failure_logs_at_error(self, caplog, settings):
         settings.VETTING_EMAIL = "test@example.com"
-        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         q = JoinFormQuestion.objects.filter(required=True).first()
         answers = {str(q.id): "Community"} if q else {}
         client = Client()
@@ -127,7 +126,7 @@ class TestApplicationEventLogging:
             caplog.at_level(logging.ERROR, logger="pda.community"),
             pytest.MonkeyPatch.context() as mp,
         ):
-            mp.setattr("community._join_request_submit.send_mail", _fail_send_mail)
+            mp.setattr("community.join_requests.submit.send_mail", _fail_send_mail)
             response = client.post(
                 "/api/community/join-request/",
                 data={

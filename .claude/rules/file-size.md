@@ -13,7 +13,7 @@ Aim to keep files under ~300 lines. 500 lines is the hard max — never exceed i
 
 ## How to Split
 
-- **Python/Django**: Extract model groups, schema groups, or endpoint groups into separate `_module.py` files (e.g., `_surveys.py`, `_events.py`). Helpers go in a `utils.py` or `helpers.py` in the same package.
+- **Python/Django**: Extract model groups, schema groups, or endpoint groups into separate modules or a feature subpackage (e.g., `community/surveys/`, `community/events/`). Helpers go in a `utils.py` or `helpers.py` in the same package.
 - **React/TypeScript**: Extract components to sibling files or a `components/` subdirectory. Extract reusable logic to custom hooks or `utils/`.
 
 ## What Counts

@@ -3,25 +3,28 @@
 import logging
 import re
 
-from community._rsvp_counts import attendance_q, reportable_events_q
-from community._shared import validate_display_name
-from community._validation import Code, ValidationException, raise_validation
+from community.attendance.analytics import AttendedEventOut
 from community.models import AttendanceStatus, EventRSVP
+from community.rsvps.counts import attendance_q, reportable_events_q
+from community.shared import validate_display_name
+from community.validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
 
-from users._helpers import (
-    _check_and_set_email,
-    _create_magic_token,
-    _create_user_with_role,
-    _is_admin,
-    _resolve_name_fields,
-    _strip_non_member_roles,
-    _validate_admin_role_change,
-    _validate_member_role_required,
+from users._attendance_pause import apply_attendance_pause_patch
+from users._unpause import has_pause, mark_unpaused
+from users.helpers import (
+    check_and_set_email,
+    create_magic_token,
+    create_user_with_role,
+    is_admin,
+    resolve_name_fields,
+    strip_elevated_roles,
+    validate_admin_role_change,
+    validate_member_role_required,
     visible_name,
 )
 from users.models import ADMIN_ENTERED_PHONE_REGION, User, validate_phone
@@ -32,7 +35,6 @@ from users.schemas import (
     BulkUserCreateOut,
     BulkUserResult,
     ErrorOut,
-    MemberAttendedEventOut,
     UserCreateIn,
     UserCreateOut,
     UserOut,
@@ -44,26 +46,32 @@ from users.schemas import (
 router = Router()
 
 
+def _require_permission(
+    request, key: PermissionKey, endpoint: str, user_id: str | None = None
+) -> None:
+    if request.auth.has_permission(key):
+        return
+    details = {"endpoint": endpoint, "required_permission": key}
+    target = (
+        AuditTarget(details=details)
+        if user_id is None
+        else AuditTarget(type=AuditTargetType.USER, id=user_id, details=details)
+    )
+    audit_log(logging.WARNING, "permission_denied", request, persist=False, target=target)
+    raise_validation(Code.Perm.DENIED, status_code=403, action=endpoint)
+
+
+def require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
+    _require_permission(request, PermissionKey.MANAGE_USERS, endpoint, user_id)
+
+
 @router.post(
     "/create-user/",
     response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
     auth=gated_jwt,
 )
 def create_user(request, payload: UserCreateIn):
-    if not request.auth.has_permission(PermissionKey.CREATE_USER):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "create_user",
-                    "required_permission": PermissionKey.CREATE_USER,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
+    _require_permission(request, PermissionKey.CREATE_USER, "create_user")
 
     if payload.last_name:
         validate_display_name(payload.last_name, field="last_name")
@@ -71,7 +79,7 @@ def create_user(request, payload: UserCreateIn):
     last_name = payload.last_name.strip()
     validate_display_name(first_name, field="first_name")
 
-    user, magic_token = _create_user_with_role(
+    user, magic_token = create_user_with_role(
         payload.phone_number,
         first_name,
         last_name,
@@ -112,20 +120,7 @@ def create_user(request, payload: UserCreateIn):
     auth=gated_jwt,
 )
 def bulk_create_users(request, payload: BulkUserCreateIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "bulk_create_users",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="bulk_create_users")
+    require_manage_users(request, "bulk_create_users")
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
     results: list[BulkUserResult] = []
@@ -167,7 +162,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         if member_role:
             user.roles.add(member_role)
 
-        magic_token = _create_magic_token(user)
+        magic_token = create_magic_token(user)
         results.append(
             BulkUserResult(
                 row=i + 1,
@@ -217,7 +212,7 @@ def search_users(request, q: str = ""):
         name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
         qs = qs.filter(name_q | phone_q)
     qs = qs.order_by("first_name", "last_name")
-    needs_non_admin_filter = bool(q) and not _is_admin(request.auth)
+    needs_non_admin_filter = bool(q) and not is_admin(request.auth)
     # Non-admins post-filter in Python (the DB can match a hidden last name),
     # so fetch some headroom before capping to 10. Admins take the top 10
     # straight from the DB.
@@ -248,25 +243,14 @@ def search_users(request, q: str = ""):
     auth=gated_jwt,
 )
 def list_users(request, include_non_members: bool = False):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                details={
-                    "endpoint": "list_users",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                }
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
+    require_manage_users(request, "list_users")
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
-    # Default stays members-only; the opt-in adds non-members (public-RSVP users).
-    base = User.objects.all() if include_non_members else User.objects.members()
+    # Default is members plus attendance-paused; the opt-in adds public-RSVP non-members.
+    base = (
+        User.objects.all() if include_non_members else User.objects.members_or_attendance_paused()
+    )
     users = (
         base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
@@ -288,26 +272,11 @@ def list_users(request, include_non_members: bool = False):
 
 @router.get(
     "/users/{user_id}/attended-events/",
-    response={200: list[MemberAttendedEventOut], 403: ErrorOut, 404: ErrorOut},
+    response={200: list[AttendedEventOut], 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def list_member_attended_events(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "list_member_attended_events",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="list_member_attended_events")
+    require_manage_users(request, "list_member_attended_events", user_id)
     if not User.objects.filter(pk=user_id, archived_at__isnull=True).exists():
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     rsvps = (
@@ -317,18 +286,7 @@ def list_member_attended_events(request, user_id: str):
         .select_related("event")
         .order_by("-event__start_datetime")
     )
-    return Status(
-        200,
-        [
-            MemberAttendedEventOut(
-                event_id=str(r.event.id),
-                title=r.event.title,
-                start_datetime=r.event.start_datetime,
-                event_type=r.event.event_type,
-            )
-            for r in rsvps
-        ],
-    )
+    return Status(200, [AttendedEventOut.from_rsvp(r) for r in rsvps])
 
 
 @router.patch(
@@ -337,32 +295,23 @@ def list_member_attended_events(request, user_id: str):
     auth=gated_jwt,
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "update_user",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
+    require_manage_users(request, "update_user", user_id)
+    editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
     try:
-        user = User.objects.members().prefetch_related("roles").get(pk=user_id)
+        user = editable.get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     old_is_paused = user.is_paused
+    was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
+    if apply_attendance_pause_patch(request, user, payload.attendance_paused):
+        user = editable.get(pk=user_id)
+    if was_paused and not has_pause(user):
+        mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
 
@@ -377,7 +326,7 @@ def _audit_user_update(
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
+        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
         audit_log(
             logging.WARNING,
             action,
@@ -414,7 +363,7 @@ def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str
         return
     if requester_id == str(user.pk):
         raise_validation(Code.User.CANNOT_PAUSE_SELF, status_code=400)
-    if _is_admin(user):
+    if is_admin(user):
         raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
 
 
@@ -422,12 +371,15 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    _resolve_name_fields(user, payload)
+    resolve_name_fields(user, payload)
     if payload.email is not None:
-        _check_and_set_email(user, payload.email, exclude_pk=user_id)
+        check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
+    _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
+    if payload.is_paused:
+        user.unpaused_at = None
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
 
@@ -438,22 +390,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     auth=gated_jwt,
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            persist=False,
-            target=AuditTarget(
-                type=AuditTargetType.USER,
-                id=user_id,
-                details={
-                    "endpoint": "update_user_roles",
-                    "required_permission": PermissionKey.MANAGE_USERS,
-                },
-            ),
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
+    require_manage_users(request, "update_user_roles", user_id)
     try:
         user = User.objects.members().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
@@ -463,8 +400,8 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if len(roles) != len(payload.role_ids):
         raise_validation(Code.User.ROLE_IDS_NOT_FOUND, field="role_ids", status_code=400)
 
-    _validate_admin_role_change(user, request.auth, roles)
-    _validate_member_role_required(roles)
+    validate_admin_role_change(user, request.auth, roles)
+    validate_member_role_required(roles)
 
     old_role_ids = [str(r.id) for r in user.roles.all()]
     user.roles.set(roles)

@@ -6,7 +6,7 @@ import type {
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
-import { AttendanceStatus } from '@/models/event';
+import { AttendanceStatus, EventFormat, type QuestionnaireAnswer } from '@/models/event';
 
 import { mapRsvpQuestion } from './eventRsvpQuestions';
 
@@ -21,7 +21,8 @@ interface WireGuest {
   plus_one_attendance?: string;
   is_member?: boolean;
   paid_confirmed?: boolean;
-  questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
+  payment_verified?: boolean;
+  questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
 }
 
 export interface WireEvent {
@@ -54,7 +55,6 @@ export interface WireEvent {
 
   datetime_tbd?: boolean;
   has_poll?: boolean;
-  datetime_poll_slug?: string | null;
 
   created_by_id?: string | null;
   created_by_name?: string | null;
@@ -66,7 +66,7 @@ export interface WireEvent {
   guests?: WireGuest[];
   my_rsvp?: string | null;
   my_paid_confirmed?: boolean;
-  my_questionnaire_responses?: Record<string, { label?: string; answer?: string }>;
+  my_questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
   rsvp_questions?: {
     id: string;
     label: string;
@@ -76,7 +76,6 @@ export interface WireEvent {
     display_order?: number;
   }[];
   viewer_user_id?: string | null;
-  linked_surveys?: { id: string; title: string; slug: string }[];
   invited_user_ids?: string[];
   invited_user_names?: string[];
   invited_user_photo_urls?: string[];
@@ -86,6 +85,7 @@ export interface WireEvent {
   my_pending_cohost_invite_id?: string | null;
 
   event_type?: string;
+  event_format?: string | null;
   visibility?: string;
   photo_url?: string;
   photo_updated_at?: string | null;
@@ -112,6 +112,10 @@ interface WirePendingCohostInvite {
   invited_at: string;
 }
 
+function mapEventFormat(value: string | null | undefined): EventFormat | null {
+  return Object.values(EventFormat).find((format) => format === value) ?? null;
+}
+
 function mapAttendance(value: string | undefined): AttendanceStatusValue {
   if (value === AttendanceStatus.Attended) return AttendanceStatus.Attended;
   if (value === AttendanceStatus.DidntGo) return AttendanceStatus.DidntGo;
@@ -119,7 +123,7 @@ function mapAttendance(value: string | undefined): AttendanceStatusValue {
 }
 
 function mapQuestionnaireResponses(
-  raw: Record<string, { label?: string; answer?: string }> | undefined,
+  raw: Record<string, { label?: string; answer?: QuestionnaireAnswer }> | undefined,
 ): Event['myQuestionnaireResponses'] {
   return Object.fromEntries(
     Object.entries(raw ?? {}).map(([id, snap]) => [
@@ -141,6 +145,7 @@ function mapGuest(g: WireGuest): EventGuest {
     plusOneAttendance: mapAttendance(g.plus_one_attendance),
     isMember: g.is_member ?? true,
     paidConfirmed: g.paid_confirmed ?? false,
+    paymentVerified: g.payment_verified ?? false,
     questionnaireResponses: mapQuestionnaireResponses(g.questionnaire_responses),
   };
 }
@@ -190,7 +195,6 @@ export function mapEvent(e: WireEvent): Event {
 
     datetimeTbd: e.datetime_tbd ?? false,
     hasPoll: e.has_poll ?? false,
-    datetimePollSlug: e.datetime_poll_slug ?? null,
 
     createdById: e.created_by_id ?? null,
     createdByName: e.created_by_name ?? null,
@@ -205,7 +209,6 @@ export function mapEvent(e: WireEvent): Event {
     myQuestionnaireResponses: mapQuestionnaireResponses(e.my_questionnaire_responses),
     rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
     viewerUserId: e.viewer_user_id ?? null,
-    linkedSurveys: e.linked_surveys ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],
     invitedUserPhotoUrls: e.invited_user_photo_urls ?? [],
@@ -215,6 +218,7 @@ export function mapEvent(e: WireEvent): Event {
     myPendingCohostInviteId: e.my_pending_cohost_invite_id ?? null,
 
     eventType: e.event_type ?? 'community',
+    eventFormat: mapEventFormat(e.event_format),
     visibility: e.visibility ?? 'public',
     photoUrl: e.photo_url ?? '',
     photoUpdatedAt: e.photo_updated_at ?? null,

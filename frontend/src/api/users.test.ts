@@ -1,10 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   useArchiveUser,
@@ -17,26 +15,12 @@ import {
   useUsers,
 } from './users';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 const mockedPatch = vi.mocked(apiClient.patch);
 const mockedDelete = vi.mocked(apiClient.delete);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-// Each hook gets a fresh QueryClient so invalidations are observable in isolation.
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -62,6 +46,7 @@ describe('useUsers', () => {
           show_email: false,
           is_superuser: false,
           is_paused: false,
+          attendance_paused_at: '2026-03-01T12:00:00Z',
           needs_onboarding: false,
           login_link_requested: false,
           attended_count: 4,
@@ -77,8 +62,8 @@ describe('useUsers', () => {
       ],
     });
 
-    const qc = makeQc();
-    const { result } = renderHook(() => useUsers(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useUsers(), { wrapper: queryWrapper(qc) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -92,6 +77,7 @@ describe('useUsers', () => {
     expect(member?.showPhone).toBe(true);
     expect(member?.showEmail).toBe(false);
     expect(member?.attendedCount).toBe(4);
+    expect(member?.attendancePausedAt).toEqual(new Date('2026-03-01T12:00:00Z'));
     expect(member?.roles[0]).toEqual({
       id: 'r1',
       name: 'member',
@@ -115,8 +101,8 @@ describe('useUsers', () => {
       ],
     });
 
-    const qc = makeQc();
-    const { result } = renderHook(() => useUsers(true), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useUsers(true), { wrapper: queryWrapper(qc) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -124,14 +110,15 @@ describe('useUsers', () => {
       params: { include_non_members: true },
     });
     expect(result.current.data?.[0]?.isMember).toBe(false);
+    expect(result.current.data?.[0]?.attendancePausedAt).toBeNull();
   });
 
   it('propagates errors from the API', async () => {
     const apiError = new Error('network down');
     mockedGet.mockRejectedValueOnce(apiError);
 
-    const qc = makeQc();
-    const { result } = renderHook(() => useUsers(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useUsers(), { wrapper: queryWrapper(qc) });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBe(apiError);
@@ -162,9 +149,9 @@ describe('useCreateUser', () => {
       },
     });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useCreateUser(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useCreateUser(), { wrapper: queryWrapper(qc) });
 
     const created = await result.current.mutateAsync({
       phoneNumber: '+15551230002',
@@ -201,8 +188,8 @@ describe('useCreateUser', () => {
       },
     });
 
-    const qc = makeQc();
-    const { result } = renderHook(() => useCreateUser(), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useCreateUser(), { wrapper: queryWrapper(qc) });
 
     await result.current.mutateAsync({
       phoneNumber: '+15551230003',
@@ -233,14 +220,15 @@ describe('useUpdateUser', () => {
       },
     });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: queryWrapper(qc) });
 
     await result.current.mutateAsync({
       firstName: 'Ada',
       lastName: 'Lovelace',
       isPaused: false,
+      attendancePaused: true,
       hasJoinedWhatsapp: true,
     });
 
@@ -248,6 +236,7 @@ describe('useUpdateUser', () => {
       first_name: 'Ada',
       last_name: 'Lovelace',
       is_paused: false,
+      attendance_paused: true,
       has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
@@ -278,9 +267,9 @@ describe('useBulkCreateUsers', () => {
       },
     });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useBulkCreateUsers(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useBulkCreateUsers(), { wrapper: queryWrapper(qc) });
 
     const response = await result.current.mutateAsync(['+15551230001', 'garbage']);
 
@@ -306,9 +295,9 @@ describe('useArchiveUser', () => {
   it('calls delete endpoint and invalidates users query', async () => {
     mockedDelete.mockResolvedValueOnce({ data: undefined });
 
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useArchiveUser(), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useArchiveUser(), { wrapper: queryWrapper(qc) });
 
     await result.current.mutateAsync('u-archive');
 
@@ -322,9 +311,11 @@ describe('useSendMemberMagicLink', () => {
     mockedPost.mockResolvedValueOnce({
       data: { detail: 'Magic login link generated.', magic_link_token: 'tok-abc' },
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useSendMemberMagicLink('u9'), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useSendMemberMagicLink('u9'), {
+      wrapper: queryWrapper(qc),
+    });
     const out = await result.current.mutateAsync();
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/users/u9/magic-link/');
     expect(out.magicLinkToken).toBe('tok-abc');
@@ -346,7 +337,7 @@ describe('useMemberAttendedEvents', () => {
       ],
     });
     const { result } = renderHook(() => useMemberAttendedEvents('u9'), {
-      wrapper: makeWrapper(makeQc()),
+      wrapper: queryWrapper(),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/u9/attended-events/');
@@ -374,9 +365,9 @@ describe('useUpdateMemberRoles', () => {
         ],
       },
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useUpdateMemberRoles('u9'), { wrapper: makeWrapper(qc) });
+    const { result } = renderHook(() => useUpdateMemberRoles('u9'), { wrapper: queryWrapper(qc) });
     const member = await result.current.mutateAsync(['r2']);
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u9/roles/', { role_ids: ['r2'] });
     expect(member.roles[0]?.name).toBe('vet');

@@ -1,42 +1,10 @@
 import { newRsvpQuestionId } from '@/api/eventRsvpQuestions';
-import { QuestionType } from '@/api/questionTypes';
+import type { OfficialRsvpQuestion } from '@/api/officialEventDefaults';
 
 import type { RsvpQuestionDraft } from '../rsvpQuestions';
 
-const YES = 'Yes';
-
-const OFFICIAL_QUESTIONS: readonly Omit<RsvpQuestionDraft, 'id'>[] = [
-  {
-    label: 'Do you understand that your RSVP is not confirmed until you pay?',
-    fieldType: QuestionType.Select,
-    options: [YES],
-    required: true,
-  },
-  {
-    label:
-      'Do you understand that payments are not refundable for cancellations within 5 days of the event?',
-    fieldType: QuestionType.Select,
-    options: [YES],
-    required: true,
-  },
-  {
-    label:
-      'Do you understand that your payment is for your share of the group order and will not be returned to you?',
-    fieldType: QuestionType.Select,
-    options: [YES],
-    required: true,
-  },
-  {
-    label:
-      'We repost content on IG that is critical of ICE and supportive of Palestine. We share group and candid photos from events. Do you consent to being in photos on our IG (opt out is totally fine!)?',
-    fieldType: QuestionType.Select,
-    options: ['Yes, I consent to being on the IG', "No, I'd like to opt out"],
-    required: true,
-  },
-];
-
-function isUntouchedOfficial(q: RsvpQuestionDraft): boolean {
-  return OFFICIAL_QUESTIONS.some(
+function isUntouchedOfficial(q: RsvpQuestionDraft, official: readonly OfficialRsvpQuestion[]) {
+  return official.some(
     (o) =>
       o.label === q.label &&
       o.fieldType === q.fieldType &&
@@ -49,13 +17,14 @@ function isUntouchedOfficial(q: RsvpQuestionDraft): boolean {
 export function withOfficialQuestions(
   questions: RsvpQuestionDraft[],
   official: boolean,
+  officialQuestions: readonly OfficialRsvpQuestion[],
 ): RsvpQuestionDraft[] {
   if (!official) {
-    const kept = questions.filter((q) => !isUntouchedOfficial(q));
+    const kept = questions.filter((q) => !isUntouchedOfficial(q, officialQuestions));
     return kept.length === questions.length ? questions : kept;
   }
   const labels = new Set(questions.map((q) => q.label));
-  const missing = OFFICIAL_QUESTIONS.filter((o) => !labels.has(o.label));
+  const missing = officialQuestions.filter((o) => !labels.has(o.label));
   if (missing.length === 0) return questions;
   return [
     ...questions,

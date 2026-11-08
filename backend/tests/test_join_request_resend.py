@@ -3,8 +3,8 @@
 import uuid
 
 import pytest
-from community._validation import Code
 from community.models import JoinRequestStatus
+from community.validation import Code
 from django.utils import timezone
 from users.models import MagicLoginToken, User
 

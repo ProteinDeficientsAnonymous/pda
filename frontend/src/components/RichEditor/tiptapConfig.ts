@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { CtaExtension } from './CtaExtension';
 
-// every node enabled here must also have a handler in backend/community/_prosemirror_html.py, or it's silently dropped on render
+// every node enabled here must also have a handler in backend/community/content/_prosemirror_html.py, or it's silently dropped on render
 export function pdaExtensions(): Extensions {
   return [
     StarterKit.configure({

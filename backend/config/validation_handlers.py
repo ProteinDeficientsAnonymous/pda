@@ -11,11 +11,11 @@ Two cases:
 
 from typing import Any
 
-from community._validation import ValidationException
+from community.validation import ValidationException
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import ValidationError as NinjaValidationError
-from users._refresh_cookie import clear_refresh_cookie
+from users.refresh_cookie import clear_refresh_cookie
 
 _GENERIC_FIELD_INVALID = "field_invalid"
 _GENERIC_FIELD_REQUIRED = "field_required"
@@ -28,7 +28,7 @@ def register_validation_handlers(api: NinjaAPI) -> None:
     ) -> HttpResponse:
         response = api.create_response(
             request,
-            {"detail": [_serialize_validation_exception(exc)]},
+            {"detail": [serialize_validation_exception(exc)]},
             status=exc.status_code,
         )
         if exc.clear_refresh_cookie:
@@ -41,19 +41,19 @@ def register_validation_handlers(api: NinjaAPI) -> None:
     ) -> HttpResponse:
         return api.create_response(
             request,
-            {"detail": [_serialize_pydantic_error(e) for e in exc.errors]},
+            {"detail": [serialize_pydantic_error(e) for e in exc.errors]},
             status=422,
         )
 
 
-def _serialize_validation_exception(exc: ValidationException) -> dict[str, Any]:
+def serialize_validation_exception(exc: ValidationException) -> dict[str, Any]:
     out: dict[str, Any] = {"code": exc.code, "field": exc.field}
     if exc.params:
         out["params"] = exc.params
     return out
 
 
-def _serialize_pydantic_error(err: dict[str, Any]) -> dict[str, Any]:
+def serialize_pydantic_error(err: dict[str, Any]) -> dict[str, Any]:
     # When a validator raised a ValidationException, Pydantic's message takes
     # the form "Value error, <str(exc)>". Since str(ValidationException) is the
     # bare code (see __init__), we can recover it by stripping the prefix.

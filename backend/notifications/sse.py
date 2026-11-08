@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import psycopg
 from asgiref.sync import sync_to_async
 from django.conf import settings
-from django.db import transaction
+from django.db import DatabaseError, connection, transaction
 from django.http import JsonResponse, StreamingHttpResponse
 
 from notifications.models import SseTicket
@@ -21,9 +21,25 @@ logger = logging.getLogger("pda")
 _PG_CHANNEL = "notifications"
 _EVENT_UPDATES_CHANNEL = "event_updates"
 _HEARTBEAT_INTERVAL = 30  # seconds
+_READ_PAYLOAD_PREFIX = "read:"
+
+
+def notify_read_state_changed(user_id: str) -> None:
+    """Tell the user's other tabs/devices their read state changed so they refetch."""
+    if connection.vendor != "postgresql":
+        return
+    # Best-effort: the mark-read write already succeeded.
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT pg_notify('{_PG_CHANNEL}', %s)", [f"{_READ_PAYLOAD_PREFIX}{user_id}"]
+            )
+    except DatabaseError:
+        logger.warning("read-state ping failed", exc_info=True)
+
 
 # Each stream holds its own Postgres connection; cap anonymous ones per worker process.
-_MAX_ANONYMOUS_CONNECTIONS = 200
+MAX_ANONYMOUS_CONNECTIONS = 200
 # Ends anonymous streams so the reconnect re-checks the rsvp token and event eligibility.
 _ANONYMOUS_MAX_LIFETIME = 15 * 60  # seconds
 
@@ -32,13 +48,13 @@ _anonymous_connections = 0
 
 
 @dataclass(frozen=True)
-class _StreamScope:
+class StreamScope:
     user_id: str | None
     event_id: str | None
 
 
 @sync_to_async
-def _consume_ticket(ticket_str: str) -> _StreamScope | None:
+def consume_ticket(ticket_str: str) -> StreamScope | None:
     """Atomically validate + consume a single-use SSE ticket.
 
     Row-locked (select_for_update) so concurrent connections can't both consume
@@ -53,7 +69,7 @@ def _consume_ticket(ticket_str: str) -> _StreamScope | None:
             return None
         ticket.used = True
         ticket.save(update_fields=["used"])
-    return _StreamScope(
+    return StreamScope(
         user_id=str(ticket.user_id) if ticket.user_id else None,
         event_id=str(ticket.event_id) if ticket.event_id else None,
     )
@@ -61,20 +77,20 @@ def _consume_ticket(ticket_str: str) -> _StreamScope | None:
 
 def _anonymous_slots_full() -> bool:
     with _anonymous_lock:
-        return _anonymous_connections >= _MAX_ANONYMOUS_CONNECTIONS
+        return _anonymous_connections >= MAX_ANONYMOUS_CONNECTIONS
 
 
-def _try_acquire_anonymous_slot() -> bool:
+def try_acquire_anonymous_slot() -> bool:
     """Reserve one of the capped anonymous-connection slots; False if full."""
     global _anonymous_connections
     with _anonymous_lock:
-        if _anonymous_connections >= _MAX_ANONYMOUS_CONNECTIONS:
+        if _anonymous_connections >= MAX_ANONYMOUS_CONNECTIONS:
             return False
         _anonymous_connections += 1
         return True
 
 
-def _release_anonymous_slot() -> None:
+def release_anonymous_slot() -> None:
     global _anonymous_connections
     with _anonymous_lock:
         _anonymous_connections = max(0, _anonymous_connections - 1)
@@ -88,21 +104,27 @@ def _build_async_dsn() -> str:
     return f"postgresql://{db['USER']}:{db['PASSWORD']}@{host}:{port}/{db['NAME']}"
 
 
-def _format_notify_for_user(channel: str, payload: str, scope: _StreamScope) -> str | None:
+def format_notify_for_user(channel: str, payload: str, scope: StreamScope) -> str | None:
     """Turn a pg_notify payload into an SSE frame for this stream, or None to skip."""
     if scope.user_id is None:
         return _format_notify_for_event(channel, payload, scope.event_id)
     if channel == _PG_CHANNEL:
-        if payload == scope.user_id:
-            return f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
-        return None
+        return _format_personal_notify(payload, scope.user_id)
     if channel == _EVENT_UPDATES_CHANNEL:
         # Payload format: "<user_id-or-*>:<event_id>". "*" broadcasts to every
-        # connected member (used for changes visible to any member, e.g. comments).
+        # connected viewer (used for changes visible to any member, e.g. comments).
         target_user, _, event_id = payload.partition(":")
         if target_user in (scope.user_id, "*") and event_id:
             return _event_updated_frame(event_id)
         return None
+    return None
+
+
+def _format_personal_notify(payload: str, user_id: str) -> str | None:
+    if payload == user_id:
+        return f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
+    if payload == f"{_READ_PAYLOAD_PREFIX}{user_id}":
+        return "event: notifications_read\ndata: {}\n\n"
     return None
 
 
@@ -120,24 +142,24 @@ def _event_updated_frame(event_id: str) -> str:
     return f"event: event_updated\ndata: {json.dumps({'event_id': event_id})}\n\n"
 
 
-async def _sse_generator(scope: _StreamScope):
+async def sse_generator(scope: StreamScope):
     """Async generator that yields SSE events for a single connection."""
     if scope.user_id is not None:
         async for frame in _stream_frames(scope, deadline=None):
             yield frame
         return
     # Reserved here, not in the view, so the finally always pairs with it.
-    if not _try_acquire_anonymous_slot():
+    if not try_acquire_anonymous_slot():
         return
     try:
         deadline = time.monotonic() + _ANONYMOUS_MAX_LIFETIME
         async for frame in _stream_frames(scope, deadline=deadline):
             yield frame
     finally:
-        _release_anonymous_slot()
+        release_anonymous_slot()
 
 
-async def _stream_frames(scope: _StreamScope, *, deadline: float | None):
+async def _stream_frames(scope: StreamScope, *, deadline: float | None):
     try:
         dsn = _build_async_dsn()
         async with await psycopg.AsyncConnection.connect(dsn, autocommit=True) as conn:
@@ -149,7 +171,7 @@ async def _stream_frames(scope: _StreamScope, *, deadline: float | None):
             while not conn.closed and (deadline is None or time.monotonic() < deadline):
                 async with aclosing(conn.notifies(timeout=_HEARTBEAT_INTERVAL)) as notifies:
                     async for notify in notifies:
-                        frame = _format_notify_for_user(notify.channel, notify.payload, scope)
+                        frame = format_notify_for_user(notify.channel, notify.payload, scope)
                         if frame is not None:
                             yield frame
                 yield ": heartbeat\n\n"
@@ -173,7 +195,7 @@ async def notification_stream(request):
     if not ticket:
         return JsonResponse({"detail": "ticket required"}, status=401)
 
-    scope = await _consume_ticket(ticket)
+    scope = await consume_ticket(ticket)
     if scope is None:
         return JsonResponse({"detail": "invalid ticket"}, status=401)
 
@@ -181,7 +203,7 @@ async def notification_stream(request):
         return JsonResponse({"detail": "too many anonymous viewers"}, status=503)
 
     response = StreamingHttpResponse(
-        _sse_generator(scope),
+        sse_generator(scope),
         content_type="text/event-stream",
     )
     response["Cache-Control"] = "no-cache"

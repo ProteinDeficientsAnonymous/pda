@@ -32,7 +32,7 @@ class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20, db_index=True)
     email = models.EmailField()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -64,6 +64,14 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="approved_join_requests",
     )
+    # Set when a tentative applicant is auto-approved by checking in at this event.
+    approved_via_event = models.ForeignKey(
+        "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
     rejected_at = models.DateTimeField(null=True, blank=True)
     rejected_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -92,6 +100,15 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phone_number"],
+                condition=models.Q(
+                    status__in=[JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE]
+                ),
+                name="unique_open_join_request_per_phone",
+            ),
+        ]
 
     @property
     def full_name(self) -> str:

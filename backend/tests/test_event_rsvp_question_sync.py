@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRsvpQuestion
+from community.validation import Code
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.fixture

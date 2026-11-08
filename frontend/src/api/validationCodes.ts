@@ -58,10 +58,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'start date must be in the future';
     case Code.Event.EndBeforeStart:
       return 'end time must be after the start time';
+    case Code.Event.DatetimeOffsetRequired:
+      return 'date and time must include a timezone';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
     case Code.Event.OfficialNoPlusOnes:
       return "official and club events can't allow +1s";
+    case Code.Event.InvalidEventFormat:
+      return 'only official events can be a walk or restaurant';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -100,6 +104,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.PaymentVerifyNotGuests:
+      return "some of those people aren't attending or waitlisted for this event — nothing was verified";
     case Code.Event.WaitlistOrderStale:
       return 'the waitlist changed — refresh and try again';
     case Code.Event.MemberContactMustSignIn:
@@ -132,8 +138,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvp questions changed — refresh and try again';
     case Code.Event.RsvpQuestionOptionsRequired:
       return 'add at least one option';
-    case Code.Event.RsvpQuestionOptionNoComma:
-      return 'options cannot contain commas';
     case Code.Event.RsvpAnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -141,6 +145,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Event.RsvpAnswerInvalidOption: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `invalid option for "${label}"` : 'invalid option';
+    }
+    case Code.Event.RsvpAnswerInvalidFormat: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid answer format for "${label}"` : 'invalid answer format';
     }
     case Code.Event.RsvpAnswerTooLong: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
@@ -368,12 +376,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "this feedback link doesn't work anymore";
     case Code.Survey.FeedbackAlreadySubmitted:
       return 'you already sent feedback for this event — thank you!';
-    case Code.Survey.NoDatetimePollQuestion:
-      return 'survey has no datetime poll question';
-    case Code.Survey.WinningDatetimeNotInOptions:
-      return 'winning datetime is not one of the poll options';
-    case Code.Survey.PollAlreadyFinalized:
-      return 'this poll has already been finalized';
     case Code.Survey.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -405,8 +407,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Survey.AnswerInvalidAvailability: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label
-        ? `availability for "${label}" must be "yes" or "maybe"`
-        : 'availability must be "yes" or "maybe"';
+        ? `availability for "${label}" must be "yes", "maybe", or "no"`
+        : 'availability must be "yes", "maybe", or "no"';
     }
     case Code.Survey.ConditionQuestionNotFound:
       return 'the question this condition depends on no longer exists';
@@ -452,6 +454,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "a request for this number is already pending — we'll be in touch soon";
     case Code.JoinRequest.PhoneAlreadyTentative:
       return 'you already have an account — try logging in instead';
+    case Code.JoinRequest.OpenRequestExists:
+      return 'this number already has an open request — review that one instead';
     case Code.JoinRequest.AnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `"${label}" is required` : 'an answer is required';
@@ -509,6 +513,22 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.AttendanceImport.AmbiguousUserPick:
       return 'pick a member for that row before continuing';
 
+    // Cash App import
+    case Code.CashAppImport.CsvEmpty:
+      return "that csv doesn't have any rows — export your cash app activity and try again";
+    case Code.CashAppImport.CsvMissingColumns: {
+      const columns = typeof err.params?.columns === 'string' ? err.params.columns : null;
+      return columns
+        ? `that csv is missing columns: ${columns} — use the raw cash app export`
+        : "couldn't read that csv — use the raw cash app export";
+    }
+    case Code.CashAppImport.CsvTooManyRows: {
+      const maxRows = typeof err.params?.max_rows === 'number' ? err.params.max_rows : null;
+      return maxRows !== null
+        ? `that csv has more than ${String(maxRows)} rows — narrow the date range and try again`
+        : 'that csv is too big — narrow the date range and try again';
+    }
+
     // Attendance mark
     case Code.AttendanceMark.EventOrTitleRequired:
       return 'pick an existing event or give the new event a name and date';
@@ -558,6 +578,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't step down — every event needs at least one host";
     case Code.CoHostInvite.EventIsPast:
       return "can't invite co-hosts to a past event";
+    case Code.CoHostInvite.NotMember:
+      return 'only members can be co-hosts';
 
     // Welcome template
     case Code.WelcomeTemplate.BodyRequired:
@@ -599,6 +621,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'member promotion email is too long';
     }
 
+    // Member restored email
+    case Code.MemberRestoredEmail.BodyRequired:
+      return 'welcome back email body is required';
+    case Code.MemberRestoredEmail.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `welcome back email must be at most ${String(max)} characters`
+        : 'welcome back email is too long';
+    }
+
     // Rejection email
     case Code.RejectionEmail.BodyRequired:
       return 'rejection email body is required';
@@ -616,6 +648,30 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         ? `reason text must be at most ${String(max)} characters`
         : 'reason text is too long';
     }
+
+    // Speech template
+    case Code.SpeechTemplate.InvalidDoc:
+      return 'that speech section is not valid';
+    case Code.SpeechTemplate.TooManyRoles: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null ? `at most ${String(max)} open roles` : 'too many open roles';
+    }
+    case Code.SpeechTemplate.RoleTooLong: {
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      return max !== null
+        ? `each role must be at most ${String(max)} characters`
+        : 'a role is too long';
+    }
+
+    // Event speech
+    case Code.Speech.FormatRequired:
+      return 'pick walk or restaurant first';
+    case Code.Speech.InvalidValues:
+      return 'one of the speech blanks is not valid';
+    case Code.Speech.HostsOnly:
+      return "only this event's hosts and event managers can see or edit its speech";
+    case Code.Speech.OfficialEventRequired:
+      return 'speeches are only for official events';
 
     case Code.Connect.RequestNotFound:
       return 'this connection request was not found';

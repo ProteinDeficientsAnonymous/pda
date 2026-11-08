@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from notifications._event_feedback_email import send_event_feedback_email
 from notifications.email_sender import SendResult
+from notifications.event_feedback_email import send_event_feedback_email
 
 URL = "https://pda.test/feedback#abc123"
 
@@ -42,7 +42,7 @@ class TestSendEventFeedbackEmail:
 
     def test_reminder_has_distinct_subject_and_copy(self):
         _, kwargs = _send(reminder=True)
-        assert kwargs["subject"] == "still keen to hear about vegan potluck"
+        assert kwargs["subject"] == "we'd still love to hear about vegan potluck"
         assert "haven't shared your feedback yet" in kwargs["text"]
         assert URL in kwargs["html"]
 
