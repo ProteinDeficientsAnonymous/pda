@@ -48,7 +48,6 @@ describe('RestoredMembersList', () => {
     expect(screen.getByText(/restored mar 4, 2026/)).toBeInTheDocument();
     expect(screen.getByText('Potluck · mar 1, 2026')).toBeInTheDocument();
     expect(screen.getByText('Book Club · feb 10, 2026')).toBeInTheDocument();
-    expect(screen.getByText(/stay here until it's been 7 days/)).toBeInTheDocument();
   });
 
   it('flips joined whatsapp for the restored member', async () => {

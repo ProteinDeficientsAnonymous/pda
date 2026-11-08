@@ -18,6 +18,7 @@ import { formatPhone } from '@/utils/formatPhone';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
+import { JoinRequestResults } from './JoinRequestResults';
 import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 import { RejectJoinRequestDialog } from './RejectJoinRequestDialog';
 import { RestoredMembersList } from './RestoredMembersList';
@@ -179,7 +180,7 @@ export default function JoinRequestsScreen() {
       <div className="mb-4">
         <TextField
           label="search"
-          placeholder="name, phone, or email"
+          placeholder={filter === Filter.RESTORED ? 'name or phone' : 'name, phone, or email'}
           value={query}
           maxLength={100}
           onChange={(e) => {
@@ -188,9 +189,7 @@ export default function JoinRequestsScreen() {
         />
       </div>
 
-      {filter === Filter.RESTORED ? null : (
-        <SortHint filter={filter} hasRows={visible.length > 0} />
-      )}
+      <SortHint filter={filter} hasRows={visible.length > 0} />
 
       {error ? (
         <p role="alert" className="text-destructive mb-3 text-sm">
@@ -200,13 +199,10 @@ export default function JoinRequestsScreen() {
 
       {filter === Filter.RESTORED ? (
         <RestoredMembersList query={query} />
-      ) : visible.length === 0 ? (
-        <p className="text-muted text-sm">
-          {query.trim() ? 'nothing matches — try a different search' : 'nothing here 🌿'}
-        </p>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {visible.map((r) => (
+        <JoinRequestResults
+          query={query}
+          items={visible.map((r) => (
             <li key={r.id}>
               <JoinRequestCard
                 request={r}
@@ -227,7 +223,7 @@ export default function JoinRequestsScreen() {
               />
             </li>
           ))}
-        </ul>
+        />
       )}
 
       {credsFor ? (
@@ -284,6 +280,14 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
       <p className="text-muted mb-3 text-xs">
         sorted newest first — approved members stay here until it's been 7 days since their first
         login and they're marked as joined the whatsapp
+      </p>
+    );
+  }
+  if (filter === Filter.RESTORED) {
+    return (
+      <p className="text-muted mb-3 text-xs">
+        sorted newest first — restored members stay here until it's been 7 days since they were
+        restored and they're marked as joined the whatsapp
       </p>
     );
   }
