@@ -1,3 +1,10 @@
+# [0.224.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.223.0...v0.224.0) (2026-11-08)
+
+
+### Features
+
+* 1518 - add attendance pause preview api client ([#2189](https://github.com/ProteinDeficientsAnonymous/pda/issues/2189)) ([649e0c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/649e0c68567d62b07e10a4fa3f9fd94c15f3b111))
+
 # [0.223.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.6...v0.223.0) (2026-11-08)
 
 
