@@ -9,7 +9,6 @@ interface Props {
 }
 
 export function MemberRestoredEmailEditorDialog({ open, onClose, template }: Props) {
-  const update = useUpdateMemberRestoredEmail();
   return (
     <TemplateEditorDialog
       open={open}
@@ -22,7 +21,7 @@ export function MemberRestoredEmailEditorDialog({ open, onClose, template }: Pro
       ]}
       ariaLabel="welcome back email body"
       template={template}
-      update={update}
+      useUpdate={useUpdateMemberRestoredEmail}
       noun="email"
     />
   );
