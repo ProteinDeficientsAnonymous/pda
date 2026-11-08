@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { normalizePermissions } from '@/models/permissions';
 import type { Birthday, Veganniversary } from '@/models/user';
 
+import { mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
 import { memberAttendanceAnalyticsKey } from './memberAttendanceAnalytics';
 
@@ -123,33 +124,14 @@ export function useUsers(includeNonMembers = false) {
   });
 }
 
-export interface MemberAttendedEvent {
-  eventId: string;
-  title: string;
-  startDatetime: Date | null;
-  eventType: string;
-}
-
-interface WireMemberAttendedEvent {
-  event_id: string;
-  title: string;
-  start_datetime?: string | null;
-  event_type: string;
-}
-
 export function useMemberAttendedEvents(userId: string) {
   return useQuery({
     queryKey: [...USERS_KEY, userId, 'attended-events'] as const,
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMemberAttendedEvent[]>(
+      const { data } = await apiClient.get<WireAttendedEvent[]>(
         `/api/auth/users/${userId}/attended-events/`,
       );
-      return data.map((e): MemberAttendedEvent => ({
-        eventId: e.event_id,
-        title: e.title,
-        startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,
-        eventType: e.event_type,
-      }));
+      return data.map(mapAttendedEvent);
     },
     enabled: userId !== '',
   });
