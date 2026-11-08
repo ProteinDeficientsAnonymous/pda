@@ -9,7 +9,6 @@ interface Props {
 }
 
 export function MemberPromotionMessageEditorDialog({ open, onClose, template }: Props) {
-  const update = useUpdateMemberPromotionMessage();
   return (
     <TemplateEditorDialog
       open={open}
@@ -23,7 +22,7 @@ export function MemberPromotionMessageEditorDialog({ open, onClose, template }: 
       ]}
       ariaLabel="member promotion message body"
       template={template}
-      update={update}
+      useUpdate={useUpdateMemberPromotionMessage}
     />
   );
 }
