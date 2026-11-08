@@ -4,7 +4,7 @@ from notifications.email_sender import get_email_sender
 from users.models import NonMemberRsvpToken, User
 
 from community.events.tentative_member_access import TENTATIVE_MEMBER_EVENT_TYPES
-from community.models import Event, EventRSVP, JoinRequestStatus, RSVPStatus
+from community.models import Event, EventRSVP, RSVPStatus
 from community.rsvps.public_shared import email_details, log_email_failure
 from community.validation import Code, raise_validation
 
@@ -15,8 +15,8 @@ def ineligible_non_member_rsvps(event: Event):
         status=RSVPStatus.REMOVED
     )
     if event.event_type in TENTATIVE_MEMBER_EVENT_TYPES:
-        # Tentative members keep official/club access regardless of public RSVP eligibility.
-        rsvps = rsvps.exclude(user__join_requests__status=JoinRequestStatus.TENTATIVE)
+        # Limited users keep official/club access regardless of public RSVP eligibility.
+        rsvps = rsvps.exclude(user__in=User.objects.limited_users())
     return rsvps
 
 
@@ -38,10 +38,10 @@ def email_removed_non_members(request, event: Event, removed_user_ids: list[str]
     """Email any removed non-members. Best-effort per user, mirrors email_promoted_users."""
     if not removed_user_ids:
         return
-    # Tentative members can sign in; this email and its join pitch are for people without an account.
+    # This email and its join pitch are for people without an account.
     removed = User.objects.filter(
-        id__in=removed_user_ids, is_member=False, email__isnull=False
-    ).exclude(join_requests__status=JoinRequestStatus.TENTATIVE)
+        id__in=removed_user_ids, is_member=False, is_paused=False, email__isnull=False
+    ).exclude(pk__in=User.objects.limited_users())
     for user in removed:
         if not user.email:
             continue

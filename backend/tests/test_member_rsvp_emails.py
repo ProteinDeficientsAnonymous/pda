@@ -1,9 +1,9 @@
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventType, RSVPStatus
 from django.test import Client
 
 from tests._auth import auth_headers_for
-from tests._public_rsvp_helpers import make_non_member, make_tentative_member
+from tests._public_rsvp_helpers import SIGNED_IN_NON_MEMBER_FACTORIES, make_non_member
 from tests._time import future_iso
 from tests._users import make_user
 
@@ -180,13 +180,22 @@ class TestHostSetRsvpEmail:
 
         assert _subjects(fake_email_sender, "member@e.com") == []
 
-    def test_host_set_tentative_member_gets_member_email(self, test_user, fake_email_sender):
-        event = _event(test_user)
-        tentative = make_tentative_member("+14155550101", "tentative@e.com")
+    @SIGNED_IN_NON_MEMBER_FACTORIES
+    @pytest.mark.parametrize(
+        ("event_type", "gets_manage_link"),
+        [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
+    )
+    def test_host_set_limited_user_gets_member_email_only_on_official(
+        self, test_user, fake_email_sender, make_signed_in, event_type, gets_manage_link
+    ):
+        event = _event(test_user, event_type=event_type)
+        guest = make_signed_in("+14155550101", "signed-in@e.com")
 
-        _host_set(event, test_user, tentative, RSVPStatus.ATTENDING)
+        _host_set(event, test_user, guest, RSVPStatus.ATTENDING)
 
-        assert _subjects(fake_email_sender, "tentative@e.com") == ["you're in for picnic"]
+        assert _subjects(fake_email_sender, "signed-in@e.com") == ["you're in for picnic"]
+        text = fake_email_sender.send.call_args.kwargs["text"]
+        assert ("/my-rsvps?token=" in text) is gets_manage_link
 
     def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user)
