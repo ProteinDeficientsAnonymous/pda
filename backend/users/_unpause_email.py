@@ -1,3 +1,5 @@
+from functools import partial
+
 from community.models import WhatsAppLinkConfig
 from django.db import transaction
 from notifications.email_sender import get_email_sender, send_best_effort
@@ -7,10 +9,11 @@ from users.models import User
 
 
 def email_whatsapp_link_on_unpause(user: User) -> None:
-    """Queue the WhatsApp link email for after commit, so a failed send can't undo the unpause."""
-    if not user.email:
+    """Send once the unpause commits, so a failed send can't undo it."""
+    if user.archived_at or user.attendance_paused_at or user.whatsapp_reminder_opt_out:
         return
-    transaction.on_commit(lambda: _send(user.email or "", user.first_name), robust=True)
+    if user.email:
+        transaction.on_commit(partial(_send, user.email, user.first_name), robust=True)
 
 
 def _send(to: str, display_name: str) -> None:

@@ -1,5 +1,6 @@
 import pytest
 from community.models import WhatsAppLinkConfig
+from django.utils import timezone
 from users.models import User
 
 LINK = "https://chat.whatsapp.com/abc123"
@@ -27,9 +28,10 @@ def patch_user(api_client, manage_users_headers, django_capture_on_commit_callba
     return patch
 
 
-def _member(*, is_paused: bool, email: str = EMAIL) -> User:
+def _member(*, is_paused: bool, **extra) -> User:
+    extra.setdefault("email", EMAIL)
     return User.objects.create_user(
-        phone_number="+12025550199", first_name="Pat", email=email, is_paused=is_paused
+        phone_number="+12025550199", first_name="Pat", is_paused=is_paused, **extra
     )
 
 
@@ -49,8 +51,13 @@ class TestMemberAdminUnpause:
 
     @pytest.mark.parametrize(
         ("was_paused", "payload"),
-        [(False, {"is_paused": True}), (False, {"first_name": "Sam"}), (True, {"is_paused": True})],
-        ids=["pausing", "never_paused", "still_paused"],
+        [
+            (False, {"is_paused": True}),
+            (False, {"first_name": "Sam"}),
+            (True, {"is_paused": True}),
+            (True, {"is_paused": False, "attendance_paused": True}),
+        ],
+        ids=["pausing", "never_paused", "still_paused", "into_attendance_pause"],
     )
     def test_no_email_unless_pause_is_lifted(
         self, patch_user, fake_email_sender, was_paused, payload
@@ -58,7 +65,7 @@ class TestMemberAdminUnpause:
         patch_user(_member(is_paused=was_paused), payload)
         assert _sends(fake_email_sender) == []
 
-    def test_failed_email_keeps_the_unpause(self, patch_user, fake_email_sender):
+    def test_send_error_does_not_fail_the_unpause(self, patch_user, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("provider down")
         user = _member(is_paused=True)
         response = patch_user(user, {"is_paused": False})
@@ -66,8 +73,18 @@ class TestMemberAdminUnpause:
         user.refresh_from_db()
         assert not user.is_paused
 
-    def test_member_without_email_is_skipped(self, patch_user, fake_email_sender):
-        patch_user(_member(is_paused=True, email=""), {"is_paused": False})
+    @pytest.mark.parametrize(
+        "extra",
+        [
+            {"attendance_paused_at": timezone.now(), "is_member": False},
+            {"archived_at": timezone.now()},
+            {"whatsapp_reminder_opt_out": True},
+            {"email": ""},
+        ],
+        ids=["still_attendance_paused", "archived", "whatsapp_opt_out", "no_email"],
+    )
+    def test_ineligible_member_gets_no_email(self, patch_user, fake_email_sender, extra):
+        patch_user(_member(is_paused=True, **extra), {"is_paused": False})
         fake_email_sender.send.assert_not_called()
 
 

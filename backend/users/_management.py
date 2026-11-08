@@ -316,10 +316,10 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
-    if old_is_paused and not user.is_paused:
-        email_whatsapp_link_on_unpause(user)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
+    if old_is_paused and not user.is_paused:
+        email_whatsapp_link_on_unpause(user)
     return Status(200, UserOut.from_user(user))
 
 
