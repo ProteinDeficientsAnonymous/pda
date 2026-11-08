@@ -6517,30 +6517,6 @@
         "title": "ResetPasswordOut",
         "type": "object"
       },
-      "RestoredEventOut": {
-        "properties": {
-          "event_id": {
-            "title": "Event Id",
-            "type": "string"
-          },
-          "start_datetime": {
-            "format": "date-time",
-            "title": "Start Datetime",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_id",
-          "title",
-          "start_datetime"
-        ],
-        "title": "RestoredEventOut",
-        "type": "object"
-      },
       "RestoredMemberOut": {
         "properties": {
           "full_name": {
@@ -6561,7 +6537,7 @@
           },
           "recent_events": {
             "items": {
-              "$ref": "#/components/schemas/RestoredEventOut"
+              "$ref": "#/components/schemas/AttendedEventOut"
             },
             "title": "Recent Events",
             "type": "array"

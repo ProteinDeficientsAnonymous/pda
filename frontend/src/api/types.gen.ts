@@ -5379,18 +5379,6 @@ export interface components {
             /** Magic Link Token */
             magic_link_token: string;
         };
-        /** RestoredEventOut */
-        RestoredEventOut: {
-            /** Event Id */
-            event_id: string;
-            /**
-             * Start Datetime
-             * Format: date-time
-             */
-            start_datetime: string;
-            /** Title */
-            title: string;
-        };
         /** RestoredMemberOut */
         RestoredMemberOut: {
             /** Full Name */
@@ -5402,7 +5390,7 @@ export interface components {
             /** Phone Number */
             phone_number: string;
             /** Recent Events */
-            recent_events: components["schemas"]["RestoredEventOut"][];
+            recent_events: components["schemas"]["AttendedEventOut"][];
             /**
              * Restored At
              * Format: date-time
