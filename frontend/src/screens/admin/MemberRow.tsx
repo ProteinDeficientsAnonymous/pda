@@ -5,12 +5,13 @@ import type { Member } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { attendedCountLabel } from './attendedCountLabel';
+import { isAttendancePaused, isManagedMember } from './memberPause';
 import { PauseBadges } from './PauseBadges';
 
 export function MemberRow({ member }: { member: Member }) {
   const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
 
-  // Non-members have no detail page, so the row is a plain div, not a link.
+  // Unmanaged non-members have no detail page, so the row is a plain div, not a link.
   if (!isManagedMember(member)) {
     return (
       <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
@@ -32,7 +33,7 @@ export function MemberRow({ member }: { member: Member }) {
 function MemberRowBody({ member, initials }: { member: Member; initials: string }) {
   const managed = isManagedMember(member);
   const hasTags =
-    !managed || member.roles.length > 0 || member.isPaused || member.attendancePausedAt !== null;
+    !managed || member.roles.length > 0 || member.isPaused || isAttendancePaused(member);
   return (
     <>
       <div className="flex items-center gap-3">
@@ -91,8 +92,4 @@ function MemberRowBody({ member, initials }: { member: Member; initials: string 
       ) : null}
     </>
   );
-}
-
-function isManagedMember(member: Member): boolean {
-  return member.isMember || member.attendancePausedAt !== null;
 }

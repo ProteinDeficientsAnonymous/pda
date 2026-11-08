@@ -183,7 +183,7 @@ describe('MemberDetailScreen edit form', () => {
     expect(updateMutateAsync).toHaveBeenCalledWith(patch);
   });
 
-  it('unpauses an event rqmt pause and shows its badge', async () => {
+  it('unpauses an event rqmt pause, shows its badge, and hides roles', async () => {
     vi.mocked(useUsers).mockReturnValue({
       data: [{ ...member, attendancePausedAt: new Date('2026-03-01') }],
       isPending: false,
@@ -191,6 +191,8 @@ describe('MemberDetailScreen edit form', () => {
     } as unknown as ReturnType<typeof useUsers>);
     renderScreen();
     expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
+    expect(screen.getByText('roles are cleared while event rqmt paused')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'save roles' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
     await userEvent.click(screen.getByRole('switch', { name: 'event rqmt pause' }));
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
