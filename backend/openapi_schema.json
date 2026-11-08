@@ -4427,6 +4427,7 @@
         "properties": {
           "question_ids": {
             "items": {
+              "format": "uuid",
               "type": "string"
             },
             "title": "Question Ids",
