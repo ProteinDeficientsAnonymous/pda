@@ -25,7 +25,7 @@ from notifications.sse import (
 )
 
 from tests._auth import auth_headers_for
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 _MEMBER = StreamScope(user_id="user-2", event_id=None)
 _ANON_EVENT_1 = StreamScope(user_id=None, event_id="event-1")
