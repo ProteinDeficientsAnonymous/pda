@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from community.models import EventStatus, RSVPStatus
+from community.models import EventStatus, EventType, RSVPStatus
 from community.rsvps.reminder import due_rsvp_reminder_events, send_due_rsvp_reminders
 from django.core.management import call_command
 
@@ -56,15 +56,16 @@ class TestSendDueRsvpReminders:
         assert event.rsvp_reminder_sent_at == NOW
 
     @pytest.mark.parametrize(
-        "make_guest, link",
+        "make_guest, event_type, link",
         [
-            (make_user, "/events/"),
-            (lambda: make_tentative("+12025558001"), "/events/"),
-            (lambda: make_user(is_member=False), "/my-rsvps?token="),
+            (make_user, EventType.COMMUNITY, "/events/"),
+            (lambda: make_tentative("+12025558001"), EventType.OFFICIAL, "/events/"),
+            (lambda: make_tentative("+12025558002"), EventType.COMMUNITY, "/my-rsvps?token="),
+            (lambda: make_user(is_member=False), EventType.OFFICIAL, "/my-rsvps?token="),
         ],
     )
-    def test_link_matches_guest_kind(self, fake_email_sender, make_guest, link):
-        make_rsvp(_event(), make_guest())
+    def test_link_matches_guest_kind(self, fake_email_sender, make_guest, event_type, link):
+        make_rsvp(_event(event_type=event_type), make_guest())
         send_due_rsvp_reminders(NOW)
         assert link in fake_email_sender.send.call_args.kwargs["text"]
 

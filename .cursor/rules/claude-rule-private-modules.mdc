@@ -1,5 +1,5 @@
 ---
-description: Private Modules
+description: Private Modules and Symbols
 globs: backend/**/*.py
 alwaysApply: false
 ---

@@ -2,15 +2,17 @@
 
 import asyncio
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 import psycopg
 import pytest
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
 from notifications.models import SseTicket
-from notifications.sse import _format_notify_for_user
+from notifications.sse import format_notify_for_user
 
 from tests._auth import auth_headers_for
 
@@ -18,17 +20,49 @@ from tests._auth import auth_headers_for
 @pytest.mark.django_db
 class TestFormatNotifyForUser:
     def test_event_update_matches_target_user(self):
-        frame = _format_notify_for_user("event_updates", "user-1:event-1", "user-1")
+        frame = format_notify_for_user("event_updates", "user-1:event-1", "user-1")
         assert frame is not None
         assert "event: event_updated" in frame
 
     def test_event_update_skips_other_user(self):
-        assert _format_notify_for_user("event_updates", "user-1:event-1", "user-2") is None
+        assert format_notify_for_user("event_updates", "user-1:event-1", "user-2") is None
 
     def test_event_update_wildcard_matches_any_user(self):
-        frame = _format_notify_for_user("event_updates", "*:event-1", "user-2")
+        frame = format_notify_for_user("event_updates", "*:event-1", "user-2")
         assert frame is not None
         assert "event: event_updated" in frame
+
+    def test_read_ping_matches_target_user(self):
+        frame = format_notify_for_user("notifications", "read:user-1", "user-1")
+        assert frame is not None
+        assert "event: notifications_read" in frame
+
+    def test_read_ping_skips_other_user(self):
+        assert format_notify_for_user("notifications", "read:user-1", "user-2") is None
+
+
+class TestNotifyReadStateChanged:
+    def test_publishes_read_payload_on_postgres(self, monkeypatch):
+        cursor = MagicMock()
+        conn = MagicMock(vendor="postgresql")
+        conn.cursor.return_value.__enter__.return_value = cursor
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+        cursor.execute.assert_called_once_with(
+            "SELECT pg_notify('notifications', %s)", ["read:user-1"]
+        )
+
+    def test_swallows_database_errors(self, monkeypatch):
+        conn = MagicMock(vendor="postgresql")
+        conn.cursor.side_effect = DatabaseError("boom")
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+
+    def test_noop_off_postgres(self, monkeypatch):
+        conn = MagicMock(vendor="sqlite")
+        monkeypatch.setattr(sse, "connection", conn)
+        sse.notify_read_state_changed("user-1")
+        conn.cursor.assert_not_called()
 
 
 @pytest.mark.django_db

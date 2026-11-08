@@ -1,11 +1,11 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community.join_requests.approval import _promote_tentative_member
+from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from community.validation import ValidationException
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, payload, url
@@ -25,15 +25,15 @@ def _approve(api_client, vettor_headers, jr_id):
 
 
 @pytest.mark.django_db
-class TestPromotePublicNonMember:
-    def _public_non_member_request(self):
+class TestPromotePublicRsvper:
+    def _public_rsvper_request(self):
         user = User.objects.create_user(
             phone_number="+12025551900",
             first_name="Rsvper",
             email="public@example.com",
             is_member=False,
         )
-        NonMemberRsvpToken.issue(user)
+        PublicRsvpToken.issue(user)
         jr = JoinRequest.objects.create(
             first_name="Public",
             last_name="Rsvper",
@@ -47,7 +47,7 @@ class TestPromotePublicNonMember:
     def test_mints_the_token_that_replaces_their_revoked_rsvp_tokens(
         self, api_client, vettor_headers
     ):
-        user, jr = self._public_non_member_request()
+        user, jr = self._public_rsvper_request()
         before = user.magic_tokens.count()
         resp = _approve(api_client, vettor_headers, jr.id)
         assert resp.status_code == 200
@@ -55,7 +55,7 @@ class TestPromotePublicNonMember:
         assert user.magic_tokens.count() == before + 1
 
     def test_sends_them_through_onboarding(self, api_client, vettor_headers):
-        user, jr = self._public_non_member_request()
+        user, jr = self._public_rsvper_request()
         _approve(api_client, vettor_headers, jr.id)
         user.refresh_from_db()
         assert user.is_member is True
@@ -153,7 +153,7 @@ class TestPromoteTentativeMember:
         user.first_name = ""
         user.save(update_fields=["first_name"])
         with pytest.raises(ValidationException):
-            _promote_tentative_member(user, sample_join_request)
+            promote_tentative_member(user, sample_join_request)
 
 
 @pytest.mark.django_db

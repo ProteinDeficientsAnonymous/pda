@@ -1,7 +1,7 @@
 """Tests for email validation on join request submission."""
 
 import pytest
-from community.join_requests.submit import _send_join_request_email
+from community.join_requests.submit import send_join_request_email
 from community.models import JoinFormQuestion, JoinRequest
 from community.shared import flatten_to_single_line
 from django.core import mail
@@ -79,7 +79,7 @@ class TestVettingEmailHeaderInjection:
         settings.VETTING_EMAIL = "vetting@example.com"
         mail.outbox = []
 
-        _send_join_request_email(
+        send_join_request_email(
             full_name="Mallory\r\nSubject: spoofed",
             phone="+12025550101",
             custom_answers={},

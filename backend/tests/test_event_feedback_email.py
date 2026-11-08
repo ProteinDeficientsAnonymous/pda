@@ -42,7 +42,7 @@ class TestSendEventFeedbackEmail:
 
     def test_reminder_has_distinct_subject_and_copy(self):
         _, kwargs = _send(reminder=True)
-        assert kwargs["subject"] == "still keen to hear about vegan potluck"
+        assert kwargs["subject"] == "we'd still love to hear about vegan potluck"
         assert "haven't shared your feedback yet" in kwargs["text"]
         assert URL in kwargs["html"]
 

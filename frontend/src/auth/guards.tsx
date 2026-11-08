@@ -7,7 +7,7 @@ import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
-import { isTentativeMember } from '@/models/event';
+import { isLimited } from '@/models/event';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
@@ -167,7 +167,7 @@ export function RequireMember({ unlocks }: { unlocks: string }) {
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
-  if (isTentativeMember(user)) {
+  if (isLimited(user)) {
     return <MembersOnlyNotice unlocks={unlocks} />;
   }
   return <Outlet />;

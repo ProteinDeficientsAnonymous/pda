@@ -12,14 +12,14 @@ from notifications.service import (
     broadcast_event_created,
     create_event_cancellation_notifications,
     create_event_invite_notifications,
-    notify_users,
 )
 from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import diff_cohost_invites, send_cohost_invite_emails
-from community.events.helpers import _event_out, _has_attendees
+from community.events.helpers import event_out, has_attendees
+from community.events.unpublish import clear_unpublished_side_effects
 from community.models import Event, EventRSVP, EventStatus
-from community.rsvps.counts import _host_crew_ids
+from community.rsvps.counts import host_crew_ids
 from community.validation import Code, raise_validation
 
 
@@ -40,7 +40,7 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
     """ACTIVE → CANCELLED. Raises ValidationException on failure."""
     if event.is_past:
         raise_validation(Code.Event.PAST_CANNOT_BE_CANCELLED, status_code=400)
-    if not _has_attendees(event):
+    if not has_attendees(event):
         raise_validation(Code.Event.NO_ATTENDEES_CANNOT_BE_CANCELLED, status_code=400)
     event.status = EventStatus.CANCELLED
     event.save(update_fields=["status"])
@@ -51,7 +51,7 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
 
 def _delete_event(request, event: Event) -> None:
     """ACTIVE|CANCELLED|DRAFT → DELETED. Raises ValidationException on failure."""
-    if event.status == EventStatus.ACTIVE and not event.is_past and _has_attendees(event):
+    if event.status == EventStatus.ACTIVE and not event.is_past and has_attendees(event):
         raise_validation(Code.Event.CANCEL_BEFORE_DELETE, status_code=400)
     event.status = EventStatus.DELETED
     event.deleted_at = timezone.now()
@@ -67,7 +67,7 @@ def _uncancel_event(request, event: Event) -> None:
     _audit_event(request, event, "event_uncancelled")
 
 
-def _set_event_participants(request, event: Event, co_host_ids: list) -> None:
+def set_event_participants(request, event: Event, co_host_ids: list) -> None:
     """Attach co-hosts to the event and send invite notifications.
 
     Co-hosts go through the invite-approval flow: requested ids become PENDING
@@ -107,7 +107,7 @@ def _publish_draft(request, event: Event) -> None:
 def _notify_new_invitees(request, event: Event) -> None:
     """Notify invited members who don't already have an invite for this event.
 
-    Unpublish deletes the EVENT_INVITE rows (see `_unpublish_event`), so a
+    Unpublish deletes the EVENT_INVITE rows (see `clear_unpublished_side_effects`), so a
     publish → unpublish → publish cycle re-creates them — each invitee holds
     exactly one invite notification at any time. The filter also skips any
     rows that survived from an earlier publish, so nobody is re-notified.
@@ -136,30 +136,12 @@ def _unpublish_event(request, event: Event) -> None:
     # so the check can't race an in-flight rsvp into a now-draft event.
     locked = Event.objects.select_for_update().get(pk=event.pk)
     # Current co-hosts only — a stepped-down creator's RSVP still blocks.
-    host_ids = _host_crew_ids(locked)
+    host_ids = host_crew_ids(locked)
     if EventRSVP.objects.filter(event=locked).exclude(user_id__in=host_ids).exists():
         raise_validation(Code.Event.HAS_RSVPS, status_code=400)
     event.status = EventStatus.DRAFT
     event.save(update_fields=["status"])
-    # A draft is invisible to invitees, so its in-app invites go with the
-    # publish that made them visible — republish re-creates them via
-    # _notify_new_invitees, leaving each invitee exactly one at any time.
-    # Email can't be recalled; only the Notification rows are deleted.
-    invitee_ids = [
-        str(uid)
-        for uid in Notification.objects.filter(
-            event=event,
-            notification_type=NotificationType.EVENT_INVITE,
-        ).values_list("recipient_id", flat=True)
-    ]
-    Notification.objects.filter(
-        event=event,
-        notification_type=NotificationType.EVENT_INVITE,
-    ).delete()
-    # Live calendars and the invite bell stay stale unless we ping after commit.
-    transaction.on_commit(lambda: broadcast_event_created(event))
-    if invitee_ids:
-        transaction.on_commit(lambda ids=invitee_ids: notify_users(ids))
+    clear_unpublished_side_effects(event)
     _audit_event(request, event, "event_unpublished")
 
 
@@ -191,7 +173,7 @@ def _apply_status_transition(request, event: Event, new_status: str, notify: boo
     )
 
 
-def _handle_status_update(request, event: Event, new_status: str, notify: bool):
+def handle_status_update(request, event: Event, new_status: str, notify: bool):
     """Apply a status transition from update_event.
 
     Returns a Status response to send immediately (for DELETE, which exits early
@@ -208,6 +190,6 @@ def _handle_status_update(request, event: Event, new_status: str, notify: bool):
 
     # After a delete transition the event is gone — stop further processing
     if new_status == EventStatus.DELETED:
-        return Status(200, _event_out(event, request.auth))
+        return Status(200, event_out(event, request.auth))
 
     return None

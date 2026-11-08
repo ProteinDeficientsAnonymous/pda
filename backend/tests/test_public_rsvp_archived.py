@@ -4,9 +4,9 @@ import pytest
 from community.models import EventRSVP
 from community.validation import Code
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
-from tests._public_rsvp_helpers import make_non_member, make_official_event, post
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ class TestArchivedMemberGate:
     def test_archived_non_member_email_holder_is_not_adopted_by_fresh_phone(
         self, api_client, official_event, fake_email_sender
     ):
-        archived = make_non_member("+14155550777", "sam@example.com", name="Archived")
+        archived = make_public_rsvper("+14155550777", "sam@example.com", name="Archived")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
 
@@ -69,7 +69,7 @@ class TestArchivedNonMemberGate:
     def test_phone_belongs_to_archived_non_member(
         self, api_client, official_event, fake_email_sender
     ):
-        archived = make_non_member("+14155550123", "old@example.com", name="Archived NonMember")
+        archived = make_public_rsvper("+14155550123", "old@example.com", name="Archived NonMember")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
 
@@ -80,5 +80,5 @@ class TestArchivedNonMemberGate:
         assert not EventRSVP.objects.filter(event=official_event, user=archived).exists()
         archived.refresh_from_db()
         assert archived.archived_at is not None
-        assert not NonMemberRsvpToken.objects.filter(user=archived).exists()
+        assert not PublicRsvpToken.objects.filter(user=archived).exists()
         fake_email_sender.send.assert_not_called()

@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0124_event_cohost_reminder_sent_at"),
+        ("community", "0132_member_restored_email_template"),
     ]
 
     operations = [

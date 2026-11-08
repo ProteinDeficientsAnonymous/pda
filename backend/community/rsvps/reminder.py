@@ -6,11 +6,11 @@ from django.db.models import QuerySet
 from django.utils import timezone
 from notifications.email_sender import EmailSender, EmailStream, get_email_sender
 from notifications.rsvp_reminder_email import RsvpReminderEmailDetails, send_rsvp_reminder_email
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
-from community.rsvps.public_shared import _format_event_when, event_page_url, manage_rsvp_url
-from community.rsvps.status_emails import _tentative_q
+from community.rsvps.public_shared import event_page_url, format_event_when, manage_rsvp_url
+from community.rsvps.status_emails import member_email_ids
 from community.shared import local_midnight
 
 logger = logging.getLogger(__name__)
@@ -31,13 +31,13 @@ def due_rsvp_reminder_events(now: datetime) -> QuerySet[Event]:
     )
 
 
-def _rsvp_url(event: Event, rsvp: EventRSVP) -> str:
-    if rsvp.user.is_member or rsvp.is_tentative:
+def _rsvp_url(event: Event, rsvp: EventRSVP, member_ids: set[str]) -> str:
+    if str(rsvp.user_id) in member_ids:
         return event_page_url(event)
-    return manage_rsvp_url(NonMemberRsvpToken.issue_or_extend(rsvp.user).token)
+    return manage_rsvp_url(PublicRsvpToken.issue_or_extend(rsvp.user).token)
 
 
-def _send(sender: EmailSender, event: Event, rsvp: EventRSVP) -> bool:
+def _send(sender: EmailSender, event: Event, rsvp: EventRSVP, member_ids: set[str]) -> bool:
     try:
         result = send_rsvp_reminder_email(
             sender=sender,
@@ -46,9 +46,9 @@ def _send(sender: EmailSender, event: Event, rsvp: EventRSVP) -> bool:
                 display_name=rsvp.user.first_name or "",
                 status=rsvp.status,
                 event_title=event.title,
-                event_when=_format_event_when(event),
+                event_when=format_event_when(event),
                 event_location=event.location,
-                rsvp_url=_rsvp_url(event, rsvp),
+                rsvp_url=_rsvp_url(event, rsvp, member_ids),
             ),
         )
     except Exception:  # noqa: BLE001 — one bad send must not abort the batch
@@ -65,18 +65,17 @@ def send_rsvp_reminders_for_event(sender: EmailSender, event: Event, now: dateti
     )
     if not claimed:
         return 0
-    rsvps = (
+    rsvps = list(
         EventRSVP.objects.filter(
             event=event,
             status__in=REMINDED_STATUSES,
             user__is_active=True,
             user__archived_at__isnull=True,
             user__email__gt="",
-        )
-        .annotate(is_tentative=_tentative_q("user"))
-        .select_related("user")
+        ).select_related("user")
     )
-    return sum(_send(sender, event, rsvp) for rsvp in rsvps)
+    member_ids = member_email_ids(event, [str(rsvp.user_id) for rsvp in rsvps])
+    return sum(_send(sender, event, rsvp, member_ids) for rsvp in rsvps)
 
 
 def send_due_rsvp_reminders(now: datetime) -> int:
