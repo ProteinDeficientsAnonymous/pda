@@ -14,6 +14,7 @@ import { hasPermission, Permission } from '@/models/permissions';
 
 import { MemberPromotionEmailEditorDialog } from './MemberPromotionEmailEditorDialog';
 import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
+import { MemberRestoredEmailEditorDialog } from './MemberRestoredEmailEditorDialog';
 import { RejectionEmailEditorDialog } from './RejectionEmailEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
@@ -115,8 +116,7 @@ export function JoinRequestMessageEditors() {
         }}
         template={promotionEmailQ.data ?? null}
       />
-      <MemberPromotionEmailEditorDialog
-        variant="restored"
+      <MemberRestoredEmailEditorDialog
         open={restoredEmailOpen}
         onClose={() => {
           setRestoredEmailOpen(false);

@@ -16,12 +16,6 @@ vi.mock('@/api/content', () => ({
   useUpdateMemberPromotionEmail: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
 }));
 
-const restoredMutateMock = vi.fn();
-
-vi.mock('@/api/memberRestoredEmail', () => ({
-  useUpdateMemberRestoredEmail: () => ({ mutateAsync: restoredMutateMock, isPending: false }),
-}));
-
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 function renderEditor(
@@ -74,25 +68,6 @@ describe('MemberPromotionEmailEditorDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('member promotion email must be at most 4000 characters');
-  });
-
-  it('saves the welcome back email through its own endpoint', async () => {
-    mutateAsyncMock.mockReset();
-    restoredMutateMock.mockReset().mockResolvedValue({ body: 'hi', updatedAt: '2026-01-02' });
-    renderWithProviders(
-      <MemberPromotionEmailEditorDialog
-        open
-        variant="restored"
-        onClose={vi.fn()}
-        template={{ body: 'welcome back', updatedAt: '2026-01-01' }}
-      />,
-    );
-    expect(screen.getByLabelText('welcome back email body')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
-    await waitFor(() => {
-      expect(restoredMutateMock).toHaveBeenCalledWith('welcome back');
-    });
-    expect(mutateAsyncMock).not.toHaveBeenCalled();
   });
 
   it('blocks save when body is empty', async () => {

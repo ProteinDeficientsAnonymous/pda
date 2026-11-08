@@ -3,68 +3,31 @@ import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { type MemberPromotionEmail, useUpdateMemberPromotionEmail } from '@/api/content';
-import { useUpdateMemberRestoredEmail } from '@/api/memberRestoredEmail';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { cn } from '@/utils/cn';
 
 const MAX_LENGTH = 4000;
 
-const COPY = {
-  promotion: {
-    title: 'edit member promotion email',
-    label: 'member promotion email body',
-    description:
-      'sent automatically when a tentatively-approved applicant becomes a full member — on event check-in or manual promotion.',
-  },
-  restored: {
-    title: 'edit welcome back email',
-    label: 'welcome back email body',
-    description:
-      'sent automatically when a check-in brings an attendance-paused member back to full membership.',
-  },
-} as const;
-
-type Variant = keyof typeof COPY;
-
 interface Props {
   open: boolean;
   onClose: () => void;
   template: MemberPromotionEmail | null;
-  variant?: Variant;
 }
 
-export function MemberPromotionEmailEditorDialog({
-  open,
-  onClose,
-  template,
-  variant = 'promotion',
-}: Props) {
+export function MemberPromotionEmailEditorDialog({ open, onClose, template }: Props) {
   if (!open) return null;
   // Inner form is keyed on the template body so each open seeds fresh state
   // without an effect.
   return (
-    <Dialog open onClose={onClose} title={COPY[variant].title}>
-      <EditorForm
-        key={template?.body ?? ''}
-        initialBody={template?.body ?? ''}
-        onClose={onClose}
-        variant={variant}
-      />
+    <Dialog open onClose={onClose} title="edit member promotion email">
+      <EditorForm key={template?.body ?? ''} initialBody={template?.body ?? ''} onClose={onClose} />
     </Dialog>
   );
 }
 
-interface FormProps {
-  initialBody: string;
-  onClose: () => void;
-  variant: Variant;
-}
-
-function EditorForm({ initialBody, onClose, variant }: FormProps) {
-  const promotion = useUpdateMemberPromotionEmail();
-  const restored = useUpdateMemberRestoredEmail();
-  const update = variant === 'restored' ? restored : promotion;
+function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: () => void }) {
+  const update = useUpdateMemberPromotionEmail();
   const [body, setBody] = useState(initialBody);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -90,7 +53,8 @@ function EditorForm({ initialBody, onClose, variant }: FormProps) {
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
       <p className="text-foreground-secondary text-sm">
-        {COPY[variant].description} links in the body are turned into clickable links.
+        sent automatically when a tentatively-approved applicant becomes a full member — on event
+        check-in or manual promotion. links in the body are turned into clickable links.
       </p>
       <p className="text-muted text-xs">
         available placeholders:{' '}
@@ -104,7 +68,7 @@ function EditorForm({ initialBody, onClose, variant }: FormProps) {
         }}
         rows={10}
         className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-base focus-visible:ring-2 focus-visible:outline-none md:text-sm"
-        aria-label={COPY[variant].label}
+        aria-label="member promotion email body"
       />
       <div
         className={cn(
