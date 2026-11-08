@@ -1,20 +1,15 @@
 import logging
-from datetime import timedelta
 from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
-from notifications.email_sender import get_email_sender, send_best_effort
+from notifications.email_sender import SendResult, get_email_sender, send_best_effort
 from users.helpers import grant_membership
 from users.models import User
 
-from community.attendance.analytics import (
-    COMPLIANCE_MIN_COUNT,
-    QUALIFYING_WINDOW_DAYS,
-    qualifying_attendance_q,
-)
+from community.attendance.analytics import compute_member_stats, is_compliant
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import (
     EventRSVP,
@@ -43,18 +38,16 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
 
 
 def _restore_attendance_paused(request, user: User) -> bool:
-    now = timezone.now()
-    qualifying_count = EventRSVP.objects.filter(
-        qualifying_attendance_q(),
-        user=user,
-        event__start_datetime__gte=now - timedelta(days=QUALIFYING_WINDOW_DAYS),
-    ).count()
-    if qualifying_count < COMPLIANCE_MIN_COUNT:
+    # Row lock: concurrent check-ins then see each other's marks and only one restores.
+    if User.objects.select_for_update().get(pk=user.pk).attendance_paused_at is None:
+        return False
+    rsvps = EventRSVP.objects.filter(user=user).select_related("event")
+    if not is_compliant(compute_member_stats(rsvps)):
         return False
 
     user.attendance_paused_at = None
     user.attendance_grace_notified_at = None
-    user.restored_at = now
+    user.restored_at = timezone.now()
     user.is_member = True
     # Saved before grant_membership: roles on non-members are rejected.
     fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
@@ -70,20 +63,22 @@ def _restore_attendance_paused(request, user: User) -> bool:
 
 
 def send_member_restored(user: User) -> None:
-    """Best-effort restore email. A send failure must not roll back the restore."""
-    if not user.email:
+    """Best-effort restore email. A failure, lookups included, must not roll back the restore."""
+    to = user.email
+    if not to:
         return
-    body = render_template_placeholders(
-        MemberRestoredEmailTemplate.get().body,
-        {"FIRST_NAME": user.first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
-    )
-    send_best_effort(
-        lambda: send_member_restored_email(
+
+    def send() -> SendResult:
+        body = render_template_placeholders(
+            MemberRestoredEmailTemplate.get().body,
+            {"FIRST_NAME": user.first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link},
+        )
+        return send_member_restored_email(
             sender=get_email_sender(),
-            to=user.email or "",
+            to=to,
             display_name=user.full_name,
             message_body=body,
             login_url=f"{settings.FRONTEND_BASE_URL}/login",
-        ),
-        "member_restored_email",
-    )
+        )
+
+    send_best_effort(send, "member_restored_email")
