@@ -1,3 +1,10 @@
+## [0.222.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.4...v0.222.5) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep attendance-paused members on the members list ([#2198](https://github.com/ProteinDeficientsAnonymous/pda/issues/2198)) ([0d8f2d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/0d8f2d3de0c50a682061a971d5fc621fa6d0ede0))
+
 ## [0.222.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.3...v0.222.4) (2026-11-08)
 
 
