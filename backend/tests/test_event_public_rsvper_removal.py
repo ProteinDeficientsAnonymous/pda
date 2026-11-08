@@ -214,10 +214,10 @@ class TestLimitedUserOnIneligibleEvent:
         assert _emails_to(fake_email_sender, "signed_in3@e.com") == []
 
     def test_guidelines_paused_limited_user_removed_without_email(
-        self, api_client, manage_events_headers, fake_email_sender, make_signed_in
+        self, api_client, manage_events_headers, fake_email_sender, make_limited
     ):
         event = make_official_event()
-        paused = make_signed_in("+14155559024", "signed_in4@e.com")
+        paused = make_limited("+14155559024", "signed_in4@e.com")
         User.objects.filter(pk=paused.pk).update(is_paused=True)
         EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.ATTENDING)
 
