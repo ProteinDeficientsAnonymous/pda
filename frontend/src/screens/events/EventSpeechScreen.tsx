@@ -16,6 +16,9 @@ const READING_CLASS = [
   '[&_blockquote]:my-3 [&_blockquote]:border-yellow-400 [&_blockquote]:text-sm [&_blockquote]:italic',
 ].join(' ');
 
+const ZOOM_STEPS = [1, 1.25, 1.5, 1.75, 2];
+const ZOOM_STORAGE_KEY = 'pda-speech-zoom';
+
 const LOAD_ERROR = "couldn't load this speech — try refreshing";
 const NOTICE_CODES = [Code.Speech.HostsOnly, Code.Speech.OfficialEventRequired];
 
@@ -34,11 +37,37 @@ export default function EventSpeechScreen() {
   return <SpeechBody eventId={id ?? ''} speech={speech} />;
 }
 
+function storedZoomIndex(): number {
+  const index = ZOOM_STEPS.indexOf(Number(localStorage.getItem(ZOOM_STORAGE_KEY)));
+  return index === -1 ? 0 : index;
+}
+
+function useSpeechZoom() {
+  const [index, setIndex] = useState(storedZoomIndex);
+  const step = (delta: number) => {
+    const next = Math.min(Math.max(index + delta, 0), ZOOM_STEPS.length - 1);
+    localStorage.setItem(ZOOM_STORAGE_KEY, String(ZOOM_STEPS[next]));
+    setIndex(next);
+  };
+  return {
+    zoom: ZOOM_STEPS[index] ?? 1,
+    canZoomOut: index > 0,
+    canZoomIn: index < ZOOM_STEPS.length - 1,
+    zoomOut: () => {
+      step(-1);
+    },
+    zoomIn: () => {
+      step(1);
+    },
+  };
+}
+
 function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech }) {
   const readable = speech.saved && speech.eventFormat !== null;
   const [editing, setEditing] = useState(!readable);
   const save = useSaveEventSpeech(eventId);
   const reading = !editing && readable;
+  const { zoom, canZoomOut, canZoomIn, zoomOut, zoomIn } = useSpeechZoom();
 
   return (
     <ContentContainer>
@@ -51,15 +80,28 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
       <div className="mb-1 flex items-center justify-between gap-2">
         <h1 className="text-2xl font-medium tracking-tight">event speech</h1>
         {reading ? (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              save.reset();
-              setEditing(true);
-            }}
-          >
-            edit
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              aria-label="zoom out"
+              disabled={!canZoomOut}
+              onClick={zoomOut}
+            >
+              −
+            </Button>
+            <Button variant="secondary" aria-label="zoom in" disabled={!canZoomIn} onClick={zoomIn}>
+              +
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                save.reset();
+                setEditing(true);
+              }}
+            >
+              edit
+            </Button>
+          </div>
         ) : null}
       </div>
       <p className="text-foreground-secondary text-lg">{speech.eventTitle}</p>
@@ -69,7 +111,9 @@ function SpeechBody({ eventId, speech }: { eventId: string; speech: EventSpeech 
         <div className="mb-6" />
       )}
       {reading ? (
-        <HtmlContent html={speech.html} className={READING_CLASS} />
+        <div style={{ zoom }}>
+          <HtmlContent html={speech.html} className={READING_CLASS} />
+        </div>
       ) : (
         <EventSpeechForm
           speech={speech}

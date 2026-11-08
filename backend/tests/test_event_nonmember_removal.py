@@ -212,3 +212,22 @@ class TestLimitedUserOnIneligibleEvent:
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=event, user=signed_in).status == RSVPStatus.REMOVED
         assert _emails_to(fake_email_sender, "signed_in3@e.com") == []
+
+    def test_guidelines_paused_limited_user_removed_without_email(
+        self, api_client, manage_events_headers, fake_email_sender, make_signed_in
+    ):
+        event = make_official_event()
+        paused = make_signed_in("+14155559024", "signed_in4@e.com")
+        User.objects.filter(pk=paused.pk).update(is_paused=True)
+        EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.ATTENDING)
+
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"rsvp_enabled": False, "force": True},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=event, user=paused).status == RSVPStatus.REMOVED
+        assert _emails_to(fake_email_sender, "signed_in4@e.com") == []
