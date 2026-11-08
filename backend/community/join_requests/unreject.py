@@ -45,6 +45,11 @@ def unreject_join_request(request, id: UUID):
 
     if join_request.status != JoinRequestStatus.REJECTED:
         raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
+    if JoinRequest.objects.filter(
+        phone_number=join_request.phone_number,
+        status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+    ).exists():
+        raise_validation(Code.JoinRequest.OPEN_REQUEST_EXISTS, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
     join_request.rejection_reason = ""

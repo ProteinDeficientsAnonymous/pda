@@ -10,7 +10,7 @@ LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
 def is_limited(user) -> bool:
-    """Signed in but not a member (see ``limited_q``); callers pass a signed-in user, never a public rsvper."""
+    """Signed in, not a member: tentatively approved or attendance-paused; never a public rsvper."""
     return user is not None and not user.is_member
 
 

@@ -29,8 +29,11 @@ vi.mock('@/api/users', () => ({
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateWelcomeTemplate: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
   useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
@@ -184,7 +187,7 @@ describe('JoinRequestsScreen sort', () => {
           {
             eventId: 'evt-1',
             title: 'Community Hang',
-            startDatetime: '2026-02-01T18:00:00Z',
+            startDatetime: new Date('2026-02-01T18:00:00Z'),
             eventType: 'community',
           },
         ],

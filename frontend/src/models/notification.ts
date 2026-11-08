@@ -20,6 +20,7 @@ export const NotificationType = {
   EventFeedback: 'event_feedback',
   SurveyResponse: 'survey_response',
   EventUnpublished: 'event_unpublished',
+  MemberRestored: 'member_restored',
   AccountDeleted: 'account_deleted',
 } as const;
 

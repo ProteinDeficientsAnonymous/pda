@@ -40,9 +40,9 @@ def _neutral() -> Status:
 
 
 def _find_public_rsvper(phone: str) -> User | None:
-    """Find the non-member User matching this phone. None if no match or a member."""
+    """Find the non-member User matching this phone. None if no match, a member, or paused."""
     match = User.objects.filter(phone_number=phone).first()
-    if match and match.is_member:
+    if match and (match.is_member or match.is_paused):
         return None
     return match
 
