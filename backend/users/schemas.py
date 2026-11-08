@@ -1,9 +1,9 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from community._field_limits import FieldLimit
-from community._validation import Code, raise_validation
+from community.field_limits import FieldLimit
 from community.models.choices import EventType
+from community.validation import Code, raise_validation
 from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 
@@ -164,7 +164,11 @@ class UserOut(BaseModel):
     monthly_digest_opt_out: bool = False
     whatsapp_reminder_opt_out: bool = False
     attendance_nudge_opt_out: bool = False
+    host_digest_opt_out: bool = False
     is_paused: bool = False
+    attendance_paused_at: datetime | None = None
+    restored_at: datetime | None = None
+    unpaused_at: datetime | None = None
     has_joined_whatsapp: bool = False
     # False until the user's first successful login (Django's last_login is null).
     # Admins use this to spot approved entries that were never actually claimed.
@@ -213,7 +217,11 @@ class UserOut(BaseModel):
             monthly_digest_opt_out=user.monthly_digest_opt_out,
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
+            host_digest_opt_out=user.host_digest_opt_out,
             is_paused=user.is_paused,
+            attendance_paused_at=user.attendance_paused_at,
+            restored_at=user.restored_at,
+            unpaused_at=user.unpaused_at,
             has_joined_whatsapp=user.has_joined_whatsapp,
             has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
@@ -237,13 +245,6 @@ class UserOut(BaseModel):
                 for r in user.roles.all()
             ],
         )
-
-
-class MemberAttendedEventOut(BaseModel):
-    event_id: str
-    title: str
-    start_datetime: datetime | None = None
-    event_type: str
 
 
 class MemberProfileOut(BaseModel):
@@ -313,6 +314,7 @@ class UserPatchIn(BaseModel):
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
+    attendance_paused: bool | None = None
     has_joined_whatsapp: bool | None = None
 
 
@@ -337,6 +339,7 @@ class MePatchIn(BaseModel):
     monthly_digest_opt_out: bool | None = None
     whatsapp_reminder_opt_out: bool | None = None
     attendance_nudge_opt_out: bool | None = None
+    host_digest_opt_out: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
     calendar_feed_excluded_types: (

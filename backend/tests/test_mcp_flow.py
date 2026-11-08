@@ -1,82 +1,12 @@
 import asyncio
-import base64
-import hashlib
-import secrets
-from contextlib import asynccontextmanager
-from urllib.parse import parse_qs, urlsplit
 
-import httpx
 import pytest
-from asgiref.sync import sync_to_async
-from django.conf import settings
-from django.core.asgi import get_asgi_application
-from mcp_gateway.asgi_router import McpDispatcher
-from mcp_gateway.models import OAuthAuthRequest
-from mcp_gateway.provider import issue_auth_code
-from mcp_gateway.server import TOOL_PERMISSIONS, build_mcp_app, pda_mcp, pda_tool
+from mcp_gateway.server import TOOL_PERMISSIONS, pda_mcp, pda_tool
 from users.permissions import PermissionKey
 
-from tests._mcp_helpers import REDIRECT
+from tests._mcp_helpers import connect, mcp_client, rpc
 
 pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
-
-BASE = settings.FRONTEND_BASE_URL.rstrip("/")
-RESOURCE = f"{BASE}/mcp"
-
-
-@asynccontextmanager
-async def mcp_client():
-    # A session manager runs once, so each test needs a fresh MCP app.
-    app = McpDispatcher(get_asgi_application(), build_mcp_app())
-    async with pda_mcp.session_manager.run():
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url=BASE) as client:
-            yield client
-
-
-async def connect(client: httpx.AsyncClient, user) -> str:
-    verifier = secrets.token_urlsafe(48)
-    digest = hashlib.sha256(verifier.encode()).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
-    registration = {"redirect_uris": [REDIRECT], "token_endpoint_auth_method": "none"}
-    client_id = (await client.post("/register", json=registration)).json()["client_id"]
-    authorize = await client.get(
-        "/authorize",
-        params={
-            "response_type": "code",
-            "client_id": client_id,
-            "redirect_uri": REDIRECT,
-            "code_challenge": challenge,
-            "code_challenge_method": "S256",
-            "resource": RESOURCE,
-        },
-    )
-    request_id = parse_qs(urlsplit(authorize.headers["location"]).query)["request"][0]
-    auth_request = await OAuthAuthRequest.objects.select_related("client").aget(pk=request_id)
-    code = await sync_to_async(issue_auth_code)(auth_request, user)
-    token = await client.post(
-        "/token",
-        data={
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": REDIRECT,
-            "client_id": client_id,
-            "code_verifier": verifier,
-            "resource": RESOURCE,
-        },
-    )
-    return token.json()["access_token"]
-
-
-async def rpc(client: httpx.AsyncClient, token: str, method: str, **params) -> httpx.Response:
-    return await client.post(
-        "/mcp",
-        json={"jsonrpc": "2.0", "id": 1, "method": method, "params": params},
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json, text/event-stream",
-        },
-    )
 
 
 @pytest.fixture

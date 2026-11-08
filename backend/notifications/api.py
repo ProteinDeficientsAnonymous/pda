@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from ninja import Query, Router
@@ -9,6 +9,7 @@ from ninja.responses import Status
 
 from notifications.models import Notification, SseTicket
 from notifications.schemas import NotificationOut, SseTicketOut, UnreadCountOut
+from notifications.sse import notify_read_state_changed
 
 router = Router()
 
@@ -62,7 +63,8 @@ def unread_count(request):
 
 @router.post("/read-all/", response={200: dict}, auth=gated_jwt)
 def mark_all_read(request):
-    Notification.objects.filter(recipient=request.auth, is_read=False).update(is_read=True)
+    if Notification.objects.filter(recipient=request.auth, is_read=False).update(is_read=True):
+        notify_read_state_changed(str(request.auth.pk))
     return Status(200, {"detail": "ok"})
 
 
@@ -73,4 +75,5 @@ def mark_read(request, notification_id: UUID):
     )
     if not updated:
         raise_validation(Code.Notification.NOT_FOUND, status_code=404)
+    notify_read_state_changed(str(request.auth.pk))
     return Status(200, {"detail": "ok"})

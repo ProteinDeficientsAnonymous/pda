@@ -70,6 +70,24 @@ describe('visibleQuestionIds', () => {
     expect(visibleQuestionIds([interests, dish], { interests: 'art' }).has('dish')).toBe(false);
   });
 
+  it('matches a list answer whose option contains a comma', () => {
+    const clubs = 'club events (book club, movie club)';
+    const interests = question('interests', {
+      fieldType: 'checkbox',
+      options: [clubs, 'potlucks'],
+      displayOrder: 0,
+    });
+    const which = question('which', {
+      fieldType: 'text',
+      displayOrder: 1,
+      showIf: { questionId: 'interests', operator: ShowIfOperator.Contains, value: clubs },
+    });
+    expect(visibleQuestionIds([interests, which], { interests: [clubs] }).has('which')).toBe(true);
+    expect(visibleQuestionIds([interests, which], { interests: ['potlucks'] }).has('which')).toBe(
+      false,
+    );
+  });
+
   it('treats not_equals on a checkbox as "not ticked"', () => {
     const interests = question('interests', {
       fieldType: 'checkbox',

@@ -1,5 +1,5 @@
 import pytest
-from ninja_jwt.tokens import RefreshToken
+from tests._auth import auth_headers_for
 from users.models import User
 
 
@@ -60,8 +60,7 @@ class TestProfileRespectsShowBirthday:
             birthday_year=1990,
             show_birthday=False,
         )
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(user)
         response = api_client.get(f"/api/auth/users/{user.pk}/profile/", **headers)
         assert response.status_code == 200
         assert response.json()["birthday"] is None
@@ -77,8 +76,7 @@ class TestMeShowBirthday:
         test_user.save(
             update_fields=["birthday_month", "birthday_day", "birthday_year", "show_birthday"]
         )
-        refresh = RefreshToken.for_user(test_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 200
         assert response.json()["birthday"] == {"month": 6, "day": 15, "year": 1990}

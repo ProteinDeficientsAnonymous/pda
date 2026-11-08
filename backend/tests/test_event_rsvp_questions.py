@@ -1,11 +1,11 @@
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventRsvpQuestion, RsvpQuestionType, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code
 from users.models import User
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
 
 
 @pytest.fixture
@@ -31,8 +31,7 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_user)
 
 
 def _question_data(**overrides):
@@ -186,7 +185,7 @@ class TestRsvpAnswerEdgeCases:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_REQUIRED)
 
-    def test_checkbox_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
+    def test_checkbox_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(
             api_client,
             auth_headers,
@@ -194,8 +193,7 @@ class TestRsvpAnswerEdgeCases:
             field_type=RsvpQuestionType.CHECKBOX,
             options=["a, b", "c"],
         )
-        assert response.status_code == 400
-        assert_error_code(response, Code.Event.RSVP_QUESTION_OPTION_NO_COMMA)
+        assert response.status_code == 200
 
     def test_select_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(

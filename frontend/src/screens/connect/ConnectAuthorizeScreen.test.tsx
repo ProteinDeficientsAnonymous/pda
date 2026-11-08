@@ -1,16 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { renderWithProviders } from '@/test/render';
 
 import ConnectAuthorizeScreen from './ConnectAuthorizeScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
@@ -32,14 +29,7 @@ function httpError(status: number) {
 }
 
 function renderScreen(url = `/connect/authorize?request=${REQUEST_ID}`) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[url]}>
-        <ConnectAuthorizeScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<ConnectAuthorizeScreen />, { route: url });
 }
 
 beforeEach(() => {

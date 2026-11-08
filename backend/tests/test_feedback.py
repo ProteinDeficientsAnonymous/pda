@@ -5,8 +5,9 @@ import json
 from urllib.error import URLError
 
 import pytest
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
+
+from tests._auth import auth_headers_for
 
 
 def _mock_urlopen(monkeypatch, issue_url="https://github.com/leahpeker/pda/issues/1"):
@@ -161,8 +162,7 @@ class TestFeedback:
             first_name="alice",
             last_name="smith",
         )
-        refresh = RefreshToken.for_user(user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(user)
 
         response = api_client.post(
             "/api/community/feedback/",

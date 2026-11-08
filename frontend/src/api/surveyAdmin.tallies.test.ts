@@ -1,34 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { QuestionType } from '@/api/questionTypes';
+import { makeQueryClient, queryWrapper } from '@/test/render';
 
-import {
-  useFinalizeSurveyPoll,
-  useSurveyPollTallies,
-  useSurveyQuestionSummaries,
-} from './surveyAdmin';
+import { useSurveyPollTallies, useSurveyQuestionSummaries } from './surveyAdmin';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
-const mockedPost = vi.mocked(apiClient.post);
-
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
-function makeWrapper(qc: QueryClient) {
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,9 +29,9 @@ describe('useSurveyPollTallies', () => {
         },
       ],
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyPollTallies('srv-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/tallies/');
@@ -66,48 +47,12 @@ describe('useSurveyPollTallies', () => {
   });
 });
 
-describe('useFinalizeSurveyPoll', () => {
-  it('should post winning datetime and refresh survey cache', async () => {
-    const wireSurvey = {
-      id: 'srv-1',
-      title: 't',
-      slug: 's',
-      visibility: 'members_only',
-      is_active: false,
-      questions: [],
-      poll_result: {
-        id: 'pr1',
-        winning_datetime: '2026-04-20T12:00:00.000Z',
-        finalized_by_id: 'u-me',
-        finalized_at: '2026-04-20T13:00:00.000Z',
-      },
-    };
-    mockedPost.mockResolvedValueOnce({ data: wireSurvey });
-    const qc = makeQc();
-    const { result } = renderHook(() => useFinalizeSurveyPoll('srv-1'), {
-      wrapper: makeWrapper(qc),
-    });
-    const dt = new Date('2026-04-20T12:00:00.000Z');
-    await result.current.mutateAsync(dt);
-    expect(mockedPost).toHaveBeenCalledWith('/api/community/surveys/srv-1/finalize/', {
-      winning_datetime: dt.toISOString(),
-    });
-    await waitFor(() => {
-      expect(qc.getQueryData(['surveys', 'admin', 'srv-1'])!).toEqual(
-        expect.objectContaining({
-          pollResult: expect.objectContaining({ id: 'pr1' }),
-        }),
-      );
-    });
-  });
-});
-
 describe('useSurveyQuestionSummaries', () => {
   it('should pass the event filter as event_id', async () => {
     mockedGet.mockResolvedValueOnce({ data: [] });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1', 'ev-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
@@ -120,7 +65,7 @@ describe('useSurveyQuestionSummaries', () => {
       data: [
         {
           question_id: 'q1',
-          field_type: 'rating',
+          field_type: QuestionType.Stars,
           counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
           answered: 2,
           mean: 3.5,
@@ -128,9 +73,9 @@ describe('useSurveyQuestionSummaries', () => {
         { question_id: 'q2', field_type: 'radio', counts: { red: 1 }, answered: 1 },
       ],
     });
-    const qc = makeQc();
+    const qc = makeQueryClient();
     const { result } = renderHook(() => useSurveyQuestionSummaries('srv-1'), {
-      wrapper: makeWrapper(qc),
+      wrapper: queryWrapper(qc),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/srv-1/summary/', {
@@ -139,7 +84,7 @@ describe('useSurveyQuestionSummaries', () => {
     const [rating, radio] = result.current.data!;
     expect(rating).toEqual({
       questionId: 'q1',
-      fieldType: 'rating',
+      fieldType: QuestionType.Stars,
       counts: { '1': 0, '2': 1, '3': 0, '4': 0, '5': 1 },
       answered: 2,
       mean: 3.5,
@@ -148,8 +93,8 @@ describe('useSurveyQuestionSummaries', () => {
   });
 
   it('should not fetch without a survey id', () => {
-    const qc = makeQc();
-    renderHook(() => useSurveyQuestionSummaries(undefined), { wrapper: makeWrapper(qc) });
+    const qc = makeQueryClient();
+    renderHook(() => useSurveyQuestionSummaries(undefined), { wrapper: queryWrapper(qc) });
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });

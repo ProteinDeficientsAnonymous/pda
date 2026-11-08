@@ -1,26 +1,16 @@
 import { Toggle } from '@/components/ui/Toggle';
 import type { User } from '@/models/user';
 
-type EmailPreferencesPatch = Partial<
-  Pick<
-    User,
-    | 'weeklyDigestOptOut'
-    | 'monthlyDigestOptOut'
-    | 'whatsappReminderOptOut'
-    | 'attendanceNudgeOptOut'
-  >
->;
+type EmailPreferenceKey =
+  | 'weeklyDigestOptOut'
+  | 'monthlyDigestOptOut'
+  | 'whatsappReminderOptOut'
+  | 'attendanceNudgeOptOut'
+  | 'hostDigestOptOut';
 
 interface EmailPreferencesProps {
-  user: Pick<
-    User,
-    | 'isMember'
-    | 'weeklyDigestOptOut'
-    | 'monthlyDigestOptOut'
-    | 'whatsappReminderOptOut'
-    | 'attendanceNudgeOptOut'
-  >;
-  onChange: (patch: EmailPreferencesPatch) => void;
+  user: Pick<User, 'isMember' | EmailPreferenceKey>;
+  onChange: (patch: Partial<Pick<User, EmailPreferenceKey>>) => void;
 }
 
 export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
@@ -60,6 +50,13 @@ export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
           }}
         />
       )}
+      <Toggle
+        label="updates about events i host"
+        checked={!user.hostDigestOptOut}
+        onChange={(v) => {
+          onChange({ hostDigestOptOut: !v });
+        }}
+      />
     </>
   );
 }

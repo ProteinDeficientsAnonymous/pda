@@ -1,27 +1,17 @@
 """Tests for ProseMirror JSON → HTML rendering."""
 
 import pytest
-from community._prosemirror_html import prosemirror_to_html
-from ninja_jwt.tokens import RefreshToken
-from users.models import Role, User
+from community.content.prosemirror_html import prosemirror_to_html
 from users.permissions import PermissionKey
+
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def edit_homepage_headers(db):
-    user = User.objects.create_user(
-        phone_number="+12025550999",
-        password="testpass",
-        first_name="PM",
-        last_name="Editor",
-    )
-    role = Role.objects.create(
-        name="pm_homepage_editor",
-        permissions=[PermissionKey.EDIT_HOMEPAGE],
-    )
-    user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+    user = make_user(PermissionKey.EDIT_HOMEPAGE)
+    return auth_headers_for(user)
 
 
 def _doc(*children):
@@ -138,6 +128,17 @@ class TestImages:
         # src is escaped as an HTML attribute value
         assert 'src="a&quot;b"' in html
 
+    def test_inline_image_hard_break_and_unknown_node(self):
+        pm = _doc(
+            _para(
+                _text("a"),
+                '{"type":"hardBreak"}',
+                '{"type":"image","attrs":{"src":"a\\"b"}}',
+                '{"type":"mystery"}',
+            )
+        )
+        assert prosemirror_to_html(pm) == '<p>a<br><img src="a&quot;b"></p>'
+
 
 class TestCta:
     def test_primary(self):
@@ -248,3 +249,15 @@ class TestContentPmEndpoint:
         assert data["content_pm"] != ""
         assert data["content"] == ""
         assert data["content_html"] == "<p>hi</p>"
+
+
+class TestSpeechBlank:
+    def test_renders_label_span(self):
+        blank = '{"type":"speechBlank","attrs":{"key":"walk_details"}}'
+        assert prosemirror_to_html(_doc(_para(blank))) == (
+            '<p><span class="speech-blank">walk details</span></p>'
+        )
+
+    def test_unknown_key_renders_nothing(self):
+        blank = '{"type":"speechBlank","attrs":{"key":"nope"}}'
+        assert prosemirror_to_html(_doc(_para(blank))) == "<p><br></p>"

@@ -289,6 +289,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/restored/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Restored Members */
+        get: operations["users__restored_list_restored_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/search/": {
         parameters: {
             query?: never;
@@ -322,6 +339,23 @@ export interface paths {
         head?: never;
         /** Update User */
         patch: operations["users__management_update_user"];
+        trace?: never;
+    };
+    "/api/auth/users/{user_id}/attendance-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attendance Pause Preview */
+        get: operations["users__attendance_pause_api_attendance_pause_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/auth/users/{user_id}/attended-events/": {
@@ -424,7 +458,7 @@ export interface paths {
             cookie?: never;
         };
         /** Calendar Feed */
-        get: operations["community__calendar_calendar_feed"];
+        get: operations["community_events_calendar_calendar_feed"];
         put?: never;
         post?: never;
         delete?: never;
@@ -441,10 +475,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Calendar Token */
-        get: operations["community__calendar_get_calendar_token"];
+        get: operations["community_events_calendar_get_calendar_token"];
         put?: never;
         /** Generate Calendar Token */
-        post: operations["community__calendar_generate_calendar_token"];
+        post: operations["community_events_calendar_generate_calendar_token"];
         delete?: never;
         options?: never;
         head?: never;
@@ -461,7 +495,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Check Phone */
-        post: operations["community__join_request_submit_check_phone"];
+        post: operations["community_join_requests_submit_check_phone"];
         delete?: never;
         options?: never;
         head?: never;
@@ -478,7 +512,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Dev Test Event */
-        post: operations["community__dev_tools_create_dev_test_event"];
+        post: operations["community_dev_tools_api_create_dev_test_event"];
         delete?: never;
         options?: never;
         head?: never;
@@ -495,7 +529,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Document */
-        post: operations["community__docs_documents_create_document"];
+        post: operations["community_content_documents_create_document"];
         delete?: never;
         options?: never;
         head?: never;
@@ -510,10 +544,10 @@ export interface paths {
             cookie?: never;
         };
         /** List Folders */
-        get: operations["community__docs_list_folders"];
+        get: operations["community_content_docs_list_folders"];
         put?: never;
         /** Create Folder */
-        post: operations["community__docs_create_folder"];
+        post: operations["community_content_docs_create_folder"];
         delete?: never;
         options?: never;
         head?: never;
@@ -529,7 +563,7 @@ export interface paths {
         };
         get?: never;
         /** Reorder Folders */
-        put: operations["community__docs_reorder_folders"];
+        put: operations["community_content_docs_reorder_folders"];
         post?: never;
         delete?: never;
         options?: never;
@@ -548,11 +582,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Folder */
-        delete: operations["community__docs_delete_folder"];
+        delete: operations["community_content_docs_delete_folder"];
         options?: never;
         head?: never;
         /** Update Folder */
-        patch: operations["community__docs_update_folder"];
+        patch: operations["community_content_docs_update_folder"];
         trace?: never;
     };
     "/api/community/docs/reorder/": {
@@ -564,7 +598,7 @@ export interface paths {
         };
         get?: never;
         /** Reorder Documents */
-        put: operations["community__docs_documents_reorder_documents"];
+        put: operations["community_content_documents_reorder_documents"];
         post?: never;
         delete?: never;
         options?: never;
@@ -580,15 +614,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get Document */
-        get: operations["community__docs_documents_get_document"];
+        get: operations["community_content_documents_get_document"];
         put?: never;
         post?: never;
         /** Delete Document */
-        delete: operations["community__docs_documents_delete_document"];
+        delete: operations["community_content_documents_delete_document"];
         options?: never;
         head?: never;
         /** Update Document */
-        patch: operations["community__docs_documents_update_document"];
+        patch: operations["community_content_documents_update_document"];
         trace?: never;
     };
     "/api/community/error-report/": {
@@ -616,7 +650,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Description Templates */
-        get: operations["community__event_description_templates_get_event_description_templates"];
+        get: operations["community_events_description_templates_get_event_description_templates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -633,7 +667,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Feedback */
-        get: operations["community__event_feedback_public_get_event_feedback"];
+        get: operations["community_event_feedback_public_get_event_feedback"];
         put?: never;
         post?: never;
         delete?: never;
@@ -652,7 +686,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Event Feedback */
-        post: operations["community__event_feedback_public_submit_event_feedback"];
+        post: operations["community_event_feedback_public_submit_event_feedback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -667,7 +701,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Event Flags */
-        get: operations["community__event_flags_list_event_flags"];
+        get: operations["community_events_flags_list_event_flags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -690,7 +724,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Review Event Flag */
-        patch: operations["community__event_flags_review_event_flag"];
+        patch: operations["community_events_flags_review_event_flag"];
         trace?: never;
     };
     "/api/community/event-tags/": {
@@ -701,10 +735,10 @@ export interface paths {
             cookie?: never;
         };
         /** List Event Tags */
-        get: operations["community__event_tags_list_event_tags"];
+        get: operations["community_events_tags_list_event_tags"];
         put?: never;
         /** Create Event Tag */
-        post: operations["community__event_tags_create_event_tag"];
+        post: operations["community_events_tags_create_event_tag"];
         delete?: never;
         options?: never;
         head?: never;
@@ -722,7 +756,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Event Tag */
-        delete: operations["community__event_tags_delete_event_tag"];
+        delete: operations["community_events_tags_delete_event_tag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -739,10 +773,10 @@ export interface paths {
          * List Events
          * @description start/end bound a calendar window; include_imported=false drops partiful/legacy rows.
          */
-        get: operations["community__events_list_events"];
+        get: operations["community_events_crud_list_events"];
         put?: never;
         /** Create Event */
-        post: operations["community__events_create_event"];
+        post: operations["community_events_crud_create_event"];
         delete?: never;
         options?: never;
         head?: never;
@@ -763,7 +797,7 @@ export interface paths {
          *     Pause candidates (no qualifying attendance in the last 12 months, or
          *     ever) sort first so admins triage them without scrolling.
          */
-        get: operations["community__attendance_report_member_attendance_analytics"];
+        get: operations["community_attendance_report_member_attendance_analytics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -782,7 +816,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Commit Attendance Import */
-        post: operations["community__attendance_import_commit_attendance_import"];
+        post: operations["community_attendance_csv_import_commit_attendance_import"];
         delete?: never;
         options?: never;
         head?: never;
@@ -797,7 +831,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Attendance Import Event Options */
-        get: operations["community__attendance_import_list_attendance_import_event_options"];
+        get: operations["community_attendance_csv_import_list_attendance_import_event_options"];
         put?: never;
         post?: never;
         delete?: never;
@@ -816,7 +850,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Preview Attendance Import */
-        post: operations["community__attendance_import_preview_attendance_import"];
+        post: operations["community_attendance_csv_import_preview_attendance_import"];
         delete?: never;
         options?: never;
         head?: never;
@@ -833,7 +867,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Mark Attendance */
-        post: operations["community__attendance_mark_mark_attendance"];
+        post: operations["community_attendance_mark_mark_attendance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -851,7 +885,7 @@ export interface paths {
          * Attendance Report
          * @description Per-event attendance summary, newest first, for events with any mark.
          */
-        get: operations["community__attendance_report_attendance_report"];
+        get: operations["community_attendance_report_attendance_report"];
         put?: never;
         post?: never;
         delete?: never;
@@ -871,14 +905,14 @@ export interface paths {
          * Get Event
          * @description Guest photo_urls are signed only for five preview avatars; GET /events/{id}/guests/ for the rest.
          */
-        get: operations["community__events_get_event"];
+        get: operations["community_events_crud_get_event"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Event */
-        patch: operations["community__events_update_event"];
+        patch: operations["community_events_crud_update_event"];
         trace?: never;
     };
     "/api/community/events/{event_id}/cohost-invites/": {
@@ -896,7 +930,7 @@ export interface paths {
          *     is touched. PATCH co_host_ids treats its list as a replacement set, so a
          *     caller that didn't resend pending invitees silently rescinded them.
          */
-        post: operations["community__event_cohost_invites_add_cohosts"];
+        post: operations["community_cohosts_invites_add_cohosts"];
         delete?: never;
         options?: never;
         head?: never;
@@ -918,7 +952,7 @@ export interface paths {
          * @description Rescind a pending invite. Removing an accepted co-host is a co_hosts
          *     operation — see the user-keyed DELETE .../cohosts/{user_id}/.
          */
-        delete: operations["community__event_cohost_invites_rescind_cohost_invite"];
+        delete: operations["community_cohosts_invites_rescind_cohost_invite"];
         options?: never;
         head?: never;
         patch?: never;
@@ -934,7 +968,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Accept Cohost Invite */
-        post: operations["community__event_cohost_invites_accept_cohost_invite"];
+        post: operations["community_cohosts_invites_accept_cohost_invite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -951,7 +985,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Decline Cohost Invite */
-        post: operations["community__event_cohost_invites_decline_cohost_invite"];
+        post: operations["community_cohosts_invites_decline_cohost_invite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -975,7 +1009,7 @@ export interface paths {
          *     Keyed on the user, not an invite: the creator has no invite row, so an
          *     invite-keyed route can't address them. created_by is left intact.
          */
-        delete: operations["community__event_cohost_invites_remove_cohost"];
+        delete: operations["community_cohosts_invites_remove_cohost"];
         options?: never;
         head?: never;
         patch?: never;
@@ -989,10 +1023,10 @@ export interface paths {
             cookie?: never;
         };
         /** List Comments */
-        get: operations["community__event_comments_list_comments"];
+        get: operations["community_events_comments_list_comments"];
         put?: never;
         /** Post Comment */
-        post: operations["community__event_comments_post_comment"];
+        post: operations["community_events_comments_post_comment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1010,7 +1044,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Comment */
-        delete: operations["community__event_comments_delete_comment"];
+        delete: operations["community_events_comments_delete_comment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1026,7 +1060,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Toggle Reaction */
-        post: operations["community__event_comments_toggle_reaction"];
+        post: operations["community_events_comments_toggle_reaction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1043,7 +1077,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Post Reply */
-        post: operations["community__event_comments_post_reply"];
+        post: operations["community_events_comments_post_reply"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1063,7 +1097,7 @@ export interface paths {
          * Send Email Blast
          * @description Email everyone who RSVP'd to this event in the chosen audience. Host/co-host only.
          */
-        post: operations["community__event_blasts_send_email_blast"];
+        post: operations["community_events_blasts_send_email_blast"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1078,7 +1112,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Feedback */
-        get: operations["community__event_feedback_host_get_event_feedback"];
+        get: operations["community_event_feedback_host_get_event_feedback"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1097,7 +1131,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Flag Event */
-        post: operations["community__event_flags_flag_event"];
+        post: operations["community_events_flags_flag_event"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1115,7 +1149,7 @@ export interface paths {
          * Get Event Guests
          * @description Full signed guest and invited photos, same visibility as event detail.
          */
-        get: operations["community__events_get_event_guests"];
+        get: operations["community_events_crud_get_event_guests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1132,7 +1166,7 @@ export interface paths {
             cookie?: never;
         };
         /** Single Event Ics */
-        get: operations["community__calendar_single_event_ics"];
+        get: operations["community_events_calendar_single_event_ics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1151,7 +1185,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Invite To Event */
-        post: operations["community__event_invitations_invite_to_event"];
+        post: operations["community_events_invitations_invite_to_event"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1166,7 +1200,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get My Event Feedback */
-        get: operations["community__event_feedback_host_get_my_event_feedback"];
+        get: operations["community_event_feedback_host_get_my_event_feedback"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1185,7 +1219,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Upload Event Photo */
-        post: operations["community__event_actions_upload_event_photo"];
+        post: operations["community_events_photos_upload_event_photo"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1200,12 +1234,12 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Poll */
-        get: operations["community__polls_get_event_poll"];
+        get: operations["community_polls_crud_get_event_poll"];
         put?: never;
         /** Create Event Poll */
-        post: operations["community__polls_create_event_poll"];
+        post: operations["community_polls_crud_create_event_poll"];
         /** Delete Event Poll */
-        delete: operations["community__polls_delete_event_poll"];
+        delete: operations["community_polls_crud_delete_event_poll"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1221,7 +1255,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Finalize Event Poll */
-        post: operations["community__polls_finalize_event_poll"];
+        post: operations["community_polls_crud_finalize_event_poll"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1238,7 +1272,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add Poll Option */
-        post: operations["community__poll_options_add_poll_option"];
+        post: operations["community_polls_options_add_poll_option"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1256,11 +1290,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Poll Option */
-        delete: operations["community__poll_options_delete_poll_option"];
+        delete: operations["community_polls_options_delete_poll_option"];
         options?: never;
         head?: never;
         /** Update Poll Option */
-        patch: operations["community__poll_options_update_poll_option"];
+        patch: operations["community_polls_options_update_poll_option"];
         trace?: never;
     };
     "/api/community/events/{event_id}/poll/vote/": {
@@ -1273,7 +1307,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Vote On Event Poll */
-        post: operations["community__polls_vote_on_event_poll"];
+        post: operations["community_polls_crud_vote_on_event_poll"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1288,7 +1322,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Check In Report Csv */
-        get: operations["community__event_report_get_check_in_report_csv"];
+        get: operations["community_events_report_get_check_in_report_csv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1305,7 +1339,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Check In Report */
-        get: operations["community__event_report_get_check_in_report"];
+        get: operations["community_events_report_get_check_in_report"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1323,7 +1357,7 @@ export interface paths {
         };
         get?: never;
         /** Replace Event Rsvp Questions */
-        put: operations["community__event_rsvp_questions_replace_event_rsvp_questions"];
+        put: operations["community_rsvps_questions_replace_event_rsvp_questions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1341,9 +1375,29 @@ export interface paths {
         get?: never;
         put?: never;
         /** Upsert Rsvp */
-        post: operations["community__event_rsvps_upsert_rsvp"];
+        post: operations["community_rsvps_member_upsert_rsvp"];
         /** Delete Rsvp */
-        delete: operations["community__event_rsvps_delete_rsvp"];
+        delete: operations["community_rsvps_member_delete_rsvp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/rsvps/payments/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Guest Payments
+         * @description Bulk-verify attending/waitlisted guests' payments; needs import_payments and hosting rights.
+         */
+        post: operations["community_rsvps_host_verify_guest_payments"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1359,7 +1413,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Set Attendance */
-        post: operations["community__event_host_actions_set_attendance"];
+        post: operations["community_events_host_actions_set_attendance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1381,9 +1435,9 @@ export interface paths {
         head?: never;
         /**
          * Set Guest Payment
-         * @description Let a host confirm or retract a guest's payment without touching their rsvp status.
+         * @description Let a host verify or un-verify a guest's payment without touching their rsvp status.
          */
-        patch: operations["community__event_host_rsvps_set_guest_payment"];
+        patch: operations["community_rsvps_host_set_guest_payment"];
         trace?: never;
     };
     "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/": {
@@ -1399,12 +1453,30 @@ export interface paths {
          * Set Guest Rsvp
          * @description Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872).
          */
-        post: operations["community__event_host_rsvps_set_guest_rsvp"];
+        post: operations["community_rsvps_host_set_guest_rsvp"];
         /**
          * Remove Guest Rsvp
          * @description Let an event host/co-host/manager remove another user's rsvp entirely.
          */
-        delete: operations["community__event_host_rsvps_remove_guest_rsvp"];
+        delete: operations["community_rsvps_host_remove_guest_rsvp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/speech/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Speech */
+        get: operations["community_speech_event_speech_get_event_speech"];
+        /** Put Event Speech */
+        put: operations["community_speech_event_speech_put_event_speech"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1418,7 +1490,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Stats */
-        get: operations["community__event_host_actions_get_event_stats"];
+        get: operations["community_events_host_actions_get_event_stats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1435,7 +1507,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Text Recipients */
-        get: operations["community__event_host_actions_get_text_recipients"];
+        get: operations["community_events_host_actions_get_text_recipients"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1456,7 +1528,7 @@ export interface paths {
          * Reorder Waitlist
          * @description Let an event host/co-host/manager set the waitlist order (Issue 1553).
          */
-        put: operations["community__event_waitlist_order_reorder_waitlist"];
+        put: operations["community_rsvps_waitlist_order_reorder_waitlist"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1472,14 +1544,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Faq */
-        get: operations["community__guidelines_get_faq"];
+        get: operations["community_content_guidelines_get_faq"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Faq */
-        patch: operations["community__guidelines_update_faq"];
+        patch: operations["community_content_guidelines_update_faq"];
         trace?: never;
     };
     "/api/community/feedback/": {
@@ -1510,7 +1582,7 @@ export interface paths {
          * Geocode
          * @description Proxy geocoding requests to Photon, biased toward NYC.
          */
-        get: operations["community__geocode_geocode"];
+        get: operations["community_events_geocode_geocode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1550,14 +1622,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Guidelines */
-        get: operations["community__guidelines_get_guidelines"];
+        get: operations["community_content_guidelines_get_guidelines"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Guidelines */
-        patch: operations["community__guidelines_update_guidelines"];
+        patch: operations["community_content_guidelines_update_guidelines"];
         trace?: never;
     };
     "/api/community/home/": {
@@ -1568,14 +1640,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Home */
-        get: operations["community__home_get_home"];
+        get: operations["community_content_home_get_home"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Home */
-        patch: operations["community__home_update_home"];
+        patch: operations["community_content_home_update_home"];
         trace?: never;
     };
     "/api/community/join-form/": {
@@ -1586,7 +1658,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Join Form */
-        get: operations["community__join_form_get_join_form"];
+        get: operations["community_join_requests_form_get_join_form"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1605,7 +1677,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Join Form Question */
-        post: operations["community__join_form_create_join_form_question"];
+        post: operations["community_join_requests_form_create_join_form_question"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1621,7 +1693,7 @@ export interface paths {
         };
         get?: never;
         /** Reorder Join Form Questions */
-        put: operations["community__join_form_reorder_join_form_questions"];
+        put: operations["community_join_requests_form_reorder_join_form_questions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1640,11 +1712,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Join Form Question */
-        delete: operations["community__join_form_delete_join_form_question"];
+        delete: operations["community_join_requests_form_delete_join_form_question"];
         options?: never;
         head?: never;
         /** Update Join Form Question */
-        patch: operations["community__join_form_update_join_form_question"];
+        patch: operations["community_join_requests_form_update_join_form_question"];
         trace?: never;
     };
     "/api/community/join-request/": {
@@ -1672,7 +1744,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Join Requests */
-        get: operations["community__join_requests_list_join_requests"];
+        get: operations["community_join_requests_manage_list_join_requests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1695,7 +1767,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update Join Request Status */
-        patch: operations["community__join_requests_update_join_request_status"];
+        patch: operations["community_join_requests_manage_update_join_request_status"];
         trace?: never;
     };
     "/api/community/join-requests/{id}/resend-magic-link/": {
@@ -1715,7 +1787,7 @@ export interface paths {
          *     on already-logged-in users (use the members screen's password reset
          *     flow for that).
          */
-        post: operations["community__join_request_resend_resend_magic_link"];
+        post: operations["community_join_requests_resend_resend_magic_link"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1736,7 +1808,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Unreject Join Request */
-        patch: operations["community__join_request_unreject_unreject_join_request"];
+        patch: operations["community_join_requests_unreject_unreject_join_request"];
         trace?: never;
     };
     "/api/community/member-promotion-email/": {
@@ -1747,14 +1819,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Member Promotion Email */
-        get: operations["community__member_promotion_email_get_member_promotion_email"];
+        get: operations["community_message_templates_member_promotion_email_get_member_promotion_email"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Member Promotion Email */
-        patch: operations["community__member_promotion_email_update_member_promotion_email"];
+        patch: operations["community_message_templates_member_promotion_email_update_member_promotion_email"];
         trace?: never;
     };
     "/api/community/member-promotion-message/": {
@@ -1765,14 +1837,49 @@ export interface paths {
             cookie?: never;
         };
         /** Get Member Promotion Message */
-        get: operations["community__member_promotion_message_get_member_promotion_message"];
+        get: operations["community_message_templates_member_promotion_message_get_member_promotion_message"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Member Promotion Message */
-        patch: operations["community__member_promotion_message_update_member_promotion_message"];
+        patch: operations["community_message_templates_member_promotion_message_update_member_promotion_message"];
+        trace?: never;
+    };
+    "/api/community/member-restored-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Restored Email */
+        get: operations["community_message_templates_member_restored_email_get_member_restored_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Member Restored Email */
+        patch: operations["community_message_templates_member_restored_email_update_member_restored_email"];
+        trace?: never;
+    };
+    "/api/community/official-event-defaults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Official Event Defaults */
+        get: operations["community_events_official_defaults_get_official_event_defaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/pages/{slug}/": {
@@ -1783,14 +1890,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Page */
-        get: operations["community__pages_get_page"];
+        get: operations["community_content_pages_get_page"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Page */
-        patch: operations["community__pages_update_page"];
+        patch: operations["community_content_pages_update_page"];
         trace?: never;
     };
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
@@ -1806,7 +1913,7 @@ export interface paths {
          * Check Public Rsvp Phone
          * @description Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.
          */
-        post: operations["community__public_rsvp_submit_check_public_rsvp_phone"];
+        post: operations["community_rsvps_public_submit_check_public_rsvp_phone"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1823,7 +1930,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Public Rsvp */
-        post: operations["community__public_rsvp_submit_submit_public_rsvp"];
+        post: operations["community_rsvps_public_submit_submit_public_rsvp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1838,7 +1945,7 @@ export interface paths {
             cookie?: never;
         };
         /** List My Rsvps */
-        get: operations["community__public_rsvp_manage_list_my_rsvps"];
+        get: operations["community_rsvps_public_manage_list_my_rsvps"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1867,7 +1974,7 @@ export interface paths {
          *     sends synchronously, so it's marginally slower; the 3/h IP rate limit keeps
          *     that timing side channel impractical to exploit.
          */
-        post: operations["community__public_rsvp_resend_resend_manage_link"];
+        post: operations["community_rsvps_public_resend_resend_manage_link"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1884,9 +1991,9 @@ export interface paths {
         get?: never;
         put?: never;
         /** Update My Rsvp */
-        post: operations["community__public_rsvp_manage_update_my_rsvp"];
+        post: operations["community_rsvps_public_manage_update_my_rsvp"];
         /** Delete My Rsvp */
-        delete: operations["community__public_rsvp_manage_delete_my_rsvp"];
+        delete: operations["community_rsvps_public_manage_delete_my_rsvp"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1900,14 +2007,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Rejection Email */
-        get: operations["community__rejection_email_get_rejection_email"];
+        get: operations["community_message_templates_rejection_email_get_rejection_email"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Rejection Email */
-        patch: operations["community__rejection_email_update_rejection_email"];
+        patch: operations["community_message_templates_rejection_email_update_rejection_email"];
         trace?: never;
     };
     "/api/community/request-login-link/": {
@@ -1933,6 +2040,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/speech-template/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Speech Template */
+        get: operations["community_speech_template_get_speech_template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Speech Template */
+        patch: operations["community_speech_template_update_speech_template"];
+        trace?: never;
+    };
     "/api/community/surveys/": {
         parameters: {
             query?: never;
@@ -1943,7 +2068,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Survey */
-        post: operations["community__surveys_create_survey"];
+        post: operations["community_surveys_crud_create_survey"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1958,7 +2083,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Surveys Admin */
-        get: operations["community__surveys_list_surveys_admin"];
+        get: operations["community_surveys_crud_list_surveys_admin"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1975,7 +2100,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Public */
-        get: operations["community__surveys_public_get_survey_public"];
+        get: operations["community_surveys_public_get_survey_public"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1994,7 +2119,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Survey Response */
-        post: operations["community__surveys_public_submit_survey_response"];
+        post: operations["community_surveys_public_submit_survey_response"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2012,11 +2137,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Survey */
-        delete: operations["community__surveys_delete_survey"];
+        delete: operations["community_surveys_crud_delete_survey"];
         options?: never;
         head?: never;
         /** Update Survey */
-        patch: operations["community__surveys_update_survey"];
+        patch: operations["community_surveys_crud_update_survey"];
         trace?: never;
     };
     "/api/community/surveys/{survey_id}/admin/": {
@@ -2027,26 +2152,9 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Admin */
-        get: operations["community__surveys_get_survey_admin"];
+        get: operations["community_surveys_crud_get_survey_admin"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/community/surveys/{survey_id}/finalize/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Finalize Poll */
-        post: operations["community__surveys_public_finalize_poll"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2063,7 +2171,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Survey Question */
-        post: operations["community__surveys_create_survey_question"];
+        post: operations["community_surveys_crud_create_survey_question"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2079,7 +2187,7 @@ export interface paths {
         };
         get?: never;
         /** Reorder Survey Questions */
-        put: operations["community__surveys_reorder_survey_questions"];
+        put: operations["community_surveys_crud_reorder_survey_questions"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2098,11 +2206,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Survey Question */
-        delete: operations["community__surveys_delete_survey_question"];
+        delete: operations["community_surveys_crud_delete_survey_question"];
         options?: never;
         head?: never;
         /** Update Survey Question */
-        patch: operations["community__surveys_update_survey_question"];
+        patch: operations["community_surveys_crud_update_survey_question"];
         trace?: never;
     };
     "/api/community/surveys/{survey_id}/responses.csv": {
@@ -2113,7 +2221,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Responses Csv */
-        get: operations["community__survey_reports_get_survey_responses_csv"];
+        get: operations["community_surveys_reports_get_survey_responses_csv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2130,7 +2238,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Survey Responses */
-        get: operations["community__surveys_responses_list_survey_responses"];
+        get: operations["community_surveys_responses_list_survey_responses"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2150,7 +2258,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Survey Response */
-        delete: operations["community__surveys_responses_delete_survey_response"];
+        delete: operations["community_surveys_responses_delete_survey_response"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2164,7 +2272,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Summary */
-        get: operations["community__survey_reports_get_survey_summary"];
+        get: operations["community_surveys_reports_get_survey_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2181,7 +2289,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Survey Tallies */
-        get: operations["community__surveys_public_get_survey_tallies"];
+        get: operations["community_surveys_public_get_survey_tallies"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2198,14 +2306,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Tentative Approval Message */
-        get: operations["community__tentative_approval_message_get_tentative_approval_message"];
+        get: operations["community_message_templates_tentative_approval_get_tentative_approval_message"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Tentative Approval Message */
-        patch: operations["community__tentative_approval_message_update_tentative_approval_message"];
+        patch: operations["community_message_templates_tentative_approval_update_tentative_approval_message"];
         trace?: never;
     };
     "/api/community/version/": {
@@ -2233,14 +2341,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Welcome Template */
-        get: operations["community__welcome_template_get_welcome_template"];
+        get: operations["community_message_templates_welcome_get_welcome_template"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Welcome Template */
-        patch: operations["community__welcome_template_update_welcome_template"];
+        patch: operations["community_message_templates_welcome_update_welcome_template"];
         trace?: never;
     };
     "/api/community/whatsapp-link/": {
@@ -2251,14 +2359,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get Whatsapp Link */
-        get: operations["community__whatsapp_link_get_whatsapp_link"];
+        get: operations["community_message_templates_whatsapp_link_get_whatsapp_link"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Whatsapp Link */
-        patch: operations["community__whatsapp_link_update_whatsapp_link"];
+        patch: operations["community_message_templates_whatsapp_link_update_whatsapp_link"];
         trace?: never;
     };
     "/api/connect/apps/": {
@@ -2590,6 +2698,11 @@ export interface components {
             /** Updated Count */
             updated_count: number;
         };
+        /** AttendancePausePreviewOut */
+        AttendancePausePreviewOut: {
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
+        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -2613,6 +2726,17 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "unknown" | "attended" | "didnt_go";
+        /** AttendedEventOut */
+        AttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** AttendedPersonOut */
         AttendedPersonOut: {
             /** Checked In At */
@@ -2651,6 +2775,23 @@ export interface components {
             month: number;
             /** Year */
             year?: number | null;
+        };
+        /** BulkPaymentVerifyIn */
+        BulkPaymentVerifyIn: {
+            /** User Ids */
+            user_ids: string[];
+        };
+        /** BulkPaymentVerifyOut */
+        BulkPaymentVerifyOut: {
+            /** Already Verified User Ids */
+            already_verified_user_ids: string[];
+            /**
+             * Event Verified Total
+             * @description Rsvps on the event with a verified payment now.
+             */
+            event_verified_total: number;
+            /** Verified User Ids */
+            verified_user_ids: string[];
         };
         /** BulkUserCreateIn */
         BulkUserCreateIn: {
@@ -3378,6 +3519,8 @@ export interface components {
             description: string;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Event Type
              * @default community
@@ -3472,34 +3615,10 @@ export interface components {
              */
             attending_count: number;
             /**
-             * Cashapp Link
-             * @default
-             */
-            cashapp_link: string;
-            /**
              * Co Host Ids
              * @default []
              */
             co_host_ids: string[];
-            /**
-             * Co Host Names
-             * @default []
-             */
-            co_host_names: string[];
-            /**
-             * Co Host Photo Urls
-             * @default []
-             */
-            co_host_photo_urls: string[];
-            /** Created By Id */
-            created_by_id?: string | null;
-            /** Created By Name */
-            created_by_name?: string | null;
-            /**
-             * Created By Photo Url
-             * @default
-             */
-            created_by_photo_url: string;
             /**
              * Datetime Tbd
              * @default false
@@ -3522,11 +3641,6 @@ export interface components {
             /** Id */
             id: string;
             /**
-             * Invited Count
-             * @default 0
-             */
-            invited_count: number;
-            /**
              * Is Legacy
              * @default false
              */
@@ -3541,12 +3655,8 @@ export interface components {
              * @default false
              */
             is_past: boolean;
-            /** Latitude */
-            latitude?: number | null;
             /** Location */
             location: string;
-            /** Longitude */
-            longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
             /**
@@ -3556,23 +3666,6 @@ export interface components {
             my_paid_confirmed: boolean;
             /** My Rsvp */
             my_rsvp?: string | null;
-            /**
-             * Other Link
-             * @default
-             */
-            other_link: string;
-            /**
-             * Partiful Link
-             * @default
-             */
-            partiful_link: string;
-            /** Photo Updated At */
-            photo_updated_at?: string | null;
-            /**
-             * Photo Url
-             * @default
-             */
-            photo_url: string;
             /**
              * Price
              * @default
@@ -3598,11 +3691,6 @@ export interface components {
             /** Title */
             title: string;
             /**
-             * Venmo Link
-             * @default
-             */
-            venmo_link: string;
-            /**
              * Visibility
              * @default public
              */
@@ -3612,16 +3700,6 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
-            /**
-             * Whatsapp Link
-             * @default
-             */
-            whatsapp_link: string;
-            /**
-             * Zelle Info
-             * @default
-             */
-            zelle_info: string;
         };
         /** EventListQuery */
         EventListQuery: {
@@ -3702,8 +3780,6 @@ export interface components {
              * @default
              */
             created_by_photo_url: string;
-            /** Datetime Poll Slug */
-            datetime_poll_slug?: string | null;
             /**
              * Datetime Tbd
              * @default false
@@ -3713,6 +3789,8 @@ export interface components {
             description: string;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Event Type
              * @default community
@@ -3777,11 +3855,6 @@ export interface components {
             is_past: boolean;
             /** Latitude */
             latitude?: number | null;
-            /**
-             * Linked Surveys
-             * @default []
-             */
-            linked_surveys: components["schemas"]["EventSurveyOut"][];
             /** Location */
             location: string;
             /** Longitude */
@@ -3902,6 +3975,8 @@ export interface components {
             description?: string | null;
             /** End Datetime */
             end_datetime?: string | null;
+            /** Event Format */
+            event_format?: string | null;
             /** Event Type */
             event_type?: string | null;
             /** Force */
@@ -4122,6 +4197,34 @@ export interface components {
             /** Questions */
             questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
         };
+        /** EventSpeechIn */
+        EventSpeechIn: {
+            /** Event Format */
+            event_format?: string | null;
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
+        };
+        /** EventSpeechOut */
+        EventSpeechOut: {
+            /** Event Format */
+            event_format: string | null;
+            /** Event Title */
+            event_title: string;
+            /** Html */
+            html: string;
+            /** Saved */
+            saved: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
+            /** Values */
+            values: {
+                [key: string]: string | string[];
+            };
+        };
         /** EventStatsOut */
         EventStatsOut: {
             /**
@@ -4170,15 +4273,6 @@ export interface components {
              */
             waitlisted_count: number;
         };
-        /** EventSurveyOut */
-        EventSurveyOut: {
-            /** Id */
-            id: string;
-            /** Slug */
-            slug: string;
-            /** Title */
-            title: string;
-        };
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -4220,14 +4314,6 @@ export interface components {
          * @enum {string}
          */
         FeedbackType: "bug" | "feature request" | "improvement";
-        /** FinalizePollIn */
-        FinalizePollIn: {
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
-        };
         /** FolderIn */
         FolderIn: {
             /** Name */
@@ -4481,17 +4567,6 @@ export interface components {
             /** Question Id */
             question_id: string;
         };
-        /** JoinRequestAttendedEventOut */
-        JoinRequestAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
-        };
         /** JoinRequestIn */
         JoinRequestIn: {
             /**
@@ -4545,6 +4620,10 @@ export interface components {
             approved_at?: string | null;
             /** Approved By Name */
             approved_by_name?: string | null;
+            /** Approved Via Event Id */
+            approved_via_event_id?: string | null;
+            /** Approved Via Event Title */
+            approved_via_event_title?: string | null;
             /**
              * Attended Club Count
              * @default 0
@@ -4554,7 +4633,7 @@ export interface components {
              * Attended Events
              * @default []
              */
-            attended_events: components["schemas"]["JoinRequestAttendedEventOut"][];
+            attended_events: components["schemas"]["AttendedEventOut"][];
             /**
              * Attended Official Count
              * @default 0
@@ -4668,6 +4747,22 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** JoinRequestSubmittedOut */
+        JoinRequestSubmittedOut: {
+            /** First Name */
+            first_name: string;
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
         /** LoginIn */
         LoginIn: {
             /** Password */
@@ -4699,6 +4794,8 @@ export interface components {
             has_seen_veganniversary?: boolean | null;
             /** Hide Last Name */
             hide_last_name?: boolean | null;
+            /** Host Digest Opt Out */
+            host_digest_opt_out?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Monthly Digest Opt Out */
@@ -4782,17 +4879,6 @@ export interface components {
             qualifying_count_12mo: number;
             /** User Id */
             user_id: string;
-        };
-        /** MemberAttendedEventOut */
-        MemberAttendedEventOut: {
-            /** Event Id */
-            event_id: string;
-            /** Event Type */
-            event_type: string;
-            /** Start Datetime */
-            start_datetime?: string | null;
-            /** Title */
-            title: string;
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
@@ -4913,6 +4999,21 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /** MemberRestoredEmailOut */
+        MemberRestoredEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberRestoredEmailPatchIn */
+        MemberRestoredEmailPatchIn: {
+            /** Body */
+            body?: string | null;
+        };
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
@@ -4940,6 +5041,13 @@ export interface components {
             /** Survey Id */
             survey_id: string | null;
         };
+        /** OfficialEventDefaultsOut */
+        OfficialEventDefaultsOut: {
+            /** Cashapp Link */
+            cashapp_link: string;
+            /** Rsvp Questions */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
+        };
         /** OnboardingIn */
         OnboardingIn: {
             /** Consent Types */
@@ -4955,6 +5063,27 @@ export interface components {
             /** Pronouns */
             pronouns?: string | null;
         };
+        /** PauseImpactEventOut */
+        PauseImpactEventOut: {
+            /** Id */
+            id: string;
+            outcome: components["schemas"]["PauseOutcome"];
+            role: components["schemas"]["PauseRole"];
+            /** Start Datetime */
+            start_datetime: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * PauseOutcome
+         * @enum {string}
+         */
+        PauseOutcome: "kept" | "removed" | "drafted";
+        /**
+         * PauseRole
+         * @enum {string}
+         */
+        PauseRole: "rsvp" | "hosting";
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
             /** Id */
@@ -4981,23 +5110,6 @@ export interface components {
              * Format: date-time
              */
             datetime: string;
-        };
-        /** PollResultOut */
-        PollResultOut: {
-            /**
-             * Finalized At
-             * Format: date-time
-             */
-            finalized_at: string;
-            /** Finalized By Id */
-            finalized_by_id?: string | null;
-            /** Id */
-            id: string;
-            /**
-             * Winning Datetime
-             * Format: date-time
-             */
-            winning_datetime: string;
         };
         /** PollResultsOut */
         PollResultsOut: {
@@ -5049,10 +5161,10 @@ export interface components {
             phone_number: string;
             /**
              * Questionnaire Responses
-             * @description Question UUID to answer; checkbox values are comma-separated.
+             * @description Question UUID to answer; checkbox answers are a list of ticked options.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             /** Status */
             status: string;
@@ -5081,7 +5193,7 @@ export interface components {
              * @description Question UUID to answer; omit or send null to preserve saved answers.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             } | null;
             /** Status */
             status: string;
@@ -5156,7 +5268,7 @@ export interface components {
          * @description HTML-aligned question type catalog (wire values).
          * @enum {string}
          */
-        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll" | "section";
+        QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "stars" | "scale" | "datetime_poll" | "section";
         /** RSVPGuestOut */
         RSVPGuestOut: {
             /** @default unknown */
@@ -5177,9 +5289,16 @@ export interface components {
             name: string;
             /**
              * Paid Confirmed
+             * @description Guest says they paid, or a host verified it.
              * @default false
              */
             paid_confirmed: boolean;
+            /**
+             * Payment Verified
+             * @description A host verified the payment.
+             * @default false
+             */
+            payment_verified: boolean;
             /** Phone */
             phone?: string | null;
             /**
@@ -5219,10 +5338,10 @@ export interface components {
             paid_confirmed: boolean;
             /**
              * Questionnaire Responses
-             * @description Question UUID to answer; checkbox values are comma-separated.
+             * @description Question UUID to answer; checkbox answers are a list of ticked options.
              */
             questionnaire_responses?: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             status: components["schemas"]["RSVPStatus"];
         };
@@ -5309,6 +5428,31 @@ export interface components {
             /** Magic Link Token */
             magic_link_token: string;
         };
+        /** RestoredMemberOut */
+        RestoredMemberOut: {
+            /** Came In Person At */
+            came_in_person_at: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Has Joined Whatsapp */
+            has_joined_whatsapp: boolean;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["ReturnKind"];
+            /** Phone Number */
+            phone_number: string;
+            /** Recent Events */
+            recent_events: components["schemas"]["AttendedEventOut"][];
+            /** Restored At */
+            restored_at: string | null;
+            /** Unpaused At */
+            unpaused_at: string | null;
+        };
+        /**
+         * ReturnKind
+         * @enum {string}
+         */
+        ReturnKind: "restored" | "unpaused";
         /** RoleIn */
         RoleIn: {
             /** Name */
@@ -5368,6 +5512,33 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** SpeechTemplateOut */
+        SpeechTemplateOut: {
+            /** Open Roles */
+            open_roles: string[];
+            /** Restaurant Pm */
+            restaurant_pm: string;
+            /** Shared Pm */
+            shared_pm: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Walk Pm */
+            walk_pm: string;
+        };
+        /** SpeechTemplatePatchIn */
+        SpeechTemplatePatchIn: {
+            /** Open Roles */
+            open_roles?: string[] | null;
+            /** Restaurant Pm */
+            restaurant_pm?: string | null;
+            /** Shared Pm */
+            shared_pm?: string | null;
+            /** Walk Pm */
+            walk_pm?: string | null;
+        };
         /** SseTicketOut */
         SseTicketOut: {
             /** Ticket */
@@ -5377,7 +5548,7 @@ export interface components {
         SurveyAnswersIn: {
             /** Answers */
             answers: {
-                [key: string]: string | {
+                [key: string]: string | string[] | {
                     [key: string]: string;
                 };
             };
@@ -5412,8 +5583,6 @@ export interface components {
              * @default true
              */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /**
@@ -5446,8 +5615,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** Opens At */
@@ -5496,8 +5663,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** My Answers */
@@ -5513,7 +5678,6 @@ export interface components {
             one_response_per_user: boolean;
             /** Opens At */
             opens_at?: string | null;
-            poll_result?: components["schemas"]["PollResultOut"] | null;
             /**
              * Questions
              * @default []
@@ -5545,8 +5709,6 @@ export interface components {
             feedback_event_type?: ("official" | "club" | "") | null;
             /** Is Active */
             is_active?: boolean | null;
-            /** Linked Event Id */
-            linked_event_id?: string | null;
             /** Max Responses */
             max_responses?: number | null;
             /** One Response Per User */
@@ -5781,6 +5943,8 @@ export interface components {
              * @default false
              */
             attendance_nudge_opt_out: boolean;
+            /** Attendance Paused At */
+            attendance_paused_at?: string | null;
             /**
              * Attended Count
              * @default 0
@@ -5842,6 +6006,11 @@ export interface components {
              * @default false
              */
             hide_last_name: boolean;
+            /**
+             * Host Digest Opt Out
+             * @default false
+             */
+            host_digest_opt_out: boolean;
             /** Id */
             id: string;
             /**
@@ -5920,6 +6089,8 @@ export interface components {
              * @default
              */
             pronouns: string;
+            /** Restored At */
+            restored_at?: string | null;
             /** Roles */
             roles: components["schemas"]["RoleOut"][];
             /**
@@ -5942,6 +6113,8 @@ export interface components {
              * @default true
              */
             show_veganniversary: boolean;
+            /** Unpaused At */
+            unpaused_at?: string | null;
             veganniversary?: components["schemas"]["VeganniversaryOut"] | null;
             /**
              * Veganniversary Shoutout Opt In
@@ -5966,6 +6139,8 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
+            /** Attendance Paused */
+            attendance_paused?: boolean | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -6846,6 +7021,35 @@ export interface operations {
             };
         };
     };
+    users__restored_list_restored_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoredMemberOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     users__management_search_users: {
         parameters: {
             query?: {
@@ -6977,6 +7181,46 @@ export interface operations {
             };
         };
     };
+    users__attendance_pause_api_attendance_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     users__management_list_member_attended_events: {
         parameters: {
             query?: never;
@@ -6994,7 +7238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberAttendedEventOut"][];
+                    "application/json": components["schemas"]["AttendedEventOut"][];
                 };
             };
             /** @description Forbidden */
@@ -7197,7 +7441,7 @@ export interface operations {
             };
         };
     };
-    community__calendar_calendar_feed: {
+    community_events_calendar_calendar_feed: {
         parameters: {
             query?: {
                 token?: string;
@@ -7217,7 +7461,7 @@ export interface operations {
             };
         };
     };
-    community__calendar_get_calendar_token: {
+    community_events_calendar_get_calendar_token: {
         parameters: {
             query?: never;
             header?: never;
@@ -7237,7 +7481,7 @@ export interface operations {
             };
         };
     };
-    community__calendar_generate_calendar_token: {
+    community_events_calendar_generate_calendar_token: {
         parameters: {
             query?: never;
             header?: never;
@@ -7257,7 +7501,7 @@ export interface operations {
             };
         };
     };
-    community__join_request_submit_check_phone: {
+    community_join_requests_submit_check_phone: {
         parameters: {
             query?: never;
             header?: never;
@@ -7290,7 +7534,7 @@ export interface operations {
             };
         };
     };
-    community__dev_tools_create_dev_test_event: {
+    community_dev_tools_api_create_dev_test_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -7323,7 +7567,7 @@ export interface operations {
             };
         };
     };
-    community__docs_documents_create_document: {
+    community_content_documents_create_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -7365,7 +7609,7 @@ export interface operations {
             };
         };
     };
-    community__docs_list_folders: {
+    community_content_docs_list_folders: {
         parameters: {
             query?: never;
             header?: never;
@@ -7394,7 +7638,7 @@ export interface operations {
             };
         };
     };
-    community__docs_create_folder: {
+    community_content_docs_create_folder: {
         parameters: {
             query?: never;
             header?: never;
@@ -7436,7 +7680,7 @@ export interface operations {
             };
         };
     };
-    community__docs_reorder_folders: {
+    community_content_docs_reorder_folders: {
         parameters: {
             query?: never;
             header?: never;
@@ -7471,7 +7715,7 @@ export interface operations {
             };
         };
     };
-    community__docs_delete_folder: {
+    community_content_docs_delete_folder: {
         parameters: {
             query?: never;
             header?: never;
@@ -7513,7 +7757,7 @@ export interface operations {
             };
         };
     };
-    community__docs_update_folder: {
+    community_content_docs_update_folder: {
         parameters: {
             query?: never;
             header?: never;
@@ -7557,7 +7801,7 @@ export interface operations {
             };
         };
     };
-    community__docs_documents_reorder_documents: {
+    community_content_documents_reorder_documents: {
         parameters: {
             query?: never;
             header?: never;
@@ -7592,7 +7836,7 @@ export interface operations {
             };
         };
     };
-    community__docs_documents_get_document: {
+    community_content_documents_get_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -7632,7 +7876,7 @@ export interface operations {
             };
         };
     };
-    community__docs_documents_delete_document: {
+    community_content_documents_delete_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -7674,7 +7918,7 @@ export interface operations {
             };
         };
     };
-    community__docs_documents_update_document: {
+    community_content_documents_update_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -7742,7 +7986,7 @@ export interface operations {
             };
         };
     };
-    community__event_description_templates_get_event_description_templates: {
+    community_events_description_templates_get_event_description_templates: {
         parameters: {
             query?: never;
             header?: never;
@@ -7762,7 +8006,7 @@ export interface operations {
             };
         };
     };
-    community__event_feedback_public_get_event_feedback: {
+    community_event_feedback_public_get_event_feedback: {
         parameters: {
             query?: never;
             header?: {
@@ -7802,7 +8046,7 @@ export interface operations {
             };
         };
     };
-    community__event_feedback_public_submit_event_feedback: {
+    community_event_feedback_public_submit_event_feedback: {
         parameters: {
             query?: never;
             header?: {
@@ -7864,7 +8108,7 @@ export interface operations {
             };
         };
     };
-    community__event_flags_list_event_flags: {
+    community_events_flags_list_event_flags: {
         parameters: {
             query?: {
                 status?: string | null;
@@ -7895,7 +8139,7 @@ export interface operations {
             };
         };
     };
-    community__event_flags_review_event_flag: {
+    community_events_flags_review_event_flag: {
         parameters: {
             query?: never;
             header?: never;
@@ -7948,7 +8192,7 @@ export interface operations {
             };
         };
     };
-    community__event_tags_list_event_tags: {
+    community_events_tags_list_event_tags: {
         parameters: {
             query?: never;
             header?: never;
@@ -7968,7 +8212,7 @@ export interface operations {
             };
         };
     };
-    community__event_tags_create_event_tag: {
+    community_events_tags_create_event_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8019,7 +8263,7 @@ export interface operations {
             };
         };
     };
-    community__event_tags_delete_event_tag: {
+    community_events_tags_delete_event_tag: {
         parameters: {
             query?: never;
             header?: never;
@@ -8057,7 +8301,7 @@ export interface operations {
             };
         };
     };
-    community__events_list_events: {
+    community_events_crud_list_events: {
         parameters: {
             query?: {
                 status?: string;
@@ -8095,7 +8339,7 @@ export interface operations {
             };
         };
     };
-    community__events_create_event: {
+    community_events_crud_create_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -8146,7 +8390,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_report_member_attendance_analytics: {
+    community_attendance_report_member_attendance_analytics: {
         parameters: {
             query?: never;
             header?: never;
@@ -8175,7 +8419,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_import_commit_attendance_import: {
+    community_attendance_csv_import_commit_attendance_import: {
         parameters: {
             query?: never;
             header?: never;
@@ -8235,7 +8479,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_import_list_attendance_import_event_options: {
+    community_attendance_csv_import_list_attendance_import_event_options: {
         parameters: {
             query?: {
                 q?: string;
@@ -8266,7 +8510,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_import_preview_attendance_import: {
+    community_attendance_csv_import_preview_attendance_import: {
         parameters: {
             query?: {
                 event_id?: string | null;
@@ -8325,7 +8569,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_mark_mark_attendance: {
+    community_attendance_mark_mark_attendance: {
         parameters: {
             query?: never;
             header?: never;
@@ -8385,7 +8629,7 @@ export interface operations {
             };
         };
     };
-    community__attendance_report_attendance_report: {
+    community_attendance_report_attendance_report: {
         parameters: {
             query?: never;
             header?: never;
@@ -8414,7 +8658,7 @@ export interface operations {
             };
         };
     };
-    community__events_get_event: {
+    community_events_crud_get_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -8454,7 +8698,7 @@ export interface operations {
             };
         };
     };
-    community__events_update_event: {
+    community_events_crud_update_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -8516,7 +8760,7 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_add_cohosts: {
+    community_cohosts_invites_add_cohosts: {
         parameters: {
             query?: never;
             header?: never;
@@ -8569,7 +8813,7 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_rescind_cohost_invite: {
+    community_cohosts_invites_rescind_cohost_invite: {
         parameters: {
             query?: never;
             header?: never;
@@ -8619,7 +8863,7 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_accept_cohost_invite: {
+    community_cohosts_invites_accept_cohost_invite: {
         parameters: {
             query?: never;
             header?: never;
@@ -8669,7 +8913,7 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_decline_cohost_invite: {
+    community_cohosts_invites_decline_cohost_invite: {
         parameters: {
             query?: never;
             header?: never;
@@ -8719,7 +8963,7 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_remove_cohost: {
+    community_cohosts_invites_remove_cohost: {
         parameters: {
             query?: never;
             header?: never;
@@ -8769,7 +9013,7 @@ export interface operations {
             };
         };
     };
-    community__event_comments_list_comments: {
+    community_events_comments_list_comments: {
         parameters: {
             query?: never;
             header?: never;
@@ -8809,7 +9053,7 @@ export interface operations {
             };
         };
     };
-    community__event_comments_post_comment: {
+    community_events_comments_post_comment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8871,7 +9115,7 @@ export interface operations {
             };
         };
     };
-    community__event_comments_delete_comment: {
+    community_events_comments_delete_comment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8919,7 +9163,7 @@ export interface operations {
             };
         };
     };
-    community__event_comments_toggle_reaction: {
+    community_events_comments_toggle_reaction: {
         parameters: {
             query?: never;
             header?: never;
@@ -8982,7 +9226,7 @@ export interface operations {
             };
         };
     };
-    community__event_comments_post_reply: {
+    community_events_comments_post_reply: {
         parameters: {
             query?: never;
             header?: never;
@@ -9045,7 +9289,7 @@ export interface operations {
             };
         };
     };
-    community__event_blasts_send_email_blast: {
+    community_events_blasts_send_email_blast: {
         parameters: {
             query?: never;
             header?: never;
@@ -9107,7 +9351,7 @@ export interface operations {
             };
         };
     };
-    community__event_feedback_host_get_event_feedback: {
+    community_event_feedback_host_get_event_feedback: {
         parameters: {
             query?: never;
             header?: never;
@@ -9147,7 +9391,7 @@ export interface operations {
             };
         };
     };
-    community__event_flags_flag_event: {
+    community_events_flags_flag_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -9218,7 +9462,7 @@ export interface operations {
             };
         };
     };
-    community__events_get_event_guests: {
+    community_events_crud_get_event_guests: {
         parameters: {
             query?: never;
             header?: never;
@@ -9258,7 +9502,7 @@ export interface operations {
             };
         };
     };
-    community__calendar_single_event_ics: {
+    community_events_calendar_single_event_ics: {
         parameters: {
             query?: never;
             header?: never;
@@ -9278,7 +9522,7 @@ export interface operations {
             };
         };
     };
-    community__event_invitations_invite_to_event: {
+    community_events_invitations_invite_to_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -9331,7 +9575,7 @@ export interface operations {
             };
         };
     };
-    community__event_feedback_host_get_my_event_feedback: {
+    community_event_feedback_host_get_my_event_feedback: {
         parameters: {
             query?: never;
             header?: never;
@@ -9353,7 +9597,7 @@ export interface operations {
             };
         };
     };
-    community__event_actions_upload_event_photo: {
+    community_events_photos_upload_event_photo: {
         parameters: {
             query?: never;
             header?: never;
@@ -9421,7 +9665,7 @@ export interface operations {
             };
         };
     };
-    community__polls_get_event_poll: {
+    community_polls_crud_get_event_poll: {
         parameters: {
             query?: never;
             header?: never;
@@ -9461,7 +9705,7 @@ export interface operations {
             };
         };
     };
-    community__polls_create_event_poll: {
+    community_polls_crud_create_event_poll: {
         parameters: {
             query?: never;
             header?: never;
@@ -9523,7 +9767,7 @@ export interface operations {
             };
         };
     };
-    community__polls_delete_event_poll: {
+    community_polls_crud_delete_event_poll: {
         parameters: {
             query?: never;
             header?: never;
@@ -9570,7 +9814,7 @@ export interface operations {
             };
         };
     };
-    community__polls_finalize_event_poll: {
+    community_polls_crud_finalize_event_poll: {
         parameters: {
             query?: never;
             header?: never;
@@ -9632,7 +9876,7 @@ export interface operations {
             };
         };
     };
-    community__poll_options_add_poll_option: {
+    community_polls_options_add_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -9694,7 +9938,7 @@ export interface operations {
             };
         };
     };
-    community__poll_options_delete_poll_option: {
+    community_polls_options_delete_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -9753,7 +9997,7 @@ export interface operations {
             };
         };
     };
-    community__poll_options_update_poll_option: {
+    community_polls_options_update_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -9816,7 +10060,7 @@ export interface operations {
             };
         };
     };
-    community__polls_vote_on_event_poll: {
+    community_polls_crud_vote_on_event_poll: {
         parameters: {
             query?: never;
             header?: never;
@@ -9878,7 +10122,7 @@ export interface operations {
             };
         };
     };
-    community__event_report_get_check_in_report_csv: {
+    community_events_report_get_check_in_report_csv: {
         parameters: {
             query?: {
                 columns?: string;
@@ -9929,7 +10173,7 @@ export interface operations {
             };
         };
     };
-    community__event_report_get_check_in_report: {
+    community_events_report_get_check_in_report: {
         parameters: {
             query?: never;
             header?: never;
@@ -9978,7 +10222,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvp_questions_replace_event_rsvp_questions: {
+    community_rsvps_questions_replace_event_rsvp_questions: {
         parameters: {
             query?: never;
             header?: never;
@@ -10049,7 +10293,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvps_upsert_rsvp: {
+    community_rsvps_member_upsert_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -10111,7 +10355,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvps_delete_rsvp: {
+    community_rsvps_member_delete_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -10167,7 +10411,69 @@ export interface operations {
             };
         };
     };
-    community__event_host_actions_set_attendance: {
+    community_rsvps_host_verify_guest_payments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkPaymentVerifyIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPaymentVerifyOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_events_host_actions_set_attendance: {
         parameters: {
             query?: never;
             header?: never;
@@ -10230,7 +10536,7 @@ export interface operations {
             };
         };
     };
-    community__event_host_rsvps_set_guest_payment: {
+    community_rsvps_host_set_guest_payment: {
         parameters: {
             query?: never;
             header?: never;
@@ -10284,7 +10590,7 @@ export interface operations {
             };
         };
     };
-    community__event_host_rsvps_set_guest_rsvp: {
+    community_rsvps_host_set_guest_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -10347,7 +10653,7 @@ export interface operations {
             };
         };
     };
-    community__event_host_rsvps_remove_guest_rsvp: {
+    community_rsvps_host_remove_guest_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -10395,7 +10701,100 @@ export interface operations {
             };
         };
     };
-    community__event_host_actions_get_event_stats: {
+    community_speech_event_speech_get_event_speech: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSpeechOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_speech_event_speech_put_event_speech: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventSpeechIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSpeechOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_events_host_actions_get_event_stats: {
         parameters: {
             query?: never;
             header?: never;
@@ -10435,7 +10834,7 @@ export interface operations {
             };
         };
     };
-    community__event_host_actions_get_text_recipients: {
+    community_events_host_actions_get_text_recipients: {
         parameters: {
             query?: never;
             header?: never;
@@ -10475,7 +10874,7 @@ export interface operations {
             };
         };
     };
-    community__event_waitlist_order_reorder_waitlist: {
+    community_rsvps_waitlist_order_reorder_waitlist: {
         parameters: {
             query?: never;
             header?: never;
@@ -10537,7 +10936,7 @@ export interface operations {
             };
         };
     };
-    community__guidelines_get_faq: {
+    community_content_guidelines_get_faq: {
         parameters: {
             query?: never;
             header?: never;
@@ -10557,7 +10956,7 @@ export interface operations {
             };
         };
     };
-    community__guidelines_update_faq: {
+    community_content_guidelines_update_faq: {
         parameters: {
             query?: never;
             header?: never;
@@ -10632,7 +11031,7 @@ export interface operations {
             };
         };
     };
-    community__geocode_geocode: {
+    community_events_geocode_geocode: {
         parameters: {
             query: {
                 q: string;
@@ -10705,7 +11104,7 @@ export interface operations {
             };
         };
     };
-    community__guidelines_get_guidelines: {
+    community_content_guidelines_get_guidelines: {
         parameters: {
             query?: never;
             header?: never;
@@ -10725,7 +11124,7 @@ export interface operations {
             };
         };
     };
-    community__guidelines_update_guidelines: {
+    community_content_guidelines_update_guidelines: {
         parameters: {
             query?: never;
             header?: never;
@@ -10758,7 +11157,7 @@ export interface operations {
             };
         };
     };
-    community__home_get_home: {
+    community_content_home_get_home: {
         parameters: {
             query?: never;
             header?: never;
@@ -10778,7 +11177,7 @@ export interface operations {
             };
         };
     };
-    community__home_update_home: {
+    community_content_home_update_home: {
         parameters: {
             query?: never;
             header?: never;
@@ -10811,7 +11210,7 @@ export interface operations {
             };
         };
     };
-    community__join_form_get_join_form: {
+    community_join_requests_form_get_join_form: {
         parameters: {
             query?: never;
             header?: never;
@@ -10831,7 +11230,7 @@ export interface operations {
             };
         };
     };
-    community__join_form_create_join_form_question: {
+    community_join_requests_form_create_join_form_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -10864,7 +11263,7 @@ export interface operations {
             };
         };
     };
-    community__join_form_reorder_join_form_questions: {
+    community_join_requests_form_reorder_join_form_questions: {
         parameters: {
             query?: never;
             header?: never;
@@ -10897,7 +11296,7 @@ export interface operations {
             };
         };
     };
-    community__join_form_delete_join_form_question: {
+    community_join_requests_form_delete_join_form_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -10935,7 +11334,7 @@ export interface operations {
             };
         };
     };
-    community__join_form_update_join_form_question: {
+    community_join_requests_form_update_join_form_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -10998,7 +11397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JoinRequestOut"];
+                    "application/json": components["schemas"]["JoinRequestSubmittedOut"];
                 };
             };
             /** @description Bad Request */
@@ -11039,7 +11438,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_list_join_requests: {
+    community_join_requests_manage_list_join_requests: {
         parameters: {
             query?: never;
             header?: never;
@@ -11068,7 +11467,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_update_join_request_status: {
+    community_join_requests_manage_update_join_request_status: {
         parameters: {
             query?: never;
             header?: never;
@@ -11130,7 +11529,7 @@ export interface operations {
             };
         };
     };
-    community__join_request_resend_resend_magic_link: {
+    community_join_requests_resend_resend_magic_link: {
         parameters: {
             query?: never;
             header?: never;
@@ -11179,7 +11578,7 @@ export interface operations {
             };
         };
     };
-    community__join_request_unreject_unreject_join_request: {
+    community_join_requests_unreject_unreject_join_request: {
         parameters: {
             query?: never;
             header?: never;
@@ -11228,7 +11627,7 @@ export interface operations {
             };
         };
     };
-    community__member_promotion_email_get_member_promotion_email: {
+    community_message_templates_member_promotion_email_get_member_promotion_email: {
         parameters: {
             query?: never;
             header?: never;
@@ -11248,7 +11647,7 @@ export interface operations {
             };
         };
     };
-    community__member_promotion_email_update_member_promotion_email: {
+    community_message_templates_member_promotion_email_update_member_promotion_email: {
         parameters: {
             query?: never;
             header?: never;
@@ -11290,7 +11689,7 @@ export interface operations {
             };
         };
     };
-    community__member_promotion_message_get_member_promotion_message: {
+    community_message_templates_member_promotion_message_get_member_promotion_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -11310,7 +11709,7 @@ export interface operations {
             };
         };
     };
-    community__member_promotion_message_update_member_promotion_message: {
+    community_message_templates_member_promotion_message_update_member_promotion_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -11352,7 +11751,89 @@ export interface operations {
             };
         };
     };
-    community__pages_get_page: {
+    community_message_templates_member_restored_email_get_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
+                };
+            };
+        };
+    };
+    community_message_templates_member_restored_email_update_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRestoredEmailPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_events_official_defaults_get_official_event_defaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficialEventDefaultsOut"];
+                };
+            };
+        };
+    };
+    community_content_pages_get_page: {
         parameters: {
             query?: never;
             header?: never;
@@ -11383,7 +11864,7 @@ export interface operations {
             };
         };
     };
-    community__pages_update_page: {
+    community_content_pages_update_page: {
         parameters: {
             query?: never;
             header?: never;
@@ -11427,7 +11908,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_submit_check_public_rsvp_phone: {
+    community_rsvps_public_submit_check_public_rsvp_phone: {
         parameters: {
             query?: never;
             header?: never;
@@ -11471,7 +11952,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_submit_submit_public_rsvp: {
+    community_rsvps_public_submit_submit_public_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -11542,7 +12023,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_manage_list_my_rsvps: {
+    community_rsvps_public_manage_list_my_rsvps: {
         parameters: {
             query?: {
                 token?: string;
@@ -11582,7 +12063,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_resend_resend_manage_link: {
+    community_rsvps_public_resend_resend_manage_link: {
         parameters: {
             query?: never;
             header?: never;
@@ -11615,7 +12096,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_manage_update_my_rsvp: {
+    community_rsvps_public_manage_update_my_rsvp: {
         parameters: {
             query?: {
                 token?: string;
@@ -11679,7 +12160,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_manage_delete_my_rsvp: {
+    community_rsvps_public_manage_delete_my_rsvp: {
         parameters: {
             query?: {
                 token?: string;
@@ -11728,7 +12209,7 @@ export interface operations {
             };
         };
     };
-    community__rejection_email_get_rejection_email: {
+    community_message_templates_rejection_email_get_rejection_email: {
         parameters: {
             query?: never;
             header?: never;
@@ -11748,7 +12229,7 @@ export interface operations {
             };
         };
     };
-    community__rejection_email_update_rejection_email: {
+    community_message_templates_rejection_email_update_rejection_email: {
         parameters: {
             query?: never;
             header?: never;
@@ -11823,7 +12304,60 @@ export interface operations {
             };
         };
     };
-    community__surveys_create_survey: {
+    community_speech_template_get_speech_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechTemplateOut"];
+                };
+            };
+        };
+    };
+    community_speech_template_update_speech_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeechTemplatePatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechTemplateOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_surveys_crud_create_survey: {
         parameters: {
             query?: never;
             header?: never;
@@ -11865,7 +12399,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_list_surveys_admin: {
+    community_surveys_crud_list_surveys_admin: {
         parameters: {
             query?: never;
             header?: never;
@@ -11894,7 +12428,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_public_get_survey_public: {
+    community_surveys_public_get_survey_public: {
         parameters: {
             query?: {
                 response_token?: string;
@@ -11927,10 +12461,11 @@ export interface operations {
             };
         };
     };
-    community__surveys_public_submit_survey_response: {
+    community_surveys_public_submit_survey_response: {
         parameters: {
             query?: {
                 response_token?: string;
+                response_id?: string | null;
             };
             header?: never;
             path: {
@@ -11991,7 +12526,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_delete_survey: {
+    community_surveys_crud_delete_survey: {
         parameters: {
             query?: never;
             header?: never;
@@ -12029,7 +12564,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_update_survey: {
+    community_surveys_crud_update_survey: {
         parameters: {
             query?: never;
             header?: never;
@@ -12082,7 +12617,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_get_survey_admin: {
+    community_surveys_crud_get_survey_admin: {
         parameters: {
             query?: never;
             header?: never;
@@ -12122,60 +12657,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_public_finalize_poll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                survey_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinalizePollIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SurveyOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__surveys_create_survey_question: {
+    community_surveys_crud_create_survey_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -12228,7 +12710,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_reorder_survey_questions: {
+    community_surveys_crud_reorder_survey_questions: {
         parameters: {
             query?: never;
             header?: never;
@@ -12281,7 +12763,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_delete_survey_question: {
+    community_surveys_crud_delete_survey_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -12320,7 +12802,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_update_survey_question: {
+    community_surveys_crud_update_survey_question: {
         parameters: {
             query?: never;
             header?: never;
@@ -12374,7 +12856,7 @@ export interface operations {
             };
         };
     };
-    community__survey_reports_get_survey_responses_csv: {
+    community_surveys_reports_get_survey_responses_csv: {
         parameters: {
             query?: never;
             header?: never;
@@ -12405,7 +12887,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_responses_list_survey_responses: {
+    community_surveys_responses_list_survey_responses: {
         parameters: {
             query?: {
                 event_id?: string | null;
@@ -12447,7 +12929,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_responses_delete_survey_response: {
+    community_surveys_responses_delete_survey_response: {
         parameters: {
             query?: never;
             header?: never;
@@ -12486,7 +12968,7 @@ export interface operations {
             };
         };
     };
-    community__survey_reports_get_survey_summary: {
+    community_surveys_reports_get_survey_summary: {
         parameters: {
             query?: {
                 event_id?: string | null;
@@ -12528,7 +13010,7 @@ export interface operations {
             };
         };
     };
-    community__surveys_public_get_survey_tallies: {
+    community_surveys_public_get_survey_tallies: {
         parameters: {
             query?: never;
             header?: never;
@@ -12568,7 +13050,7 @@ export interface operations {
             };
         };
     };
-    community__tentative_approval_message_get_tentative_approval_message: {
+    community_message_templates_tentative_approval_get_tentative_approval_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -12588,7 +13070,7 @@ export interface operations {
             };
         };
     };
-    community__tentative_approval_message_update_tentative_approval_message: {
+    community_message_templates_tentative_approval_update_tentative_approval_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -12650,7 +13132,7 @@ export interface operations {
             };
         };
     };
-    community__welcome_template_get_welcome_template: {
+    community_message_templates_welcome_get_welcome_template: {
         parameters: {
             query?: never;
             header?: never;
@@ -12670,7 +13152,7 @@ export interface operations {
             };
         };
     };
-    community__welcome_template_update_welcome_template: {
+    community_message_templates_welcome_update_welcome_template: {
         parameters: {
             query?: never;
             header?: never;
@@ -12712,7 +13194,7 @@ export interface operations {
             };
         };
     };
-    community__whatsapp_link_get_whatsapp_link: {
+    community_message_templates_whatsapp_link_get_whatsapp_link: {
         parameters: {
             query?: never;
             header?: never;
@@ -12732,7 +13214,7 @@ export interface operations {
             };
         };
     };
-    community__whatsapp_link_update_whatsapp_link: {
+    community_message_templates_whatsapp_link_update_whatsapp_link: {
         parameters: {
             query?: never;
             header?: never;

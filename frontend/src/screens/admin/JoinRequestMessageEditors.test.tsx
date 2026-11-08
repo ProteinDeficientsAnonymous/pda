@@ -1,18 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({
@@ -28,6 +24,7 @@ vi.mock('@/api/content', () => ({
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberPromotionEmail: () => ({ data: undefined, isPending: false, isError: false }),
   useUpdateMemberPromotionEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({
@@ -36,6 +33,15 @@ vi.mock('@/api/content', () => ({
     isError: false,
   }),
   useUpdateWhatsAppLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/api/memberRestoredEmail', () => ({
+  useMemberRestoredEmail: () => ({
+    data: { body: 'welcome back ${FIRST_NAME}', updatedAt: '2026-01-01' },
+    isPending: false,
+    isError: false,
+  }),
+  useUpdateMemberRestoredEmail: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 function makeUser(overrides?: Partial<User>): User {
@@ -59,12 +65,7 @@ function renderEditors(user: User | null) {
     user,
     accessToken: user ? 'tok' : null,
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <JoinRequestMessageEditors />
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<JoinRequestMessageEditors />);
 }
 
 describe('JoinRequestMessageEditors', () => {
@@ -92,6 +93,7 @@ describe('JoinRequestMessageEditors', () => {
     expect(
       screen.getByRole('button', { name: /edit member promotion email/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit welcome back email/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
   });
 
@@ -105,6 +107,19 @@ describe('JoinRequestMessageEditors', () => {
     renderEditors(user);
     await userEvent.click(screen.getByRole('button', { name: /edit member promotion email/i }));
     expect(screen.getByLabelText('member promotion email body')).toBeInTheDocument();
+  });
+
+  it('opens the welcome back email editor seeded with its template', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = makeUser({
+      roles: [
+        { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
+      ],
+    });
+    renderEditors(user);
+    await userEvent.click(screen.getByRole('button', { name: /edit welcome back email/i }));
+    const textarea = screen.getByLabelText('welcome back email body') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('welcome back ${FIRST_NAME}');
   });
 
   it('opens the whatsapp link editor dialog when clicked', async () => {

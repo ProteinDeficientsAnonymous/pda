@@ -186,7 +186,7 @@ and one send path (on iOS, FCM still rides on APNs underneath).
    session may not survive killing the app. **fix:** test it; if it doesn't persist, move the refresh
    token to Capacitor secure storage (iOS Keychain) with a header-based refresh flow.
    - files: `frontend/src/api/client.ts`, `frontend/src/auth/store.ts`,
-     `backend/users/_refresh_cookie.py`
+     `backend/users/refresh_cookie.py`
 
 7. **Guideline 4.2 (minimum functionality).** a bare "website in a box" is the textbook rejection.
    mitigate by shipping ≥2 genuine native features in v1 (push is #1; native camera/photo picker for

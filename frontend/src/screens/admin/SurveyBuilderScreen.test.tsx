@@ -1,19 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import type { SurveyQuestion } from '@/api/surveyAdmin';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyBuilderScreen from './SurveyBuilderScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/components/SortableList', () => ({
   SortableList: ({
@@ -48,15 +44,12 @@ const mockedPost = vi.mocked(apiClient.post);
 const mockedPatch = vi.mocked(apiClient.patch);
 
 function renderScreen(surveyId = 'srv-1') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/admin/surveys/${surveyId}`]}>
-        <Routes>
-          <Route path="/admin/surveys/:id" element={<SurveyBuilderScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  const qc = makeQueryClient();
+  renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id" element={<SurveyBuilderScreen />} />
+    </Routes>,
+    { route: `/admin/surveys/${surveyId}`, qc },
   );
 }
 
@@ -72,7 +65,6 @@ const wireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 beforeEach(() => {
@@ -88,6 +80,27 @@ describe('SurveyBuilderScreen', () => {
     const add = screen.getByRole('button', { name: '+ add question' });
     expect(add.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(card).getByLabelText('thank-you message')).toHaveValue('yay');
+  });
+
+  it('edits the description inline above the questions', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...wireSurvey, description: 'hi all' } });
+    mockedPatch.mockResolvedValueOnce({ data: { ...wireSurvey, description: 'welcome' } });
+    renderScreen();
+
+    const card = await screen.findByRole('article', { name: 'intro' });
+    const first = screen.getByDisplayValue('first');
+    expect(card.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const field = within(card).getByLabelText('description');
+    expect(field).toHaveValue('hi all');
+    fireEvent.change(field, { target: { value: ' welcome ' } });
+    fireEvent.blur(field);
+
+    await waitFor(() => {
+      expect(mockedPatch).toHaveBeenCalledWith('/api/community/surveys/srv-1/', {
+        description: 'welcome',
+      });
+    });
   });
 
   it('links back to the survey list', async () => {
@@ -340,27 +353,6 @@ describe('SurveyBuilderScreen', () => {
       expect(mockedPut).toHaveBeenCalledTimes(1);
     });
     expect(mockedPost).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps questions editable after the poll is finalized', async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        ...wireSurvey,
-        poll_result: {
-          id: 'pr-1',
-          winning_datetime: '2026-11-01T18:00:00Z',
-          finalized_by_id: null,
-          finalized_at: '2026-10-30T18:00:00Z',
-        },
-      },
-    });
-    renderScreen();
-    const input = await screen.findByDisplayValue('first');
-
-    expect(screen.getByText('this poll has been finalized')).toBeInTheDocument();
-    expect(input).toBeEnabled();
-    expect(screen.getByRole('button', { name: '+ add question' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'delete' })).toHaveLength(2);
   });
 
   it('keeps a just-edited label when the condition is changed right after', async () => {

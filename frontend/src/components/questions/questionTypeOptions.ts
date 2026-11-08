@@ -11,13 +11,14 @@ export interface QuestionTypeOption {
 /** Labels / option-requirement flags keyed by catalog wire value. */
 const QUESTION_TYPE_META: Record<QuestionType, Omit<QuestionTypeOption, 'value'>> = {
   [QuestionType.Text]: { label: 'short text', wantsOptions: false },
-  [QuestionType.Textarea]: { label: 'short answer', wantsOptions: false },
+  [QuestionType.Textarea]: { label: 'long answer', wantsOptions: false },
   [QuestionType.Number]: { label: 'number', wantsOptions: false },
   [QuestionType.Radio]: { label: 'radio', wantsOptions: true },
   [QuestionType.Select]: { label: 'select', wantsOptions: true },
   [QuestionType.Checkbox]: { label: 'checkbox', wantsOptions: true },
   [QuestionType.Boolean]: { label: 'yes / no', wantsOptions: false },
-  [QuestionType.Rating]: { label: '1–5 rating', wantsOptions: true },
+  [QuestionType.Stars]: { label: 'star rating', wantsOptions: false },
+  [QuestionType.Scale]: { label: '1–5 scale', wantsOptions: false },
   [QuestionType.DatetimePoll]: { label: 'datetime poll', wantsOptions: true },
   [QuestionType.Section]: { label: 'section header', wantsOptions: false },
 };
@@ -76,12 +77,30 @@ export function normalizeQuestionOptions(options: readonly string[]): string[] {
 
 export const RATING_SCALE_SIZE = 5;
 
-/** One label slot per star; blanks keep their position so labels stay on the right star. */
-export function ratingLabelSlots(options: readonly string[]): string[] {
-  return Array.from({ length: RATING_SCALE_SIZE }, (_, i) => options[i] ?? '');
+/** [low, high] labels for the two ends of a 1–5 scale. */
+export function scaleEndLabels(options: readonly string[]): [string, string] {
+  return [options[0] ?? '', options[1] ?? ''];
 }
 
-export function normalizeRatingLabels(options: readonly string[]): string[] {
-  const labels = ratingLabelSlots(options).map((label) => label.trim());
+export function labelsEveryScalePoint(options: readonly string[]): boolean {
+  return options.length === RATING_SCALE_SIZE;
+}
+
+/** Label for each point 1–5: all five as given, or just the two ends. */
+export function scaleLabels(options: readonly string[]): string[] {
+  if (labelsEveryScalePoint(options)) return [...options];
+  const [low, high] = scaleEndLabels(options);
+  return [low, '', '', '', high];
+}
+
+/** Accessible name for a scale point, e.g. "5 — great" when that point is labeled. */
+export function scalePointLabel(n: number, options: readonly string[]): string {
+  const label = scaleLabels(options)[n - 1];
+  return label ? `${String(n)} — ${label}` : String(n);
+}
+
+export function normalizeScaleLabels(options: readonly string[]): string[] {
+  const kept = labelsEveryScalePoint(options) ? options : scaleEndLabels(options);
+  const labels = kept.map((label) => label.trim());
   return labels.some(Boolean) ? labels : [];
 }

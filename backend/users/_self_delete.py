@@ -1,6 +1,6 @@
 import logging
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
@@ -11,8 +11,8 @@ from ninja.responses import Status
 from notifications.service import create_account_deleted_notifications
 
 from users._archive import archive_user
-from users._helpers import _is_last_admin
-from users._refresh_cookie import clear_refresh_cookie
+from users.helpers import is_last_admin
+from users.refresh_cookie import clear_refresh_cookie
 from users.schemas import DeleteAccountIn, ErrorOut
 
 router = Router()
@@ -24,7 +24,7 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
     user = request.auth
     if not user.check_password(payload.password):
         raise_validation(Code.Auth.CURRENT_PASSWORD_INCORRECT, field="password", status_code=400)
-    if _is_last_admin(user):
+    if is_last_admin(user):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     with transaction.atomic():
         removed_role_ids = archive_user(request, user)
