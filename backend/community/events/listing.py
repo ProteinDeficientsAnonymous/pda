@@ -13,7 +13,7 @@ from community.events.helpers import (
 from community.events.schemas import EventListOut
 from community.events.tentative_member_access import (
     event_viewer_for,
-    is_tentative_member,
+    is_limited,
     tentative_member_event_q,
 )
 from community.models import (
@@ -78,7 +78,7 @@ def _status_q(status: str, auth_user, is_authed) -> Q:
     q = Q(status=EventStatus.ACTIVE)
     if not is_authed:
         q &= Q(visibility=PageVisibility.PUBLIC)
-    elif is_tentative_member(auth_user):
+    elif is_limited(auth_user):
         q &= tentative_member_event_q()
     return q
 

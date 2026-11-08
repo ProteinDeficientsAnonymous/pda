@@ -9,8 +9,8 @@ from community.validation import Code, raise_validation
 TENTATIVE_MEMBER_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
-def is_tentative_member(user) -> bool:
-    """Signed in but not a member: a tentative applicant or an attendance-paused ex-member."""
+def is_limited(user) -> bool:
+    """Signed in but not a member (see ``limited_q``); callers pass a signed-in user, never a public rsvper."""
     return user is not None and not user.is_member
 
 
@@ -26,12 +26,12 @@ def event_viewer_for(viewer, event):
     sees — so they're downgraded to anonymous rather than filtered out, and a
     public community event stays as visible as it was before they signed in.
     """
-    if is_tentative_member(viewer) and event.event_type not in TENTATIVE_MEMBER_EVENT_TYPES:
+    if is_limited(viewer) and event.event_type not in TENTATIVE_MEMBER_EVENT_TYPES:
         return None
     return viewer
 
 
 def enforce_tentative_member_write_access(user, event, action: str) -> None:
     """Block a tentative member from acting on an event they may only read as a visitor."""
-    if is_tentative_member(user) and event.event_type not in TENTATIVE_MEMBER_EVENT_TYPES:
+    if is_limited(user) and event.event_type not in TENTATIVE_MEMBER_EVENT_TYPES:
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action=action)
