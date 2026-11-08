@@ -155,6 +155,22 @@ describe('messageForCode', () => {
     );
   });
 
+  it('explains welcome back email errors', () => {
+    expect(messageForCode({ code: Code.MemberRestoredEmail.BodyRequired, field: 'body' })).toBe(
+      'welcome back email body is required',
+    );
+    expect(
+      messageForCode({
+        code: Code.MemberRestoredEmail.BodyTooLong,
+        field: 'body',
+        params: { max_length: 5000 },
+      }),
+    ).toBe('welcome back email must be at most 5000 characters');
+    expect(messageForCode({ code: Code.MemberRestoredEmail.BodyTooLong, field: 'body' })).toBe(
+      'welcome back email is too long',
+    );
+  });
+
   it('points to the existing open join request', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),

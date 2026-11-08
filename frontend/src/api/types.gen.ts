@@ -1847,6 +1847,23 @@ export interface paths {
         patch: operations["community_message_templates_member_promotion_message_update_member_promotion_message"];
         trace?: never;
     };
+    "/api/community/member-restored-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Restored Email */
+        get: operations["community_message_templates_member_restored_email_get_member_restored_email"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/official-event-defaults/": {
         parameters: {
             query?: never;
@@ -4964,6 +4981,16 @@ export interface components {
         MemberPromotionMessagePatchIn: {
             /** Body */
             body?: string | null;
+        };
+        /** MemberRestoredEmailOut */
+        MemberRestoredEmailOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
@@ -11698,6 +11725,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_message_templates_member_restored_email_get_member_restored_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberRestoredEmailOut"];
                 };
             };
         };
