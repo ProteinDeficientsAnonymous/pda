@@ -144,7 +144,7 @@ describe('useJoinRequests', () => {
       {
         eventId: 'evt-2',
         title: 'Community Hang',
-        startDatetime: '2026-02-01T18:00:00Z',
+        startDatetime: new Date('2026-02-01T18:00:00Z'),
         eventType: 'community',
       },
     ]);

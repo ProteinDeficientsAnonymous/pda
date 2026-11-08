@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { hasErrorCode } from './apiErrors';
+import { type AttendedEvent, mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
 import type { RejectionReason } from './rejectionEmail';
 import type { components } from './types.gen';
@@ -131,13 +132,6 @@ export interface JoinRequestRsvpEvent {
   startDatetime: string | null;
 }
 
-export interface JoinRequestAttendedEvent {
-  eventId: string;
-  title: string;
-  startDatetime: string | null;
-  eventType: string;
-}
-
 export interface JoinRequestSummary {
   id: string;
   fullName: string;
@@ -163,7 +157,7 @@ export interface JoinRequestSummary {
   userHasJoinedWhatsapp: boolean;
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
-  attendedEvents: JoinRequestAttendedEvent[];
+  attendedEvents: AttendedEvent[];
 }
 
 interface WireAnswer {
@@ -176,13 +170,6 @@ interface WireRsvpEvent {
   event_id: string;
   title: string;
   start_datetime: string | null;
-}
-
-interface WireAttendedEvent {
-  event_id: string;
-  title: string;
-  start_datetime: string | null;
-  event_type: string;
 }
 
 interface WireJoinRequest {
@@ -255,12 +242,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
       title: e.title,
       startDatetime: e.start_datetime,
     })),
-    attendedEvents: (w.attended_events ?? []).map((e) => ({
-      eventId: e.event_id,
-      title: e.title,
-      startDatetime: e.start_datetime,
-      eventType: e.event_type,
-    })),
+    attendedEvents: (w.attended_events ?? []).map(mapAttendedEvent),
   };
 }
 
