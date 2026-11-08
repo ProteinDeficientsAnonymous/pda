@@ -1,3 +1,10 @@
+## [0.222.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.5...v0.222.6) (2026-11-08)
+
+
+### Bug Fixes
+
+* 1518 - keep paid and checked-in rsvps when pause drafts an event ([#2209](https://github.com/ProteinDeficientsAnonymous/pda/issues/2209)) ([b2bc871](https://github.com/ProteinDeficientsAnonymous/pda/commit/b2bc8716bbadf7f3515c854cf866521dded9378f))
+
 ## [0.222.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.222.4...v0.222.5) (2026-11-08)
 
 
