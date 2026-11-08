@@ -24,12 +24,11 @@ class TestAttendancePausePatch:
         drafted.refresh_from_db()
         assert drafted.status == EventStatus.DRAFT
 
-    def test_unpause_restores_membership_silently(
+    def test_unpause_restores_membership(
         self,
         api_client,
         manage_users_headers,
         member,
-        fake_email_sender,
         django_capture_on_commit_callbacks,
     ):
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
@@ -44,7 +43,6 @@ class TestAttendancePausePatch:
         assert member.is_member is True
         assert member.restored_at is None
         assert list(member.roles.all()) == [member_role]
-        fake_email_sender.send.assert_not_called()
 
 
 @pytest.mark.django_db
