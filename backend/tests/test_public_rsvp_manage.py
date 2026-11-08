@@ -12,7 +12,7 @@ from community.models import (
 from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
-from users.models import NonMemberRsvpToken
+from users.models import PublicRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
 from tests._time import future_iso, past_iso
@@ -38,7 +38,7 @@ def official_event(db):
 class TestGetMyRsvps:
     def test_valid_token_returns_rsvps(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.get(f"{GET_URL}?token={token.token}")
         assert resp.status_code == 200
         body = resp.json()
@@ -51,7 +51,7 @@ class TestGetMyRsvps:
         community_event = make_official_event(title="Community B", event_type=EventType.COMMUNITY)
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(event=community_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.get(f"{GET_URL}?token={token.token}")
         assert resp.status_code == 200
         ids = {r["event"]["id"] for r in resp.json()["rsvps"]}
@@ -65,7 +65,7 @@ class TestGetMyRsvps:
 
     def test_revoked_token_404(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         token.revoke()
         assert api_client.get(f"{GET_URL}?token={token.token}").status_code == 404
 
@@ -77,7 +77,7 @@ class TestGetMyRsvpsHidesIneligibleEvents:
 
     def _rsvp_and_list(self, api_client, nonmember, event):
         EventRSVP.objects.create(event=event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.get(f"{GET_URL}?token={token.token}")
         assert resp.status_code == 200
         return resp.json()["rsvps"]
@@ -117,7 +117,7 @@ class TestGetMyRsvpsHidesIneligibleEvents:
 class TestPostMyRsvps:
     def test_update_changes_status(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
             {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
@@ -132,7 +132,7 @@ class TestPostMyRsvps:
         self, api_client, nonmember, official_event, fake_email_sender
     ):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
             {"status": RSVPStatus.ATTENDING, "has_plus_one": True},
@@ -145,7 +145,7 @@ class TestPostMyRsvps:
 
     def test_update_extends_token_keeping_same_string(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         old_expiry = token.expires_at
         token.expires_at = timezone.now() + timezone.timedelta(minutes=1)  # simulate near-expiry
         token.save(update_fields=["expires_at"])
@@ -164,7 +164,7 @@ class TestPostMyRsvps:
         self, api_client, nonmember, official_event, fake_email_sender
     ):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
             {"status": RSVPStatus.ATTENDING},
@@ -181,7 +181,7 @@ class TestPostMyRsvps:
     def test_first_rsvp_sends_confirmation_then_change_sends_updated(
         self, api_client, nonmember, official_event, fake_email_sender
     ):
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         first = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
             {"status": RSVPStatus.ATTENDING},
@@ -202,7 +202,7 @@ class TestPostMyRsvps:
         self, api_client, nonmember, official_event, fake_email_sender, caplog
     ):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         fake_email_sender.send.return_value = SendResult(success=False, error="boom")
 
         audit_logger = logging.getLogger("pda.audit")
@@ -227,7 +227,7 @@ class TestPostMyRsvps:
 
     def test_invalid_status_400(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(official_event)}?token={token.token}",
             {"status": RSVPStatus.WAITLISTED},
@@ -238,7 +238,7 @@ class TestPostMyRsvps:
     def test_ineligible_event_404(self, api_client, nonmember):
         community_event = make_official_event(title="C", event_type=EventType.COMMUNITY)
         EventRSVP.objects.create(event=community_event, user=nonmember, status=RSVPStatus.MAYBE)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.post(
             f"{_post_url(community_event)}?token={token.token}",
             {"status": RSVPStatus.ATTENDING},
@@ -256,7 +256,7 @@ class TestPostMyRsvps:
 
     def test_update_broadcasts_capacity_change(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         with patch("community.rsvps.public_manage.broadcast_capacity_change") as mock_broadcast:
             api_client.post(
                 f"{_post_url(official_event)}?token={token.token}",
@@ -271,7 +271,7 @@ class TestPostMyRsvps:
 class TestDeleteMyRsvps:
     def test_delete_removes_rsvp(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         assert resp.status_code == 204
         assert not EventRSVP.objects.filter(event=official_event, user=nonmember).exists()
@@ -287,7 +287,7 @@ class TestDeleteMyRsvps:
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
         waiter = make_non_member("+14155550002", "w@example.com", name="waiter")
         EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         assert resp.status_code == 204
         waiter_rsvp = EventRSVP.objects.get(event=official_event, user=waiter)
@@ -298,7 +298,7 @@ class TestDeleteMyRsvps:
         assert sent["subject"] == "you're off the waitlist for official a"
 
     def test_delete_no_rsvp_404(self, api_client, nonmember, official_event):
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         assert resp.status_code == 404
 
@@ -308,7 +308,7 @@ class TestDeleteMyRsvps:
 
     def test_delete_broadcasts_capacity_change(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
         with patch("community.rsvps.public_manage.broadcast_capacity_change") as mock_broadcast:
             api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         mock_broadcast.assert_called_once()
@@ -324,7 +324,7 @@ class TestDeleteMyRsvps:
         EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
         official_event.status = EventStatus.CANCELLED
         official_event.save(update_fields=["status"])
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
 
@@ -344,7 +344,7 @@ class TestDeleteMyRsvps:
         EventRSVP.objects.create(event=past_event, user=nonmember, status=RSVPStatus.ATTENDING)
         waiter = make_non_member("+14155550004", "w3@example.com", name="waiter three")
         EventRSVP.objects.create(event=past_event, user=waiter, status=RSVPStatus.WAITLISTED)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         resp = api_client.delete(f"{_post_url(past_event)}?token={token.token}")
 
@@ -357,7 +357,7 @@ class TestDeleteMyRsvps:
     def test_delete_on_rsvp_disabled_event_rejected(self, api_client, nonmember, fake_email_sender):
         event = make_official_event(title="No RSVP", rsvp_enabled=False)
         EventRSVP.objects.create(event=event, user=nonmember, status=RSVPStatus.ATTENDING)
-        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        token = PublicRsvpToken.issue_or_extend(nonmember)
 
         resp = api_client.delete(f"{_post_url(event)}?token={token.token}")
 
@@ -373,7 +373,7 @@ class TestPublicRsvpManageComment:
 
     def _setup(self, nonmember, official_event, status=RSVPStatus.ATTENDING):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=status)
-        return NonMemberRsvpToken.issue_or_extend(nonmember)
+        return PublicRsvpToken.issue_or_extend(nonmember)
 
     def _post(self, api_client, event, token, **body):
         return api_client.post(

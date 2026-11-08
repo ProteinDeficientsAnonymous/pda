@@ -4,7 +4,7 @@ import pytest
 from community.events.viewer import resolve_event_viewer
 from community.models import EventType, PageVisibility
 from django.utils import timezone
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from tests._events import make_event, make_rsvp
 
@@ -51,7 +51,7 @@ class TestResolveEventViewer:
 
     def test_valid_token_with_rsvp_on_this_event_unlocks(self, rf, event, non_member):
         make_rsvp(event, non_member)
-        token = NonMemberRsvpToken.issue(non_member)
+        token = PublicRsvpToken.issue(non_member)
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
         assert resolve_event_viewer(request, event.id) == non_member
@@ -59,7 +59,7 @@ class TestResolveEventViewer:
     def test_valid_token_without_rsvp_unlocks_eligible_event(self, rf, event, non_member):
         # Reusing one token across events: no RSVP on THIS event, but the token
         # is valid and the event still accepts public RSVPs (issue #873).
-        token = NonMemberRsvpToken.issue(non_member)
+        token = PublicRsvpToken.issue(non_member)
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
         assert resolve_event_viewer(request, event.id) == non_member
@@ -71,7 +71,7 @@ class TestResolveEventViewer:
 
     def test_expired_token_stays_locked(self, rf, event, non_member):
         make_rsvp(event, non_member)
-        token = NonMemberRsvpToken.issue(non_member)
+        token = PublicRsvpToken.issue(non_member)
 
         token.expires_at = timezone.now() - timedelta(days=1)
         token.save(update_fields=["expires_at"])
@@ -82,7 +82,7 @@ class TestResolveEventViewer:
     def test_valid_token_stays_locked_on_members_only_event(self, rf, event, non_member):
         # The token only unlocks public-RSVP-eligible events — a members-only
         # event never accepts public RSVPs, so it must stay locked.
-        token = NonMemberRsvpToken.issue(non_member)
+        token = PublicRsvpToken.issue(non_member)
         event.visibility = PageVisibility.MEMBERS_ONLY
         event.save(update_fields=["visibility"])
         request = _request(rf, query=f"token={token.token}")
