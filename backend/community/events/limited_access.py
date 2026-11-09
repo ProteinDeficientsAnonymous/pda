@@ -1,5 +1,5 @@
 from django.db.models import Q
-from users.models import MEMBER_STATUSES
+from users.models import MembershipStatus
 
 from community.models import EventType, PageVisibility
 from community.validation import Code, raise_validation
@@ -13,7 +13,7 @@ LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 def is_limited(user) -> bool:
     """Signed in, not a member: tentatively approved or attendance-paused; never a public rsvper."""
     # Not LIMITED_STATUSES: a rejected ex-tentative user can still sign in (#2245).
-    return user is not None and user.membership_status not in MEMBER_STATUSES
+    return user is not None and user.membership_status != MembershipStatus.ACTIVE_MEMBER
 
 
 def limited_access_event_q() -> Q:

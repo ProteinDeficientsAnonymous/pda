@@ -76,7 +76,7 @@ class TestRestoreOnCheckIn:
     def test_first_qualifying_check_in_does_not_restore(self, api_client, host, paused):
         _check_in(api_client, host, paused)
         assert paused.attendance_paused_at is not None
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
 
     def test_second_qualifying_check_in_restores(
         self, api_client, host, paused, django_capture_on_commit_callbacks
@@ -87,7 +87,7 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_paused_at is None
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
-        assert paused.is_member is True
+        assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
         assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
         assert (
             paused.roles.filter(name="member").exists()
@@ -123,12 +123,12 @@ class TestRestoreOnCheckIn:
         User.objects.filter(pk=paused.pk).update(attendance_paused_at=None)
         _tentative_request(paused)
         _check_in(api_client, paused, paused)
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
 
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
         jr = _tentative_request(paused)
         _check_in(api_client, host, paused)
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         jr.refresh_from_db()
         assert jr.status == JoinRequestStatus.TENTATIVE
 

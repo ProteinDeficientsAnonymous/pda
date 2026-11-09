@@ -64,10 +64,17 @@ class MembershipStatus(models.TextChoices):
     GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 
 
-# A guidelines-paused member is still a member; login and active_members() keep them out.
-MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
+# Paused members keep the member role; only active members get full access.
+MEMBER_STATUSES = (
+    MembershipStatus.ACTIVE_MEMBER,
+    MembershipStatus.GUIDELINES_PAUSED,
+    MembershipStatus.ATTENDANCE_PAUSED,
+)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
-SIGN_IN_STATUSES = (*MEMBER_STATUSES, *LIMITED_STATUSES)
+PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
+# Members not limited to official/club events; a guidelines pause blocks login outright.
+FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
 
 
@@ -95,19 +102,18 @@ class UserManager(BaseUserManager):
         return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
 
     def members_or_archived(self):
-        """Members plus archived members, for admin views with an archived bucket."""
+        """Members plus archived members: everyone admins manage as members."""
         return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
-
-    def members_or_attendance_paused(self):
-        """Members, attendance-paused ex-members, and archived members: everyone admins manage."""
-        return self.get_queryset().filter(
-            membership_status__in=(*MEMBER_OR_ARCHIVED, MembershipStatus.ATTENDANCE_PAUSED)
-        )
 
     def active_members(self):
         """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""
         # is_active is only ever cleared from the Django admin; kept as defense in depth.
-        return self.members().filter(is_active=True, is_paused=False, archived_at__isnull=True)
+        return self.get_queryset().filter(
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+            is_active=True,
+            is_paused=False,
+            archived_at__isnull=True,
+        )
 
     def limited_users(self):
         """Users matching ``limited_q``."""
@@ -141,12 +147,6 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    is_member = models.GeneratedField(
-        expression=Q(membership_status__in=MEMBER_STATUSES),
-        output_field=models.BooleanField(),
-        db_persist=True,
-        db_index=True,
-    )
     membership_status = models.CharField(
         max_length=20,
         choices=MembershipStatus.choices,
@@ -243,6 +243,10 @@ class User(AbstractUser):
         self.attendance_paused_at = None
         status = MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ACTIVE_MEMBER
         return ["is_paused", "attendance_paused_at", *self.set_membership_status(status)]
+
+    @property
+    def is_member(self) -> bool:
+        return self.membership_status in MEMBER_STATUSES
 
     @property
     def full_name(self) -> str:
@@ -378,7 +382,7 @@ class PublicRsvpToken(models.Model):
         Rejects members — a converted/existing member must use the member flow,
         not the scoped non-member RSVP link.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         return cls.objects.create(
             user=user,
@@ -393,7 +397,7 @@ class PublicRsvpToken(models.Model):
         Extends the newest valid token still within its absolute lifetime (so an
         emailed link keeps resolving), else issues a fresh one. Rejects members.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
         max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)

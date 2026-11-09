@@ -249,9 +249,7 @@ def list_users(request, include_non_members: bool = False):
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
     # Default is members plus attendance-paused; the opt-in adds public-RSVP non-members.
-    base = (
-        User.objects.all() if include_non_members else User.objects.members_or_attendance_paused()
-    )
+    base = User.objects.all() if include_non_members else User.objects.members_or_archived()
     users = (
         base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
@@ -297,7 +295,7 @@ def list_member_attended_events(request, user_id: str):
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
     require_manage_users(request, "update_user", user_id)
-    editable = User.objects.members_or_attendance_paused().prefetch_related("roles")
+    editable = User.objects.members_or_archived().prefetch_related("roles")
     try:
         user = editable.get(pk=user_id)
     except User.DoesNotExist:

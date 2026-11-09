@@ -1,7 +1,7 @@
 import pytest
 from community.validation import Code
 from django.utils import timezone
-from users.models import MembershipStatus, User
+from users.models import MEMBER_STATUSES, MembershipStatus, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -15,7 +15,7 @@ pytestmark = pytest.mark.django_db
 def _status(user):
     user.refresh_from_db()
     if user.membership_status != MembershipStatus.ARCHIVED:
-        assert user.is_member == (user.membership_status == MembershipStatus.ACTIVE_MEMBER)
+        assert user.is_member == (user.membership_status in MEMBER_STATUSES)
     return user.membership_status
 
 

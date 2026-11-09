@@ -2,7 +2,7 @@ import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
 from django.utils import timezone
-from users.models import MembershipStatus
+from users.models import MEMBER_STATUSES, MembershipStatus
 from users.roles import Role
 
 from tests._public_rsvp_helpers import make_public_rsvper
@@ -28,7 +28,7 @@ def _decide(api_client, headers, join_request, status):
 
 def _assert_in_sync(user):
     user.refresh_from_db()
-    assert user.is_member == (user.membership_status == MembershipStatus.ACTIVE_MEMBER)
+    assert user.is_member == (user.membership_status in MEMBER_STATUSES)
     return user.membership_status
 
 

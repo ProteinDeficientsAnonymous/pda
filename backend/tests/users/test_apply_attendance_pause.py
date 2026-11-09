@@ -13,6 +13,7 @@ from community.models import (
 from django.utils import timezone
 from tests._events import make_event, make_rsvp
 from users._attendance_pause import apply_attendance_pause
+from users.models import MembershipStatus
 from users.roles import Role
 
 
@@ -26,7 +27,7 @@ class TestApplyAttendancePause:
 
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_member is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         assert member.has_joined_whatsapp is False
         assert member.is_paused is False
 

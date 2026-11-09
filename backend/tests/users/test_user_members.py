@@ -18,10 +18,11 @@ class TestMembersManager:
             ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, False),
             ({"membership_status": MembershipStatus.ARCHIVED}, False),
             ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
-            ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, False),
+            ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, True),
+            ({"membership_status": MembershipStatus.TENTATIVE}, False),
         ],
     )
-    def test_is_member_is_generated_from_status(self, fields, expected):
+    def test_is_member_follows_status(self, fields, expected):
         user = User.objects.create(phone_number="+12025550201", **fields)
         assert user.is_member is expected
 

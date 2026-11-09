@@ -13,6 +13,7 @@ from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import (
+    FULL_MEMBER_STATUSES,
     PUBLIC_FORM_PHONE_REGION,
     MembershipStatus,
     PublicRsvpToken,
@@ -145,7 +146,7 @@ def _resolve_public_rsvper(
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if phone_match and phone_match.is_member:
+    if phone_match and phone_match.membership_status in FULL_MEMBER_STATUSES:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and phone_match.archived_at:
@@ -247,7 +248,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     # Paused goes to login like a member; login only reveals the pause after the right password.
-    if user.is_member or user.is_paused:
+    if user.membership_status in FULL_MEMBER_STATUSES or user.is_paused:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)
