@@ -39,14 +39,15 @@ def test_buckets_are_disjoint_and_match_app_definitions(manage_users_user):
     make_member(needs_onboarding=True, onboarded_at=timezone.now())
     make_member(is_paused=True)
     make_member(is_paused=True, needs_onboarding=True)
+    make_member(attendance_paused_at=timezone.now())
     make_member(archived_at=timezone.now())
     make_member(archived_at=timezone.now(), is_paused=True)
     body = member_totals(manage_users_user)
     assert {k: body[k] for k in ("total", *BUCKETS)} == {
-        "total": 8,
+        "total": 9,
         "active": 3,
         "still_onboarding": 1,
-        "paused": 2,
+        "paused": 3,
         "archived": 2,
     }
     assert sum(body[k] for k in BUCKETS) == body["total"]
