@@ -17,6 +17,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.CreateUser]: 'create users',
   [Permission.ManageUsers]: 'manage users',
   [Permission.ManageRoles]: 'manage roles',
+  [Permission.ViewAuditLog]: 'view audit log',
   [Permission.ApproveJoinRequests]: 'approve join requests',
   [Permission.ManageEvents]: 'manage events',
   [Permission.EditGuidelines]: 'edit guidelines',
