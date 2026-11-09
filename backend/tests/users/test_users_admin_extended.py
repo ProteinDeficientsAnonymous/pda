@@ -102,7 +102,7 @@ class TestUpdateUser:
         assert role_names == {"member"}
         paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
         assert len(paused_logs) == 1
-        assert paused_logs[0].details == {"removed_role_ids": [str(extra_role.id)]}
+        assert paused_logs[0].details["removed_role_ids"] == [str(extra_role.id)]
 
     def test_pause_member_only_is_noop_for_roles(
         self, api_client, manage_users_headers, other_user, caplog
@@ -125,7 +125,7 @@ class TestUpdateUser:
         assert role_names == {"member"}
         paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
         assert len(paused_logs) == 1
-        assert paused_logs[0].details == {"removed_role_ids": []}
+        assert paused_logs[0].details["removed_role_ids"] == []
 
     def test_unpause_does_not_restore_roles(self, api_client, manage_users_headers, other_user):
         member_role = Role.objects.get(name="member", is_default=True)

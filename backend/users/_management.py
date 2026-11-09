@@ -163,6 +163,12 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             user.roles.add(member_role)
 
         magic_token = create_magic_token(user)
+        audit_log(
+            logging.INFO,
+            "user_created",
+            request,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.id), details={"bulk": True}),
+        )
         results.append(
             BulkUserResult(
                 row=i + 1,
@@ -320,20 +326,21 @@ def _audit_user_update(
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing also strips non-member roles and
-    records the removed ids. Otherwise a plain field change logs user_updated.
+    A pause transition logs user_paused/user_unpaused (pausing also strips
+    non-member roles and records the removed ids); field changes log user_updated.
     """
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
+        details: dict = {"full_name": user.full_name}
+        if payload.is_paused:
+            details["removed_role_ids"] = strip_elevated_roles(user)
         audit_log(
             logging.WARNING,
             action,
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
         )
-        return
 
     changed = [
         f
