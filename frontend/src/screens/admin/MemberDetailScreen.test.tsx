@@ -14,6 +14,7 @@ import {
   useUsers,
 } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
+import { MembershipStatus } from '@/models/user';
 
 import MemberDetailScreen from './MemberDetailScreen';
 
@@ -52,6 +53,7 @@ const member: Member = {
   showPhone: true,
   showEmail: true,
   isMember: true,
+  membershipStatus: MembershipStatus.Member,
   isSuperuser: false,
   isPaused: false,
   attendancePausedAt: null,

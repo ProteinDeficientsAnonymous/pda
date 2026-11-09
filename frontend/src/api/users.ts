@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';
-import type { Birthday, Veganniversary } from '@/models/user';
+import {
+  type Birthday,
+  MembershipStatus,
+  type MembershipStatusValue,
+  type Veganniversary,
+} from '@/models/user';
 
 import { mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
@@ -28,6 +33,7 @@ export interface Member {
   showPhone: boolean;
   showEmail: boolean;
   isMember: boolean;
+  membershipStatus: MembershipStatusValue;
   isSuperuser: boolean;
   isPaused: boolean;
   attendancePausedAt: Date | null;
@@ -62,6 +68,7 @@ interface WireMember {
   show_phone?: boolean;
   show_email?: boolean;
   is_member?: boolean;
+  membership_status?: MembershipStatusValue;
   is_superuser?: boolean;
   is_paused?: boolean;
   attendance_paused_at?: string | null;
@@ -96,6 +103,7 @@ function fromWire(w: WireMember): Member {
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
     isMember: w.is_member ?? true,
+    membershipStatus: w.membership_status ?? MembershipStatus.Member,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
     attendancePausedAt: w.attendance_paused_at ? new Date(w.attendance_paused_at) : null,

@@ -37,10 +37,12 @@ def archive_user(request, user: User) -> list[str]:
     """
     with transaction.atomic():
         user.archived_at = timezone.now()
+        user.archived_by = getattr(request, "auth", None)
         user.calendar_token = ""
         user.save(
             update_fields=[
                 "archived_at",
+                "archived_by",
                 "calendar_token",
                 *user.set_membership_status(MembershipStatus.ARCHIVED),
             ]

@@ -30,18 +30,21 @@ def _resolve_names(join_request) -> tuple[str, str]:
 def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
     existing_user.archived_at = None
+    existing_user.archived_by = None
     existing_user.needs_onboarding = True
     existing_user.first_name, existing_user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
         existing_user.sms_consent_at = join_request.sms_consent_at
-    # Behavior-preserving: an archived ex-tentative user is reactivated as a non-member today.
-    status = MembershipStatus.MEMBER if existing_user.is_member else MembershipStatus.PUBLIC_RSVPER
+    # Archiving leaves an attendance pause in place, so re-approval doesn't lift it.
+    paused = existing_user.attendance_paused_at is not None
+    status = MembershipStatus.ATTENDANCE_PAUSED if paused else MembershipStatus.MEMBER
     existing_user.save(
         update_fields=[
             *existing_user.set_membership_status(status),
             "archived_at",
+            "archived_by",
             "needs_onboarding",
             "first_name",
             "last_name",
@@ -49,6 +52,9 @@ def _reactivate_archived_user(existing_user, join_request):
             "sms_consent_at",
         ]
     )
+    if status == MembershipStatus.MEMBER:
+        # An archived applicant never had the member role.
+        grant_membership(existing_user)
     return create_magic_token(existing_user)
 
 

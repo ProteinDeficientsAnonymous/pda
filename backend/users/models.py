@@ -76,6 +76,7 @@ def _legacy_membership_status(fields: dict) -> "MembershipStatus":
 
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
 SIGN_IN_STATUSES = (MembershipStatus.MEMBER, *LIMITED_STATUSES)
+MEMBER_OR_ARCHIVED = (MembershipStatus.MEMBER, MembershipStatus.ARCHIVED)
 
 
 class WeekStart:
@@ -103,16 +104,12 @@ class UserManager(BaseUserManager):
 
     def members_or_archived(self):
         """Members plus archived members, for admin views with an archived bucket."""
-        # is_member is what still tells an archived member from an archived applicant (#2264).
-        return self.get_queryset().filter(
-            models.Q(membership_status=MembershipStatus.MEMBER)
-            | models.Q(membership_status=MembershipStatus.ARCHIVED, is_member=True)
-        )
+        return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
 
     def members_or_attendance_paused(self):
-        """Members plus attendance-paused ex-members, who admins still manage as members."""
+        """Members, attendance-paused ex-members, and archived members: everyone admins manage."""
         return self.get_queryset().filter(
-            models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
+            membership_status__in=(*MEMBER_OR_ARCHIVED, MembershipStatus.ATTENDANCE_PAUSED)
         )
 
     def active_members(self):
@@ -221,6 +218,9 @@ class User(AbstractUser):
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    archived_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
@@ -453,9 +453,13 @@ def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwar
         return
     signal_from_role_side = reverse
     if signal_from_role_side:
-        if User.objects.filter(pk__in=pk_set, is_member=False).exists():
+        if (
+            User.objects.filter(pk__in=pk_set)
+            .exclude(membership_status__in=MEMBER_OR_ARCHIVED)
+            .exists()
+        ):
             raise ValueError("cannot assign a role to a non-member user")
-    elif not instance.is_member:
+    elif instance.membership_status not in MEMBER_OR_ARCHIVED:
         raise ValueError("cannot assign a role to a non-member user")
 
 

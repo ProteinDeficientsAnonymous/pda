@@ -44,10 +44,10 @@ def test_members_excludes_archived_member():
     assert not User.objects.members().filter(pk=archived.pk).exists()
 
 
-@pytest.mark.parametrize(("was_member", "included"), [(True, True), (False, False)])
-def test_members_or_archived_keeps_only_archived_members(was_member, included):
+@pytest.mark.parametrize("was_member", [True, False])
+def test_members_or_archived_includes_every_archived_user(was_member):
     user = make_user(is_member=was_member, archived_at=timezone.now())
-    assert User.objects.members_or_archived().filter(pk=user.pk).exists() is included
+    assert User.objects.members_or_archived().filter(pk=user.pk).exists()
 
 
 def test_me_returns_membership_status(api_client, auth_headers):

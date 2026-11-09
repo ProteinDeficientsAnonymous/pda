@@ -82,8 +82,10 @@ def test_non_members_are_not_counted(manage_users_user):
     make_member(is_member=False, is_paused=True)
     make_member(is_member=False, archived_at=timezone.now())
     body = member_totals(manage_users_user)
-    assert body["total"] == body["active"] == body["new_in_period"] == 1
-    assert body["still_onboarding"] == body["paused"] == body["archived"] == 0
+    # An archived applicant counts as archived, same as an archived member.
+    assert body["total"] == body["new_in_period"] == 2
+    assert body["active"] == body["archived"] == 1
+    assert body["still_onboarding"] == body["paused"] == 0
 
 
 def test_new_in_period_boundary(manage_users_user):

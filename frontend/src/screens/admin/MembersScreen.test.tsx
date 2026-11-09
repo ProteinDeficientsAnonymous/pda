@@ -6,7 +6,7 @@ import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 import { setAuthed } from '@/test/auth';
 import { makeMember, makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
@@ -45,6 +45,7 @@ const attendancePaused = makeMember({
   id: 'm3',
   fullName: 'Paused Member',
   isMember: false,
+  membershipStatus: MembershipStatus.AttendancePaused,
   attendancePausedAt: new Date('2026-03-01'),
 });
 
@@ -217,7 +218,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.PublicRsvper,
+        }),
         attendancePaused,
       ],
     });
@@ -304,7 +310,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.PublicRsvper,
+        }),
       ],
     });
 

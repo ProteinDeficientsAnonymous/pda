@@ -1,10 +1,16 @@
 import type { Member } from '@/api/users';
+import { MembershipStatus, type MembershipStatusValue } from '@/models/user';
+
+const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
+  MembershipStatus.Member,
+  MembershipStatus.AttendancePaused,
+  MembershipStatus.Archived,
+];
 
 export function isAttendancePaused(member: Pick<Member, 'attendancePausedAt'>): boolean {
   return member.attendancePausedAt !== null;
 }
 
-// Attendance pause clears is_member, but admins still manage them as members.
-export function isManagedMember(member: Pick<Member, 'isMember' | 'attendancePausedAt'>): boolean {
-  return member.isMember || isAttendancePaused(member);
+export function isManagedMember(member: Pick<Member, 'membershipStatus'>): boolean {
+  return MANAGED_STATUSES.includes(member.membershipStatus);
 }

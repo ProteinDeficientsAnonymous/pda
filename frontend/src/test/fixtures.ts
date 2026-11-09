@@ -180,6 +180,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     showPhone: true,
     showEmail: true,
     isMember: true,
+    membershipStatus: MembershipStatus.Member,
     isSuperuser: false,
     isPaused: false,
     attendancePausedAt: null,
