@@ -21,7 +21,8 @@ class AuditLogQuery(Schema):
     target_type: AuditTargetType | None = None
     target_id: str | None = Field(None, max_length=64)
     member_id: UUID | None = Field(
-        None, description="entries targeting this user, plus join requests linked to them"
+        None,
+        description="entries targeting this user, plus any entry whose details.user_id names them",
     )
     actor_id: UUID | None = None
     action: str | None = Field(None, max_length=64)
