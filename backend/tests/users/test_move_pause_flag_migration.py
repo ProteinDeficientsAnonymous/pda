@@ -38,13 +38,22 @@ def test_paused_flag_moves_onto_the_status(historical_apps):
         status_before_archive="attendance_paused",
     )
     active = make("+12025550604", membership_status="active_member")
+    drifted = make(
+        "+12025550605",
+        membership_status="attendance_paused",
+        is_paused=True,
+        attendance_paused_at=timezone.now(),
+    )
 
     migration.move_pause_flag_to_status(historical_apps, None)
 
-    for user in (tentative, none, archived, active):
+    for user in (tentative, none, archived, active, drifted):
         user.refresh_from_db()
-    assert tentative.membership_status == none.membership_status == "guidelines_paused"
+    assert {tentative.membership_status, none.membership_status, drifted.membership_status} == {
+        "guidelines_paused"
+    }
     assert tentative.attendance_paused_at is None
+    assert drifted.attendance_paused_at is None
     assert archived.membership_status == "archived"
     assert archived.status_before_archive == "guidelines_paused"
     assert active.membership_status == "active_member"

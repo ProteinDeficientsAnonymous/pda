@@ -114,6 +114,31 @@ class TestRestoreOnCheckIn:
         _check_in(api_client, host, paused, for_plus_one=True)
         assert paused.attendance_paused_at is not None
 
+    def test_archived_member_is_never_restored(self, api_client, host, paused):
+        _attended(paused, event_type=EventType.CLUB)
+        paused.archived_at = timezone.now()
+        paused.status_before_archive = MembershipStatus.ATTENDANCE_PAUSED
+        paused.save(
+            update_fields=[
+                "archived_at",
+                "status_before_archive",
+                *paused.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
+        _check_in(api_client, host, paused)
+        assert paused.attendance_paused_at is not None
+        assert paused.restored_at is None
+        assert paused.status_before_archive == MembershipStatus.ATTENDANCE_PAUSED
+
+    def test_archived_tentative_applicant_is_never_promoted(self, api_client, host):
+        archived = User.objects.create_user(
+            phone_number="+12025557102", first_name="Gone", archived_at=timezone.now()
+        )
+        jr = _tentative_request(archived)
+        _check_in(api_client, host, archived)
+        jr.refresh_from_db()
+        assert jr.status == JoinRequestStatus.TENTATIVE
+
     def test_host_marking_themselves_never_restores(self, api_client, paused):
         _attended(paused)
         _check_in(api_client, paused, paused)
