@@ -67,11 +67,24 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
     auth=gated_jwt,
 )
 def attendance_pause_preview(request, user_id: UUID):
-    require_manage_users(request, "attendance_pause_preview", str(user_id))
+    return _pause_preview(request, user_id, "attendance_pause_preview", keep_official=True)
+
+
+@router.get(
+    "/users/{user_id}/guidelines-pause-preview/",
+    response={200: AttendancePausePreviewOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def guidelines_pause_preview(request, user_id: UUID):
+    return _pause_preview(request, user_id, "guidelines_pause_preview", keep_official=False)
+
+
+def _pause_preview(request, user_id: UUID, endpoint: str, *, keep_official: bool):
+    require_manage_users(request, endpoint, str(user_id))
     try:
         user = User.objects.members_or_archived().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    events = _preview_events(attendance_pause_impact(user))
-    return Status(200, AttendancePausePreviewOut(events=events))
+    impact = attendance_pause_impact(user, keep_official=keep_official)
+    return Status(200, AttendancePausePreviewOut(events=_preview_events(impact)))

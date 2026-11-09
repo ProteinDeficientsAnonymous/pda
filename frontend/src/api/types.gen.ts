@@ -375,6 +375,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guidelines Pause Preview */
+        get: operations["users__attendance_pause_api_guidelines_pause_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/hard/": {
         parameters: {
             query?: never;
@@ -7246,6 +7263,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__attendance_pause_api_guidelines_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
                 };
             };
             /** @description Forbidden */
