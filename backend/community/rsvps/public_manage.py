@@ -30,6 +30,7 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -144,13 +145,21 @@ def list_my_rsvps(request, token: str = ""):
 
 @router.post(
     "/public/my-rsvps/{event_id}/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
+    response={
+        200: PublicRsvpOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
 def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = ""):
     user = _resolve_token_user(token)
     event = load_public_rsvp_event(event_id)
+    reject_if_rejected_applicant(request, user.phone_number, event.id)
     validate_rsvp_status(payload.status)
 
     with transaction.atomic():

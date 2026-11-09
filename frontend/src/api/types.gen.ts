@@ -12214,6 +12214,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Unprocessable Content */
             422: {
                 headers: {
