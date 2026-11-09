@@ -27,8 +27,8 @@ class TestUnrejectJoinRequest:
         assert response.json()["status"] == JoinRequestStatus.PENDING
         sample_join_request.refresh_from_db()
         assert sample_join_request.status == JoinRequestStatus.PENDING
-        assert sample_join_request.rejected_by == vettor_user
-        assert sample_join_request.rejected_at is not None
+        assert sample_join_request.status_changed_by == vettor_user
+        assert sample_join_request.status_changed_at is not None
 
     def test_unreject_blocked_while_phone_has_open_request(
         self, api_client, vettor_headers, sample_join_request

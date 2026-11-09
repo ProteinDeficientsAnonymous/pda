@@ -49,10 +49,10 @@ def with_member_since(qs: QuerySet[User]) -> QuerySet[User]:
         JoinRequest.objects.filter(
             Q(user=OuterRef("pk")) | Q(user__isnull=True, phone_number=OuterRef("phone_number")),
             status=JoinRequestStatus.APPROVED,
-            approved_at__isnull=False,
+            status_changed_at__isnull=False,
         )
-        .order_by("-approved_at")
-        .values("approved_at")[:1]
+        .order_by("-status_changed_at")
+        .values("status_changed_at")[:1]
     )
     joined = F("date_joined")
     # Greatest is NULL on SQLite if any arg is NULL, hence the Coalesce.

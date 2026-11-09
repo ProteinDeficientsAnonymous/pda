@@ -35,7 +35,7 @@ def _make_tentative(phone_number: str, *, set_up_days_ago: int = 8, **extra) -> 
         email=user.email,
         user=user,
         status=JoinRequestStatus.TENTATIVE,
-        tentative_at=timezone.now() - timedelta(days=set_up_days_ago),
+        status_changed_at=timezone.now() - timedelta(days=set_up_days_ago),
     )
     return user
 

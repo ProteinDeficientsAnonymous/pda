@@ -227,6 +227,21 @@ def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
     return {"approved_via_event_id": str(event.id), "approved_via_event_title": event.title}
 
 
+_DECISION_FIELD_PREFIX = {
+    JoinRequestStatus.TENTATIVE: "tentative",
+    JoinRequestStatus.APPROVED: "approved",
+    JoinRequestStatus.REJECTED: "rejected",
+}
+
+
+def _decision_fields(jr: JoinRequest) -> dict[str, datetime | str | None]:
+    prefix = _DECISION_FIELD_PREFIX.get(JoinRequestStatus(jr.status))
+    if prefix is None:
+        return {}
+    by = jr.status_changed_by
+    return {f"{prefix}_at": jr.status_changed_at, f"{prefix}_by_name": by.full_name if by else None}
+
+
 def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
@@ -248,13 +263,8 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         user_id=str(user.id) if user else None,
         previously_archived=history.previously_archived,
         previously_rejected=history.previously_rejected,
-        tentative_at=jr.tentative_at,
-        tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
-        approved_at=jr.approved_at,
-        approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
+        **_decision_fields(jr),
         **_approving_event_fields(jr),
-        rejected_at=jr.rejected_at,
-        rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         rejection_reason=jr.rejection_reason,
         rejection_note=jr.rejection_note,
         onboarded_at=user.onboarded_at if user else None,
@@ -278,7 +288,7 @@ def _superseded_by_pause(jr: JoinRequest, lookups: PhoneLookups) -> bool:
     user = lookups.users_by_phone.get(jr.phone_number)
     if user is None or jr.status not in _ADMITTED_STATUSES:
         return False
-    decided_at = jr.approved_at or jr.tentative_at or jr.submitted_at
+    decided_at = jr.status_changed_at or jr.submitted_at
     stamps = (user.attendance_paused_at, user.restored_at)
     return any(stamp is not None and stamp > decided_at for stamp in stamps)
 
@@ -313,7 +323,7 @@ def list_join_requests(request):
             status__in=_ADMITTED_STATUSES,
             phone_number__in=expired_phones,
         )
-        .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
+        .select_related("user", "status_changed_by", "approved_via_event")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
@@ -325,17 +335,10 @@ def list_join_requests(request):
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
-    now = timezone.now()
     join_request.status = status
-    if status == JoinRequestStatus.TENTATIVE:
-        join_request.tentative_at = now
-        join_request.tentative_by = actor
-    elif status == JoinRequestStatus.APPROVED:
-        join_request.approved_at = now
-        join_request.approved_by = actor
-    elif status == JoinRequestStatus.REJECTED:
-        join_request.rejected_at = now
-        join_request.rejected_by = actor
+    join_request.status_changed_at = timezone.now()
+    join_request.status_changed_by = actor
+    if status == JoinRequestStatus.REJECTED:
         join_request.rejection_reason, join_request.rejection_note = rejection
     join_request.save()
 

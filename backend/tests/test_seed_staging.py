@@ -376,17 +376,9 @@ def test_seed_staging_creates_join_requests_matching_specs():
         assert bool(jr.email) is spec.has_email
         assert jr.sms_consent_at is not None
         assert jr.guidelines_consent_at is not None
-        if spec.status == JoinRequestStatus.APPROVED:
-            assert jr.approved_at is not None
-            assert jr.approved_by is not None
-            assert jr.rejected_at is None
-        elif spec.status == JoinRequestStatus.REJECTED:
-            assert jr.rejected_at is not None
-            assert jr.rejected_by is not None
-            assert jr.approved_at is None
-        else:
-            assert jr.approved_at is None
-            assert jr.rejected_at is None
+        decided = spec.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED)
+        assert (jr.status_changed_at is not None) is decided
+        assert (jr.status_changed_by is not None) is decided
 
 
 @pytest.mark.django_db
