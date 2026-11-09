@@ -19,6 +19,9 @@ export function TentativeActions({
         <Button onClick={onApprove} disabled={busy}>
           manually approve
         </Button>
+        <p className="text-muted mt-2 text-xs">
+          tentative members can&rsquo;t be rejected — archive or pause them instead
+        </p>
       </div>
     </div>
   );

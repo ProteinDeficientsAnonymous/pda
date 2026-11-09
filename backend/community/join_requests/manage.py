@@ -22,7 +22,6 @@ from community.join_requests._rejection import Rejection, send_join_rejection, v
 from community.join_requests.approval import (
     provision_approved_user,
     provision_tentative_user,
-    reject_tentative_user,
     send_join_approval,
 )
 from community.join_requests.grace import WHATSAPP_GRACE_DAYS
@@ -362,12 +361,13 @@ def _apply_status_transition(
         except JoinRequest.DoesNotExist:
             raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-        # TENTATIVE is not a final decision — it may still transition to
-        # approved/rejected, so only the two terminal states are locked.
         if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
             raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
-
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
+        # A tentative person who shouldn't stay is archived or guidelines-paused instead.
+        if was_tentative and status == JoinRequestStatus.REJECTED:
+            raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
+
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
             _, magic_token = provision_tentative_user(join_request, actor)
@@ -377,8 +377,6 @@ def _apply_status_transition(
                 join_request, actor, was_tentative=was_tentative
             )
             return join_request, magic_token, user_created, was_tentative
-        if status == JoinRequestStatus.REJECTED:
-            reject_tentative_user(join_request)
     return join_request, None, False, False
 
 

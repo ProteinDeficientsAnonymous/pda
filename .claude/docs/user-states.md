@@ -37,7 +37,6 @@ stateDiagram-v2
     Rejected --> Applicant: vetter un-rejects
 
     Tentative --> Member: vetter approves, or checked in at official/club event
-    Tentative --> Rejected: vetter rejects
     Tentative --> Archived: deletes own account
 
     Member --> AttendancePaused: admin pauses for attendance
@@ -64,7 +63,7 @@ stateDiagram-v2
 | vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative` | `provision_tentative_user` |
 | vetter approves | new user → create with member role; public rsvper → promote in place; tentative → promote in place, no new link; archived → clear `archived_at`/`archived_by`, re-flag onboarding, back to `active_member` (or a pause it was archived under). All but tentative mint a magic link. `grant_membership` revokes rsvp tokens | `provision_approved_user` |
 | checked in at official/club event | someone else checks a tentative user in → promoted, join request approved via that event | `maybe_promote_tentative` |
-| vetter rejects | join request rejected + email; a tentative user becomes `rejected` and can't sign in | `join_requests/manage.py` |
+| vetter rejects | pending join request rejected + email. A tentative request can't be rejected (400 `tentative_cannot_be_rejected`); archive or guidelines-pause them instead | `join_requests/manage.py` |
 | vetter un-rejects | back to pending, unless the phone already has an open request | `join_requests/unreject.py` |
 | admin creates account | member with member role + magic link | `users/_management.py` `create_user` |
 | admin pauses for attendance | `attendance_paused`, elevated roles stripped (member role kept), non-official/club RSVPs released, co-host spots dropped, solo-hosted events moved to draft | `apply_attendance_pause` |
@@ -110,5 +109,4 @@ See [user-capabilities.md](user-capabilities.md).
 
 ## Open questions
 
-- A tentative user who is then rejected keeps their account and password. Login only blocks archived and guidelines-paused users, so if they'd already finished onboarding they can still sign in as limited ([#2245](https://github.com/ProteinDeficientsAnonymous/pda/issues/2245)).
 - An archived member who tries to sign in is told the account is no longer active, with no prompt to request to join again ([#2244](https://github.com/ProteinDeficientsAnonymous/pda/issues/2244)).
