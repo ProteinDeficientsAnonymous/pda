@@ -92,7 +92,7 @@ guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_
     ],
 )
 def test_guidelines_paused_backfill(before, expected):
-    user = make_user(is_paused=True)
+    user = make_user(is_paused=True, attendance_paused_at=timezone.now())
     User.objects.filter(pk=user.pk).update(membership_status=before)
     guidelines_backfill.backfill_guidelines_paused(apps, None)
     user.refresh_from_db()

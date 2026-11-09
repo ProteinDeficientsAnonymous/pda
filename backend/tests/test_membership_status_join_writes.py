@@ -105,14 +105,20 @@ def test_reapproving_archived_applicant_makes_member(
     assert applicant.roles.filter(name="member").exists()
 
 
+@pytest.mark.parametrize("is_paused", [False, True])
 def test_reapproving_archived_paused_member_keeps_pause(
-    api_client, vettor_headers, sample_join_request
+    api_client, vettor_headers, sample_join_request, is_paused
 ):
     paused = make_user(
         phone_number=sample_join_request.phone_number,
         is_member=False,
+        is_paused=is_paused,
         attendance_paused_at=timezone.now(),
         archived_at=timezone.now(),
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
-    assert _assert_in_sync(paused) == MembershipStatus.ATTENDANCE_PAUSED
+    paused.refresh_from_db()
+    assert paused.membership_status == (
+        MembershipStatus.GUIDELINES_PAUSED if is_paused else MembershipStatus.ATTENDANCE_PAUSED
+    )
+    assert (paused.attendance_paused_at is None) == is_paused
