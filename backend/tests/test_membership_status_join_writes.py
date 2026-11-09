@@ -83,6 +83,22 @@ def test_reapproving_archived_member_makes_member(api_client, vettor_headers, sa
     assert _assert_in_sync(member) == MembershipStatus.MEMBER
 
 
+def test_approving_linked_archived_applicant_reactivates(
+    api_client, vettor_headers, sample_join_request
+):
+    applicant = make_user(
+        phone_number=sample_join_request.phone_number,
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+    )
+    sample_join_request.user = applicant
+    sample_join_request.save(update_fields=["user"])
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+    applicant.refresh_from_db()
+    assert applicant.archived_at is None
+    assert applicant.is_member is True
+
+
 def test_check_in_promotes_tentative_to_member(
     sample_join_request, vettor_user, open_official_event
 ):
