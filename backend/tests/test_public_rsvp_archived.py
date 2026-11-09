@@ -26,7 +26,9 @@ class TestArchivedMemberGate:
             membership_status=MembershipStatus.MEMBER,
         )
         member.archived_at = timezone.now()
-        member.save(update_fields=["archived_at"])
+        member.save(
+            update_fields=["archived_at", *member.set_membership_status(MembershipStatus.ARCHIVED)]
+        )
 
         response = post(api_client, official_event)
 
@@ -44,7 +46,9 @@ class TestArchivedMemberGate:
             membership_status=MembershipStatus.MEMBER,
         )
         member.archived_at = timezone.now()
-        member.save(update_fields=["archived_at"])
+        member.save(
+            update_fields=["archived_at", *member.set_membership_status(MembershipStatus.ARCHIVED)]
+        )
 
         response = post(api_client, official_event)
 
