@@ -33,7 +33,7 @@ from users._archive import (
     upcoming_events_q,
     upcoming_hosted_events,
 )
-from users.helpers import grant_membership
+from users.helpers import grant_membership, strip_elevated_roles
 from users.models import HAS_EMAIL, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         EventCoHostInvite.objects.filter(
             upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
         ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
-        removed_role_ids = _strip_membership(user)
+        removed_role_ids = strip_elevated_roles(user)
         user.attendance_paused_at = timezone.now()
         user.has_joined_whatsapp = False
         user.unpaused_at = None
@@ -157,12 +157,6 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
             lambda d=details: send_event_unpublished_email(sender=sender, details=d),
             "event_unpublished_email",
         )
-
-
-def _strip_membership(user: User) -> list[str]:
-    removed_role_ids = [str(pk) for pk in user.roles.values_list("pk", flat=True)]
-    user.roles.clear()
-    return removed_role_ids
 
 
 def _audit_pause(request, user: User, impact: PauseImpact, removed_role_ids: list[str]) -> None:
