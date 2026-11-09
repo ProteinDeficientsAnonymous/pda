@@ -77,4 +77,14 @@ def test_self_deleted(api_client, member):
     body = {"password": "memberpass123"}
     _send(api_client.post, "/api/auth/me/delete/", body, **auth_headers_for(member))
 
-    _assert_entry("user_self_deleted", member, member)
+    entry = _assert_entry("user_self_deleted", member, member)
+    assert entry.details["full_name"] == member.full_name
+
+
+def test_pause_with_rename_logs_both(api_client, manage_users_user, manage_users_headers, member):
+    body = {"is_paused": True, "first_name": "Renamed"}
+    _send(api_client.patch, f"/api/auth/users/{member.pk}/", body, **manage_users_headers)
+
+    _assert_entry("user_paused", manage_users_user, member)
+    entry = _assert_entry("user_updated", manage_users_user, member)
+    assert entry.details["fields_changed"] == ["first_name"]
