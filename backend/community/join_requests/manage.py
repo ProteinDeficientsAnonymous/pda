@@ -22,6 +22,7 @@ from community.join_requests._rejection import Rejection, send_join_rejection, v
 from community.join_requests.approval import (
     provision_approved_user,
     provision_tentative_user,
+    reject_tentative_user,
     send_join_approval,
 )
 from community.join_requests.grace import WHATSAPP_GRACE_DAYS
@@ -376,6 +377,8 @@ def _apply_status_transition(
                 join_request, actor, was_tentative=was_tentative
             )
             return join_request, magic_token, user_created, was_tentative
+        if status == JoinRequestStatus.REJECTED:
+            reject_tentative_user(join_request)
     return join_request, None, False, False
 
 

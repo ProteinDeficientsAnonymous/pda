@@ -229,6 +229,14 @@ class User(AbstractUser):
             ),
         ]
 
+    def set_membership_status(self, status: MembershipStatus) -> list[str]:
+        """return(list[str]): the fields it changed, for update_fields."""
+        self.membership_status = status
+        # Archived users keep is_member until it becomes a generated field (#2264).
+        if status != MembershipStatus.ARCHIVED:
+            self.is_member = status == MembershipStatus.MEMBER
+        return ["membership_status", "is_member"]
+
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()

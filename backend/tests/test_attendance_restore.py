@@ -13,7 +13,7 @@ from community.models import (
 )
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 from tests._auth import auth_headers_for
@@ -83,6 +83,7 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
         assert paused.is_member is True
+        assert paused.membership_status == MembershipStatus.MEMBER
         assert (
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()

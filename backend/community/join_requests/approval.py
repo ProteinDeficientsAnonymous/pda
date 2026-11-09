@@ -6,7 +6,7 @@ from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
-from users.models import User
+from users.models import MembershipStatus, User
 
 from community.models import (
     JoinRequestStatus,
@@ -36,8 +36,11 @@ def _reactivate_archived_user(existing_user, join_request):
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
         existing_user.sms_consent_at = join_request.sms_consent_at
+    # Behavior-preserving: an archived ex-tentative user is reactivated as a non-member today.
+    status = MembershipStatus.MEMBER if existing_user.is_member else MembershipStatus.PUBLIC_RSVPER
     existing_user.save(
         update_fields=[
+            *existing_user.set_membership_status(status),
             "archived_at",
             "needs_onboarding",
             "first_name",
@@ -55,7 +58,6 @@ def _promote_public_rsvper(user, join_request) -> str:
     param(user): the public rsvper User to promote, linked to join_request.
     return(str): magic token replacing the rsvp tokens this revokes.
     """
-    user.is_member = True
     # Never onboarded and no password — dropping the token below strands them.
     user.needs_onboarding = True
     user.first_name, user.last_name = _resolve_names(join_request)
@@ -65,7 +67,7 @@ def _promote_public_rsvper(user, join_request) -> str:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(
         update_fields=[
-            "is_member",
+            *user.set_membership_status(MembershipStatus.MEMBER),
             "needs_onboarding",
             "first_name",
             "last_name",
@@ -85,12 +87,17 @@ def promote_tentative_member(user, join_request) -> None:
     """
     # Their own name, not the application's — this path copies none (Issue 733).
     validate_display_name(user.first_name, field="first_name")
-    user.is_member = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:
         user.sms_consent_at = join_request.sms_consent_at
-    user.save(update_fields=["is_member", "guidelines_consent_at", "sms_consent_at"])
+    user.save(
+        update_fields=[
+            *user.set_membership_status(MembershipStatus.MEMBER),
+            "guidelines_consent_at",
+            "sms_consent_at",
+        ]
+    )
     grant_membership(user)
 
 
@@ -136,6 +143,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
             last_name=join_request.last_name,
             email=join_request.email,
             is_member=False,
+            membership_status=MembershipStatus.TENTATIVE,
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])
@@ -147,6 +155,8 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
+    if user.membership_status in (MembershipStatus.PUBLIC_RSVPER, MembershipStatus.REJECTED):
+        changed += user.set_membership_status(MembershipStatus.TENTATIVE)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
@@ -158,6 +168,14 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
         user.save(update_fields=changed)
 
     return user, create_magic_token(user)
+
+
+def reject_tentative_user(join_request) -> None:
+    """A rejected tentative applicant becomes ``rejected``; a linked public rsvper stays one."""
+    user = join_request.user
+    if user is None or user.membership_status != MembershipStatus.TENTATIVE:
+        return
+    user.save(update_fields=user.set_membership_status(MembershipStatus.REJECTED))
 
 
 def maybe_promote_tentative(user, event, actor) -> bool:
