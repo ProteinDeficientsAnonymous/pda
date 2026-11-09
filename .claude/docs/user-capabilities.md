@@ -9,7 +9,7 @@ What each user type can do, as the backend enforces it. For how people move betw
 
 Guidelines-paused, archived and `none` users can't sign in. They can still browse as a visitor. A guidelines-paused number is sent to login from the public RSVP form and told "already a member" by the join form; login only says they're paused after the right password, so nobody learns it from a phone number alone.
 
-A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both refuse with the generic `rsvp_could_not_be_created`) until they submit a new join request. From `/my-rsvps` they can still mark can't go or cancel. An archived user can submit the join form again; marking that request tentative or approving it restores the account.
+A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both refuse with the generic `rsvp_could_not_be_created`) until they submit a new join request. From `/my-rsvps` they can still mark can't go or cancel. An archived user, including a tentative person an admin archived, can submit the join form again; marking that request tentative or approving it restores the account.
 
 ## Events
 
@@ -58,7 +58,7 @@ Granted through roles; only members can hold roles. The admin role has every per
 | Permission | Unlocks |
 |---|---|
 | `create_user` | create member accounts directly |
-| `manage_users` | edit, pause, attendance-pause, archive and hard-delete members; assign roles |
+| `manage_users` | edit, pause, attendance-pause, archive and hard-delete members; archive tentative people, which closes their join request; assign roles |
 | `manage_roles` | create, edit and delete roles |
 | `approve_join_requests` | vet join requests: tentative, approve, reject, un-reject |
 | `manage_events` | edit any event, see every guest list and questionnaire response, comment anywhere |

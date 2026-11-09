@@ -255,7 +255,7 @@ def list_users(request, include_non_members: bool = False):
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
     # The opt-in adds public-RSVP non-members.
-    base = User.objects.all() if include_non_members else User.objects.members_or_archived()
+    base = User.objects.all() if include_non_members else User.objects.managed()
     users = (
         base.filter(archived_at__isnull=True)
         .prefetch_related("roles")

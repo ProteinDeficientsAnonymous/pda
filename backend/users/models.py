@@ -85,6 +85,8 @@ PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDAN
 FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
+# The admin members screen lists tentative people too, so they can be archived.
+MANAGED_STATUSES = (*MEMBER_OR_ARCHIVED, MembershipStatus.TENTATIVE)
 
 
 class WeekStart:
@@ -113,6 +115,10 @@ class UserManager(BaseUserManager):
     def members_or_archived(self):
         """Members plus archived members: everyone admins manage as members."""
         return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
+
+    def managed(self):
+        """Everyone on the admin members screen: members, archived members and tentative people."""
+        return self.get_queryset().filter(membership_status__in=MANAGED_STATUSES)
 
     def active_members(self):
         """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""

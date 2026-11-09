@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
 from community.events.helpers import broadcast_capacity_change
+from community.join_requests.closing import close_tentative_requests
 from community.models import (
     CoHostInviteStatus,
     Event,
@@ -48,6 +49,7 @@ def archive_user(request, user: User) -> list[str]:
                 *user.set_membership_status(MembershipStatus.ARCHIVED, by=actor),
             ]
         )
+        close_tentative_requests(request, user)
         removed_role_ids = strip_elevated_roles(user)
         release_upcoming_rsvps(request, user)
         step_down_as_cohost(user)
