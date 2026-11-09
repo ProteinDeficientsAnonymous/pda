@@ -4,7 +4,7 @@ import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.apps import apps
 from django.utils import timezone
-from users.models import MembershipStatus
+from users.models import MembershipStatus, User
 
 from tests._users import make_user
 
@@ -90,3 +90,24 @@ def test_member_wins_over_old_rejected_request(sample_join_request):
         user, sample_join_request, JoinRequestStatus.REJECTED, tentative_at=timezone.now()
     )
     assert _status_after_backfill(user) == MembershipStatus.MEMBER
+
+
+guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_paused_status")
+
+
+@pytest.mark.parametrize(
+    ("before", "expected"),
+    [
+        (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED),
+        (MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
+        (MembershipStatus.ARCHIVED, MembershipStatus.ARCHIVED),
+    ],
+)
+def test_guidelines_paused_backfill(before, expected):
+    user = make_user(is_paused=True, attendance_paused_at=timezone.now())
+    User.objects.filter(pk=user.pk).update(membership_status=before)
+    guidelines_backfill.backfill_guidelines_paused(apps, None)
+    user.refresh_from_db()
+    assert user.membership_status == expected
+    if expected == MembershipStatus.GUIDELINES_PAUSED:
+        assert user.attendance_paused_at is None

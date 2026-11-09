@@ -61,6 +61,7 @@ class MembershipStatus(models.TextChoices):
     ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
     REJECTED = "rejected", "rejected"
     ARCHIVED = "archived", "archived"
+    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 
 
 def _legacy_membership_status(fields: dict) -> "MembershipStatus":
@@ -74,9 +75,11 @@ def _legacy_membership_status(fields: dict) -> "MembershipStatus":
     return MembershipStatus.PUBLIC_RSVPER
 
 
+# A guidelines-paused member is still a member; login and active_members() keep them out.
+MEMBER_STATUSES = (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
-SIGN_IN_STATUSES = (MembershipStatus.MEMBER, *LIMITED_STATUSES)
-MEMBER_OR_ARCHIVED = (MembershipStatus.MEMBER, MembershipStatus.ARCHIVED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, *LIMITED_STATUSES)
+MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
 
 
 class WeekStart:
@@ -100,7 +103,7 @@ class UserManager(BaseUserManager):
         Use on member-facing surfaces (directory, roles, recipient lists). The
         default manager returns both, for auth/login/join lookups by phone/email.
         """
-        return self.get_queryset().filter(membership_status=MembershipStatus.MEMBER)
+        return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
 
     def members_or_archived(self):
         """Members plus archived members, for admin views with an archived bucket."""
@@ -255,7 +258,7 @@ class User(AbstractUser):
         self.membership_status = status
         # Archived users keep is_member until it becomes a generated field (#2264).
         if status != MembershipStatus.ARCHIVED:
-            self.is_member = status == MembershipStatus.MEMBER
+            self.is_member = status in MEMBER_STATUSES
         return ["membership_status", "is_member"]
 
     @property

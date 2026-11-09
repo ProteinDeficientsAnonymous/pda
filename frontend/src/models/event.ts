@@ -1,7 +1,7 @@
 import type { components } from '@/api/types.gen';
 
 import { hasPermission, Permission } from './permissions';
-import { MembershipStatus, type User } from './user';
+import { MEMBER_STATUSES, type User } from './user';
 
 /** checkbox answers are a list of ticked options; older ones are comma-joined strings */
 export type QuestionnaireAnswer = string | string[];
@@ -250,7 +250,7 @@ export function canLimitedRsvp(event: Event): boolean {
 
 // Mirrors backend is_limited: any signed-in non-member.
 export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefined): boolean {
-  return user != null && user.membershipStatus !== MembershipStatus.Member;
+  return user != null && !MEMBER_STATUSES.includes(user.membershipStatus);
 }
 
 export function canPublicRsvp(event: Event): boolean {

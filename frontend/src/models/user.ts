@@ -13,8 +13,15 @@ export const MembershipStatus = {
   AttendancePaused: 'attendance_paused',
   Rejected: 'rejected',
   Archived: 'archived',
+  GuidelinesPaused: 'guidelines_paused',
 } as const;
 export type MembershipStatusValue = (typeof MembershipStatus)[keyof typeof MembershipStatus];
+
+// A guidelines-paused member is still a member; the backend blocks their login.
+export const MEMBER_STATUSES: readonly MembershipStatusValue[] = [
+  MembershipStatus.Member,
+  MembershipStatus.GuidelinesPaused,
+];
 
 export interface Role {
   id: string;
