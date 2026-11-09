@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -138,7 +138,7 @@ class Command(BaseCommand):
             defaults = {
                 "first_name": f"perm: {key}",
                 "email": perm_email(key),
-                "is_member": True,
+                "membership_status": MembershipStatus.MEMBER,
                 "needs_onboarding": False,
                 "onboarded_at": now,
                 "guidelines_consent_at": now,
@@ -183,7 +183,10 @@ class Command(BaseCommand):
         for index, combo in enumerate(condition_combinations()):
             user, created = User.objects.get_or_create(
                 phone_number=cond_phone(index),
-                defaults={"first_name": condition_label(combo), "is_member": True},
+                defaults={
+                    "first_name": condition_label(combo),
+                    "membership_status": MembershipStatus.MEMBER,
+                },
             )
             self._apply_condition_user_fields(user, combo, index, now)
             if created:
@@ -200,7 +203,8 @@ class Command(BaseCommand):
         users: list[User] = []
         for index, spec in enumerate(PRIVACY_SPECS):
             user, created = User.objects.get_or_create(
-                phone_number=privacy_phone(index), defaults={"is_member": True}
+                phone_number=privacy_phone(index),
+                defaults={"membership_status": MembershipStatus.MEMBER},
             )
             user.first_name = spec.label
             user.last_name = ""
@@ -227,7 +231,7 @@ class Command(BaseCommand):
         defaults = {
             "first_name": "reset: needs password reset",
             "email": reset_member_email(),
-            "is_member": True,
+            "membership_status": MembershipStatus.MEMBER,
             "needs_onboarding": False,
             "onboarded_at": now,
             "needs_password_reset": True,
@@ -291,7 +295,7 @@ class Command(BaseCommand):
             defaults={
                 "first_name": spec.label,
                 "email": nonmember_email(index) if spec.has_email else None,
-                "is_member": False,
+                "membership_status": MembershipStatus.PUBLIC_RSVPER,
             },
         )
         user.email = nonmember_email(index) if spec.has_email else None

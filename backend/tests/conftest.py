@@ -9,7 +9,7 @@ from django.test import Client
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User, UserManager
+from users.models import User, UserManager, legacy_membership_status
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -91,7 +91,8 @@ def _default_test_users_consented(monkeypatch):
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
-        extra_fields.setdefault("is_member", True)
+        implied = legacy_membership_status({"is_member": True, **extra_fields})
+        extra_fields.setdefault("membership_status", implied)
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)

@@ -64,7 +64,7 @@ class MembershipStatus(models.TextChoices):
     GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 
 
-def _legacy_membership_status(fields: dict) -> "MembershipStatus":
+def legacy_membership_status(fields: dict) -> "MembershipStatus":
     """Status implied by the old flags, for callers that don't pass one yet (#2261-#2263)."""
     if fields.get("archived_at") is not None:
         return MembershipStatus.ARCHIVED
@@ -282,9 +282,18 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
-        if self._state.adding and self.membership_status == MembershipStatus.PUBLIC_RSVPER:
-            self.membership_status = _legacy_membership_status(vars(self))
+        if self._state.adding:
+            self._sync_legacy_membership_fields()
         super().save(*args, **kwargs)
+
+    def _sync_legacy_membership_fields(self) -> None:
+        """Keep a new row's status and is_member consistent, whichever one the caller set."""
+        if self.membership_status == MembershipStatus.PUBLIC_RSVPER:
+            self.membership_status = legacy_membership_status(vars(self))
+        if self.membership_status == MembershipStatus.GUIDELINES_PAUSED:
+            self.is_member = self.attendance_paused_at is None
+        elif self.membership_status != MembershipStatus.ARCHIVED:
+            self.is_member = self.membership_status == MembershipStatus.MEMBER
 
     def __str__(self):
         return self.full_name or self.phone_number

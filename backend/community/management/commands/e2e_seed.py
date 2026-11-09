@@ -9,7 +9,7 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 from users.roles import Role
 
 from community.event_feedback.send import feedback_url
@@ -162,7 +162,9 @@ def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
 
 
 def _screen_user(**fields) -> User:
-    user = User.objects.create_user(password=E2E_PASSWORD, is_member=True, **fields)
+    user = User.objects.create_user(
+        password=E2E_PASSWORD, membership_status=MembershipStatus.MEMBER, **fields
+    )
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
     user.contact_privacy_consent_at = _CONSENT_AT
@@ -228,7 +230,7 @@ def _seed_member_screens() -> dict:
         first_name="River",
         last_name="Guest",
         email="river@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.PUBLIC_RSVPER,
         password=E2E_PASSWORD,
     )
     event = Event.objects.create(
@@ -297,7 +299,7 @@ def _seed_member_screens() -> dict:
         first_name="Casey",
         last_name="Consent",
         email="casey@example.com",
-        is_member=True,
+        membership_status=MembershipStatus.MEMBER,
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
         password=E2E_PASSWORD,
@@ -384,7 +386,7 @@ def _seed_waitlist_screens() -> dict:
         first_name="Pat",
         last_name="Guest",
         email=None,
-        is_member=False,
+        membership_status=MembershipStatus.PUBLIC_RSVPER,
     )
     event = Event.objects.create(
         title="supper club",

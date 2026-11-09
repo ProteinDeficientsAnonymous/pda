@@ -69,7 +69,7 @@ def make_public_rsvper(phone, email, name="Existing Rsvper"):
         first_name=first_name,
         last_name=last_name,
         email=email,
-        is_member=False,
+        membership_status=MembershipStatus.PUBLIC_RSVPER,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])

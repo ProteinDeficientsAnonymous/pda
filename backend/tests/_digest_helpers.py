@@ -10,7 +10,6 @@ def make_tentative(phone_number: str, **extra) -> User:
         phone_number=phone_number,
         email=f"{phone_number}@example.test",
         first_name="Sprout",
-        is_member=False,
         membership_status=MembershipStatus.TENTATIVE,
         **extra,
     )
