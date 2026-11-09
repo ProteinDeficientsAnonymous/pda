@@ -57,7 +57,7 @@ class TestSendAttendanceRemindersCommand:
         assert AttendanceReminder.objects.count() == 1
 
     def test_excludes_paused_member(self, fake_sender):
-        _make_member("+12025550114", is_paused=True)
+        _make_member("+12025550114", membership_status=MembershipStatus.GUIDELINES_PAUSED)
         with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
             call_command("send_attendance_reminders")
         fake_sender.send.assert_not_called()

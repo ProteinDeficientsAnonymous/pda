@@ -63,7 +63,7 @@ def test_bad_arguments_are_rejected(admin, arguments):
 def test_status_defaults_to_live_members_and_skips_non_members(admin):
     set_up = make_onboarded()
     new = make_onboarding()
-    paused = make_onboarding(is_paused=True)
+    paused = make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     archived = make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     make_public_rsvper("+12025550198", "n@e.com")
@@ -78,7 +78,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
 def test_totals_match_member_totals_buckets(admin):
     make_onboarded()
     make_onboarding()
-    make_onboarding(is_paused=True)
+    make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     totals = member_totals(admin)

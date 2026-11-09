@@ -126,7 +126,7 @@ def test_guidelines_pause_replaces_attendance_pause(api_client, manage_users_hea
 
 
 def test_guidelines_paused_member_stays_in_members():
-    paused = make_user(is_paused=True)
+    paused = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
     assert User.objects.members().filter(pk=paused.pk).exists()
     assert not User.objects.active_members().filter(pk=paused.pk).exists()

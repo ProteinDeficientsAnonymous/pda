@@ -205,7 +205,6 @@ class TestHostSetRsvpEmail:
         paused = make_user(
             email="paused@e.com",
             membership_status=MembershipStatus.GUIDELINES_PAUSED,
-            is_paused=True,
         )
         EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.WAITLISTED)
 

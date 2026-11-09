@@ -33,9 +33,7 @@ def _archive(api_client, headers, user):
         (make_attendance_paused, {"attendance_paused": False}, MembershipStatus.ACTIVE_MEMBER),
         (make_user, {"is_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
         (
-            lambda **f: make_user(
-                membership_status=MembershipStatus.GUIDELINES_PAUSED, is_paused=True, **f
-            ),
+            lambda **f: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED, **f),
             {"is_paused": False},
             MembershipStatus.ATTENDANCE_PAUSED,
         ),
@@ -50,7 +48,7 @@ def test_pause_writers_leave_an_archived_user_archived(
     user = _patch(api_client, manage_users_headers, user, body)
     assert user.membership_status == MembershipStatus.ARCHIVED
     assert user.status_before_archive == before
-    assert user.is_paused is (before == MembershipStatus.GUIDELINES_PAUSED)
+    assert user.is_guidelines_paused is (before == MembershipStatus.GUIDELINES_PAUSED)
     assert user.membership_status_changed_at == archived_at
 
 

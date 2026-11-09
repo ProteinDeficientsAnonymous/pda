@@ -109,7 +109,7 @@ class TestWeeklyLoginReminder:
             {"needs_onboarding": False},
             {"onboarded_at": timezone.now()},
             {"archived_at": timezone.now(), "membership_status": MembershipStatus.ARCHIVED},
-            {"is_paused": True, "membership_status": MembershipStatus.GUIDELINES_PAUSED},
+            {"membership_status": MembershipStatus.GUIDELINES_PAUSED},
             {"is_active": False},
             {"email": ""},
             {"email": None},
@@ -287,7 +287,7 @@ class TestOngoingReminders:
         assert len(_reminder_calls(fake_email_sender)) == 6
         user.refresh_from_db()
         assert user.archived_at is None
-        assert not user.is_paused
+        assert user.membership_status != MembershipStatus.GUIDELINES_PAUSED
 
     def test_stops_once_member_finishes_setup(self, fake_email_sender):
         user = _make_pending_member("+12025550402")

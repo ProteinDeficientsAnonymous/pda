@@ -55,7 +55,7 @@ class TestSetAttendancePause:
         assert result["attendance_paused_at"] is not None
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_paused is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         hosted.refresh_from_db()
         assert hosted.status == EventStatus.DRAFT
 

@@ -39,8 +39,6 @@ def _default_status(fields: dict) -> MembershipStatus:
     """A member, unless the test's own pause or archive fields say otherwise."""
     if fields.get("archived_at") is not None:
         return MembershipStatus.ARCHIVED
-    if fields.get("is_paused"):
-        return MembershipStatus.GUIDELINES_PAUSED
     if fields.get("attendance_paused_at") is not None:
         return MembershipStatus.ATTENDANCE_PAUSED
     return MembershipStatus.ACTIVE_MEMBER

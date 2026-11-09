@@ -150,7 +150,7 @@ class TestSendWeeklyDigestCommand:
         fake_email_sender.send.assert_not_called()
 
     def test_skips_paused_member(self, fake_email_sender):
-        make_user(phone_number="+12025550212", is_paused=True)
+        make_user(phone_number="+12025550212", membership_status=MembershipStatus.GUIDELINES_PAUSED)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()

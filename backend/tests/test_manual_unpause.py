@@ -4,7 +4,7 @@ from django.utils import timezone
 from users.models import MembershipStatus, User
 
 EMAIL = "paused@example.com"
-GUIDELINES = {"is_paused": True}
+GUIDELINES = {"membership_status": MembershipStatus.GUIDELINES_PAUSED}
 ATTENDANCE = {
     "attendance_paused_at": timezone.now(),
     "membership_status": MembershipStatus.ATTENDANCE_PAUSED,

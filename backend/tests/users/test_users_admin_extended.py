@@ -64,7 +64,7 @@ class TestUpdateUser:
         )
         assert response.status_code == 200
         other_user.refresh_from_db()
-        assert other_user.is_paused is True
+        assert other_user.membership_status == MembershipStatus.GUIDELINES_PAUSED
 
     def test_update_user_has_joined_whatsapp(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
@@ -139,7 +139,7 @@ class TestUpdateUser:
         )
         assert response.status_code == 200
         other_user.refresh_from_db()
-        assert other_user.is_paused is False
+        assert other_user.membership_status != MembershipStatus.GUIDELINES_PAUSED
         role_names = set(other_user.roles.values_list("name", flat=True))
         assert role_names == {"member"}
 
@@ -185,7 +185,7 @@ class TestUpdateUser:
         assert response.status_code == 400
         assert_error_code(response, Code.User.CANNOT_PAUSE_ADMIN)
         other_user.refresh_from_db()
-        assert other_user.is_paused is False
+        assert other_user.membership_status != MembershipStatus.GUIDELINES_PAUSED
         assert other_user.attendance_paused_at is None
 
     def test_admin_list_includes_paused_users(self, api_client, manage_users_headers, other_user):

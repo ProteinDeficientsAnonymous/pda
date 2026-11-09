@@ -37,11 +37,13 @@ def test_buckets_are_disjoint_and_match_app_definitions(manage_users_user):
     make_member(needs_onboarding=True)
     # A login-link reset re-flags needs_onboarding on a member who already set up.
     make_member(needs_onboarding=True, onboarded_at=timezone.now())
-    make_member(is_paused=True)
-    make_member(is_paused=True, needs_onboarding=True)
+    make_member(membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    make_member(membership_status=MembershipStatus.GUIDELINES_PAUSED, needs_onboarding=True)
     make_member(attendance_paused_at=timezone.now())
     make_member(archived_at=timezone.now())
-    make_member(archived_at=timezone.now(), is_paused=True)
+    make_member(
+        archived_at=timezone.now(), status_before_archive=MembershipStatus.GUIDELINES_PAUSED
+    )
     body = member_totals(manage_users_user)
     assert {k: body[k] for k in ("total", *BUCKETS)} == {
         "total": 9,
@@ -80,7 +82,7 @@ def test_non_members_are_not_counted(manage_users_user):
     make_public_rsvper("+12025550198", "n@e.com")
     make_tentative_member("+12025550197", "t@e.com")
     make_member(membership_status=MembershipStatus.NONE, needs_onboarding=True)
-    make_member(membership_status=MembershipStatus.NONE, is_paused=True)
+    make_member(membership_status=MembershipStatus.NONE)
     make_member(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     body = member_totals(manage_users_user)
     # An archived applicant counts as archived, same as an archived member.

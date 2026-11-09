@@ -165,7 +165,7 @@ def test_recipients_filter(run_at):
         make_user(first_name="no email", email=None),
         make_user(first_name="blank email", email=""),
         make_user(first_name="opted out", host_digest_opt_out=True),
-        make_user(first_name="paused", is_paused=True),
+        make_user(first_name="paused", membership_status=MembershipStatus.GUIDELINES_PAUSED),
         make_user(first_name="archived", archived_at=run_at),
         make_user(first_name="non member", membership_status=MembershipStatus.NONE),
     )

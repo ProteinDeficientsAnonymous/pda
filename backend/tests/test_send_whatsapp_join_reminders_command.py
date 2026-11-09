@@ -88,7 +88,7 @@ class TestRecipientSelection:
         fake_sender.send.assert_not_called()
 
     def test_excludes_paused_member(self, fake_sender):
-        _make_member("+12025550314", is_paused=True)
+        _make_member("+12025550314", membership_status=MembershipStatus.GUIDELINES_PAUSED)
         call_command("send_whatsapp_join_reminders")
         fake_sender.send.assert_not_called()
 
