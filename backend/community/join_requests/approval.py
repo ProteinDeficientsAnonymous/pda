@@ -150,7 +150,7 @@ def _make_tentative(user) -> list[str]:
         return []
     fields = _unarchive(user, MembershipStatus.TENTATIVE)
     if user.membership_status == MembershipStatus.TENTATIVE:
-        # Archiving keeps the member role; a tentative applicant holds none.
+        # Archiving keeps every role, and a non-member may hold none.
         user.roles.clear()
     return fields
 
@@ -205,7 +205,8 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     user has a linked TENTATIVE join request. Returns whether a promotion
     happened, so the caller knows to send the approval email.
     """
-    if not is_official_or_club(event.event_type):
+    # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
+    if not is_official_or_club(event.event_type) or user.is_paused:
         return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
