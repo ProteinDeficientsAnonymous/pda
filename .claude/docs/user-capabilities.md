@@ -5,7 +5,7 @@ What each user type can do, as the backend enforces it. For how people move betw
 - **visitor** — not signed in.
 - **public rsvper** — RSVP'd through the public form; uses a `/my-rsvps` token link, never signs in.
 - **limited** — signed in, not a member: tentative or attendance-paused. Both get the same access.
-- **member** — `is_member=True`. Elevated roles add the permissions further down.
+- **member** — `membership_status=member`. Elevated roles add the permissions further down.
 
 Guidelines-paused and archived users can't sign in. They can still browse as a visitor, but the public RSVP form and join form silently turn them away.
 
