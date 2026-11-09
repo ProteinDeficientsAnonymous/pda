@@ -154,7 +154,7 @@ def audit_log_before_raise(
 
 
 def flush_rollback_safe_audits(request) -> None:
-    """Write the audit_log_before_raise rows held during the view, after its transactions closed."""
+    """Write rows held by audit_log_before_raise; RequestLoggingMiddleware and MCP call_view call this."""
     for fields in getattr(request, _HELD_AUDITS_ATTR, []):
         _persist(**fields)
     setattr(request, _HELD_AUDITS_ATTR, [])
