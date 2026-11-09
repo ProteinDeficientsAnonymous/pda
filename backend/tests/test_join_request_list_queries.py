@@ -12,7 +12,7 @@ from community.models import (
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 URL = "/api/community/join-requests/"
 
@@ -25,7 +25,11 @@ def _seed_applicants(start: int, count: int) -> None:
     )
     for i in range(start, start + count):
         phone = f"+1202555{i:04d}"
-        user = User.objects.create(phone_number=phone, first_name="Sprout", is_member=False)
+        user = User.objects.create(
+            phone_number=phone,
+            first_name="Sprout",
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
+        )
         EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
         JoinRequest.objects.create(
             first_name="Sprout", phone_number=phone, status=JoinRequestStatus.REJECTED

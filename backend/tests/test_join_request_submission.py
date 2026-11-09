@@ -4,7 +4,7 @@ import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.core import mail
 from notifications.models import Notification, NotificationType
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._users import make_user
@@ -128,7 +128,9 @@ class TestJoinRequestSubmission:
 
     def test_submit_response_omits_matched_user_history(self, api_client, why_join_id):
         prior = User.objects.create_user(
-            phone_number="+12025556666", password="pass", is_member=False
+            phone_number="+12025556666",
+            password="pass",
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
         JoinRequest.objects.create(
             first_name="Old",

@@ -21,7 +21,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
 from users.helpers import visible_display_name
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 from tests._users import make_user
@@ -167,7 +167,7 @@ def test_recipients_filter(run_at):
         make_user(first_name="opted out", host_digest_opt_out=True),
         make_user(first_name="paused", is_paused=True),
         make_user(first_name="archived", archived_at=run_at),
-        make_user(first_name="non member", is_member=False),
+        make_user(first_name="non member", membership_status=MembershipStatus.PUBLIC_RSVPER),
     )
     _event(make_user(first_name="ineligible only"), "cancelled", status=EventStatus.CANCELLED)
 

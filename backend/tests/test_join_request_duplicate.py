@@ -12,7 +12,7 @@ from community.join_requests import submit
 from community.models import JoinRequest, JoinRequestStatus
 from community.validation import Code
 from django.db import IntegrityError, transaction
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._users import make_attendance_paused
@@ -57,7 +57,11 @@ class TestDuplicateSubmission:
         assert JoinRequest.objects.filter(phone_number=PHONE).count() == 1
 
     def test_tentative_request_blocks_even_with_linked_non_member(self, api_client, why_join_id):
-        user = User.objects.create(phone_number=PHONE, first_name="Sprout", is_member=False)
+        user = User.objects.create(
+            phone_number=PHONE,
+            first_name="Sprout",
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
+        )
         JoinRequest.objects.create(
             first_name="Sprout",
             phone_number=PHONE,
