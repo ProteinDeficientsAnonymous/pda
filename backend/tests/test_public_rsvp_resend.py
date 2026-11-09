@@ -74,7 +74,9 @@ class TestResendManageLink:
 
     def test_member_contact_gets_no_non_member_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.save(update_fields=member.set_membership_status(MembershipStatus.ACTIVE_MEMBER))
+        member.save(
+            update_fields=member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
+        )
 
         response = post(api_client)
 
@@ -106,7 +108,10 @@ class TestResendManageLink:
         user = make_public_rsvper(PHONE, EMAIL)
         user.archived_at = timezone.now()
         user.save(
-            update_fields=["archived_at", *user.set_membership_status(MembershipStatus.ARCHIVED)]
+            update_fields=[
+                "archived_at",
+                *user.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
         )
 
         post(api_client)
@@ -115,12 +120,12 @@ class TestResendManageLink:
 
     def test_archived_member_contact_gets_no_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.set_membership_status(MembershipStatus.ACTIVE_MEMBER)
+        member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
         member.archived_at = timezone.now()
         member.save(
             update_fields=[
                 "archived_at",
-                *member.set_membership_status(MembershipStatus.ARCHIVED),
+                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
             ]
         )
 

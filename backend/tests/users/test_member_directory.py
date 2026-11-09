@@ -34,7 +34,9 @@ class TestMemberDirectory:
         assert str(other_user.pk) not in ids
 
     def test_excludes_non_members(self, api_client, auth_headers, other_user):
-        other_user.save(update_fields=other_user.set_membership_status(MembershipStatus.NONE))
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]

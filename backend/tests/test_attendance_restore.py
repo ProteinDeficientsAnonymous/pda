@@ -37,7 +37,7 @@ def paused(db):
         update_fields=[
             "attendance_paused_at",
             "attendance_grace_notified_at",
-            *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED),
+            *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=None),
         ]
     )
     return user
@@ -88,6 +88,7 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
         assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
+        assert paused.membership_status_changed_by == host
         assert (
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()

@@ -150,7 +150,7 @@ class TestTentativeAttendanceNudge:
 
     def test_skips_promoted_member(self, fake_email_sender):
         user = _make_tentative("+12025550409")
-        user.save(update_fields=user.set_membership_status(MembershipStatus.ACTIVE_MEMBER))
+        user.save(update_fields=user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None))
         user.join_requests.update(status=JoinRequestStatus.APPROVED)
         call_command("send_weekly_digest")
         assert _nudge_calls(fake_email_sender) == []

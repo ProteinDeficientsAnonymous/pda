@@ -100,7 +100,9 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         user.unpaused_at = None
         user.save(
             update_fields=[
-                *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED),
+                *user.set_membership_status(
+                    MembershipStatus.ATTENDANCE_PAUSED, by=getattr(request, "auth", None)
+                ),
                 "attendance_paused_at",
                 "has_joined_whatsapp",
                 "unpaused_at",
@@ -202,7 +204,7 @@ def _unpause(request, user: User) -> None:
         user.save(
             update_fields=[
                 "attendance_paused_at",
-                *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER),
+                *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=request.auth),
             ]
         )
         grant_membership(user)

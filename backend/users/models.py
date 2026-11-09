@@ -19,6 +19,11 @@ ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+STATUS_CHANGE_FIELDS = (
+    "membership_status",
+    "membership_status_changed_at",
+    "membership_status_changed_by",
+)
 
 
 def status_change_stamp(by: "User | None") -> dict:
@@ -236,12 +241,16 @@ class User(AbstractUser):
             ),
         ]
 
-    def set_membership_status(self, status: MembershipStatus) -> list[str]:
-        """return(list[str]): the fields it changed, for update_fields."""
-        self.membership_status = status
-        return ["membership_status"]
+    def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
+        """param(by): who made the change, or None for the system.
+        return(list[str]): the fields it changed, for update_fields."""
+        if status != self.membership_status:
+            self.membership_status = status
+            self.membership_status_changed_at = timezone.now()
+            self.membership_status_changed_by = by
+        return list(STATUS_CHANGE_FIELDS)
 
-    def set_guidelines_pause(self, paused: bool) -> list[str]:
+    def set_guidelines_pause(self, paused: bool, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
         if paused == self.is_paused:
             return []
@@ -255,7 +264,7 @@ class User(AbstractUser):
         if not paused:
             self.has_joined_whatsapp = False
         fields = ["is_paused", "attendance_paused_at", "has_joined_whatsapp"]
-        return [*fields, *self.set_membership_status(status)]
+        return [*fields, *self.set_membership_status(status, by=by)]
 
     @property
     def is_member(self) -> bool:

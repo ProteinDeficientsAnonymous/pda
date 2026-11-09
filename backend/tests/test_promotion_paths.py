@@ -155,7 +155,7 @@ class TestPromoteTentativeMember:
         user.first_name = ""
         user.save(update_fields=["first_name"])
         with pytest.raises(ValidationException):
-            promote_tentative_member(user, sample_join_request)
+            promote_tentative_member(user, sample_join_request, None)
 
 
 @pytest.mark.django_db

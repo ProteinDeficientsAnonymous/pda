@@ -98,6 +98,7 @@ def test_check_in_promotes_tentative_to_member(
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     assert maybe_promote_tentative(user, open_official_event, vettor_user)
     assert _assert_in_sync(user) == MembershipStatus.ACTIVE_MEMBER
+    assert user.membership_status_changed_by == vettor_user
 
 
 def test_reapproving_archived_applicant_makes_member(
