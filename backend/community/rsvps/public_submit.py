@@ -15,7 +15,6 @@ from pydantic import BaseModel, EmailStr, Field
 from users.models import (
     FULL_MEMBER_STATUSES,
     PUBLIC_FORM_PHONE_REGION,
-    MembershipStatus,
     PublicRsvpToken,
     User,
     status_change_stamp,
@@ -103,7 +102,7 @@ def _reject_if_paused_non_member(request, phone: str) -> None:
     """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
     user = (
         User.objects.filter(phone_number=phone, is_paused=True, archived_at__isnull=True)
-        .exclude(membership_status=MembershipStatus.ACTIVE_MEMBER)
+        .exclude(membership_status__in=FULL_MEMBER_STATUSES)
         .first()
     )
     if user is None:

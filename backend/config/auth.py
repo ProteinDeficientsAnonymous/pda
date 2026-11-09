@@ -62,9 +62,18 @@ _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
 )
 
 
+def _first_block_code(user: User) -> str | None:
+    return next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
+
+
+def account_may_act(user: User) -> bool:
+    """Whether the account is unblocked; safe in async code since it runs no query."""
+    return _first_block_code(user) is None
+
+
 def account_block_code(user: User) -> str | None:
     """Return the auth code that blocks this account, or None if it may act."""
-    code = next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
+    code = _first_block_code(user)
     # A rejected applicant is told they may request to join again.
     if code == Code.Auth.NOT_A_MEMBER and JoinRequest.latest_is_rejected(user.phone_number):
         return Code.Auth.ACCOUNT_REJECTED
