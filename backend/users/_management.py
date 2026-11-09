@@ -247,7 +247,7 @@ def list_users(request, include_non_members: bool = False):
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
-    # Default is members plus attendance-paused; the opt-in adds public-RSVP non-members.
+    # The opt-in adds public-RSVP non-members.
     base = User.objects.all() if include_non_members else User.objects.members_or_archived()
     users = (
         base.filter(archived_at__isnull=True)
@@ -394,8 +394,12 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
     require_manage_users(request, "update_user_roles", user_id)
+    # Attendance-paused users can still sign in, so they can't gain roles until unpaused.
+    assignable = User.objects.members_or_archived().exclude(
+        membership_status=MembershipStatus.ATTENDANCE_PAUSED
+    )
     try:
-        user = User.objects.members_or_archived().prefetch_related("roles").get(pk=user_id)
+        user = assignable.prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 

@@ -108,8 +108,8 @@ class TestWeeklyLoginReminder:
         [
             {"needs_onboarding": False},
             {"onboarded_at": timezone.now()},
-            {"archived_at": timezone.now()},
-            {"is_paused": True},
+            {"archived_at": timezone.now(), "membership_status": MembershipStatus.ARCHIVED},
+            {"is_paused": True, "membership_status": MembershipStatus.GUIDELINES_PAUSED},
             {"is_active": False},
             {"email": ""},
             {"email": None},

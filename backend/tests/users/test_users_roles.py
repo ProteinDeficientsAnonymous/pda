@@ -2,6 +2,7 @@ import pytest
 from community.validation import Code
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_attendance_paused
 from users.models import User
 from users.roles import Role
 
@@ -63,3 +64,16 @@ class TestUpdateUserRoles:
         )
         assert response.status_code == 200
         assert other_user.roles.filter(name="admin").exists()
+
+    def test_attendance_paused_user_cannot_be_given_roles(self, api_client, manage_users_headers):
+        paused = make_attendance_paused()
+        vetter = Role.objects.create(name="vetter")
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{paused.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(vetter.id)]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404
+        assert not paused.roles.filter(pk=vetter.pk).exists()
