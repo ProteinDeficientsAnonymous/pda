@@ -10,7 +10,7 @@ from tests._time import future_iso
 
 
 @pytest.fixture
-def paused_user(db):
+def attendance_paused_user(db):
     return User.objects.create_user(
         phone_number="+12025550930",
         password="pausedpass",
@@ -43,34 +43,39 @@ def _post(api_client, event: Event, user: User, path: str = "comments/"):
 @pytest.mark.django_db
 class TestLimitedUserComments:
     def test_paused_user_cannot_post_on_community_event_they_were_released_from(
-        self, api_client, test_user, paused_user
+        self, api_client, test_user, attendance_paused_user
     ):
-        event = _event_with_released_rsvp(test_user, paused_user, EventType.COMMUNITY)
-        response = _post(api_client, event, paused_user)
+        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.COMMUNITY)
+        response = _post(api_client, event, attendance_paused_user)
         assert response.status_code == 403
         assert response.json()["detail"][0]["code"] == "comment.rsvp_required"
 
-    def test_paused_user_cannot_reply_on_community_event(self, api_client, test_user, paused_user):
-        event = _event_with_released_rsvp(test_user, paused_user, EventType.COMMUNITY)
+    def test_paused_user_cannot_reply_on_community_event(
+        self, api_client, test_user, attendance_paused_user
+    ):
+        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.COMMUNITY)
         parent = EventComment.objects.create(event=event, author=test_user, body="host")
-        response = _post(api_client, event, paused_user, f"comments/{parent.id}/replies/")
+        response = _post(
+            api_client, event, attendance_paused_user, f"comments/{parent.id}/replies/"
+        )
         assert response.status_code == 403
 
     def test_paused_user_cannot_read_community_event_comments(
-        self, api_client, test_user, paused_user
+        self, api_client, test_user, attendance_paused_user
     ):
-        event = _event_with_released_rsvp(test_user, paused_user, EventType.COMMUNITY)
+        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.COMMUNITY)
         EventComment.objects.create(event=event, author=test_user, body="host")
         response = api_client.get(
-            f"/api/community/events/{event.id}/comments/", **auth_headers_for(paused_user)
+            f"/api/community/events/{event.id}/comments/",
+            **auth_headers_for(attendance_paused_user),
         )
         assert response.status_code == 200
         assert response.json()["items"] == []
         assert response.json()["can_post"] is False
 
     def test_paused_user_can_post_on_official_event_they_rsvpd_to(
-        self, api_client, test_user, paused_user
+        self, api_client, test_user, attendance_paused_user
     ):
-        event = _event_with_released_rsvp(test_user, paused_user, EventType.OFFICIAL)
-        response = _post(api_client, event, paused_user)
+        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.OFFICIAL)
+        response = _post(api_client, event, attendance_paused_user)
         assert response.status_code == 201, response.content
