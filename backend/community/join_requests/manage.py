@@ -348,14 +348,28 @@ _DECISION_ACTIONS = {
 }
 
 
+def _audit_reactivated(request, user: User, join_request: JoinRequest) -> None:
+    audit_log(
+        logging.WARNING,
+        "user_reactivated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=str(user.pk),
+            details={"full_name": user.full_name, "join_request_id": str(join_request.id)},
+        ),
+    )
+
+
 def _apply_status_transition(
-    id: UUID, status: str, actor, rejection: Rejection
+    request, id: UUID, status: str, rejection: Rejection
 ) -> tuple[JoinRequest, str | None, bool, bool]:
     """Stamp + provision inside one locked transaction.
 
     Returns ``(join_request, magic_token, user_created, promoted_from_tentative)``.
     select_for_update() serializes concurrent approvals so only one provisions.
     """
+    actor = request.auth
     with transaction.atomic():
         try:
             join_request = JoinRequest.objects.select_for_update().get(id=id)
@@ -373,10 +387,10 @@ def _apply_status_transition(
             _, magic_token = provision_tentative_user(join_request, actor)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = provision_approved_user(
-                join_request, actor, was_tentative=was_tentative
-            )
-            return join_request, magic_token, user_created, was_tentative
+            provisioned = provision_approved_user(join_request, actor, was_tentative=was_tentative)
+            if provisioned.reactivated_user is not None:
+                _audit_reactivated(request, provisioned.reactivated_user, join_request)
+            return join_request, provisioned.magic_token, provisioned.user_created, was_tentative
     return join_request, None, False, False
 
 
@@ -428,7 +442,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         else Rejection()
     )
     join_request, magic_token, user_created, promoted = _apply_status_transition(
-        id, payload.status, request.auth, rejection
+        request, id, payload.status, rejection
     )
 
     if promoted:

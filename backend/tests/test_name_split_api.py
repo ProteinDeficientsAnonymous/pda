@@ -156,8 +156,8 @@ class TestApprovalCopiesNames:
         jr = JoinRequest.objects.create(
             first_name="Grace", last_name="Hopper", phone_number="+12025551212"
         )
-        token, created = provision_approved_user(jr, manage_users_user, was_tentative=False)
-        assert created is True
+        provisioned = provision_approved_user(jr, manage_users_user, was_tentative=False)
+        assert provisioned.user_created is True
         u = User.objects.get(phone_number="+12025551212")
         assert (u.first_name, u.last_name) == ("Grace", "Hopper")
         assert u.full_name == "Grace Hopper"
