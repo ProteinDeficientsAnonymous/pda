@@ -6,7 +6,7 @@ from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
-from users.models import MEMBER_OR_ARCHIVED, MembershipStatus, User
+from users.models import MEMBER_OR_ARCHIVED, MembershipStatus, User, status_change_stamp
 
 from community.models import (
     JoinRequestStatus,
@@ -173,6 +173,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
             last_name=join_request.last_name,
             email=join_request.email,
             membership_status=MembershipStatus.TENTATIVE,
+            **status_change_stamp(requesting_user),
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])

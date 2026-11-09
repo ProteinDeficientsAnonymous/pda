@@ -18,6 +18,7 @@ from users.models import (
     MembershipStatus,
     PublicRsvpToken,
     User,
+    status_change_stamp,
     validate_phone,
 )
 
@@ -124,7 +125,8 @@ def _create_public_rsvper(
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
-                phone_number=phone, defaults={**defaults, "email": email or None}
+                phone_number=phone,
+                defaults={**defaults, "email": email or None, **status_change_stamp(None)},
             )
     except IntegrityError:
         _reject_email_collision(request, email)

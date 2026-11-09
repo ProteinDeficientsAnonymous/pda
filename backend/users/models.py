@@ -21,6 +21,11 @@ PUBLIC_FORM_PHONE_REGION = None
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
+def status_change_stamp(by: "User | None") -> dict:
+    """Create kwargs that record who set a new account's first status."""
+    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
+
+
 def can_sign_in_q() -> Q:
     """Members, plus tentative and attendance-paused non-members."""
     return Q(membership_status__in=SIGN_IN_STATUSES)
@@ -151,6 +156,10 @@ class User(AbstractUser):
         choices=MembershipStatus.choices,
         default=MembershipStatus.NONE,
         db_index=True,
+    )
+    membership_status_changed_at = models.DateTimeField(null=True, blank=True)
+    membership_status_changed_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.

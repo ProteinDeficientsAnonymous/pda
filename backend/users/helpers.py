@@ -20,6 +20,7 @@ from users.models import (
     MembershipStatus,
     PublicRsvpToken,
     User,
+    status_change_stamp,
     validate_phone,
 )
 from users.roles import Role
@@ -225,6 +226,7 @@ def create_user_with_role(  # noqa: PLR0913
         last_name=last_name,
         email=normalized_email,
         membership_status=MembershipStatus.ACTIVE_MEMBER,
+        **status_change_stamp(requesting_user),
         needs_onboarding=True,
         guidelines_consent_at=consent.guidelines_consent_at if consent else None,
         sms_consent_at=consent.sms_consent_at if consent else None,
