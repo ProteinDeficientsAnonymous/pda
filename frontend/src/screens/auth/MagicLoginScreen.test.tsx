@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Code } from '@/api/validationCodes.gen';
 import type { User } from '@/models/user';
+import { apiError } from '@/test/apiError';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import MagicLoginScreen from './MagicLoginScreen';
@@ -54,6 +56,13 @@ describe('MagicLoginScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     currentUser = null;
+  });
+
+  it('offers a rejected applicant the join form instead of a new link', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountRejected));
+    renderAt('tok-rejected');
+    expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
   });
 
   it('routes a needsPasswordReset user (has a name) to /new-password', async () => {

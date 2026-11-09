@@ -493,6 +493,11 @@
         "params": []
       },
       {
+        "name": "ACCOUNT_REJECTED",
+        "value": "auth.account_rejected",
+        "params": []
+      },
+      {
         "name": "MAGIC_LINK_INVALID_OR_EXPIRED",
         "value": "auth.magic_link_invalid_or_expired",
         "params": []

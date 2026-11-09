@@ -17,10 +17,12 @@ A pending user (needs password reset / onboarding) must still reach the few
 endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
+from collections.abc import Callable
+
 from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
-from users.models import User
+from users.models import MembershipStatus, User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
 #   - GET /me/                 — frontend reads needs_password_reset/onboarding/
@@ -39,22 +41,24 @@ _PENDING_ALLOWLIST = frozenset(
 )
 
 # Archive and pause still 403 on the pending allowlist; password and consent do not.
-HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
+HARD_ACCOUNT_BLOCKS = frozenset(
+    {Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED, Code.Auth.ACCOUNT_REJECTED}
+)
+
+
+_ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
+    (lambda u: u.archived_at is not None, Code.Auth.ACCOUNT_ARCHIVED),
+    (lambda u: u.is_paused, Code.Auth.ACCOUNT_PAUSED),
+    (lambda u: u.membership_status == MembershipStatus.REJECTED, Code.Auth.ACCOUNT_REJECTED),
+    (lambda u: u.needs_password_reset, Code.Auth.PASSWORD_RESET_REQUIRED),
+    (lambda u: u.needs_onboarding, Code.Auth.ONBOARDING_REQUIRED),
+    (lambda u: u.guidelines_consent_at is None, Code.Auth.GUIDELINES_CONSENT_REQUIRED),
+)
 
 
 def account_block_code(user: User) -> str | None:
     """Return the auth code that blocks this account, or None if it may act."""
-    if user.archived_at is not None:
-        return Code.Auth.ACCOUNT_ARCHIVED
-    if user.is_paused:
-        return Code.Auth.ACCOUNT_PAUSED
-    if user.needs_password_reset:
-        return Code.Auth.PASSWORD_RESET_REQUIRED
-    if user.needs_onboarding:
-        return Code.Auth.ONBOARDING_REQUIRED
-    if user.guidelines_consent_at is None:
-        return Code.Auth.GUIDELINES_CONSENT_REQUIRED
-    return None
+    return next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
 
 
 class GatedJWTAuth(JWTAuth):

@@ -1,7 +1,9 @@
 import { AxiosError } from 'axios';
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { hasErrorCode } from '@/api/apiErrors';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { postAuthRedirect } from '@/models/user';
@@ -10,7 +12,7 @@ import { AuthLayout } from './AuthLayout';
 import { safeRedirect } from './redirect';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State = 'pending' | 'expired' | 'cross_user';
+type State = 'pending' | 'expired' | 'cross_user' | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -45,6 +47,10 @@ export default function MagicLoginScreen() {
         void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
+        if (hasErrorCode(err, Code.Auth.AccountRejected)) {
+          setState('rejected');
+          return;
+        }
         // 403 means the caller is already signed in as a different user. The
         // store preserves that session, so surface a distinct message instead
         // of the generic "link expired" and a "request new link" CTA that
@@ -58,6 +64,19 @@ export default function MagicLoginScreen() {
   }, [token, magicLogin, navigate, params]);
 
   if (!token) return <Navigate to="/login" replace />;
+
+  if (state === 'rejected') {
+    return (
+      <AuthLayout title="not approved" subtitle="your request to join wasn't approved">
+        <p className="text-foreground-tertiary text-sm">
+          you're welcome to{' '}
+          <Link to="/join" className="text-brand-700 hover:text-brand-900">
+            request to join again
+          </Link>
+        </p>
+      </AuthLayout>
+    );
+  }
 
   if (state === 'cross_user') {
     return (

@@ -266,6 +266,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this account is no longer active';
     case Code.Auth.AccountPaused:
       return 'your membership is currently paused';
+    case Code.Auth.AccountRejected:
+      return "your request to join wasn't approved — you can request to join again";
     case Code.Auth.MagicLinkInvalidOrExpired:
       return 'this login link is invalid or has expired';
     case Code.Auth.MagicLinkAlreadyUsed:
