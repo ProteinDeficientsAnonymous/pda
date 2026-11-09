@@ -262,7 +262,7 @@ class TestPublicRsvpPaymentAudit:
     def paid_public_event(self, db):
         return make_official_event(
             title="Paid Official Event",
-            price="$10",
+            price="10",
             venmo_link="https://venmo.com/u/host",
         )
 

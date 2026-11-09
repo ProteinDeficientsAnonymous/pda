@@ -89,7 +89,7 @@ def test_review_groups_matches_and_leads_with_the_gap_list(importer, event, gues
         "gap": 2,
         "already_verified": 0,
     }
-    assert result["price"] == {"text": "$15", "read_as": "exact", "low": "15", "high": "15"}
+    assert result["price"] == {"text": "15", "read_as": "exact", "low": "15", "high": "15"}
     assert result["confident"][0]["amount"] == "15"
     assert not verified_ids(event)
 

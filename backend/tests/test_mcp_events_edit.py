@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -17,7 +18,7 @@ from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
 from tests._public_rsvp_helpers import make_non_member
 
 pytestmark = pytest.mark.django_db
-PRICE = {"price": "$20"}
+PRICE = {"price": "20"}
 
 
 @pytest.fixture
@@ -113,28 +114,28 @@ def _update_refused(user, event, changes=PRICE, **arguments) -> str:
 def test_draft_edit_applies_directly(test_user, make_event):
     event = make_event(EventStatus.DRAFT)
     assert _update(test_user, event)["price"] == "20"
-    assert Event.objects.get(pk=event.pk).price == "20"
+    assert Event.objects.get(pk=event.pk).price == Decimal("20")
 
 
 def test_live_edit_previews_then_applies_with_token(test_user, make_event):
-    event = make_event(price="$15")
+    event = make_event(price="15")
     preview = _update(test_user, event)
-    assert preview["changes"] == {"price": {"before": "$15", "after": "$20"}}
-    assert Event.objects.get(pk=event.pk).price == "$15"
+    assert preview["changes"] == {"price": {"before": "15", "after": "20"}}
+    assert Event.objects.get(pk=event.pk).price == Decimal("15")
     assert "fresh preview" in _update_refused(
-        test_user, event, {"price": "$25"}, confirm_token=preview["confirm_token"]
+        test_user, event, {"price": "25"}, confirm_token=preview["confirm_token"]
     )
     _update(test_user, event, confirm_token=preview["confirm_token"])
-    assert Event.objects.get(pk=event.pk).price == "20"
+    assert Event.objects.get(pk=event.pk).price == Decimal("20")
     entry = AuditLogEntry.objects.get(action="event_updated", target_id=str(event.pk))
     assert entry.details["via"] == "mcp"
 
 
 def test_non_host_refused_before_preview(make_event, vettor_user):
-    event = make_event(price="$15")
+    event = make_event(price="15")
     error = json.loads(_update_refused(vettor_user, event))
     assert (error["status"], error["detail"][0]["code"]) == (403, "perm.denied")
-    assert Event.objects.get(pk=event.pk).price == "$15"
+    assert Event.objects.get(pk=event.pk).price == Decimal("15")
 
 
 def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
@@ -152,12 +153,12 @@ def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
 
 
 def test_live_edit_token_is_single_use(test_user, make_event):
-    event = make_event(price="$15")
+    event = make_event(price="15")
     token = _update(test_user, event)["confirm_token"]
     _update(test_user, event, confirm_token=token)
-    Event.objects.filter(pk=event.pk).update(price="$15")
+    Event.objects.filter(pk=event.pk).update(price="15")
     assert "already used" in _update_refused(test_user, event, confirm_token=token)
-    assert Event.objects.get(pk=event.pk).price == "$15"
+    assert Event.objects.get(pk=event.pk).price == Decimal("15")
 
 
 def test_publish_and_update_tokens_are_not_interchangeable(test_user, make_event):
@@ -168,7 +169,7 @@ def test_publish_and_update_tokens_are_not_interchangeable(test_user, make_event
     publish_token = _publish(test_user, event)["confirm_token"]
     Event.objects.filter(pk=event.pk).update(status=EventStatus.ACTIVE)
     assert "fresh preview" in _update_refused(test_user, event, confirm_token=publish_token)
-    assert Event.objects.get(pk=event.pk).price == ""
+    assert Event.objects.get(pk=event.pk).price is None
 
 
 def test_draft_edit_sets_event_format(test_user, make_event):
@@ -196,7 +197,7 @@ def test_live_edit_refuses_official_with_unfilled_slots(test_user, make_event, f
 
 
 def test_edit_that_changes_nothing_is_refused(test_user, make_event):
-    event = make_event(price="$20")
+    event = make_event(price="20")
     event.tags.add(EventTag.objects.create(name="walk"))
     changes = {**PRICE, "tags": ["Walk"]}
     assert _update_refused(test_user, event, changes).startswith("nothing would change")
@@ -252,7 +253,7 @@ def test_fields_outside_event_fields_are_ignored(test_user, make_event, vettor_u
     extra = {"status": "active", "slug": "taken-over", "co_host_ids": [str(vettor_user.pk)]}
     _update(test_user, event, {**PRICE, **extra})
     event.refresh_from_db()
-    assert (event.price, event.status, event.slug) == ("20", EventStatus.DRAFT, slug)
+    assert (event.price, event.status, event.slug) == (Decimal("20"), EventStatus.DRAFT, slug)
     assert list(event.co_hosts.all()) == [test_user]
 
 

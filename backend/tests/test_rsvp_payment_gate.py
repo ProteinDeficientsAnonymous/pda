@@ -116,7 +116,7 @@ class TestMemberRsvpPaymentGate:
         assert EventRSVP.objects.get(event=paid_event).paid_confirmed_at == stamped
 
     def test_free_event_needs_no_confirmation(self, api_client, paid_event, auth_headers):
-        paid_event.price = ""
+        paid_event.price = None
         paid_event.venmo_link = ""
         paid_event.save(update_fields=["price", "venmo_link"])
         response = api_client.post(
@@ -132,7 +132,7 @@ class TestMemberRsvpPaymentGate:
 def paid_public_event(db):
     return make_official_event(
         title="Paid Official Event",
-        price="$10",
+        price="10",
         venmo_link="https://venmo.com/u/host",
     )
 

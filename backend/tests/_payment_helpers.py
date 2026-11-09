@@ -22,7 +22,7 @@ def _paid_defaults(**overrides) -> dict:
         "rsvp_enabled": True,
         "status": EventStatus.ACTIVE,
         "visibility": PageVisibility.PUBLIC,
-        "price": "$10",
+        "price": "10",
         "venmo_link": "https://venmo.com/u/host",
     }
     base.update(overrides)

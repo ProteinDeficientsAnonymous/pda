@@ -49,6 +49,7 @@ from community.events.nonmember_removal import (
     guard_or_remove_ineligible_non_members,
 )
 from community.events.official_defaults import apply_official_defaults
+from community.events.price import parse_price
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     EventIn,
@@ -245,7 +246,7 @@ def create_event(request, payload: EventIn):
         whatsapp_link=payload.whatsapp_link,
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
-        price=payload.price,
+        price=parse_price(payload.price),
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,

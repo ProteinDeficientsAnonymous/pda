@@ -20,6 +20,7 @@ from community.dev_tools._populate import (
 )
 from community.dev_tools.seed_guard import is_seed_allowed
 from community.events.helpers import event_out
+from community.events.price import parse_price
 from community.events.schemas import EventOut
 from community.field_limits import FieldLimit
 from community.models import (
@@ -136,7 +137,7 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         max_attendees=max_attendees,
         allow_plus_ones=payload.allow_plus_ones and not official_or_club,
         status=status,
-        price=payload.price,
+        price=parse_price(payload.price),
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,

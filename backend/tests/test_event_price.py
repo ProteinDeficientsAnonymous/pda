@@ -1,3 +1,4 @@
+import importlib
 import json
 from decimal import Decimal
 
@@ -7,6 +8,8 @@ from community.models import Event
 from community.validation import Code, ValidationException
 
 from tests._time import future_iso
+
+migration = importlib.import_module("community.migrations.0131_event_price_decimal")
 
 
 @pytest.mark.parametrize(
@@ -40,6 +43,23 @@ def test_price_text(amount, expected):
     assert price_text(amount) == expected
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("14", "14"),
+        ("$21", "21"),
+        ("33.50", "33.50"),
+        ("$10 deposit", "10"),
+        ("~$35 - ~$60 sliding scale + cookbook", "35"),
+        ("", None),
+        ("pwyc", None),
+        ("$0", None),
+    ],
+)
+def test_migration_keeps_the_first_amount(raw, expected):
+    assert migration.numeric_text(raw) == expected
+
+
 @pytest.mark.django_db
 class TestEventPriceApi:
     def _create(self, api_client, auth_headers, price):
@@ -54,7 +74,7 @@ class TestEventPriceApi:
         resp = self._create(api_client, auth_headers, "$12.50")
         assert resp.status_code == 201
         assert resp.json()["price"] == "12.50"
-        assert Event.objects.get(pk=resp.json()["id"]).price == "12.50"
+        assert Event.objects.get(pk=resp.json()["id"]).price == Decimal("12.50")
 
     def test_create_rejects_free_text(self, api_client, auth_headers):
         resp = self._create(api_client, auth_headers, "sliding scale")
@@ -71,4 +91,4 @@ class TestEventPriceApi:
         )
         assert resp.status_code == 200
         assert resp.json()["price"] == ""
-        assert Event.objects.get(pk=event_id).price == ""
+        assert Event.objects.get(pk=event_id).price is None

@@ -10,6 +10,7 @@ from community.events.helpers import (
     tags_out,
     viewer_rsvp_rows,
 )
+from community.events.price import price_text
 from community.events.schemas import EventListOut
 from community.events.tentative_member_access import (
     event_viewer_for,
@@ -162,7 +163,7 @@ def event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         location=gated(e.location, "", is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
-        price=e.price,
+        price=price_text(e.price),
         co_host_ids=[str(c.id) for c in e.co_hosts.all()] if is_authed else [],
         datetime_tbd=e.datetime_tbd,
         has_poll=hasattr(e, "poll"),

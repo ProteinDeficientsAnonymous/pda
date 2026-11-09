@@ -20,7 +20,8 @@ from community.cashapp.import_types import (
     PaymentProposal,
     UnreadableRow,
 )
-from community.cashapp.price import PriceKind, parse_event_price
+from community.cashapp.price import parse_event_price
+from community.events.price import price_text
 from community.models import MATCHABLE_RSVP_STATUSES, Event, EventRSVP, RSVPStatus
 from community.rsvps.payment import event_requires_payment_confirmation
 
@@ -124,14 +125,12 @@ def _ends_at(event: Event) -> datetime | None:
 
 
 def load_payment_context(event: Event) -> EventPaymentContext:
-    """Paid when the app gates on payment or the price reads as a dollar amount."""
-    is_paid = event_requires_payment_confirmation(event) or (
-        parse_event_price(event.price).kind != PriceKind.UNPARSEABLE
-    )
+    """Paid when the app gates on payment or the event has a price."""
+    is_paid = event_requires_payment_confirmation(event) or bool(event.price)
     return EventPaymentContext(
         created_at=event.created_at,
         ends_at=_ends_at(event),
-        price=event.price,
+        price=price_text(event.price),
         is_paid_event=is_paid,
     )
 
