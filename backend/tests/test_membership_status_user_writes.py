@@ -71,14 +71,6 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
     assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.ACTIVE_MEMBER
 
 
-def test_archive_records_who_archived(api_client, manage_users_user, manage_users_headers):
-    member = make_user(last_login=timezone.now())
-    response = api_client.delete(f"/api/auth/users/{member.pk}/", **manage_users_headers)
-    assert response.status_code == 204
-    member.refresh_from_db()
-    assert member.archived_by == manage_users_user
-
-
 def _set_guidelines_pause(api_client, headers, user, paused):
     response = api_client.patch(
         f"/api/auth/users/{user.pk}/",

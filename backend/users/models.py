@@ -209,9 +209,6 @@ class User(AbstractUser):
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    archived_by = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY

@@ -32,7 +32,7 @@ def phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
     phones = {jr.phone_number for jr in join_requests}
     users = (
         User.objects.filter(phone_number__in=phones)
-        .select_related("archived_by")
+        .select_related("membership_status_changed_by")
         .prefetch_related(
             Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
@@ -55,10 +55,10 @@ class PhoneHistory(NamedTuple):
 
 
 def previous_archive_out(user: User | None) -> PreviousArchiveOut | None:
-    """The only reader of the archive stamps, so a later move off archived_by touches one place."""
+    """While archived, the last status change is the archive itself."""
     if user is None or user.archived_at is None:
         return None
-    by = user.archived_by
+    by = user.membership_status_changed_by
     return PreviousArchiveOut(
         archived_at=user.archived_at, archived_by_name=by.full_name if by else None
     )

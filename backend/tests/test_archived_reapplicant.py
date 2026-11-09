@@ -14,7 +14,9 @@ PHONE = "+16505551234"
 
 @pytest.fixture
 def archived_member(vettor_user):
-    member = make_user(phone_number=PHONE, archived_at=timezone.now(), archived_by=vettor_user)
+    member = make_user(
+        phone_number=PHONE, archived_at=timezone.now(), membership_status_changed_by=vettor_user
+    )
     member.roles.add(*Role.objects.filter(name="member", is_default=True))
     assert member.roles.exists()
     return member
@@ -56,7 +58,6 @@ def test_marking_tentative_unarchives(
     archived_member.refresh_from_db()
     assert archived_member.membership_status == MembershipStatus.TENTATIVE
     assert archived_member.archived_at is None
-    assert archived_member.archived_by is None
     assert not archived_member.roles.exists()
 
     login = api_client.get(f"/api/auth/magic-login/{body['magic_link_token']}/")

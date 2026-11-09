@@ -33,14 +33,13 @@ def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
     return(list[str]): the fields it changed, for update_fields.
     """
     user.archived_at = None
-    user.archived_by = None
     # Archiving leaves a pause in place; an archived row can predate their exclusivity.
     paused = user.attendance_paused_at is not None
     status = MembershipStatus.ATTENDANCE_PAUSED if paused else active_status
     if user.is_paused:
         user.attendance_paused_at = None
         status = MembershipStatus.GUIDELINES_PAUSED
-    fields = ["archived_at", "archived_by", "attendance_paused_at"]
+    fields = ["archived_at", "attendance_paused_at"]
     return [*fields, *user.set_membership_status(status, by=by)]
 
 

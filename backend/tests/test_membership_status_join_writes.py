@@ -111,7 +111,6 @@ def test_reapproving_archived_applicant_makes_member(
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
     assert _assert_in_sync(applicant) == MembershipStatus.ACTIVE_MEMBER
-    assert applicant.archived_by is None
     assert applicant.roles.filter(name="member").exists()
 
 
