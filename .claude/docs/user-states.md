@@ -64,9 +64,9 @@ stateDiagram-v2
 |------------|--------|--------|
 | rsvps to an official public event | creates a `none` user with unusable password; issues or extends a 90-day `/my-rsvps` token (180-day cap) | `community/rsvps/public_submit.py` |
 | submits join form | creates `JoinRequest` (pending), linked to an existing non-member by phone; no user row for a new visitor | `community/join_requests/submit.py` |
-| vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative`. An archived account matched by phone is un-archived: `archived_at` cleared and the member role dropped, or back to the pause it was archived under | `provision_tentative_user` |
+| vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative`. An archived account matched by phone is un-archived: `archived_at` cleared and every role dropped, or back to the pause it was archived under | `provision_tentative_user` |
 | vetter approves | new user → create with member role; public rsvper → promote in place; tentative → promote in place, no new link; archived → clear `archived_at`, re-flag onboarding, back to `active_member` (or a pause it was archived under). All but tentative mint a magic link. `grant_membership` revokes rsvp tokens | `provision_approved_user` |
-| checked in at official/club event | someone else checks a tentative user in → promoted, join request approved via that event | `maybe_promote_tentative` |
+| checked in at official/club event | someone else checks a tentative user in → promoted, join request approved via that event; skipped while guidelines-paused | `maybe_promote_tentative` |
 | vetter rejects | pending join request rejected + email; the user row is untouched. They can't sign in (`auth.account_rejected`) or public-RSVP until they re-apply. A tentative request can't be rejected (400 `tentative_cannot_be_rejected`); archive or guidelines-pause them instead | `join_requests/manage.py` |
 | vetter un-rejects | back to pending, unless the phone already has an open request | `join_requests/unreject.py` |
 | admin creates account | member with member role + magic link | `users/_management.py` `create_user` |
@@ -121,7 +121,7 @@ stateDiagram-v2
     Ready --> NewPassword: uses a self-service login link
 ```
 
-A status outside `SIGN_IN_STATUSES` (`none`) is blocked with `auth.account_rejected` when the phone's latest join request was rejected (the magic-login screen offers "request to join again"), and `auth.not_a_member` otherwise.
+A status outside `SIGN_IN_STATUSES` (`none`) is blocked with `auth.account_rejected` when the phone's latest join request was rejected (the magic-login screen offers "request to join again"), and `auth.not_a_member` otherwise. MCP OAuth refuses them the same way, and a self-service login link request gets the neutral "an admin will follow up" reply instead of a link.
 
 Frontend routing for these gates lives in `frontend/src/auth/guards.tsx` (`OnboardingGate`) and `passwordSetupRedirect` / `consentRedirect` in `frontend/src/models/user.ts`.
 
