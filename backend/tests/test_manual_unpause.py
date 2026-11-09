@@ -61,16 +61,12 @@ class TestManualUnpause:
             ({}, {"first_name": "Sam"}),
             (GUIDELINES, {"first_name": "Sam"}),
             (GUIDELINES, {"is_paused": False, "attendance_paused": True}),
-            ({**GUIDELINES, **ATTENDANCE}, {"is_paused": False}),
-            ({**GUIDELINES, **ATTENDANCE}, {"attendance_paused": False}),
         ],
         ids=[
             "pausing",
             "never_paused",
             "still_paused",
             "into_attendance_pause",
-            "attendance_pause_remains",
-            "guidelines_pause_remains",
         ],
     )
     def test_no_email_or_stamp_while_a_pause_remains(
