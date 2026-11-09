@@ -201,7 +201,6 @@ class User(AbstractUser):
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
-    is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
     unpaused_at = models.DateTimeField(null=True, blank=True)
@@ -257,14 +256,13 @@ class User(AbstractUser):
         """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
         if paused == self.is_guidelines_paused:
             return []
-        self.is_paused = paused
         self.attendance_paused_at = None if paused else timezone.now()
         status = (
             MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
         )
         if not paused:
             self.has_joined_whatsapp = False
-        fields = ["is_paused", "attendance_paused_at", "has_joined_whatsapp"]
+        fields = ["attendance_paused_at", "has_joined_whatsapp"]
         return [*fields, *self.set_membership_status(status, by=by)]
 
     @property

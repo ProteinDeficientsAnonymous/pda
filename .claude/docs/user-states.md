@@ -14,6 +14,7 @@ Every path a person can take through the app, from visitor to archived. What eac
 | tentative | limited because of a `TENTATIVE` join request | `JoinRequestStatus.TENTATIVE` |
 
 There is no `rejected` membership status. Rejection lives only on the join request.
+There is no `is_paused` column either: a guidelines pause is the `guidelines_paused` status (or `status_before_archive` while archived), and the API's `is_paused` is derived from `User.is_guidelines_paused`.
 
 ## Lifecycle
 
