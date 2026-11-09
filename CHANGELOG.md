@@ -1,3 +1,10 @@
+## [0.227.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.2...v0.227.3) (2026-11-09)
+
+
+### Bug Fixes
+
+* **rsvp:** lowercase join request date and point revoked links to sign in ([#2274](https://github.com/ProteinDeficientsAnonymous/pda/issues/2274)) ([1ef98ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ef98ace9efa92d7482319f1f20db2be2db68234))
+
 ## [0.227.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.1...v0.227.2) (2026-11-09)
 
 
