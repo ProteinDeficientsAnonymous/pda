@@ -75,6 +75,7 @@ class Event(models.Model):
     venmo_link = models.URLField(blank=True)
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
+    accept_paypal = models.BooleanField(default=False)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
     is_legacy = models.BooleanField(default=False)
