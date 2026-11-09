@@ -65,3 +65,17 @@ def test_rejected_applicant_cannot_rsvp_with_manage_link(api_client, official_ev
     assert response.status_code == 409
     assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
     assert not EventRSVP.objects.filter(user=rsvper).exists()
+
+
+def test_rejected_applicant_can_step_down_with_manage_link(api_client, official_event):
+    rsvper = make_public_rsvper(PHONE, "sam@example.com")
+    EventRSVP.objects.create(event=official_event, user=rsvper, status=RSVPStatus.ATTENDING)
+    token = PublicRsvpToken.issue_or_extend(rsvper)
+    _join_request(JoinRequestStatus.REJECTED, user=rsvper)
+    response = api_client.post(
+        f"/api/community/public/my-rsvps/{official_event.id}/?token={token.token}",
+        {"status": RSVPStatus.CANT_GO},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert EventRSVP.objects.get(user=rsvper).status == RSVPStatus.CANT_GO
