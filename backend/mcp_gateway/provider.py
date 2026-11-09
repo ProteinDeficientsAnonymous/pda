@@ -2,7 +2,7 @@ from datetime import timedelta
 from urllib.parse import urlparse
 from uuid import UUID
 
-from config.auth import account_block_code
+from config.auth import account_may_act
 from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
@@ -49,7 +49,7 @@ class PdaAccessToken(AccessToken):
 
 
 def _user_may_act(user: User) -> bool:
-    return user.is_active and account_block_code(user) is None
+    return user.is_active and account_may_act(user)
 
 
 # mirrors the consent screen's isSafeRedirect, so a code is never issued for a redirect it refuses
