@@ -1,7 +1,7 @@
 import importlib
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
 from django.apps import apps
 from django.utils import timezone
 from users.models import MembershipStatus, User
@@ -47,6 +47,18 @@ def test_rejected_after_tentative(sample_join_request):
         user, sample_join_request, JoinRequestStatus.REJECTED, tentative_at=timezone.now()
     )
     assert _status_after_backfill(user) == MembershipStatus.REJECTED
+
+
+def test_tentative_wins_over_older_rejection(sample_join_request):
+    user = make_user(is_member=False)
+    JoinRequest.objects.create(
+        user=user,
+        phone_number="+16505550199",
+        status=JoinRequestStatus.REJECTED,
+        tentative_at=timezone.now(),
+    )
+    _link_request(user, sample_join_request, JoinRequestStatus.TENTATIVE)
+    assert _status_after_backfill(user) == MembershipStatus.TENTATIVE
 
 
 def test_public_rsvper_rejected_without_tentative_stays_public_rsvper(sample_join_request):
