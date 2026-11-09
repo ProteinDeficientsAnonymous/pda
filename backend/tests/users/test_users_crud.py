@@ -306,7 +306,7 @@ class TestSearchUsers:
             User(
                 phone_number=f"+1555001{i:04d}",
                 first_name=f"Searchable User {i}",
-                is_member=True,
+                membership_status=MembershipStatus.MEMBER,
             )
             for i in range(11)
         ]

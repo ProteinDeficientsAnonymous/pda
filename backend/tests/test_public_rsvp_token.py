@@ -6,6 +6,7 @@ from django.utils import timezone
 from users.models import (
     PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS,
     PUBLIC_RSVP_TOKEN_TTL_DAYS,
+    MembershipStatus,
     PublicRsvpToken,
     User,
 )
@@ -18,7 +19,7 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="nonmember@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.PUBLIC_RSVPER,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -50,7 +51,7 @@ class TestIssue:
         member = User.objects.create_user(
             phone_number="+12025559002",
             first_name="Member",
-            is_member=True,
+            membership_status=MembershipStatus.MEMBER,
         )
         with pytest.raises(ValidationError):
             PublicRsvpToken.issue(member)
@@ -121,7 +122,7 @@ class TestIssueOrExtend:
         member = User.objects.create_user(
             phone_number="+12025559003",
             first_name="Member",
-            is_member=True,
+            membership_status=MembershipStatus.MEMBER,
         )
         with pytest.raises(ValidationError):
             PublicRsvpToken.issue_or_extend(member)

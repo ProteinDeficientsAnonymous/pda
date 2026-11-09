@@ -4,6 +4,7 @@ import pytest
 from community.models import AttendanceStatus, EventType, RSVPStatus
 from django.utils import timezone
 from users._restored import ReturnKind
+from users.models import MembershipStatus
 
 from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
@@ -13,7 +14,7 @@ URL = "/api/auth/users/restored/"
 
 
 def _restored(days_ago: int, *, whatsapp: bool = False, **fields):
-    fields.setdefault("is_member", True)
+    fields.setdefault("membership_status", MembershipStatus.MEMBER)
     return make_user(
         restored_at=timezone.now() - timedelta(days=days_ago),
         has_joined_whatsapp=whatsapp,
@@ -33,13 +34,15 @@ def _attended(user, title: str, days_ago: int, event_type=EventType.OFFICIAL):
 @pytest.mark.django_db
 class TestRestoredMembers:
     def test_requires_approve_join_requests(self, api_client):
-        response = api_client.get(URL, **auth_headers_for(make_user(is_member=True)))
+        response = api_client.get(
+            URL, **auth_headers_for(make_user(membership_status=MembershipStatus.MEMBER))
+        )
         assert response.status_code == 403
 
     def test_lists_restored_newest_first(self, api_client, vettor_headers):
         older = _restored(5, first_name="Older")
         newer = _restored(1, first_name="Newer")
-        make_user(is_member=True, first_name="Never")
+        make_user(membership_status=MembershipStatus.MEMBER, first_name="Never")
 
         rows = api_client.get(URL, **vettor_headers).json()
 
@@ -66,7 +69,10 @@ class TestRestoredMembers:
         [
             {"archived_at": timezone.now()},
             {"is_paused": True},
-            {"is_member": False, "attendance_paused_at": timezone.now()},
+            {
+                "membership_status": MembershipStatus.ATTENDANCE_PAUSED,
+                "attendance_paused_at": timezone.now(),
+            },
         ],
     )
     def test_skips_inactive_members(self, api_client, vettor_headers, fields):
@@ -90,7 +96,7 @@ class TestRestoredMembers:
 
 def _unpaused(days_ago: int, *, whatsapp: bool = False):
     return make_user(
-        is_member=True,
+        membership_status=MembershipStatus.MEMBER,
         unpaused_at=timezone.now() - timedelta(days=days_ago),
         has_joined_whatsapp=whatsapp,
     )

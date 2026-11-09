@@ -6,7 +6,7 @@ import pytest
 from community.events.helpers import cancellations
 from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -343,7 +343,7 @@ class TestRSVP:
             phone_number="+12025550199",
             password="testpass123",
             first_name="Guest",
-            is_member=False,
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
         EventRSVP.objects.create(event=rsvp_event, user=non_member, status=RSVPStatus.ATTENDING)
         response = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers)

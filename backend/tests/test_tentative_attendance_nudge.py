@@ -25,7 +25,6 @@ NUDGE_SUBJECT = "you're almost in at pda"
 def _make_tentative(phone_number: str, *, set_up_days_ago: int = 8, **extra) -> User:
     extra.setdefault("email", f"{phone_number}@example.test")
     extra.setdefault("first_name", "Sprout")
-    extra.setdefault("is_member", False)
     extra.setdefault("membership_status", MembershipStatus.TENTATIVE)
     extra.setdefault("needs_onboarding", False)
     extra.setdefault("onboarded_at", timezone.now() - timedelta(days=set_up_days_ago))

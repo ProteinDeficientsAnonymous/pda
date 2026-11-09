@@ -6,7 +6,7 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.db.migrations import AddField, AlterField
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 @pytest.mark.django_db
@@ -143,6 +143,6 @@ class TestEmailPartialUniqueIndex:
             with transaction.atomic():
                 User.objects.create_user(
                     phone_number="+12025550216",
-                    is_member=False,
+                    membership_status=MembershipStatus.PUBLIC_RSVPER,
                     email="shared@example.com",
                 )

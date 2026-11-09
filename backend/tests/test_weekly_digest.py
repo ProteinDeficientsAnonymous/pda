@@ -12,7 +12,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.utils import timezone
 from notifications.email_sender import EmailStream, SendResult
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._digest_helpers import make_event, make_tentative
 from tests._users import make_attendance_paused, make_user
@@ -137,7 +137,7 @@ class TestSendWeeklyDigestCommand:
             phone_number="+12025550209",
             password="testpass123",
             email="guest@example.test",
-            is_member=False,
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
         make_event("potluck", 2)
         call_command("send_weekly_digest")

@@ -12,7 +12,7 @@ from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._users import make_user
 
@@ -69,7 +69,7 @@ class TestSendAttendanceRemindersCommand:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        make_user(email="guest@example.test", is_member=False)
+        make_user(email="guest@example.test", membership_status=MembershipStatus.PUBLIC_RSVPER)
         with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
             call_command("send_attendance_reminders")
         fake_sender.send.assert_not_called()

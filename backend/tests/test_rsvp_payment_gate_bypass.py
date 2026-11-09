@@ -12,6 +12,7 @@ from community.models import (
 )
 from community.validation import Code
 from django.utils import timezone
+from users.models import MembershipStatus
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
@@ -31,7 +32,9 @@ class TestWaitlistPromotionBypass:
     ):
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
-            phone_number="+14155550111", first_name="Seated", is_member=True
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 

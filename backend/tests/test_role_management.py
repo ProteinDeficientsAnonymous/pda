@@ -1,6 +1,6 @@
 import pytest
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -185,17 +185,15 @@ class TestRoleManagementAPI:
 
 @pytest.mark.django_db
 class TestNonMemberCannotHoldRole:
-    """Issue 525: a non-member (is_member=False) must never hold a role, and the
-    role member-counts must reflect members only."""
+    """Issue 525: a non-member must never hold a role, and role counts reflect members only."""
 
     def _make_non_member(self):
 
-        # is_member=False overrides the conftest autouse default (is_member=True).
         return User.objects.create_user(
             phone_number="+12025559001",
             first_name="Non",
             last_name="Member",
-            is_member=False,
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
 
     # The guard raises inside the m2m atomic block, so we can't query the DB after; pytest.raises proves the abort.
