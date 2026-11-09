@@ -2,6 +2,7 @@ export const Permission = {
   CreateUser: 'create_user',
   ManageUsers: 'manage_users',
   ManageRoles: 'manage_roles',
+  ViewAuditLog: 'view_audit_log',
   ApproveJoinRequests: 'approve_join_requests',
   ManageEvents: 'manage_events',
   EditGuidelines: 'edit_guidelines',
