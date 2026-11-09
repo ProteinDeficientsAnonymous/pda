@@ -55,7 +55,6 @@ def test_tentative_moves_rejected_user_matched_by_phone(
 ):
     user = make_user(
         phone_number=sample_join_request.phone_number,
-        is_member=False,
         membership_status=MembershipStatus.REJECTED,
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
