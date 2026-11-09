@@ -58,6 +58,7 @@ Granted through roles; only members can hold roles. The admin role has every per
 | `create_user` | create member accounts directly |
 | `manage_users` | edit, pause, attendance-pause, archive and hard-delete members; assign roles |
 | `manage_roles` | create, edit and delete roles |
+| `view_audit_log` | read the audit log (`GET /api/audit/`) |
 | `approve_join_requests` | vet join requests: tentative, approve, reject, un-reject |
 | `manage_events` | edit any event, see every guest list and questionnaire response, comment anywhere |
 | `tag_official_event` / `tag_club_event` | create or retag official / club events |

@@ -19,7 +19,8 @@ router = Router()
 
 class AuditLogFilters(Schema):
     member_id: UUID | None = Field(
-        None, description="entries targeting this user, plus join requests linked to them"
+        None,
+        description="entries targeting this user, plus any entry whose details.user_id names them",
     )
     actor_id: UUID | None = Field(None, description="only actions this person took")
     action: str | None = Field(None, max_length=64, description="exact action, e.g. user_paused")
