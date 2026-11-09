@@ -26,7 +26,7 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="non@example.com",
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])

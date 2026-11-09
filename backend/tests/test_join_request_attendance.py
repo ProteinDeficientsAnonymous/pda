@@ -47,7 +47,7 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="Guest",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         community_event = _make_event(
             host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
@@ -79,7 +79,7 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="Guest",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         event = _make_event(
             host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
@@ -105,7 +105,7 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="GuestA",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         event = _make_event(host_user, "Club Night", days_ago=10, event_type=EventType.CLUB)
         EventRSVP.objects.create(

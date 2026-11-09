@@ -158,7 +158,7 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
     }
     for status, count in non_member_counts.items():
         for user in pick_filler_users(
-            count, membership_status=MembershipStatus.PUBLIC_RSVPER, exclude_ids=exclude_ids
+            count, membership_status=MembershipStatus.NONE, exclude_ids=exclude_ids
         ):
             rows.append(EventRSVP(event=event, user=user, status=status))
 

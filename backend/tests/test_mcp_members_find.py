@@ -67,7 +67,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
     archived = make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     make_public_rsvper("+12025550198", "n@e.com")
-    make_member(membership_status=MembershipStatus.PUBLIC_RSVPER)
+    make_member(membership_status=MembershipStatus.NONE)
     assert {row["id"]: row["status"] for row in find_members(admin)["members"]} == {
         **dict.fromkeys(ids_of(admin, set_up), "active"),
         str(new.id): "still_onboarding",

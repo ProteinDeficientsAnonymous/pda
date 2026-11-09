@@ -164,7 +164,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
-    if user.membership_status == MembershipStatus.PUBLIC_RSVPER:
+    if user.membership_status == MembershipStatus.NONE:
         changed += user.set_membership_status(MembershipStatus.TENTATIVE)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:

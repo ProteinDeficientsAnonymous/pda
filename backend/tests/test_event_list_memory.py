@@ -296,13 +296,11 @@ class TestGetEventMemory:
         ]
         maybe_member = make_user(first_name="MM")
         attending_nonmembers = [
-            make_user(first_name="N1", membership_status=MembershipStatus.PUBLIC_RSVPER),
-            make_user(first_name="N2", membership_status=MembershipStatus.PUBLIC_RSVPER),
-            make_user(first_name="N3", membership_status=MembershipStatus.PUBLIC_RSVPER),
+            make_user(first_name="N1", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N2", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N3", membership_status=MembershipStatus.NONE),
         ]
-        maybe_nonmember = make_user(
-            first_name="NM", membership_status=MembershipStatus.PUBLIC_RSVPER
-        )
+        maybe_nonmember = make_user(first_name="NM", membership_status=MembershipStatus.NONE)
         waitlisted = make_user(first_name="W")
         for guest in (
             *attending_members,

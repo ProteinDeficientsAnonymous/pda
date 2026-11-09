@@ -222,7 +222,7 @@ describe('MembersScreen', () => {
           id: 'm2',
           fullName: 'Guest Rsvp',
           isMember: false,
-          membershipStatus: MembershipStatus.PublicRsvper,
+          membershipStatus: MembershipStatus.None,
         }),
         attendancePaused,
       ],
@@ -314,7 +314,7 @@ describe('MembersScreen', () => {
           id: 'm2',
           fullName: 'Guest Rsvp',
           isMember: false,
-          membershipStatus: MembershipStatus.PublicRsvper,
+          membershipStatus: MembershipStatus.None,
         }),
       ],
     });

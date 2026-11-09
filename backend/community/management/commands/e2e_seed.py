@@ -230,7 +230,7 @@ def _seed_member_screens() -> dict:
         first_name="River",
         last_name="Guest",
         email="river@example.com",
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
         password=E2E_PASSWORD,
     )
     event = Event.objects.create(
@@ -386,7 +386,7 @@ def _seed_waitlist_screens() -> dict:
         first_name="Pat",
         last_name="Guest",
         email=None,
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
     )
     event = Event.objects.create(
         title="supper club",

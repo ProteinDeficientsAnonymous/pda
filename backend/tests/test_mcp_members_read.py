@@ -79,8 +79,8 @@ def test_self_deleted_member_counts_as_archived(
 def test_non_members_are_not_counted(manage_users_user):
     make_public_rsvper("+12025550198", "n@e.com")
     make_tentative_member("+12025550197", "t@e.com")
-    make_member(membership_status=MembershipStatus.PUBLIC_RSVPER, needs_onboarding=True)
-    make_member(membership_status=MembershipStatus.PUBLIC_RSVPER, is_paused=True)
+    make_member(membership_status=MembershipStatus.NONE, needs_onboarding=True)
+    make_member(membership_status=MembershipStatus.NONE, is_paused=True)
     make_member(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     body = member_totals(manage_users_user)
     # An archived applicant counts as archived, same as an archived member.
@@ -96,7 +96,7 @@ def test_new_in_period_boundary(manage_users_user):
     make_joined(29.99)
     make_joined(30.01)
     make_joined(6, archived_at=timezone.now())
-    make_joined(1, membership_status=MembershipStatus.PUBLIC_RSVPER)
+    make_joined(1, membership_status=MembershipStatus.NONE)
     body = member_totals(manage_users_user)
     assert body["new_in_period"] == 2
     assert body["period_days"] == 30

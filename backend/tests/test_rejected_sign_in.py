@@ -17,7 +17,7 @@ PASSWORD = "Sprout-pass-123!"
 def non_member(db):
     return make_user(
         password=PASSWORD,
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
         guidelines_consent_at=timezone.now(),
     )
 

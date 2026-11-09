@@ -15,7 +15,7 @@ class TestMembersManager:
         ("fields", "expected"),
         [
             ({"membership_status": MembershipStatus.ACTIVE_MEMBER}, True),
-            ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, False),
+            ({"membership_status": MembershipStatus.NONE}, False),
             ({"membership_status": MembershipStatus.ARCHIVED}, False),
             ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
             ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, True),
@@ -149,6 +149,6 @@ class TestEmailPartialUniqueIndex:
             with transaction.atomic():
                 User.objects.create_user(
                     phone_number="+12025550216",
-                    membership_status=MembershipStatus.PUBLIC_RSVPER,
+                    membership_status=MembershipStatus.NONE,
                     email="shared@example.com",
                 )

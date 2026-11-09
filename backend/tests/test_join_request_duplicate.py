@@ -61,7 +61,7 @@ class TestDuplicateSubmission:
         user = User.objects.create(
             phone_number=PHONE,
             first_name="Sprout",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         JoinRequest.objects.create(
             first_name="Sprout",

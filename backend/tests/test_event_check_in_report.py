@@ -38,7 +38,7 @@ def guest_user(db):
         phone_number="+12025559200",
         password="x",
         first_name="Guest",
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
     )
 
 
@@ -372,7 +372,7 @@ class TestCheckInReportCsvEndpoint:
             phone_number="+12025559500",
             password="x",
             first_name="=HYPERLINK(1)",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(event=past_event, user=attacker, status=RSVPStatus.ATTENDING)
         response = api_client.get(

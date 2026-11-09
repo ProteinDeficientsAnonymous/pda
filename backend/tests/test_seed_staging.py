@@ -341,7 +341,7 @@ def test_seed_staging_past_official_has_member_and_non_member_attendance_marks()
         attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO],
     )
     assert marked.filter(user__membership_status__in=MEMBER_STATUSES).exists()
-    assert marked.filter(user__membership_status=MembershipStatus.PUBLIC_RSVPER).exists()
+    assert marked.filter(user__membership_status=MembershipStatus.NONE).exists()
 
 
 @pytest.mark.django_db

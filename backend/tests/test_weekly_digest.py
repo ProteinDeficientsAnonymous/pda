@@ -137,7 +137,7 @@ class TestSendWeeklyDigestCommand:
             phone_number="+12025550209",
             password="testpass123",
             email="guest@example.test",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         make_event("potluck", 2)
         call_command("send_weekly_digest")

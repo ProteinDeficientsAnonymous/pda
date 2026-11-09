@@ -295,7 +295,7 @@ class Command(BaseCommand):
             defaults={
                 "first_name": spec.label,
                 "email": nonmember_email(index) if spec.has_email else None,
-                "membership_status": MembershipStatus.PUBLIC_RSVPER,
+                "membership_status": MembershipStatus.NONE,
             },
         )
         user.email = nonmember_email(index) if spec.has_email else None

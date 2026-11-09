@@ -129,7 +129,7 @@ class Command(BaseCommand):
                     "first_name": data.first_name,
                     "last_name": data.last_name,
                     "email": data.email,
-                    "membership_status": MembershipStatus.PUBLIC_RSVPER,
+                    "membership_status": MembershipStatus.NONE,
                 },
             )
             if created:

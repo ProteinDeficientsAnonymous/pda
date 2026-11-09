@@ -31,7 +31,7 @@ class TestPromotePublicRsvper:
             phone_number="+12025551900",
             first_name="Rsvper",
             email="public@example.com",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         PublicRsvpToken.issue(user)
         jr = JoinRequest.objects.create(
@@ -150,7 +150,7 @@ class TestPromoteTentativeMember:
         user = User.objects.create_user(
             phone_number="+12025551901",
             first_name="Temp",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         user.first_name = ""
         user.save(update_fields=["first_name"])

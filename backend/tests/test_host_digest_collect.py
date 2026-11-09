@@ -167,7 +167,7 @@ def test_recipients_filter(run_at):
         make_user(first_name="opted out", host_digest_opt_out=True),
         make_user(first_name="paused", is_paused=True),
         make_user(first_name="archived", archived_at=run_at),
-        make_user(first_name="non member", membership_status=MembershipStatus.PUBLIC_RSVPER),
+        make_user(first_name="non member", membership_status=MembershipStatus.NONE),
     )
     _event(make_user(first_name="ineligible only"), "cancelled", status=EventStatus.CANCELLED)
 

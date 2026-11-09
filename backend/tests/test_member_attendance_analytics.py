@@ -231,7 +231,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             phone_number="+12025552004",
             password="x",
             first_name="Guest",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]

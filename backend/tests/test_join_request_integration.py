@@ -20,7 +20,7 @@ def _public_rsvper(phone, email=""):
         phone_number=phone,
         first_name="Rsvper",
         email=email or None,
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
     )
 
 

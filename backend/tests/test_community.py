@@ -169,7 +169,7 @@ class TestCheckPhone:
             phone_number="+12025550188",
             first_name="Public",
             last_name="RSVP",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.post(
             "/api/community/check-phone/",

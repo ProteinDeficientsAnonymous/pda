@@ -326,9 +326,7 @@ class TestSearchUsers:
         assert str(other_user.pk) not in ids
 
     def test_search_excludes_non_members(self, api_client, auth_headers, other_user):
-        other_user.save(
-            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
-        )
+        other_user.save(update_fields=other_user.set_membership_status(MembershipStatus.NONE))
         response = api_client.get("/api/auth/users/search/?q=Other", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]

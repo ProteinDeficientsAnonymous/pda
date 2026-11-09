@@ -69,7 +69,7 @@ class TestSendAttendanceRemindersCommand:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        make_user(email="guest@example.test", membership_status=MembershipStatus.PUBLIC_RSVPER)
+        make_user(email="guest@example.test", membership_status=MembershipStatus.NONE)
         with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
             call_command("send_attendance_reminders")
         fake_sender.send.assert_not_called()

@@ -113,7 +113,7 @@ class TestWeeklyLoginReminder:
             {"is_active": False},
             {"email": ""},
             {"email": None},
-            {"membership_status": MembershipStatus.PUBLIC_RSVPER},
+            {"membership_status": MembershipStatus.NONE},
         ],
         ids=[
             "onboarded",

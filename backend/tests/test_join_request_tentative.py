@@ -170,7 +170,7 @@ class TestCheckInPromotion:
         non_member = User.objects.create(
             phone_number="+12025557111",
             first_name="Plain",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(
             event=open_official_event, user=non_member, status=RSVPStatus.ATTENDING

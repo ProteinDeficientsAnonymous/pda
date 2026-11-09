@@ -128,7 +128,7 @@ class TestJoinRequestSubmission:
         prior = User.objects.create_user(
             phone_number="+12025556666",
             password="pass",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         JoinRequest.objects.create(
             first_name="Old",

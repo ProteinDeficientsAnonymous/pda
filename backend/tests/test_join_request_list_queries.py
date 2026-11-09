@@ -28,7 +28,7 @@ def _seed_applicants(start: int, count: int) -> None:
         user = User.objects.create(
             phone_number=phone,
             first_name="Sprout",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
         JoinRequest.objects.create(

@@ -14,7 +14,7 @@ pytestmark = pytest.mark.django_db
         (MembershipStatus.ACTIVE_MEMBER, True, False),
         (MembershipStatus.TENTATIVE, True, True),
         (MembershipStatus.ATTENDANCE_PAUSED, True, True),
-        (MembershipStatus.PUBLIC_RSVPER, False, False),
+        (MembershipStatus.NONE, False, False),
         (MembershipStatus.ARCHIVED, False, False),
     ],
 )

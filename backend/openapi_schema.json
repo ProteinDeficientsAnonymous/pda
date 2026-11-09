@@ -5508,7 +5508,7 @@
       },
       "MembershipStatus": {
         "enum": [
-          "public_rsvper",
+          "none",
           "tentative",
           "active_member",
           "attendance_paused",

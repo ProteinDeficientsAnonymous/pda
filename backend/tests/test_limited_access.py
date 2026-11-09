@@ -101,7 +101,7 @@ class TestCheckPhoneTentative:
         User.objects.create(
             phone_number="+16505559999",
             first_name="Guest",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.post(
             "/api/community/check-phone/",

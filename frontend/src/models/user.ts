@@ -7,7 +7,7 @@ export const CalendarFeedScope = {
 export type CalendarFeedScopeValue = (typeof CalendarFeedScope)[keyof typeof CalendarFeedScope];
 
 export const MembershipStatus = {
-  PublicRsvper: 'public_rsvper',
+  None: 'none',
   Tentative: 'tentative',
   ActiveMember: 'active_member',
   AttendancePaused: 'attendance_paused',

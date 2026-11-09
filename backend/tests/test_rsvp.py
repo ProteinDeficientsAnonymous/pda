@@ -343,7 +343,7 @@ class TestRSVP:
             phone_number="+12025550199",
             password="testpass123",
             first_name="Guest",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(event=rsvp_event, user=non_member, status=RSVPStatus.ATTENDING)
         response = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers)

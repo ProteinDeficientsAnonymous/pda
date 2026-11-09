@@ -52,7 +52,7 @@ def non_member_user(phone: str) -> User:
         first_name="E2E",
         last_name="Guest",
         email=f"{phone.lstrip('+')}@example.com",
-        membership_status=MembershipStatus.PUBLIC_RSVPER,
+        membership_status=MembershipStatus.NONE,
     )
 
 

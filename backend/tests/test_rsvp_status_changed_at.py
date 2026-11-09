@@ -118,7 +118,7 @@ class TestStatusChangedAt:
         guest = User.objects.create_user(
             phone_number="+12025558400",
             password="x",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         row = _backdate(make_rsvp(event, guest))
 

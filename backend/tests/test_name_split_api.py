@@ -173,7 +173,7 @@ class TestApprovalCopiesNames:
         non_member = User.objects.create_user(
             phone_number="+12025551215",
             first_name="Prior",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
         non_member.first_name = ""
         non_member.save(update_fields=["first_name"])

@@ -55,7 +55,7 @@ def normalize_phone_number(raw: str) -> str:
 
 
 class MembershipStatus(models.TextChoices):
-    PUBLIC_RSVPER = "public_rsvper", "public rsvper"
+    NONE = "none", "none"
     TENTATIVE = "tentative", "tentative"
     ACTIVE_MEMBER = "active_member", "active member"
     ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
@@ -149,7 +149,7 @@ class User(AbstractUser):
     membership_status = models.CharField(
         max_length=20,
         choices=MembershipStatus.choices,
-        default=MembershipStatus.PUBLIC_RSVPER,
+        default=MembershipStatus.NONE,
         db_index=True,
     )
     # Uniqueness enforced by a partial constraint (see Meta) so multiple

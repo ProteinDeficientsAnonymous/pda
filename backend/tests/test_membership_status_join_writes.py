@@ -49,7 +49,7 @@ def test_rejecting_public_rsvper_leaves_status(api_client, vettor_headers, sampl
     sample_join_request.user = rsvper
     sample_join_request.save(update_fields=["user"])
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.REJECTED)
-    assert _assert_in_sync(rsvper) == MembershipStatus.PUBLIC_RSVPER
+    assert _assert_in_sync(rsvper) == MembershipStatus.NONE
 
 
 def test_approving_tentative_user_makes_member(api_client, vettor_headers, sample_join_request):

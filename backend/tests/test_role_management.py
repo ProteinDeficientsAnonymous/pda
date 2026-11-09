@@ -193,7 +193,7 @@ class TestNonMemberCannotHoldRole:
             phone_number="+12025559001",
             first_name="Non",
             last_name="Member",
-            membership_status=MembershipStatus.PUBLIC_RSVPER,
+            membership_status=MembershipStatus.NONE,
         )
 
     # The guard raises inside the m2m atomic block, so we can't query the DB after; pytest.raises proves the abort.

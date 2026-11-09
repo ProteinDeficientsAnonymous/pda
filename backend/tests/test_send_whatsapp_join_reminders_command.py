@@ -98,7 +98,7 @@ class TestRecipientSelection:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        make_user(email="guest@example.test", membership_status=MembershipStatus.PUBLIC_RSVPER)
+        make_user(email="guest@example.test", membership_status=MembershipStatus.NONE)
         call_command("send_whatsapp_join_reminders")
         fake_sender.send.assert_not_called()
 
