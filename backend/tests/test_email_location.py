@@ -97,7 +97,7 @@ def test_weekly_digest_omits_location(fake_email_sender):
         password="testpass123",
         email="digest@example.com",
         first_name="Test",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     event = make_official_event(
         title="Loft Potluck",

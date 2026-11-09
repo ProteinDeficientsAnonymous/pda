@@ -53,7 +53,7 @@ const member: Member = {
   showPhone: true,
   showEmail: true,
   isMember: true,
-  membershipStatus: MembershipStatus.Member,
+  membershipStatus: MembershipStatus.ActiveMember,
   isSuperuser: false,
   isPaused: false,
   attendancePausedAt: null,

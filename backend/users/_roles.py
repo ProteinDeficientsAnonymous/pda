@@ -43,7 +43,7 @@ def list_roles(request):
     roles = Role.objects.annotate(
         user_count=Count(
             "users",
-            filter=Q(users__membership_status=MembershipStatus.MEMBER),
+            filter=Q(users__membership_status=MembershipStatus.ACTIVE_MEMBER),
         ),
     ).order_by("name")
     return Status(
@@ -206,7 +206,9 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    affected_user_count = role.users.filter(membership_status=MembershipStatus.MEMBER).count()
+    affected_user_count = role.users.filter(
+        membership_status=MembershipStatus.ACTIVE_MEMBER
+    ).count()
     role.delete()
     audit_log(
         logging.WARNING,

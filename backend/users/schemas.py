@@ -145,7 +145,7 @@ class UserOut(BaseModel):
     birthday: BirthdayOut | None = None
     veganniversary: VeganniversaryOut | None = None
     is_member: bool = True
-    membership_status: MembershipStatus = MembershipStatus.MEMBER
+    membership_status: MembershipStatus = MembershipStatus.ACTIVE_MEMBER
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False

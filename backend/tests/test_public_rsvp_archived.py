@@ -23,7 +23,7 @@ class TestArchivedMemberGate:
             phone_number="+14155550123",
             first_name="A",
             last_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         member.archived_at = timezone.now()
         member.save(update_fields=["archived_at"])
@@ -41,7 +41,7 @@ class TestArchivedMemberGate:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         member.archived_at = timezone.now()
         member.save(update_fields=["archived_at"])

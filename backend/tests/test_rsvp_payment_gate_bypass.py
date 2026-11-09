@@ -34,7 +34,7 @@ class TestWaitlistPromotionBypass:
         seated = django_user_model.objects.create_user(
             phone_number="+14155550111",
             first_name="Seated",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 

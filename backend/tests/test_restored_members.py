@@ -14,7 +14,7 @@ URL = "/api/auth/users/restored/"
 
 
 def _restored(days_ago: int, *, whatsapp: bool = False, **fields):
-    fields.setdefault("membership_status", MembershipStatus.MEMBER)
+    fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
     return make_user(
         restored_at=timezone.now() - timedelta(days=days_ago),
         has_joined_whatsapp=whatsapp,
@@ -35,14 +35,14 @@ def _attended(user, title: str, days_ago: int, event_type=EventType.OFFICIAL):
 class TestRestoredMembers:
     def test_requires_approve_join_requests(self, api_client):
         response = api_client.get(
-            URL, **auth_headers_for(make_user(membership_status=MembershipStatus.MEMBER))
+            URL, **auth_headers_for(make_user(membership_status=MembershipStatus.ACTIVE_MEMBER))
         )
         assert response.status_code == 403
 
     def test_lists_restored_newest_first(self, api_client, vettor_headers):
         older = _restored(5, first_name="Older")
         newer = _restored(1, first_name="Newer")
-        make_user(membership_status=MembershipStatus.MEMBER, first_name="Never")
+        make_user(membership_status=MembershipStatus.ACTIVE_MEMBER, first_name="Never")
 
         rows = api_client.get(URL, **vettor_headers).json()
 
@@ -96,7 +96,7 @@ class TestRestoredMembers:
 
 def _unpaused(days_ago: int, *, whatsapp: bool = False):
     return make_user(
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         unpaused_at=timezone.now() - timedelta(days=days_ago),
         has_joined_whatsapp=whatsapp,
     )

@@ -25,7 +25,7 @@ def plain_member(db):
         phone_number="+12025552001",
         password="x",
         first_name="Plain",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -36,7 +36,7 @@ def alice(db):
         password="x",
         first_name="Alice",
         last_name="Smith",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -46,7 +46,7 @@ def bob(db):
         phone_number="+12025552003",
         password="x",
         first_name="Bob",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -133,14 +133,14 @@ class TestPreviewEndpoint:
             password="x",
             first_name="Sam",
             nickname="Sam",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         User.objects.create_user(
             phone_number="+12025552011",
             password="x",
             first_name="Sammy",
             nickname="Sam",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",

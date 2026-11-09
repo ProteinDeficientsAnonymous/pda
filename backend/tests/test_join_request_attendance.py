@@ -128,7 +128,7 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505559999",
             password="x",
             first_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event = _make_event(host_user, "Official Gala", days_ago=3, event_type=EventType.OFFICIAL)
         EventRSVP.objects.create(
@@ -163,7 +163,7 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event = _make_event(host_user, "Club Meetup", days_ago=5, event_type=EventType.CLUB)
         EventRSVP.objects.create(

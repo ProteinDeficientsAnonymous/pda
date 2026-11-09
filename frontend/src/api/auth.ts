@@ -120,7 +120,7 @@ function mapUser(u: WireUser): User {
     birthday: mapBirthday(u.birthday),
     veganniversary: mapVeganniversary(u.veganniversary),
     isMember: u.is_member ?? true,
-    membershipStatus: u.membership_status ?? MembershipStatus.Member,
+    membershipStatus: u.membership_status ?? MembershipStatus.ActiveMember,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,

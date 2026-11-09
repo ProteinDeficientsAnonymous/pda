@@ -18,7 +18,9 @@ from users.models import MembershipStatus, User
 class TestJoinRequestConflicts:
     def test_submit_existing_member_returns_409(self, api_client, why_join_id):
         User.objects.create_user(
-            phone_number="+12025551299", password="pass", membership_status=MembershipStatus.MEMBER
+            phone_number="+12025551299",
+            password="pass",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.post(
             "/api/community/join-request/",
@@ -38,7 +40,9 @@ class TestJoinRequestConflicts:
 
     def test_submit_existing_member_creates_no_join_request(self, api_client, why_join_id):
         User.objects.create_user(
-            phone_number="+12025551298", password="pass", membership_status=MembershipStatus.MEMBER
+            phone_number="+12025551298",
+            password="pass",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         api_client.post(
             "/api/community/join-request/",
@@ -60,7 +64,7 @@ class TestJoinRequestConflicts:
             phone_number="+12025551300",
             password="pass",
             email="taken@example.com",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.post(
             "/api/community/join-request/",
@@ -83,7 +87,7 @@ class TestJoinRequestConflicts:
             phone_number="+12025551302",
             password="pass",
             email="dupe@example.com",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         api_client.post(
             "/api/community/join-request/",

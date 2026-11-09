@@ -9,7 +9,7 @@ export type CalendarFeedScopeValue = (typeof CalendarFeedScope)[keyof typeof Cal
 export const MembershipStatus = {
   PublicRsvper: 'public_rsvper',
   Tentative: 'tentative',
-  Member: 'member',
+  ActiveMember: 'active_member',
   AttendancePaused: 'attendance_paused',
   Rejected: 'rejected',
   Archived: 'archived',
@@ -19,7 +19,7 @@ export type MembershipStatusValue = (typeof MembershipStatus)[keyof typeof Membe
 
 // A guidelines-paused member is still a member; the backend blocks their login.
 export const MEMBER_STATUSES: readonly MembershipStatusValue[] = [
-  MembershipStatus.Member,
+  MembershipStatus.ActiveMember,
   MembershipStatus.GuidelinesPaused,
 ];
 

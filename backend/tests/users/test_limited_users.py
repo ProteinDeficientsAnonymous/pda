@@ -10,7 +10,7 @@ class TestLimitedUsers:
     def test_is_tentative_applicants_and_attendance_paused_members(self):
         paused = make_attendance_paused()
         tentative = make_tentative("+12025550290")
-        make_user(membership_status=MembershipStatus.MEMBER)
+        make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)
         make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
         pks = list(User.objects.limited_users().values_list("pk", flat=True))
         assert sorted(pks) == sorted([paused.pk, tentative.pk])

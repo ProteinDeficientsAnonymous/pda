@@ -38,7 +38,7 @@ def member_user(phone: str) -> User:
         first_name="E2E",
         last_name="Member",
         email=f"{phone.lstrip('+')}@example.com",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         password=E2E_PASSWORD,
     )

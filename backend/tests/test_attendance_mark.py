@@ -23,7 +23,7 @@ def members_admin(db):
         phone_number="+12025553000",
         password="x",
         first_name="Admin",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     role = Role.objects.create(name="mark_admin", permissions=[PermissionKey.MANAGE_USERS])
     admin.roles.add(role)
@@ -36,7 +36,7 @@ def events_only_admin(db):
         phone_number="+12025553004",
         password="x",
         first_name="Eventy",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     role = Role.objects.create(name="events_only", permissions=[PermissionKey.MANAGE_EVENTS])
     admin.roles.add(role)
@@ -49,7 +49,7 @@ def plain_member(db):
         phone_number="+12025553001",
         password="x",
         first_name="Plain",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -59,7 +59,7 @@ def alice(db):
         phone_number="+12025553002",
         password="x",
         first_name="Alice",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -69,7 +69,7 @@ def bob(db):
         phone_number="+12025553003",
         password="x",
         first_name="Bob",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 

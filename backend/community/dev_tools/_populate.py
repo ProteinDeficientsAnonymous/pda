@@ -103,12 +103,12 @@ def pick_filler_users(
 def populate_cohosts(event, *, accepted_count: int, invited_count: int, invited_by) -> None:
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
     accepted = pick_filler_users(
-        accepted_count, membership_status=MembershipStatus.MEMBER, exclude_ids=exclude_ids
+        accepted_count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
     )
     event.co_hosts.add(*accepted)
 
     invited = pick_filler_users(
-        invited_count, membership_status=MembershipStatus.MEMBER, exclude_ids=exclude_ids
+        invited_count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
     )
     EventCoHostInvite.objects.bulk_create(
         [
@@ -148,7 +148,7 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
     }
     for status, count in member_counts.items():
         for user in pick_filler_users(
-            count, membership_status=MembershipStatus.MEMBER, exclude_ids=exclude_ids
+            count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
         ):
             rows.append(EventRSVP(event=event, user=user, status=status))
 
@@ -174,7 +174,7 @@ def populate_invited_users(event, *, count: int) -> None:
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
     exclude_ids |= set(event.rsvps.values_list("user_id", flat=True))
     users = pick_filler_users(
-        count, membership_status=MembershipStatus.MEMBER, exclude_ids=exclude_ids
+        count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
     )
     event.invited_users.add(*users)
 

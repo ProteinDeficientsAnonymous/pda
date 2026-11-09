@@ -120,7 +120,7 @@ class TestHostPaymentChangeAudit:
         guest = django_user_model.objects.create_user(
             phone_number="+14155550142",
             first_name="Guest",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **rsvp_fields
@@ -243,7 +243,7 @@ class TestHostPaymentChangeAudit:
         guest = django_user_model.objects.create_user(
             phone_number="+14155550143",
             first_name="Cash",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         _post(

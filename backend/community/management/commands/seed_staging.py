@@ -138,7 +138,7 @@ class Command(BaseCommand):
             defaults = {
                 "first_name": f"perm: {key}",
                 "email": perm_email(key),
-                "membership_status": MembershipStatus.MEMBER,
+                "membership_status": MembershipStatus.ACTIVE_MEMBER,
                 "needs_onboarding": False,
                 "onboarded_at": now,
                 "guidelines_consent_at": now,
@@ -185,7 +185,7 @@ class Command(BaseCommand):
                 phone_number=cond_phone(index),
                 defaults={
                     "first_name": condition_label(combo),
-                    "membership_status": MembershipStatus.MEMBER,
+                    "membership_status": MembershipStatus.ACTIVE_MEMBER,
                 },
             )
             self._apply_condition_user_fields(user, combo, index, now)
@@ -204,7 +204,7 @@ class Command(BaseCommand):
         for index, spec in enumerate(PRIVACY_SPECS):
             user, created = User.objects.get_or_create(
                 phone_number=privacy_phone(index),
-                defaults={"membership_status": MembershipStatus.MEMBER},
+                defaults={"membership_status": MembershipStatus.ACTIVE_MEMBER},
             )
             user.first_name = spec.label
             user.last_name = ""
@@ -231,7 +231,7 @@ class Command(BaseCommand):
         defaults = {
             "first_name": "reset: needs password reset",
             "email": reset_member_email(),
-            "membership_status": MembershipStatus.MEMBER,
+            "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "needs_onboarding": False,
             "onboarded_at": now,
             "needs_password_reset": True,

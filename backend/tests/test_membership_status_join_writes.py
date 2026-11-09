@@ -28,7 +28,7 @@ def _decide(api_client, headers, join_request, status):
 
 def _assert_in_sync(user):
     user.refresh_from_db()
-    assert user.is_member == (user.membership_status == MembershipStatus.MEMBER)
+    assert user.is_member == (user.membership_status == MembershipStatus.ACTIVE_MEMBER)
     return user.membership_status
 
 
@@ -62,7 +62,7 @@ def test_rejecting_public_rsvper_leaves_status(api_client, vettor_headers, sampl
 def test_approving_tentative_user_makes_member(api_client, vettor_headers, sample_join_request):
     user = _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
-    assert _assert_in_sync(user) == MembershipStatus.MEMBER
+    assert _assert_in_sync(user) == MembershipStatus.ACTIVE_MEMBER
 
 
 def test_approving_public_rsvper_makes_member(api_client, vettor_headers, sample_join_request):
@@ -70,7 +70,7 @@ def test_approving_public_rsvper_makes_member(api_client, vettor_headers, sample
     sample_join_request.user = rsvper
     sample_join_request.save(update_fields=["user"])
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
-    assert _assert_in_sync(rsvper) == MembershipStatus.MEMBER
+    assert _assert_in_sync(rsvper) == MembershipStatus.ACTIVE_MEMBER
 
 
 def test_reapproving_archived_member_makes_member(api_client, vettor_headers, sample_join_request):
@@ -80,7 +80,7 @@ def test_reapproving_archived_member_makes_member(api_client, vettor_headers, sa
         archived_at=timezone.now(),
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
-    assert _assert_in_sync(member) == MembershipStatus.MEMBER
+    assert _assert_in_sync(member) == MembershipStatus.ACTIVE_MEMBER
 
 
 def test_check_in_promotes_tentative_to_member(
@@ -88,7 +88,7 @@ def test_check_in_promotes_tentative_to_member(
 ):
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     assert maybe_promote_tentative(user, open_official_event, vettor_user)
-    assert _assert_in_sync(user) == MembershipStatus.MEMBER
+    assert _assert_in_sync(user) == MembershipStatus.ACTIVE_MEMBER
 
 
 def test_reapproving_archived_applicant_makes_member(
@@ -100,7 +100,7 @@ def test_reapproving_archived_applicant_makes_member(
         archived_at=timezone.now(),
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
-    assert _assert_in_sync(applicant) == MembershipStatus.MEMBER
+    assert _assert_in_sync(applicant) == MembershipStatus.ACTIVE_MEMBER
     assert applicant.archived_by is None
     assert applicant.roles.filter(name="member").exists() == (
         Role.objects.filter(name="member", is_default=True).exists()

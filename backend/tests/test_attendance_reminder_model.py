@@ -14,7 +14,7 @@ def member(db) -> User:
         phone_number="+12025550199",
         password="testpass123",
         first_name="Test",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 

@@ -64,12 +64,12 @@ def _event(creator, *, event_format: str = EventFormat.WALK, days: int = 1, **kw
 
 @pytest.fixture
 def maya(db):
-    return make_user(first_name="maya", membership_status=MembershipStatus.MEMBER)
+    return make_user(first_name="maya", membership_status=MembershipStatus.ACTIVE_MEMBER)
 
 
 @pytest.fixture
 def sam(db):
-    return make_user(first_name="sam", membership_status=MembershipStatus.MEMBER)
+    return make_user(first_name="sam", membership_status=MembershipStatus.ACTIVE_MEMBER)
 
 
 @pytest.fixture
@@ -107,14 +107,16 @@ class TestGetSpeech:
         assert data["values"]["restaurant"] == ""
 
     def test_three_cohosts_use_three_cohosts_join_with_and(self, api_client, maya, sam, walk):
-        zed = make_user(first_name="zed", membership_status=MembershipStatus.MEMBER)
+        zed = make_user(first_name="zed", membership_status=MembershipStatus.ACTIVE_MEMBER)
         walk.co_hosts.add(zed)
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["facilitators"] == "maya, sam and zed"
 
     def test_facilitators_use_first_names_only(self, api_client, maya, walk):
         walk.co_hosts.add(
-            make_user(first_name="zed", last_name="Last", membership_status=MembershipStatus.MEMBER)
+            make_user(
+                first_name="zed", last_name="Last", membership_status=MembershipStatus.ACTIVE_MEMBER
+            )
         )
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["facilitators"] == "maya, sam and zed"
@@ -145,7 +147,7 @@ class TestGetSpeech:
 
     def test_facilitators_prefill_is_viewer_independent(self, api_client, maya, walk):
         hidden = make_user(
-            first_name="zed", last_name="Secret", membership_status=MembershipStatus.MEMBER
+            first_name="zed", last_name="Secret", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         hidden.hide_last_name = True
         hidden.save(update_fields=["hide_last_name"])
@@ -185,7 +187,7 @@ class TestGetSpeech:
 
     def test_non_cohost_member_forbidden(self, api_client, walk):
         outsider = make_user(
-            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+            first_name="out", last_name="Last", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         response = api_client.get(_url(walk), **auth_headers_for(outsider))
         assert response.status_code == 403
@@ -195,7 +197,7 @@ class TestGetSpeech:
         admin = make_user(
             PermissionKey.MANAGE_EVENTS,
             first_name="Admin",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         assert api_client.get(_url(walk), **auth_headers_for(admin)).status_code == 200
 
@@ -214,11 +216,11 @@ class TestGetSpeech:
 
     def test_not_found_checked_before_permission(self, api_client):
         outsider = make_user(
-            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+            first_name="out", last_name="Last", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         community = _event(outsider, event_type=EventType.COMMUNITY, event_format="")
         other = make_user(
-            first_name="other", last_name="Last", membership_status=MembershipStatus.MEMBER
+            first_name="other", last_name="Last", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         assert api_client.get(_url(community), **auth_headers_for(other)).status_code == 404
 
@@ -245,7 +247,7 @@ class TestGetSpeech:
                     make_user(
                         first_name=f"host{i}",
                         last_name="Last",
-                        membership_status=MembershipStatus.MEMBER,
+                        membership_status=MembershipStatus.ACTIVE_MEMBER,
                     )
                 )
                 _event(maya, title=f"later {i}")
@@ -295,7 +297,7 @@ class TestPutSpeech:
 
     def test_non_cohost_forbidden(self, api_client, walk):
         outsider = make_user(
-            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+            first_name="out", last_name="Last", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         response = self._put(api_client, walk, outsider, {"values": {}})
         assert response.status_code == 403
@@ -305,7 +307,7 @@ class TestPutSpeech:
         admin = make_user(
             PermissionKey.MANAGE_EVENTS,
             first_name="Admin",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         assert self._put(api_client, walk, admin, {"values": {}}).status_code == 200
 

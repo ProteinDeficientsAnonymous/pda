@@ -75,7 +75,7 @@ class TestSubmissionMemberMatch:
         User.objects.create_user(
             phone_number="+12025551401",
             first_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         resp = _submit(api_client, why_join_id, "+12025551401", "fresh@example.com")
         assert resp.status_code == 409
@@ -87,7 +87,7 @@ class TestSubmissionMemberMatch:
             phone_number="+12025551402",
             first_name="Member",
             email="member@example.com",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         resp = _submit(api_client, why_join_id, "+12025551403", "member@example.com")
         assert resp.status_code == 409

@@ -81,7 +81,7 @@ class TestMemberDirectory:
             password="namelesspass123",
             first_name="",
             last_name="",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
             show_phone=False,
         )
         response = api_client.get("/api/auth/users/directory/", **auth_headers)

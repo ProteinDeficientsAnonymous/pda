@@ -224,7 +224,7 @@ def create_user_with_role(  # noqa: PLR0913
         first_name=first_name,
         last_name=last_name,
         email=normalized_email,
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         needs_onboarding=True,
         guidelines_consent_at=consent.guidelines_consent_at if consent else None,
         sms_consent_at=consent.sms_consent_at if consent else None,

@@ -185,7 +185,7 @@ class TestPublicRsvpMemberCollision:
             phone_number="+14155550123",
             first_name="A",
             last_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -201,7 +201,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -219,7 +219,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="Sam@Example.COM",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="sam@example.com")
@@ -235,7 +235,7 @@ class TestPublicRsvpMemberCollision:
             phone_number="(415) 555-0123",
             first_name="A",
             last_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="different@example.com")

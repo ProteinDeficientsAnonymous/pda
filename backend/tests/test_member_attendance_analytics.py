@@ -29,7 +29,7 @@ def member(db):
         password="x",
         first_name="Member",
         last_name="One",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -170,13 +170,13 @@ class TestMemberAttendanceAnalyticsEndpoint:
             phone_number="+12025552000",
             password="x",
             first_name="Compliant",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         candidate = User.objects.create_user(
             phone_number="+12025552001",
             password="x",
             first_name="Candidate",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         recent = _make_event(host_user, "Recent", days_ago=5)
         EventRSVP.objects.create(

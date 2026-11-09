@@ -51,7 +51,7 @@ class TestIssue:
         member = User.objects.create_user(
             phone_number="+12025559002",
             first_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         with pytest.raises(ValidationError):
             PublicRsvpToken.issue(member)
@@ -122,7 +122,7 @@ class TestIssueOrExtend:
         member = User.objects.create_user(
             phone_number="+12025559003",
             first_name="Member",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         with pytest.raises(ValidationError):
             PublicRsvpToken.issue_or_extend(member)

@@ -29,7 +29,9 @@ def event(test_user):
 @pytest.fixture
 def guest(django_user_model):
     return django_user_model.objects.create_user(
-        phone_number="+14155550501", first_name="Guest", membership_status=MembershipStatus.MEMBER
+        phone_number="+14155550501",
+        first_name="Guest",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -243,7 +245,7 @@ class TestHostSetRsvpVerifies:
         cohost = django_user_model.objects.create_user(
             phone_number="+14155550503",
             first_name="Cohost",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event.co_hosts.add(cohost)
 
@@ -445,7 +447,7 @@ class TestBackfill:
         other = django_user_model.objects.create_user(
             phone_number="+14155550502",
             first_name="Other",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         _log(
             "guest_payment_changed",

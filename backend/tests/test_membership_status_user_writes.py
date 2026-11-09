@@ -15,7 +15,7 @@ pytestmark = pytest.mark.django_db
 def _status(user):
     user.refresh_from_db()
     if user.membership_status != MembershipStatus.ARCHIVED:
-        assert user.is_member == (user.membership_status == MembershipStatus.MEMBER)
+        assert user.is_member == (user.membership_status == MembershipStatus.ACTIVE_MEMBER)
     return user.membership_status
 
 
@@ -38,7 +38,7 @@ def test_attendance_pause(api_client, manage_users_headers):
 def test_attendance_unpause(api_client, manage_users_headers):
     paused = make_attendance_paused()
     _set_attendance_pause(api_client, manage_users_headers, paused, False)
-    assert _status(paused) == MembershipStatus.MEMBER
+    assert _status(paused) == MembershipStatus.ACTIVE_MEMBER
 
 
 def test_archive_clears_is_member(api_client, manage_users_headers):
@@ -69,13 +69,13 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
     headers = auth_headers_for(make_user(permission))
     response = api_client.post(path, payload, content_type="application/json", **headers)
     assert response.status_code in (200, 201)
-    assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.MEMBER
+    assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.ACTIVE_MEMBER
 
 
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"membership_status": MembershipStatus.MEMBER}, MembershipStatus.MEMBER),
+        ({"membership_status": MembershipStatus.ACTIVE_MEMBER}, MembershipStatus.ACTIVE_MEMBER),
         ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, MembershipStatus.PUBLIC_RSVPER),
         (
             {
@@ -127,7 +127,7 @@ def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
     assert member.is_member is True
     assert (
         _set_guidelines_pause(api_client, manage_users_headers, member, False)
-        == MembershipStatus.MEMBER
+        == MembershipStatus.ACTIVE_MEMBER
     )
 
 
@@ -153,7 +153,7 @@ def test_guidelines_pause_replaces_attendance_pause(api_client, manage_users_hea
     assert paused.attendance_paused_at is None
     assert (
         _set_guidelines_pause(api_client, manage_users_headers, paused, False)
-        == MembershipStatus.MEMBER
+        == MembershipStatus.ACTIVE_MEMBER
     )
     assert paused.roles.filter(name="member").exists() == (
         Role.objects.filter(name="member", is_default=True).exists()

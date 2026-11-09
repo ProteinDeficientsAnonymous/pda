@@ -24,7 +24,7 @@ class TestWaitlistPromotionPaymentMessaging:
         waiting = django_user_model.objects.create_user(
             phone_number="+14155550112",
             first_name="Waiting",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=waiting, status=RSVPStatus.WAITLISTED)
         promote_from_waitlist(event)
@@ -38,7 +38,7 @@ class TestWaitlistPromotionPaymentMessaging:
         waiting = django_user_model.objects.create_user(
             phone_number="+14155550113",
             first_name="Waiting",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=waiting, status=RSVPStatus.WAITLISTED)
         promote_from_waitlist(event)
@@ -52,7 +52,7 @@ class TestWaitlistPromotionPaymentMessaging:
         paid = django_user_model.objects.create_user(
             phone_number="+14155550114",
             first_name="Paid",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event,
@@ -71,12 +71,12 @@ class TestWaitlistPromotionPaymentMessaging:
         paid = django_user_model.objects.create_user(
             phone_number="+14155550115",
             first_name="Paid",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         unpaid = django_user_model.objects.create_user(
             phone_number="+14155550116",
             first_name="Unpaid",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=paid, status=RSVPStatus.WAITLISTED, paid_confirmed_at=timezone.now()
@@ -96,7 +96,7 @@ class TestWaitlistPromotionPaymentMessaging:
         seated = django_user_model.objects.create_user(
             phone_number="+14155550111",
             first_name="Seated",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 

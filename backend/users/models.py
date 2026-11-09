@@ -57,7 +57,7 @@ def normalize_phone_number(raw: str) -> str:
 class MembershipStatus(models.TextChoices):
     PUBLIC_RSVPER = "public_rsvper", "public rsvper"
     TENTATIVE = "tentative", "tentative"
-    MEMBER = "member", "member"
+    ACTIVE_MEMBER = "active_member", "active member"
     ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
     REJECTED = "rejected", "rejected"
     ARCHIVED = "archived", "archived"
@@ -65,7 +65,7 @@ class MembershipStatus(models.TextChoices):
 
 
 # A guidelines-paused member is still a member; login and active_members() keep them out.
-MEMBER_STATUSES = (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED)
+MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
 SIGN_IN_STATUSES = (*MEMBER_STATUSES, *LIMITED_STATUSES)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
@@ -132,7 +132,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("membership_status", MembershipStatus.MEMBER)
+        extra_fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
 
@@ -241,7 +241,7 @@ class User(AbstractUser):
         if self.membership_status == MembershipStatus.ARCHIVED:
             return ["is_paused"]
         self.attendance_paused_at = None
-        status = MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.MEMBER
+        status = MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ACTIVE_MEMBER
         return ["is_paused", "attendance_paused_at", *self.set_membership_status(status)]
 
     @property

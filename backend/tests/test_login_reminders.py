@@ -21,7 +21,7 @@ REMINDER_SUBJECT = "finish setting up your pda account"
 def _make_pending_member(phone_number: str, **extra) -> User:
     extra.setdefault("email", f"{phone_number}@example.test")
     extra.setdefault("first_name", "Sprout")
-    extra.setdefault("membership_status", MembershipStatus.MEMBER)
+    extra.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
     extra.setdefault("needs_onboarding", True)
     return User.objects.create(phone_number=phone_number, **extra)
 
@@ -238,7 +238,7 @@ class TestWeeklyLoginReminder:
         User.objects.create(
             phone_number="+12025550321",
             email="m@example.test",
-            membership_status=MembershipStatus.MEMBER,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         def fail(**_kwargs):

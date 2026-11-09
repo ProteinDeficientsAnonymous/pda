@@ -14,7 +14,7 @@ class TestMembersManager:
     @pytest.mark.parametrize(
         ("fields", "expected"),
         [
-            ({"membership_status": MembershipStatus.MEMBER}, True),
+            ({"membership_status": MembershipStatus.ACTIVE_MEMBER}, True),
             ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, False),
             ({"membership_status": MembershipStatus.ARCHIVED}, False),
             ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),

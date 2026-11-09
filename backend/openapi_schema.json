@@ -5546,7 +5546,7 @@
         "enum": [
           "public_rsvper",
           "tentative",
-          "member",
+          "active_member",
           "attendance_paused",
           "rejected",
           "archived",
@@ -8117,7 +8117,7 @@
                 "$ref": "#/components/schemas/MembershipStatus"
               }
             ],
-            "default": "member"
+            "default": "active_member"
           },
           "monthly_digest_opt_out": {
             "default": false,

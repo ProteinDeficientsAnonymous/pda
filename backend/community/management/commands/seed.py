@@ -90,7 +90,7 @@ class Command(BaseCommand):
             "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
-            "membership_status": MembershipStatus.MEMBER,
+            "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
             "contact_privacy_consent_at": now,

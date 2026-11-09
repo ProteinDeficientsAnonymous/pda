@@ -43,7 +43,7 @@ def _default_status(fields: dict) -> MembershipStatus:
         return MembershipStatus.GUIDELINES_PAUSED
     if fields.get("attendance_paused_at") is not None:
         return MembershipStatus.ATTENDANCE_PAUSED
-    return MembershipStatus.MEMBER
+    return MembershipStatus.ACTIVE_MEMBER
 
 
 @pytest.fixture(autouse=True)

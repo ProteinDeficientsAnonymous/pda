@@ -103,7 +103,7 @@ function fromWire(w: WireMember): Member {
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
     isMember: w.is_member ?? true,
-    membershipStatus: w.membership_status ?? MembershipStatus.Member,
+    membershipStatus: w.membership_status ?? MembershipStatus.ActiveMember,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
     attendancePausedAt: w.attendance_paused_at ? new Date(w.attendance_paused_at) : null,

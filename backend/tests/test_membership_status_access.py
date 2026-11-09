@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(
     ("status", "signs_in", "limited"),
     [
-        (MembershipStatus.MEMBER, True, False),
+        (MembershipStatus.ACTIVE_MEMBER, True, False),
         (MembershipStatus.TENTATIVE, True, True),
         (MembershipStatus.ATTENDANCE_PAUSED, True, True),
         (MembershipStatus.PUBLIC_RSVPER, False, False),
@@ -61,4 +61,4 @@ def test_members_or_archived_includes_every_archived_user(was_member):
 def test_me_returns_membership_status(api_client, auth_headers):
     response = api_client.get("/api/auth/me/", **auth_headers)
     assert response.status_code == 200
-    assert response.json()["membership_status"] == MembershipStatus.MEMBER
+    assert response.json()["membership_status"] == MembershipStatus.ACTIVE_MEMBER

@@ -5018,7 +5018,7 @@ export interface components {
          * MembershipStatus
          * @enum {string}
          */
-        MembershipStatus: "public_rsvper" | "tentative" | "member" | "attendance_paused" | "rejected" | "archived" | "guidelines_paused";
+        MembershipStatus: "public_rsvper" | "tentative" | "active_member" | "attendance_paused" | "rejected" | "archived" | "guidelines_paused";
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
@@ -6045,7 +6045,7 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
-            /** @default member */
+            /** @default active_member */
             membership_status: components["schemas"]["MembershipStatus"];
             /**
              * Monthly Digest Opt Out

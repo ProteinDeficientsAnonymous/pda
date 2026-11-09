@@ -198,7 +198,7 @@ def _unpause(request, user: User) -> None:
         user.save(
             update_fields=[
                 "attendance_paused_at",
-                *user.set_membership_status(MembershipStatus.MEMBER),
+                *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER),
             ]
         )
         grant_membership(user)

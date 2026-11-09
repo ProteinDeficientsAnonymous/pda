@@ -163,7 +163,7 @@ def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
 
 def _screen_user(**fields) -> User:
     user = User.objects.create_user(
-        password=E2E_PASSWORD, membership_status=MembershipStatus.MEMBER, **fields
+        password=E2E_PASSWORD, membership_status=MembershipStatus.ACTIVE_MEMBER, **fields
     )
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
@@ -299,7 +299,7 @@ def _seed_member_screens() -> dict:
         first_name="Casey",
         last_name="Consent",
         email="casey@example.com",
-        membership_status=MembershipStatus.MEMBER,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
         password=E2E_PASSWORD,

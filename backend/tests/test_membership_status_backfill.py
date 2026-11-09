@@ -81,7 +81,8 @@ guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_
 @pytest.mark.parametrize(
     ("before", "expected"),
     [
-        (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED),
+        # 0062 predates the active_member rename.
+        ("member", MembershipStatus.GUIDELINES_PAUSED),
         (MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
         (MembershipStatus.ARCHIVED, MembershipStatus.ARCHIVED),
     ],

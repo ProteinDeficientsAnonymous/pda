@@ -39,7 +39,7 @@ def _reactivate_archived_user(existing_user, join_request):
         existing_user.sms_consent_at = join_request.sms_consent_at
     # Archiving leaves both pauses in place, so re-approval doesn't lift them.
     paused = existing_user.attendance_paused_at is not None
-    status = MembershipStatus.ATTENDANCE_PAUSED if paused else MembershipStatus.MEMBER
+    status = MembershipStatus.ATTENDANCE_PAUSED if paused else MembershipStatus.ACTIVE_MEMBER
     if existing_user.is_paused:
         status = MembershipStatus.GUIDELINES_PAUSED
     existing_user.save(
@@ -54,7 +54,7 @@ def _reactivate_archived_user(existing_user, join_request):
             "sms_consent_at",
         ]
     )
-    if status == MembershipStatus.MEMBER:
+    if status == MembershipStatus.ACTIVE_MEMBER:
         # An archived applicant never had the member role.
         grant_membership(existing_user)
     return create_magic_token(existing_user)
@@ -75,7 +75,7 @@ def _promote_public_rsvper(user, join_request) -> str:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(
         update_fields=[
-            *user.set_membership_status(MembershipStatus.MEMBER),
+            *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER),
             "needs_onboarding",
             "first_name",
             "last_name",
@@ -101,7 +101,7 @@ def promote_tentative_member(user, join_request) -> None:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(
         update_fields=[
-            *user.set_membership_status(MembershipStatus.MEMBER),
+            *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER),
             "guidelines_consent_at",
             "sms_consent_at",
         ]
