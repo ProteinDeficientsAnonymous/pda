@@ -37,9 +37,11 @@ def _reactivate_archived_user(existing_user, join_request):
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
         existing_user.sms_consent_at = join_request.sms_consent_at
-    # Archiving leaves an attendance pause in place, so re-approval doesn't lift it.
+    # Archiving leaves both pauses in place, so re-approval doesn't lift them.
     paused = existing_user.attendance_paused_at is not None
     status = MembershipStatus.ATTENDANCE_PAUSED if paused else MembershipStatus.MEMBER
+    if existing_user.is_paused:
+        status = MembershipStatus.GUIDELINES_PAUSED
     existing_user.save(
         update_fields=[
             *existing_user.set_membership_status(status),

@@ -13,7 +13,7 @@ from django.utils import timezone
 from notifications.email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
 from notifications.email_sender import get_email_sender
 from users.helpers import visible_display_name
-from users.models import MembershipStatus, User
+from users.models import MEMBER_STATUSES, User
 
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
 from community.validation import Code, raise_validation
@@ -200,9 +200,7 @@ def reject_non_member_cohosts(user_ids: Iterable[str]) -> None:
     ids = list(user_ids)
     if (
         ids
-        and User.objects.filter(pk__in=ids)
-        .exclude(membership_status=MembershipStatus.MEMBER)
-        .exists()
+        and User.objects.filter(pk__in=ids).exclude(membership_status__in=MEMBER_STATUSES).exists()
     ):
         raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=400)
 

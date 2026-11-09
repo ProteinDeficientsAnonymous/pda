@@ -5549,7 +5549,8 @@
           "member",
           "attendance_paused",
           "rejected",
-          "archived"
+          "archived",
+          "guidelines_paused"
         ],
         "title": "MembershipStatus",
         "type": "string"

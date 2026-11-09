@@ -378,7 +378,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     _validate_pause_change(user, payload.is_paused, requester_id)
     _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
-        user.is_paused = payload.is_paused
+        user.set_guidelines_pause(payload.is_paused)
     if payload.is_paused:
         user.unpaused_at = None
     if payload.has_joined_whatsapp is not None:

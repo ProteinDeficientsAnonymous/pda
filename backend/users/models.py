@@ -61,12 +61,16 @@ class MembershipStatus(models.TextChoices):
     ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
     REJECTED = "rejected", "rejected"
     ARCHIVED = "archived", "archived"
+    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 
 
 def _legacy_membership_status(fields: dict) -> "MembershipStatus":
     """Status implied by the old flags, for callers that don't pass one yet (#2261-#2263)."""
     if fields.get("archived_at") is not None:
         return MembershipStatus.ARCHIVED
+    paused_member = fields.get("is_member") or fields.get("attendance_paused_at") is not None
+    if fields.get("is_paused") and paused_member:
+        return MembershipStatus.GUIDELINES_PAUSED
     if fields.get("attendance_paused_at") is not None:
         return MembershipStatus.ATTENDANCE_PAUSED
     if fields.get("is_member"):
@@ -74,9 +78,12 @@ def _legacy_membership_status(fields: dict) -> "MembershipStatus":
     return MembershipStatus.PUBLIC_RSVPER
 
 
+# A guidelines-paused member is still a member; login and active_members() keep them out.
+MEMBER_STATUSES = (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
-SIGN_IN_STATUSES = (MembershipStatus.MEMBER, *LIMITED_STATUSES)
-MEMBER_OR_ARCHIVED = (MembershipStatus.MEMBER, MembershipStatus.ARCHIVED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, *LIMITED_STATUSES)
+MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
+_UNDER_GUIDELINES_PAUSE = (MembershipStatus.MEMBER, MembershipStatus.ATTENDANCE_PAUSED)
 
 
 class WeekStart:
@@ -100,7 +107,7 @@ class UserManager(BaseUserManager):
         Use on member-facing surfaces (directory, roles, recipient lists). The
         default manager returns both, for auth/login/join lookups by phone/email.
         """
-        return self.get_queryset().filter(membership_status=MembershipStatus.MEMBER)
+        return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
 
     def members_or_archived(self):
         """Members plus archived members, for admin views with an archived bucket."""
@@ -113,26 +120,9 @@ class UserManager(BaseUserManager):
         )
 
     def active_members(self):
-        """Members who should appear on member-facing surfaces.
-
-        Bundles the full visibility predicate so call sites can't forget part of
-        it (a bare ``members()`` would still leak guidelines-paused users). Use this
-        for member-facing directory, profile, and search lookups.
-
-        ``needs_onboarding`` is deliberately NOT filtered here — it's only excluded
-        by the directory, which adds ``needs_onboarding=False`` itself. The profile
-        and search surfaces intentionally include onboarding-pending members.
-
-        On ``is_active``: this is Django's built-in ``AbstractUser`` flag, which the
-        app never sets to False (``is_paused`` is the product's live suspension flag,
-        enforced at the auth gate). It's kept here as cheap defense-in-depth guarding
-        the only path that can deactivate a user — the Django admin.
-        """
-        return self.members().filter(
-            is_active=True,
-            is_paused=False,
-            archived_at__isnull=True,
-        )
+        """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""
+        # is_active is only ever cleared from the Django admin; kept as defense in depth.
+        return self.members().filter(is_active=True, is_paused=False, archived_at__isnull=True)
 
     def limited_users(self):
         """Users matching ``limited_q``."""
@@ -252,11 +242,31 @@ class User(AbstractUser):
 
     def set_membership_status(self, status: MembershipStatus) -> list[str]:
         """return(list[str]): the fields it changed, for update_fields."""
+        if (
+            self.membership_status == MembershipStatus.GUIDELINES_PAUSED
+            and status in _UNDER_GUIDELINES_PAUSE
+        ):
+            # The guidelines pause stays on top; only the state under it moves.
+            self.is_member = status == MembershipStatus.MEMBER
+            return ["is_member"]
         self.membership_status = status
         # Archived users keep is_member until it becomes a generated field (#2264).
-        if status != MembershipStatus.ARCHIVED:
+        if status not in (MembershipStatus.ARCHIVED, MembershipStatus.GUIDELINES_PAUSED):
             self.is_member = status == MembershipStatus.MEMBER
         return ["membership_status", "is_member"]
+
+    def set_guidelines_pause(self, paused: bool) -> list[str]:
+        """Lifting the pause falls back to the attendance state under it."""
+        self.is_paused = paused
+        if self.membership_status == MembershipStatus.ARCHIVED:
+            return ["is_paused"]
+        if paused:
+            self.membership_status = MembershipStatus.GUIDELINES_PAUSED
+        elif self.attendance_paused_at is not None:
+            self.membership_status = MembershipStatus.ATTENDANCE_PAUSED
+        else:
+            self.membership_status = MembershipStatus.MEMBER
+        return ["is_paused", "membership_status"]
 
     @property
     def full_name(self) -> str:

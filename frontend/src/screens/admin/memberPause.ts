@@ -1,8 +1,8 @@
 import type { Member } from '@/api/users';
-import { MembershipStatus, type MembershipStatusValue } from '@/models/user';
+import { MEMBER_STATUSES, MembershipStatus, type MembershipStatusValue } from '@/models/user';
 
 const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
-  MembershipStatus.Member,
+  ...MEMBER_STATUSES,
   MembershipStatus.AttendancePaused,
   MembershipStatus.Archived,
 ];

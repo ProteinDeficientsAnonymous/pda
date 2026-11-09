@@ -95,3 +95,48 @@ def test_archive_records_who_archived(api_client, manage_users_user, manage_user
     assert response.status_code == 204
     member.refresh_from_db()
     assert member.archived_by == manage_users_user
+
+
+def _set_guidelines_pause(api_client, headers, user, paused):
+    response = api_client.patch(
+        f"/api/auth/users/{user.pk}/",
+        {"is_paused": paused},
+        content_type="application/json",
+        **headers,
+    )
+    assert response.status_code == 200
+    user.refresh_from_db()
+    return user.membership_status
+
+
+def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
+    member = make_user()
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, member, True)
+        == MembershipStatus.GUIDELINES_PAUSED
+    )
+    assert member.is_member is True
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, member, False)
+        == MembershipStatus.MEMBER
+    )
+
+
+def test_attendance_pause_under_guidelines_pause_keeps_it(api_client, manage_users_headers):
+    member = make_user()
+    _set_guidelines_pause(api_client, manage_users_headers, member, True)
+    _set_attendance_pause(api_client, manage_users_headers, member, True)
+    member.refresh_from_db()
+    assert member.membership_status == MembershipStatus.GUIDELINES_PAUSED
+    assert member.is_member is False
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, member, False)
+        == MembershipStatus.ATTENDANCE_PAUSED
+    )
+
+
+def test_guidelines_paused_member_stays_in_members():
+    paused = make_user(is_paused=True)
+    assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
+    assert User.objects.members().filter(pk=paused.pk).exists()
+    assert not User.objects.active_members().filter(pk=paused.pk).exists()
