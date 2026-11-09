@@ -42,6 +42,9 @@ def _entry(action: str) -> AuditLogEntry:
 
 
 def test_submitted(api_client):
+    rsvper = User.objects.create_user(
+        phone_number="+14155550123", first_name="Sam", is_member=False
+    )
     body = {
         "first_name": "Sam",
         "last_name": "Green",
@@ -59,6 +62,7 @@ def test_submitted(api_client):
     entry = _entry("join_request_submitted")
     assert entry.target_id == str(JoinRequest.objects.get().id)
     assert entry.details["full_name"] == "Sam Green"
+    assert entry.details["user_id"] == str(rsvper.pk)
 
 
 @pytest.mark.parametrize("status", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
