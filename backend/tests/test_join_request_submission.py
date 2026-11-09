@@ -1,5 +1,3 @@
-"""Tests for join request submission."""
-
 import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.core import mail
