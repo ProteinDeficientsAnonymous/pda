@@ -2,7 +2,7 @@ import logging
 from enum import StrEnum
 from typing import NoReturn
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.cache import caches
@@ -81,7 +81,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 def _reject_email_collision(request, email: str) -> NoReturn:
     """Generic rejection — a distinct code here would be an account-existence oracle (Issue 1001)."""
-    audit_log(
+    audit_log_before_raise(
         logging.WARNING,
         "public_rsvp_email_collision",
         request,
@@ -97,7 +97,7 @@ def _reject_if_paused_non_member(request, phone: str) -> None:
     ).first()
     if user is None:
         return
-    audit_log(
+    audit_log_before_raise(
         logging.WARNING,
         "public_rsvp_paused_user_blocked",
         request,

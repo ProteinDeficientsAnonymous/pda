@@ -5,7 +5,7 @@ import time
 
 from community.image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
 from community.validation import Code, raise_validation
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
@@ -68,7 +68,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "login_failed",
             request,
@@ -77,7 +77,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
     if user.archived_at is not None:
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "login_archived",
             request,
@@ -85,7 +85,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if user.is_paused:
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "login_paused",
             request,
@@ -377,7 +377,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
 def change_password(request, payload: ChangePasswordIn):
     user = request.auth
     if not user.check_password(payload.current_password):
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "password_change_failed",
             request,

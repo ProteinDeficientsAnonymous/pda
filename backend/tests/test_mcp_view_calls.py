@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 from typing import Any
 
@@ -8,8 +9,9 @@ from audit.models import AuditLogEntry
 from community.events.crud import create_event
 from community.events.description_templates import get_event_description_templates as templates
 from community.events.schemas import EventIn
-from community.validation import Code
-from config.audit import is_request_via_mcp
+from community.validation import Code, raise_validation
+from config.audit import audit_log_before_raise, is_request_via_mcp
+from django.db import transaction
 from django.test import TestCase
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway import tools
@@ -53,6 +55,16 @@ def test_validation_exception_becomes_tool_error(test_user):
         "status": 400,
         "detail": [{"code": Code.Event.INVALID_CREATE_STATUS, "field": "status"}],
     }
+
+
+def test_rollback_safe_audit_written_after_validation_error(test_user):
+    def view(request):
+        with transaction.atomic():
+            audit_log_before_raise(logging.WARNING, "login_paused", request)
+            raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+
+    assert _tool_error(view, test_user)["status"] == 403
+    assert AuditLogEntry.objects.get().details == {"via": "mcp"}
 
 
 def test_audit_marked_via_mcp_and_rate_limit_kept(test_user):

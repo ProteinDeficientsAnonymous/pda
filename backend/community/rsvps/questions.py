@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.auth import gated_jwt
 from django.db import transaction
 from ninja import Router
@@ -27,7 +27,7 @@ def _load_editable_event(request, event_id: UUID) -> Event:
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not can_edit_event(request.auth, event):
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "permission_denied",
             request,

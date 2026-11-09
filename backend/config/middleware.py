@@ -1,7 +1,7 @@
 import logging
 import time
 
-from config.audit import is_request_anonymized
+from config.audit import flush_rollback_safe_audits, is_request_anonymized
 from config.memory import (
     ensure_tracemalloc,
     media_path_calls,
@@ -53,6 +53,7 @@ class RequestLoggingMiddleware:
 
         start = time.monotonic()
         response = self.get_response(request)
+        flush_rollback_safe_audits(request)
         duration_ms = (time.monotonic() - start) * 1000
 
         user = getattr(request, "user", None)

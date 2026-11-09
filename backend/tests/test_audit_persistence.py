@@ -4,9 +4,15 @@ from pathlib import Path
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from config.audit import AuditTarget, audit_log
+from config.audit import (
+    AuditTarget,
+    audit_log,
+    audit_log_before_raise,
+    flush_rollback_safe_audits,
+)
 from django.db import transaction
 from django.test import RequestFactory
+from users.models import MagicLoginToken
 
 
 @pytest.fixture
@@ -121,6 +127,37 @@ class TestAuditPersistence:
         commit(lambda: audit_log(logging.INFO, "role_created", request))
 
         assert AuditLogEntry.objects.get().ip_address is None
+
+
+class TestSurviveRollback:
+    class Rollback(Exception):
+        pass
+
+    def test_held_row_written_after_rollback(self, db, request_with_actor):
+        with pytest.raises(self.Rollback), transaction.atomic():
+            audit_log_before_raise(logging.WARNING, "login_archived", request_with_actor)
+            raise self.Rollback
+
+        assert not AuditLogEntry.objects.exists()
+        flush_rollback_safe_audits(request_with_actor)
+        flush_rollback_safe_audits(request_with_actor)
+
+        assert AuditLogEntry.objects.get().action == "login_archived"
+
+    @pytest.mark.parametrize(
+        ("field", "action"),
+        [("archived_at", "magic_login_archived"), ("is_paused", "magic_login_paused")],
+    )
+    def test_blocked_magic_login_audit_persists(self, api_client, test_user, field, action):
+        setattr(test_user, field, True if field == "is_paused" else test_user.date_joined)
+        test_user.save(update_fields=[field])
+        magic = MagicLoginToken.create_for_user(test_user)
+
+        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+
+        assert response.status_code == 403
+        entry = AuditLogEntry.objects.get(action=action)
+        assert entry.target_id == str(test_user.pk)
 
 
 class TestAuditTargetTypeCoverage:
