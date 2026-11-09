@@ -48,3 +48,9 @@ def test_members_excludes_archived_member():
 def test_members_or_archived_keeps_only_archived_members(was_member, included):
     user = make_user(is_member=was_member, archived_at=timezone.now())
     assert User.objects.members_or_archived().filter(pk=user.pk).exists() is included
+
+
+def test_me_returns_membership_status(api_client, auth_headers):
+    response = api_client.get("/api/auth/me/", **auth_headers)
+    assert response.status_code == 200
+    assert response.json()["membership_status"] == MembershipStatus.MEMBER

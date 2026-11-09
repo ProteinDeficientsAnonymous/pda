@@ -6,6 +6,16 @@ export const CalendarFeedScope = {
 } as const;
 export type CalendarFeedScopeValue = (typeof CalendarFeedScope)[keyof typeof CalendarFeedScope];
 
+export const MembershipStatus = {
+  PublicRsvper: 'public_rsvper',
+  Tentative: 'tentative',
+  Member: 'member',
+  AttendancePaused: 'attendance_paused',
+  Rejected: 'rejected',
+  Archived: 'archived',
+} as const;
+export type MembershipStatusValue = (typeof MembershipStatus)[keyof typeof MembershipStatus];
+
 export interface Role {
   id: string;
   name: string;
@@ -41,6 +51,7 @@ export interface User {
   // False for a tentatively-approved applicant: signed in, but limited to
   // official/club events until an in-person check-in promotes them.
   isMember: boolean;
+  membershipStatus: MembershipStatusValue;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

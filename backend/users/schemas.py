@@ -8,7 +8,7 @@ from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 
 from users._consents import ConsentType
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 
@@ -145,6 +145,7 @@ class UserOut(BaseModel):
     birthday: BirthdayOut | None = None
     veganniversary: VeganniversaryOut | None = None
     is_member: bool = True
+    membership_status: MembershipStatus = MembershipStatus.MEMBER
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
@@ -198,6 +199,7 @@ class UserOut(BaseModel):
             birthday=BirthdayOut.from_user(user),
             veganniversary=VeganniversaryOut.from_user(user),
             is_member=user.is_member,
+            membership_status=MembershipStatus(user.membership_status),
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,

@@ -5,7 +5,12 @@ import type { ConsentTypeValue } from '@/models/consent';
 import type { EventTypeValue } from '@/models/event';
 import { normalizePermissions } from '@/models/permissions';
 import type { Birthday, Role, User, Veganniversary } from '@/models/user';
-import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
+import {
+  CalendarFeedScope,
+  type CalendarFeedScopeValue,
+  MembershipStatus,
+  type MembershipStatusValue,
+} from '@/models/user';
 
 import { apiClient, authClient, getCurrentAccessToken } from './client';
 
@@ -43,6 +48,7 @@ interface WireUser {
   birthday?: WireBirthday | null;
   veganniversary?: WireVeganniversary | null;
   is_member?: boolean;
+  membership_status?: MembershipStatusValue;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -114,6 +120,7 @@ function mapUser(u: WireUser): User {
     birthday: mapBirthday(u.birthday),
     veganniversary: mapVeganniversary(u.veganniversary),
     isMember: u.is_member ?? true,
+    membershipStatus: u.membership_status ?? MembershipStatus.Member,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
