@@ -6,7 +6,7 @@ Every path a person can take through the app, from visitor to archived. What eac
 
 | Term | Means | Code |
 |------|-------|------|
-| non-member | any `membership_status` but `member` and `guidelines_paused` | `User.objects.members()` excludes them |
+| non-member | any `membership_status` but `active_member` and `guidelines_paused` | `User.objects.members()` excludes them |
 | public rsvper | RSVP'd without an account; can't sign in (unusable password) | `PublicRsvpToken` |
 | limited | signed in but not a member: tentative or attendance-paused | `limited_q()`, `is_limited()` |
 | tentative | limited because of a `TENTATIVE` join request | `JoinRequestStatus.TENTATIVE` |
@@ -62,20 +62,20 @@ stateDiagram-v2
 | rsvps to an official public event | creates a `public_rsvper` user with unusable password; issues or extends a 90-day `/my-rsvps` token (180-day cap) | `community/rsvps/public_submit.py` |
 | submits join form | creates `JoinRequest` (pending), linked to an existing non-member by phone; no user row for a new visitor | `community/join_requests/submit.py` |
 | vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative` | `provision_tentative_user` |
-| vetter approves | new user → create with member role; public rsvper → promote in place; tentative → promote in place, no new link; archived → clear `archived_at`/`archived_by`, re-flag onboarding, back to `member` (or a pause it was archived under). All but tentative mint a magic link. `grant_membership` revokes rsvp tokens | `provision_approved_user` |
+| vetter approves | new user → create with member role; public rsvper → promote in place; tentative → promote in place, no new link; archived → clear `archived_at`/`archived_by`, re-flag onboarding, back to `active_member` (or a pause it was archived under). All but tentative mint a magic link. `grant_membership` revokes rsvp tokens | `provision_approved_user` |
 | checked in at official/club event | someone else checks a tentative user in → promoted, join request approved via that event | `maybe_promote_tentative` |
 | vetter rejects | join request rejected + email; a tentative user becomes `rejected` and can't sign in | `join_requests/manage.py` |
 | vetter un-rejects | back to pending, unless the phone already has an open request | `join_requests/unreject.py` |
 | admin creates account | member with member role + magic link | `users/_management.py` `create_user` |
 | admin pauses for attendance | `attendance_paused`, all roles cleared, non-official/club RSVPs released, co-host spots dropped, solo-hosted events moved to draft | `apply_attendance_pause` |
-| admin unpauses (attendance) | `member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
+| admin unpauses (attendance) | `active_member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
 | compliant check-in | someone else checks them in at official/club and their attendance stats are compliant → restored, `restored_at` stamped, email | `check_in_promotion.py` |
 | admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); elevated roles stripped, member role kept. Can't pause self or an admin | `users/_management.py` `update_user` |
-| admin unpauses (guidelines) | back to `member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
+| admin unpauses (guidelines) | back to `active_member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
 | deletes / admin deletes | soft archive: `archived`, `archived_at` and `archived_by` set, calendar token cleared, elevated roles stripped, upcoming RSVPs released, co-host spots dropped | `users/_archive.py` |
 | hard-deletes | row deleted; only when `last_login` is null and nothing protected references it | `users/_user_deletion.py` |
 
-`membership_status` is the source of truth; `is_member` is generated from it (`member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause makes them a member.
+`membership_status` is the source of truth; `is_member` is generated from it (`active_member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause makes them a member.
 
 ## Getting in
 
