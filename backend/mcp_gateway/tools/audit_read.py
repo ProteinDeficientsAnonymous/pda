@@ -13,8 +13,9 @@ from mcp_gateway.view_calls import call_view
     description=(
         "read the pda audit log, newest first: who did what to whom and when. filters combine "
         "with and. for what happened to a member and who did it, pass filters.member_id (from "
-        "find_members or search_members): that covers entries targeting their account plus "
-        "their join requests. for recent actions by an admin, pass filters.actor_id. each entry has "
+        "find_members or search_members): that covers entries targeting their account plus any "
+        "entry naming them in details.user_id (join requests, rsvps, attendance, payments). "
+        "for recent actions by an admin, pass filters.actor_id. each entry has "
         "action (e.g. join_request_approved, user_paused, user_attendance_paused, "
         "user_archived, user_reactivated), actor_label (who did it; anonymous for public forms "
         "and failed sign-ins), target_type and target_id (what it was done to), details (names, "
