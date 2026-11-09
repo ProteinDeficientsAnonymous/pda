@@ -129,9 +129,8 @@ class TestUpdateUser:
         member_role = Role.objects.get(name="member", is_default=True)
         extra_role = Role.objects.create(name="organizer")
         other_user.roles.add(member_role, extra_role)
-        other_user.is_paused = True
         other_user.roles.remove(extra_role)
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.set_guidelines_pause(True, by=None))
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
             {"is_paused": False},
@@ -190,8 +189,7 @@ class TestUpdateUser:
         assert other_user.attendance_paused_at is None
 
     def test_admin_list_includes_paused_users(self, api_client, manage_users_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.set_guidelines_pause(True, by=None))
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
@@ -257,8 +255,7 @@ class TestUpdateUser:
 @pytest.mark.django_db
 class TestMemberProfile:
     def test_member_profile_returns_404_for_paused_user(self, api_client, auth_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.set_guidelines_pause(True, by=None))
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 

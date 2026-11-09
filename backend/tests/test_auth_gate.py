@@ -90,8 +90,7 @@ class TestGatedJWTAuth:
             phone_number="+12025550305", password="pass", first_name="Paused", last_name=""
         )
         headers = auth_headers_for(user)  # token minted while active
-        user.is_paused = True
-        user.save(update_fields=["is_paused"])
+        user.save(update_fields=user.set_guidelines_pause(True, by=None))
 
         resp = api_client.get("/api/notifications/", **headers)
         assert resp.status_code == 403

@@ -307,7 +307,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    old_is_paused = user.is_paused
+    old_is_paused = user.is_guidelines_paused
     was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
     with transaction.atomic():
@@ -384,7 +384,9 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
         check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
     _validate_pause_change(user, payload.attendance_paused, requester_id)
-    stays_guidelines_paused = user.is_paused if payload.is_paused is None else payload.is_paused
+    stays_guidelines_paused = (
+        user.is_guidelines_paused if payload.is_paused is None else payload.is_paused
+    )
     if payload.attendance_paused and stays_guidelines_paused:
         raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
     if payload.is_paused is not None:

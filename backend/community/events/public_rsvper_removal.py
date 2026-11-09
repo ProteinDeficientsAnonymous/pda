@@ -44,9 +44,9 @@ def email_removed_public_rsvpers(request, event: Event, removed_user_ids: list[s
     if not removed_user_ids:
         return
     # This email and its join pitch are for people without an account.
-    removed = User.objects.filter(
-        id__in=removed_user_ids, is_paused=False, email__isnull=False
-    ).exclude(Q(membership_status__in=_KEPT) | Q(pk__in=User.objects.limited_users()))
+    removed = User.objects.filter(id__in=removed_user_ids, email__isnull=False).exclude(
+        Q(membership_status__in=_KEPT) | Q(pk__in=User.objects.limited_users())
+    )
     for user in removed:
         if not user.email:
             continue

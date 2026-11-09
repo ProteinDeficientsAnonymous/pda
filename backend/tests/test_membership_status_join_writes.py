@@ -157,7 +157,10 @@ def test_archiving_remembers_the_pause(rf, status):
     [(True, MembershipStatus.GUIDELINES_PAUSED), (False, MembershipStatus.ATTENDANCE_PAUSED)],
 )
 def test_guidelines_pause_on_an_archived_user_sets_the_restored_pause(paused, before):
-    archived = make_user(archived_at=timezone.now(), is_paused=not paused)
+    archived = make_user(
+        archived_at=timezone.now(),
+        status_before_archive=None if paused else MembershipStatus.GUIDELINES_PAUSED,
+    )
     archived.set_guidelines_pause(paused, by=None)
     assert archived.membership_status == MembershipStatus.ARCHIVED
     assert archived.status_before_archive == before

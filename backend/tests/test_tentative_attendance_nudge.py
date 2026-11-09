@@ -137,7 +137,7 @@ class TestTentativeAttendanceNudge:
             {"attendance_nudge_opt_out": True},
             {"needs_onboarding": True, "onboarded_at": None},
             {"archived_at": timezone.now()},
-            {"is_paused": True},
+            {"membership_status": MembershipStatus.GUIDELINES_PAUSED},
             {"is_active": False},
             {"email": ""},
         ],

@@ -239,12 +239,6 @@ class TestWeeklyDigestTentativeMembers:
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()
 
-    def test_skips_paused_tentative_member(self, fake_email_sender):
-        make_tentative("+12025550272", is_paused=True)
-        make_event("potluck", 2)
-        call_command("send_weekly_digest")
-        fake_email_sender.send.assert_not_called()
-
     def test_sends_to_attendance_paused_member(self, fake_email_sender):
         paused = make_attendance_paused(phone_number="+12025550273")
         make_event("potluck", 2)

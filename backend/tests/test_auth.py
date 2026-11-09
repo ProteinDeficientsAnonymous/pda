@@ -100,8 +100,7 @@ class TestLogin:
         assert response.status_code == 401
 
     def test_login_paused_user_returns_403(self, api_client, test_user):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.save(update_fields=test_user.set_guidelines_pause(True, by=None))
         response = api_client.post(
             "/api/auth/login/",
             {"phone_number": "+12025550101", "password": "testpass123"},
@@ -190,8 +189,7 @@ class TestMe:
         assert response.json()["needs_onboarding"] is True
 
     def test_me_paused_user_returns_403(self, api_client, test_user):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.save(update_fields=test_user.set_guidelines_pause(True, by=None))
         headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 403

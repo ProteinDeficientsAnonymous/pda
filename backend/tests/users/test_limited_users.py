@@ -16,8 +16,7 @@ class TestLimitedUsers:
         assert sorted(pks) == sorted([paused.pk, tentative.pk])
 
     def test_excludes_guidelines_paused(self):
-        make_attendance_paused(is_paused=True)
-        make_tentative("+12025550291", is_paused=True)
+        make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
         assert not User.objects.limited_users().exists()
 
     def test_active_limited_users_excludes_archived(self):

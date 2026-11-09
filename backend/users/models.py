@@ -38,7 +38,7 @@ def can_sign_in_q() -> Q:
 
 def limited_q() -> Q:
     """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
-    return Q(membership_status__in=LIMITED_STATUSES, is_paused=False)
+    return Q(membership_status__in=LIMITED_STATUSES)
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -120,7 +120,6 @@ class UserManager(BaseUserManager):
         return self.get_queryset().filter(
             membership_status=MembershipStatus.ACTIVE_MEMBER,
             is_active=True,
-            is_paused=False,
             archived_at__isnull=True,
         )
 
@@ -256,7 +255,7 @@ class User(AbstractUser):
 
     def set_guidelines_pause(self, paused: bool, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
-        if paused == self.is_paused:
+        if paused == self.is_guidelines_paused:
             return []
         self.is_paused = paused
         self.attendance_paused_at = None if paused else timezone.now()
@@ -271,6 +270,13 @@ class User(AbstractUser):
     @property
     def is_member(self) -> bool:
         return self.membership_status in MEMBER_STATUSES
+
+    @property
+    def is_guidelines_paused(self) -> bool:
+        """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        if self.membership_status == MembershipStatus.ARCHIVED:
+            return self.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
+        return self.membership_status == MembershipStatus.GUIDELINES_PAUSED
 
     @property
     def full_name(self) -> str:
@@ -443,7 +449,7 @@ class PublicRsvpToken(models.Model):
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.is_paused:
+        if row is None or not row.is_valid or row.user.is_guidelines_paused:
             return None
         return row.user
 

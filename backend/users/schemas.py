@@ -220,7 +220,7 @@ class UserOut(BaseModel):
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
             host_digest_opt_out=user.host_digest_opt_out,
-            is_paused=user.is_paused,
+            is_paused=user.is_guidelines_paused,
             attendance_paused_at=user.attendance_paused_at,
             restored_at=user.restored_at,
             unpaused_at=user.unpaused_at,

@@ -29,8 +29,8 @@ def test_archived_member_cannot_sign_in():
     assert not User.objects.filter(can_sign_in_q(), pk=user.pk).exists()
 
 
-def test_guidelines_paused_tentative_is_not_limited():
-    user = make_user(membership_status=MembershipStatus.TENTATIVE, is_paused=True)
+def test_guidelines_paused_is_not_limited():
+    user = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     assert not User.objects.filter(limited_q(), pk=user.pk).exists()
 
 

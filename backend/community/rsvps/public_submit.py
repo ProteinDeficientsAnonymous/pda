@@ -101,11 +101,9 @@ def _reject_email_collision(request, email: str) -> NoReturn:
 
 def _reject_if_paused_non_member(request, phone: str) -> None:
     """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
-    user = (
-        User.objects.filter(phone_number=phone, is_paused=True, archived_at__isnull=True)
-        .exclude(membership_status=MembershipStatus.ACTIVE_MEMBER)
-        .first()
-    )
+    user = User.objects.filter(
+        phone_number=phone, membership_status=MembershipStatus.GUIDELINES_PAUSED
+    ).first()
     if user is None:
         return
     audit_log(
@@ -251,7 +249,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     # Paused goes to login like a member; login only reveals the pause after the right password.
-    if user.membership_status in FULL_MEMBER_STATUSES or user.is_paused:
+    if user.membership_status in FULL_MEMBER_STATUSES:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)

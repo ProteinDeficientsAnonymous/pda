@@ -14,8 +14,7 @@ EMAIL = "sam@example.com"
 @pytest.fixture
 def paused(db):
     user = make_public_rsvper(PHONE, EMAIL)
-    user.is_paused = True
-    user.save(update_fields=["is_paused"])
+    user.save(update_fields=user.set_guidelines_pause(True, by=None))
     return user
 
 
@@ -71,8 +70,12 @@ class TestPausedPublicRsvp:
 @pytest.mark.django_db
 class TestPausedRsvpToken:
     @pytest.fixture
-    def token(self, paused):
-        return PublicRsvpToken.issue_or_extend(paused).token
+    def token(self, db):
+        # Issued before the pause: a member can't be issued one.
+        user = make_public_rsvper(PHONE, EMAIL)
+        token = PublicRsvpToken.issue_or_extend(user).token
+        user.save(update_fields=user.set_guidelines_pause(True, by=None))
+        return token
 
     def test_viewer_falls_back_to_anonymous(self, rf, official_event, token):
         request = rf.get(f"/api/community/events/x/?token={token}")
@@ -85,7 +88,7 @@ class TestPausedRsvpToken:
 
         assert response.status_code == 404
 
-    def test_manage_update_404s(self, api_client, official_event, paused, token):
+    def test_manage_update_404s(self, api_client, official_event, token):
         response = api_client.post(
             f"/api/community/public/my-rsvps/{official_event.id}/?token={token}",
             {"status": RSVPStatus.ATTENDING},
@@ -93,7 +96,7 @@ class TestPausedRsvpToken:
         )
 
         assert response.status_code == 404
-        assert not EventRSVP.objects.filter(user=paused).exists()
+        assert not EventRSVP.objects.filter(user__phone_number=PHONE).exists()
 
 
 @pytest.mark.django_db
