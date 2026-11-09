@@ -18,6 +18,8 @@ class TestUnrejectJoinRequest:
             content_type="application/json",
             **vettor_headers,
         )
+        sample_join_request.refresh_from_db()
+        rejected_at = sample_join_request.status_changed_at
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/unreject/",
             content_type="application/json",
@@ -28,7 +30,7 @@ class TestUnrejectJoinRequest:
         sample_join_request.refresh_from_db()
         assert sample_join_request.status == JoinRequestStatus.PENDING
         assert sample_join_request.status_changed_by == vettor_user
-        assert sample_join_request.status_changed_at is not None
+        assert sample_join_request.status_changed_at > rejected_at
 
     def test_unreject_blocked_while_phone_has_open_request(
         self, api_client, vettor_headers, sample_join_request

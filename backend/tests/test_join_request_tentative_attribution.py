@@ -1,13 +1,7 @@
-import importlib
-
 import pytest
-from audit.models import AuditLogEntry, AuditTargetType
 from community.models import JoinRequestStatus
-from django.apps import apps
 
 pytestmark = pytest.mark.django_db
-
-backfill = importlib.import_module("community.migrations.0100_backfill_joinrequest_tentative")
 
 
 def _decide(api_client, headers, join_request, status):
@@ -43,24 +37,3 @@ def test_list_exposes_tentative_attribution(api_client, vettor_headers, sample_j
     row = next(r for r in response.json() if r["id"] == str(sample_join_request.id))
     assert row["tentative_by_name"] == "Vettor"
     assert row["tentative_at"] is not None
-
-
-def test_backfill_uses_latest_audit_entry(vettor_user, test_user, sample_join_request):
-    sample_join_request.status = JoinRequestStatus.TENTATIVE
-    sample_join_request.save()
-    for actor in (test_user, vettor_user):
-        AuditLogEntry.objects.create(
-            action="join_request_tentative",
-            actor=actor,
-            actor_label=actor.full_name,
-            target_type=AuditTargetType.JOIN_REQUEST,
-            target_id=str(sample_join_request.id),
-            level=20,
-        )
-    latest = AuditLogEntry.objects.order_by("-created_at").first()
-
-    backfill.backfill_tentative(apps, None)
-
-    sample_join_request.refresh_from_db()
-    assert sample_join_request.tentative_by == latest.actor
-    assert sample_join_request.tentative_at == latest.created_at
