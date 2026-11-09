@@ -16,7 +16,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._time import future_iso
 from tests._users import make_attendance_paused
@@ -85,6 +85,7 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
         user=user,
         status=JoinRequestStatus.TENTATIVE,
     )
+    user.save(update_fields=user.set_membership_status(MembershipStatus.TENTATIVE))
     return user
 
 

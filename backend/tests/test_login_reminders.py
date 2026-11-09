@@ -13,7 +13,7 @@ from django.db.models import F
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import EmailStream, SendResult
-from users.models import MagicLoginToken, MagicLoginTokenSource, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, MembershipStatus, User
 
 REMINDER_SUBJECT = "finish setting up your pda account"
 
@@ -27,7 +27,9 @@ def _make_pending_member(phone_number: str, **extra) -> User:
 
 
 def _make_pending_tentative(phone_number: str) -> User:
-    user = _make_pending_member(phone_number, is_member=False)
+    user = _make_pending_member(
+        phone_number, is_member=False, membership_status=MembershipStatus.TENTATIVE
+    )
     JoinRequest.objects.create(
         first_name="Sprout",
         phone_number=phone_number,

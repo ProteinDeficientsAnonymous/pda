@@ -3,13 +3,11 @@ import uuid
 from datetime import timedelta
 
 import phonenumbers
-from community.models.choices import JoinRequestStatus
-from community.models.join_form import JoinRequest
 from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Exists, OuterRef, Q, prefetch_related_objects
+from django.db.models import Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -24,14 +22,13 @@ HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
 def can_sign_in_q() -> Q:
-    """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
-    tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-    return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
+    """Members, plus tentative and attendance-paused non-members."""
+    return Q(membership_status__in=SIGN_IN_STATUSES)
 
 
 def limited_q() -> Q:
     """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
-    return Q(is_member=False, is_paused=False) & can_sign_in_q()
+    return Q(membership_status__in=LIMITED_STATUSES, is_paused=False)
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -75,6 +72,10 @@ def _legacy_membership_status(fields: dict) -> "MembershipStatus":
     if fields.get("is_member"):
         return MembershipStatus.MEMBER
     return MembershipStatus.PUBLIC_RSVPER
+
+
+LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
+SIGN_IN_STATUSES = (MembershipStatus.MEMBER, *LIMITED_STATUSES)
 
 
 class WeekStart:
@@ -143,7 +144,6 @@ class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")
-        extra_fields.setdefault("membership_status", _legacy_membership_status(extra_fields))
         user = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -264,6 +264,8 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
+        if self._state.adding and self.membership_status == MembershipStatus.PUBLIC_RSVPER:
+            self.membership_status = _legacy_membership_status(vars(self))
         super().save(*args, **kwargs)
 
     def __str__(self):

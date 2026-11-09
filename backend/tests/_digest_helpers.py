@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from community.models import Event, EventType, JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 def make_tentative(phone_number: str, **extra) -> User:
@@ -11,6 +11,7 @@ def make_tentative(phone_number: str, **extra) -> User:
         email=f"{phone_number}@example.test",
         first_name="Sprout",
         is_member=False,
+        membership_status=MembershipStatus.TENTATIVE,
         **extra,
     )
     JoinRequest.objects.create(

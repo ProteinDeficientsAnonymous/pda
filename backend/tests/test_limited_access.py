@@ -11,7 +11,7 @@ from community.models import (
 )
 from community.validation import Code
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -44,6 +44,7 @@ def tentative_user(db):
         first_name="Sprout",
         email="sprout@example.com",
         is_member=False,
+        membership_status=MembershipStatus.TENTATIVE,
         guidelines_consent_at=timezone.now(),
     )
     JoinRequest.objects.create(
