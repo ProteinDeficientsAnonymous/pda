@@ -185,8 +185,8 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
     different rows (spec: phone wins, log a warning).
 
     Raises:
-      - ALREADY_MEMBER (409) when the match is an active member — they should
-        sign in, not re-apply.
+      - ALREADY_MEMBER (409) when the match is a member or paused — they should
+        sign in, not re-apply; login tells a paused user they're paused.
       - PHONE_ALREADY_PENDING (400) when a pending request already exists.
       - PHONE_ALREADY_TENTATIVE (400) when a tentative request already exists —
         they have an account and should sign in. A rejected request is the only
@@ -210,7 +210,9 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
         )
     matched = phone_user or email_user
 
-    if matched and (matched.is_member or matched.attendance_paused_at is not None):
+    if matched and (
+        matched.is_member or matched.is_paused or matched.attendance_paused_at is not None
+    ):
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
     _raise_if_open_request(validated_phone)
 
@@ -284,16 +286,6 @@ def submit_join_request(request, payload: JoinRequestIn):
         guidelines_consent_at=now,
         submitted_at=now,
     )
-    # Unsaved decoy shaped like a real submission, so no response reveals who is paused.
-    if matched_user and matched_user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "join_request_paused_user_blocked",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(matched_user.pk)),
-        )
-        return Status(201, submitted_join_request_out(join_request))
-
     try:
         with transaction.atomic():
             # Backfill the non-member's missing email so the now-known contact
