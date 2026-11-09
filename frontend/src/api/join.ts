@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { MembershipStatusValue } from '@/models/user';
+
 import { hasErrorCode } from './apiErrors';
 import { type AttendedEvent, mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
@@ -174,11 +176,13 @@ export interface JoinRequestSummary {
 export interface PreviousArchive {
   archivedAt: string | null;
   archivedByName: string | null;
+  pausedStatus: MembershipStatusValue | null;
 }
 
 interface WirePreviousArchive {
   archived_at?: string | null;
   archived_by_name?: string | null;
+  paused_status?: MembershipStatusValue | null;
 }
 
 export interface PreviousRejection {
@@ -264,6 +268,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
       ? {
           archivedAt: w.previous_archive.archived_at ?? null,
           archivedByName: w.previous_archive.archived_by_name ?? null,
+          pausedStatus: w.previous_archive.paused_status ?? null,
         }
       : null,
     previouslyRejected: w.previously_rejected ?? false,

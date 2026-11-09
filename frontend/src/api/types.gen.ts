@@ -5153,6 +5153,7 @@ export interface components {
             archived_at?: string | null;
             /** Archived By Name */
             archived_by_name?: string | null;
+            paused_status?: components["schemas"]["MembershipStatus"] | null;
         };
         /** PreviousRejectionOut */
         PreviousRejectionOut: {

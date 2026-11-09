@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 from django.db.models import Prefetch
 from pydantic import BaseModel
-from users.models import User
+from users.models import PAUSED_STATUSES, MembershipStatus, User
 
 from community.models import EventRSVP, JoinRequest, JoinRequestStatus
 
@@ -20,6 +20,7 @@ class PreviousRejectionOut(BaseModel):
 class PreviousArchiveOut(BaseModel):
     archived_at: datetime | None = None
     archived_by_name: str | None = None
+    paused_status: MembershipStatus | None = None
 
 
 class PhoneLookups(NamedTuple):
@@ -59,8 +60,11 @@ def previous_archive_out(user: User | None) -> PreviousArchiveOut | None:
     if user is None or user.archived_at is None:
         return None
     by = user.membership_status_changed_by
+    before = user.status_before_archive
     return PreviousArchiveOut(
-        archived_at=user.archived_at, archived_by_name=by.full_name if by else None
+        archived_at=user.archived_at,
+        archived_by_name=by.full_name if by else None,
+        paused_status=MembershipStatus(before) if before in PAUSED_STATUSES else None,
     )
 
 

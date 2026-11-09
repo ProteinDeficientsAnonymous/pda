@@ -108,6 +108,18 @@ def test_card_shows_who_archived_them_and_when(
     assert row["previous_archive"]["archived_by_name"] == "Vettor"
     archived_at = datetime.fromisoformat(row["previous_archive"]["archived_at"])
     assert abs(archived_at - archived_member.archived_at) < timedelta(seconds=1)
+    assert row["previous_archive"]["paused_status"] is None
+
+
+@pytest.mark.parametrize(
+    "status", [MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED]
+)
+def test_card_names_the_pause_they_were_archived_under(
+    api_client, vettor_headers, sample_join_request, status
+):
+    make_user(phone_number=PHONE, archived_at=timezone.now(), status_before_archive=status)
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previous_archive"]["paused_status"] == status
 
 
 def test_card_has_no_archive_for_a_first_time_applicant(
