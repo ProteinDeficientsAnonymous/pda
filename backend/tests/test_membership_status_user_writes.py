@@ -3,7 +3,6 @@ from community.validation import Code
 from django.utils import timezone
 from users.models import MEMBER_STATUSES, MembershipStatus, User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -127,8 +126,10 @@ def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
     assert member.is_member is True
     assert (
         _set_guidelines_pause(api_client, manage_users_headers, member, False)
-        == MembershipStatus.ACTIVE_MEMBER
+        == MembershipStatus.ATTENDANCE_PAUSED
     )
+    assert member.attendance_paused_at is not None
+    assert member.unpaused_at is None
 
 
 def test_attendance_pause_refused_while_guidelines_paused(api_client, manage_users_headers):
@@ -153,11 +154,9 @@ def test_guidelines_pause_replaces_attendance_pause(api_client, manage_users_hea
     assert paused.attendance_paused_at is None
     assert (
         _set_guidelines_pause(api_client, manage_users_headers, paused, False)
-        == MembershipStatus.ACTIVE_MEMBER
+        == MembershipStatus.ATTENDANCE_PAUSED
     )
-    assert paused.roles.filter(name="member").exists() == (
-        Role.objects.filter(name="member", is_default=True).exists()
-    )
+    assert paused.attendance_paused_at is not None
 
 
 def test_guidelines_paused_member_stays_in_members():

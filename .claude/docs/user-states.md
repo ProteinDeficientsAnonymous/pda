@@ -45,7 +45,7 @@ stateDiagram-v2
 
     Member --> GuidelinesPaused: admin pauses
     AttendancePaused --> GuidelinesPaused: admin pauses
-    GuidelinesPaused --> Member: admin unpauses
+    GuidelinesPaused --> AttendancePaused: admin unpauses
 
     Member --> Archived: admin deletes, or deletes own account
     AttendancePaused --> Archived: admin deletes, or deletes own account
@@ -71,11 +71,11 @@ stateDiagram-v2
 | admin unpauses (attendance) | `member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
 | compliant check-in | someone else checks them in at official/club and their attendance stats are compliant → restored, `restored_at` stamped, email | `check_in_promotion.py` |
 | admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); every upcoming RSVP released (official/club included), co-host spots dropped, solo-hosted events drafted, pending co-host invites rescinded, elevated roles stripped (member role kept), all audited. Can't pause self or an admin | `update_user`, `release_held_events` |
-| admin unpauses (guidelines) | back to `member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
+| admin unpauses (guidelines) | `attendance_paused`, `attendance_paused_at` set to now, `has_joined_whatsapp` cleared, member role kept. No `unpaused_at` stamp or email while a pause remains; a compliant check-in restores them | `User.set_guidelines_pause` |
 | deletes / admin deletes | soft archive: `archived`, `archived_at` and `archived_by` set, calendar token cleared, elevated roles stripped, upcoming RSVPs released, co-host spots dropped | `users/_archive.py` |
 | hard-deletes | row deleted; only when `last_login` is null and nothing protected references it | `users/_user_deletion.py` |
 
-`membership_status` is the source of truth; `is_member` is generated from it (`member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause makes them a member.
+`membership_status` is the source of truth; `is_member` is generated from it (`member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause leaves them attendance-paused until a compliant check-in restores them.
 
 ## Getting in
 

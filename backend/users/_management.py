@@ -20,7 +20,6 @@ from users.helpers import (
     check_and_set_email,
     create_magic_token,
     create_user_with_role,
-    grant_membership,
     is_admin,
     resolve_name_fields,
     validate_admin_role_change,
@@ -309,8 +308,6 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_paused and not has_pause(user):
-        if old_is_paused:
-            grant_membership(user)
         mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 

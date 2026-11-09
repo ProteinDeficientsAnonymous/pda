@@ -234,15 +234,20 @@ class User(AbstractUser):
         return ["membership_status"]
 
     def set_guidelines_pause(self, paused: bool) -> list[str]:
-        """A guidelines pause replaces any attendance pause; lifting it makes them a member."""
+        """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
         if paused == self.is_paused:
             return []
         self.is_paused = paused
         if self.membership_status == MembershipStatus.ARCHIVED:
             return ["is_paused"]
-        self.attendance_paused_at = None
-        status = MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ACTIVE_MEMBER
-        return ["is_paused", "attendance_paused_at", *self.set_membership_status(status)]
+        self.attendance_paused_at = None if paused else timezone.now()
+        status = (
+            MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
+        )
+        if not paused:
+            self.has_joined_whatsapp = False
+        fields = ["is_paused", "attendance_paused_at", "has_joined_whatsapp"]
+        return [*fields, *self.set_membership_status(status)]
 
     @property
     def is_member(self) -> bool:

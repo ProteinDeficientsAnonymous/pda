@@ -9,6 +9,7 @@ from community.models import (
     RSVPStatus,
 )
 from tests._events import make_event, make_rsvp
+from users.models import MembershipStatus
 from users.roles import Role
 
 
@@ -64,3 +65,17 @@ class TestGuidelinesPauseRelease:
             "removed_hosting_event_ids": [str(shared.pk)],
             "drafted_event_ids": [str(drafted.pk)],
         }
+
+    def test_lifting_leaves_an_attendance_pause_with_the_member_role(self, set_pause, member):
+        member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
+        member.roles.add(member_role)
+        member.has_joined_whatsapp = True
+        member.save(update_fields=["has_joined_whatsapp"])
+
+        set_pause(member, True)
+        set_pause(member, False)
+
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
+        assert member.attendance_paused_at is not None
+        assert member.has_joined_whatsapp is False
+        assert list(member.roles.all()) == [member_role]
