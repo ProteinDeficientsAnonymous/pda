@@ -53,7 +53,7 @@ def test_members_or_archived_includes_every_archived_user(was_member):
 
 @pytest.mark.parametrize("status", [MembershipStatus.MEMBER, MembershipStatus.TENTATIVE])
 def test_me_returns_membership_status(api_client, status):
-    user = make_user(membership_status=status, is_member=status == MembershipStatus.MEMBER)
+    user = make_user(membership_status=status)
     response = api_client.get("/api/auth/me/", **auth_headers_for(user))
     assert response.status_code == 200
     assert response.json()["membership_status"] == status

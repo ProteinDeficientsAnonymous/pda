@@ -122,7 +122,7 @@ def test_reapproving_archived_paused_member_keeps_pause(
 ):
     paused = make_user(
         phone_number=sample_join_request.phone_number,
-        is_member=False,
+        membership_status=MembershipStatus.ARCHIVED,
         is_paused=is_paused,
         attendance_paused_at=timezone.now(),
         archived_at=timezone.now(),

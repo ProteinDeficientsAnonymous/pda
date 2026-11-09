@@ -50,7 +50,7 @@ def test_rejected_after_tentative(sample_join_request):
 
 
 def test_tentative_wins_over_older_rejection(sample_join_request):
-    user = make_user(is_member=False)
+    user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
     JoinRequest.objects.create(
         user=user,
         phone_number="+16505550199",
