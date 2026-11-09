@@ -1,5 +1,5 @@
 import logging
-from collections import Counter
+from collections import defaultdict
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
@@ -52,6 +52,13 @@ class JoinRequestRsvpOut(BaseModel):
     start_datetime: datetime | None = None
 
 
+class PreviousRejectionOut(BaseModel):
+    status_changed_at: datetime | None = None
+    status_changed_by_name: str | None = None
+    rejection_reason: str = ""
+    rejection_note: str = ""
+
+
 class JoinRequestOut(BaseModel):
     id: str
     first_name: str = ""
@@ -67,6 +74,7 @@ class JoinRequestOut(BaseModel):
     # A prior request from this number was rejected — rejected applicants may
     # re-apply, so vettors need the history on the fresh request.
     previously_rejected: bool = False
+    previous_rejection: PreviousRejectionOut | None = None
     status_changed_at: datetime | None = None
     status_changed_by_name: str | None = None
     approved_via_event_id: str | None = None
@@ -185,34 +193,51 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
 
 class PhoneLookups(NamedTuple):
     users_by_phone: dict[str, User]
-    rejected_counts: Counter[str]
+    rejections_by_phone: dict[str, list[JoinRequest]]
 
 
 def _phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
-    """Users (with rsvps) and rejected-request counts for every phone in the batch."""
+    """Users (with rsvps) and rejected requests, newest first, for every phone in the batch."""
     phones = {jr.phone_number for jr in join_requests}
     users = User.objects.filter(phone_number__in=phones).prefetch_related(
         Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
     )
-    rejected = JoinRequest.objects.filter(
-        phone_number__in=phones, status=JoinRequestStatus.REJECTED
-    ).values_list("phone_number", flat=True)
-    return PhoneLookups({u.phone_number: u for u in users}, Counter(rejected))
+    rejected = (
+        JoinRequest.objects.filter(phone_number__in=phones, status=JoinRequestStatus.REJECTED)
+        .select_related("status_changed_by")
+        .order_by("-submitted_at")
+    )
+    rejections: dict[str, list[JoinRequest]] = defaultdict(list)
+    for rejection in rejected:
+        rejections[rejection.phone_number].append(rejection)
+    return PhoneLookups({u.phone_number: u for u in users}, rejections)
 
 
 class PhoneHistory(NamedTuple):
     phone_user: User | None
     previously_archived: bool
-    previously_rejected: bool
+    previous_rejection: JoinRequest | None
 
 
 def _phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
     phone_user = lookups.users_by_phone.get(jr.phone_number)
-    own_rejection = 1 if jr.status == JoinRequestStatus.REJECTED else 0
+    rejections = lookups.rejections_by_phone.get(jr.phone_number, [])
     return PhoneHistory(
         phone_user=phone_user,
         previously_archived=phone_user is not None and phone_user.archived_at is not None,
-        previously_rejected=lookups.rejected_counts[jr.phone_number] > own_rejection,
+        previous_rejection=next((r for r in rejections if r.submitted_at < jr.submitted_at), None),
+    )
+
+
+def _previous_rejection_out(rejection: JoinRequest | None) -> PreviousRejectionOut | None:
+    if rejection is None:
+        return None
+    by = rejection.status_changed_by
+    return PreviousRejectionOut(
+        status_changed_at=rejection.status_changed_at,
+        status_changed_by_name=by.full_name if by else None,
+        rejection_reason=rejection.rejection_reason,
+        rejection_note=rejection.rejection_note,
     )
 
 
@@ -243,7 +268,8 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         status=jr.status,
         user_id=str(user.id) if user else None,
         previously_archived=history.previously_archived,
-        previously_rejected=history.previously_rejected,
+        previously_rejected=history.previous_rejection is not None,
+        previous_rejection=_previous_rejection_out(history.previous_rejection),
         status_changed_at=jr.status_changed_at,
         status_changed_by_name=jr.status_changed_by.full_name if jr.status_changed_by else None,
         **_approving_event_fields(jr),
