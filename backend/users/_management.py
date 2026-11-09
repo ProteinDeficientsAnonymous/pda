@@ -326,8 +326,8 @@ def _audit_user_update(
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing also strips non-member roles and
-    records the removed ids. Otherwise a plain field change logs user_updated.
+    A pause transition logs user_paused/user_unpaused (pausing also strips
+    non-member roles and records the removed ids); field changes log user_updated.
     """
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
@@ -341,7 +341,6 @@ def _audit_user_update(
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
         )
-        return
 
     changed = [
         f
