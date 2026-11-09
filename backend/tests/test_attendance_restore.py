@@ -87,9 +87,10 @@ class TestRestoreOnCheckIn:
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()
         )
-        assert AuditLogEntry.objects.filter(
+        entry = AuditLogEntry.objects.get(
             action="user_attendance_restored", target_id=str(paused.pk)
-        ).exists()
+        )
+        assert entry.details["full_name"] == paused.full_name
 
     def test_qualifying_event_older_than_a_year_does_not_count(self, api_client, host, paused):
         _attended(paused, days_ago=400)
