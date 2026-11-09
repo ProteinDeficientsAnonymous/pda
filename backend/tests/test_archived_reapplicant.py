@@ -77,18 +77,21 @@ def test_tentative_then_approved_is_a_member(
 @pytest.mark.parametrize(
     ("pause", "status"),
     [
-        ({"is_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
+        ({}, MembershipStatus.GUIDELINES_PAUSED),
         ({"attendance_paused_at": timezone.now()}, MembershipStatus.ATTENDANCE_PAUSED),
     ],
 )
 def test_marking_tentative_keeps_an_archived_pause(
     api_client, vettor_headers, sample_join_request, pause, status
 ):
-    paused = make_user(phone_number=PHONE, archived_at=timezone.now(), **pause)
+    paused = make_user(
+        phone_number=PHONE, archived_at=timezone.now(), status_before_archive=status, **pause
+    )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
     paused.refresh_from_db()
     assert paused.membership_status == status
     assert paused.archived_at is None
+    assert paused.status_before_archive is None
 
 
 def _listed(api_client, headers, join_request):

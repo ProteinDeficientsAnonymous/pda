@@ -2,6 +2,7 @@ import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
 from django.utils import timezone
+from users._archive import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus
 
 from tests._public_rsvp_helpers import make_public_rsvper
@@ -114,20 +115,49 @@ def test_reapproving_archived_applicant_makes_member(
     assert applicant.roles.filter(name="member").exists()
 
 
-@pytest.mark.parametrize("is_paused", [False, True])
-def test_reapproving_archived_paused_member_keeps_pause(
-    api_client, vettor_headers, sample_join_request, is_paused
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
+        (MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.ATTENDANCE_PAUSED),
+        (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.ACTIVE_MEMBER),
+        (None, MembershipStatus.ACTIVE_MEMBER),
+    ],
+)
+def test_reapproving_archived_member_restores_their_pause(
+    api_client, vettor_headers, sample_join_request, before, after
 ):
     paused = make_user(
         phone_number=sample_join_request.phone_number,
         membership_status=MembershipStatus.ARCHIVED,
-        is_paused=is_paused,
+        status_before_archive=before,
         attendance_paused_at=timezone.now(),
         archived_at=timezone.now(),
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
     paused.refresh_from_db()
-    assert paused.membership_status == (
-        MembershipStatus.GUIDELINES_PAUSED if is_paused else MembershipStatus.ATTENDANCE_PAUSED
-    )
-    assert (paused.attendance_paused_at is None) == is_paused
+    assert paused.membership_status == after
+    assert paused.status_before_archive is None
+    is_attendance_paused = after == MembershipStatus.ATTENDANCE_PAUSED
+    assert (paused.attendance_paused_at is not None) == is_attendance_paused
+
+
+@pytest.mark.parametrize(
+    "status", [MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED]
+)
+def test_archiving_remembers_the_pause(rf, status):
+    paused = make_user(membership_status=status)
+    archive_user(rf.get("/"), paused)
+    paused.refresh_from_db()
+    assert paused.status_before_archive == status
+
+
+@pytest.mark.parametrize(
+    ("paused", "before"),
+    [(True, MembershipStatus.GUIDELINES_PAUSED), (False, MembershipStatus.ATTENDANCE_PAUSED)],
+)
+def test_guidelines_pause_on_an_archived_user_sets_the_restored_pause(paused, before):
+    archived = make_user(archived_at=timezone.now(), is_paused=not paused)
+    archived.set_guidelines_pause(paused, by=None)
+    assert archived.membership_status == MembershipStatus.ARCHIVED
+    assert archived.status_before_archive == before

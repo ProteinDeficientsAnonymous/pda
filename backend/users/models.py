@@ -209,6 +209,9 @@ class User(AbstractUser):
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    status_before_archive = models.CharField(
+        max_length=20, choices=MembershipStatus.choices, null=True, blank=True
+    )
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
@@ -253,7 +256,10 @@ class User(AbstractUser):
             return []
         self.is_paused = paused
         if self.membership_status == MembershipStatus.ARCHIVED:
-            return ["is_paused"]
+            self.status_before_archive = (
+                MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
+            )
+            return ["is_paused", "status_before_archive"]
         self.attendance_paused_at = None if paused else timezone.now()
         status = (
             MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED

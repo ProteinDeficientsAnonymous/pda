@@ -6,7 +6,13 @@ from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
-from users.models import MEMBER_OR_ARCHIVED, MembershipStatus, User, status_change_stamp
+from users.models import (
+    MEMBER_OR_ARCHIVED,
+    PAUSED_STATUSES,
+    MembershipStatus,
+    User,
+    status_change_stamp,
+)
 
 from community.models import (
     JoinRequestStatus,
@@ -33,13 +39,14 @@ def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
     return(list[str]): the fields it changed, for update_fields.
     """
     user.archived_at = None
-    # Archiving leaves a pause in place; an archived row can predate their exclusivity.
-    paused = user.attendance_paused_at is not None
-    status = MembershipStatus.ATTENDANCE_PAUSED if paused else active_status
-    if user.is_paused:
+    before = user.status_before_archive
+    status = before if before in PAUSED_STATUSES else active_status
+    if status == MembershipStatus.ATTENDANCE_PAUSED:
+        user.attendance_paused_at = user.attendance_paused_at or timezone.now()
+    else:
         user.attendance_paused_at = None
-        status = MembershipStatus.GUIDELINES_PAUSED
-    fields = ["archived_at", "attendance_paused_at"]
+    user.status_before_archive = None
+    fields = ["archived_at", "attendance_paused_at", "status_before_archive"]
     return [*fields, *user.set_membership_status(status, by=by)]
 
 
