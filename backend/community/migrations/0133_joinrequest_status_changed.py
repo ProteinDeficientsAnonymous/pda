@@ -1,24 +1,22 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+from django.db.models import F
 
-_STAMPS = (
-    ("tentative_at", "tentative_by"),
-    ("approved_at", "approved_by"),
-    ("rejected_at", "rejected_by"),
-)
+_STAMPS = {
+    "tentative": ("tentative_at", "tentative_by"),
+    "approved": ("approved_at", "approved_by"),
+    "rejected": ("rejected_at", "rejected_by"),
+}
 
 
 def fill_status_changed(apps, schema_editor):
     JoinRequest = apps.get_model("community", "JoinRequest")
-    # A pending row was never decided or was un-rejected; its old stamps describe an earlier status.
-    for jr in JoinRequest.objects.exclude(status="pending").iterator():
-        stamps = [(getattr(jr, at), getattr(jr, by + "_id")) for at, by in _STAMPS]
-        stamped = [s for s in stamps if s[0] is not None]
-        if not stamped:
-            continue
-        jr.status_changed_at, jr.status_changed_by_id = max(stamped, key=lambda s: s[0])
-        jr.save(update_fields=["status_changed_at", "status_changed_by"])
+    # Only the current status's stamp counts; a pending row's stamps describe an earlier status.
+    for status, (at, by) in _STAMPS.items():
+        JoinRequest.objects.filter(status=status).update(
+            status_changed_at=F(at), status_changed_by=F(by)
+        )
 
 
 class Migration(migrations.Migration):
