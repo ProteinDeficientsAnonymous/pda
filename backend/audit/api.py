@@ -17,16 +17,19 @@ from audit.models import AuditLogEntry, AuditTargetType
 router = Router()
 
 
-class AuditLogQuery(Schema):
-    target_type: AuditTargetType | None = None
-    target_id: str | None = Field(None, max_length=64)
+class AuditLogFilters(Schema):
     member_id: UUID | None = Field(
         None, description="entries targeting this user, plus join requests linked to them"
     )
-    actor_id: UUID | None = None
-    action: str | None = Field(None, max_length=64)
-    since: datetime | None = None
-    until: datetime | None = None
+    actor_id: UUID | None = Field(None, description="only actions this person took")
+    action: str | None = Field(None, max_length=64, description="exact action, e.g. user_paused")
+    target_type: AuditTargetType | None = None
+    target_id: str | None = Field(None, max_length=64)
+    since: datetime | None = Field(None, description="on or after this time")
+    until: datetime | None = Field(None, description="before this time")
+
+
+class AuditLogQuery(AuditLogFilters):
     limit: int = Field(50, ge=1, le=100)
     offset: int = Field(0, ge=0)
 
