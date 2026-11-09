@@ -15,7 +15,6 @@ from pydantic import BaseModel, EmailStr, Field
 from users.models import (
     FULL_MEMBER_STATUSES,
     PUBLIC_FORM_PHONE_REGION,
-    MembershipStatus,
     PublicRsvpToken,
     User,
     status_change_stamp,
@@ -95,22 +94,6 @@ def _reject_email_collision(request, email: str) -> NoReturn:
         "public_rsvp_email_collision",
         request,
         target=AuditTarget(details={"email": email}),
-    )
-    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
-
-
-def _reject_if_paused_non_member(request, phone: str) -> None:
-    """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
-    user = User.objects.filter(
-        phone_number=phone, membership_status=MembershipStatus.GUIDELINES_PAUSED
-    ).first()
-    if user is None:
-        return
-    audit_log(
-        logging.WARNING,
-        "public_rsvp_paused_user_blocked",
-        request,
-        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
@@ -291,7 +274,6 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
-    _reject_if_paused_non_member(request, validated_phone)
     reject_if_rejected_applicant(request, validated_phone, event.id)
 
     with transaction.atomic():
