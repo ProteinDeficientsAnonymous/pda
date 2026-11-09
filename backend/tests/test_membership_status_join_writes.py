@@ -3,7 +3,6 @@ from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus
-from users.roles import Role
 
 from tests._public_rsvp_helpers import make_public_rsvper
 from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
@@ -103,9 +102,7 @@ def test_reapproving_archived_applicant_makes_member(
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
     assert _assert_in_sync(applicant) == MembershipStatus.MEMBER
     assert applicant.archived_by is None
-    assert applicant.roles.filter(name="member").exists() == (
-        Role.objects.filter(name="member", is_default=True).exists()
-    )
+    assert applicant.roles.filter(name="member").exists()
 
 
 def test_reapproving_archived_paused_member_keeps_pause(

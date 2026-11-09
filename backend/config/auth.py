@@ -40,7 +40,7 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
-# Archive and pause still 403 on the pending allowlist; password and consent do not.
+# Archive, pause and rejection still 403 on the pending allowlist; password and consent do not.
 HARD_ACCOUNT_BLOCKS = frozenset(
     {Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED, Code.Auth.ACCOUNT_REJECTED}
 )
