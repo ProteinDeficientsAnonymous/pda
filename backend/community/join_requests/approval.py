@@ -27,28 +27,34 @@ def _resolve_names(join_request) -> tuple[str, str]:
     return join_request.first_name, join_request.last_name
 
 
+def _unarchive(user, active_status: MembershipStatus) -> list[str]:
+    """Clear the archive; a pause it was archived under comes back instead of active_status.
+
+    return(list[str]): the fields it changed, for update_fields.
+    """
+    user.archived_at = None
+    user.archived_by = None
+    # Archiving leaves a pause in place; an archived row can predate their exclusivity.
+    paused = user.attendance_paused_at is not None
+    status = MembershipStatus.ATTENDANCE_PAUSED if paused else active_status
+    if user.is_paused:
+        user.attendance_paused_at = None
+        status = MembershipStatus.GUIDELINES_PAUSED
+    fields = ["archived_at", "archived_by", "attendance_paused_at"]
+    return [*fields, *user.set_membership_status(status)]
+
+
 def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
-    existing_user.archived_at = None
-    existing_user.archived_by = None
     existing_user.needs_onboarding = True
     existing_user.first_name, existing_user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
         existing_user.sms_consent_at = join_request.sms_consent_at
-    # Archiving leaves a pause in place; an archived row can predate their exclusivity.
-    paused = existing_user.attendance_paused_at is not None
-    status = MembershipStatus.ATTENDANCE_PAUSED if paused else MembershipStatus.ACTIVE_MEMBER
-    if existing_user.is_paused:
-        existing_user.attendance_paused_at = None
-        status = MembershipStatus.GUIDELINES_PAUSED
     existing_user.save(
         update_fields=[
-            *existing_user.set_membership_status(status),
-            "attendance_paused_at",
-            "archived_at",
-            "archived_by",
+            *_unarchive(existing_user, MembershipStatus.ACTIVE_MEMBER),
             "needs_onboarding",
             "first_name",
             "last_name",
@@ -56,7 +62,7 @@ def _reactivate_archived_user(existing_user, join_request):
             "sms_consent_at",
         ]
     )
-    if status == MembershipStatus.ACTIVE_MEMBER:
+    if existing_user.membership_status == MembershipStatus.ACTIVE_MEMBER:
         # An archived applicant never had the member role.
         grant_membership(existing_user)
     return create_magic_token(existing_user)
@@ -136,10 +142,24 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
+def _make_tentative(user) -> list[str]:
+    """Move a non-member or archived account to tentative; return the changed fields."""
+    if user.membership_status == MembershipStatus.NONE:
+        return user.set_membership_status(MembershipStatus.TENTATIVE)
+    if user.archived_at is None:
+        return []
+    fields = _unarchive(user, MembershipStatus.TENTATIVE)
+    if user.membership_status == MembershipStatus.TENTATIVE:
+        # Archiving keeps the member role; a tentative applicant holds none.
+        user.roles.clear()
+    return fields
+
+
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
-    Reuses a non-member already linked or matched by phone; else creates one.
+    Reuses a non-member or archived account linked or matched by phone, un-archiving
+    it; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but stay non-members with no member role, which is what
     limits them to official/club events (see ``community/events/limited_access``).
@@ -164,8 +184,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
-    if user.membership_status == MembershipStatus.NONE:
-        changed += user.set_membership_status(MembershipStatus.TENTATIVE)
+    changed += _make_tentative(user)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
