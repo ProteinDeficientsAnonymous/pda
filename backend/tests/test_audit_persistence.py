@@ -144,6 +144,12 @@ class TestSurviveRollback:
 
         assert AuditLogEntry.objects.get().action == "login_archived"
 
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
+    def test_written_immediately_outside_transaction(self, anon_request):
+        audit_log_before_raise(logging.WARNING, "login_failed", anon_request)
+
+        assert AuditLogEntry.objects.get().action == "login_failed"
+
     @pytest.mark.parametrize(
         ("field", "action"),
         [("archived_at", "magic_login_archived"), ("is_paused", "magic_login_paused")],
