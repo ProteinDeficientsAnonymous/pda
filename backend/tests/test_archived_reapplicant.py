@@ -1,9 +1,13 @@
 import pytest
+from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus, Role
 
+from tests._tentative_helpers import open_official_event
 from tests._users import make_user
+
+__all__ = ["open_official_event"]
 
 pytestmark = pytest.mark.django_db
 
@@ -86,3 +90,13 @@ def test_marking_tentative_keeps_an_archived_pause(
     paused.refresh_from_db()
     assert paused.membership_status == status
     assert paused.archived_at is None
+
+
+def test_check_in_does_not_promote_a_guidelines_paused_tentative(
+    api_client, vettor_headers, sample_join_request, vettor_user, open_official_event
+):
+    paused = make_user(phone_number=PHONE, archived_at=timezone.now(), is_paused=True)
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+    paused.refresh_from_db()
+    assert not maybe_promote_tentative(paused, open_official_event, vettor_user)
+    assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
