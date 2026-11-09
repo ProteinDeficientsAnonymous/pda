@@ -6,7 +6,7 @@ from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
-from users.models import MembershipStatus, User
+from users.models import MEMBER_OR_ARCHIVED, MembershipStatus, User
 
 from community.models import (
     JoinRequestStatus,
@@ -139,7 +139,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
 
     Reuses a non-member already linked or matched by phone; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
-    magic token — but keep ``is_member=False`` and no member role, which is what
+    magic token — but stay non-members with no member role, which is what
     limits them to official/club events (see ``community/events/limited_access``).
     Returns ``(user, magic_token)``.
     """
@@ -150,7 +150,6 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
             first_name=join_request.first_name,
             last_name=join_request.last_name,
             email=join_request.email,
-            is_member=False,
             membership_status=MembershipStatus.TENTATIVE,
         )
         user.set_unusable_password()
@@ -218,8 +217,10 @@ def provision_approved_user(
     so their promotion returns no token. When the phone already maps to an active
     member, nothing is provisioned and ``(None, False)`` is returned.
     """
-    # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
-    if join_request.user is not None and not join_request.user.is_member:
+    # A linked non-member is promoted in place; an archived one is reactivated below.
+    # SET_NULL FK means a deleted user falls through.
+    linked = join_request.user
+    if linked is not None and linked.membership_status not in MEMBER_OR_ARCHIVED:
         if was_tentative:
             promote_tentative_member(join_request.user, join_request)
             return None, False

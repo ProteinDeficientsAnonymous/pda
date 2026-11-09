@@ -27,13 +27,6 @@ def _link_request(user, sample_join_request, status, **fields):
     sample_join_request.save()
 
 
-def test_member():
-    assert (
-        _status_after_backfill(make_user(membership_status=MembershipStatus.MEMBER))
-        == MembershipStatus.MEMBER
-    )
-
-
 def test_plain_non_member_is_public_rsvper():
     assert (
         _status_after_backfill(make_user(membership_status=MembershipStatus.PUBLIC_RSVPER))
@@ -80,14 +73,6 @@ def test_archived_wins_over_attendance_pause():
         archived_at=timezone.now(),
     )
     assert _status_after_backfill(user) == MembershipStatus.ARCHIVED
-
-
-def test_member_wins_over_old_rejected_request(sample_join_request):
-    user = make_user(membership_status=MembershipStatus.MEMBER)
-    _link_request(
-        user, sample_join_request, JoinRequestStatus.REJECTED, tentative_at=timezone.now()
-    )
-    assert _status_after_backfill(user) == MembershipStatus.MEMBER
 
 
 guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_paused_status")

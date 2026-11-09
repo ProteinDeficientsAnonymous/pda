@@ -11,14 +11,25 @@ from users.models import MembershipStatus, User
 
 @pytest.mark.django_db
 class TestMembersManager:
-    def test_is_member_field_defaults_to_false(self):
-        """The model default is False — accounts must be explicitly promoted.
-
-        (The conftest create_user monkeypatch forces is_member=True for the
-        general test population, so assert the raw field default directly.)
-        """
-        assert User._meta.get_field("is_member").default is False
-        assert User(phone_number="+12025550201").is_member is False
+    @pytest.mark.parametrize(
+        ("fields", "expected"),
+        [
+            ({"membership_status": MembershipStatus.MEMBER}, True),
+            ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, False),
+            ({"membership_status": MembershipStatus.ARCHIVED}, False),
+            ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
+            (
+                {
+                    "membership_status": MembershipStatus.GUIDELINES_PAUSED,
+                    "attendance_paused_at": timezone.now(),
+                },
+                False,
+            ),
+        ],
+    )
+    def test_is_member_is_generated_from_status(self, fields, expected):
+        user = User.objects.create(phone_number="+12025550201", **fields)
+        assert user.is_member is expected
 
     def test_members_returns_only_members(self, member, non_member):
         member_ids = set(User.objects.members().values_list("pk", flat=True))

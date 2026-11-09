@@ -9,7 +9,7 @@ from django.test import Client
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User, UserManager, legacy_membership_status
+from users.models import MembershipStatus, User, UserManager
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -33,6 +33,17 @@ def pytest_runtest_teardown(item, nextitem):
                 contents = getattr(conn, "_test_serialized_contents", None)
                 if contents:
                     conn.creation.deserialize_db_from_string(contents)
+
+
+def _default_status(fields: dict) -> MembershipStatus:
+    """A member, unless the test's own pause or archive fields say otherwise."""
+    if fields.get("archived_at") is not None:
+        return MembershipStatus.ARCHIVED
+    if fields.get("is_paused"):
+        return MembershipStatus.GUIDELINES_PAUSED
+    if fields.get("attendance_paused_at") is not None:
+        return MembershipStatus.ATTENDANCE_PAUSED
+    return MembershipStatus.MEMBER
 
 
 @pytest.fixture(autouse=True)
@@ -91,8 +102,7 @@ def _default_test_users_consented(monkeypatch):
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
-        implied = legacy_membership_status({"is_member": True, **extra_fields})
-        extra_fields.setdefault("membership_status", implied)
+        extra_fields.setdefault("membership_status", _default_status(extra_fields))
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)

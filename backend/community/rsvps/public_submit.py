@@ -118,7 +118,7 @@ def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
     """Get-or-create the public rsvper User keyed on the unique phone number."""
-    defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
+    defaults = {"first_name": first_name, "last_name": last_name}
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(

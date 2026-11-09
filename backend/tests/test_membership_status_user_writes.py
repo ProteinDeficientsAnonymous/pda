@@ -38,12 +38,12 @@ def test_attendance_unpause(api_client, manage_users_headers):
     assert _status(paused) == MembershipStatus.MEMBER
 
 
-def test_archive_keeps_is_member(api_client, manage_users_headers):
+def test_archive_clears_is_member(api_client, manage_users_headers):
     member = make_user(last_login=timezone.now())
     response = api_client.delete(f"/api/auth/users/{member.pk}/", **manage_users_headers)
     assert response.status_code == 204
     assert _status(member) == MembershipStatus.ARCHIVED
-    assert member.is_member is True
+    assert member.is_member is False
 
 
 @pytest.mark.parametrize(

@@ -102,14 +102,16 @@ class TestResendManageLink:
         assert response.status_code == 200
         assert response.json()["detail"] == NEUTRAL_RESPONSE
 
-    def test_archived_non_member_still_gets_link(self, api_client, fake_email_sender):
+    def test_archived_non_member_gets_no_link(self, api_client, fake_email_sender):
         user = make_public_rsvper(PHONE, EMAIL)
         user.archived_at = timezone.now()
-        user.save(update_fields=["archived_at"])
+        user.save(
+            update_fields=["archived_at", *user.set_membership_status(MembershipStatus.ARCHIVED)]
+        )
 
         post(api_client)
 
-        fake_email_sender.send.assert_called_once()
+        fake_email_sender.send.assert_not_called()
 
     def test_archived_member_contact_gets_no_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)

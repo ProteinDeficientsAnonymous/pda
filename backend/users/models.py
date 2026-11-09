@@ -64,20 +64,6 @@ class MembershipStatus(models.TextChoices):
     GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 
 
-def legacy_membership_status(fields: dict) -> "MembershipStatus":
-    """Status implied by the old flags, for callers that don't pass one yet (#2261-#2263)."""
-    if fields.get("archived_at") is not None:
-        return MembershipStatus.ARCHIVED
-    paused_member = fields.get("is_member") or fields.get("attendance_paused_at") is not None
-    if fields.get("is_paused") and paused_member:
-        return MembershipStatus.GUIDELINES_PAUSED
-    if fields.get("attendance_paused_at") is not None:
-        return MembershipStatus.ATTENDANCE_PAUSED
-    if fields.get("is_member"):
-        return MembershipStatus.MEMBER
-    return MembershipStatus.PUBLIC_RSVPER
-
-
 # A guidelines-paused member is still a member; login and active_members() keep them out.
 MEMBER_STATUSES = (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
@@ -147,7 +133,6 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_member", True)
         extra_fields.setdefault("membership_status", MembershipStatus.MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
@@ -157,8 +142,16 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    # Defaults False; non-members are excluded via objects.members().
-    is_member = models.BooleanField(default=False, db_index=True)
+    # A guidelines pause on top of an attendance pause isn't membership.
+    is_member = models.GeneratedField(
+        expression=Q(membership_status=MembershipStatus.MEMBER)
+        | Q(
+            membership_status=MembershipStatus.GUIDELINES_PAUSED, attendance_paused_at__isnull=True
+        ),
+        output_field=models.BooleanField(),
+        db_persist=True,
+        db_index=True,
+    )
     membership_status = models.CharField(
         max_length=20,
         choices=MembershipStatus.choices,
@@ -246,14 +239,10 @@ class User(AbstractUser):
             self.membership_status == MembershipStatus.GUIDELINES_PAUSED
             and status in _UNDER_GUIDELINES_PAUSE
         ):
-            # The guidelines pause stays on top; only the state under it moves.
-            self.is_member = status == MembershipStatus.MEMBER
-            return ["is_member"]
+            # The guidelines pause stays on top; attendance_paused_at records what's under it.
+            return []
         self.membership_status = status
-        # Archived users keep is_member until it becomes a generated field (#2264).
-        if status not in (MembershipStatus.ARCHIVED, MembershipStatus.GUIDELINES_PAUSED):
-            self.is_member = status == MembershipStatus.MEMBER
-        return ["membership_status", "is_member"]
+        return ["membership_status"]
 
     def set_guidelines_pause(self, paused: bool) -> list[str]:
         """Lifting the pause falls back to the attendance state under it."""
@@ -282,18 +271,7 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
-        if self._state.adding:
-            self._sync_legacy_membership_fields()
         super().save(*args, **kwargs)
-
-    def _sync_legacy_membership_fields(self) -> None:
-        """Keep a new row's status and is_member consistent, whichever one the caller set."""
-        if self.membership_status == MembershipStatus.PUBLIC_RSVPER:
-            self.membership_status = legacy_membership_status(vars(self))
-        if self.membership_status == MembershipStatus.GUIDELINES_PAUSED:
-            self.is_member = self.attendance_paused_at is None
-        elif self.membership_status != MembershipStatus.ARCHIVED:
-            self.is_member = self.membership_status == MembershipStatus.MEMBER
 
     def __str__(self):
         return self.full_name or self.phone_number
