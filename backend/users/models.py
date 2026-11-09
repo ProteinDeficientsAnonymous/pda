@@ -69,7 +69,6 @@ MEMBER_STATUSES = (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
 SIGN_IN_STATUSES = (*MEMBER_STATUSES, *LIMITED_STATUSES)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
-_UNDER_GUIDELINES_PAUSE = (MembershipStatus.MEMBER, MembershipStatus.ATTENDANCE_PAUSED)
 
 
 class WeekStart:
@@ -142,12 +141,8 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    # A guidelines pause on top of an attendance pause isn't membership.
     is_member = models.GeneratedField(
-        expression=Q(membership_status=MembershipStatus.MEMBER)
-        | Q(
-            membership_status=MembershipStatus.GUIDELINES_PAUSED, attendance_paused_at__isnull=True
-        ),
+        expression=Q(membership_status__in=MEMBER_STATUSES),
         output_field=models.BooleanField(),
         db_persist=True,
         db_index=True,
@@ -235,27 +230,19 @@ class User(AbstractUser):
 
     def set_membership_status(self, status: MembershipStatus) -> list[str]:
         """return(list[str]): the fields it changed, for update_fields."""
-        if (
-            self.membership_status == MembershipStatus.GUIDELINES_PAUSED
-            and status in _UNDER_GUIDELINES_PAUSE
-        ):
-            # The guidelines pause stays on top; attendance_paused_at records what's under it.
-            return []
         self.membership_status = status
         return ["membership_status"]
 
     def set_guidelines_pause(self, paused: bool) -> list[str]:
-        """Lifting the pause falls back to the attendance state under it."""
+        """A guidelines pause replaces any attendance pause; lifting it makes them a member."""
+        if paused == self.is_paused:
+            return []
         self.is_paused = paused
         if self.membership_status == MembershipStatus.ARCHIVED:
             return ["is_paused"]
-        if paused:
-            self.membership_status = MembershipStatus.GUIDELINES_PAUSED
-        elif self.attendance_paused_at is not None:
-            self.membership_status = MembershipStatus.ATTENDANCE_PAUSED
-        else:
-            self.membership_status = MembershipStatus.MEMBER
-        return ["is_paused", "membership_status"]
+        self.attendance_paused_at = None
+        status = MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.MEMBER
+        return ["is_paused", "attendance_paused_at", *self.set_membership_status(status)]
 
     @property
     def full_name(self) -> str:

@@ -16,14 +16,7 @@ class Migration(migrations.Migration):
             field=models.GeneratedField(
                 db_index=True,
                 db_persist=True,
-                expression=models.Q(
-                    ("membership_status", "member"),
-                    models.Q(
-                        ("attendance_paused_at__isnull", True),
-                        ("membership_status", "guidelines_paused"),
-                    ),
-                    _connector="OR",
-                ),
+                expression=models.Q(("membership_status__in", ("member", "guidelines_paused"))),
                 output_field=models.BooleanField(),
             ),
         ),

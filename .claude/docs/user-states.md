@@ -71,11 +71,11 @@ stateDiagram-v2
 | admin unpauses (attendance) | `member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
 | compliant check-in | someone else checks them in at official/club and their attendance stats are compliant → restored, `restored_at` stamped, email | `check_in_promotion.py` |
 | admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); elevated roles stripped, member role kept. Can't pause self or an admin | `users/_management.py` `update_user` |
-| admin unpauses (guidelines) | back to `attendance_paused` if `attendance_paused_at` is set, else `member`; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
+| admin unpauses (guidelines) | back to `member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
 | deletes / admin deletes | soft archive: `archived`, `archived_at` and `archived_by` set, calendar token cleared, elevated roles stripped, upcoming RSVPs released, co-host spots dropped | `users/_archive.py` |
 | hard-deletes | row deleted; only when `last_login` is null and nothing protected references it | `users/_user_deletion.py` |
 
-`membership_status` is the source of truth; `is_member` is generated from it (`member`, or `guidelines_paused` with no attendance pause underneath). A guidelines pause sits on top of an attendance pause: the status stays `guidelines_paused` while `attendance_paused_at` records what's underneath, so lifting it falls back correctly.
+`membership_status` is the source of truth; `is_member` is generated from it (`member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause makes them a member.
 
 ## Getting in
 

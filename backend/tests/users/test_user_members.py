@@ -18,13 +18,7 @@ class TestMembersManager:
             ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, False),
             ({"membership_status": MembershipStatus.ARCHIVED}, False),
             ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
-            (
-                {
-                    "membership_status": MembershipStatus.GUIDELINES_PAUSED,
-                    "attendance_paused_at": timezone.now(),
-                },
-                False,
-            ),
+            ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, False),
         ],
     )
     def test_is_member_is_generated_from_status(self, fields, expected):

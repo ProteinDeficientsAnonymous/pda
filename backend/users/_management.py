@@ -20,6 +20,7 @@ from users.helpers import (
     check_and_set_email,
     create_magic_token,
     create_user_with_role,
+    grant_membership,
     is_admin,
     resolve_name_fields,
     strip_elevated_roles,
@@ -311,6 +312,8 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_paused and not has_pause(user):
+        if old_is_paused:
+            grant_membership(user)
         mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
@@ -376,6 +379,9 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
         check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
     _validate_pause_change(user, payload.attendance_paused, requester_id)
+    stays_guidelines_paused = user.is_paused if payload.is_paused is None else payload.is_paused
+    if payload.attendance_paused and stays_guidelines_paused:
+        raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
     if payload.is_paused is not None:
         user.set_guidelines_pause(payload.is_paused)
     if payload.is_paused:
