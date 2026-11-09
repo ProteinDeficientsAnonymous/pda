@@ -251,6 +251,14 @@ describe('JoinRequestsScreen card', () => {
 
     expect(screen.getByText(/ada@example\.com/)).toBeInTheDocument();
   });
+
+  it('lowercases the submitted date', () => {
+    mockResult([makeRequest({ submittedAt: '2026-11-08T12:00:00' })]);
+
+    renderScreen();
+
+    expect(screen.getByText(/submitted nov 8, 12:00 pm/)).toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestsScreen search', () => {
