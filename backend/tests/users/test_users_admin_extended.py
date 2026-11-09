@@ -1,5 +1,3 @@
-"""Tests for user update, profile, delete, and magic link."""
-
 import logging
 
 import pytest
