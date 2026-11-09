@@ -34,7 +34,7 @@ from users._archive import (
     upcoming_hosted_events,
 )
 from users.helpers import grant_membership
-from users.models import HAS_EMAIL, User
+from users.models import HAS_EMAIL, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
 
@@ -107,13 +107,12 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
         ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
         removed_role_ids = _strip_membership(user)
         user.attendance_paused_at = timezone.now()
-        user.is_member = False
         user.has_joined_whatsapp = False
         user.unpaused_at = None
         user.save(
             update_fields=[
+                *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED),
                 "attendance_paused_at",
-                "is_member",
                 "has_joined_whatsapp",
                 "unpaused_at",
             ]
@@ -196,8 +195,12 @@ def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | 
 def _unpause(request, user: User) -> None:
     with transaction.atomic():
         user.attendance_paused_at = None
-        user.is_member = True
-        user.save(update_fields=["attendance_paused_at", "is_member"])
+        user.save(
+            update_fields=[
+                "attendance_paused_at",
+                *user.set_membership_status(MembershipStatus.MEMBER),
+            ]
+        )
         grant_membership(user)
         audit_log(
             logging.WARNING,

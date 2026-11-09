@@ -66,6 +66,17 @@ class MembershipStatus(models.TextChoices):
     ARCHIVED = "archived", "archived"
 
 
+def _legacy_membership_status(fields: dict) -> "MembershipStatus":
+    """Status implied by the old flags, for callers that don't pass one yet (#2261-#2263)."""
+    if fields.get("archived_at") is not None:
+        return MembershipStatus.ARCHIVED
+    if fields.get("attendance_paused_at") is not None:
+        return MembershipStatus.ATTENDANCE_PAUSED
+    if fields.get("is_member"):
+        return MembershipStatus.MEMBER
+    return MembershipStatus.PUBLIC_RSVPER
+
+
 class WeekStart:
     SUNDAY = "sunday"
     MONDAY = "monday"
@@ -132,6 +143,7 @@ class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")
+        extra_fields.setdefault("membership_status", _legacy_membership_status(extra_fields))
         user = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -141,6 +153,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_member", True)
+        extra_fields.setdefault("membership_status", MembershipStatus.MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
 
