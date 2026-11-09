@@ -26,7 +26,7 @@ def official_event(db):
 
 @pytest.mark.django_db
 class TestPausedPublicRsvp:
-    def test_phone_check_answers_non_member_without_emailing(
+    def test_phone_check_routes_to_login_without_emailing(
         self, api_client, official_event, paused, fake_email_sender
     ):
         response = api_client.post(
@@ -36,7 +36,7 @@ class TestPausedPublicRsvp:
         )
 
         assert response.status_code == 200
-        assert response.json()["status"] == "non_member"
+        assert response.json()["status"] == "member"
         fake_email_sender.send.assert_not_called()
         assert not PublicRsvpToken.objects.filter(user=paused).exists()
 
@@ -116,18 +116,9 @@ class TestPausedJoinRequest:
     @pytest.mark.parametrize(
         "overrides", [{"email": "other@example.com"}, {"phone_number": "+14155550999"}]
     )
-    def test_match_gets_decoy_without_persisting(self, api_client, paused, overrides):
+    def test_match_is_told_to_sign_in(self, api_client, paused, overrides):
         response = self._submit(api_client, **overrides)
 
-        assert response.status_code == 201
-        body = response.json()
-        assert set(body) == {"id", "first_name", "full_name", "status", "submitted_at"}
-        assert body["id"]
+        assert response.status_code == 409
+        assert first_code(response) == Code.JoinRequest.ALREADY_MEMBER
         assert not JoinRequest.objects.exists()
-
-    def test_invalid_answers_still_422(self, api_client, paused):
-        JoinFormQuestion.objects.create(label="why", required=True)
-
-        response = self._submit(api_client, answers={})
-
-        assert response.status_code == 422

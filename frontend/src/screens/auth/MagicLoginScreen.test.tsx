@@ -127,6 +127,21 @@ describe('MagicLoginScreen', () => {
     expect(await screen.findByText('calendar page')).toBeInTheDocument();
   });
 
+  it('should tell a paused user they cannot sign in', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountPaused));
+    renderAt('tok-paused');
+    expect(await screen.findByText("can't sign in")).toBeInTheDocument();
+    expect(
+      screen.getByText("your membership is paused — you can't log in right now"),
+    ).toBeInTheDocument();
+  });
+
+  it('should keep the cross-user message for other 403s', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403));
+    renderAt('tok-other');
+    expect(await screen.findByText('already signed in')).toBeInTheDocument();
+  });
+
   it('should follow a same-app redirect when login is complete', async () => {
     currentUser = makeUser();
     renderAt('tok-event', '/events/some-slug');
