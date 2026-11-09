@@ -227,6 +227,20 @@ describe('PublicRsvpsScreen', () => {
     expect(screen.getByText(/this link's expired or invalid/)).toBeInTheDocument();
   });
 
+  it('points a since-approved member to sign in when the token is revoked', () => {
+    usePublicMyRsvps.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: { isAxiosError: true, response: { status: 404 } },
+    });
+    renderAt('revoked-token');
+    expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute(
+      'href',
+      '/login?redirect=%2Fevents%2Fmine',
+    );
+  });
+
   it('shows a retry message (not the invalid-token state) on a transient error', () => {
     usePublicMyRsvps.mockReturnValue({
       data: undefined,
