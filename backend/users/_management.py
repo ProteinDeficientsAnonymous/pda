@@ -163,6 +163,12 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             user.roles.add(member_role)
 
         magic_token = create_magic_token(user)
+        audit_log(
+            logging.INFO,
+            "user_created",
+            request,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.id), details={"bulk": True}),
+        )
         results.append(
             BulkUserResult(
                 row=i + 1,
@@ -326,7 +332,9 @@ def _audit_user_update(
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
+        details: dict = {"full_name": user.full_name}
+        if payload.is_paused:
+            details["removed_role_ids"] = strip_elevated_roles(user)
         audit_log(
             logging.WARNING,
             action,

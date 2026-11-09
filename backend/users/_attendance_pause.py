@@ -168,6 +168,7 @@ def _strip_membership(user: User) -> list[str]:
 
 def _audit_pause(request, user: User, impact: PauseImpact, removed_role_ids: list[str]) -> None:
     details = {
+        "full_name": user.full_name,
         "removed_role_ids": removed_role_ids,
         "removed_rsvp_event_ids": [str(e.pk) for e in impact.removed_rsvps],
         "removed_hosting_event_ids": [str(e.pk) for e in impact.removed_hosting],
@@ -203,5 +204,7 @@ def _unpause(request, user: User) -> None:
             logging.WARNING,
             "user_attendance_unpaused",
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=str(user.pk), details={"full_name": user.full_name}
+            ),
         )
