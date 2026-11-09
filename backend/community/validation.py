@@ -153,6 +153,7 @@ class Code:
         CANNOT_HARD_DELETE_LOGGED_IN = "user.cannot_hard_delete_logged_in"
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
+        GUIDELINES_PAUSED = "user.guidelines_paused"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"

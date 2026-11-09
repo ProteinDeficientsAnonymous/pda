@@ -350,6 +350,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't pause your own account";
     case Code.User.CannotPauseAdmin:
       return "admins can't be paused";
+    case Code.User.GuidelinesPaused:
+      return 'lift the guidelines pause before pausing for attendance';
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
