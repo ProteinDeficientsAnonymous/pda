@@ -115,6 +115,39 @@ describe('useJoinRequests', () => {
     ]);
   });
 
+  it('maps previous_rejection from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-5',
+          full_name: 'Lee Park',
+          phone_number: '+12125550333',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: null,
+          previous_rejection: {
+            status_changed_at: '2023-11-02T18:00:00Z',
+            status_changed_by_name: 'Sam Vettor',
+            rejection_reason: '',
+            rejection_note: '',
+          },
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: '2023-11-02T18:00:00Z',
+      statusChangedByName: 'Sam Vettor',
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+  });
+
   it('maps attended_events from the wire', async () => {
     mockedGet.mockResolvedValueOnce({
       data: [
