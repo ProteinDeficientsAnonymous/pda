@@ -248,7 +248,7 @@ def list_users(request, include_non_members: bool = False):
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
-    # Default is members plus attendance-paused; the opt-in adds public-RSVP non-members.
+    # The opt-in adds public-RSVP non-members.
     base = User.objects.all() if include_non_members else User.objects.members_or_archived()
     users = (
         base.filter(archived_at__isnull=True)
