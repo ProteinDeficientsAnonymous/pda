@@ -248,7 +248,7 @@ export function canLimitedRsvp(event: Event): boolean {
   return LIMITED_ACCESS_EVENT_TYPES.includes(event.eventType);
 }
 
-// Mirrors backend is_limited: any signed-in non-member, including a rejected applicant (#2245).
+// Mirrors backend is_limited: any signed-in non-member.
 export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefined): boolean {
   return user != null && !MEMBER_STATUSES.includes(user.membershipStatus);
 }
