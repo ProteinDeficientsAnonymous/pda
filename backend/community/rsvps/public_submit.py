@@ -238,10 +238,10 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     user = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
-    if user.is_member:
+    # Paused goes to login like a member; login only reveals the pause after the right password.
+    if user.is_member or user.is_paused:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
-    # Paused still answers NON_MEMBER so the response can't reveal the pause; only the email is withheld.
-    if user.email and not user.is_paused:
+    if user.email:
         _send_recognized_login_link(request, user)
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
