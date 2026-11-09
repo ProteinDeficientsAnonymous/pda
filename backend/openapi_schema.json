@@ -4579,29 +4579,6 @@
             "title": "Answers",
             "type": "array"
           },
-          "approved_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved At"
-          },
-          "approved_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved By Name"
-          },
           "approved_via_event_id": {
             "anyOf": [
               {
@@ -4692,29 +4669,6 @@
             "title": "Previously Rejected",
             "type": "boolean"
           },
-          "rejected_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected At"
-          },
-          "rejected_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected By Name"
-          },
           "rejection_note": {
             "default": "",
             "title": "Rejection Note",
@@ -4737,12 +4691,7 @@
             "title": "Status",
             "type": "string"
           },
-          "submitted_at": {
-            "format": "date-time",
-            "title": "Submitted At",
-            "type": "string"
-          },
-          "tentative_at": {
+          "status_changed_at": {
             "anyOf": [
               {
                 "format": "date-time",
@@ -4752,9 +4701,9 @@
                 "type": "null"
               }
             ],
-            "title": "Tentative At"
+            "title": "Status Changed At"
           },
-          "tentative_by_name": {
+          "status_changed_by_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -4763,7 +4712,12 @@
                 "type": "null"
               }
             ],
-            "title": "Tentative By Name"
+            "title": "Status Changed By Name"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
           },
           "upcoming_club_count": {
             "default": 0,

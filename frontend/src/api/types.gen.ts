@@ -4633,10 +4633,6 @@ export interface components {
              * @default []
              */
             answers: components["schemas"]["JoinRequestAnswerOut"][];
-            /** Approved At */
-            approved_at?: string | null;
-            /** Approved By Name */
-            approved_by_name?: string | null;
             /** Approved Via Event Id */
             approved_via_event_id?: string | null;
             /** Approved Via Event Title */
@@ -4692,10 +4688,6 @@ export interface components {
              * @default false
              */
             previously_rejected: boolean;
-            /** Rejected At */
-            rejected_at?: string | null;
-            /** Rejected By Name */
-            rejected_by_name?: string | null;
             /**
              * Rejection Note
              * @default
@@ -4713,15 +4705,15 @@ export interface components {
             rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
             /**
              * Submitted At
              * Format: date-time
              */
             submitted_at: string;
-            /** Tentative At */
-            tentative_at?: string | null;
-            /** Tentative By Name */
-            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0

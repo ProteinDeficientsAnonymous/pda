@@ -133,7 +133,6 @@ export function JoinRequestCard({
         </>
       ) : (
         <>
-          <TentativeAttribution request={request} />
           <DecisionAttribution request={request} />
           {isRejected ? (
             <div className="mt-3">
@@ -203,19 +202,28 @@ function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
   );
 }
 
+function stampText(at: string): string {
+  return format(new Date(at), 'MMM d, h:mm a').toLowerCase();
+}
+
+function changedBy(request: JoinRequestSummary): string {
+  return (request.statusChangedByName ?? 'an admin').toLowerCase();
+}
+
 function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
-  if (!request.tentativeAt) return null;
-  const who = request.tentativeByName ?? 'an admin';
+  const at = request.statusChangedAt;
+  if (!at) return null;
   return (
     <p className="text-muted mt-3 text-xs">
-      tentatively approved by {who.toLowerCase()} on{' '}
-      {format(new Date(request.tentativeAt), 'MMM d, h:mm a').toLowerCase()}
+      tentatively approved by {changedBy(request)} on {stampText(at)}
     </p>
   );
 }
 
 function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
-  if (request.status === JoinRequestStatus.APPROVED && request.approvedAt) {
+  const at = request.statusChangedAt;
+  if (!at) return null;
+  if (request.status === JoinRequestStatus.APPROVED) {
     if (request.approvedViaEventId) {
       return (
         <>
@@ -224,30 +232,26 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
             <Link to={`/events/${request.approvedViaEventId}`} className="hover:underline">
               {(request.approvedViaEventTitle ?? 'an event').toLowerCase()}
             </Link>{' '}
-            on {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+            on {stampText(at)}
           </p>
           <LoginStatus onboardedAt={request.onboardedAt} />
         </>
       );
     }
-    const who = request.approvedByName ?? 'an admin';
     return (
       <>
         <p className="text-muted mt-3 text-xs">
-          approved by {who.toLowerCase()} on{' '}
-          {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+          approved by {changedBy(request)} on {stampText(at)}
         </p>
         <LoginStatus onboardedAt={request.onboardedAt} />
       </>
     );
   }
-  if (request.status === JoinRequestStatus.REJECTED && request.rejectedAt) {
-    const who = request.rejectedByName ?? 'an admin';
+  if (request.status === JoinRequestStatus.REJECTED) {
     return (
       <>
         <p className="text-muted mt-3 text-xs">
-          rejected by {who.toLowerCase()} on{' '}
-          {format(new Date(request.rejectedAt), 'MMM d, h:mm a').toLowerCase()}
+          rejected by {changedBy(request)} on {stampText(at)}
         </p>
         <RejectionReasonLine request={request} />
       </>
