@@ -5512,7 +5512,6 @@
           "tentative",
           "active_member",
           "attendance_paused",
-          "rejected",
           "archived",
           "guidelines_paused"
         ],

@@ -11,7 +11,6 @@ export const MembershipStatus = {
   Tentative: 'tentative',
   ActiveMember: 'active_member',
   AttendancePaused: 'attendance_paused',
-  Rejected: 'rejected',
   Archived: 'archived',
   GuidelinesPaused: 'guidelines_paused',
 } as const;

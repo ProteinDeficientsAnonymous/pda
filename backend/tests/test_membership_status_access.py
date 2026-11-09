@@ -1,5 +1,4 @@
 import pytest
-from community.events.limited_access import is_limited
 from django.utils import timezone
 from users.models import MembershipStatus, User, can_sign_in_q, limited_q
 
@@ -16,7 +15,6 @@ pytestmark = pytest.mark.django_db
         (MembershipStatus.TENTATIVE, True, True),
         (MembershipStatus.ATTENDANCE_PAUSED, True, True),
         (MembershipStatus.PUBLIC_RSVPER, False, False),
-        (MembershipStatus.REJECTED, False, False),
         (MembershipStatus.ARCHIVED, False, False),
     ],
 )
@@ -34,10 +32,6 @@ def test_archived_member_cannot_sign_in():
 def test_guidelines_paused_tentative_is_not_limited():
     user = make_user(membership_status=MembershipStatus.TENTATIVE, is_paused=True)
     assert not User.objects.filter(limited_q(), pk=user.pk).exists()
-
-
-def test_rejected_user_who_signs_in_stays_limited():
-    assert is_limited(make_user(membership_status=MembershipStatus.REJECTED))
 
 
 def test_members_excludes_archived_member():

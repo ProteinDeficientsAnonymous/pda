@@ -164,7 +164,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
-    if user.membership_status in (MembershipStatus.PUBLIC_RSVPER, MembershipStatus.REJECTED):
+    if user.membership_status == MembershipStatus.PUBLIC_RSVPER:
         changed += user.set_membership_status(MembershipStatus.TENTATIVE)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
@@ -177,14 +177,6 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
         user.save(update_fields=changed)
 
     return user, create_magic_token(user)
-
-
-def reject_tentative_user(join_request) -> None:
-    """A rejected tentative applicant becomes ``rejected``; a linked public rsvper stays one."""
-    user = join_request.user
-    if user is None or user.membership_status != MembershipStatus.TENTATIVE:
-        return
-    user.save(update_fields=user.set_membership_status(MembershipStatus.REJECTED))
 
 
 def maybe_promote_tentative(user, event, actor) -> bool:

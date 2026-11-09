@@ -19,10 +19,11 @@ endpoints required to *resolve* that state, so those paths are allowlisted.
 
 from collections.abc import Callable
 
+from community.models import JoinRequest
 from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
-from users.models import MembershipStatus, User
+from users.models import SIGN_IN_STATUSES, User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
 #   - GET /me/                 — frontend reads needs_password_reset/onboarding/
@@ -40,16 +41,21 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
-# Archive, pause and rejection still 403 on the pending allowlist; password and consent do not.
+# Archive, pause and no membership still 403 on the pending allowlist; password and consent do not.
 HARD_ACCOUNT_BLOCKS = frozenset(
-    {Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED, Code.Auth.ACCOUNT_REJECTED}
+    {
+        Code.Auth.ACCOUNT_ARCHIVED,
+        Code.Auth.ACCOUNT_PAUSED,
+        Code.Auth.ACCOUNT_REJECTED,
+        Code.Auth.NOT_A_MEMBER,
+    }
 )
 
 
 _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
     (lambda u: u.archived_at is not None, Code.Auth.ACCOUNT_ARCHIVED),
     (lambda u: u.is_paused, Code.Auth.ACCOUNT_PAUSED),
-    (lambda u: u.membership_status == MembershipStatus.REJECTED, Code.Auth.ACCOUNT_REJECTED),
+    (lambda u: u.membership_status not in SIGN_IN_STATUSES, Code.Auth.NOT_A_MEMBER),
     (lambda u: u.needs_password_reset, Code.Auth.PASSWORD_RESET_REQUIRED),
     (lambda u: u.needs_onboarding, Code.Auth.ONBOARDING_REQUIRED),
     (lambda u: u.guidelines_consent_at is None, Code.Auth.GUIDELINES_CONSENT_REQUIRED),
@@ -58,7 +64,11 @@ _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
 
 def account_block_code(user: User) -> str | None:
     """Return the auth code that blocks this account, or None if it may act."""
-    return next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
+    code = next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
+    # A rejected applicant is told they may request to join again.
+    if code == Code.Auth.NOT_A_MEMBER and JoinRequest.latest_is_rejected(user.phone_number):
+        return Code.Auth.ACCOUNT_REJECTED
+    return code
 
 
 class GatedJWTAuth(JWTAuth):

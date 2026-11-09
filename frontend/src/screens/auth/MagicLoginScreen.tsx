@@ -54,7 +54,8 @@ export default function MagicLoginScreen() {
         }
         if (
           hasErrorCode(err, Code.Auth.AccountPaused) ||
-          hasErrorCode(err, Code.Auth.AccountArchived)
+          hasErrorCode(err, Code.Auth.AccountArchived) ||
+          hasErrorCode(err, Code.Auth.NotAMember)
         ) {
           setBlockedMessage(extractApiError(err) ?? '');
           setState('blocked');

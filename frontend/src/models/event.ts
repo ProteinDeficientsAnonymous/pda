@@ -248,7 +248,7 @@ export function canLimitedRsvp(event: Event): boolean {
   return LIMITED_ACCESS_EVENT_TYPES.includes(event.eventType);
 }
 
-// Mirrors backend is_limited: signed in without full access (tentative, attendance-paused, or rejected).
+// Mirrors backend is_limited: signed in without full access (tentative or attendance-paused).
 export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefined): boolean {
   return user != null && user.membershipStatus !== MembershipStatus.ActiveMember;
 }

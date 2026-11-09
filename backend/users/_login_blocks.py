@@ -10,6 +10,7 @@ _AUDIT_SUFFIX = {
     Code.Auth.ACCOUNT_ARCHIVED: "archived",
     Code.Auth.ACCOUNT_PAUSED: "paused",
     Code.Auth.ACCOUNT_REJECTED: "rejected",
+    Code.Auth.NOT_A_MEMBER: "not_a_member",
 }
 
 

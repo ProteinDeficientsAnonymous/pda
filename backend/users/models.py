@@ -59,7 +59,6 @@ class MembershipStatus(models.TextChoices):
     TENTATIVE = "tentative", "tentative"
     ACTIVE_MEMBER = "active_member", "active member"
     ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
-    REJECTED = "rejected", "rejected"
     ARCHIVED = "archived", "archived"
     GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
 

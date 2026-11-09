@@ -11,7 +11,7 @@ LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
 def is_limited(user) -> bool:
-    """Signed in without full access: tentative, attendance-paused, or rejected; never a public rsvper."""
+    """Signed in without full access: tentative or attendance-paused; no other status signs in."""
     return user is not None and user.membership_status != MembershipStatus.ACTIVE_MEMBER
 
 

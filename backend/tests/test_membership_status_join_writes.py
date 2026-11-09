@@ -44,17 +44,6 @@ def test_tentative_moves_linked_public_rsvper(api_client, vettor_headers, sample
     assert _assert_in_sync(rsvper) == MembershipStatus.TENTATIVE
 
 
-def test_tentative_moves_rejected_user_matched_by_phone(
-    api_client, vettor_headers, sample_join_request
-):
-    user = make_user(
-        phone_number=sample_join_request.phone_number,
-        membership_status=MembershipStatus.REJECTED,
-    )
-    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
-    assert _assert_in_sync(user) == MembershipStatus.TENTATIVE
-
-
 def test_rejecting_public_rsvper_leaves_status(api_client, vettor_headers, sample_join_request):
     rsvper = make_public_rsvper(sample_join_request.phone_number, "sprout@example.test")
     sample_join_request.user = rsvper

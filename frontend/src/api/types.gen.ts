@@ -5028,7 +5028,7 @@ export interface components {
          * MembershipStatus
          * @enum {string}
          */
-        MembershipStatus: "public_rsvper" | "tentative" | "active_member" | "attendance_paused" | "rejected" | "archived" | "guidelines_paused";
+        MembershipStatus: "public_rsvper" | "tentative" | "active_member" | "attendance_paused" | "archived" | "guidelines_paused";
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */

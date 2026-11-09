@@ -112,13 +112,12 @@ describe('myRsvpLabel', () => {
 });
 
 describe('isLimited', () => {
-  it.each([
-    MembershipStatus.Tentative,
-    MembershipStatus.AttendancePaused,
-    MembershipStatus.Rejected,
-  ])('is true for a signed-in %s user', (membershipStatus) => {
-    expect(isLimited(makeUser({ isMember: false, membershipStatus }))).toBe(true);
-  });
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'is true for a signed-in %s user',
+    (membershipStatus) => {
+      expect(isLimited(makeUser({ isMember: false, membershipStatus }))).toBe(true);
+    },
+  );
 
   it('is false for a member', () => {
     expect(isLimited(makeUser())).toBe(false);
