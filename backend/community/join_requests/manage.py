@@ -20,6 +20,7 @@ from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
+    applicant_user,
     provision_approved_user,
     provision_tentative_user,
     send_join_approval,
@@ -439,6 +440,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     if payload.status == JoinRequestStatus.REJECTED:
         send_join_rejection(join_request)
 
+    approved_user = applicant_user(join_request)
     action = _DECISION_ACTIONS[payload.status]
     audit_log(
         logging.INFO,
@@ -449,17 +451,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             id=str(join_request.id),
             details={
                 "full_name": join_request.full_name,
+                "user_id": str(approved_user.id) if approved_user else None,
                 "user_created": user_created,
                 "rejection_reason": join_request.rejection_reason,
             },
         ),
-    )
-
-    # A promoted non-member is the linked User itself (which may have been
-    # matched by email, so its phone can differ from the request's). Fall back
-    # to the phone lookup for the create/reactivate paths.
-    approved_user = (
-        join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
     )
     return Status(
         200,

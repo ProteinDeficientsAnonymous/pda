@@ -60,7 +60,9 @@ def _restore_attendance_paused(request, user: User) -> bool:
         logging.WARNING,
         "user_attendance_restored",
         request,
-        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
+        target=AuditTarget(
+            type=AuditTargetType.USER, id=str(user.pk), details={"full_name": user.full_name}
+        ),
     )
     return True
 

@@ -7,6 +7,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
+from community.join_requests.approval import applicant_user
 from community.join_requests.manage import JoinRequestOut, join_request_out
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
@@ -56,6 +57,7 @@ def unreject_join_request(request, id: UUID):
     join_request.rejection_note = ""
     join_request.save(update_fields=["status", "rejection_reason", "rejection_note"])
 
+    user = applicant_user(join_request)
     audit_log(
         logging.INFO,
         "join_request_unrejected",
@@ -63,7 +65,10 @@ def unreject_join_request(request, id: UUID):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": join_request.full_name},
+            details={
+                "full_name": join_request.full_name,
+                "user_id": str(user.pk) if user else None,
+            },
         ),
     )
 
