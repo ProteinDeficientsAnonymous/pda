@@ -70,7 +70,7 @@ stateDiagram-v2
 | admin pauses for attendance | `attendance_paused`, elevated roles stripped (member role kept), non-official/club RSVPs released, co-host spots dropped, solo-hosted events moved to draft | `apply_attendance_pause` |
 | admin unpauses (attendance) | `member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
 | compliant check-in | someone else checks them in at official/club and their attendance stats are compliant → restored, `restored_at` stamped, email | `check_in_promotion.py` |
-| admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); elevated roles stripped, member role kept. Can't pause self or an admin | `users/_management.py` `update_user` |
+| admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); every upcoming RSVP released (official/club included), co-host spots dropped, solo-hosted events drafted, pending co-host invites rescinded, elevated roles stripped (member role kept), all audited. Can't pause self or an admin | `update_user`, `release_held_events` |
 | admin unpauses (guidelines) | back to `member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |
 | deletes / admin deletes | soft archive: `archived`, `archived_at` and `archived_by` set, calendar token cleared, elevated roles stripped, upcoming RSVPs released, co-host spots dropped | `users/_archive.py` |
 | hard-deletes | row deleted; only when `last_login` is null and nothing protected references it | `users/_user_deletion.py` |

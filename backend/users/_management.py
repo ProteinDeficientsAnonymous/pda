@@ -14,7 +14,7 @@ from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
 
-from users._attendance_pause import apply_attendance_pause_patch
+from users._attendance_pause import apply_attendance_pause_patch, release_held_events
 from users._unpause import has_pause, mark_unpaused
 from users.helpers import (
     check_and_set_email,
@@ -23,7 +23,6 @@ from users.helpers import (
     grant_membership,
     is_admin,
     resolve_name_fields,
-    strip_elevated_roles,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
@@ -321,13 +320,18 @@ def _audit_user_update(
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing also strips non-member roles and
-    records the removed ids. Otherwise a plain field change logs user_updated.
+    A pause transition takes priority — pausing releases every upcoming RSVP and host
+    spot and strips non-member roles, recording what went. Otherwise a plain field
+    change logs user_updated.
     """
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
+        details = (
+            release_held_events(request, user, keep_official=False)[1]
+            if payload.is_paused
+            else None
+        )
         audit_log(
             logging.WARNING,
             action,
