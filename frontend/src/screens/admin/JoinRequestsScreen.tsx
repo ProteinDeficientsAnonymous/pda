@@ -37,6 +37,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
+  { value: Filter.CLOSED, label: 'closed' },
   { value: Filter.RESTORED, label: 'restored' },
 ];
 

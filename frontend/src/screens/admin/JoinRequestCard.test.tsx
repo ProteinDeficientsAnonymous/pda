@@ -26,11 +26,16 @@ function renderCard(request: JoinRequestSummary) {
 }
 
 describe('JoinRequestCard tentative', () => {
-  it('offers no reject and says to archive or pause instead', () => {
-    renderCard(makeRequest({ status: JoinRequestStatus.TENTATIVE }));
+  it('offers no reject and points to archiving from the members screen', () => {
+    renderCard(makeRequest({ status: JoinRequestStatus.TENTATIVE, userId: 'u1' }));
 
     expect(screen.queryByRole('button', { name: 'reject' })).not.toBeInTheDocument();
     expect(screen.getByText(/tentative members can.t be rejected/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'members screen' })).toHaveAttribute(
+      'href',
+      '/admin/members/u1',
+    );
+    expect(screen.queryByText(/pause/)).not.toBeInTheDocument();
   });
 });
 
@@ -45,6 +50,20 @@ describe('JoinRequestCard decision', () => {
     );
 
     expect(screen.getByText(/rejected by sam vettor on jan 2/)).toBeInTheDocument();
+  });
+
+  it('shows a closed request as terminal, with who archived them', () => {
+    renderCard(
+      makeRequest({
+        status: JoinRequestStatus.CLOSED,
+        statusChangedAt: '2026-01-02T18:00:00Z',
+        statusChangedByName: 'Robin Admin',
+      }),
+    );
+
+    expect(screen.getByText('closed')).toBeInTheDocument();
+    expect(screen.getByText(/closed when robin admin archived them on jan 2/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /approve|reject/ })).not.toBeInTheDocument();
   });
 });
 

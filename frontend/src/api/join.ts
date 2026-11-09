@@ -125,6 +125,7 @@ export const JoinRequestStatus = {
   TENTATIVE: 'tentative',
   APPROVED: 'approved',
   REJECTED: 'rejected',
+  CLOSED: 'closed',
 } as const;
 export type JoinRequestStatus = (typeof JoinRequestStatus)[keyof typeof JoinRequestStatus];
 
