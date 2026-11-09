@@ -69,16 +69,20 @@ def test_submitted(api_client):
 def test_admitted_names_actor_and_user(
     api_client, vettor_headers, vettor_user, sample_join_request, status
 ):
-    body = _decide(api_client, vettor_headers, sample_join_request, status)
+    _decide(api_client, vettor_headers, sample_join_request, status)
 
+    user = User.objects.get(phone_number=sample_join_request.phone_number)
     entry = _entry(f"join_request_{status}")
     assert entry.actor == vettor_user
     assert entry.target_type == AuditTargetType.JOIN_REQUEST
     assert entry.target_id == str(sample_join_request.id)
-    assert entry.details["user_id"] == body["user_id"]
+    assert entry.details["user_id"] == str(user.pk)
 
 
 def test_rejected_then_unrejected(api_client, vettor_headers, vettor_user, sample_join_request):
+    rsvper = User.objects.create_user(
+        phone_number=sample_join_request.phone_number, first_name="Sprout", is_member=False
+    )
     _decide(
         api_client,
         vettor_headers,
@@ -98,6 +102,7 @@ def test_rejected_then_unrejected(api_client, vettor_headers, vettor_user, sampl
     for entry in (rejected, unrejected):
         assert entry.actor == vettor_user
         assert entry.target_id == str(sample_join_request.id)
+        assert entry.details["user_id"] == str(rsvper.pk)
 
 
 def test_reapproval_reactivates_archived_user(

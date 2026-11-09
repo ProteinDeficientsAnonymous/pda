@@ -19,6 +19,11 @@ from community.models import (
 from community.shared import render_template_placeholders, validate_display_name
 
 
+def applicant_user(join_request) -> User | None:
+    # The linked User may have been matched by email, so its phone can differ from the request's.
+    return join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
+
+
 def _resolve_names(join_request) -> tuple[str, str]:
     """Return validated (first_name, last_name) for an approved join request.
 
