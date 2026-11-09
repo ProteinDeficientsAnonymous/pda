@@ -76,7 +76,6 @@ def test_approving_public_rsvper_makes_member(api_client, vettor_headers, sample
 def test_reapproving_archived_member_makes_member(api_client, vettor_headers, sample_join_request):
     member = make_user(
         phone_number=sample_join_request.phone_number,
-        is_member=True,
         membership_status=MembershipStatus.ARCHIVED,
         archived_at=timezone.now(),
     )
@@ -97,7 +96,7 @@ def test_reapproving_archived_applicant_makes_member(
 ):
     applicant = make_user(
         phone_number=sample_join_request.phone_number,
-        is_member=False,
+        membership_status=MembershipStatus.ARCHIVED,
         archived_at=timezone.now(),
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
@@ -113,7 +112,7 @@ def test_reapproving_archived_paused_member_keeps_pause(
 ):
     paused = make_user(
         phone_number=sample_join_request.phone_number,
-        is_member=False,
+        membership_status=MembershipStatus.ARCHIVED,
         attendance_paused_at=timezone.now(),
         archived_at=timezone.now(),
     )

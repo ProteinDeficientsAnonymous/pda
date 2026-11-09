@@ -72,15 +72,21 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"is_member": True}, MembershipStatus.MEMBER),
-        ({"is_member": False}, MembershipStatus.PUBLIC_RSVPER),
+        ({"membership_status": MembershipStatus.MEMBER}, MembershipStatus.MEMBER),
+        ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, MembershipStatus.PUBLIC_RSVPER),
         (
-            {"is_member": False, "attendance_paused_at": timezone.now()},
+            {
+                "membership_status": MembershipStatus.ATTENDANCE_PAUSED,
+                "attendance_paused_at": timezone.now(),
+            },
             MembershipStatus.ATTENDANCE_PAUSED,
         ),
-        ({"is_member": True, "archived_at": timezone.now()}, MembershipStatus.ARCHIVED),
         (
-            {"is_member": False, "membership_status": MembershipStatus.TENTATIVE},
+            {"membership_status": MembershipStatus.ARCHIVED, "archived_at": timezone.now()},
+            MembershipStatus.ARCHIVED,
+        ),
+        (
+            {"membership_status": MembershipStatus.TENTATIVE},
             MembershipStatus.TENTATIVE,
         ),
     ],

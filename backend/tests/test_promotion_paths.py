@@ -5,7 +5,7 @@ from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
 from community.validation import ValidationException
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, payload, url
@@ -31,7 +31,7 @@ class TestPromotePublicRsvper:
             phone_number="+12025551900",
             first_name="Rsvper",
             email="public@example.com",
-            is_member=False,
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
         PublicRsvpToken.issue(user)
         jr = JoinRequest.objects.create(
@@ -148,7 +148,9 @@ class TestPromoteTentativeMember:
         """Issue 733 — no approval path may produce a member with no first name."""
 
         user = User.objects.create_user(
-            phone_number="+12025551901", first_name="Temp", is_member=False
+            phone_number="+12025551901",
+            first_name="Temp",
+            membership_status=MembershipStatus.PUBLIC_RSVPER,
         )
         user.first_name = ""
         user.save(update_fields=["first_name"])

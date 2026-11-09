@@ -23,7 +23,7 @@ from community.models import (
 )
 from community.validation import Code
 from notifications.models import Notification, NotificationType
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
@@ -182,7 +182,10 @@ class TestPublicRsvpDedup:
 class TestPublicRsvpMemberCollision:
     def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
         User.objects.create_user(
-            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
+            phone_number="+14155550123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -198,7 +201,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -216,7 +219,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="Sam@Example.COM",
-            is_member=True,
+            membership_status=MembershipStatus.MEMBER,
         )
 
         response = post(api_client, official_event, email="sam@example.com")
@@ -229,7 +232,10 @@ class TestPublicRsvpMemberCollision:
         self, api_client, official_event, fake_email_sender
     ):
         User.objects.create_user(
-            phone_number="(415) 555-0123", first_name="A", last_name="Member", is_member=True
+            phone_number="(415) 555-0123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.MEMBER,
         )
 
         response = post(api_client, official_event, email="different@example.com")

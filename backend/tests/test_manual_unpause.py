@@ -1,11 +1,14 @@
 import pytest
 from community.models import WhatsAppLinkConfig
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 EMAIL = "paused@example.com"
 GUIDELINES = {"is_paused": True}
-ATTENDANCE = {"attendance_paused_at": timezone.now(), "is_member": False}
+ATTENDANCE = {
+    "attendance_paused_at": timezone.now(),
+    "membership_status": MembershipStatus.ATTENDANCE_PAUSED,
+}
 
 
 @pytest.fixture

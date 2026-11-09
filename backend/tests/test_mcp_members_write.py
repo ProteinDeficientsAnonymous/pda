@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 from community.models import Event, EventStatus
+from users.models import MembershipStatus
 
 from tests._events import make_event
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
@@ -31,7 +32,11 @@ class TestSetAttendancePause:
 
     @pytest.mark.parametrize("row_exists", [False, True])
     def test_rejects_an_unknown_or_non_member_id(self, manage_users_user, row_exists):
-        missing = str(make_user(is_member=False).pk if row_exists else uuid.uuid4())
+        missing = str(
+            make_user(membership_status=MembershipStatus.PUBLIC_RSVPER).pk
+            if row_exists
+            else uuid.uuid4()
+        )
         assert f"no member with id {missing}" in tool_error(
             manage_users_user, TOOL, member_id=missing, paused=True
         )

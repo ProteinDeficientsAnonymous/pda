@@ -20,33 +20,41 @@ pytestmark = pytest.mark.django_db
     ],
 )
 def test_access_queries_follow_status(status, signs_in, limited):
-    user = make_user(membership_status=status, is_member=status == MembershipStatus.MEMBER)
+    user = make_user(membership_status=status)
     assert User.objects.filter(can_sign_in_q(), pk=user.pk).exists() is signs_in
     assert User.objects.filter(limited_q(), pk=user.pk).exists() is limited
 
 
 def test_archived_member_cannot_sign_in():
-    user = make_user(is_member=True, archived_at=timezone.now())
+    user = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     assert not User.objects.filter(can_sign_in_q(), pk=user.pk).exists()
 
 
 def test_guidelines_paused_tentative_is_not_limited():
-    user = make_user(membership_status=MembershipStatus.TENTATIVE, is_member=False, is_paused=True)
+    user = make_user(membership_status=MembershipStatus.TENTATIVE, is_paused=True)
     assert not User.objects.filter(limited_q(), pk=user.pk).exists()
 
 
 def test_rejected_user_who_signs_in_stays_limited():
-    assert is_limited(make_user(membership_status=MembershipStatus.REJECTED, is_member=False))
+    assert is_limited(
+        make_user(
+            membership_status=MembershipStatus.REJECTED,
+        )
+    )
 
 
 def test_members_excludes_archived_member():
-    archived = make_user(is_member=True, archived_at=timezone.now())
+    archived = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     assert not User.objects.members().filter(pk=archived.pk).exists()
 
 
 @pytest.mark.parametrize("was_member", [True, False])
 def test_members_or_archived_includes_every_archived_user(was_member):
-    user = make_user(is_member=was_member, archived_at=timezone.now())
+    user = make_user(
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+        attendance_paused_at=None if was_member else timezone.now(),
+    )
     assert User.objects.members_or_archived().filter(pk=user.pk).exists()
 
 

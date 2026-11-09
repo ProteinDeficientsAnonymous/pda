@@ -4,7 +4,7 @@ import pytest
 from community.models import EventRSVP
 from community.validation import Code
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
@@ -20,7 +20,10 @@ def official_event(db):
 class TestArchivedMemberGate:
     def test_phone_belongs_to_archived_member(self, api_client, official_event, fake_email_sender):
         member = User.objects.create_user(
-            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
+            phone_number="+14155550123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.MEMBER,
         )
         member.archived_at = timezone.now()
         member.save(update_fields=["archived_at"])
@@ -38,7 +41,7 @@ class TestArchivedMemberGate:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.MEMBER,
         )
         member.archived_at = timezone.now()
         member.save(update_fields=["archived_at"])

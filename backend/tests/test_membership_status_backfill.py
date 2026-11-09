@@ -28,21 +28,27 @@ def _link_request(user, sample_join_request, status, **fields):
 
 
 def test_member():
-    assert _status_after_backfill(make_user(is_member=True)) == MembershipStatus.MEMBER
+    assert (
+        _status_after_backfill(make_user(membership_status=MembershipStatus.MEMBER))
+        == MembershipStatus.MEMBER
+    )
 
 
 def test_plain_non_member_is_public_rsvper():
-    assert _status_after_backfill(make_user(is_member=False)) == MembershipStatus.PUBLIC_RSVPER
+    assert (
+        _status_after_backfill(make_user(membership_status=MembershipStatus.PUBLIC_RSVPER))
+        == MembershipStatus.PUBLIC_RSVPER
+    )
 
 
 def test_tentative(sample_join_request):
-    user = make_user(is_member=False)
+    user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
     _link_request(user, sample_join_request, JoinRequestStatus.TENTATIVE)
     assert _status_after_backfill(user) == MembershipStatus.TENTATIVE
 
 
 def test_rejected_after_tentative(sample_join_request):
-    user = make_user(is_member=False)
+    user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
     _link_request(
         user, sample_join_request, JoinRequestStatus.REJECTED, tentative_at=timezone.now()
     )
@@ -50,30 +56,34 @@ def test_rejected_after_tentative(sample_join_request):
 
 
 def test_public_rsvper_rejected_without_tentative_stays_public_rsvper(sample_join_request):
-    user = make_user(is_member=False)
+    user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
     _link_request(user, sample_join_request, JoinRequestStatus.REJECTED)
     assert _status_after_backfill(user) == MembershipStatus.PUBLIC_RSVPER
 
 
 def test_attendance_paused():
-    user = make_user(is_member=False, attendance_paused_at=timezone.now())
+    user = make_user(
+        membership_status=MembershipStatus.ATTENDANCE_PAUSED, attendance_paused_at=timezone.now()
+    )
     assert _status_after_backfill(user) == MembershipStatus.ATTENDANCE_PAUSED
 
 
 def test_archived_member_is_archived():
-    user = make_user(is_member=True, archived_at=timezone.now())
+    user = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     assert _status_after_backfill(user) == MembershipStatus.ARCHIVED
 
 
 def test_archived_wins_over_attendance_pause():
     user = make_user(
-        is_member=False, attendance_paused_at=timezone.now(), archived_at=timezone.now()
+        membership_status=MembershipStatus.ARCHIVED,
+        attendance_paused_at=timezone.now(),
+        archived_at=timezone.now(),
     )
     assert _status_after_backfill(user) == MembershipStatus.ARCHIVED
 
 
 def test_member_wins_over_old_rejected_request(sample_join_request):
-    user = make_user(is_member=True)
+    user = make_user(membership_status=MembershipStatus.MEMBER)
     _link_request(
         user, sample_join_request, JoinRequestStatus.REJECTED, tentative_at=timezone.now()
     )
