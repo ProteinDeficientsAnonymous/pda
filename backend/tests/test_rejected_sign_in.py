@@ -64,6 +64,39 @@ def test_non_member_without_rejection_is_blocked(api_client, non_member):
     assert_error_code(response, Code.Auth.NOT_A_MEMBER)
 
 
+def test_non_member_password_login_is_blocked(api_client, non_member):
+    response = api_client.post(
+        "/api/auth/login/",
+        {"phone_number": non_member.phone_number, "password": PASSWORD},
+        content_type="application/json",
+    )
+    assert response.status_code == 403
+    assert_error_code(response, Code.Auth.NOT_A_MEMBER)
+
+
+def test_non_member_cannot_finish_onboarding(api_client, non_member):
+    non_member.needs_onboarding = True
+    non_member.save(update_fields=["needs_onboarding"])
+    response = api_client.post(
+        "/api/auth/complete-onboarding/",
+        {"new_password": "Fresh-pass-123!"},
+        content_type="application/json",
+        **auth_headers_for(non_member),
+    )
+    assert response.status_code == 403
+    assert_error_code(response, Code.Auth.NOT_A_MEMBER)
+
+
+def test_non_member_gets_no_self_service_link(api_client, non_member):
+    response = api_client.post(
+        "/api/community/request-login-link/",
+        {"phone_number": non_member.phone_number},
+        content_type="application/json",
+    )
+    assert response.json()["delivery"] == "admin"
+    assert not MagicLoginToken.objects.filter(user=non_member).exists()
+
+
 def test_reapplied_non_member_is_not_told_they_were_rejected(api_client, rejected_user):
     JoinRequest.objects.create(
         first_name="Sprout",
