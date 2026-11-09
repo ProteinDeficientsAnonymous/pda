@@ -41,7 +41,7 @@ from community.models import (
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import MembershipStatus, PublicRsvpToken, User
+from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -340,8 +340,8 @@ def test_seed_staging_past_official_has_member_and_non_member_attendance_marks()
         status=RSVPStatus.ATTENDING,
         attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO],
     )
-    assert marked.filter(user__is_member=True).exists()
-    assert marked.filter(user__is_member=False).exists()
+    assert marked.filter(user__membership_status__in=MEMBER_STATUSES).exists()
+    assert marked.filter(user__membership_status=MembershipStatus.PUBLIC_RSVPER).exists()
 
 
 @pytest.mark.django_db

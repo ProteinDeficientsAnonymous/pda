@@ -23,7 +23,7 @@ from community.models import (
 )
 from community.validation import Code
 from notifications.models import Notification, NotificationType
-from users.models import MembershipStatus, PublicRsvpToken, User
+from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
@@ -133,7 +133,7 @@ class TestPublicRsvpDedup:
 
         assert response.status_code == 200
         assert response.json()["rsvp_token"] == ""
-        assert User.objects.filter(is_member=False).count() == 1
+        assert User.objects.exclude(membership_status__in=MEMBER_STATUSES).count() == 1
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 

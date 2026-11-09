@@ -431,7 +431,7 @@ class TestCreateDevTestEvent:
         self, api_client, dev_tools_headers, dev_tools_user, monkeypatch
     ):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
-        before = User.objects.filter(is_member=True).count()
+        before = User.objects.members().count()
         response = api_client.post(
             "/api/community/dev/test-events/",
             data={
@@ -446,7 +446,7 @@ class TestCreateDevTestEvent:
             **dev_tools_headers,
         )
         assert response.status_code == 201
-        after = User.objects.filter(is_member=True).count()
+        after = User.objects.members().count()
         # dev_tools_user is already a member in the pool, so the single filler
         # should reuse it rather than always creating a new user.
         assert after - before <= 1

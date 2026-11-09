@@ -9,7 +9,7 @@ from community.models import Event, EventRSVP, EventType, JoinRequest, RSVPStatu
 from community.models.choices import AttendanceStatus, SurveyQuestionType
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 @pytest.mark.django_db
@@ -132,7 +132,9 @@ def test_seed_users_clear_every_consent_gate():
     call_command("seed")
 
     # Members only — SEED_NON_MEMBERS are unconsented join-request applicants.
-    for user in User.objects.filter(phone_number__startswith="+1702555", is_member=True):
+    for user in User.objects.filter(
+        phone_number__startswith="+1702555", membership_status=MembershipStatus.ACTIVE_MEMBER
+    ):
         assert user.guidelines_consent_at is not None, user.phone_number
         assert user.sms_consent_at is not None, user.phone_number
         assert not user.needs_contact_privacy_consent, user.phone_number
