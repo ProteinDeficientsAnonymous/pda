@@ -175,6 +175,10 @@ class EventOut(BaseModel):
     venmo_link: str = ""
     cashapp_link: str = ""
     zelle_info: str = ""
+    accept_paypal: bool = False
+    # Fee-inclusive totals; "" when paypal isn't offered (or, for plus_one, +1s aren't allowed).
+    paypal_price: str = ""
+    paypal_price_plus_one: str = ""
     rsvp_enabled: bool = False
     created_by_id: str | None = None
     created_by_name: str | None = None
@@ -324,6 +328,7 @@ class EventIn(BaseModel):
     venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
+    accept_paypal: bool = False
     rsvp_enabled: bool = False
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
@@ -404,6 +409,7 @@ class EventPatchIn(BaseModel):
     venmo_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    accept_paypal: bool | None = None
     rsvp_enabled: bool | None = None
     datetime_tbd: bool | None = None
     allow_plus_ones: bool | None = None

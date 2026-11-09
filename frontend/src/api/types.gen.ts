@@ -3447,6 +3447,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -3696,6 +3701,11 @@ export interface components {
         /** EventOut */
         EventOut: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -3842,6 +3852,16 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
+             * Paypal Price Plus One
+             * @default
+             */
+            paypal_price_plus_one: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -3917,6 +3937,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */

@@ -28,6 +28,7 @@ from community.models import (
     RSVPStatus,
     is_official_or_club,
 )
+from community.paypal.price import offered_paypal_price
 from community.rsvps.answers import (
     can_see_guest_questionnaire_responses,
     find_my_questionnaire_responses,
@@ -364,6 +365,11 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         venmo_link=gated(event.venmo_link, "", show_payment_details),
         cashapp_link=gated(event.cashapp_link, "", show_payment_details),
         zelle_info=gated(event.zelle_info, "", show_payment_details),
+        accept_paypal=event.accept_paypal,
+        paypal_price=price_text(offered_paypal_price(event)),
+        paypal_price_plus_one=price_text(
+            offered_paypal_price(event, 2) if event.allow_plus_ones else None
+        ),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,

@@ -2071,6 +2071,11 @@
       },
       "EventIn": {
         "properties": {
+          "accept_paypal": {
+            "default": false,
+            "title": "Accept Paypal",
+            "type": "boolean"
+          },
           "allow_plus_ones": {
             "default": false,
             "title": "Allow Plus Ones",
@@ -2513,6 +2518,11 @@
       },
       "EventOut": {
         "properties": {
+          "accept_paypal": {
+            "default": false,
+            "title": "Accept Paypal",
+            "type": "boolean"
+          },
           "allow_plus_ones": {
             "default": false,
             "title": "Allow Plus Ones",
@@ -2767,6 +2777,16 @@
             "title": "Partiful Link",
             "type": "string"
           },
+          "paypal_price": {
+            "default": "",
+            "title": "Paypal Price",
+            "type": "string"
+          },
+          "paypal_price_plus_one": {
+            "default": "",
+            "title": "Paypal Price Plus One",
+            "type": "string"
+          },
           "pending_cohost_invites": {
             "default": [],
             "items": {
@@ -2891,6 +2911,17 @@
       },
       "EventPatchIn": {
         "properties": {
+          "accept_paypal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accept Paypal"
+          },
           "allow_plus_ones": {
             "anyOf": [
               {

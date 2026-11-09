@@ -250,6 +250,7 @@ def create_event(request, payload: EventIn):
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,
+        accept_paypal=payload.accept_paypal,
         rsvp_enabled=payload.rsvp_enabled,
         datetime_tbd=payload.datetime_tbd,
         allow_plus_ones=payload.allow_plus_ones,
