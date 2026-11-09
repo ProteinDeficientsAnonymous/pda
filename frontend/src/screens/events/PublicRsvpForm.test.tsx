@@ -442,6 +442,26 @@ describe('PublicRsvpForm payment confirmation gate', () => {
     expect(submitMutate).not.toHaveBeenCalled();
   });
 
+  it('skips the payment step when joining the waitlist', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
+    renderForm(makePaidEvent({ maxAttendees: 2, attendingCount: 2 }), vi.fn());
+    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: /yes, i paid/i })).not.toBeInTheDocument();
+    expect(submitMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      payload: expect.objectContaining({ status: 'attending', paid_confirmed: false }),
+    });
+  });
+
   it('submits with paid_confirmed after the payment step', async () => {
     const onSuccess = vi.fn();
     renderForm(paidEvent, onSuccess);

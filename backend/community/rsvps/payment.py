@@ -19,10 +19,8 @@ def payment_enforced_for_event(event: Event) -> bool:
     return event_requires_payment_confirmation(event)
 
 
-def requires_payment_gate(event: Event, existing: EventRSVP | None, requested_status: str) -> bool:
-    # Checked against the requested status, not the post-capacity one: at
-    # capacity attending resolves to waitlisted, which must still gate.
-    if requested_status != RSVPStatus.ATTENDING:
+def requires_payment_gate(event: Event, existing: EventRSVP | None, final_status: str) -> bool:
+    if final_status != RSVPStatus.ATTENDING:
         return False
     if not payment_enforced_for_event(event):
         return False

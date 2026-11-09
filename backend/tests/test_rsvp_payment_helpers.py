@@ -53,6 +53,9 @@ class TestRequiresPaymentGate:
     def test_new_cant_go_rsvp_does_not_gate(self):
         assert requires_payment_gate(build_paid_event(), None, RSVPStatus.CANT_GO) is False
 
+    def test_new_waitlisted_rsvp_does_not_gate(self):
+        assert requires_payment_gate(build_paid_event(), None, RSVPStatus.WAITLISTED) is False
+
     def test_maybe_to_attending_gates(self):
         existing = EventRSVP(status=RSVPStatus.MAYBE)
         assert requires_payment_gate(build_paid_event(), existing, RSVPStatus.ATTENDING) is True
