@@ -12,7 +12,6 @@ LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 def is_limited(user) -> bool:
     """Signed in, not a member: tentatively approved or attendance-paused; never a public rsvper."""
-    # Not LIMITED_STATUSES: a rejected ex-tentative user can still sign in (#2245).
     return user is not None and user.membership_status != MembershipStatus.MEMBER
 
 
