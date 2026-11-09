@@ -13,7 +13,7 @@ from django.utils import timezone
 from notifications.email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
 from notifications.email_sender import get_email_sender
 from users.helpers import visible_display_name
-from users.models import User
+from users.models import MembershipStatus, User
 
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
 from community.validation import Code, raise_validation
@@ -198,7 +198,12 @@ def _check_members_only_guard(
 def reject_non_member_cohosts(user_ids: Iterable[str]) -> None:
     """Raise NOT_MEMBER if any of ``user_ids`` is not a member (e.g. a tentative member)."""
     ids = list(user_ids)
-    if ids and User.objects.filter(pk__in=ids, is_member=False).exists():
+    if (
+        ids
+        and User.objects.filter(pk__in=ids)
+        .exclude(membership_status=MembershipStatus.MEMBER)
+        .exists()
+    ):
         raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=400)
 
 

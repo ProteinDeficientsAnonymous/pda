@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from notifications.email_helpers import send_rsvp_removed_email
 from notifications.email_sender import get_email_sender
@@ -11,8 +12,10 @@ from community.validation import Code, raise_validation
 
 def ineligible_public_rsvper_rsvps(event: Event):
     """Non-member RSVPs (any status) on `event` not already REMOVED."""
-    rsvps = EventRSVP.objects.filter(event=event, user__is_member=False).exclude(
-        status=RSVPStatus.REMOVED
+    rsvps = (
+        EventRSVP.objects.filter(event=event)
+        .exclude(status=RSVPStatus.REMOVED)
+        .exclude(user__in=User.objects.members_or_archived())
     )
     if event.event_type in LIMITED_ACCESS_EVENT_TYPES:
         # Limited users keep official/club access regardless of public RSVP eligibility.
@@ -40,8 +43,8 @@ def email_removed_public_rsvpers(request, event: Event, removed_user_ids: list[s
         return
     # This email and its join pitch are for people without an account.
     removed = User.objects.filter(
-        id__in=removed_user_ids, is_member=False, is_paused=False, email__isnull=False
-    ).exclude(pk__in=User.objects.limited_users())
+        id__in=removed_user_ids, is_paused=False, email__isnull=False
+    ).exclude(Q(pk__in=User.objects.members_or_archived()) | Q(pk__in=User.objects.limited_users()))
     for user in removed:
         if not user.email:
             continue

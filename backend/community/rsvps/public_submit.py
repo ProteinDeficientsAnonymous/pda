@@ -12,7 +12,13 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
+from users.models import (
+    PUBLIC_FORM_PHONE_REGION,
+    MembershipStatus,
+    PublicRsvpToken,
+    User,
+    validate_phone,
+)
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
@@ -92,9 +98,11 @@ def _reject_email_collision(request, email: str) -> NoReturn:
 
 def _reject_if_paused_non_member(request, phone: str) -> None:
     """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
-    user = User.objects.filter(
-        phone_number=phone, is_paused=True, is_member=False, archived_at__isnull=True
-    ).first()
+    user = (
+        User.objects.filter(phone_number=phone, is_paused=True, archived_at__isnull=True)
+        .exclude(membership_status=MembershipStatus.MEMBER)
+        .first()
+    )
     if user is None:
         return
     audit_log(

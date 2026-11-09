@@ -37,3 +37,14 @@ def test_guidelines_paused_tentative_is_not_limited():
 
 def test_rejected_user_who_signs_in_stays_limited():
     assert is_limited(make_user(membership_status=MembershipStatus.REJECTED, is_member=False))
+
+
+def test_members_excludes_archived_member():
+    archived = make_user(is_member=True, archived_at=timezone.now())
+    assert not User.objects.members().filter(pk=archived.pk).exists()
+
+
+@pytest.mark.parametrize(("was_member", "included"), [(True, True), (False, False)])
+def test_members_or_archived_keeps_only_archived_members(was_member, included):
+    user = make_user(is_member=was_member, archived_at=timezone.now())
+    assert User.objects.members_or_archived().filter(pk=user.pk).exists() is included

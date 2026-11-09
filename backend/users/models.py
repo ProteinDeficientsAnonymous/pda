@@ -99,7 +99,15 @@ class UserManager(BaseUserManager):
         Use on member-facing surfaces (directory, roles, recipient lists). The
         default manager returns both, for auth/login/join lookups by phone/email.
         """
-        return self.get_queryset().filter(is_member=True)
+        return self.get_queryset().filter(membership_status=MembershipStatus.MEMBER)
+
+    def members_or_archived(self):
+        """Members plus archived members, for admin views with an archived bucket."""
+        # is_member is what still tells an archived member from an archived applicant (#2264).
+        return self.get_queryset().filter(
+            models.Q(membership_status=MembershipStatus.MEMBER)
+            | models.Q(membership_status=MembershipStatus.ARCHIVED, is_member=True)
+        )
 
     def members_or_attendance_paused(self):
         """Members plus attendance-paused ex-members, who admins still manage as members."""
@@ -111,7 +119,7 @@ class UserManager(BaseUserManager):
         """Members who should appear on member-facing surfaces.
 
         Bundles the full visibility predicate so call sites can't forget part of
-        it (a bare ``members()`` would still leak paused/archived users). Use this
+        it (a bare ``members()`` would still leak guidelines-paused users). Use this
         for member-facing directory, profile, and search lookups.
 
         ``needs_onboarding`` is deliberately NOT filtered here — it's only excluded

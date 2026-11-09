@@ -8,7 +8,7 @@ from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
 from tests._users import make_user
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MembershipStatus, User
 from users.roles import Role
 
 
@@ -200,8 +200,9 @@ class TestUpdateUser:
         assert str(other_user.pk) in ids
 
     def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
+        )
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
@@ -223,8 +224,9 @@ class TestUpdateUser:
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user
     ):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
+        )
         response = api_client.get(
             "/api/auth/users/?include_non_members=true", **manage_users_headers
         )
@@ -236,8 +238,9 @@ class TestUpdateUser:
     def test_admin_update_non_member_returns_404(
         self, api_client, manage_users_headers, other_user
     ):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
+        )
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
             {"first_name": "Renamed"},
@@ -256,8 +259,9 @@ class TestMemberProfile:
         assert response.status_code == 404
 
     def test_member_profile_returns_404_for_non_member(self, api_client, auth_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
+        )
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 

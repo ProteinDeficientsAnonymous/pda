@@ -393,7 +393,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
     require_manage_users(request, "update_user_roles", user_id)
     try:
-        user = User.objects.members().prefetch_related("roles").get(pk=user_id)
+        user = User.objects.members_or_archived().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
@@ -417,5 +417,5 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
             details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
         ),
     )
-    user = User.objects.members().prefetch_related("roles").get(pk=user.pk)
+    user = User.objects.members_or_archived().prefetch_related("roles").get(pk=user.pk)
     return Status(200, UserOut.from_user(user))

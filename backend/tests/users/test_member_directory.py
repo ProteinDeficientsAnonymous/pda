@@ -2,7 +2,7 @@
 
 import pytest
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 @pytest.mark.django_db
@@ -34,8 +34,9 @@ class TestMemberDirectory:
         assert str(other_user.pk) not in ids
 
     def test_excludes_non_members(self, api_client, auth_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.PUBLIC_RSVPER)
+        )
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]

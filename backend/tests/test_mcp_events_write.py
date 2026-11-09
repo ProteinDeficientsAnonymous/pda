@@ -6,7 +6,7 @@ import pytest
 from audit.models import AuditLogEntry
 from community.models import Event, EventTag
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._http_helpers import FakeResp
@@ -55,7 +55,8 @@ def test_create_refuses_unknown_format(official_planner):
 
 @pytest.mark.parametrize(("is_member", "event_type"), [(True, "official"), (False, "community")])
 def test_view_refuses_official_without_permission_and_tentative(test_user, is_member, event_type):
-    User.objects.filter(pk=test_user.pk).update(is_member=is_member)
+    status = MembershipStatus.MEMBER if is_member else MembershipStatus.TENTATIVE
+    User.objects.filter(pk=test_user.pk).update(is_member=is_member, membership_status=status)
     error = tool_error(test_user, "create_event", fields={**WALK, "event_type": event_type})
     assert json.loads(error)["status"] == 403
 

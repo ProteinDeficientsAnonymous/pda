@@ -65,7 +65,7 @@ def count_members_by_status(since: datetime) -> dict[str, int]:
     param(since): start of the window for new_in_period
     return(dict[str, int]): total, the four status buckets, and new_in_period
     """
-    members = User.objects.members()
+    members = User.objects.members_or_archived()
     grouped = with_status(members).values("status").annotate(n=Count("pk")).order_by()
     counts = {row["status"]: row["n"] for row in grouped}
     return {
