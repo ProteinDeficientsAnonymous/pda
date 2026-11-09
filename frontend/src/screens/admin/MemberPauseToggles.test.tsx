@@ -123,10 +123,26 @@ describe('MemberPauseToggles guidelines preview', () => {
     expect(guidelinesSwitch()).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('lifts an existing pause without a preview', async () => {
+  it('lifts an existing pause without a preview and warns it leaves an event rqmt pause', async () => {
     render(<Harness isPaused />);
+    expect(eventRqmtSwitch()).toBeDisabled();
     await userEvent.click(guidelinesSwitch());
     expect(guidelinesPreview).not.toHaveBeenCalled();
     expect(guidelinesSwitch()).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText(/leaves an event rqmt pause/)).toBeInTheDocument();
+  });
+
+  it('drops a pending event rqmt pause and locks that toggle', async () => {
+    preview.mockResolvedValue([]);
+    guidelinesPreview.mockResolvedValue([]);
+    render(<Harness />);
+    await userEvent.click(eventRqmtSwitch());
+    expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'true');
+
+    await userEvent.click(guidelinesSwitch());
+
+    expect(guidelinesSwitch()).toHaveAttribute('aria-checked', 'true');
+    expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'false');
+    expect(eventRqmtSwitch()).toBeDisabled();
   });
 });

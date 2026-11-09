@@ -43,8 +43,11 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
   const { confirm, element: confirmElement } = useConfirm();
 
   async function onToggle(field: keyof PauseState, next: boolean) {
+    // A guidelines pause replaces an event rqmt pause, so drop any pending event rqmt change.
+    const base =
+      field === 'isPaused' ? { ...value, attendancePaused: initial.attendancePaused } : value;
     if (!next || initial[field]) {
-      onChange({ ...value, [field]: next });
+      onChange({ ...base, [field]: next });
       return;
     }
     const { fetchPreview, title } = PAUSE_DIALOG[field];
@@ -59,7 +62,7 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
           confirmLabel: 'pause',
           destructive: true,
         }));
-      if (ok) onChange({ ...value, [field]: true });
+      if (ok) onChange({ ...base, [field]: true });
     } catch (err) {
       toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
     } finally {
@@ -79,9 +82,14 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
         label="event rqmt pause"
         checked={value.attendancePaused}
         onChange={(next) => void onToggle('attendancePaused', next)}
-        disabled={targetIsAdmin || loading}
+        disabled={targetIsAdmin || loading || value.isPaused}
       />
       {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
+      {initial.isPaused && !value.isPaused ? (
+        <p className="text-muted text-xs">
+          lifting this leaves an event rqmt pause until they check in and meet the event rqmt
+        </p>
+      ) : null}
       {confirmElement}
     </>
   );
