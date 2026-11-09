@@ -107,3 +107,5 @@ def test_guidelines_paused_backfill(before, expected):
     guidelines_backfill.backfill_guidelines_paused(apps, None)
     user.refresh_from_db()
     assert user.membership_status == expected
+    if expected == MembershipStatus.GUIDELINES_PAUSED:
+        assert user.attendance_paused_at is None
