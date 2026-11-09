@@ -9,7 +9,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import Role, User
+from users.models import MembershipStatus, Role, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -20,7 +20,10 @@ URL = "/api/community/events/attendance-mark/"
 @pytest.fixture
 def members_admin(db):
     admin = User.objects.create_user(
-        phone_number="+12025553000", password="x", first_name="Admin", is_member=True
+        phone_number="+12025553000",
+        password="x",
+        first_name="Admin",
+        membership_status=MembershipStatus.MEMBER,
     )
     role = Role.objects.create(name="mark_admin", permissions=[PermissionKey.MANAGE_USERS])
     admin.roles.add(role)
@@ -30,7 +33,10 @@ def members_admin(db):
 @pytest.fixture
 def events_only_admin(db):
     admin = User.objects.create_user(
-        phone_number="+12025553004", password="x", first_name="Eventy", is_member=True
+        phone_number="+12025553004",
+        password="x",
+        first_name="Eventy",
+        membership_status=MembershipStatus.MEMBER,
     )
     role = Role.objects.create(name="events_only", permissions=[PermissionKey.MANAGE_EVENTS])
     admin.roles.add(role)
@@ -40,21 +46,30 @@ def events_only_admin(db):
 @pytest.fixture
 def plain_member(db):
     return User.objects.create_user(
-        phone_number="+12025553001", password="x", first_name="Plain", is_member=True
+        phone_number="+12025553001",
+        password="x",
+        first_name="Plain",
+        membership_status=MembershipStatus.MEMBER,
     )
 
 
 @pytest.fixture
 def alice(db):
     return User.objects.create_user(
-        phone_number="+12025553002", password="x", first_name="Alice", is_member=True
+        phone_number="+12025553002",
+        password="x",
+        first_name="Alice",
+        membership_status=MembershipStatus.MEMBER,
     )
 
 
 @pytest.fixture
 def bob(db):
     return User.objects.create_user(
-        phone_number="+12025553003", password="x", first_name="Bob", is_member=True
+        phone_number="+12025553003",
+        password="x",
+        first_name="Bob",
+        membership_status=MembershipStatus.MEMBER,
     )
 
 

@@ -12,6 +12,7 @@ from community.models import (
     PageVisibility,
     SpeechTemplate,
 )
+from users.models import MembershipStatus
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
@@ -63,12 +64,12 @@ def _event(creator, *, event_format: str = EventFormat.WALK, days: int = 1, **kw
 
 @pytest.fixture
 def maya(db):
-    return make_user(first_name="maya", is_member=True)
+    return make_user(first_name="maya", membership_status=MembershipStatus.MEMBER)
 
 
 @pytest.fixture
 def sam(db):
-    return make_user(first_name="sam", is_member=True)
+    return make_user(first_name="sam", membership_status=MembershipStatus.MEMBER)
 
 
 @pytest.fixture
@@ -106,13 +107,15 @@ class TestGetSpeech:
         assert data["values"]["restaurant"] == ""
 
     def test_three_cohosts_use_three_cohosts_join_with_and(self, api_client, maya, sam, walk):
-        zed = make_user(first_name="zed", is_member=True)
+        zed = make_user(first_name="zed", membership_status=MembershipStatus.MEMBER)
         walk.co_hosts.add(zed)
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["facilitators"] == "maya, sam and zed"
 
     def test_facilitators_use_first_names_only(self, api_client, maya, walk):
-        walk.co_hosts.add(make_user(first_name="zed", last_name="Last", is_member=True))
+        walk.co_hosts.add(
+            make_user(first_name="zed", last_name="Last", membership_status=MembershipStatus.MEMBER)
+        )
         data = api_client.get(_url(walk), **auth_headers_for(maya)).json()
         assert data["values"]["facilitators"] == "maya, sam and zed"
 
@@ -141,7 +144,9 @@ class TestGetSpeech:
         assert data["values"]["restaurant"] == "Spicy Moon"
 
     def test_facilitators_prefill_is_viewer_independent(self, api_client, maya, walk):
-        hidden = make_user(first_name="zed", last_name="Secret", is_member=True)
+        hidden = make_user(
+            first_name="zed", last_name="Secret", membership_status=MembershipStatus.MEMBER
+        )
         hidden.hide_last_name = True
         hidden.save(update_fields=["hide_last_name"])
         walk.co_hosts.add(hidden)
@@ -179,13 +184,19 @@ class TestGetSpeech:
         assert data["values"]["restaurant"] == ""
 
     def test_non_cohost_member_forbidden(self, api_client, walk):
-        outsider = make_user(first_name="out", last_name="Last", is_member=True)
+        outsider = make_user(
+            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+        )
         response = api_client.get(_url(walk), **auth_headers_for(outsider))
         assert response.status_code == 403
         assert_error_code(response, "speech.hosts_only")
 
     def test_manage_events_without_cohost_allowed(self, api_client, walk):
-        admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
+        admin = make_user(
+            PermissionKey.MANAGE_EVENTS,
+            first_name="Admin",
+            membership_status=MembershipStatus.MEMBER,
+        )
         assert api_client.get(_url(walk), **auth_headers_for(admin)).status_code == 200
 
     def test_anonymous_unauthorized(self, api_client, walk):
@@ -202,9 +213,13 @@ class TestGetSpeech:
         assert api_client.get(_url(walk), **auth_headers_for(maya)).status_code == 404
 
     def test_not_found_checked_before_permission(self, api_client):
-        outsider = make_user(first_name="out", last_name="Last", is_member=True)
+        outsider = make_user(
+            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+        )
         community = _event(outsider, event_type=EventType.COMMUNITY, event_format="")
-        other = make_user(first_name="other", last_name="Last", is_member=True)
+        other = make_user(
+            first_name="other", last_name="Last", membership_status=MembershipStatus.MEMBER
+        )
         assert api_client.get(_url(community), **auth_headers_for(other)).status_code == 404
 
     def test_event_without_format_reports_none(self, api_client, maya):
@@ -227,7 +242,11 @@ class TestGetSpeech:
         def grow(n: int) -> None:
             for i in range(n):
                 walk.co_hosts.add(
-                    make_user(first_name=f"host{i}", last_name="Last", is_member=True)
+                    make_user(
+                        first_name=f"host{i}",
+                        last_name="Last",
+                        membership_status=MembershipStatus.MEMBER,
+                    )
                 )
                 _event(maya, title=f"later {i}")
 
@@ -275,13 +294,19 @@ class TestPutSpeech:
         assert walk.event_format == EventFormat.WALK
 
     def test_non_cohost_forbidden(self, api_client, walk):
-        outsider = make_user(first_name="out", last_name="Last", is_member=True)
+        outsider = make_user(
+            first_name="out", last_name="Last", membership_status=MembershipStatus.MEMBER
+        )
         response = self._put(api_client, walk, outsider, {"values": {}})
         assert response.status_code == 403
         assert_error_code(response, "speech.hosts_only")
 
     def test_manage_events_without_cohost_allowed(self, api_client, walk):
-        admin = make_user(PermissionKey.MANAGE_EVENTS, first_name="Admin", is_member=True)
+        admin = make_user(
+            PermissionKey.MANAGE_EVENTS,
+            first_name="Admin",
+            membership_status=MembershipStatus.MEMBER,
+        )
         assert self._put(api_client, walk, admin, {"values": {}}).status_code == 200
 
     def test_anonymous_unauthorized(self, api_client, walk):
