@@ -395,8 +395,12 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
     require_manage_users(request, "update_user_roles", user_id)
+    # Attendance-paused users can still sign in, so they can't gain roles until unpaused.
+    assignable = User.objects.members_or_archived().exclude(
+        membership_status=MembershipStatus.ATTENDANCE_PAUSED
+    )
     try:
-        user = User.objects.members_or_archived().prefetch_related("roles").get(pk=user_id)
+        user = assignable.prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
