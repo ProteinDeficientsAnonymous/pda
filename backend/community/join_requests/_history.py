@@ -55,7 +55,7 @@ class PhoneHistory(NamedTuple):
 
 
 def previous_archive_out(user: User | None) -> PreviousArchiveOut | None:
-    """The only reader of the archive stamps, so a later move off archived_by touches one place."""
+    """The only reader of archived_by, so a later move off it touches one place."""
     if user is None or user.archived_at is None:
         return None
     by = user.archived_by
