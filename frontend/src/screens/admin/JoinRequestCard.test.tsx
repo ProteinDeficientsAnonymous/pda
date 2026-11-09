@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
+import { RejectionReason } from '@/api/rejectionEmail';
 import { makeRequest } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -43,5 +44,32 @@ describe('JoinRequestCard decision', () => {
     );
 
     expect(screen.getByText(/rejected by sam vettor on jan 2/)).toBeInTheDocument();
+  });
+});
+
+describe('JoinRequestCard previous rejection', () => {
+  it('shows who rejected the earlier request, when, and why', () => {
+    renderCard(
+      makeRequest({
+        previouslyRejected: true,
+        previousRejection: {
+          statusChangedAt: '2025-11-02T18:00:00Z',
+          statusChangedByName: 'Sam Vettor',
+          rejectionReason: RejectionReason.OTHER,
+          rejectionNote: 'asked about leather boots',
+        },
+      }),
+    );
+
+    expect(
+      screen.getByText(/previously rejected by sam vettor on nov 2, 2025/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('reason: asked about leather boots')).toBeInTheDocument();
+  });
+
+  it('omits the note on a first-time applicant', () => {
+    renderCard(makeRequest());
+
+    expect(screen.queryByText(/previously rejected by/)).not.toBeInTheDocument();
   });
 });

@@ -65,6 +65,7 @@ describe('useJoinRequests', () => {
         userId: null,
         previouslyArchived: false,
         previouslyRejected: false,
+        previousRejection: null,
         statusChangedAt: null,
         statusChangedByName: null,
         approvedViaEventId: null,

@@ -156,6 +156,7 @@ export interface JoinRequestSummary {
   userId: string | null;
   previouslyArchived: boolean;
   previouslyRejected: boolean;
+  previousRejection: PreviousRejection | null;
   statusChangedAt: string | null;
   statusChangedByName: string | null;
   approvedViaEventId: string | null;
@@ -167,6 +168,29 @@ export interface JoinRequestSummary {
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
   attendedEvents: AttendedEvent[];
+}
+
+export interface PreviousRejection {
+  statusChangedAt: string | null;
+  statusChangedByName: string | null;
+  rejectionReason: RejectionReason | null;
+  rejectionNote: string;
+}
+
+interface WirePreviousRejection {
+  status_changed_at?: string | null;
+  status_changed_by_name?: string | null;
+  rejection_reason?: RejectionReason | '';
+  rejection_note?: string;
+}
+
+function mapPreviousRejection(w: WirePreviousRejection): PreviousRejection {
+  return {
+    statusChangedAt: w.status_changed_at ?? null,
+    statusChangedByName: w.status_changed_by_name ?? null,
+    rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
+    rejectionNote: w.rejection_note ?? '',
+  };
 }
 
 interface WireAnswer {
@@ -192,6 +216,7 @@ interface WireJoinRequest {
   user_id: string | null;
   previously_archived?: boolean;
   previously_rejected?: boolean;
+  previous_rejection?: WirePreviousRejection | null;
   status_changed_at?: string | null;
   status_changed_by_name?: string | null;
   approved_via_event_id?: string | null;
@@ -224,6 +249,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
     previouslyRejected: w.previously_rejected ?? false,
+    previousRejection: w.previous_rejection ? mapPreviousRejection(w.previous_rejection) : null,
     statusChangedAt: w.status_changed_at ?? null,
     statusChangedByName: w.status_changed_by_name ?? null,
     approvedViaEventId: w.approved_via_event_id ?? null,
