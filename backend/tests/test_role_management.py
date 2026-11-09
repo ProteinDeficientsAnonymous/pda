@@ -262,3 +262,15 @@ class TestNonMemberCannotHoldRole:
         assert response.status_code == 200
         counted = next(r for r in response.json() if r["name"] == "counted")
         assert counted["user_count"] == 1
+
+    def test_list_roles_count_includes_guidelines_paused(
+        self, api_client, manage_users_headers, test_user
+    ):
+        role = Role.objects.create(name="counted", permissions=[])
+        test_user.roles.add(role)
+        User.objects.filter(pk=test_user.pk).update(
+            membership_status=MembershipStatus.GUIDELINES_PAUSED
+        )
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        counted = next(r for r in response.json() if r["name"] == "counted")
+        assert counted["user_count"] == 1
