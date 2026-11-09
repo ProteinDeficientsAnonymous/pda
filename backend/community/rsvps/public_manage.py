@@ -159,8 +159,10 @@ def list_my_rsvps(request, token: str = ""):
 def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = ""):
     user = _resolve_token_user(token)
     event = load_public_rsvp_event(event_id)
-    reject_if_rejected_applicant(request, user.phone_number, event.id)
     validate_rsvp_status(payload.status)
+    # Stepping down from an rsvp stays open; only new attendance waits on a re-application.
+    if payload.status != RSVPStatus.CANT_GO:
+        reject_if_rejected_applicant(request, user.phone_number, event.id)
 
     with transaction.atomic():
         final_status, promoted_user_ids, previous_status = apply_rsvp_in_transaction(
