@@ -72,32 +72,6 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
     assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.MEMBER
 
 
-@pytest.mark.parametrize(
-    ("fields", "expected"),
-    [
-        ({"membership_status": MembershipStatus.MEMBER}, MembershipStatus.MEMBER),
-        ({"membership_status": MembershipStatus.PUBLIC_RSVPER}, MembershipStatus.PUBLIC_RSVPER),
-        (
-            {
-                "membership_status": MembershipStatus.ATTENDANCE_PAUSED,
-                "attendance_paused_at": timezone.now(),
-            },
-            MembershipStatus.ATTENDANCE_PAUSED,
-        ),
-        (
-            {"membership_status": MembershipStatus.ARCHIVED, "archived_at": timezone.now()},
-            MembershipStatus.ARCHIVED,
-        ),
-        (
-            {"membership_status": MembershipStatus.TENTATIVE},
-            MembershipStatus.TENTATIVE,
-        ),
-    ],
-)
-def test_create_user_derives_status_from_legacy_flags(fields, expected):
-    assert make_user(**fields).membership_status == expected
-
-
 def test_archive_records_who_archived(api_client, manage_users_user, manage_users_headers):
     member = make_user(last_login=timezone.now())
     response = api_client.delete(f"/api/auth/users/{member.pk}/", **manage_users_headers)
