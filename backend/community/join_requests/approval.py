@@ -1,4 +1,5 @@
 import logging
+from typing import NamedTuple
 
 from django.conf import settings
 from django.utils import timezone
@@ -9,6 +10,7 @@ from users.helpers import ConsentTimestamps, create_magic_token, grant_membershi
 from users.models import User
 
 from community.models import (
+    JoinRequest,
     JoinRequestStatus,
     MemberPromotionEmailTemplate,
     WhatsAppLinkConfig,
@@ -160,18 +162,18 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     return user, create_magic_token(user)
 
 
-def maybe_promote_tentative(user, event, actor) -> bool:
+def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
     """Promote a tentative applicant to full member when they check in.
 
     Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
-    user has a linked TENTATIVE join request. Returns whether a promotion
-    happened, so the caller knows to send the approval email.
+    user has a linked TENTATIVE join request. Returns the promoted join request,
+    or None when nothing was promoted.
     """
     if not is_official_or_club(event.event_type):
-        return False
+        return None
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
-        return False
+        return None
 
     promote_tentative_member(user, join_request)
     join_request.status = JoinRequestStatus.APPROVED
@@ -179,25 +181,29 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     join_request.approved_by = actor
     join_request.approved_via_event = event
     join_request.save(update_fields=["status", "approved_at", "approved_by", "approved_via_event"])
-    return True
+    return join_request
 
 
-def provision_approved_user(
-    join_request, requesting_user, *, was_tentative: bool
-) -> tuple[str | None, bool]:
+class Provisioned(NamedTuple):
+    magic_token: str | None
+    user_created: bool
+    reactivated_user: User | None = None
+
+
+def provision_approved_user(join_request, requesting_user, *, was_tentative: bool) -> Provisioned:
     """Create, reactivate, or promote the user for an approved join request.
 
-    Returns ``(magic_token, user_created)``: the one-time login token and whether
-    a brand-new User row was created. A tentative applicant already has a login,
-    so their promotion returns no token. When the phone already maps to an active
-    member, nothing is provisioned and ``(None, False)`` is returned.
+    Returns the one-time login token and whether a User was created or
+    reactivated (``user_created``, with ``reactivated_user`` set for the latter).
+    A tentative applicant already has a login, so their promotion returns no
+    token. When the phone already maps to an active member, nothing is provisioned.
     """
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:
         if was_tentative:
             promote_tentative_member(join_request.user, join_request)
-            return None, False
-        return _promote_public_rsvper(join_request.user, join_request), False
+            return Provisioned(None, False)
+        return Provisioned(_promote_public_rsvper(join_request.user, join_request), False)
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
@@ -214,7 +220,9 @@ def provision_approved_user(
                 sms_consent_at=join_request.sms_consent_at,
             ),
         )
-        return magic_token, True
+        return Provisioned(magic_token, True)
     if existing_user.archived_at is not None:
-        return _reactivate_archived_user(existing_user, join_request), True
-    return None, False
+        return Provisioned(
+            _reactivate_archived_user(existing_user, join_request), True, existing_user
+        )
+    return Provisioned(None, False)

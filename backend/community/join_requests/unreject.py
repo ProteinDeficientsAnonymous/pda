@@ -63,7 +63,10 @@ def unreject_join_request(request, id: UUID):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": join_request.full_name},
+            details={
+                "full_name": join_request.full_name,
+                "user_id": str(join_request.user_id) if join_request.user_id else None,
+            },
         ),
     )
 

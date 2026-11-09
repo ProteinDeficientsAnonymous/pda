@@ -310,7 +310,10 @@ def submit_join_request(request, payload: JoinRequestIn):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": full_name},
+            details={
+                "full_name": full_name,
+                "user_id": str(matched_user.pk) if matched_user else None,
+            },
         ),
     )
     send_join_request_email(full_name, validated_phone, custom_answers)
