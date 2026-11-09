@@ -57,6 +57,15 @@ def normalize_phone_number(raw: str) -> str:
     return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 
+class MembershipStatus(models.TextChoices):
+    PUBLIC_RSVPER = "public_rsvper", "public rsvper"
+    TENTATIVE = "tentative", "tentative"
+    MEMBER = "member", "member"
+    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
+    REJECTED = "rejected", "rejected"
+    ARCHIVED = "archived", "archived"
+
+
 class WeekStart:
     SUNDAY = "sunday"
     MONDAY = "monday"
@@ -142,6 +151,12 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=64, blank=True, default="")
     # Defaults False; non-members are excluded via objects.members().
     is_member = models.BooleanField(default=False, db_index=True)
+    membership_status = models.CharField(
+        max_length=20,
+        choices=MembershipStatus.choices,
+        default=MembershipStatus.PUBLIC_RSVPER,
+        db_index=True,
+    )
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.
     email = models.EmailField(null=True, blank=True)
