@@ -14,11 +14,11 @@ from users.roles import Role
 
 @pytest.fixture
 def set_pause(api_client, manage_users_headers, django_capture_on_commit_callbacks):
-    def patch(user, paused: bool):
+    def patch(user, paused: bool, field: str = "is_paused"):
         with django_capture_on_commit_callbacks(execute=True):
             response = api_client.patch(
                 f"/api/auth/users/{user.pk}/",
-                {"is_paused": paused},
+                {field: paused},
                 content_type="application/json",
                 **manage_users_headers,
             )
@@ -38,6 +38,16 @@ class TestGuidelinesPauseRelease:
         set_pause(member, True)
 
         assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.CANT_GO
+
+    def test_releases_rsvps_an_attendance_pause_kept(self, set_pause, member, other_user):
+        official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
+        make_rsvp(official, member)
+        set_pause(member, True, field="attendance_paused")
+        assert EventRSVP.objects.get(event=official, user=member).status == RSVPStatus.ATTENDING
+
+        set_pause(member, True)
+
+        assert EventRSVP.objects.get(event=official, user=member).status == RSVPStatus.CANT_GO
 
     def test_releases_hosting_and_audits_it(self, set_pause, member, other_user):
         vettor = Role.objects.create(name="vettor")

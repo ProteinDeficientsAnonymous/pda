@@ -11,6 +11,7 @@ from community.validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
@@ -303,9 +304,12 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     old_is_paused = user.is_paused
     was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
-    user.save()
-
-    _audit_user_update(request, user, user_id, payload, old_is_paused)
+    with transaction.atomic():
+        user.save()
+        released = None
+        if payload.is_paused and not old_is_paused:
+            released = release_held_events(request, user, keep_official=False)[1]
+        _audit_user_update(request, user_id, payload, old_is_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_paused and not has_pause(user):
@@ -316,27 +320,21 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 
 
 def _audit_user_update(
-    request, user: User, user_id: str, payload: UserPatchIn, old_is_paused: bool
+    request, user_id: str, payload: UserPatchIn, old_is_paused: bool, released: dict | None
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing releases every upcoming RSVP and host
-    spot and strips non-member roles, recording what went. Otherwise a plain field
-    change logs user_updated.
+    A pause transition takes priority, recording what the pause released. Otherwise a
+    plain field change logs user_updated.
     """
     is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
     if is_pause_transition:
         action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = (
-            release_held_events(request, user, keep_official=False)[1]
-            if payload.is_paused
-            else None
-        )
         audit_log(
             logging.WARNING,
             action,
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=released),
         )
         return
 
