@@ -47,6 +47,27 @@ describe('JoinRequestCard decision', () => {
   });
 });
 
+describe('JoinRequestCard previous archive', () => {
+  it('shows when and by whom they were archived', () => {
+    renderCard(
+      makeRequest({
+        previouslyArchived: true,
+        previousArchive: { archivedAt: '2025-08-14T18:00:00Z', archivedByName: 'Robin Admin' },
+      }),
+    );
+
+    expect(
+      screen.getByText('previously archived on aug 14, 2025 by robin admin'),
+    ).toBeInTheDocument();
+  });
+
+  it('omits the note on a first-time applicant', () => {
+    renderCard(makeRequest());
+
+    expect(screen.queryByText(/previously archived on/)).not.toBeInTheDocument();
+  });
+});
+
 describe('JoinRequestCard previous rejection', () => {
   it('shows who rejected the earlier request, when, and why', () => {
     renderCard(

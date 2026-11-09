@@ -9,7 +9,7 @@ import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AttendedEventsNote } from './AttendedEventsNote';
-import { PreviousRejectionNote } from './JoinRequestPreviousRejection';
+import { PreviousArchiveNote, PreviousRejectionNote } from './JoinRequestPreviousRejection';
 import { TentativeActions } from './JoinRequestTentativeSection';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 import { SendMessageDialog } from './SendMessageDialog';
@@ -63,7 +63,7 @@ export function JoinRequestCard({
           {request.previouslyArchived ? (
             <span
               className="bg-warning-subtle text-warning rounded-full px-2 py-0.5 text-xs"
-              title="this phone number belongs to a previously archived member — approving will restore their account"
+              title="this phone number belongs to a previously archived account — approving or tentatively approving restores it"
             >
               previously archived
             </span>
@@ -79,6 +79,7 @@ export function JoinRequestCard({
           <StatusBadge status={request.status} />
         </div>
       </header>
+      <PreviousArchiveNote archive={request.previousArchive} />
       <PreviousRejectionNote rejection={request.previousRejection} />
 
       {request.answers.length > 0 ? (

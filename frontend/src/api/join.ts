@@ -155,6 +155,7 @@ export interface JoinRequestSummary {
   status: JoinRequestStatus;
   userId: string | null;
   previouslyArchived: boolean;
+  previousArchive: PreviousArchive | null;
   previouslyRejected: boolean;
   previousRejection: PreviousRejection | null;
   statusChangedAt: string | null;
@@ -168,6 +169,16 @@ export interface JoinRequestSummary {
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
   attendedEvents: AttendedEvent[];
+}
+
+export interface PreviousArchive {
+  archivedAt: string | null;
+  archivedByName: string | null;
+}
+
+interface WirePreviousArchive {
+  archived_at?: string | null;
+  archived_by_name?: string | null;
 }
 
 export interface PreviousRejection {
@@ -215,6 +226,7 @@ interface WireJoinRequest {
   status: JoinRequestStatus;
   user_id: string | null;
   previously_archived?: boolean;
+  previous_archive?: WirePreviousArchive | null;
   previously_rejected?: boolean;
   previous_rejection?: WirePreviousRejection | null;
   status_changed_at?: string | null;
@@ -248,6 +260,12 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     status: w.status,
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
+    previousArchive: w.previous_archive
+      ? {
+          archivedAt: w.previous_archive.archived_at ?? null,
+          archivedByName: w.previous_archive.archived_by_name ?? null,
+        }
+      : null,
     previouslyRejected: w.previously_rejected ?? false,
     previousRejection: w.previous_rejection ? mapPreviousRejection(w.previous_rejection) : null,
     statusChangedAt: w.status_changed_at ?? null,

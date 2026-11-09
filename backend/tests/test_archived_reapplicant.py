@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pytest
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
@@ -86,3 +88,27 @@ def test_marking_tentative_keeps_an_archived_pause(
     paused.refresh_from_db()
     assert paused.membership_status == status
     assert paused.archived_at is None
+
+
+def _listed(api_client, headers, join_request):
+    response = api_client.get("/api/community/join-requests/", **headers)
+    assert response.status_code == 200
+    return next(r for r in response.json() if r["id"] == str(join_request.id))
+
+
+def test_card_shows_who_archived_them_and_when(
+    api_client, vettor_headers, sample_join_request, archived_member
+):
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previously_archived"] is True
+    assert row["previous_archive"]["archived_by_name"] == "Vettor"
+    archived_at = datetime.fromisoformat(row["previous_archive"]["archived_at"])
+    assert abs(archived_at - archived_member.archived_at) < timedelta(seconds=1)
+
+
+def test_card_has_no_archive_for_a_first_time_applicant(
+    api_client, vettor_headers, sample_join_request
+):
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previously_archived"] is False
+    assert row["previous_archive"] is None

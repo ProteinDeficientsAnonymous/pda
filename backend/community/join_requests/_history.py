@@ -17,6 +17,11 @@ class PreviousRejectionOut(BaseModel):
     rejection_note: str = ""
 
 
+class PreviousArchiveOut(BaseModel):
+    archived_at: datetime | None = None
+    archived_by_name: str | None = None
+
+
 class PhoneLookups(NamedTuple):
     users_by_phone: dict[str, User]
     rejections_by_phone: dict[str, list[JoinRequest]]
@@ -25,8 +30,12 @@ class PhoneLookups(NamedTuple):
 def phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
     """Users (with rsvps) and rejected requests, newest first, for every phone in the batch."""
     phones = {jr.phone_number for jr in join_requests}
-    users = User.objects.filter(phone_number__in=phones).prefetch_related(
-        Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
+    users = (
+        User.objects.filter(phone_number__in=phones)
+        .select_related("archived_by")
+        .prefetch_related(
+            Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
+        )
     )
     rejected = (
         JoinRequest.objects.filter(phone_number__in=phones, status=JoinRequestStatus.REJECTED)
@@ -41,8 +50,18 @@ def phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
 
 class PhoneHistory(NamedTuple):
     phone_user: User | None
-    previously_archived: bool
+    previous_archive: PreviousArchiveOut | None
     previous_rejection: JoinRequest | None
+
+
+def previous_archive_out(user: User | None) -> PreviousArchiveOut | None:
+    """The only reader of the archive stamps, so a later move off archived_by touches one place."""
+    if user is None or user.archived_at is None:
+        return None
+    by = user.archived_by
+    return PreviousArchiveOut(
+        archived_at=user.archived_at, archived_by_name=by.full_name if by else None
+    )
 
 
 def phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
@@ -50,7 +69,7 @@ def phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
     rejections = lookups.rejections_by_phone.get(jr.phone_number, [])
     return PhoneHistory(
         phone_user=phone_user,
-        previously_archived=phone_user is not None and phone_user.archived_at is not None,
+        previous_archive=previous_archive_out(phone_user),
         previous_rejection=next((r for r in rejections if r.submitted_at < jr.submitted_at), None),
     )
 
