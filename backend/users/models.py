@@ -280,10 +280,8 @@ class User(AbstractUser):
         """Keep a new row's status and is_member consistent, whichever one the caller set."""
         if self.membership_status == MembershipStatus.PUBLIC_RSVPER:
             self.membership_status = legacy_membership_status(vars(self))
-        if self.membership_status == MembershipStatus.GUIDELINES_PAUSED:
-            self.is_member = self.attendance_paused_at is None
-        elif self.membership_status != MembershipStatus.ARCHIVED:
-            self.is_member = self.membership_status == MembershipStatus.MEMBER
+        if self.membership_status != MembershipStatus.ARCHIVED:
+            self.is_member = self.membership_status in MEMBER_STATUSES
 
     def __str__(self):
         return self.full_name or self.phone_number
