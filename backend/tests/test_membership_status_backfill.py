@@ -91,18 +91,19 @@ guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_
 
 
 @pytest.mark.parametrize(
-    ("before", "expected"),
+    ("is_paused", "before", "expected"),
     [
-        (MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED),
-        (MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
-        (MembershipStatus.ARCHIVED, MembershipStatus.ARCHIVED),
+        (True, MembershipStatus.MEMBER, MembershipStatus.GUIDELINES_PAUSED),
+        (True, MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
+        (True, MembershipStatus.ARCHIVED, MembershipStatus.ARCHIVED),
+        (False, MembershipStatus.MEMBER, MembershipStatus.MEMBER),
+        (False, MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.ATTENDANCE_PAUSED),
     ],
 )
-def test_guidelines_paused_backfill(before, expected):
-    user = make_user(is_paused=True, attendance_paused_at=timezone.now())
+def test_guidelines_paused_backfill(is_paused, before, expected):
+    user = make_user(is_paused=is_paused, attendance_paused_at=timezone.now())
     User.objects.filter(pk=user.pk).update(membership_status=before)
     guidelines_backfill.backfill_guidelines_paused(apps, None)
     user.refresh_from_db()
     assert user.membership_status == expected
-    if expected == MembershipStatus.GUIDELINES_PAUSED:
-        assert user.attendance_paused_at is None
+    assert (user.attendance_paused_at is None) == (expected == MembershipStatus.GUIDELINES_PAUSED)
