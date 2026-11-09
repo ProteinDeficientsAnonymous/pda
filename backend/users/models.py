@@ -244,6 +244,10 @@ class User(AbstractUser):
     def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
         """param(by): who made the change, or None for the system.
         return(list[str]): the fields it changed, for update_fields."""
+        if self.archived_at is not None and status != MembershipStatus.ARCHIVED:
+            # Archived stays archived; the change waits here until reactivation restores it.
+            self.status_before_archive = status
+            return ["status_before_archive"]
         if status != self.membership_status:
             self.membership_status = status
             self.membership_status_changed_at = timezone.now()
@@ -255,11 +259,6 @@ class User(AbstractUser):
         if paused == self.is_paused:
             return []
         self.is_paused = paused
-        if self.membership_status == MembershipStatus.ARCHIVED:
-            self.status_before_archive = (
-                MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
-            )
-            return ["is_paused", "status_before_archive"]
         self.attendance_paused_at = None if paused else timezone.now()
         status = (
             MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED

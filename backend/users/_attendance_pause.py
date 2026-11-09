@@ -126,6 +126,9 @@ def release_held_events(request, user: User, *, keep_official: bool) -> tuple[Pa
     param(keep_official): keep official/club RSVPs (attendance pause) or release them too
     return(tuple[PauseImpact, dict]): the impact and its audit details
     """
+    if user.archived_at is not None:
+        # Archiving already released them; a pause now must not draft their solo-hosted events.
+        return PauseImpact(), {}
     impact = attendance_pause_impact(user, keep_official=keep_official)
     drafted_ids = [e.pk for e in impact.drafted_events]
     for event in impact.drafted_events:

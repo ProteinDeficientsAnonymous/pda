@@ -88,7 +88,14 @@ class TestManualUnpause:
     @pytest.mark.parametrize(
         ("pause", "payload"),
         [
-            ({**GUIDELINES, "archived_at": timezone.now()}, {"is_paused": False}),
+            (
+                {
+                    "attendance_paused_at": timezone.now(),
+                    "archived_at": timezone.now(),
+                    "status_before_archive": MembershipStatus.ATTENDANCE_PAUSED,
+                },
+                {"attendance_paused": False},
+            ),
             ({**ATTENDANCE, "email": ""}, {"attendance_paused": False}),
         ],
         ids=["archived", "no_email"],
