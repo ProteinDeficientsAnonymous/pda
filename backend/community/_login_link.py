@@ -18,6 +18,7 @@ from users.models import (
     MagicLoginToken,
     MagicLoginTokenSource,
     User,
+    can_sign_in_q,
     validate_phone,
 )
 
@@ -90,7 +91,9 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
-    user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
+    user = User.objects.filter(
+        can_sign_in_q(), phone_number=normalized, archived_at__isnull=True
+    ).first()
     if user is None:
         audit_log(
             logging.INFO,

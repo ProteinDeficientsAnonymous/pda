@@ -116,6 +116,7 @@ BLOCKED_STATES = [
     ("archived_at", "now"),
     ("needs_onboarding", True),
     ("is_active", False),
+    ("membership_status", MembershipStatus.NONE),
 ]
 
 
