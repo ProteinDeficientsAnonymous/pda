@@ -88,7 +88,6 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
         assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
-        assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
         assert (
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()
@@ -120,10 +119,12 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_paused_at is not None
 
     def test_host_marking_themselves_never_promotes(self, api_client, paused):
-        User.objects.filter(pk=paused.pk).update(attendance_paused_at=None)
+        User.objects.filter(pk=paused.pk).update(
+            attendance_paused_at=None, membership_status=MembershipStatus.TENTATIVE
+        )
         _tentative_request(paused)
         _check_in(api_client, paused, paused)
-        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
+        assert paused.membership_status == MembershipStatus.TENTATIVE
 
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
         jr = _tentative_request(paused)

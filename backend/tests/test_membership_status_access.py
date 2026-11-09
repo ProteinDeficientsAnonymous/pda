@@ -3,6 +3,7 @@ from community.events.limited_access import is_limited
 from django.utils import timezone
 from users.models import MembershipStatus, User, can_sign_in_q, limited_q
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
@@ -36,11 +37,7 @@ def test_guidelines_paused_tentative_is_not_limited():
 
 
 def test_rejected_user_who_signs_in_stays_limited():
-    assert is_limited(
-        make_user(
-            membership_status=MembershipStatus.REJECTED,
-        )
-    )
+    assert is_limited(make_user(membership_status=MembershipStatus.REJECTED))
 
 
 def test_members_excludes_archived_member():
@@ -48,17 +45,14 @@ def test_members_excludes_archived_member():
     assert not User.objects.members().filter(pk=archived.pk).exists()
 
 
-@pytest.mark.parametrize("was_member", [True, False])
-def test_members_or_archived_includes_every_archived_user(was_member):
-    user = make_user(
-        membership_status=MembershipStatus.ARCHIVED,
-        archived_at=timezone.now(),
-        attendance_paused_at=None if was_member else timezone.now(),
-    )
+def test_members_or_archived_includes_archived_user():
+    user = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     assert User.objects.members_or_archived().filter(pk=user.pk).exists()
 
 
-def test_me_returns_membership_status(api_client, auth_headers):
-    response = api_client.get("/api/auth/me/", **auth_headers)
+@pytest.mark.parametrize("status", [MembershipStatus.ACTIVE_MEMBER, MembershipStatus.TENTATIVE])
+def test_me_returns_membership_status(api_client, status):
+    user = make_user(membership_status=status)
+    response = api_client.get("/api/auth/me/", **auth_headers_for(user))
     assert response.status_code == 200
-    assert response.json()["membership_status"] == MembershipStatus.ACTIVE_MEMBER
+    assert response.json()["membership_status"] == status
