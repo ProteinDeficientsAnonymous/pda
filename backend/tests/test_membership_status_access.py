@@ -3,6 +3,7 @@ from community.events.limited_access import is_limited
 from django.utils import timezone
 from users.models import MembershipStatus, User, can_sign_in_q, limited_q
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
@@ -49,7 +50,9 @@ def test_members_or_archived_includes_archived_user():
     assert User.objects.members_or_archived().filter(pk=user.pk).exists()
 
 
-def test_me_returns_membership_status(api_client, auth_headers):
-    response = api_client.get("/api/auth/me/", **auth_headers)
+@pytest.mark.parametrize("status", [MembershipStatus.MEMBER, MembershipStatus.TENTATIVE])
+def test_me_returns_membership_status(api_client, status):
+    user = make_user(membership_status=status)
+    response = api_client.get("/api/auth/me/", **auth_headers_for(user))
     assert response.status_code == 200
-    assert response.json()["membership_status"] == MembershipStatus.MEMBER
+    assert response.json()["membership_status"] == status
