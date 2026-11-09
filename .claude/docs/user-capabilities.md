@@ -3,11 +3,13 @@
 What each user type can do, as the backend enforces it. For how people move between types, see [user-states.md](user-states.md).
 
 - **visitor** — not signed in.
-- **public rsvper** — RSVP'd through the public form; uses a `/my-rsvps` token link, never signs in.
-- **limited** — signed in, not a member: tentative or attendance-paused. Both get the same access.
+- **public rsvper** — `membership_status=none`; RSVP'd through the public form, uses a `/my-rsvps` token link, never signs in.
+- **limited** — signed in without full access: tentative or attendance-paused. Both get the same access, though attendance-paused users still hold membership (`is_member`) and the member role.
 - **member** — `membership_status=active_member`. Elevated roles add the permissions further down.
 
-Guidelines-paused and archived users can't sign in. They can still browse as a visitor. A guidelines-paused number is sent to login from the public RSVP form and told "already a member" by the join form; login only says they're paused after the right password, so nobody learns it from a phone number alone. An archived user can submit the join form again.
+Guidelines-paused, archived and `none` users can't sign in. They can still browse as a visitor. A guidelines-paused number is sent to login from the public RSVP form and told "already a member" by the join form; login only says they're paused after the right password, so nobody learns it from a phone number alone.
+
+A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both refuse with the generic `rsvp_could_not_be_created`) until they submit a new join request. An archived user can submit the join form again; marking that request tentative or approving it restores the account.
 
 ## Events
 
@@ -17,7 +19,7 @@ Guidelines-paused and archived users can't sign in. They can still browse as a v
 | see members-only events | ❌ | ❌ | official/club only | ✅ |
 | see invite-only events | ❌ | ❌ | if invited | if invited, or hosting |
 | see location, whatsapp/partiful links | ❌ | official events open to public RSVP, via token link | official/club only | ✅ |
-| RSVP | official public events, via public form (becomes a public rsvper) | same, managed at `/my-rsvps` | official/club only | ✅ |
+| RSVP | official public events, via public form (becomes a public rsvper); not after a rejected join request | same, managed at `/my-rsvps` | official/club only | ✅ |
 | see guest list | ❌ | events they RSVP'd to | events they RSVP'd to | events they RSVP'd to |
 | comment | ❌ | events they RSVP'd to | events they RSVP'd to | events they RSVP'd to |
 | create events | ❌ | ❌ | ❌ | community + drafts; official/club need a tag permission |

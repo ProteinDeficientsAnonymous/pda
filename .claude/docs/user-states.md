@@ -6,19 +6,23 @@ Every path a person can take through the app, from visitor to archived. What eac
 
 | Term | Means | Code |
 |------|-------|------|
-| non-member | any `membership_status` but `active_member` and `guidelines_paused` | `User.objects.members()` excludes them |
-| public rsvper | RSVP'd without an account; can't sign in (unusable password) | `PublicRsvpToken` |
-| limited | signed in but not a member: tentative or attendance-paused | `limited_q()`, `is_limited()` |
+| member | `membership_status` in `MEMBER_STATUSES`: active, guidelines-paused or attendance-paused | `is_member` property, `User.objects.members()` |
+| non-member | `none`, `tentative` or `archived` | `User.objects.members()` excludes them |
+| `none` | base status for an account with no membership: a public rsvper, or a rejected or withdrawn applicant. Can't sign in | `MembershipStatus.NONE` |
+| public rsvper | RSVP'd without an account; status `none`, unusable password | `PublicRsvpToken` |
+| limited | signed in without full access: tentative, or attendance-paused (who still hold membership and the member role) | `limited_q()`, `is_limited()` |
 | tentative | limited because of a `TENTATIVE` join request | `JoinRequestStatus.TENTATIVE` |
+
+There is no `rejected` membership status. Rejection lives only on the join request.
 
 ## Lifecycle
 
 ```mermaid
 stateDiagram-v2
     state "visitor (no account)" as Visitor
-    state "public rsvper" as PublicRsvper
+    state "public rsvper (none)" as PublicRsvper
     state "applicant (join request pending)" as Applicant
-    state "rejected" as Rejected
+    state "rejected applicant (none, or no account)" as Rejected
     state "tentative (limited)" as Tentative
     state "member" as Member
     state "attendance-paused (limited)" as AttendancePaused
@@ -34,7 +38,7 @@ stateDiagram-v2
     Applicant --> Tentative: vetter marks tentative
     Applicant --> Member: vetter approves
     Applicant --> Rejected: vetter rejects
-    Rejected --> Applicant: vetter un-rejects
+    Rejected --> Applicant: re-applies, or vetter un-rejects
 
     Tentative --> Member: vetter approves, or checked in at official/club event
     Tentative --> Archived: deletes own account
@@ -49,7 +53,7 @@ stateDiagram-v2
     Member --> Archived: admin deletes, or deletes own account
     AttendancePaused --> Archived: admin deletes, or deletes own account
     GuidelinesPaused --> Archived: admin deletes
-    Archived --> Applicant: submits join form again
+    Archived --> Applicant: submits join form again (tentative or approval un-archives)
 
     Member --> [*]: admin hard-deletes (never logged in)
 ```
@@ -58,12 +62,12 @@ stateDiagram-v2
 
 | Transition | Effect | Source |
 |------------|--------|--------|
-| rsvps to an official public event | creates a `public_rsvper` user with unusable password; issues or extends a 90-day `/my-rsvps` token (180-day cap) | `community/rsvps/public_submit.py` |
+| rsvps to an official public event | creates a `none` user with unusable password; issues or extends a 90-day `/my-rsvps` token (180-day cap) | `community/rsvps/public_submit.py` |
 | submits join form | creates `JoinRequest` (pending), linked to an existing non-member by phone; no user row for a new visitor | `community/join_requests/submit.py` |
-| vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative` | `provision_tentative_user` |
+| vetter marks tentative | creates the user if needed, sets `needs_onboarding`, mints a magic link; status `tentative`. An archived account matched by phone is un-archived: `archived_at`/`archived_by` cleared and the member role dropped, or back to the pause it was archived under | `provision_tentative_user` |
 | vetter approves | new user → create with member role; public rsvper → promote in place; tentative → promote in place, no new link; archived → clear `archived_at`/`archived_by`, re-flag onboarding, back to `active_member` (or a pause it was archived under). All but tentative mint a magic link. `grant_membership` revokes rsvp tokens | `provision_approved_user` |
 | checked in at official/club event | someone else checks a tentative user in → promoted, join request approved via that event | `maybe_promote_tentative` |
-| vetter rejects | pending join request rejected + email. A tentative request can't be rejected (400 `tentative_cannot_be_rejected`); archive or guidelines-pause them instead | `join_requests/manage.py` |
+| vetter rejects | pending join request rejected + email; the user row is untouched. They can't sign in (`auth.account_rejected`) or public-RSVP until they re-apply. A tentative request can't be rejected (400 `tentative_cannot_be_rejected`); archive or guidelines-pause them instead | `join_requests/manage.py` |
 | vetter un-rejects | back to pending, unless the phone already has an open request | `join_requests/unreject.py` |
 | admin creates account | member with member role + magic link | `users/_management.py` `create_user` |
 | admin pauses for attendance | `attendance_paused`, elevated roles stripped (member role kept), non-official/club RSVPs released, co-host spots dropped, solo-hosted events moved to draft | `apply_attendance_pause` |
@@ -74,7 +78,23 @@ stateDiagram-v2
 | deletes / admin deletes | soft archive: `archived`, `archived_at` and `archived_by` set, calendar token cleared, elevated roles stripped, upcoming RSVPs released, co-host spots dropped | `users/_archive.py` |
 | hard-deletes | row deleted; only when `last_login` is null and nothing protected references it | `users/_user_deletion.py` |
 
-`membership_status` is the source of truth; `is_member` is generated from it (`active_member` or `guidelines_paused`). The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause leaves them attendance-paused until a compliant check-in restores them.
+`membership_status` is the source of truth; `is_member` is a property, true for `MEMBER_STATUSES` (active, guidelines-paused, attendance-paused). Attendance-paused users hold membership and the member role but get limited access. The two pauses are mutually exclusive: a guidelines pause replaces an attendance pause, an attendance pause is refused while guidelines-paused, and lifting a guidelines pause leaves them attendance-paused until a compliant check-in restores them.
+
+## Join requests
+
+A join request has its own status, separate from the person's `membership_status`. `status_changed_at`/`status_changed_by` record the last move.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: submits join form
+    pending --> tentative: vetter marks tentative
+    tentative --> approved: vetter approves, or checked in at official/club event
+    pending --> approved: vetter approves
+    pending --> rejected: vetter rejects
+    rejected --> pending: vetter un-rejects
+```
+
+`tentative → rejected` is refused (400 `tentative_cannot_be_rejected`); archive or guidelines-pause them instead. One open (pending or tentative) request per phone. A rejected applicant re-applies with a new request, and the vetter card shows the earlier rejection and any archive.
 
 ## Getting in
 
@@ -90,7 +110,7 @@ stateDiagram-v2
     state "in the app" as Ready
 
     [*] --> Login
-    Login --> Blocked: archived or guidelines-paused
+    Login --> Blocked: archived, guidelines-paused, or not in SIGN_IN_STATUSES
     Login --> Onboarding: needs_onboarding, no name or email on file
     Login --> NewPassword: needs_onboarding with name + email, or needs_password_reset
     Login --> Consent: nothing pending but a consent
@@ -100,6 +120,8 @@ stateDiagram-v2
     Consent --> Ready
     Ready --> NewPassword: uses a self-service login link
 ```
+
+A status outside `SIGN_IN_STATUSES` (`none`) is blocked with `auth.account_rejected` when the phone's latest join request was rejected (the magic-login screen offers "request to join again"), and `auth.not_a_member` otherwise.
 
 Frontend routing for these gates lives in `frontend/src/auth/guards.tsx` (`OnboardingGate`) and `passwordSetupRedirect` / `consentRedirect` in `frontend/src/models/user.ts`.
 
