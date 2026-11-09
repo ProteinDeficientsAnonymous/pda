@@ -68,7 +68,7 @@ stateDiagram-v2
 | vetter un-rejects | back to pending, unless the phone already has an open request | `join_requests/unreject.py` |
 | admin creates account | member with member role + magic link | `users/_management.py` `create_user` |
 | admin pauses for attendance | `attendance_paused`, elevated roles stripped (member role kept), non-official/club RSVPs released, co-host spots dropped, solo-hosted events moved to draft | `apply_attendance_pause` |
-| admin unpauses (attendance) | `active_member`, member role back; no restore stamp | `users/_attendance_pause.py` `_unpause` |
+| admin unpauses (attendance) | `active_member`; re-grants the member role if missing; no restore stamp | `users/_attendance_pause.py` `_unpause` |
 | compliant check-in | someone else checks them in at official/club and their attendance stats are compliant → restored, `restored_at` stamped, email | `check_in_promotion.py` |
 | admin pauses (guidelines) | `guidelines_paused` (`is_paused` kept in sync); elevated roles stripped, member role kept. Can't pause self or an admin | `users/_management.py` `update_user` |
 | admin unpauses (guidelines) | back to `active_member` with the member role; `unpaused_at` stamped, `has_joined_whatsapp` cleared, email | `users/_unpause.py` |

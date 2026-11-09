@@ -45,7 +45,7 @@ Directory and search both respect each member's `show_phone`, `show_email`, `sho
 | event feedback survey | per-attendee token link | per-attendee token link | per-attendee token link | per-attendee token link |
 | calendar subscription feed | ❌ | ❌ | ✅ | ✅ |
 | weekly / monthly digest emails | ❌ | ❌ | ✅ | ✅ |
-| hold roles | ❌ | ❌ | ❌ | ✅ |
+| hold roles | ❌ | ❌ | attendance-paused keep the member role | ✅ |
 
 "Members-only" pages and surveys only check that someone is signed in, so limited users see them too.
 
