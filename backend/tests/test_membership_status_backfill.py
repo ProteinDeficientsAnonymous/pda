@@ -1,7 +1,7 @@
 import importlib
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
 from django.apps import apps
 from django.utils import timezone
 from users.models import MembershipStatus, User
@@ -48,6 +48,18 @@ def test_rejected_after_tentative(sample_join_request):
     assert _status_after_backfill(user) == MembershipStatus.REJECTED
 
 
+def test_tentative_wins_over_older_rejection(sample_join_request):
+    user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
+    JoinRequest.objects.create(
+        user=user,
+        phone_number="+16505550199",
+        status=JoinRequestStatus.REJECTED,
+        tentative_at=timezone.now(),
+    )
+    _link_request(user, sample_join_request, JoinRequestStatus.TENTATIVE)
+    assert _status_after_backfill(user) == MembershipStatus.TENTATIVE
+
+
 def test_public_rsvper_rejected_without_tentative_stays_public_rsvper(sample_join_request):
     user = make_user(membership_status=MembershipStatus.PUBLIC_RSVPER)
     _link_request(user, sample_join_request, JoinRequestStatus.REJECTED)
@@ -88,7 +100,7 @@ guidelines_backfill = importlib.import_module("users.migrations.0062_guidelines_
     ],
 )
 def test_guidelines_paused_backfill(before, expected):
-    user = make_user(is_paused=True)
+    user = make_user(is_paused=True, attendance_paused_at=timezone.now())
     User.objects.filter(pk=user.pk).update(membership_status=before)
     guidelines_backfill.backfill_guidelines_paused(apps, None)
     user.refresh_from_db()
