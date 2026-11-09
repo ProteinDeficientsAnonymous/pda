@@ -5,9 +5,10 @@ from django.db import migrations, models
 
 def backfill_guidelines_paused(apps, schema_editor):
     User = apps.get_model("users", "User")
+    # A guidelines pause replaces any attendance pause under it.
     User.objects.filter(
         is_paused=True, membership_status__in=["member", "attendance_paused"]
-    ).update(membership_status="guidelines_paused")
+    ).update(membership_status="guidelines_paused", attendance_paused_at=None, is_member=True)
 
 
 class Migration(migrations.Migration):
