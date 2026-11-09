@@ -13,8 +13,8 @@ from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import (
+    MEMBER_STATUSES,
     PUBLIC_FORM_PHONE_REGION,
-    MembershipStatus,
     PublicRsvpToken,
     User,
     validate_phone,
@@ -100,7 +100,7 @@ def _reject_if_paused_non_member(request, phone: str) -> None:
     """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
     user = (
         User.objects.filter(phone_number=phone, is_paused=True, archived_at__isnull=True)
-        .exclude(membership_status=MembershipStatus.MEMBER)
+        .exclude(membership_status__in=MEMBER_STATUSES)
         .first()
     )
     if user is None:
