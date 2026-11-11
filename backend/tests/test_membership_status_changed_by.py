@@ -1,4 +1,5 @@
 import pytest
+from community.models import JoinRequestStatus
 from users.models import MembershipStatus, User
 
 from tests._public_rsvp_helpers import make_official_event, post
@@ -29,6 +30,21 @@ def test_admin_create_records_the_creator(
     created = User.objects.get(phone_number=NEW_PHONE)
     assert created.membership_status_changed_by == manage_users_user
     assert created.membership_status_changed_at is not None
+
+
+@pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
+def test_vetting_a_new_applicant_records_the_vetter(
+    api_client, vettor_user, vettor_headers, sample_join_request, decision
+):
+    response = api_client.patch(
+        f"/api/community/join-requests/{sample_join_request.id}/",
+        {"status": decision},
+        content_type="application/json",
+        **vettor_headers,
+    )
+    assert response.status_code == 200
+    user = User.objects.get(phone_number=sample_join_request.phone_number)
+    assert user.membership_status_changed_by == vettor_user
 
 
 def test_public_rsvp_stamps_no_actor(api_client):

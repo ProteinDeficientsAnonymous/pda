@@ -10,7 +10,7 @@ from community.models import (
 )
 from community.validation import Code
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -167,7 +167,9 @@ class TestCheckInPromotion:
         self, api_client, open_official_event, fake_email_sender
     ):
         non_member = User.objects.create(
-            phone_number="+12025557111", first_name="Plain", is_member=False
+            phone_number="+12025557111",
+            first_name="Plain",
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(
             event=open_official_event, user=non_member, status=RSVPStatus.ATTENDING

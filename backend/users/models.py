@@ -21,6 +21,11 @@ ADMIN_ENTERED_PHONE_REGION = "US"
 PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+STATUS_CHANGE_FIELDS = (
+    "membership_status",
+    "membership_status_changed_at",
+    "membership_status_changed_by",
+)
 
 
 def status_change_stamp(by: "User | None") -> dict:
@@ -249,6 +254,19 @@ class User(AbstractUser):
                 name="unique_non_blank_email",
             ),
         ]
+
+    def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
+        """param(by): who made the change, or None for the system.
+        return(list[str]): the fields it changed, for update_fields."""
+        if self.archived_at is not None and status != MembershipStatus.ARCHIVED:
+            # Archived stays archived; the change waits here until reactivation restores it.
+            self.status_before_archive = status
+            return ["status_before_archive"]
+        if status != self.membership_status:
+            self.membership_status = status
+            self.membership_status_changed_at = timezone.now()
+            self.membership_status_changed_by = by
+        return list(STATUS_CHANGE_FIELDS)
 
     @property
     def full_name(self) -> str:
