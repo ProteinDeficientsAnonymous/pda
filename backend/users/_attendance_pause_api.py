@@ -69,7 +69,7 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
 def attendance_pause_preview(request, user_id: UUID):
     require_manage_users(request, "attendance_pause_preview", str(user_id))
     try:
-        user = User.objects.members_or_attendance_paused().get(pk=user_id)
+        user = User.objects.members_or_archived().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
