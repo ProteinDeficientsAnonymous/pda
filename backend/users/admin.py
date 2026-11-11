@@ -8,7 +8,14 @@ from users.roles import PROTECTED_ROLE_NAMES, Role
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = ("phone_number", "first_name", "last_name", "is_staff", "created_at")
-    list_filter = ("is_staff", "is_superuser", "is_active", "is_paused", "has_joined_whatsapp")
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "is_paused",
+        "membership_status",
+        "has_joined_whatsapp",
+    )
     search_fields = ("phone_number", "first_name", "last_name", "email")
     ordering = ("-created_at",)
     fieldsets = (

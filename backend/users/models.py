@@ -57,6 +57,23 @@ def normalize_phone_number(raw: str) -> str:
     return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 
+class MembershipStatus(models.TextChoices):
+    NONE = "none", "none"
+    TENTATIVE = "tentative", "tentative"
+    ACTIVE_MEMBER = "active_member", "active member"
+    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
+    ARCHIVED = "archived", "archived"
+    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
+
+
+# Paused members keep the member role; only active members get full access.
+MEMBER_STATUSES = (
+    MembershipStatus.ACTIVE_MEMBER,
+    MembershipStatus.GUIDELINES_PAUSED,
+    MembershipStatus.ATTENDANCE_PAUSED,
+)
+
+
 class WeekStart:
     SUNDAY = "sunday"
     MONDAY = "monday"
@@ -142,6 +159,16 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=64, blank=True, default="")
     # Defaults False; non-members are excluded via objects.members().
     is_member = models.BooleanField(default=False, db_index=True)
+    membership_status = models.CharField(
+        max_length=20,
+        choices=MembershipStatus.choices,
+        default=MembershipStatus.NONE,
+        db_index=True,
+    )
+    membership_status_changed_at = models.DateTimeField(null=True, blank=True)
+    membership_status_changed_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.
     email = models.EmailField(null=True, blank=True)
@@ -185,6 +212,9 @@ class User(AbstractUser):
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    status_before_archive = models.CharField(
+        max_length=20, choices=MembershipStatus.choices, null=True, blank=True
+    )
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY

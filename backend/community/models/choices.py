@@ -51,6 +51,8 @@ class JoinRequestStatus(models.TextChoices):
     TENTATIVE = "tentative", "Tentatively approved"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
+    # Terminal: the tentative applicant was archived before they were approved.
+    CLOSED = "closed", "Closed"
 
 
 class RejectionReason(models.TextChoices):
