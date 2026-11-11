@@ -37,12 +37,12 @@ def test_final_approval_restamps_status_change(api_client, vettor_headers, sampl
     assert sample_join_request.status_changed_at > tentative_at
 
 
-def test_list_exposes_tentative_attribution(api_client, vettor_headers, sample_join_request):
+def test_list_exposes_status_change(api_client, vettor_headers, sample_join_request):
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
     response = api_client.get("/api/community/join-requests/", **vettor_headers)
     row = next(r for r in response.json() if r["id"] == str(sample_join_request.id))
-    assert row["tentative_by_name"] == "Vettor"
-    assert row["tentative_at"] is not None
+    assert row["status_changed_by_name"] == "Vettor"
+    assert row["status_changed_at"] is not None
 
 
 def test_backfill_uses_latest_audit_entry(vettor_user, test_user, sample_join_request):

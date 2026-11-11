@@ -4696,15 +4696,15 @@ export interface components {
             rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
             /**
              * Submitted At
              * Format: date-time
              */
             submitted_at: string;
-            /** Tentative At */
-            tentative_at?: string | null;
-            /** Tentative By Name */
-            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
