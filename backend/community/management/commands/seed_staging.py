@@ -138,7 +138,6 @@ class Command(BaseCommand):
             defaults = {
                 "first_name": f"perm: {key}",
                 "email": perm_email(key),
-                "is_member": True,
                 "membership_status": MembershipStatus.ACTIVE_MEMBER,
                 "needs_onboarding": False,
                 "onboarded_at": now,
@@ -186,7 +185,6 @@ class Command(BaseCommand):
                 phone_number=cond_phone(index),
                 defaults={
                     "first_name": condition_label(combo),
-                    "is_member": True,
                     "membership_status": MembershipStatus.ACTIVE_MEMBER,
                 },
             )
@@ -206,10 +204,7 @@ class Command(BaseCommand):
         for index, spec in enumerate(PRIVACY_SPECS):
             user, created = User.objects.get_or_create(
                 phone_number=privacy_phone(index),
-                defaults={
-                    "is_member": True,
-                    "membership_status": MembershipStatus.ACTIVE_MEMBER,
-                },
+                defaults={"membership_status": MembershipStatus.ACTIVE_MEMBER},
             )
             user.first_name = spec.label
             user.last_name = ""
@@ -236,7 +231,6 @@ class Command(BaseCommand):
         defaults = {
             "first_name": "reset: needs password reset",
             "email": reset_member_email(),
-            "is_member": True,
             "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "needs_onboarding": False,
             "onboarded_at": now,
@@ -301,7 +295,6 @@ class Command(BaseCommand):
             defaults={
                 "first_name": spec.label,
                 "email": nonmember_email(index) if spec.has_email else None,
-                "is_member": False,
                 "membership_status": MembershipStatus.NONE,
             },
         )

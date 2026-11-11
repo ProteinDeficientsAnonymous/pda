@@ -45,10 +45,8 @@ def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
         user.attendance_paused_at = user.attendance_paused_at or timezone.now()
     else:
         user.attendance_paused_at = None
-    user.is_member = status in (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
     user.status_before_archive = None
     fields = ["archived_at", "attendance_paused_at", "status_before_archive"]
-    fields.append("is_member")
     return [*fields, *user.set_membership_status(status, by=by)]
 
 
@@ -82,7 +80,6 @@ def _promote_public_rsvper(user, join_request, by: User) -> str:
     param(user): the public rsvper User to promote, linked to join_request.
     return(str): magic token replacing the rsvp tokens this revokes.
     """
-    user.is_member = True
     # Never onboarded and no password — dropping the token below strands them.
     user.needs_onboarding = True
     user.first_name, user.last_name = _resolve_names(join_request)
@@ -92,7 +89,6 @@ def _promote_public_rsvper(user, join_request, by: User) -> str:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(
         update_fields=[
-            "is_member",
             *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=by),
             "needs_onboarding",
             "first_name",
@@ -113,14 +109,12 @@ def promote_tentative_member(user, join_request, by: User) -> None:
     """
     # Their own name, not the application's — this path copies none (Issue 733).
     validate_display_name(user.first_name, field="first_name")
-    user.is_member = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:
         user.sms_consent_at = join_request.sms_consent_at
     user.save(
         update_fields=[
-            "is_member",
             *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=by),
             "guidelines_consent_at",
             "sms_consent_at",
@@ -184,7 +178,6 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
             first_name=join_request.first_name,
             last_name=join_request.last_name,
             email=join_request.email,
-            is_member=False,
             membership_status=MembershipStatus.TENTATIVE,
             **status_change_stamp(requesting_user),
         )

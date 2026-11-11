@@ -196,8 +196,6 @@ class TestUpdateUser:
         assert str(other_user.pk) in ids
 
     def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
         other_user.save(
             update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
         )
@@ -228,8 +226,6 @@ class TestUpdateUser:
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user
     ):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
         other_user.save(
             update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
         )

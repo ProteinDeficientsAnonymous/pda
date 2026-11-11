@@ -96,7 +96,6 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     with transaction.atomic():
         impact, details = release_held_events(request, user, keep_official=True)
         user.attendance_paused_at = timezone.now()
-        user.is_member = False
         user.has_joined_whatsapp = False
         user.unpaused_at = None
         user.save(
@@ -105,7 +104,6 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
                     MembershipStatus.ATTENDANCE_PAUSED, by=getattr(request, "auth", None)
                 ),
                 "attendance_paused_at",
-                "is_member",
                 "has_joined_whatsapp",
                 "unpaused_at",
             ]
@@ -206,11 +204,9 @@ def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | 
 def _unpause(request, user: User) -> None:
     with transaction.atomic():
         user.attendance_paused_at = None
-        user.is_member = True
         user.save(
             update_fields=[
                 "attendance_paused_at",
-                "is_member",
                 *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=request.auth),
             ]
         )

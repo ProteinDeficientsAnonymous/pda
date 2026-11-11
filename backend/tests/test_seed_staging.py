@@ -202,7 +202,6 @@ def test_seed_staging_reset_removes_only_scoped_rows():
         phone_number="+17025559999",
         first_name="real",
         last_name="person",
-        is_member=True,
         membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     call_command("seed_staging")
@@ -270,9 +269,7 @@ def test_seed_staging_reset_removes_approval_created_join_request_users():
     # then collides with the reseeded pending request and suppresses the welcome
     # modal (no token minted). --reset must clear the join-request band's users too.
     orphan = User.objects.create(
-        phone_number=joinreq_phone(0),
-        is_member=True,
-        membership_status=MembershipStatus.ACTIVE_MEMBER,
+        phone_number=joinreq_phone(0), membership_status=MembershipStatus.ACTIVE_MEMBER
     )
     call_command("seed_staging", "--reset")
     assert not User.objects.filter(phone_number=joinreq_phone(0)).exists()

@@ -33,8 +33,6 @@ def paused(db):
     user.roles.clear()
     user.attendance_paused_at = timezone.now() - timedelta(days=10)
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
-    user.is_member = False
-    user.save(update_fields=["attendance_paused_at", "attendance_grace_notified_at", "is_member"])
     user.save(
         update_fields=[
             "attendance_paused_at",

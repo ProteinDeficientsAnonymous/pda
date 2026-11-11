@@ -24,7 +24,6 @@ def public_rsvper(db, event):
         first_name="Non",
         last_name="Member",
         email="commenter@example.com",
-        is_member=False,
         membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
@@ -69,7 +68,6 @@ class TestPublicRsvpTokenComments:
             phone_number="+12025550166",
             first_name="No",
             last_name="Rsvp",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         user.set_unusable_password()

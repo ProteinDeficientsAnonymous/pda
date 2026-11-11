@@ -27,7 +27,6 @@ def tentative(db) -> User:
     return User.objects.create_user(
         phone_number="+12025550603",
         first_name="Tentative",
-        is_member=False,
         membership_status=MembershipStatus.TENTATIVE,
     )
 

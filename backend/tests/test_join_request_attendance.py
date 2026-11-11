@@ -47,7 +47,6 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="Guest",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         community_event = _make_event(
@@ -80,7 +79,6 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="Guest",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         event = _make_event(
@@ -107,7 +105,6 @@ class TestJoinRequestAttendedEvents:
             phone_number="+16505551234",
             password="x",
             first_name="GuestA",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         event = _make_event(host_user, "Club Night", days_ago=10, event_type=EventType.CLUB)

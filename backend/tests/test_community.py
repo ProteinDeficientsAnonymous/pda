@@ -169,7 +169,6 @@ class TestCheckPhone:
             phone_number="+12025550188",
             first_name="Public",
             last_name="RSVP",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         response = api_client.post(
