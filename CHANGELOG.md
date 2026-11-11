@@ -1,3 +1,22 @@
+# [0.228.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.3...v0.228.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **join-requests:** drop the is_member write from un-archiving ([2a03081](https://github.com/ProteinDeficientsAnonymous/pda/commit/2a0308175021fd0653ad3befdaba43853278b0f7))
+* **join-requests:** marking someone tentative sets their status and restores an archived account ([7dfd21c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7dfd21c2acb54acad4eb9c09c28944d76d27479e))
+* **join-requests:** marking someone tentative sets their status and restores an archived account ([#2345](https://github.com/ProteinDeficientsAnonymous/pda/issues/2345)) ([223c337](https://github.com/ProteinDeficientsAnonymous/pda/commit/223c337aa08c45792ff143f417d80d4cbe313f41))
+* **join-requests:** re-approving an archived account restores it, pause included ([7692fe3](https://github.com/ProteinDeficientsAnonymous/pda/commit/7692fe3f4859ccfc8a39d625f472c6b25a8c59a4))
+* **join-requests:** re-approving an archived account restores it, pause included ([#2346](https://github.com/ProteinDeficientsAnonymous/pda/issues/2346)) ([8a072a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a072a4a81e953d82e91c961ff080ca2a0be709a))
+* **join-requests:** un-archiving keeps is_member in step with the status ([244a47e](https://github.com/ProteinDeficientsAnonymous/pda/commit/244a47e2a67a34d91e8bef4431b8b7f9d1f3d6f0))
+* **users:** the backfill clears the attendance pause on archived guidelines-paused rows too ([c5ac989](https://github.com/ProteinDeficientsAnonymous/pda/commit/c5ac989ca4efd8b09e9bf6ab9fda4cc2480e0a39))
+
+
+### Features
+
+* **api:** expose membership_status; isLimited reads it ([49664bb](https://github.com/ProteinDeficientsAnonymous/pda/commit/49664bb6573ab49cb1d831de36b9ed340f42ca1c))
+* **api:** expose membership_status; isLimited reads it ([#2349](https://github.com/ProteinDeficientsAnonymous/pda/issues/2349)) ([143bc6b](https://github.com/ProteinDeficientsAnonymous/pda/commit/143bc6bfc03ca53c03091f728ff91dd0f743e109))
+
 ## [0.227.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.2...v0.227.3) (2026-11-09)
 
 
