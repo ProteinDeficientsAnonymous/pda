@@ -13,7 +13,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 JOIN_REQUESTS_URL = "/api/community/join-requests/"
 
@@ -44,7 +44,11 @@ class TestJoinRequestAttendedEvents:
     ):
 
         applicant = User.objects.create_user(
-            phone_number="+16505551234", password="x", first_name="Guest", is_member=False
+            phone_number="+16505551234",
+            password="x",
+            first_name="Guest",
+            is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         community_event = _make_event(
             host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
@@ -73,7 +77,11 @@ class TestJoinRequestAttendedEvents:
         """A bare phone match to a guest row must not surface that guest's history."""
 
         guest = User.objects.create_user(
-            phone_number="+16505551234", password="x", first_name="Guest", is_member=False
+            phone_number="+16505551234",
+            password="x",
+            first_name="Guest",
+            is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         event = _make_event(
             host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
@@ -96,7 +104,11 @@ class TestJoinRequestAttendedEvents:
         """Guest A's attendance must not appear on unlinked applicant B who shares A's phone."""
 
         guest_a = User.objects.create_user(
-            phone_number="+16505551234", password="x", first_name="GuestA", is_member=False
+            phone_number="+16505551234",
+            password="x",
+            first_name="GuestA",
+            is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         event = _make_event(host_user, "Club Night", days_ago=10, event_type=EventType.CLUB)
         EventRSVP.objects.create(
@@ -116,7 +128,10 @@ class TestJoinRequestAttendedEvents:
     def test_resolves_via_join_request_user_fk(self, api_client, vettor_headers, host_user):
 
         member = User.objects.create_user(
-            phone_number="+16505559999", password="x", first_name="Member", is_member=True
+            phone_number="+16505559999",
+            password="x",
+            first_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event = _make_event(host_user, "Official Gala", days_ago=3, event_type=EventType.OFFICIAL)
         EventRSVP.objects.create(
@@ -148,7 +163,10 @@ class TestJoinRequestAttendedEvents:
         """A member sharing the phone number of a JoinRequest isn't a guest match."""
 
         member = User.objects.create_user(
-            phone_number="+16505551234", password="x", first_name="Member", is_member=True
+            phone_number="+16505551234",
+            password="x",
+            first_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event = _make_event(host_user, "Club Meetup", days_ago=5, event_type=EventType.CLUB)
         EventRSVP.objects.create(
