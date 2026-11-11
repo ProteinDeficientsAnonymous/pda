@@ -12,7 +12,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -214,7 +214,10 @@ class TestMemberAttendanceAnalyticsEndpoint:
     def test_non_member_excluded(self, api_client, events_admin):
 
         guest = User.objects.create_user(
-            phone_number="+12025552004", password="x", first_name="Guest", is_member=False
+            phone_number="+12025552004",
+            password="x",
+            first_name="Guest",
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]

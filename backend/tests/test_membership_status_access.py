@@ -34,6 +34,16 @@ def test_guidelines_paused_is_not_limited():
     assert not User.objects.filter(limited_q(), pk=user.pk).exists()
 
 
+def test_members_excludes_archived_member():
+    archived = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
+    assert not User.objects.members().filter(pk=archived.pk).exists()
+
+
+def test_members_or_archived_includes_archived_user():
+    user = make_user(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
+    assert User.objects.members_or_archived().filter(pk=user.pk).exists()
+
+
 @pytest.mark.parametrize("status", [MembershipStatus.ACTIVE_MEMBER, MembershipStatus.TENTATIVE])
 def test_me_returns_membership_status(api_client, status):
     user = make_user(membership_status=status)

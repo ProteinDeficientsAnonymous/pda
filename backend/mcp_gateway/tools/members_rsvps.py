@@ -33,7 +33,12 @@ def _row(rsvp: EventRSVP) -> dict[str, Any]:
 def member_rsvps_page(
     member_id: UUID, since_days: int | None, limit: int, offset: int
 ) -> dict[str, Any]:
-    member = User.objects.members().filter(pk=member_id).only("first_name", "last_name").first()
+    member = (
+        User.objects.members_or_archived()
+        .filter(pk=member_id)
+        .only("first_name", "last_name")
+        .first()
+    )
     if member is None:
         raise ToolError("no member with that id")
     qs = EventRSVP.objects.filter(user=member)
