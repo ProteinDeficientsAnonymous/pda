@@ -12,7 +12,13 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
+from users.models import (
+    PUBLIC_FORM_PHONE_REGION,
+    PublicRsvpToken,
+    User,
+    status_change_stamp,
+    validate_phone,
+)
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
@@ -114,7 +120,8 @@ def _create_public_rsvper(
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
-                phone_number=phone, defaults={**defaults, "email": email or None}
+                phone_number=phone,
+                defaults={**defaults, "email": email or None, **status_change_stamp(None)},
             )
     except IntegrityError:
         _reject_email_collision(request, email)

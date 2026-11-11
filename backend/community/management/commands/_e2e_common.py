@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import User
+from users.models import MembershipStatus, User
 
 from community.models import Event, EventStatus, EventType, PageVisibility
 
@@ -39,6 +39,7 @@ def member_user(phone: str) -> User:
         last_name="Member",
         email=f"{phone.lstrip('+')}@example.com",
         is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         password=E2E_PASSWORD,
     )
@@ -53,6 +54,7 @@ def non_member_user(phone: str) -> User:
         last_name="Guest",
         email=f"{phone.lstrip('+')}@example.com",
         is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
 
 

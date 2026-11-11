@@ -27,7 +27,13 @@ from users.helpers import (
     validate_member_role_required,
     visible_name,
 )
-from users.models import ADMIN_ENTERED_PHONE_REGION, User, validate_phone
+from users.models import (
+    ADMIN_ENTERED_PHONE_REGION,
+    MembershipStatus,
+    User,
+    status_change_stamp,
+    validate_phone,
+)
 from users.permissions import PermissionKey
 from users.roles import Role
 from users.schemas import (
@@ -155,7 +161,9 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         user = User.objects.create_user(
             phone_number=validated_phone,
             is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
             needs_onboarding=True,
+            **status_change_stamp(request.auth),
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])
