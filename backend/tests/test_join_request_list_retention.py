@@ -193,13 +193,13 @@ class TestJoinRequestListRetention:
             first_name="Paused",
             phone_number="+12025550104",
             status=JoinRequestStatus.APPROVED,
-            approved_at=paused_at - timedelta(days=30),
+            status_changed_at=paused_at - timedelta(days=30),
         )
         new = JoinRequest.objects.create(
             first_name="Paused",
             phone_number="+12025550104",
             status=JoinRequestStatus.TENTATIVE,
-            tentative_at=paused_at + timedelta(days=1),
+            status_changed_at=paused_at + timedelta(days=1),
         )
 
         ids = [
