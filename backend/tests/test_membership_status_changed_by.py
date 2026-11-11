@@ -1,8 +1,11 @@
 import pytest
 from community.models import JoinRequestStatus
+from django.utils import timezone
 from users.models import MembershipStatus, User
 
+from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, post
+from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
@@ -52,3 +55,24 @@ def test_public_rsvp_stamps_no_actor(api_client):
     rsvper = User.objects.get(membership_status=MembershipStatus.NONE)
     assert rsvper.membership_status_changed_at is not None
     assert rsvper.membership_status_changed_by is None
+
+
+def test_archive_records_the_admin(api_client, manage_users_user, manage_users_headers):
+    member = make_user(last_login=timezone.now())
+    response = api_client.delete(f"/api/auth/users/{member.pk}/", **manage_users_headers)
+    assert response.status_code == 204
+    member.refresh_from_db()
+    assert member.membership_status_changed_by == manage_users_user
+
+
+def test_self_delete_records_the_user(api_client):
+    member = make_user(password="testpass123")
+    response = api_client.post(
+        "/api/auth/me/delete/",
+        {"password": "testpass123"},
+        content_type="application/json",
+        **auth_headers_for(member),
+    )
+    assert response.status_code == 204
+    member.refresh_from_db()
+    assert member.membership_status_changed_by == member
