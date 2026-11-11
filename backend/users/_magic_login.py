@@ -3,7 +3,7 @@
 import logging
 
 from community.validation import Code, raise_validation
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.http import HttpResponse
@@ -43,7 +43,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
     # password-set on behalf of the link's target. Force explicit logout first.
     current_user = _current_jwt_user(request)
     if current_user is not None and current_user.pk != magic.user.pk:
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "magic_login_cross_user_blocked",
             request,
@@ -55,7 +55,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
         )
         raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
     if magic.user.archived_at is not None:
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "magic_login_archived",
             request,
@@ -63,7 +63,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if magic.user.is_paused:
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "magic_login_paused",
             request,
@@ -84,7 +84,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
             )
         except MagicLoginToken.DoesNotExist:
-            audit_log(
+            audit_log_before_raise(
                 logging.WARNING,
                 "magic_login_failed",
                 request,
@@ -93,7 +93,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
             raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
         _validate_magic_user(request, magic)
         if magic.used or magic.is_expired:
-            audit_log(
+            audit_log_before_raise(
                 logging.WARNING,
                 "magic_login_failed",
                 request,

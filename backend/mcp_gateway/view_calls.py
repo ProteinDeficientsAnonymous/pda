@@ -5,7 +5,7 @@ from typing import Any
 
 from asgiref.sync import sync_to_async
 from community.validation import ValidationException
-from config.audit import mark_request_via_mcp
+from config.audit import flush_rollback_safe_audits, mark_request_via_mcp
 from config.validation_handlers import serialize_validation_exception
 from django.core.handlers.asgi import ASGIRequest
 from django.http import HttpRequest
@@ -53,12 +53,19 @@ def validation_tool_error(exc: ValidationException) -> ToolError:
     return tool_error(exc.status_code, [serialize_validation_exception(exc)])
 
 
+def _run_view(view: Callable[..., Any], request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
+    try:
+        return view(request, *args, **kwargs)
+    finally:
+        flush_rollback_safe_audits(request)
+
+
 async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: Any) -> Any:
     """Run a ninja route handler as `user`; return its body as JSON-able data or raise ToolError."""
     request = _view_request(user)
     # No outer atomic, like the website: a rollback would undo the DB-backed rate-limit counter.
     try:
-        result = await sync_to_async(view)(request, *args, **kwargs)
+        result = await sync_to_async(_run_view)(view, request, *args, **kwargs)
     except ValidationException as exc:
         raise validation_tool_error(exc) from exc
     if isinstance(result, Status) and result.status_code >= 400:
