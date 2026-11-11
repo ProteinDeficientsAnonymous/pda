@@ -2,6 +2,8 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
+from tests._users import make_user
+from users.models import MembershipStatus
 from users.schemas import UserOut
 
 
@@ -23,3 +25,18 @@ class TestUserOutPauseFields:
 
         assert out.attendance_paused_at == paused_at
         assert out.restored_at == restored_at
+
+    @pytest.mark.parametrize(
+        ("fields", "is_paused"),
+        [
+            ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
+            ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, False),
+            ({"status_before_archive": MembershipStatus.GUIDELINES_PAUSED}, True),
+            ({"status_before_archive": MembershipStatus.ATTENDANCE_PAUSED}, False),
+        ],
+        ids=["guidelines", "attendance", "archived-guidelines", "archived-attendance"],
+    )
+    def test_is_paused_is_derived_from_status(self, fields, is_paused):
+        if "status_before_archive" in fields:
+            fields["archived_at"] = timezone.now()
+        assert UserOut.from_user(make_user(**fields)).is_paused is is_paused

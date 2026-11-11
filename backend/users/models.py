@@ -126,7 +126,6 @@ class UserManager(BaseUserManager):
         return self.get_queryset().filter(
             membership_status=MembershipStatus.ACTIVE_MEMBER,
             is_active=True,
-            is_paused=False,
             archived_at__isnull=True,
         )
 

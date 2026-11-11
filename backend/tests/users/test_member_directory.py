@@ -18,8 +18,7 @@ class TestMemberDirectory:
         assert str(other_user.pk) in ids
 
     def test_excludes_paused_users(self, api_client, auth_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.set_guidelines_pause(True, by=None))
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
