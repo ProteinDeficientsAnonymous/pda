@@ -26,7 +26,7 @@ router = management_router
 def delete_user(request, user_id: str):
     require_manage_users(request, "delete_user", user_id)
     try:
-        user = User.objects.members_or_attendance_paused().get(pk=user_id)
+        user = User.objects.managed().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):

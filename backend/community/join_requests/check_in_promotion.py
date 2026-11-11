@@ -30,8 +30,10 @@ class CheckInOutcome(StrEnum):
 
 def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
     """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
-    # Nobody vouches for their own check-in.
-    if user.pk == request.auth.pk or not is_official_or_club(event.event_type):
+    # Nobody vouches for their own check-in; an archived user comes back only through a vetter.
+    if user.pk == request.auth.pk or user.archived_at is not None:
+        return None
+    if not is_official_or_club(event.event_type):
         return None
     if user.attendance_paused_at is not None:
         return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None

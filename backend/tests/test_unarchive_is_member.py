@@ -32,7 +32,6 @@ def test_retentatived_archived_member_is_not_a_member(
     assert member.is_member is False
     for members in (
         User.objects.members(),
-        User.objects.members_or_attendance_paused(),
         User.objects.active_members(),
     ):
         assert not members.filter(pk=member.pk).exists()

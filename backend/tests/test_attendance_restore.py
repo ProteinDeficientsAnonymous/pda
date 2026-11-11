@@ -116,6 +116,17 @@ class TestRestoreOnCheckIn:
         _check_in(api_client, host, paused, for_plus_one=True)
         assert paused.attendance_paused_at is not None
 
+    def test_archived_user_is_never_restored_or_promoted(self, api_client, host, paused):
+        _attended(paused, event_type=EventType.CLUB)
+        jr = _tentative_request(paused)
+        User.objects.filter(pk=paused.pk).update(
+            archived_at=timezone.now(), membership_status=MembershipStatus.ARCHIVED
+        )
+        _check_in(api_client, host, paused)
+        jr.refresh_from_db()
+        assert paused.attendance_paused_at is not None
+        assert jr.status == JoinRequestStatus.TENTATIVE
+
     def test_host_marking_themselves_never_restores(self, api_client, paused):
         _attended(paused)
         _check_in(api_client, paused, paused)
