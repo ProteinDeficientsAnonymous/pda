@@ -23,6 +23,11 @@ PUBLIC_FORM_PHONE_REGION = None
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
 
+def status_change_stamp(by: "User | None") -> dict:
+    """Create kwargs that record who set a new account's first status."""
+    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
+
+
 def can_sign_in_q() -> Q:
     """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
     tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
@@ -149,6 +154,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_member", True)
+        extra_fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
 

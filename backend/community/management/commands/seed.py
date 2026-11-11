@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 from community.models import Event, EventRSVP, EventTag, JoinRequest, JoinRequestStatus
@@ -91,6 +91,7 @@ class Command(BaseCommand):
             "email": data.email,
             "bio": data.bio,
             "is_member": True,
+            "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
             "contact_privacy_consent_at": now,
@@ -130,6 +131,7 @@ class Command(BaseCommand):
                     "last_name": data.last_name,
                     "email": data.email,
                     "is_member": False,
+                    "membership_status": MembershipStatus.NONE,
                 },
             )
             if created:
