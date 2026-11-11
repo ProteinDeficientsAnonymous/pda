@@ -64,7 +64,9 @@ describe('useJoinRequests', () => {
         status: 'pending',
         userId: null,
         previouslyArchived: false,
+        previousArchive: null,
         previouslyRejected: false,
+        previousRejection: null,
         statusChangedAt: null,
         statusChangedByName: null,
         approvedViaEventId: null,
@@ -112,6 +114,86 @@ describe('useJoinRequests', () => {
     expect(result.current.data?.[0]?.rsvpEvents).toEqual([
       { eventId: 'evt-1', title: 'Potluck', startDatetime: '2026-03-01T18:00:00Z' },
     ]);
+  });
+
+  it('maps previous_rejection from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-5',
+          full_name: 'Lee Park',
+          phone_number: '+12125550333',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: null,
+          previous_rejection: {
+            status_changed_at: '2023-11-02T18:00:00Z',
+            status_changed_by_name: 'Sam Vettor',
+            rejection_reason: '',
+            rejection_note: '',
+          },
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: '2023-11-02T18:00:00Z',
+      statusChangedByName: 'Sam Vettor',
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+  });
+
+  it('maps previous_archive from the wire and fills missing fields with null', async () => {
+    const wire = {
+      full_name: 'Lee Park',
+      phone_number: '+12125550333',
+      answers: [],
+      submitted_at: '2024-04-01T09:00:00Z',
+      status: 'pending',
+      user_id: null,
+    };
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          ...wire,
+          id: 'jr-6',
+          previous_archive: {
+            archived_at: '2023-08-01T12:00:00Z',
+            archived_by_name: 'Sam Vettor',
+            paused_status: 'attendance_paused',
+          },
+          previous_rejection: {},
+        },
+        { ...wire, id: 'jr-7', previous_archive: {} },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousArchive).toEqual({
+      archivedAt: '2023-08-01T12:00:00Z',
+      archivedByName: 'Sam Vettor',
+      pausedStatus: 'attendance_paused',
+    });
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: null,
+      statusChangedByName: null,
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+    expect(result.current.data?.[1]?.previousArchive).toEqual({
+      archivedAt: null,
+      archivedByName: null,
+      pausedStatus: null,
+    });
   });
 
   it('maps attended_events from the wire', async () => {
