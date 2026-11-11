@@ -6,7 +6,7 @@ from community.models import EventRSVP, RSVPStatus
 from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
@@ -97,7 +97,7 @@ def test_weekly_digest_omits_location(fake_email_sender):
         password="testpass123",
         email="digest@example.com",
         first_name="Test",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     event = make_official_event(
         title="Loft Potluck",

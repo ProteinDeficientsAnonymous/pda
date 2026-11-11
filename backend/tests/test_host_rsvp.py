@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
@@ -37,7 +37,10 @@ def guest(db):
 @pytest.fixture
 def public_rsvper(db):
     return User.objects.create_user(
-        phone_number="+12025559105", first_name="Walkin", is_member=False
+        phone_number="+12025559105",
+        first_name="Walkin",
+        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
 
 

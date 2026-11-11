@@ -4,7 +4,7 @@ import pytest
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -24,7 +24,10 @@ def member(db) -> User:
 @pytest.fixture
 def tentative(db) -> User:
     return User.objects.create_user(
-        phone_number="+12025550603", first_name="Tentative", is_member=False
+        phone_number="+12025550603",
+        first_name="Tentative",
+        is_member=False,
+        membership_status=MembershipStatus.TENTATIVE,
     )
 
 

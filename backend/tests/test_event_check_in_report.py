@@ -12,7 +12,7 @@ from community.models import (
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 
@@ -35,7 +35,11 @@ def members(db):
 @pytest.fixture
 def guest_user(db):
     return User.objects.create_user(
-        phone_number="+12025559200", password="x", first_name="Guest", is_member=False
+        phone_number="+12025559200",
+        password="x",
+        first_name="Guest",
+        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
 
 
@@ -370,6 +374,7 @@ class TestCheckInReportCsvEndpoint:
             password="x",
             first_name="=HYPERLINK(1)",
             is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         EventRSVP.objects.create(event=past_event, user=attacker, status=RSVPStatus.ATTENDING)
         response = api_client.get(

@@ -2,7 +2,7 @@ import pytest
 from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -22,7 +22,10 @@ def events_admin(db):
 @pytest.fixture
 def plain_member(db):
     return User.objects.create_user(
-        phone_number="+12025552001", password="x", first_name="Plain", is_member=True
+        phone_number="+12025552001",
+        password="x",
+        first_name="Plain",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -33,14 +36,17 @@ def alice(db):
         password="x",
         first_name="Alice",
         last_name="Smith",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
 @pytest.fixture
 def bob(db):
     return User.objects.create_user(
-        phone_number="+12025552003", password="x", first_name="Bob", is_member=True
+        phone_number="+12025552003",
+        password="x",
+        first_name="Bob",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -127,14 +133,14 @@ class TestPreviewEndpoint:
             password="x",
             first_name="Sam",
             nickname="Sam",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         User.objects.create_user(
             phone_number="+12025552011",
             password="x",
             first_name="Sammy",
             nickname="Sam",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.post(
             "/api/community/events/attendance-import/preview/",
