@@ -312,7 +312,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 
     old_is_paused = user.is_paused
     was_paused = has_pause(user)
-    _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
+    _apply_user_patch(user, user_id, payload, requester=request.auth)
     user.save()
 
     _audit_user_update(request, user, user_id, payload, old_is_paused)
@@ -375,8 +375,9 @@ def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str
         raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
 
 
-def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_id: str) -> None:
+def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester: User) -> None:
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
+    requester_id = str(requester.pk)
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
     resolve_name_fields(user, payload)
@@ -386,6 +387,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     _validate_pause_change(user, payload.attendance_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
+        user.set_guidelines_pause(payload.is_paused, by=requester)
     if payload.is_paused:
         user.unpaused_at = None
     if payload.has_joined_whatsapp is not None:

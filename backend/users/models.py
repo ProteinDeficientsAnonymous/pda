@@ -268,6 +268,26 @@ class User(AbstractUser):
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
 
+    def set_guidelines_pause(self, paused: bool, *, by: "User | None") -> list[str]:
+        """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
+        if paused == self.is_guidelines_paused:
+            return []
+        self.attendance_paused_at = None if paused else timezone.now()
+        status = (
+            MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
+        )
+        if not paused:
+            self.has_joined_whatsapp = False
+        fields = ["attendance_paused_at", "has_joined_whatsapp"]
+        return [*fields, *self.set_membership_status(status, by=by)]
+
+    @property
+    def is_guidelines_paused(self) -> bool:
+        """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        if self.membership_status == MembershipStatus.ARCHIVED:
+            return self.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
+        return self.membership_status == MembershipStatus.GUIDELINES_PAUSED
+
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()

@@ -1,6 +1,7 @@
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
+from django.utils import timezone
 from users._archive import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus
 
@@ -75,3 +76,17 @@ def test_archiving_remembers_the_pause(rf, status):
     archive_user(rf.get("/"), paused)
     paused.refresh_from_db()
     assert paused.status_before_archive == status
+
+
+@pytest.mark.parametrize(
+    ("paused", "before"),
+    [(True, MembershipStatus.GUIDELINES_PAUSED), (False, MembershipStatus.ATTENDANCE_PAUSED)],
+)
+def test_guidelines_pause_on_an_archived_user_sets_the_restored_pause(paused, before):
+    archived = make_user(
+        archived_at=timezone.now(),
+        status_before_archive=None if paused else MembershipStatus.GUIDELINES_PAUSED,
+    )
+    archived.set_guidelines_pause(paused, by=None)
+    assert archived.membership_status == MembershipStatus.ARCHIVED
+    assert archived.status_before_archive == before
