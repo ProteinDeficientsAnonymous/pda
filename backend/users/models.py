@@ -82,6 +82,7 @@ MEMBER_STATUSES = (
     MembershipStatus.GUIDELINES_PAUSED,
     MembershipStatus.ATTENDANCE_PAUSED,
 )
+PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
 
 
 class WeekStart:
@@ -267,6 +268,13 @@ class User(AbstractUser):
             self.membership_status_changed_at = timezone.now()
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
+
+    @property
+    def is_guidelines_paused(self) -> bool:
+        """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        if self.membership_status == MembershipStatus.ARCHIVED:
+            return self.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
+        return self.membership_status == MembershipStatus.GUIDELINES_PAUSED
 
     @property
     def full_name(self) -> str:
