@@ -32,7 +32,9 @@ class TestSetAttendancePause:
 
     @pytest.mark.parametrize("row_exists", [False, True])
     def test_rejects_an_unknown_or_non_member_id(self, manage_users_user, row_exists):
-        missing = str(make_user(is_member=False).pk if row_exists else uuid.uuid4())
+        missing = str(
+            make_user(membership_status=MembershipStatus.NONE).pk if row_exists else uuid.uuid4()
+        )
         assert f"no member with id {missing}" in tool_error(
             manage_users_user, TOOL, member_id=missing, paused=True
         )

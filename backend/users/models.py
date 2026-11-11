@@ -106,7 +106,7 @@ class UserManager(BaseUserManager):
         Use on member-facing surfaces (directory, roles, recipient lists). The
         default manager returns both, for auth/login/join lookups by phone/email.
         """
-        return self.get_queryset().filter(is_member=True)
+        return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
 
     def members_or_attendance_paused(self):
         """Members plus attendance-paused ex-members, who admins still manage as members."""
@@ -114,23 +114,15 @@ class UserManager(BaseUserManager):
             models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
         )
 
+    def members_or_archived(self):
+        """Members plus archived members: everyone admins manage as members."""
+        return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
+
     def active_members(self):
-        """Members who should appear on member-facing surfaces.
-
-        Bundles the full visibility predicate so call sites can't forget part of
-        it (a bare ``members()`` would still leak paused/archived users). Use this
-        for member-facing directory, profile, and search lookups.
-
-        ``needs_onboarding`` is deliberately NOT filtered here — it's only excluded
-        by the directory, which adds ``needs_onboarding=False`` itself. The profile
-        and search surfaces intentionally include onboarding-pending members.
-
-        On ``is_active``: this is Django's built-in ``AbstractUser`` flag, which the
-        app never sets to False (``is_paused`` is the product's live suspension flag,
-        enforced at the auth gate). It's kept here as cheap defense-in-depth guarding
-        the only path that can deactivate a user — the Django admin.
-        """
-        return self.members().filter(
+        """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""
+        # is_active is only ever cleared from the Django admin; kept as defense in depth.
+        return self.get_queryset().filter(
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
             is_active=True,
             is_paused=False,
             archived_at__isnull=True,

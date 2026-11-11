@@ -15,7 +15,7 @@ from mcp_gateway.view_calls import call_view
 
 async def _member(member_id: UUID) -> User:
     try:
-        return await User.objects.members_or_attendance_paused().aget(pk=member_id)
+        return await User.objects.members_or_archived().aget(pk=member_id)
     except User.DoesNotExist:
         raise ToolError(f"no member with id {member_id}") from None
 

@@ -263,8 +263,9 @@ class TestMemberProfile:
         assert response.status_code == 404
 
     def test_member_profile_returns_404_for_non_member(self, api_client, auth_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 

@@ -52,3 +52,10 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
     response = api_client.post(path, payload, content_type="application/json", **headers)
     assert response.status_code in (200, 201)
     assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.ACTIVE_MEMBER
+
+
+def test_guidelines_paused_member_stays_in_members():
+    paused = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
+    assert User.objects.members().filter(pk=paused.pk).exists()
+    assert not User.objects.active_members().filter(pk=paused.pk).exists()
