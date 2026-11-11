@@ -48,6 +48,15 @@ class JoinRequest(models.Model):
         choices=JoinRequestStatus.choices,
         default=JoinRequestStatus.PENDING,
     )
+    # Last move between statuses; the audit log keeps the history.
+    status_changed_at = models.DateTimeField(null=True, blank=True)
+    status_changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="status_changed_join_requests",
+    )
     tentative_at = models.DateTimeField(null=True, blank=True)
     tentative_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
