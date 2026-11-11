@@ -19,8 +19,10 @@ from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
 from community.join_requests._history import (
     PhoneLookups,
+    PreviousRejectionOut,
     phone_history,
     phone_lookups,
+    previous_rejection_out,
 )
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
@@ -71,6 +73,7 @@ class JoinRequestOut(BaseModel):
     # A prior request from this number was rejected — rejected applicants may
     # re-apply, so vettors need the history on the fresh request.
     previously_rejected: bool = False
+    previous_rejection: PreviousRejectionOut | None = None
     status_changed_at: datetime | None = None
     status_changed_by_name: str | None = None
     approved_via_event_id: str | None = None
@@ -215,6 +218,7 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         user_id=str(user.id) if user else None,
         previously_archived=history.previous_archive is not None,
         previously_rejected=history.previous_rejection is not None,
+        previous_rejection=previous_rejection_out(history.previous_rejection),
         status_changed_at=jr.status_changed_at,
         status_changed_by_name=jr.status_changed_by.full_name if jr.status_changed_by else None,
         **_approving_event_fields(jr),
