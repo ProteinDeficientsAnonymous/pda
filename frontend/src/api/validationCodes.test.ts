@@ -53,6 +53,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says to lift a guidelines pause before an attendance pause', () => {
+    expect(messageForCode({ code: Code.User.GuidelinesPaused, field: 'attendance_paused' })).toBe(
+      'lift the guidelines pause before pausing for attendance',
+    );
+  });
+
   it('explains an empty cash app csv', () => {
     expect(messageForCode({ code: Code.CashAppImport.CsvEmpty, field: null })).toMatch(
       /doesn't have any rows/,
