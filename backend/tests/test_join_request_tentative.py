@@ -6,6 +6,7 @@ from community.models import (
     EventRSVP,
     EventType,
     JoinRequestStatus,
+    RejectionReason,
     RSVPStatus,
 )
 from community.validation import Code
@@ -227,20 +228,24 @@ class TestManualFullApproveFromTentative:
         assert sample_join_request.user.is_member is True
         fake_email_sender.send.assert_called()
 
-    def test_tentative_to_rejected_does_not_promote(
+    def test_tentative_cannot_be_rejected(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
         self._to_tentative(api_client, sample_join_request, vettor_headers)
+        fake_email_sender.send.reset_mock()
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"status": JoinRequestStatus.REJECTED, "rejection_reason": RejectionReason.VEGETARIAN},
             content_type="application/json",
             **vettor_headers,
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
+        assert_error_code(response, Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED)
         sample_join_request.refresh_from_db()
-        assert sample_join_request.status == JoinRequestStatus.REJECTED
-        assert sample_join_request.user.is_member is False
+        assert sample_join_request.status == JoinRequestStatus.TENTATIVE
+        assert sample_join_request.rejection_reason == ""
+        assert sample_join_request.user.membership_status == MembershipStatus.TENTATIVE
+        fake_email_sender.send.assert_not_called()
 
     def test_approved_cannot_be_redecided(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(

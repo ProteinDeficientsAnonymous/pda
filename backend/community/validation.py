@@ -195,6 +195,7 @@ class Code:
     class JoinRequest:
         NOT_FOUND = "join_request.not_found"
         ALREADY_DECIDED = "join_request.already_decided"
+        TENTATIVE_CANNOT_BE_REJECTED = "join_request.tentative_cannot_be_rejected"
         ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"

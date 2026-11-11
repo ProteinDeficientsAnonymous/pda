@@ -846,6 +846,11 @@
         "params": []
       },
       {
+        "name": "TENTATIVE_CANNOT_BE_REJECTED",
+        "value": "join_request.tentative_cannot_be_rejected",
+        "params": []
+      },
+      {
         "name": "ONLY_REJECTED_CAN_BE_UN_REJECTED",
         "value": "join_request.only_rejected_can_be_un_rejected",
         "params": []

@@ -23,6 +23,20 @@ function renderCard(request: JoinRequestSummary) {
   );
 }
 
+describe('JoinRequestCard tentative', () => {
+  it('offers no reject and points to archiving from the members screen', () => {
+    renderCard(makeRequest({ status: JoinRequestStatus.TENTATIVE, userId: 'u1' }));
+
+    expect(screen.queryByRole('button', { name: 'reject' })).not.toBeInTheDocument();
+    expect(screen.getByText(/tentative members can.t be rejected/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'members screen' })).toHaveAttribute(
+      'href',
+      '/admin/members/u1',
+    );
+    expect(screen.queryByText(/pause/)).not.toBeInTheDocument();
+  });
+});
+
 describe('JoinRequestCard decision', () => {
   it('attributes a rejection to whoever last changed the status', () => {
     renderCard(

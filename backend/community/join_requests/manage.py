@@ -361,6 +361,10 @@ def _apply_status_transition(
             raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
 
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
+        # A tentative person who shouldn't stay is archived from the members screen instead.
+        if was_tentative and status == JoinRequestStatus.REJECTED:
+            raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
+
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
             _, magic_token = provision_tentative_user(join_request, actor)
