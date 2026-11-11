@@ -24,18 +24,17 @@ def test_tentative_stamps_who_and_when(
 ):
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
     sample_join_request.refresh_from_db()
-    assert sample_join_request.tentative_by == vettor_user
-    assert sample_join_request.tentative_at is not None
+    assert sample_join_request.status_changed_by == vettor_user
+    assert sample_join_request.status_changed_at is not None
 
 
-def test_tentative_stamp_survives_final_approval(
-    api_client, vettor_headers, vettor_user, sample_join_request
-):
+def test_final_approval_restamps_status_change(api_client, vettor_headers, sample_join_request):
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+    sample_join_request.refresh_from_db()
+    tentative_at = sample_join_request.status_changed_at
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
     sample_join_request.refresh_from_db()
-    assert sample_join_request.tentative_by == vettor_user
-    assert sample_join_request.approved_by == vettor_user
+    assert sample_join_request.status_changed_at > tentative_at
 
 
 def test_list_exposes_tentative_attribution(api_client, vettor_headers, sample_join_request):

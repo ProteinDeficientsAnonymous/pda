@@ -327,6 +327,8 @@ def list_join_requests(request):
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
     now = timezone.now()
     join_request.status = status
+    join_request.status_changed_at = timezone.now()
+    join_request.status_changed_by = actor
     if status == JoinRequestStatus.TENTATIVE:
         join_request.tentative_at = now
         join_request.tentative_by = actor

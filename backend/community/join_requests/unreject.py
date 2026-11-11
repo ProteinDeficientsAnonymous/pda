@@ -3,6 +3,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
@@ -52,9 +53,19 @@ def unreject_join_request(request, id: UUID):
         raise_validation(Code.JoinRequest.OPEN_REQUEST_EXISTS, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
+    join_request.status_changed_at = timezone.now()
+    join_request.status_changed_by = request.auth
     join_request.rejection_reason = ""
     join_request.rejection_note = ""
-    join_request.save(update_fields=["status", "rejection_reason", "rejection_note"])
+    join_request.save(
+        update_fields=[
+            "status",
+            "status_changed_at",
+            "status_changed_by",
+            "rejection_reason",
+            "rejection_note",
+        ]
+    )
 
     audit_log(
         logging.INFO,
