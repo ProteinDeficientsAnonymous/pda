@@ -1,17 +1,18 @@
 from django.db.models import Q
+from users.models import MembershipStatus
 
 from community.models import EventType, PageVisibility
 from community.validation import Code, raise_validation
 
-# Event types a limited user (signed in, not yet is_member) engages
+# Event types a limited user (signed in, not an active member) engages
 # with fully. They're also the two types whose check-in promotes them to member
 # (see maybe_promote_tentative), so this is the path into the community.
 LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 
 
 def is_limited(user) -> bool:
-    """Signed in, not a member: tentatively approved or attendance-paused; never a public rsvper."""
-    return user is not None and not user.is_member
+    """Signed in without full access: tentative or attendance-paused; no other status signs in."""
+    return user is not None and user.membership_status != MembershipStatus.ACTIVE_MEMBER
 
 
 def limited_access_event_q() -> Q:

@@ -3,13 +3,11 @@ import uuid
 from datetime import timedelta
 
 import phonenumbers
-from community.models.choices import JoinRequestStatus
-from community.models.join_form import JoinRequest
 from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Exists, OuterRef, Q, prefetch_related_objects
+from django.db.models import Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -34,14 +32,13 @@ def status_change_stamp(by: "User | None") -> dict:
 
 
 def can_sign_in_q() -> Q:
-    """Members, plus non-members with a TENTATIVE join request or an attendance pause."""
-    tentative = JoinRequest.objects.filter(user=OuterRef("pk"), status=JoinRequestStatus.TENTATIVE)
-    return Q(is_member=True) | Exists(tentative) | Q(attendance_paused_at__isnull=False)
+    """Members, plus tentative and attendance-paused non-members."""
+    return Q(membership_status__in=SIGN_IN_STATUSES)
 
 
 def limited_q() -> Q:
     """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
-    return Q(is_member=False, is_paused=False) & can_sign_in_q()
+    return Q(membership_status__in=LIMITED_STATUSES)
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -82,7 +79,9 @@ MEMBER_STATUSES = (
     MembershipStatus.GUIDELINES_PAUSED,
     MembershipStatus.ATTENDANCE_PAUSED,
 )
+LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
 PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
 
 
