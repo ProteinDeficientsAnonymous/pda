@@ -36,6 +36,14 @@ def test_tentative_creates_tentative_user(api_client, vettor_headers, sample_joi
     assert _assert_in_sync(user) == MembershipStatus.TENTATIVE
 
 
+def test_tentative_moves_linked_public_rsvper(api_client, vettor_headers, sample_join_request):
+    rsvper = make_public_rsvper(sample_join_request.phone_number, "sprout@example.test")
+    sample_join_request.user = rsvper
+    sample_join_request.save(update_fields=["user"])
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+    assert _assert_in_sync(rsvper) == MembershipStatus.TENTATIVE
+
+
 def test_rejecting_public_rsvper_leaves_status(api_client, vettor_headers, sample_join_request):
     rsvper = make_public_rsvper(sample_join_request.phone_number, "sprout@example.test")
     sample_join_request.user = rsvper

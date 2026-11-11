@@ -7,6 +7,7 @@ from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
 from users.models import (
+    PAUSED_STATUSES,
     MembershipStatus,
     User,
     status_change_stamp,
@@ -29,6 +30,23 @@ def _resolve_names(join_request) -> tuple[str, str]:
     """
     validate_display_name(join_request.first_name, field="first_name")
     return join_request.first_name, join_request.last_name
+
+
+def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
+    """Clear the archive; a pause it was archived under comes back instead of active_status.
+
+    return(list[str]): the fields it changed, for update_fields.
+    """
+    user.archived_at = None
+    before = user.status_before_archive
+    status = before if before in PAUSED_STATUSES else active_status
+    if status == MembershipStatus.ATTENDANCE_PAUSED:
+        user.attendance_paused_at = user.attendance_paused_at or timezone.now()
+    else:
+        user.attendance_paused_at = None
+    user.status_before_archive = None
+    fields = ["archived_at", "attendance_paused_at", "status_before_archive"]
+    return [*fields, *user.set_membership_status(status, by=by)]
 
 
 def _reactivate_archived_user(existing_user, join_request):
@@ -131,12 +149,26 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
+def _make_tentative(user, by: User) -> list[str]:
+    """Move a non-member or archived account to tentative; return the changed fields."""
+    if user.membership_status == MembershipStatus.NONE:
+        return user.set_membership_status(MembershipStatus.TENTATIVE, by=by)
+    if user.archived_at is None:
+        return []
+    fields = _unarchive(user, MembershipStatus.TENTATIVE, by)
+    if user.membership_status == MembershipStatus.TENTATIVE:
+        # Archiving keeps every role, and a non-member may hold none.
+        user.roles.clear()
+    return fields
+
+
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
-    Reuses a non-member already linked or matched by phone; else creates one.
+    Reuses a non-member or archived account linked or matched by phone, un-archiving
+    it; else creates one.
     They get the same way in as a fully-approved member — onboarding plus a
-    magic token — but keep ``is_member=False`` and no member role, which is what
+    magic token — but stay non-members with no member role, which is what
     limits them to official/club events (see ``community/events/limited_access``).
     Returns ``(user, magic_token)``.
     """
@@ -161,6 +193,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
+    changed += _make_tentative(user, requesting_user)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
@@ -181,7 +214,8 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     user has a linked TENTATIVE join request. Returns whether a promotion
     happened, so the caller knows to send the approval email.
     """
-    if not is_official_or_club(event.event_type):
+    # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
+    if not is_official_or_club(event.event_type) or user.is_guidelines_paused:
         return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
