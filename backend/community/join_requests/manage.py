@@ -278,7 +278,7 @@ def _superseded_by_pause(jr: JoinRequest, lookups: PhoneLookups) -> bool:
     user = lookups.users_by_phone.get(jr.phone_number)
     if user is None or jr.status not in _ADMITTED_STATUSES:
         return False
-    decided_at = jr.approved_at or jr.tentative_at or jr.submitted_at
+    decided_at = jr.status_changed_at or jr.submitted_at
     stamps = (user.attendance_paused_at, user.restored_at)
     return any(stamp is not None and stamp > decided_at for stamp in stamps)
 

@@ -47,7 +47,7 @@ def _candidates(now: datetime) -> QuerySet:
             nudge_count=Count("attendance_nudges", distinct=True),
             last_nudged_at=Max("attendance_nudges__sent_at"),
             tentative_at=Max(
-                "join_requests__tentative_at",
+                "join_requests__status_changed_at",
                 filter=Q(join_requests__status=JoinRequestStatus.TENTATIVE),
             ),
         )

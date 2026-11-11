@@ -63,5 +63,5 @@ def make_join_request(
         email="j@e.com",
         user=user if linked else None,
         status=status,
-        approved_at=timezone.now() - timedelta(days=days_ago),
+        status_changed_at=timezone.now() - timedelta(days=days_ago),
     )
