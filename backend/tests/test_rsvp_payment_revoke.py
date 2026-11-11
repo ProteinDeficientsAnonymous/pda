@@ -7,6 +7,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from community.validation import Code
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
+from users.models import MembershipStatus
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
@@ -40,7 +41,9 @@ class TestHostRevokePayment:
         """Un-verifying only drops the host mark; the guest's own "i paid" still stands."""
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550301", first_name="Guest", is_member=True
+            phone_number="+14155550301",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.CANT_GO, **_verified(test_user)
@@ -73,7 +76,9 @@ class TestHostRevokePayment:
         """A mis-clicked verify on a guest who never claimed payment must fully undo."""
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550302", first_name="Guest", is_member=True
+            phone_number="+14155550302",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.MAYBE)
         url = PAYMENT_URL.format(event_id=event.id, user_id=guest.id)
@@ -120,7 +125,9 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550308", first_name="Guest", is_member=True
+            phone_number="+14155550308",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.MAYBE)
         url = PAYMENT_URL.format(event_id=event.id, user_id=guest.id)
@@ -155,7 +162,9 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550303", first_name="Guest", is_member=True
+            phone_number="+14155550303",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **_verified(test_user)
@@ -179,7 +188,9 @@ class TestHostRevokePayment:
         """No host verification stood, so nothing was taken away."""
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550304", first_name="Guest", is_member=True
+            phone_number="+14155550304",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, paid_confirmed_at=timezone.now()
@@ -199,7 +210,9 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550305", first_name="Guest", is_member=True
+            phone_number="+14155550305",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
         response = api_client.patch(
@@ -219,7 +232,9 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550311", first_name="Guest", is_member=True
+            phone_number="+14155550311",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         attested_at = timezone.now() - timedelta(days=1)
         EventRSVP.objects.create(
@@ -240,13 +255,17 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550312", first_name="Guest", is_member=True
+            phone_number="+14155550312",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         rsvp = EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **_verified(test_user)
         )
         cohost = django_user_model.objects.create_user(
-            phone_number="+14155550313", first_name="Cohost", is_member=True
+            phone_number="+14155550313",
+            first_name="Cohost",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event.co_hosts.add(cohost)
         api_client.patch(
@@ -264,7 +283,9 @@ class TestHostRevokePayment:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550306", first_name="Guest", is_member=True
+            phone_number="+14155550306",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.MAYBE, paid_confirmed_at=timezone.now()
@@ -280,7 +301,9 @@ class TestHostRevokePayment:
     def test_non_host_cannot_revoke(self, api_client, test_user, django_user_model):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550307", first_name="Guest", is_member=True
+            phone_number="+14155550307",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         seeded = EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **_verified(test_user)
@@ -300,7 +323,9 @@ class TestHostRevokePayment:
     def test_missing_rsvp_is_404(self, api_client, auth_headers, test_user, django_user_model):
         event = _paid_event(test_user)
         stranger = django_user_model.objects.create_user(
-            phone_number="+14155550308", first_name="Stranger", is_member=True
+            phone_number="+14155550308",
+            first_name="Stranger",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.patch(
             PAYMENT_URL.format(event_id=event.id, user_id=stranger.id),
@@ -316,7 +341,9 @@ class TestHostRevokePayment:
         """A guest's own cancel keeps their confirmation."""
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550309", first_name="Guest", is_member=True
+            phone_number="+14155550309",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         headers = auth_headers_for(guest)
         api_client.post(
@@ -349,7 +376,7 @@ class TestPaymentStatusVisibility:
     def _event_with_a_payer(self, host, django_user_model, phone):
         event = _paid_event(host)
         payer = django_user_model.objects.create_user(
-            phone_number=phone, first_name="Payer", is_member=True
+            phone_number=phone, first_name="Payer", membership_status=MembershipStatus.ACTIVE_MEMBER
         )
         EventRSVP.objects.create(
             event=event, user=payer, status=RSVPStatus.ATTENDING, **_verified(host)
@@ -366,7 +393,9 @@ class TestPaymentStatusVisibility:
     ):
         event = _paid_event(test_user)
         payer = django_user_model.objects.create_user(
-            phone_number="+14155550411", first_name="Payer", is_member=True
+            phone_number="+14155550411",
+            first_name="Payer",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=payer, status=RSVPStatus.ATTENDING, paid_confirmed_at=timezone.now()
@@ -382,7 +411,9 @@ class TestPaymentStatusVisibility:
     def test_event_manager_can_mark_paid(self, api_client, test_user, django_user_model):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550409", first_name="Guest", is_member=True
+            phone_number="+14155550409",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
         manager = make_user(PermissionKey.MANAGE_EVENTS)
@@ -403,7 +434,9 @@ class TestPaymentStatusVisibility:
     ):
         event = self._event_with_a_payer(test_user, django_user_model, "+14155550402")
         nosy = django_user_model.objects.create_user(
-            phone_number="+14155550403", first_name="Nosy", is_member=True
+            phone_number="+14155550403",
+            first_name="Nosy",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=nosy, status=RSVPStatus.ATTENDING)
         assert self._guests(api_client, event, auth_headers_for(nosy))["Payer"] is False
@@ -431,7 +464,9 @@ class TestPaymentStatusVisibility:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550406", first_name="Guest", is_member=True
+            phone_number="+14155550406",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **_verified(test_user)

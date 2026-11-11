@@ -1,5 +1,3 @@
-"""Tests for user update, profile, delete, and magic link."""
-
 import logging
 
 import pytest
@@ -8,7 +6,7 @@ from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
 from tests._users import make_user
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MembershipStatus, User
 from users.roles import Role
 
 
@@ -202,6 +200,9 @@ class TestUpdateUser:
     def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
         other_user.is_member = False
         other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
@@ -225,6 +226,9 @@ class TestUpdateUser:
     ):
         other_user.is_member = False
         other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get(
             "/api/auth/users/?include_non_members=true", **manage_users_headers
         )
@@ -238,6 +242,9 @@ class TestUpdateUser:
     ):
         other_user.is_member = False
         other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
             {"first_name": "Renamed"},

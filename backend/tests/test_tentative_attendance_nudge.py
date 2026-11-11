@@ -15,7 +15,7 @@ from django.core.management import call_command
 from django.db.models import F
 from django.utils import timezone
 from notifications.email_sender import SendResult
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._users import make_attendance_paused
 
@@ -25,7 +25,7 @@ NUDGE_SUBJECT = "you're almost in at pda"
 def _make_tentative(phone_number: str, *, set_up_days_ago: int = 8, **extra) -> User:
     extra.setdefault("email", f"{phone_number}@example.test")
     extra.setdefault("first_name", "Sprout")
-    extra.setdefault("is_member", False)
+    extra.setdefault("membership_status", MembershipStatus.TENTATIVE)
     extra.setdefault("needs_onboarding", False)
     extra.setdefault("onboarded_at", timezone.now() - timedelta(days=set_up_days_ago))
     user = User.objects.create(phone_number=phone_number, **extra)
@@ -152,6 +152,7 @@ class TestTentativeAttendanceNudge:
         user = _make_tentative("+12025550409")
         user.is_member = True
         user.save(update_fields=["is_member"])
+        user.save(update_fields=user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None))
         user.join_requests.update(status=JoinRequestStatus.APPROVED)
         call_command("send_weekly_digest")
         assert _nudge_calls(fake_email_sender) == []

@@ -3,7 +3,7 @@
 import pytest
 from community.validation import Code
 from tests._asserts import assert_error_code
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 
@@ -307,6 +307,7 @@ class TestSearchUsers:
                 phone_number=f"+1555001{i:04d}",
                 first_name=f"Searchable User {i}",
                 is_member=True,
+                membership_status=MembershipStatus.ACTIVE_MEMBER,
             )
             for i in range(11)
         ]
@@ -328,6 +329,9 @@ class TestSearchUsers:
     def test_search_excludes_non_members(self, api_client, auth_headers, other_user):
         other_user.is_member = False
         other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get("/api/auth/users/search/?q=Other", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
