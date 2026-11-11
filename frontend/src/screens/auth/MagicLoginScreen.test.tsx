@@ -58,6 +58,13 @@ describe('MagicLoginScreen', () => {
     currentUser = null;
   });
 
+  it('tells a non-member they cannot sign in', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.NotAMember));
+    renderAt('tok-non-member');
+    expect(await screen.findByText("can't sign in")).toBeInTheDocument();
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
   it('routes a needsPasswordReset user (has a name) to /new-password', async () => {
     currentUser = makeUser({ needsPasswordReset: true, firstName: 'Alice', fullName: 'Alice' });
     renderAt('tok-1');
