@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 from community.models import Event, EventStatus
+from users.models import MembershipStatus
 
 from tests._events import make_event
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
@@ -52,7 +53,7 @@ class TestSetAttendancePause:
         assert result["attendance_paused_at"] is not None
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_paused is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         hosted.refresh_from_db()
         assert hosted.status == EventStatus.DRAFT
 
