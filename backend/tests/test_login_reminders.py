@@ -13,7 +13,7 @@ from django.db.models import F
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import EmailStream, SendResult
-from users.models import MagicLoginToken, MagicLoginTokenSource, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, MembershipStatus, User
 
 REMINDER_SUBJECT = "finish setting up your pda account"
 
@@ -22,12 +22,15 @@ def _make_pending_member(phone_number: str, **extra) -> User:
     extra.setdefault("email", f"{phone_number}@example.test")
     extra.setdefault("first_name", "Sprout")
     extra.setdefault("is_member", True)
+    extra.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
     extra.setdefault("needs_onboarding", True)
     return User.objects.create(phone_number=phone_number, **extra)
 
 
 def _make_pending_tentative(phone_number: str) -> User:
-    user = _make_pending_member(phone_number, is_member=False)
+    user = _make_pending_member(
+        phone_number, is_member=False, membership_status=MembershipStatus.TENTATIVE
+    )
     JoinRequest.objects.create(
         first_name="Sprout",
         phone_number=phone_number,
@@ -83,7 +86,10 @@ class TestWeeklyLoginReminder:
 
     def test_reminds_attendance_paused_member_who_never_logged_in(self, fake_email_sender):
         user = _make_pending_member(
-            "+12025550323", is_member=False, attendance_paused_at=timezone.now()
+            "+12025550323",
+            is_member=False,
+            membership_status=MembershipStatus.ATTENDANCE_PAUSED,
+            attendance_paused_at=timezone.now(),
         )
         call_command("send_weekly_digest")
         assert [c.kwargs["to"] for c in _reminder_calls(fake_email_sender)] == [user.email]
@@ -106,12 +112,12 @@ class TestWeeklyLoginReminder:
         [
             {"needs_onboarding": False},
             {"onboarded_at": timezone.now()},
-            {"archived_at": timezone.now()},
-            {"is_paused": True},
+            {"archived_at": timezone.now(), "membership_status": MembershipStatus.ARCHIVED},
+            {"is_paused": True, "membership_status": MembershipStatus.GUIDELINES_PAUSED},
             {"is_active": False},
             {"email": ""},
             {"email": None},
-            {"is_member": False},
+            {"is_member": False, "membership_status": MembershipStatus.NONE},
         ],
         ids=[
             "onboarded",
@@ -233,7 +239,12 @@ class TestWeeklyLoginReminder:
     def test_sends_the_digest_even_when_reminders_fail(self, fake_email_sender, monkeypatch):
         _make_pending_member("+12025550320")
         _make_event()
-        User.objects.create(phone_number="+12025550321", email="m@example.test", is_member=True)
+        User.objects.create(
+            phone_number="+12025550321",
+            email="m@example.test",
+            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
 
         def fail(**_kwargs):
             raise RuntimeError("reminder template broke")
