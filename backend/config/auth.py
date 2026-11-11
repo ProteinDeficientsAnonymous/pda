@@ -9,7 +9,7 @@ changes that should revoke access:
     ``check_password``). It has no effect on a token that was already issued, so
     a self-service magic-login user could otherwise call any endpoint without
     ever setting a password.
-  - ``is_paused`` / ``archived_at`` were historically checked only at login and
+  - a guidelines pause / ``archived_at`` were historically checked only at login and
     on ``/me/``, so a user paused *after* getting a token kept access until it
     expired. Enforcing here closes that hole too.
 
@@ -17,10 +17,12 @@ A pending user (needs password reset / onboarding) must still reach the few
 endpoints required to *resolve* that state, so those paths are allowlisted.
 """
 
+from collections.abc import Callable
+
 from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
-from users.models import User
+from users.models import MembershipStatus, User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
 #   - GET /me/                 — frontend reads needs_password_reset/onboarding/
@@ -42,19 +44,28 @@ _PENDING_ALLOWLIST = frozenset(
 HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
 
 
+_ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
+    (lambda u: u.archived_at is not None, Code.Auth.ACCOUNT_ARCHIVED),
+    (lambda u: u.membership_status == MembershipStatus.GUIDELINES_PAUSED, Code.Auth.ACCOUNT_PAUSED),
+    (lambda u: u.needs_password_reset, Code.Auth.PASSWORD_RESET_REQUIRED),
+    (lambda u: u.needs_onboarding, Code.Auth.ONBOARDING_REQUIRED),
+    (lambda u: u.guidelines_consent_at is None, Code.Auth.GUIDELINES_CONSENT_REQUIRED),
+)
+
+
+def _first_block_code(user: User) -> str | None:
+    return next((code for blocks, code in _ACCOUNT_BLOCKS if blocks(user)), None)
+
+
+def account_may_act(user: User) -> bool:
+    """Whether the account is unblocked; safe in async code since it runs no query."""
+    return _first_block_code(user) is None
+
+
 def account_block_code(user: User) -> str | None:
     """Return the auth code that blocks this account, or None if it may act."""
-    if user.archived_at is not None:
-        return Code.Auth.ACCOUNT_ARCHIVED
-    if user.is_paused:
-        return Code.Auth.ACCOUNT_PAUSED
-    if user.needs_password_reset:
-        return Code.Auth.PASSWORD_RESET_REQUIRED
-    if user.needs_onboarding:
-        return Code.Auth.ONBOARDING_REQUIRED
-    if user.guidelines_consent_at is None:
-        return Code.Auth.GUIDELINES_CONSENT_REQUIRED
-    return None
+    code = _first_block_code(user)
+    return code
 
 
 class GatedJWTAuth(JWTAuth):
