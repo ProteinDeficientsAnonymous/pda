@@ -54,6 +54,47 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
     assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.ACTIVE_MEMBER
 
 
+def _set_guidelines_pause(api_client, headers, user, paused):
+    response = api_client.patch(
+        f"/api/auth/users/{user.pk}/",
+        {"is_paused": paused},
+        content_type="application/json",
+        **headers,
+    )
+    assert response.status_code == 200
+    user.refresh_from_db()
+    return user.membership_status
+
+
+def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
+    member = make_user()
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, member, True)
+        == MembershipStatus.GUIDELINES_PAUSED
+    )
+    assert member.is_member is True
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, member, False)
+        == MembershipStatus.ATTENDANCE_PAUSED
+    )
+    assert member.attendance_paused_at is not None
+    assert member.unpaused_at is None
+
+
+def test_guidelines_pause_replaces_attendance_pause(api_client, manage_users_headers):
+    paused = make_attendance_paused()
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, paused, True)
+        == MembershipStatus.GUIDELINES_PAUSED
+    )
+    assert paused.attendance_paused_at is None
+    assert (
+        _set_guidelines_pause(api_client, manage_users_headers, paused, False)
+        == MembershipStatus.ATTENDANCE_PAUSED
+    )
+    assert paused.attendance_paused_at is not None
+
+
 def test_guidelines_paused_member_stays_in_members():
     paused = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
