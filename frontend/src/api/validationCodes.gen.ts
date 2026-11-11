@@ -115,6 +115,7 @@ export const Code = {
     InvalidCredentials: 'auth.invalid_credentials',
     AccountArchived: 'auth.account_archived',
     AccountPaused: 'auth.account_paused',
+    AccountRejected: 'auth.account_rejected',
     NotAMember: 'auth.not_a_member',
     MagicLinkInvalidOrExpired: 'auth.magic_link_invalid_or_expired',
     MagicLinkAlreadyUsed: 'auth.magic_link_already_used',
@@ -402,6 +403,7 @@ export type ValidationCode =
   | 'auth.invalid_credentials'
   | 'auth.account_archived'
   | 'auth.account_paused'
+  | 'auth.account_rejected'
   | 'auth.not_a_member'
   | 'auth.magic_link_invalid_or_expired'
   | 'auth.magic_link_already_used'
@@ -631,6 +633,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'auth.invalid_credentials': [],
   'auth.account_archived': [],
   'auth.account_paused': [],
+  'auth.account_rejected': [],
   'auth.not_a_member': [],
   'auth.magic_link_invalid_or_expired': [],
   'auth.magic_link_already_used': [],

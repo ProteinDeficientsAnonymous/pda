@@ -58,6 +58,13 @@ describe('MagicLoginScreen', () => {
     currentUser = null;
   });
 
+  it('offers a rejected applicant the join form instead of a new link', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountRejected));
+    renderAt('tok-rejected');
+    expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
   it('tells a non-member they cannot sign in', async () => {
     magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.NotAMember));
     renderAt('tok-non-member');

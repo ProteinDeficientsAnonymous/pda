@@ -19,6 +19,7 @@ endpoints required to *resolve* that state, so those paths are allowlisted.
 
 from collections.abc import Callable
 
+from community.models import JoinRequest
 from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
@@ -45,6 +46,7 @@ HARD_ACCOUNT_BLOCKS = frozenset(
     {
         Code.Auth.ACCOUNT_ARCHIVED,
         Code.Auth.ACCOUNT_PAUSED,
+        Code.Auth.ACCOUNT_REJECTED,
         Code.Auth.NOT_A_MEMBER,
     }
 )
@@ -72,6 +74,9 @@ def account_may_act(user: User) -> bool:
 def account_block_code(user: User) -> str | None:
     """Return the auth code that blocks this account, or None if it may act."""
     code = _first_block_code(user)
+    # A rejected applicant is told they may request to join again.
+    if code == Code.Auth.NOT_A_MEMBER and JoinRequest.latest_is_rejected(user.phone_number):
+        return Code.Auth.ACCOUNT_REJECTED
     return code
 
 
