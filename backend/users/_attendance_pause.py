@@ -33,7 +33,7 @@ from users._archive import (
     upcoming_events_q,
     upcoming_hosted_events,
 )
-from users.helpers import grant_membership
+from users.helpers import grant_membership, strip_elevated_roles
 from users.models import HAS_EMAIL, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
@@ -56,10 +56,11 @@ class PauseImpact:
     drafted_events: list[Event] = field(default_factory=list)
 
 
-def attendance_pause_impact(user: User) -> PauseImpact:
+def attendance_pause_impact(user: User, *, keep_official: bool = True) -> PauseImpact:
     """Sort the user's upcoming RSVPs and host spots into what a pause keeps, removes or drafts.
 
-    param(user): the member who would be attendance-paused
+    param(user): the member who would be paused
+    param(keep_official): keep official/club RSVPs (attendance pause) or release them too
     return(PauseImpact): events per bucket, soonest first
     """
     impact = PauseImpact()
@@ -80,10 +81,8 @@ def attendance_pause_impact(user: User) -> PauseImpact:
         .order_by("start_datetime")
     )
     for event in rsvped:
-        bucket = (
-            impact.kept_rsvps if event.event_type in KEPT_RSVP_EVENT_TYPES else impact.removed_rsvps
-        )
-        bucket.append(event)
+        kept = keep_official and event.event_type in KEPT_RSVP_EVENT_TYPES
+        (impact.kept_rsvps if kept else impact.removed_rsvps).append(event)
     return impact
 
 
@@ -95,17 +94,7 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     return(PauseImpact): the impact as it stood when the pause was applied
     """
     with transaction.atomic():
-        impact = attendance_pause_impact(user)
-        drafted_ids = [e.pk for e in impact.drafted_events]
-        for event in impact.drafted_events:
-            _move_to_draft(event, user)
-        # A kept RSVP on a draft stays as-is; releasing it would promote that draft's waitlist.
-        release_upcoming_rsvps(request, user, ~KEPT_RSVP_EVENT_Q & ~Q(pk__in=drafted_ids))
-        step_down_as_cohost(user, impact.removed_hosting)
-        EventCoHostInvite.objects.filter(
-            upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
-        ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
-        removed_role_ids = _strip_membership(user)
+        impact, details = release_held_events(request, user, keep_official=True)
         user.attendance_paused_at = timezone.now()
         user.is_member = False
         user.has_joined_whatsapp = False
@@ -121,8 +110,47 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
                 "unpaused_at",
             ]
         )
-        _audit_pause(request, user, impact, removed_role_ids)
+        audit_log(
+            logging.WARNING,
+            "user_attendance_paused",
+            request,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk), details=details),
+        )
     return impact
+
+
+@transaction.atomic
+def release_held_events(request, user: User, *, keep_official: bool) -> tuple[PauseImpact, dict]:
+    """Release the user's upcoming RSVPs and host spots and strip their elevated roles.
+
+    param(request): the triggering request, for promoted-member email logging
+    param(user): the member being paused
+    param(keep_official): keep official/club RSVPs (attendance pause) or release them too
+    return(tuple[PauseImpact, dict]): the impact and its audit details
+    """
+    if user.archived_at is not None:
+        # Archiving already released them; a pause now must not draft their solo-hosted events.
+        return PauseImpact(), {}
+    impact = attendance_pause_impact(user, keep_official=keep_official)
+    drafted_ids = [e.pk for e in impact.drafted_events]
+    for event in impact.drafted_events:
+        _move_to_draft(event, user)
+    # A kept RSVP on a draft stays as-is; releasing it would promote that draft's waitlist.
+    release_q = ~Q(pk__in=drafted_ids)
+    if keep_official:
+        release_q &= ~KEPT_RSVP_EVENT_Q
+    release_upcoming_rsvps(request, user, release_q)
+    step_down_as_cohost(user, impact.removed_hosting)
+    EventCoHostInvite.objects.filter(
+        upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
+    ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
+    details = {
+        "removed_role_ids": strip_elevated_roles(user),
+        "removed_rsvp_event_ids": [str(e.pk) for e in impact.removed_rsvps],
+        "removed_hosting_event_ids": [str(e.pk) for e in impact.removed_hosting],
+        "drafted_event_ids": [str(e.pk) for e in impact.drafted_events],
+    }
+    return impact, details
 
 
 def _move_to_draft(event: Event, user: User) -> None:
@@ -161,27 +189,6 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
             lambda d=details: send_event_unpublished_email(sender=sender, details=d),
             "event_unpublished_email",
         )
-
-
-def _strip_membership(user: User) -> list[str]:
-    removed_role_ids = [str(pk) for pk in user.roles.values_list("pk", flat=True)]
-    user.roles.clear()
-    return removed_role_ids
-
-
-def _audit_pause(request, user: User, impact: PauseImpact, removed_role_ids: list[str]) -> None:
-    details = {
-        "removed_role_ids": removed_role_ids,
-        "removed_rsvp_event_ids": [str(e.pk) for e in impact.removed_rsvps],
-        "removed_hosting_event_ids": [str(e.pk) for e in impact.removed_hosting],
-        "drafted_event_ids": [str(e.pk) for e in impact.drafted_events],
-    }
-    audit_log(
-        logging.WARNING,
-        "user_attendance_paused",
-        request,
-        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk), details=details),
-    )
 
 
 def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | None) -> bool:
