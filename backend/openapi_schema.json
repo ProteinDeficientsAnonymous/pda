@@ -5542,6 +5542,18 @@
         "title": "MemberRestoredEmailPatchIn",
         "type": "object"
       },
+      "MembershipStatus": {
+        "enum": [
+          "none",
+          "tentative",
+          "active_member",
+          "attendance_paused",
+          "archived",
+          "guidelines_paused"
+        ],
+        "title": "MembershipStatus",
+        "type": "string"
+      },
       "MyEventFeedbackOut": {
         "properties": {
           "token": {
@@ -8097,6 +8109,14 @@
             "default": false,
             "title": "Login Link Requested",
             "type": "boolean"
+          },
+          "membership_status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              }
+            ],
+            "default": "active_member"
           },
           "monthly_digest_opt_out": {
             "default": false,

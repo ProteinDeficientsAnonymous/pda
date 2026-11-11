@@ -2,6 +2,7 @@ import pytest
 from django.utils import timezone
 from users.models import MembershipStatus, User, can_sign_in_q, limited_q
 
+from tests._auth import auth_headers_for
 from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
@@ -31,3 +32,11 @@ def test_archived_member_cannot_sign_in():
 def test_guidelines_paused_is_not_limited():
     user = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     assert not User.objects.filter(limited_q(), pk=user.pk).exists()
+
+
+@pytest.mark.parametrize("status", [MembershipStatus.ACTIVE_MEMBER, MembershipStatus.TENTATIVE])
+def test_me_returns_membership_status(api_client, status):
+    user = make_user(membership_status=status)
+    response = api_client.get("/api/auth/me/", **auth_headers_for(user))
+    assert response.status_code == 200
+    assert response.json()["membership_status"] == status

@@ -5014,6 +5014,11 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /**
+         * MembershipStatus
+         * @enum {string}
+         */
+        MembershipStatus: "none" | "tentative" | "active_member" | "attendance_paused" | "archived" | "guidelines_paused";
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
@@ -6040,6 +6045,8 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /** @default active_member */
+            membership_status: components["schemas"]["MembershipStatus"];
             /**
              * Monthly Digest Opt Out
              * @default false
