@@ -177,6 +177,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a tentative request is archived, not rejected', () => {
+    expect(
+      messageForCode({ code: Code.JoinRequest.TentativeCannotBeRejected, field: null }),
+    ).toMatch(/archive them from the members screen/);
+  });
+
   it('points to the existing open join request', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
