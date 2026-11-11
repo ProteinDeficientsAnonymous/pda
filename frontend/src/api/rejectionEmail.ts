@@ -27,6 +27,11 @@ export const REJECTION_REASON_LABELS: Record<RejectionReason, string> = {
   [RejectionReason.OTHER]: 'other',
 };
 
+export function rejectionReasonText(reason: RejectionReason | null, note: string): string | null {
+  if (!reason) return null;
+  return reason === RejectionReason.OTHER ? note : REJECTION_REASON_LABELS[reason];
+}
+
 export interface RejectionEmail {
   body: string;
   reasons: Record<PresetRejectionReason, string>;
