@@ -1,10 +1,12 @@
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
+from users._archive import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus
 
 from tests._public_rsvp_helpers import make_public_rsvper
 from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
+from tests._users import make_user
 
 __all__ = ["open_official_event"]
 
@@ -63,3 +65,13 @@ def test_check_in_promotes_tentative_to_member(
     assert maybe_promote_tentative(user, open_official_event, vettor_user)
     assert _assert_in_sync(user) == MembershipStatus.ACTIVE_MEMBER
     assert user.membership_status_changed_by == vettor_user
+
+
+@pytest.mark.parametrize(
+    "status", [MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED]
+)
+def test_archiving_remembers_the_pause(rf, status):
+    paused = make_user(membership_status=status)
+    archive_user(rf.get("/"), paused)
+    paused.refresh_from_db()
+    assert paused.status_before_archive == status

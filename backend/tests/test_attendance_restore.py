@@ -13,7 +13,7 @@ from community.models import (
 )
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 from tests._auth import auth_headers_for
@@ -35,6 +35,13 @@ def paused(db):
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
     user.is_member = False
     user.save(update_fields=["attendance_paused_at", "attendance_grace_notified_at", "is_member"])
+    user.save(
+        update_fields=[
+            "attendance_paused_at",
+            "attendance_grace_notified_at",
+            *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=None),
+        ]
+    )
     return user
 
 
@@ -71,7 +78,7 @@ class TestRestoreOnCheckIn:
     def test_first_qualifying_check_in_does_not_restore(self, api_client, host, paused):
         _check_in(api_client, host, paused)
         assert paused.attendance_paused_at is not None
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
 
     def test_second_qualifying_check_in_restores(
         self, api_client, host, paused, django_capture_on_commit_callbacks
@@ -82,7 +89,8 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_paused_at is None
         assert paused.attendance_grace_notified_at is None
         assert paused.restored_at is not None
-        assert paused.is_member is True
+        assert paused.membership_status == MembershipStatus.ACTIVE_MEMBER
+        assert paused.membership_status_changed_by == host
         assert (
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()
@@ -114,15 +122,17 @@ class TestRestoreOnCheckIn:
         assert paused.attendance_paused_at is not None
 
     def test_host_marking_themselves_never_promotes(self, api_client, paused):
-        User.objects.filter(pk=paused.pk).update(attendance_paused_at=None)
+        User.objects.filter(pk=paused.pk).update(
+            attendance_paused_at=None, membership_status=MembershipStatus.TENTATIVE
+        )
         _tentative_request(paused)
         _check_in(api_client, paused, paused)
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.TENTATIVE
 
     def test_stale_tentative_request_does_not_promote_on_first(self, api_client, host, paused):
         jr = _tentative_request(paused)
         _check_in(api_client, host, paused)
-        assert paused.is_member is False
+        assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         jr.refresh_from_db()
         assert jr.status == JoinRequestStatus.TENTATIVE
 
