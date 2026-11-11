@@ -149,6 +149,53 @@ describe('useJoinRequests', () => {
     });
   });
 
+  it('maps previous_archive from the wire and fills missing fields with null', async () => {
+    const wire = {
+      full_name: 'Lee Park',
+      phone_number: '+12125550333',
+      answers: [],
+      submitted_at: '2024-04-01T09:00:00Z',
+      status: 'pending',
+      user_id: null,
+    };
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          ...wire,
+          id: 'jr-6',
+          previous_archive: {
+            archived_at: '2023-08-01T12:00:00Z',
+            archived_by_name: 'Sam Vettor',
+            paused_status: 'attendance_paused',
+          },
+          previous_rejection: {},
+        },
+        { ...wire, id: 'jr-7', previous_archive: {} },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousArchive).toEqual({
+      archivedAt: '2023-08-01T12:00:00Z',
+      archivedByName: 'Sam Vettor',
+      pausedStatus: 'attendance_paused',
+    });
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: null,
+      statusChangedByName: null,
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+    expect(result.current.data?.[1]?.previousArchive).toEqual({
+      archivedAt: null,
+      archivedByName: null,
+      pausedStatus: null,
+    });
+  });
+
   it('maps attended_events from the wire', async () => {
     mockedGet.mockResolvedValueOnce({
       data: [
