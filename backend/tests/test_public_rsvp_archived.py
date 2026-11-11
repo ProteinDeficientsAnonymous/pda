@@ -4,7 +4,7 @@ import pytest
 from community.models import EventRSVP
 from community.validation import Code
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
 
@@ -20,15 +20,23 @@ def official_event(db):
 class TestArchivedMemberGate:
     def test_phone_belongs_to_archived_member(self, api_client, official_event, fake_email_sender):
         member = User.objects.create_user(
-            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
+            phone_number="+14155550123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         member.archived_at = timezone.now()
-        member.save(update_fields=["archived_at"])
+        member.save(
+            update_fields=[
+                "archived_at",
+                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         response = post(api_client, official_event)
 
-        assert response.status_code == 409
-        assert response.json()["detail"][0]["code"] == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert response.status_code == 403
+        assert response.json()["detail"][0]["code"] == Code.Auth.ACCOUNT_ARCHIVED
         assert not EventRSVP.objects.exists()
         fake_email_sender.send.assert_not_called()
 
@@ -38,10 +46,15 @@ class TestArchivedMemberGate:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         member.archived_at = timezone.now()
-        member.save(update_fields=["archived_at"])
+        member.save(
+            update_fields=[
+                "archived_at",
+                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         response = post(api_client, official_event)
 
@@ -54,7 +67,12 @@ class TestArchivedMemberGate:
     ):
         archived = make_public_rsvper("+14155550777", "sam@example.com", name="Archived")
         archived.archived_at = timezone.now()
-        archived.save(update_fields=["archived_at"])
+        archived.save(
+            update_fields=[
+                "archived_at",
+                *archived.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         response = post(api_client, official_event)
 
@@ -71,7 +89,12 @@ class TestArchivedNonMemberGate:
     ):
         archived = make_public_rsvper("+14155550123", "old@example.com", name="Archived NonMember")
         archived.archived_at = timezone.now()
-        archived.save(update_fields=["archived_at"])
+        archived.save(
+            update_fields=[
+                "archived_at",
+                *archived.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         response = post(api_client, official_event)
 

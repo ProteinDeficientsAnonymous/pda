@@ -417,7 +417,7 @@ class PublicRsvpToken(models.Model):
         Rejects members — a converted/existing member must use the member flow,
         not the scoped non-member RSVP link.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         return cls.objects.create(
             user=user,
@@ -432,7 +432,7 @@ class PublicRsvpToken(models.Model):
         Extends the newest valid token still within its absolute lifetime (so an
         emailed link keeps resolving), else issues a fresh one. Rejects members.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
         max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
@@ -454,7 +454,7 @@ class PublicRsvpToken(models.Model):
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.is_paused:
+        if row is None or not row.is_valid or row.user.is_guidelines_paused:
             return None
         return row.user
 

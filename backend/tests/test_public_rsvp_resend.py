@@ -10,7 +10,7 @@ from community.rsvps.public_resend import NEUTRAL_RESPONSE
 from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
-from users.models import PublicRsvpToken
+from users.models import MembershipStatus, PublicRsvpToken
 
 from tests._public_rsvp_helpers import make_public_rsvper
 
@@ -74,8 +74,9 @@ class TestResendManageLink:
 
     def test_member_contact_gets_no_non_member_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.is_member = True
-        member.save(update_fields=["is_member"])
+        member.save(
+            update_fields=member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
+        )
 
         response = post(api_client)
 
@@ -103,20 +104,30 @@ class TestResendManageLink:
         assert response.status_code == 200
         assert response.json()["detail"] == NEUTRAL_RESPONSE
 
-    def test_archived_non_member_still_gets_link(self, api_client, fake_email_sender):
+    def test_archived_non_member_gets_no_link(self, api_client, fake_email_sender):
         user = make_public_rsvper(PHONE, EMAIL)
         user.archived_at = timezone.now()
-        user.save(update_fields=["archived_at"])
+        user.save(
+            update_fields=[
+                "archived_at",
+                *user.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         post(api_client)
 
-        fake_email_sender.send.assert_called_once()
+        fake_email_sender.send.assert_not_called()
 
     def test_archived_member_contact_gets_no_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.is_member = True
+        member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
         member.archived_at = timezone.now()
-        member.save(update_fields=["is_member", "archived_at"])
+        member.save(
+            update_fields=[
+                "archived_at",
+                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
+            ]
+        )
 
         post(api_client)
 
