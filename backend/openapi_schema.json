@@ -4659,6 +4659,16 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "previous_archive": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousArchiveOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previous_rejection": {
             "anyOf": [
               {
@@ -5840,6 +5850,45 @@
           "total_responses"
         ],
         "title": "PollResultsOut",
+        "type": "object"
+      },
+      "PreviousArchiveOut": {
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "archived_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived By Name"
+          },
+          "paused_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PreviousArchiveOut",
         "type": "object"
       },
       "PreviousRejectionOut": {
