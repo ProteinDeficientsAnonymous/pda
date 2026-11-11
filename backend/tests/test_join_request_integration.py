@@ -11,7 +11,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 
 def _public_rsvper(phone, email=""):
@@ -21,6 +21,7 @@ def _public_rsvper(phone, email=""):
         first_name="Rsvper",
         email=email or None,
         is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
 
 
@@ -72,7 +73,11 @@ def _submit(api_client, why_join_id, phone, email):
 class TestSubmissionMemberMatch:
     def test_member_phone_match_returns_already_member(self, api_client, why_join_id):
 
-        User.objects.create_user(phone_number="+12025551401", first_name="Member", is_member=True)
+        User.objects.create_user(
+            phone_number="+12025551401",
+            first_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
         resp = _submit(api_client, why_join_id, "+12025551401", "fresh@example.com")
         assert resp.status_code == 409
         assert resp.json()["detail"][0]["code"] == "join_request.already_member"
@@ -83,7 +88,7 @@ class TestSubmissionMemberMatch:
             phone_number="+12025551402",
             first_name="Member",
             email="member@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         resp = _submit(api_client, why_join_id, "+12025551403", "member@example.com")
         assert resp.status_code == 409

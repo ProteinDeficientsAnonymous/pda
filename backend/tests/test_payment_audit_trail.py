@@ -4,6 +4,7 @@ import pytest
 from audit.models import AuditLogEntry, AuditTargetType
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
+from users.models import MembershipStatus
 
 from tests._payment_helpers import create_paid_event
 from tests._public_rsvp_helpers import make_official_event
@@ -117,7 +118,9 @@ class TestMemberRsvpPaymentAudit:
 class TestHostPaymentChangeAudit:
     def _guest(self, django_user_model, event, **rsvp_fields):
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550142", first_name="Guest", is_member=True
+            phone_number="+14155550142",
+            first_name="Guest",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=guest, status=RSVPStatus.ATTENDING, **rsvp_fields
@@ -238,7 +241,9 @@ class TestHostPaymentChangeAudit:
     ):
         event = _paid_event(test_user)
         guest = django_user_model.objects.create_user(
-            phone_number="+14155550143", first_name="Cash", is_member=True
+            phone_number="+14155550143",
+            first_name="Cash",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         _post(
