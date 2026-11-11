@@ -4,7 +4,7 @@ import pytest
 from community.events.viewer import resolve_event_viewer
 from community.models import EventType, PageVisibility
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._events import make_event, make_rsvp
 
@@ -27,6 +27,7 @@ def public_rsvper(db):
         last_name="Member",
         email="non@example.com",
         is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])

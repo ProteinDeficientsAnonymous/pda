@@ -4,7 +4,7 @@ import json
 
 import pytest
 from community.models import EditablePage, PageVisibility
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -170,6 +170,7 @@ class TestCheckPhone:
             first_name="Public",
             last_name="RSVP",
             is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.post(
             "/api/community/check-phone/",
