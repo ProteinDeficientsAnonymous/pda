@@ -1,4 +1,5 @@
 import pytest
+from django.utils import timezone
 from users.models import MembershipStatus
 
 from tests._users import make_attendance_paused, make_user
@@ -39,3 +40,25 @@ def test_lifting_a_guidelines_pause_clears_is_member(api_client, manage_users_he
     member.refresh_from_db()
     assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
     assert member.is_member is False
+
+
+def test_guidelines_pausing_an_archived_non_member_keeps_is_member_false(
+    api_client, manage_users_headers
+):
+    archived = make_user(
+        membership_status=MembershipStatus.ARCHIVED,
+        status_before_archive=MembershipStatus.NONE,
+        archived_at=timezone.now(),
+        is_member=False,
+    )
+    response = api_client.patch(
+        f"/api/auth/users/{archived.pk}/",
+        {"is_paused": True},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 200
+    archived.refresh_from_db()
+    assert archived.membership_status == MembershipStatus.ARCHIVED
+    assert archived.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
+    assert archived.is_member is False
