@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { MembershipStatus } from '@/models/user';
 import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 
@@ -40,7 +41,7 @@ describe('RequireMember', () => {
   });
 
   it('explains the gate to a tentatively-approved user instead of redirecting', () => {
-    setAuthed(makeUser({ isMember: false }));
+    setAuthed(makeUser({ isMember: false, membershipStatus: MembershipStatus.Tentative }));
     renderGuard();
 
     expect(screen.queryByText('directory contents')).toBeNull();

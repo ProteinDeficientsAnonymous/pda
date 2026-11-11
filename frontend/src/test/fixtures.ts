@@ -13,7 +13,7 @@ import {
 } from '@/models/event';
 import type { AppNotification } from '@/models/notification';
 import { NotificationType } from '@/models/notification';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 
 export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
   return {
@@ -124,6 +124,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     birthday: null,
     veganniversary: null,
     isMember: true,
+    membershipStatus: MembershipStatus.ActiveMember,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,
@@ -179,6 +180,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     showPhone: true,
     showEmail: true,
     isMember: true,
+    membershipStatus: MembershipStatus.ActiveMember,
     isSuperuser: false,
     isPaused: false,
     attendancePausedAt: null,
