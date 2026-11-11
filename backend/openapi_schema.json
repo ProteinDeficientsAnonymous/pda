@@ -4579,29 +4579,6 @@
             "title": "Answers",
             "type": "array"
           },
-          "approved_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved At"
-          },
-          "approved_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved By Name"
-          },
           "approved_via_event_id": {
             "anyOf": [
               {
@@ -4691,29 +4668,6 @@
             "default": false,
             "title": "Previously Rejected",
             "type": "boolean"
-          },
-          "rejected_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected At"
-          },
-          "rejected_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected By Name"
           },
           "rejection_note": {
             "default": "",
