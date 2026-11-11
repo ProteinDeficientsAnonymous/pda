@@ -207,7 +207,6 @@ class User(AbstractUser):
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
-    is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
     unpaused_at = models.DateTimeField(null=True, blank=True)
