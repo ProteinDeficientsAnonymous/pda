@@ -50,6 +50,31 @@ def test_vetting_a_new_applicant_records_the_vetter(
     assert user.membership_status_changed_by == vettor_user
 
 
+@pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
+@pytest.mark.parametrize("status", [MembershipStatus.NONE, MembershipStatus.ARCHIVED])
+def test_vetting_an_existing_account_records_the_vetter(
+    api_client, vettor_user, sample_join_request, decision, status
+):
+    archived_at = timezone.now() if status == MembershipStatus.ARCHIVED else None
+    existing = make_user(
+        phone_number=sample_join_request.phone_number,
+        membership_status=status,
+        archived_at=archived_at,
+    )
+    sample_join_request.user = existing
+    sample_join_request.save(update_fields=["user"])
+    response = api_client.patch(
+        f"/api/community/join-requests/{sample_join_request.id}/",
+        {"status": decision},
+        content_type="application/json",
+        **auth_headers_for(vettor_user),
+    )
+    assert response.status_code == 200
+    existing.refresh_from_db()
+    assert existing.membership_status != status
+    assert existing.membership_status_changed_by == vettor_user
+
+
 def test_public_rsvp_stamps_no_actor(api_client):
     assert post(api_client, make_official_event()).status_code in (200, 201)
     rsvper = User.objects.get(membership_status=MembershipStatus.NONE)

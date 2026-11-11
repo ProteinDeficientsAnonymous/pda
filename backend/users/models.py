@@ -83,6 +83,7 @@ MEMBER_STATUSES = (
     MembershipStatus.ATTENDANCE_PAUSED,
 )
 PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
+MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
 
 
 class WeekStart:
@@ -469,9 +470,13 @@ def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwar
         return
     signal_from_role_side = reverse
     if signal_from_role_side:
-        if User.objects.filter(pk__in=pk_set, is_member=False).exists():
+        if (
+            User.objects.filter(pk__in=pk_set)
+            .exclude(membership_status__in=MEMBER_OR_ARCHIVED)
+            .exists()
+        ):
             raise ValueError("cannot assign a role to a non-member user")
-    elif not instance.is_member:
+    elif instance.membership_status not in MEMBER_OR_ARCHIVED:
         raise ValueError("cannot assign a role to a non-member user")
 
 
