@@ -391,6 +391,8 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     if payload.is_paused:
         user.is_member = True
         user.unpaused_at = None
+    if user.membership_status == MembershipStatus.ATTENDANCE_PAUSED:
+        user.is_member = False
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
 
