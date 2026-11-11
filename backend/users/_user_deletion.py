@@ -63,7 +63,7 @@ def hard_delete_user(request, user_id: str):
     """
     require_manage_users(request, "hard_delete_user", user_id)
     try:
-        user = User.objects.members_or_attendance_paused().get(pk=user_id)
+        user = User.objects.members_or_archived().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):

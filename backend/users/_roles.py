@@ -9,6 +9,7 @@ from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
 
+from users.models import FULL_MEMBER_STATUSES
 from users.permissions import PermissionKey
 from users.roles import PROTECTED_ROLE_NAMES, Role
 from users.schemas import ErrorOut, RoleIn, RoleOut, RolePatchIn
@@ -42,7 +43,7 @@ def list_roles(request):
     roles = Role.objects.annotate(
         user_count=Count(
             "users",
-            filter=Q(users__archived_at__isnull=True, users__is_member=True),
+            filter=Q(users__membership_status__in=FULL_MEMBER_STATUSES),
         ),
     ).order_by("name")
     return Status(
@@ -205,7 +206,7 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    affected_user_count = role.users.filter(archived_at__isnull=True, is_member=True).count()
+    affected_user_count = role.users.filter(membership_status__in=FULL_MEMBER_STATUSES).count()
     role.delete()
     audit_log(
         logging.WARNING,

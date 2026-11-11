@@ -7,7 +7,7 @@ from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
-from users.models import User
+from users.models import PAUSED_STATUSES, MembershipStatus, User
 from users.permissions import PermissionKey
 
 from community.attendance.analytics import (
@@ -122,7 +122,7 @@ def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
         user_id=str(user.id),
         full_name=user.full_name,
         phone_number=user.phone_number,
-        is_paused=user.is_paused,
+        is_paused=user.membership_status in PAUSED_STATUSES,
         last_qualifying_at=stats.last_qualifying_at,
         qualifying_count_12mo=stats.qualifying_count_12mo,
         compliant=is_compliant(stats),
@@ -130,7 +130,8 @@ def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
         didnt_go_count=stats.didnt_go_count,
         cancel_count=stats.cancel_count,
         months_since_last_qualifying=months_since(stats.last_qualifying_at),
-        is_pause_candidate=not user.is_paused and is_pause_candidate(stats),
+        is_pause_candidate=user.membership_status == MembershipStatus.ACTIVE_MEMBER
+        and is_pause_candidate(stats),
     )
 
 
