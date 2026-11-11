@@ -38,6 +38,7 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.shared import ErrorOut, validate_display_name
@@ -273,6 +274,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
+    reject_if_rejected_applicant(request, validated_phone, event.id)
 
     with transaction.atomic():
         user, created = _resolve_public_rsvper(

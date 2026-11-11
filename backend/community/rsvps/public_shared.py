@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from users.models import User
 
 from community.events.schemas import EventOut
-from community.models import Event, EventRSVP
+from community.models import Event, EventRSVP, JoinRequest
 from community.rsvps.payment import payment_enforced_for_event
 from community.shared import logger
 from community.validation import Code, raise_validation
@@ -43,6 +43,19 @@ def load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
     if event.is_past:
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
     return event
+
+
+def reject_if_rejected_applicant(request, phone_number: str, event_id) -> None:
+    """A rejected applicant re-applies before rsvping; the code is generic so the form can't probe for a rejection."""
+    if not JoinRequest.latest_is_rejected(phone_number):
+        return
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_rejected_applicant_blocked",
+        request,
+        target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
 def collect_event_links(event: Event) -> list[str]:
