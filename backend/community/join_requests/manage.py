@@ -1,5 +1,4 @@
 import logging
-from collections import Counter
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
@@ -18,6 +17,11 @@ from users.permissions import PermissionKey
 
 from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
+from community.join_requests._history import (
+    PhoneLookups,
+    phone_history,
+    phone_lookups,
+)
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
     provision_approved_user,
@@ -183,39 +187,6 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
-class PhoneLookups(NamedTuple):
-    users_by_phone: dict[str, User]
-    rejected_counts: Counter[str]
-
-
-def _phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
-    """Users (with rsvps) and rejected-request counts for every phone in the batch."""
-    phones = {jr.phone_number for jr in join_requests}
-    users = User.objects.filter(phone_number__in=phones).prefetch_related(
-        Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
-    )
-    rejected = JoinRequest.objects.filter(
-        phone_number__in=phones, status=JoinRequestStatus.REJECTED
-    ).values_list("phone_number", flat=True)
-    return PhoneLookups({u.phone_number: u for u in users}, Counter(rejected))
-
-
-class PhoneHistory(NamedTuple):
-    phone_user: User | None
-    previously_archived: bool
-    previously_rejected: bool
-
-
-def _phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
-    phone_user = lookups.users_by_phone.get(jr.phone_number)
-    own_rejection = 1 if jr.status == JoinRequestStatus.REJECTED else 0
-    return PhoneHistory(
-        phone_user=phone_user,
-        previously_archived=phone_user is not None and phone_user.archived_at is not None,
-        previously_rejected=lookups.rejected_counts[jr.phone_number] > own_rejection,
-    )
-
-
 def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
     event = jr.approved_via_event
     if event is None:
@@ -228,7 +199,7 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
     ]
-    history = _phone_history(jr, lookups or _phone_lookups([jr]))
+    history = phone_history(jr, lookups or phone_lookups([jr]))
     user = jr.user or history.phone_user
     breakdown = _rsvp_breakdown(user)
     return JoinRequestOut(
@@ -242,8 +213,8 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         submitted_at=jr.submitted_at,
         status=jr.status,
         user_id=str(user.id) if user else None,
-        previously_archived=history.previously_archived,
-        previously_rejected=history.previously_rejected,
+        previously_archived=history.previous_archive is not None,
+        previously_rejected=history.previous_rejection is not None,
         status_changed_at=jr.status_changed_at,
         status_changed_by_name=jr.status_changed_by.full_name if jr.status_changed_by else None,
         **_approving_event_fields(jr),
@@ -311,7 +282,7 @@ def list_join_requests(request):
         )
     )
     join_requests = list(join_requests)
-    lookups = _phone_lookups(join_requests)
+    lookups = phone_lookups(join_requests)
     rows = [jr for jr in join_requests if not _superseded_by_pause(jr, lookups)]
     return Status(200, [join_request_out(jr, lookups) for jr in rows])
 

@@ -1,0 +1,71 @@
+from collections import defaultdict
+from collections.abc import Iterable
+from datetime import datetime
+from typing import NamedTuple
+
+from django.db.models import Prefetch
+from pydantic import BaseModel
+from users.models import PAUSED_STATUSES, MembershipStatus, User
+
+from community.models import EventRSVP, JoinRequest, JoinRequestStatus
+
+
+class PreviousArchiveOut(BaseModel):
+    archived_at: datetime | None = None
+    archived_by_name: str | None = None
+    paused_status: MembershipStatus | None = None
+
+
+class PhoneLookups(NamedTuple):
+    users_by_phone: dict[str, User]
+    rejections_by_phone: dict[str, list[JoinRequest]]
+
+
+def phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
+    """Users (with rsvps) and rejected requests, newest first, for every phone in the batch."""
+    phones = {jr.phone_number for jr in join_requests}
+    users = (
+        User.objects.filter(phone_number__in=phones)
+        .select_related("membership_status_changed_by")
+        .prefetch_related(
+            Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
+        )
+    )
+    rejected = (
+        JoinRequest.objects.filter(phone_number__in=phones, status=JoinRequestStatus.REJECTED)
+        .select_related("status_changed_by")
+        .order_by("-submitted_at")
+    )
+    rejections: dict[str, list[JoinRequest]] = defaultdict(list)
+    for rejection in rejected:
+        rejections[rejection.phone_number].append(rejection)
+    return PhoneLookups({u.phone_number: u for u in users}, rejections)
+
+
+class PhoneHistory(NamedTuple):
+    phone_user: User | None
+    previous_archive: PreviousArchiveOut | None
+    previous_rejection: JoinRequest | None
+
+
+def previous_archive_out(user: User | None) -> PreviousArchiveOut | None:
+    """While archived, the last status change is the archive itself."""
+    if user is None or user.archived_at is None:
+        return None
+    by = user.membership_status_changed_by
+    before = user.status_before_archive
+    return PreviousArchiveOut(
+        archived_at=user.archived_at,
+        archived_by_name=by.full_name if by else None,
+        paused_status=MembershipStatus(before) if before in PAUSED_STATUSES else None,
+    )
+
+
+def phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
+    phone_user = lookups.users_by_phone.get(jr.phone_number)
+    rejections = lookups.rejections_by_phone.get(jr.phone_number, [])
+    return PhoneHistory(
+        phone_user=phone_user,
+        previous_archive=previous_archive_out(phone_user),
+        previous_rejection=next((r for r in rejections if r.submitted_at < jr.submitted_at), None),
+    )
