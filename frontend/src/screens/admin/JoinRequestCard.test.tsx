@@ -51,6 +51,20 @@ describe('JoinRequestCard decision', () => {
 
     expect(screen.getByText(/rejected by sam vettor on jan 2/)).toBeInTheDocument();
   });
+
+  it('shows a closed request as terminal, with who archived them', () => {
+    renderCard(
+      makeRequest({
+        status: JoinRequestStatus.CLOSED,
+        statusChangedAt: '2026-01-02T18:00:00Z',
+        statusChangedByName: 'Robin Admin',
+      }),
+    );
+
+    expect(screen.getByText('closed')).toBeInTheDocument();
+    expect(screen.getByText(/closed when robin admin archived them on jan 2/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /approve|reject/ })).not.toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestCard previous archive', () => {

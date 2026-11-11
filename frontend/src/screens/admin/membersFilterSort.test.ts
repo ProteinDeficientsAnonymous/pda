@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MembershipStatus } from '@/models/user';
 import { makeMember } from '@/test/fixtures';
 
 import { filterAndSort, type StatusFilter } from './membersFilterSort';
@@ -50,6 +51,18 @@ describe('status filters', () => {
 
   it('requires both when both are selected', () => {
     expect(ids(['neverAttended', 'notInWhatsapp'])).toEqual(['m4']);
+  });
+
+  it('keeps only tentative people', () => {
+    const tentative = makeMember({ id: 'm5', membershipStatus: MembershipStatus.Tentative });
+    const result = filterAndSort(
+      [...all, tentative],
+      '',
+      'name',
+      new Set(),
+      new Set(['tentative']),
+    );
+    expect(result.map((m) => m.id)).toEqual(['m5']);
   });
 
   it('combines with search and role filters', () => {

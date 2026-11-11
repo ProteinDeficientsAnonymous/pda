@@ -16,6 +16,13 @@ export const MembershipStatus = {
 } as const;
 export type MembershipStatusValue = (typeof MembershipStatus)[keyof typeof MembershipStatus];
 
+// Paused members keep the member role; only active members get full access.
+export const MEMBER_STATUSES: readonly MembershipStatusValue[] = [
+  MembershipStatus.ActiveMember,
+  MembershipStatus.GuidelinesPaused,
+  MembershipStatus.AttendancePaused,
+];
+
 export interface Role {
   id: string;
   name: string;
