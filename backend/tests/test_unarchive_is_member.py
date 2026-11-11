@@ -55,3 +55,28 @@ def test_retentatived_archived_pause_keeps_main_is_member(
     paused.refresh_from_db()
     assert paused.membership_status == before
     assert paused.is_member is is_member
+
+
+@pytest.mark.parametrize(
+    ("before", "is_member"),
+    [
+        (None, True),
+        (MembershipStatus.ACTIVE_MEMBER, True),
+        (MembershipStatus.GUIDELINES_PAUSED, True),
+        (MembershipStatus.ATTENDANCE_PAUSED, False),
+    ],
+)
+def test_reapproval_sets_main_is_member(
+    api_client, vettor_headers, sample_join_request, before, is_member
+):
+    archived = make_user(
+        phone_number=sample_join_request.phone_number,
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+        status_before_archive=before,
+        is_member=not is_member,
+    )
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+    archived.refresh_from_db()
+    assert archived.is_member is is_member
+    assert archived.archived_at is None

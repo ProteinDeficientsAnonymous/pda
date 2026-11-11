@@ -48,6 +48,16 @@ def test_marking_tentative_unarchives(
     assert login.status_code == 200
 
 
+def test_tentative_then_approved_is_a_member(
+    api_client, vettor_headers, sample_join_request, archived_member
+):
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+    archived_member.refresh_from_db()
+    assert archived_member.membership_status == MembershipStatus.ACTIVE_MEMBER
+    assert archived_member.roles.filter(name="member").exists()
+
+
 @pytest.mark.parametrize(
     ("pause", "status"),
     [

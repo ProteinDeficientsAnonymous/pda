@@ -7,6 +7,7 @@ from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
 from users.models import (
+    MEMBER_OR_ARCHIVED,
     PAUSED_STATUSES,
     MembershipStatus,
     User,
@@ -51,9 +52,8 @@ def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
     return [*fields, *user.set_membership_status(status, by=by)]
 
 
-def _reactivate_archived_user(existing_user, join_request):
+def _reactivate_archived_user(existing_user, join_request, by: User):
     """Un-archive an existing user on re-approval, carrying any new consents."""
-    existing_user.archived_at = None
     existing_user.needs_onboarding = True
     existing_user.first_name, existing_user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
@@ -62,7 +62,7 @@ def _reactivate_archived_user(existing_user, join_request):
         existing_user.sms_consent_at = join_request.sms_consent_at
     existing_user.save(
         update_fields=[
-            "archived_at",
+            *_unarchive(existing_user, MembershipStatus.ACTIVE_MEMBER, by),
             "needs_onboarding",
             "first_name",
             "last_name",
@@ -70,6 +70,9 @@ def _reactivate_archived_user(existing_user, join_request):
             "sms_consent_at",
         ]
     )
+    if existing_user.membership_status == MembershipStatus.ACTIVE_MEMBER:
+        # An archived applicant never had the member role.
+        grant_membership(existing_user)
     return create_magic_token(existing_user)
 
 
@@ -253,8 +256,10 @@ def provision_approved_user(
     so their promotion returns no token. When the phone already maps to an active
     member, nothing is provisioned and ``(None, False)`` is returned.
     """
-    # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
-    if join_request.user is not None and not join_request.user.is_member:
+    # A linked non-member is promoted in place; an archived one is reactivated below.
+    # SET_NULL FK means a deleted user falls through.
+    linked = join_request.user
+    if linked is not None and linked.membership_status not in MEMBER_OR_ARCHIVED:
         if was_tentative:
             promote_tentative_member(join_request.user, join_request, requesting_user)
             return None, False
@@ -277,5 +282,5 @@ def provision_approved_user(
         )
         return magic_token, True
     if existing_user.archived_at is not None:
-        return _reactivate_archived_user(existing_user, join_request), True
+        return _reactivate_archived_user(existing_user, join_request, requesting_user), True
     return None, False
