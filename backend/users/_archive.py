@@ -18,7 +18,7 @@ from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
 from users.helpers import strip_elevated_roles
-from users.models import User
+from users.models import MembershipStatus, User
 
 HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
@@ -36,9 +36,18 @@ def archive_user(request, user: User) -> list[str]:
     return(list[str]): ids of the elevated roles that were stripped
     """
     with transaction.atomic():
+        actor = getattr(request, "auth", None)
         user.archived_at = timezone.now()
+        user.status_before_archive = user.membership_status
         user.calendar_token = ""
-        user.save(update_fields=["archived_at", "calendar_token"])
+        user.save(
+            update_fields=[
+                "archived_at",
+                "status_before_archive",
+                "calendar_token",
+                *user.set_membership_status(MembershipStatus.ARCHIVED, by=actor),
+            ]
+        )
         removed_role_ids = strip_elevated_roles(user)
         release_upcoming_rsvps(request, user)
         step_down_as_cohost(user)

@@ -8,7 +8,7 @@ from notifications.email_helpers import send_member_restored_email
 from notifications.email_sender import SendResult, get_email_sender, send_best_effort
 from notifications.service import create_member_restored_notifications
 from users.helpers import grant_membership
-from users.models import User
+from users.models import MembershipStatus, User
 
 from community.attendance.analytics import compute_member_stats, is_compliant
 from community.join_requests.approval import maybe_promote_tentative
@@ -54,7 +54,12 @@ def _restore_attendance_paused(request, user: User) -> bool:
     user.is_member = True
     # Saved before grant_membership: roles on non-members are rejected.
     fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
-    user.save(update_fields=fields)
+    user.save(
+        update_fields=[
+            *fields,
+            *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=request.auth),
+        ]
+    )
     grant_membership(user)
     audit_log(
         logging.WARNING,
