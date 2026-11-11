@@ -16,10 +16,11 @@ def backfill_membership_status(apps, schema_editor):
     User.objects.filter(attendance_paused_at__isnull=False).update(
         membership_status="attendance_paused"
     )
-    # A guidelines pause replaces an attendance pause, and fails closed on tentative or none rows.
-    User.objects.filter(~ARCHIVED, is_paused=True).update(
-        membership_status="guidelines_paused", attendance_paused_at=None
-    )
+    paused = User.objects.filter(~ARCHIVED, is_paused=True)
+    # A guidelines pause replaces an attendance pause; is_member keeps them on the admin list.
+    paused.filter(attendance_paused_at__isnull=False).update(is_member=True)
+    # Also fails closed on tentative or none rows.
+    paused.update(membership_status="guidelines_paused", attendance_paused_at=None)
     User.objects.filter(ARCHIVED).update(membership_status="archived")
 
     archived = User.objects.filter(ARCHIVED)
