@@ -44,10 +44,8 @@ def _unarchive(user, active_status: MembershipStatus, by: User) -> list[str]:
         user.attendance_paused_at = user.attendance_paused_at or timezone.now()
     else:
         user.attendance_paused_at = None
-    user.is_member = status in (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
     user.status_before_archive = None
     fields = ["archived_at", "attendance_paused_at", "status_before_archive"]
-    fields.append("is_member")
     return [*fields, *user.set_membership_status(status, by=by)]
 
 
