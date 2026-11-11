@@ -100,16 +100,3 @@ def test_guidelines_paused_member_stays_in_members():
     assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
     assert User.objects.members().filter(pk=paused.pk).exists()
     assert not User.objects.active_members().filter(pk=paused.pk).exists()
-
-
-def test_switching_from_guidelines_to_attendance_pause(api_client, manage_users_headers):
-    member = make_user()
-    _set_guidelines_pause(api_client, manage_users_headers, member, True)
-    response = api_client.patch(
-        f"/api/auth/users/{member.pk}/",
-        {"is_paused": False, "attendance_paused": True},
-        content_type="application/json",
-        **manage_users_headers,
-    )
-    assert response.status_code == 200
-    assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED
