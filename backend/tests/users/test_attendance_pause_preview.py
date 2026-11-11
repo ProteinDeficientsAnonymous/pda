@@ -7,8 +7,8 @@ from users._attendance_pause import PauseImpact
 from users.models import User
 
 
-def _preview(api_client, user: User, headers: dict):
-    return api_client.get(f"/api/auth/users/{user.pk}/attendance-pause-preview/", **headers)
+def _preview(api_client, user: User, headers: dict, kind: str = "attendance"):
+    return api_client.get(f"/api/auth/users/{user.pk}/{kind}-pause-preview/", **headers)
 
 
 @pytest.mark.django_db
@@ -39,7 +39,9 @@ class TestAttendancePausePreview:
             removed_hosting=[make_event(title="removed hosting")],
             drafted_events=[make_event(title="drafted")],
         )
-        monkeypatch.setattr(_attendance_pause_api, "attendance_pause_impact", lambda _: impact)
+        monkeypatch.setattr(
+            _attendance_pause_api, "attendance_pause_impact", lambda *_, **__: impact
+        )
 
         response = _preview(api_client, member, manage_users_headers)
 
@@ -62,3 +64,26 @@ class TestAttendancePausePreview:
     def test_unknown_user_is_404(self, api_client, manage_users_headers, non_member):
         response = _preview(api_client, non_member, manage_users_headers)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestGuidelinesPausePreview:
+    def test_lists_official_rsvp_as_removed(
+        self, api_client, manage_users_headers, member, other_user
+    ):
+        official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
+        make_rsvp(official, member)
+        drafted = make_event(created_by=member, event_type=EventType.CLUB)
+
+        response = _preview(api_client, member, manage_users_headers, "guidelines")
+
+        assert response.status_code == 200
+        pairs = {e["id"]: (e["role"], e["outcome"]) for e in response.json()["events"]}
+        assert pairs == {
+            str(official.pk): ("rsvp", "removed"),
+            str(drafted.pk): ("hosting", "drafted"),
+        }
+
+    def test_requires_manage_users(self, api_client, member, other_user):
+        response = _preview(api_client, member, auth_headers_for(other_user), "guidelines")
+        assert response.status_code == 403

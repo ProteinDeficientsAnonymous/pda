@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 
-import { fetchAttendancePausePreview } from './attendancePausePreview';
+import { fetchAttendancePausePreview, fetchGuidelinesPausePreview } from './attendancePausePreview';
 
 vi.mock('@/api/client');
 
@@ -36,5 +36,12 @@ describe('fetchAttendancePausePreview', () => {
       },
       { id: 'e2', title: 'Hike', startDatetime: null, role: 'rsvp', outcome: 'removed' },
     ]);
+  });
+
+  it('fetches the guidelines pause preview', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { events: [] } });
+
+    expect(await fetchGuidelinesPausePreview('u1')).toEqual([]);
+    expect(apiClient.get).toHaveBeenCalledWith('/api/auth/users/u1/guidelines-pause-preview/');
   });
 });
