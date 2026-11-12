@@ -156,14 +156,10 @@ export interface JoinRequestSummary {
   userId: string | null;
   previouslyArchived: boolean;
   previouslyRejected: boolean;
-  approvedAt: string | null;
-  approvedByName: string | null;
   statusChangedAt: string | null;
   statusChangedByName: string | null;
   approvedViaEventId: string | null;
   approvedViaEventTitle: string | null;
-  rejectedAt: string | null;
-  rejectedByName: string | null;
   rejectionReason: RejectionReason | null;
   rejectionNote: string;
   onboardedAt: string | null;
@@ -196,14 +192,10 @@ interface WireJoinRequest {
   user_id: string | null;
   previously_archived?: boolean;
   previously_rejected?: boolean;
-  approved_at?: string | null;
-  approved_by_name?: string | null;
   status_changed_at?: string | null;
   status_changed_by_name?: string | null;
   approved_via_event_id?: string | null;
   approved_via_event_title?: string | null;
-  rejected_at?: string | null;
-  rejected_by_name?: string | null;
   rejection_reason?: RejectionReason | '';
   rejection_note?: string;
   onboarded_at?: string | null;
@@ -232,14 +224,10 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
     previouslyRejected: w.previously_rejected ?? false,
-    approvedAt: w.approved_at ?? null,
-    approvedByName: w.approved_by_name ?? null,
     statusChangedAt: w.status_changed_at ?? null,
     statusChangedByName: w.status_changed_by_name ?? null,
     approvedViaEventId: w.approved_via_event_id ?? null,
     approvedViaEventTitle: w.approved_via_event_title ?? null,
-    rejectedAt: w.rejected_at ?? null,
-    rejectedByName: w.rejected_by_name ?? null,
     rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
     rejectionNote: w.rejection_note ?? '',
     onboardedAt: w.onboarded_at ?? null,

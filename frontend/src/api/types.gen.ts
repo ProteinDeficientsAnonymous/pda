@@ -4616,10 +4616,6 @@ export interface components {
              * @default []
              */
             answers: components["schemas"]["JoinRequestAnswerOut"][];
-            /** Approved At */
-            approved_at?: string | null;
-            /** Approved By Name */
-            approved_by_name?: string | null;
             /** Approved Via Event Id */
             approved_via_event_id?: string | null;
             /** Approved Via Event Title */
@@ -4675,10 +4671,6 @@ export interface components {
              * @default false
              */
             previously_rejected: boolean;
-            /** Rejected At */
-            rejected_at?: string | null;
-            /** Rejected By Name */
-            rejected_by_name?: string | null;
             /**
              * Rejection Note
              * @default
