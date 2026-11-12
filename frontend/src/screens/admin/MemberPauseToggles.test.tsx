@@ -20,8 +20,8 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const preview = vi.mocked(fetchAttendancePausePreview);
 const guidelinesPreview = vi.mocked(fetchGuidelinesPausePreview);
 
-function Harness({ isPaused = false, attendancePaused = false }: Partial<PauseState>) {
-  const [value, setValue] = useState<PauseState>({ isPaused, attendancePaused });
+function Harness({ guidelinesPaused = false, attendancePaused = false }: Partial<PauseState>) {
+  const [value, setValue] = useState<PauseState>({ guidelinesPaused, attendancePaused });
   return (
     <MemberPauseToggles memberId="m1" value={value} onChange={setValue} targetIsAdmin={false} />
   );
@@ -124,7 +124,7 @@ describe('MemberPauseToggles guidelines preview', () => {
   });
 
   it('lifts an existing pause without a preview and warns it leaves an event rqmt pause', async () => {
-    render(<Harness isPaused />);
+    render(<Harness guidelinesPaused />);
     expect(eventRqmtSwitch()).toBeDisabled();
     await userEvent.click(guidelinesSwitch());
     expect(guidelinesPreview).not.toHaveBeenCalled();
