@@ -195,7 +195,7 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
 
 def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | None) -> bool:
     """Pause or silently unpause the user per the PATCH flag; returns True if anything changed."""
-    is_paused = user.membership_status == MembershipStatus.ATTENDANCE_PAUSED
+    is_paused = user.is_attendance_paused
     if attendance_paused is None or attendance_paused == is_paused:
         return False
     if attendance_paused:

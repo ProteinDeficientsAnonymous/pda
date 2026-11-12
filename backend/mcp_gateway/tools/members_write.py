@@ -4,7 +4,7 @@ from uuid import UUID
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 from users.api import attendance_pause_preview, update_user
-from users.models import MembershipStatus, User
+from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import UserPatchIn
 
@@ -44,7 +44,7 @@ async def set_attendance_pause(
     user = await current_user()
     member = await _member(member_id)
     summary = {"id": str(member.pk), "name": member.full_name}
-    if paused == (member.membership_status == MembershipStatus.ATTENDANCE_PAUSED):
+    if paused == member.is_attendance_paused:
         state = "is already" if paused else "isn't"
         raise ToolError(f"{member.full_name} {state} attendance-paused; nothing to do")
 
